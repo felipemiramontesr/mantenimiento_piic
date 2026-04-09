@@ -35,6 +35,7 @@ jobs:
           echo "DB_USER=${{ secrets.DB_USER }}" >> apps/api/.env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> apps/api/.env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> apps/api/.env
+          echo "DB_ENCRYPTION_KEY=${{ secrets.DB_ENCRYPTION_KEY }}" >> apps/api/.env
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> apps/api/.env
           echo "NODE_ENV=production" >> apps/api/.env
 
