@@ -27,6 +27,8 @@ jobs:
           npm run test
 
       - name: Build Web Application
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build --workspace=@mantenimiento/web
 
       - name: 📂 Generate Server .env

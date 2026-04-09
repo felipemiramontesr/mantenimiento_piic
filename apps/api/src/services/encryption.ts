@@ -6,14 +6,25 @@ import crypto from 'crypto';
  */
 export class EncryptionService {
   private static readonly ALGORITHM = 'aes-256-gcm';
-  private static readonly KEY = process.env.DB_ENCRYPTION_KEY || 'default-secret-archon-key-32-chars-!';
+
+  private static getKey(): Buffer {
+    const rawKey = process.env.DB_ENCRYPTION_KEY || 'default-secret-archon-key-32-chars-!';
+    const key = rawKey.trim();
+    
+    // If the key is a 64-char hex string, it represents 32 bytes
+    if (/^[0-9a-fA-F]{64}$/.test(key)) {
+      return Buffer.from(key, 'hex');
+    }
+    // Otherwise assume it's a 32-char string
+    return Buffer.from(key, 'utf-8');
+  }
 
   /**
-   * Encrypts a string into base64(iv:tag:ciphertext)
+   * Encrypts a string into iv:tag:ciphertext
    */
   public static encrypt(text: string): string {
     const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv(this.ALGORITHM, Buffer.from(this.KEY, 'utf-8'), iv);
+    const cipher = crypto.createCipheriv(this.ALGORITHM, this.getKey(), iv);
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -36,7 +47,7 @@ export class EncryptionService {
 
     const decipher = crypto.createDecipheriv(
       this.ALGORITHM, 
-      Buffer.from(this.KEY, 'utf-8'), 
+      this.getKey(), 
       Buffer.from(ivHex, 'hex')
     );
     
