@@ -27,7 +27,6 @@ body {
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden; /* Avoid scrollbars on the auth flow */
 }
 
 /* 🏗️ UNBREAKABLE GRID ARCHITECTURE */
@@ -63,7 +62,7 @@ body {
   height: 100%;
   object-fit: cover;
   z-index: -2;
-  animation: ken-burns 40s infinite alternate ease-in-out;
+  animation: ken-burns 60s infinite alternate ease-in-out;
 }
 
 .brand-overlay {
@@ -81,17 +80,49 @@ body {
   z-index: -1;
 }
 
-/* 🧪 SENIOR TYPOGRAPHY SCALING */
-.slogan-text {
-  font-size: clamp(1.8rem, 4vw, 3.2rem);
-  font-weight: 900;
-  line-height: 1.1;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
+/* 🎞️ CINEMATIC ANIMATIONS */
+@keyframes ken-burns {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
 }
 
-.slogan-accent {
-  color: var(--accent);
+/* 💎 CACHE BUSTING V2 STYLES */
+.piic-hero-slogan-v2 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #FFFFFF !important;
+}
+
+.piic-hero-accent-v2 {
+  color: #F2B705 !important;
+}
+
+.piic-cta-primary-v2 {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  border: 1px solid #E2E8F0 !important;
+  display: inline-block !important;
+  text-decoration: none !important;
+  transition: background 0.2s !important;
+}
+
+.piic-cta-primary-v2:hover {
+  background-color: #F8FAFC !important;
+}
+
+.piic-link-secondary-v2 {
+  color: #2563EB !important; /* Blue standard link */
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
 }
 
 /* 🛡️ DYNAMIC DIAMOND FORMS */
@@ -101,15 +132,13 @@ body {
   justify-content: center;
   padding: 40px;
   background-color: var(--bg-pristine);
-  z-index: 10;
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: var(--radius-pinnacle);
   padding: 48px;
@@ -123,8 +152,6 @@ body {
   border: 1.5px solid #E2E8F0;
   border-radius: var(--radius-control);
   font-size: 16px;
-  font-weight: 500;
-  transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;
 }
 
@@ -139,28 +166,9 @@ body {
   background-color: var(--accent);
   color: var(--primary);
   border: none;
-  border-radius: var(--radius-control);
   font-weight: 900;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
-  transition: transform 0.2s, filter 0.2s;
-}
-
-.diamond-button:hover {
-  filter: brightness(1.05);
-  transform: translateY(-2px);
-}
-
-/* 🎞️ CINEMATIC ANIMATIONS */
-@keyframes ken-burns {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.15); }
-}
-
-.fixed-logo-container {
-  width: 90px;
-  height: 90px;
-  margin-bottom: 24px;
 }
