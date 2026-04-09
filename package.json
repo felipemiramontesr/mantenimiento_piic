@@ -1,0 +1,23 @@
+{
+  "name": "mantenimiento-piic",
+  "version": "1.0.0",
+  "description": "Automotive Maintenance Management System - PIIC Premium",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "lint-staged": "^13.0.0",
+    "prettier": "^2.8.0",
+    "typescript": "^5.0.0"
+  }
+}

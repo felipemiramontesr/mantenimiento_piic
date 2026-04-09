@@ -1,0 +1,63 @@
+name: 🚀 PIIC Pro Deployment (Phase 0)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint and Test
+        run: |
+          npm run lint
+          npm run test
+
+      - name: Build Web Application
+        run: npm run build --workspace=@mantenimiento/web
+
+      - name: 📂 Generate Server .env
+        run: |
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> apps/api/.env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> apps/api/.env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> apps/api/.env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> apps/api/.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> apps/api/.env
+          echo "NODE_ENV=production" >> apps/api/.env
+
+      - name: 📂 Deploy Web to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./apps/web/dist/
+          server-dir: ./public_html/
+          protocol: ftp
+
+      - name: 📂 Deploy API to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./apps/api/
+          server-dir: ./api_service/
+          protocol: ftp
+          exclude: |
+            **/node_modules/**
+            **/tests/**
+            src/

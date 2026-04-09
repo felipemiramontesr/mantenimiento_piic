@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-pinnacle-bg text-pinnacle-text font-sans antialiased;
+  }
+
+  h1 {
+    @apply text-[48px] font-bold leading-tight;
+  }
+
+  h2 {
+    @apply text-[32px] font-semibold leading-snug;
+  }
+
+  p {
+    @apply text-[16px] leading-[1.6];
+  }
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.diamond-input {
+  @apply bg-[#FAFAFA] border border-gray-300 rounded-pinnacle-input transition-all duration-300;
+  @apply focus:bg-white focus:border-pinnacle-accent focus:ring-4 focus:ring-pinnacle-accent/10 outline-none;
+}
