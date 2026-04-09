@@ -23,7 +23,7 @@ jobs:
 
       - name: Lint and Test
         run: |
-          npm run lint
+          npm run lint -- --max-warnings 100
           npm run test
 
       - name: Build Web Application
