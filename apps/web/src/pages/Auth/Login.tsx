@@ -63,15 +63,15 @@ const LoginPage: React.FC = () => {
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
           
-          <div className="flex flex-wrap gap-4 mt-10">
-            <button className="px-8 py-3 bg-accent text-primary font-bold rounded-sm hover:brightness-105 transition-all">
+          <div className="flex flex-wrap items-center gap-6 mt-10">
+            <button className="px-6 py-2 bg-white text-black font-medium text-sm hover:bg-gray-100 transition-all shadow-sm border border-gray-200">
               Solicitar cotización
             </button>
             <a 
               href="https://www.piic.com.mx" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="px-8 py-3 border border-white text-white font-bold rounded-sm hover:bg-white/10 transition-all text-center"
+              className="text-[#3b82f6] hover:text-blue-500 font-medium text-sm underline decoration-2 underline-offset-4 transition-all"
             >
               Ir al sitio oficial
             </a>
