@@ -26,14 +26,14 @@ const PiicLogo: React.FC<{ className?: string }> = ({ className }) => (
           fill="#0F2A44"
           clipPath="url(#logoMask)"
           animate={{
-            x: [50, 0, 50],
-            width: ["50%", "100%", "50%"],
+            x: [50, 0, -100, 50],
+            width: ["50%", "100%", "100%", "50%"],
           }}
           transition={{
             duration: 30,
             repeat: Infinity,
             ease: "linear",
-            times: [0, 0.25, 1], // Simplified cycle for MVP
+            times: [0, 0.15, 0.25, 0.3], // Concentrated animation phases within the 30s cycle
           }}
         />
 
