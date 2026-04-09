@@ -15,6 +15,7 @@
   --shadow-pinnacle: 0 10px 25px rgba(0, 0, 0, 0.05);
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-dark: rgba(15, 42, 68, 0.85);
 }
 
 * {
@@ -31,76 +32,65 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
-  color: var(--primary);
-  line-height: 1.2;
-}
-
 /* 🛡️ DIAMOND FORM SYSTEM */
 .diamond-input {
   width: 100%;
-  padding: 12px 16px;
-  background: #FAFAFA;
-  border: 1px solid #D1D5DB;
+  padding: 14px 18px;
+  background: var(--white);
+  border: 1.5px solid #E5E7EB;
   border-radius: var(--radius-control);
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
 }
 
 .diamond-input:focus {
-  background: var(--white);
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.1);
+  box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.15);
 }
 
 .diamond-button {
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   background-color: var(--accent);
   color: var(--primary);
   border: none;
   border-radius: var(--radius-control);
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: 800;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .diamond-button:hover {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(242, 183, 5, 0.3);
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(242, 183, 5, 0.25);
 }
 
-/* 💎 GLASSMORPHISM UTILITIES */
-.glass-effect {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(15, 42, 68, 0.1);
+/* 💎 SPLIT-SCREEN & GLASSMORPHISM */
+.glass-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
 }
 
-/* 📱 MOBILE-FIRST RESPONSIVE UTILS */
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
+.brand-panel-overlay {
+  background: linear-gradient(135deg, rgba(15, 42, 68, 0.9) 0%, rgba(15, 42, 68, 0.7) 100%);
+  backdrop-filter: blur(4px);
 }
 
-@media (min-width: 768px) {
-  .section-padding {
-    padding: 80px 0;
-  }
-}
-
-/* 🌌 BRAND ANIMATIONS */
-@keyframes sun-moon-cycle {
-  0% { stop-color: var(--accent); }
-  50% { stop-color: var(--primary); }
-  100% { stop-color: var(--accent); }
+/* 📱 UTILITIES */
+.fixed-logo {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  min-height: 80px;
 }

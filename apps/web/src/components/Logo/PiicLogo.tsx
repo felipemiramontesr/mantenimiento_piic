@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const PiicLogo: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={`relative overflow-hidden ${className}`}>
+  <div className={`relative overflow-hidden fixed-logo ${className}`}>
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <defs>
           <clipPath id="logoMask">

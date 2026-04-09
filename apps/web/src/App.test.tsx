@@ -27,7 +27,7 @@ describe('PIIC ARCHON - Authentication Interface', () => {
       </MemoryRouter>
     );
     
-    const usernameInput = screen.getByPlaceholderText(/ID de Archon/i);
+    const usernameInput = screen.getByPlaceholderText(/Introduzca su Archon ID/i);
     const passwordInput = screen.getByPlaceholderText(/••••••••••••/i);
     const submitButton = screen.getByText(/Iniciar Autenticación/i);
     
