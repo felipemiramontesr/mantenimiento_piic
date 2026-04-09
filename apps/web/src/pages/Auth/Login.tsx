@@ -54,12 +54,28 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Middle: Cinematic Slogan */}
-        <div className="relative z-10 max-w-2xl">
-          <h1 className="slogan-text">
+        <div className="relative z-10 max-w-2xl animate-in fade-in slide-in-from-bottom duration-1000 delay-300">
+          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
             Suministro industrial, tecnológico y comercial <br/>
             <span className="slogan-accent">para operaciones que no pueden detenerse</span>
           </h1>
-          <div className="w-24 h-2 bg-accent mt-8"></div>
+          <p className="text-white/80 text-lg mt-6 font-medium max-w-lg">
+            Respuesta rápida y suministro confiable para el sector minero e industrial.
+          </p>
+          
+          <div className="flex flex-wrap gap-4 mt-10">
+            <button className="px-8 py-3 bg-accent text-primary font-bold rounded-sm hover:brightness-105 transition-all">
+              Solicitar cotización
+            </button>
+            <a 
+              href="https://www.piic.com.mx" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-8 py-3 border border-white text-white font-bold rounded-sm hover:bg-white/10 transition-all text-center"
+            >
+              Ir al sitio oficial
+            </a>
+          </div>
         </div>
 
         {/* Bottom: System Metadata */}
