@@ -1,13 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  /* 🎨 PINNACLE IDENTITY MASTER PALETTE */
-  --primary: #0F2A44;         /* Deep Space Blue */
-  --accent: #F2B705;          /* Industrial Teck Yellow */
-  --bg-pristine: #F2F4F7;     /* Pristine Grey */
-  --secondary: #2E2E2E;       /* Solid Grey */
-  --text-primary: #1A1A1A;
-  --white: #FFFFFF;
+  /* 🎨 OFFICIAL PIIC COLOR PALETTE */
+  --color-primary: #0f2a44;   /* Azul Corporativo */
+  --color-accent: #f2b705;    /* Amarillo PIIC */
+  --color-white: #ffffff;
+  --color-subtitle: #E5E7EB;
+  --bg-pristine: #F2F4F7;
 }
 
 * {
@@ -19,12 +18,13 @@
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-pristine);
-  color: var(--text-primary);
+  color: var(--color-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-/* 🏗️ STABLE SPLIT LAYOUT */
+/* 🏗️ PIIC CORPORATE 70/30 SPLIT */
 .auth-grid-container {
   display: flex;
   flex-direction: column;
@@ -37,28 +37,28 @@ body {
   }
 }
 
-/* 🌌 BRAND PANEL (Izquierda) */
-.brand-panel {
+/* 🌌 HERO SECTION (Brand Authority) */
+.hero-section {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 60px;
-  position: relative;
+  padding: 40px;
   overflow: hidden;
-  color: var(--white);
-  min-height: 50vh;
+  color: var(--color-white);
+  min-height: 60vh;
 }
 
 @media (min-width: 1024px) {
-  .brand-panel {
-    width: 55%;
+  .hero-section {
+    width: 70%;
     flex: none;
     min-height: 100vh;
+    padding: 60px 80px;
   }
 }
 
-.brand-bg-image {
+.hero-bg-image {
   position: absolute;
   top: 0;
   left: 0;
@@ -69,23 +69,123 @@ body {
   animation: static-zoom 60s infinite alternate;
 }
 
-.brand-overlay {
+.hero-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(15, 42, 68, 0.95) 0%, rgba(15, 42, 68, 0.8) 100%);
+  /* Double Gradient as per PIIC Standards */
+  background: 
+    linear-gradient(rgba(15, 42, 68, 0.9), rgba(15, 42, 68, 0.75)),
+    radial-gradient(circle at 20% 50%, rgba(242, 183, 5, 0.05), transparent 40%);
   z-index: -1;
 }
 
 @keyframes static-zoom {
   0% { transform: scale(1); }
-  100% { transform: scale(1.05); }
+  100% { transform: scale(1.1); }
 }
 
-/* 🛡️ FORM PANEL (Derecha) */
-.form-panel {
+/* 🧪 SENIOR TYPOGRAPHY */
+.hero-title {
+  font-size: clamp(34px, 5vw, 48px);
+  font-weight: 700;
+  color: var(--color-white);
+  line-height: 1.2;
+  max-width: 800px;
+}
+
+.hero-subtitle {
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 400;
+  color: var(--color-subtitle);
+  margin-top: 24px;
+}
+
+/* 🔗 PIIC BUTTON SYSTEM */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.btn-primary:hover {
+  background-color: #d9a404;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  border: 1px solid var(--color-white);
+  color: var(--color-white);
+  background: transparent;
+}
+
+.btn-outline:hover {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+/* 💎 LOGO PIIC V5 KEYFRAMES */
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  overflow: visible;
+}
+
+.logo-text {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-white);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-left: 12px;
+}
+
+.sun-grow-left-v5 { animation: sunGrowLeftV5 30s infinite linear; }
+.luna-full-rl-v5 { animation: lunaFullRLV5 30s infinite linear; }
+.sol-half-rl-v5 { animation: solHalfRLV5 30s infinite linear; }
+
+@keyframes sunGrowLeftV5 {
+  0%, 10% { x: 50px; width: 0; }
+  15% { x: 0px; width: 50px; }
+  15.01%, 100% { x: 0px; width: 50px; }
+}
+
+@keyframes lunaFullRLV5 {
+  0%, 15% { x: 100px; }
+  25% { x: 0px; }
+  25.01%, 100% { x: 0px; }
+}
+
+@keyframes solHalfRLV5 {
+  0%, 25% { x: 100px; }
+  30% { x: 50px; }
+  30.01%, 100% { x: 50px; }
+}
+
+/* 🛡️ LOGIN PANEL (Right) */
+.login-panel {
   flex: 1;
   display: flex;
   align-items: center;
@@ -95,17 +195,17 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .form-panel {
-    width: 45%;
+  .login-panel {
+    width: 30%;
     flex: none;
   }
 }
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
-  background: var(--white);
-  border-radius: 12px;
+  max-width: 400px;
+  background: var(--color-white);
+  border-radius: 8px;
   padding: 40px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
 }
@@ -115,32 +215,13 @@ body {
   padding: 14px 18px;
   background: #F9FAFB;
   border: 1.5px solid #E5E7EB;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 15px;
   outline: none;
   transition: all 0.2s;
 }
 
 .diamond-input:focus {
-  border-color: var(--accent);
+  border-color: var(--color-accent);
   background: white;
-  box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.1);
-}
-
-.diamond-button {
-  width: 100%;
-  padding: 16px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 900;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.diamond-button:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
 }
