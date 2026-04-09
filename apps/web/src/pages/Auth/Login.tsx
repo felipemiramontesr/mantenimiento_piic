@@ -1,19 +1,33 @@
 import React, { useState } from 'react';
 import { PiicLogo } from '../../components/Logo/PiicLogo';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api/client';
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'archon' && password === 'pinnacle2026') {
-      localStorage.setItem('auth_token', 'mock_token'); // Simplified for MVP
-      navigate('/dashboard');
-    } else {
-      alert('Invalid Archon Clearance');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.post('/auth/login', { username, password });
+      
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      const message = err.response?.data?.error || 'Authentication Failed';
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -27,6 +41,11 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-24">
+          {error && (
+            <div className="p-16 bg-red-500/20 border border-red-500/50 rounded-pinnacle-input text-red-200 text-xs text-center animate-pulse">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-white/80 text-xs mb-8 uppercase tracking-widest font-bold">Username</label>
             <input 
@@ -35,6 +54,8 @@ export const LoginPage: React.FC = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Archon ID"
+              disabled={loading}
+              required
             />
           </div>
           <div>
@@ -45,13 +66,16 @@ export const LoginPage: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              disabled={loading}
+              required
             />
           </div>
           <button 
             type="submit"
-            className="w-full bg-pinnacle-accent text-pinnacle-primary font-bold py-16 rounded-pinnacle-input hover:brightness-110 transition-all active:scale-95"
+            disabled={loading}
+            className="w-full bg-pinnacle-accent text-pinnacle-primary font-bold py-16 rounded-pinnacle-input hover:brightness-110 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            INITIALIZE AUTHENTICATION
+            {loading ? 'SYNCHRONIZING...' : 'INITIALIZE AUTHENTICATION'}
           </button>
         </form>
       </div>

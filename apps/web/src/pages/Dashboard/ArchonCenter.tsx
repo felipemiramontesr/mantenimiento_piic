@@ -1,7 +1,16 @@
 import React from 'react';
 import { LayoutDashboard, Truck, Settings, ShieldAlert, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const ArchonDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    navigate('/login');
+  };
   return (
     <div className="flex min-h-screen bg-pinnacle-bg">
       {/* Sidebar 280px */}
@@ -18,7 +27,10 @@ export const ArchonDashboard: React.FC = () => {
           <NavItem icon={<Settings size={20} />} label="System Config" />
         </nav>
 
-        <button className="flex items-center gap-16 p-16 text-white/60 hover:text-pinnacle-accent transition-colors">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-16 p-16 text-white/60 hover:text-pinnacle-accent transition-colors"
+        >
           <LogOut size={20} />
           <span>Terminate Session</span>
         </button>
