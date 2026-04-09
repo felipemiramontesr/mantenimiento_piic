@@ -37,53 +37,53 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="auth-grid-container">
-      {/* 🌌 SECCIÓN DE MARCA: Autoridad & Visión (Inmune a Cache) */}
-      <section className="brand-panel">
-        <img src={backgroundImage} alt="Fondo Industrial" className="brand-bg-image" />
+    <div className="auth-grid-container bg-[#F2F4F7]">
+      {/* 🌌 PANEL DE MARCA (Izquierda) - Blindado contra desbordamientos */}
+      <section className="brand-panel min-h-[400px] lg:min-h-screen">
+        <img src={backgroundImage} alt="Hangar" className="brand-bg-image" />
         <div className="brand-overlay"></div>
         
-        <div className="relative z-10 animate-in fade-in duration-700">
+        {/* Logo con Bloqueo de Hardware (90px) */}
+        <div className="relative z-10" style={{ width: '90px', height: '90px' }}>
           <PiicLogo />
-          <p className="text-[#F2B705] text-[10px] font-black uppercase tracking-[0.5em] mt-4">
-            Pinnacle Identity
-          </p>
         </div>
 
-        <div className="relative z-10 max-w-2xl animate-in fade-in slide-in-from-bottom duration-1000 delay-300">
-          <h1 className="piic-hero-slogan-v2">
+        {/* Contenedor Informativo Homologado */}
+        <div className="relative z-10 max-w-2xl animate-in fade-in slide-in-from-bottom duration-1000">
+          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
             Suministro industrial, tecnológico y comercial <br/>
-            <span className="piic-hero-accent-v2">para operaciones que no pueden detenerse</span>
+            <span className="text-[#F2B705]">para operaciones que no pueden detenerse</span>
           </h1>
           <p className="text-white/80 text-lg mt-6 font-medium max-w-lg">
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
           
-          <div className="flex flex-wrap items-center gap-8 mt-12">
-            <button className="piic-cta-primary-v2">
+          {/* Arquitectura de Botones (Fidelidad Flecha Roja) */}
+          <div className="flex flex-wrap items-center gap-6 mt-12">
+            <button className="px-8 py-3 bg-[#F2B705] text-[#0F2A44] font-black text-sm uppercase tracking-wider rounded-sm hover:brightness-105 transition-all shadow-lg">
               Solicitar cotización
             </button>
             <a 
               href="https://www.piic.com.mx" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="piic-link-secondary-v2"
+              className="px-8 py-3 border-2 border-white text-white font-black text-sm uppercase tracking-wider rounded-sm hover:bg-white/10 transition-all text-center"
             >
               Ir al sitio oficial
             </a>
           </div>
         </div>
 
-        <div className="relative z-10 text-white/30 text-[9px] font-bold uppercase tracking-[0.4em]">
-          Archon Systems | Engineered for visual immortality
+        <div className="relative z-10 text-white/30 text-[9px] font-black uppercase tracking-[0.4em]">
+          Archon Operating System | PIIC Identity
         </div>
       </section>
 
-      {/* 🛡️ SECCIÓN DE ACCESO: Precisión Operativa */}
+      {/* 🛡️ PANEL DE ACCESO (Derecha) */}
       <section className="form-panel">
         <div className="auth-card">
-          <header className="mb-12 text-center lg:text-left">
-            <h2 className="text-3xl font-black text-[#0F2A44] uppercase tracking-tight">
+          <header className="mb-12">
+            <h2 className="text-3xl font-black text-[#0F2A44] uppercase tracking-tighter">
               Acceso Archon
             </h2>
             <p className="text-slate-500 text-[11px] font-black uppercase tracking-[0.2em] mt-3">
@@ -93,8 +93,8 @@ const LoginPage: React.FC = () => {
 
           <form onSubmit={handleLogin} className="space-y-8">
             {error && (
-              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-[10px] font-black uppercase tracking-widest rounded shadow-sm animate-in slide-in-from-top">
-                ⚠️ Error: {error}
+              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-[10px] font-black uppercase rounded">
+                ALERTA DE SISTEMA: {error}
               </div>
             )}
             
@@ -132,8 +132,9 @@ const LoginPage: React.FC = () => {
               type="submit"
               disabled={loading}
               className="diamond-button"
+              style={{ backgroundColor: '#F2B705', color: '#0F2A44' }}
             >
-              {loading ? 'Validando...' : 'Iniciar Autenticación'}
+              {loading ? 'Sincronizando...' : 'Iniciar Autenticación'}
             </button>
             
             <footer className="text-center pt-8">

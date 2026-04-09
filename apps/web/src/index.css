@@ -8,11 +8,6 @@
   --secondary: #2E2E2E;       /* Solid Grey */
   --text-primary: #1A1A1A;
   --white: #FFFFFF;
-  
-  /* 📐 SENIOR GRID SYSTEM */
-  --grid-gap: 24px;
-  --radius-pinnacle: 12px;
-  --radius-control: 6px;
 }
 
 * {
@@ -29,22 +24,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 🏗️ UNBREAKABLE GRID ARCHITECTURE */
+/* 🏗️ STABLE SPLIT LAYOUT */
 .auth-grid-container {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  width: 100vw;
 }
 
 @media (min-width: 1024px) {
   .auth-grid-container {
-    grid-template-columns: 55fr 45fr;
+    flex-direction: row;
   }
 }
 
-/* 🌌 BRAND AUTHORITY SECTION */
+/* 🌌 BRAND PANEL (Izquierda) */
 .brand-panel {
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -52,6 +47,15 @@ body {
   position: relative;
   overflow: hidden;
   color: var(--white);
+  min-height: 50vh;
+}
+
+@media (min-width: 1024px) {
+  .brand-panel {
+    width: 55%;
+    flex: none;
+    min-height: 100vh;
+  }
 }
 
 .brand-bg-image {
@@ -62,7 +66,7 @@ body {
   height: 100%;
   object-fit: cover;
   z-index: -2;
-  animation: ken-burns 60s infinite alternate ease-in-out;
+  animation: static-zoom 60s infinite alternate;
 }
 
 .brand-overlay {
@@ -71,62 +75,18 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    135deg, 
-    rgba(15, 42, 68, 0.95) 0%, 
-    rgba(15, 42, 68, 0.75) 50%,
-    rgba(15, 42, 68, 0.85) 100%
-  );
+  background: linear-gradient(135deg, rgba(15, 42, 68, 0.95) 0%, rgba(15, 42, 68, 0.8) 100%);
   z-index: -1;
 }
 
-/* 🎞️ CINEMATIC ANIMATIONS */
-@keyframes ken-burns {
+@keyframes static-zoom {
   0% { transform: scale(1); }
-  100% { transform: scale(1.1); }
+  100% { transform: scale(1.05); }
 }
 
-/* 💎 CACHE BUSTING V2 STYLES */
-.piic-hero-slogan-v2 {
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  font-weight: 800;
-  line-height: 1.15;
-  color: #FFFFFF !important;
-}
-
-.piic-hero-accent-v2 {
-  color: #F2B705 !important;
-}
-
-.piic-cta-primary-v2 {
-  background-color: #FFFFFF !important;
-  color: #000000 !important;
-  padding: 12px 24px !important;
-  font-weight: 600 !important;
-  font-size: 15px !important;
-  border: 1px solid #E2E8F0 !important;
-  display: inline-block !important;
-  text-decoration: none !important;
-  transition: background 0.2s !important;
-}
-
-.piic-cta-primary-v2:hover {
-  background-color: #F8FAFC !important;
-}
-
-.piic-link-secondary-v2 {
-  color: #2563EB !important; /* Blue standard link */
-  font-weight: 600 !important;
-  font-size: 15px !important;
-  text-decoration: underline !important;
-  text-underline-offset: 4px !important;
-  background: transparent !important;
-  border: none !important;
-  cursor: pointer !important;
-}
-
-/* 🛡️ DYNAMIC DIAMOND FORMS */
+/* 🛡️ FORM PANEL (Derecha) */
 .form-panel {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,41 +94,53 @@ body {
   background-color: var(--bg-pristine);
 }
 
+@media (min-width: 1024px) {
+  .form-panel {
+    width: 45%;
+    flex: none;
+  }
+}
+
 .auth-card {
   width: 100%;
-  max-width: 440px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-pinnacle);
-  padding: 48px;
-  box-shadow: 0 25px 50px -12px rgba(15, 42, 68, 0.15);
+  max-width: 420px;
+  background: var(--white);
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
 }
 
 .diamond-input {
   width: 100%;
-  padding: 16px 20px;
-  background: var(--white);
-  border: 1.5px solid #E2E8F0;
-  border-radius: var(--radius-control);
-  font-size: 16px;
+  padding: 14px 18px;
+  background: #F9FAFB;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 6px;
+  font-size: 15px;
   outline: none;
+  transition: all 0.2s;
 }
 
 .diamond-input:focus {
   border-color: var(--accent);
+  background: white;
   box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.1);
 }
 
 .diamond-button {
   width: 100%;
-  padding: 18px;
-  background-color: var(--accent);
-  color: var(--primary);
+  padding: 16px;
   border: none;
+  border-radius: 6px;
   font-weight: 900;
-  font-size: 14px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diamond-button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
