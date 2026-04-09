@@ -58,16 +58,21 @@ const LoginPage: React.FC = () => {
           </p>
           
           <div className="hero-actions">
-            <button className="btn btn-primary">
-              Solicitar cotización
-            </button>
             <a 
-              href="https://www.piic.com.mx" 
+              href="https://wa.me/5214929421780" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              Solicitar cotización
+            </a>
+            <a 
+              href="https://piic.com.mx/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="btn btn-outline"
             >
-              Ver servicios
+              Ver sitio Web
             </a>
           </div>
         </main>
