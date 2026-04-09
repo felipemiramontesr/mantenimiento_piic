@@ -11,14 +11,14 @@ jobs:
     name: 🛡️ Backend (API) Verification
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Lint and Test
         run: |
           npm run lint --workspace=@mantenimiento/api
@@ -28,14 +28,14 @@ jobs:
     name: 🎨 Frontend (Web) Verification
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Lint and Test
         run: |
           npm run lint --workspace=@mantenimiento/web
@@ -45,14 +45,14 @@ jobs:
     name: 🏛️ Database (SQL) Verification
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
       - name: Validate SQL Schema
         run: npm run db:validate
 
@@ -62,14 +62,14 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
       
       - name: Build Web Application
         env:
@@ -87,7 +87,7 @@ jobs:
           echo "NODE_ENV=production" >> apps/api/.env
 
       - name: 📂 Deploy Web to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
@@ -97,7 +97,7 @@ jobs:
           protocol: ftp
 
       - name: 📂 Deploy API to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}

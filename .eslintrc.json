@@ -22,6 +22,24 @@
     "no-console": "error",
     "@typescript-eslint/explicit-function-return-type": "error",
     "no-param-reassign": ["error", { "props": true, "ignorePropertyModificationsFor": ["config", "state"] }],
-    "@typescript-eslint/no-non-null-assertion": "off"
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "import/no-extraneous-dependencies": ["error", { 
+      "devDependencies": [
+        "**/vite.config.ts",
+        "**/vitest.config.ts",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/src/test/setup.ts"
+      ],
+      "packageDir": ["./", "./apps/web", "./apps/api", "./packages/database"]
+    }]
+  },
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": ["./tsconfig.json", "apps/*/tsconfig.json", "packages/*/tsconfig.json"]
+      }
+    }
   }
 }
