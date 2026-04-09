@@ -38,18 +38,18 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="auth-grid-container">
-      {/* 🌌 HERO SECTION (70% Desktop) - Modular Architecture */}
+      {/* 🌌 HERO SECTION (70% Desktop) - 10/80/10 Proportion */}
       <section className="hero-section">
         <img src={backgroundImage} alt="Background" className="hero-bg-image" />
         <div className="hero-overlay"></div>
         
-        {/* HEADER: Institutional Branding */}
-        <header className="relative z-10 animate-in fade-in duration-1000">
+        {/* HEADER (10%) */}
+        <header className="hero-header animate-in fade-in duration-1000">
            <PiicLogo />
         </header>
 
-        {/* BODY: Main Value Proposition (Centrado Vertical) */}
-        <main className="flex-1 flex flex-col justify-center relative z-10 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
+        {/* BODY (80%) */}
+        <main className="hero-body animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
           <h1 className="hero-title">
             Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
           </h1>
@@ -72,9 +72,9 @@ const LoginPage: React.FC = () => {
           </div>
         </main>
 
-        {/* FOOTER: System Metadata */}
-        <footer className="relative z-10 animate-in fade-in duration-1000 delay-500">
-          <div className="text-white/30 text-[10px] font-black uppercase tracking-[0.4em]">
+        {/* FOOTER (10%) */}
+        <footer className="hero-footer animate-in fade-in duration-1000 delay-500">
+          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
             Archon Systems | PIIC Identity Standard
           </div>
         </footer>
@@ -132,7 +132,7 @@ const LoginPage: React.FC = () => {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full py-5 bg-[#f2b705] text-[#0f2a44] font-black text-xs uppercase tracking-widest rounded shadow-xl hover:brightness-105 active:scale-[0.98] transition-all"
+              className="diamond-button"
             >
               {loading ? 'Validando...' : 'Iniciar Autenticación'}
             </button>
