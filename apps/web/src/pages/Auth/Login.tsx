@@ -37,62 +37,61 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row font-sans">
-      {/* 🌌 PANEL IZQUIERDO: Branding & Autoridad (Desktop Only) */}
-      <div 
-        className="hidden lg:flex lg:w-1/2 relative bg-cover bg-center p-16 flex-col justify-between overflow-hidden"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      >
-        <div className="absolute inset-0 brand-panel-overlay z-0"></div>
+    <div className="auth-grid-container">
+      {/* 🌌 SECCIÓN DE MARCA: Autoridad & Visión (Left) */}
+      <section className="brand-panel">
+        <img src={backgroundImage} alt="Industrial Hangar" className="brand-bg-image" />
+        <div className="brand-overlay"></div>
         
-        <div className="relative z-10 animate-in fade-in slide-in-from-left duration-700">
-          <PiicLogo className="scale-125 origin-left" />
-        </div>
-
-        <div className="relative z-10 max-w-xl animate-in fade-in slide-in-from-bottom duration-1000 delay-300">
-          <h2 className="text-[#F2B705] text-xs font-black uppercase tracking-[0.3em] mb-4">
-            Identity Manifesto
-          </h2>
-          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight uppercase">
-            Suministro industrial, tecnológico y comercial <br/>
-            <span className="text-[#F2B705]">para operaciones que no pueden detenerse</span>
-          </h1>
-          <div className="w-24 h-1.5 bg-[#F2B705] mt-8 rounded-full"></div>
-        </div>
-
-        <div className="relative z-10 text-white/40 text-xs font-medium uppercase tracking-widest flex items-center gap-4">
-          <span>PIIC ARCHON SYSTEM</span>
-          <span className="w-8 h-px bg-white/20"></span>
-          <span>EST. 2026</span>
-        </div>
-      </div>
-
-      {/* 🛡️ PANEL DERECHO: Operación & Acceso (Mobile First) */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-[#F2F4F7] relative">
-        {/* Mobile Logo Branding (Visible only on mobile/tablet) */}
-        <div className="absolute top-8 lg:hidden animate-in fade-in zoom-in duration-500">
-          <PiicLogo />
-        </div>
-
-        <div className="w-full max-w-[420px] glass-card p-8 md:p-12 rounded-lg animate-in fade-in slide-in-from-bottom lg:slide-in-from-right duration-700">
-          <div className="mb-10 lg:text-left text-center">
-            <h3 className="text-2xl font-black text-[#0F2A44] uppercase tracking-tight">
-              Acceso Archon
-            </h3>
-            <p className="text-slate-500 text-sm mt-2 font-medium uppercase tracking-widest">
-              Sistema de Mantenimiento Vehicular | PIIC
-            </p>
+        {/* Top: Brand Header */}
+        <div className="relative z-10">
+          <div className="fixed-logo-container">
+            <PiicLogo />
           </div>
+          <p className="text-accent text-xs font-black uppercase tracking-[0.4em]">
+            Pinnacle Identity
+          </p>
+        </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+        {/* Middle: Cinematic Slogan */}
+        <div className="relative z-10 max-w-2xl">
+          <h1 className="slogan-text">
+            Suministro industrial, tecnológico y comercial <br/>
+            <span className="slogan-accent">para operaciones que no pueden detenerse</span>
+          </h1>
+          <div className="w-24 h-2 bg-accent mt-8"></div>
+        </div>
+
+        {/* Bottom: System Metadata */}
+        <div className="relative z-10 flex items-center gap-6 text-white/40 text-[10px] font-bold uppercase tracking-[0.3em]">
+          <span>Archon Operating System</span>
+          <span className="w-12 h-px bg-white/10"></span>
+          <span>v1.4.0 High-End</span>
+        </div>
+      </section>
+
+      {/* 🛡️ SECCIÓN DE ACCESO: Precisión Operativa (Right) */}
+      <section className="form-panel">
+        <div className="auth-card">
+          {/* Header del Formulario */}
+          <header className="mb-12">
+            <h2 className="text-3xl font-black text-primary uppercase tracking-tight">
+              Acceso Archon
+            </h2>
+            <p className="text-slate-500 text-sm mt-3 font-semibold uppercase tracking-widest leading-relaxed">
+              Mantenimiento Vehicular | PIIC
+            </p>
+          </header>
+
+          <form onSubmit={handleLogin} className="space-y-8">
             {error && (
-              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded animate-in slide-in-from-top">
-                <span className="font-bold">Aviso:</span> {error}
+              <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs font-bold rounded shadow-sm">
+                ALERTA: {error}
               </div>
             )}
             
-            <div className="space-y-2">
-              <label className="block text-[#0F2A44] text-[10px] font-black uppercase tracking-[0.2em] ml-1">
+            <div className="space-y-3">
+              <label className="block text-primary text-[10px] font-black uppercase tracking-[0.25em] ml-1">
                 Identidad / Usuario
               </label>
               <input 
@@ -100,14 +99,14 @@ const LoginPage: React.FC = () => {
                 className="diamond-input"
                 value={username}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUsername(e.target.value)}
-                placeholder="Introduzca su Archon ID"
+                placeholder="INTRODUZCA ARCHON ID"
                 disabled={loading}
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-[#0F2A44] text-[10px] font-black uppercase tracking-[0.2em] ml-1">
+            <div className="space-y-3">
+              <label className="block text-primary text-[10px] font-black uppercase tracking-[0.25em] ml-1">
                 Clave de Seguridad
               </label>
               <input 
@@ -126,20 +125,20 @@ const LoginPage: React.FC = () => {
               disabled={loading}
               className="diamond-button mt-4"
             >
-              {loading ? 'Validando...' : 'Iniciar Autenticación'}
+              {loading ? 'Sincronizando...' : 'Iniciar Autenticación'}
             </button>
             
-            <div className="text-center mt-8">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            <footer className="text-center pt-10">
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
                 © 2026 PIIC Identity System
               </p>
-              <p className="text-[9px] text-slate-300 italic mt-1">
+              <span className="block text-[9px] text-accent italic mt-2 font-semibold">
                 Engineered for visual immortality.
-              </p>
-            </div>
+              </span>
+            </footer>
           </form>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
