@@ -24,14 +24,8 @@
     "no-param-reassign": ["error", { "props": true, "ignorePropertyModificationsFor": ["config", "state"] }],
     "@typescript-eslint/no-non-null-assertion": "off",
     "import/no-extraneous-dependencies": ["error", { 
-      "devDependencies": [
-        "**/vite.config.ts",
-        "**/vitest.config.ts",
-        "**/*.test.ts",
-        "**/*.test.tsx",
-        "**/src/test/setup.ts"
-      ],
-      "packageDir": ["./", "./apps/web", "./apps/api", "./packages/database"]
+      "devDependencies": true,
+      "packageDir": ["./"]
     }]
   },
   "settings": {
