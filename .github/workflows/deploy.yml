@@ -7,25 +7,70 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  backend-validation:
+    name: 🛡️ Backend (API) Verification
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
-
       - name: Install dependencies
         run: npm install
-
       - name: Lint and Test
         run: |
-          npm run lint
-          npm run test
+          npm run lint --workspace=@mantenimiento/api
+          npm run test --workspace=@mantenimiento/api
 
+  frontend-validation:
+    name: 🎨 Frontend (Web) Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Lint and Test
+        run: |
+          npm run lint --workspace=@mantenimiento/web
+          npm run test --workspace=@mantenimiento/web
+
+  database-validation:
+    name: 🏛️ Database (SQL) Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - name: Validate SQL Schema
+        run: npm run db:validate
+
+  hostinger-deployment:
+    name: 🚀 Deployment to Hostinger
+    needs: [backend-validation, frontend-validation, database-validation]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      
       - name: Build Web Application
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}

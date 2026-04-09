@@ -12,6 +12,7 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+    "db:validate": "tsx packages/database/scripts/validate-sql.ts",
     "prepare": "husky install"
   },
   "devDependencies": {
@@ -28,6 +29,7 @@
     "husky": "^8.0.0",
     "lint-staged": "^13.0.0",
     "prettier": "^2.8.0",
+    "tsx": "^4.19.1",
     "typescript": "^5.0.0"
   }
 }

@@ -8,7 +8,7 @@ class EncryptionService {
   private static readonly ALGORITHM = 'aes-256-gcm';
 
   private static getKey(): Buffer {
-    const rawKey = process.env.DB_ENCRYPTION_KEY || 'default-secret-archon-key-32-chars-!';
+    const rawKey = process.env.DB_ENCRYPTION_KEY || 'pinnacle-archon-encryption-key-1'; // Exactly 32 chars
     const key = rawKey.trim();
     
     // If the key is a 64-char hex string, it represents 32 bytes
