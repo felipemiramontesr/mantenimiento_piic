@@ -142,7 +142,7 @@ body {
 
 @media (min-width: 768px) {
   .hero-actions {
-    justify-content: flex-end; /* Right alignment per request */
+    justify-content: flex-start; /* Reverting to left alignment */
   }
 }
 
