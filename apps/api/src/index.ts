@@ -31,7 +31,7 @@ fastify.register(authRoutes, { prefix: '/v1/auth' });
 fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
 
 // Health Check
-fastify.get('/health', async () => ({
+fastify.get('/health', async (): Promise<{ status: string; timestamp: string }> => ({
   status: 'operational',
   timestamp: new Date().toISOString(),
 }));

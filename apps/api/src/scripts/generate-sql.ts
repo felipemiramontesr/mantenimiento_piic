@@ -1,6 +1,6 @@
 import argon2 from 'argon2';
-import { EncryptionService } from '../services/encryption';
 import dotenv from 'dotenv';
+import { EncryptionService } from '../services/encryption';
 
 dotenv.config({ path: '../../.env' });
 
