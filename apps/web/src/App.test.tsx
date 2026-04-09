@@ -13,10 +13,10 @@ describe('PIIC ARCHON - Authentication Interface', () => {
     );
     
     // Check for specific text from the Login screen
-    const heading = screen.getByText(/Archon Access/i);
+    const heading = screen.getByText(/Acceso Archon/i);
     expect(heading).toBeInTheDocument();
     
-    const subtitle = screen.getByText(/Pinnacle Maintenance System/i);
+    const subtitle = screen.getByText(/Sistema de Mantenimiento Vehicular/i);
     expect(subtitle).toBeInTheDocument();
   });
 
@@ -27,9 +27,9 @@ describe('PIIC ARCHON - Authentication Interface', () => {
       </MemoryRouter>
     );
     
-    const usernameInput = screen.getByPlaceholderText(/Archon ID/i);
-    const passwordInput = screen.getByPlaceholderText(/••••••••/i);
-    const submitButton = screen.getByText(/INITIALIZE AUTHENTICATION/i);
+    const usernameInput = screen.getByPlaceholderText(/ID de Archon/i);
+    const passwordInput = screen.getByPlaceholderText(/••••••••••••/i);
+    const submitButton = screen.getByText(/Iniciar Autenticación/i);
     
     expect(usernameInput).toBeInTheDocument();
     expect(passwordInput).toBeInTheDocument();
