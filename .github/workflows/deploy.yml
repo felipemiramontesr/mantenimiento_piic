@@ -100,6 +100,6 @@ jobs:
         run: |
           lftp -c "set ftp:ssl-allow no; 
           open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER; 
-          mirror -R ./apps/web/dist/ ./public_html/;
+          mirror -R ./apps/web/dist/ .;
           mirror -R --exclude-glob node_modules/ --exclude-glob tests/ --exclude-glob src/ --exclude-glob .git/ ./apps/api/ ./api_service/;
           quit"
