@@ -2,22 +2,55 @@ import React from 'react';
 import { LayoutDashboard, Truck, Settings, ShieldAlert, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export const ArchonDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+interface NavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+}
 
-  const handleLogout = () => {
+const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => (
+  <div className={`flex items-center gap-16 p-16 rounded-pinnacle-input cursor-pointer transition-all ${active ? 'bg-pinnacle-accent text-pinnacle-primary font-bold' : 'hover:bg-white/5 text-white/60'}`}>
+    {icon}
+    <span>{label}</span>
+  </div>
+);
+
+interface TelemetryWidgetProps {
+  label: string;
+  value: string;
+  trend: string;
+}
+
+const TelemetryWidget: React.FC<TelemetryWidgetProps> = ({ label, value, trend }) => (
+  <div className="glass-morphism p-24 rounded-pinnacle-card shadow-pinnacle border-l-4 border-l-pinnacle-accent">
+    <p className="text-xs uppercase tracking-widest text-gray-500 font-bold mb-8">{label}</p>
+    <div className="flex items-baseline gap-16">
+      <h3 className="text-[32px] font-bold text-pinnacle-primary">{value}</h3>
+      <span className="text-xs text-green-600 font-bold">{trend}</span>
+    </div>
+  </div>
+);
+
+const ArchonDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const userData = JSON.parse(localStorage.getItem('user_data') || '{}') as { username?: string };
+
+  const handleLogout = (): void => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     navigate('/login');
   };
+
   return (
     <div className="flex min-h-screen bg-pinnacle-bg">
       {/* Sidebar 280px */}
       <aside className="w-[280px] bg-pinnacle-primary text-white flex flex-col p-24">
         <div className="flex items-center gap-16 mb-80">
           <div className="w-10 h-10 bg-pinnacle-accent rounded-full" />
-          <h1 className="text-[20px] font-bold tracking-tight">ARCHON CORE</h1>
+          <div>
+            <h1 className="text-[20px] font-bold tracking-tight">ARCHON CORE</h1>
+            <p className="text-[10px] text-pinnacle-accent font-bold tracking-widest">ID: {userData.username || 'UNKNOWN'}</p>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-16">
@@ -57,7 +90,7 @@ export const ArchonDashboard: React.FC = () => {
         <div className="mt-80 glass-morphism p-32 rounded-pinnacle-card">
           <h3 className="text-pinnacle-primary font-bold mb-24">Recent Activity Logs</h3>
           <div className="space-y-16">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="flex justify-between border-b border-gray-100 pb-16">
                 <span className="text-sm font-medium">Archon accessed Telemetry V1</span>
                 <span className="text-xs text-gray-400">2 minutes ago</span>
@@ -70,19 +103,4 @@ export const ArchonDashboard: React.FC = () => {
   );
 };
 
-const NavItem: React.FC<{ icon: React.ReactNode, label: string, active?: boolean }> = ({ icon, label, active }) => (
-  <div className={`flex items-center gap-16 p-16 rounded-pinnacle-input cursor-pointer transition-all ${active ? 'bg-pinnacle-accent text-pinnacle-primary font-bold' : 'hover:bg-white/5 text-white/60'}`}>
-    {icon}
-    <span>{label}</span>
-  </div>
-);
-
-const TelemetryWidget: React.FC<{ label: string, value: string, trend: string }> = ({ label, value, trend }) => (
-  <div className="glass-morphism p-24 rounded-pinnacle-card shadow-pinnacle border-l-4 border-l-pinnacle-accent">
-    <p className="text-xs uppercase tracking-widest text-gray-500 font-bold mb-8">{label}</p>
-    <div className="flex items-baseline gap-16">
-      <h3 className="text-[32px] font-bold text-pinnacle-primary">{value}</h3>
-      <span className="text-xs text-green-600 font-bold">{trend}</span>
-    </div>
-  </div>
-);
+export default ArchonDashboard;

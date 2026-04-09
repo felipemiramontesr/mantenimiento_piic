@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { PiicLogo } from '../../components/Logo/PiicLogo';
 import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
+import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
 
-export const LoginPage: React.FC = () => {
+const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -23,8 +24,9 @@ export const LoginPage: React.FC = () => {
         localStorage.setItem('user_data', JSON.stringify(response.data.user));
         navigate('/dashboard');
       }
-    } catch (err: any) {
-      const message = err.response?.data?.error || 'Authentication Failed';
+    } catch (err) {
+      const axiosError = err as AxiosError<{ error: string }>;
+      const message = axiosError.response?.data?.error || 'Authentication Failed';
       setError(message);
     } finally {
       setLoading(false);
@@ -52,7 +54,7 @@ export const LoginPage: React.FC = () => {
               type="text" 
               className="w-full p-16 diamond-input"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUsername(e.target.value)}
               placeholder="Archon ID"
               disabled={loading}
               required
@@ -64,7 +66,7 @@ export const LoginPage: React.FC = () => {
               type="password" 
               className="w-full p-16 diamond-input"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value)}
               placeholder="••••••••"
               disabled={loading}
               required
@@ -82,3 +84,5 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+
+export default LoginPage;

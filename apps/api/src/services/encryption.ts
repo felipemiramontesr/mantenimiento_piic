@@ -4,7 +4,7 @@ import crypto from 'crypto';
  * Encryption Service - ARCHON Master Standard
  * Implements AES-256-GCM for Application-Level Encryption (ALE).
  */
-export class EncryptionService {
+class EncryptionService {
   private static readonly ALGORITHM = 'aes-256-gcm';
 
   private static getKey(): Buffer {
@@ -59,3 +59,5 @@ export class EncryptionService {
     return decrypted;
   }
 }
+
+export default EncryptionService;

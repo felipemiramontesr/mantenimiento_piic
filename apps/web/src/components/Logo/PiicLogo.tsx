@@ -1,9 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export const PiicLogo: React.FC<{ className?: string }> = ({ className }) => {
-  return (
-    <div className={`relative overflow-hidden ${className}`}>
+const PiicLogo: React.FC<{ className?: string }> = ({ className }) => (
+  <div className={`relative overflow-hidden ${className}`}>
       <svg viewBox="0 0 100 100" className="w-full h-full">
         <defs>
           <clipPath id="logoMask">
@@ -42,5 +41,6 @@ export const PiicLogo: React.FC<{ className?: string }> = ({ className }) => {
         <circle cx="50" cy="50" r="45" fill="none" stroke="#F2B705" strokeWidth="10" />
       </svg>
     </div>
-  );
-};
+);
+
+export default PiicLogo;

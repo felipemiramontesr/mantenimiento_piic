@@ -1,15 +1,23 @@
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import { db } from '../services/db';
-import { EncryptionService } from '../services/encryption';
 import argon2 from 'argon2';
+import { z } from 'zod';
+import db from '../services/db';
+import EncryptionService from '../services/encryption';
 
 const loginSchema = z.object({
   username: z.string(),
   password: z.string(),
 });
 
-export async function authRoutes(fastify: FastifyInstance) {
+const userDbSchema = z.object({
+  id: z.number(),
+  username: z.string(),
+  email: z.string(),
+  password_hash: z.string(),
+  role_id: z.number(),
+});
+
+export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/login', async (request, reply) => {
     const body = loginSchema.safeParse(request.body);
 
@@ -21,12 +29,11 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     try {
       // 1. Fetch user from DB
-      const [rows]: any = await db.execute(
-        'SELECT id, username, email, password_hash, role_id FROM users WHERE username = ?',
-        [username]
-      );
+      const query = 'SELECT id, username, email, password_hash, role_id FROM users WHERE username = ?';
+      const [rows] = await db.execute(query, [username]);
 
-      const user = rows[0];
+      const result = z.array(userDbSchema).safeParse(rows);
+      const user = result.success ? result.data[0] : null;
 
       if (!user) {
         fastify.log.warn(`Unauthorized access attempt for user: ${username}`);
@@ -44,23 +51,23 @@ export async function authRoutes(fastify: FastifyInstance) {
       const decryptedEmail = EncryptionService.decrypt(user.email);
 
       // 4. Generate Token
-      const token = fastify.jwt.sign({ 
-        id: user.id, 
-        username: user.username, 
-        role_id: user.role_id 
+      const token = fastify.jwt.sign({
+        id: user.id,
+        username: user.username,
+        role_id: user.role_id,
       });
 
-      return {
+      return reply.send({
         status: 'success',
         token,
-        user: { 
-          id: user.id, 
-          username: user.username, 
+        user: {
+          id: user.id,
+          username: user.username,
           email: decryptedEmail,
-          role_id: user.role_id 
-        }
-      };
-    } catch (err: any) {
+          role_id: user.role_id,
+        },
+      });
+    } catch (err) {
       fastify.log.error(err);
       return reply.code(500).send({ error: 'Internal Server Error' });
     }

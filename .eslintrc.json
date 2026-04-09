@@ -19,7 +19,9 @@
   "rules": {
     "import/extensions": "off",
     "import/no-unresolved": "off",
-    "no-console": "warn",
-    "@typescript-eslint/explicit-function-return-type": "error"
+    "no-console": "error",
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "no-param-reassign": ["error", { "props": true, "ignorePropertyModificationsFor": ["config", "state"] }],
+    "@typescript-eslint/no-non-null-assertion": "off"
   }
 }
