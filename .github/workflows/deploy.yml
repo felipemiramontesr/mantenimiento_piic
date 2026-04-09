@@ -89,26 +89,17 @@ jobs:
           echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> apps/api/.env
           echo "NODE_ENV=production" >> apps/api/.env
 
-      - name: 📂 Deploy Web to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./apps/web/dist/
-          server-dir: ./public_html/
-          protocol: ftp
+      - name: 🚀 Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: 📂 Deploy API to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./apps/api/
-          server-dir: ./api_service/
-          protocol: ftp
-          exclude: |
-            **/node_modules/**
-            **/tests/**
-            src/
+      - name: 🚀 Deploy Web and API via Native LFTP
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          lftp -c "set ftp:ssl-allow no; 
+          open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER; 
+          mirror -R ./apps/web/dist/ ./public_html/;
+          mirror -R --exclude-glob node_modules/ --exclude-glob tests/ --exclude-glob src/ --exclude-glob .git/ ./apps/api/ ./api_service/;
+          quit"
