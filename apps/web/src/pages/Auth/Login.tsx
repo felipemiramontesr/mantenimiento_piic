@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import PiicLogo from '../../components/Logo/PiicLogo';
@@ -10,7 +10,20 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCookies, setShowCookies] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const cookiesAccepted = localStorage.getItem('cookies_accepted');
+    if (!cookiesAccepted) {
+      setShowCookies(true);
+    }
+  }, []);
+
+  const acceptCookies = (): void => {
+    localStorage.setItem('cookies_accepted', 'true');
+    setShowCookies(false);
+  };
 
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -37,7 +50,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="auth-grid-container">
+    <div className="auth-grid-container relative">
       {/* 🌌 HERO SECTION (70% Desktop) - 10/80/10 Proportion */}
       <section className="hero-section">
         <img src={backgroundImage} alt="Background" className="hero-bg-image" />
@@ -150,6 +163,26 @@ const LoginPage: React.FC = () => {
           </form>
         </div>
       </section>
+
+      {/* 🍪 COOKIE BANNER */}
+      {showCookies && (
+        <div className="cookie-banner animate-in slide-in-from-bottom duration-500">
+          <p className="cookie-text">
+            Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
+            <a 
+              href="https://piic.com.mx/politicas" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="cookie-link"
+            >
+              política de uso, tratamiento de información y cookies.
+            </a>
+          </p>
+          <button onClick={acceptCookies} className="cookie-btn">
+            ACEPTAR
+          </button>
+        </div>
+      )}
     </div>
   );
 };
