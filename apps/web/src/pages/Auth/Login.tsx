@@ -112,7 +112,10 @@ const LoginPage: React.FC = () => {
               Acceso Archon
             </h2>
             <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
-              Control de Flotas | Powered by PIIC TECH
+              Control de Flotas
+            </p>
+            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-1">
+              Powered by PIIC TECH
             </p>
           </header>
 
