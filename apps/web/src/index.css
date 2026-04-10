@@ -325,12 +325,20 @@ body {
     width: 100%;
   }
 
+  /* RESTORE LOGO TEXT IN BLUE HEADER */
+  .auth-card-header .logo-text {
+    color: var(--color-white) !important;
+    display: block !important;
+    font-size: 24px;
+  }
+
   .auth-card-body {
     height: 80vh;
     background-color: var(--color-white);
     padding: 40px 24px;
     display: flex;
     flex-direction: column;
+    justify-content: center; /* 🌌 VERTICAL CENTERING */
     overflow-y: auto;
   }
 
@@ -344,7 +352,7 @@ body {
     width: 100%;
   }
 
-  /* 🎯 ALIGNMENT RULES */
+  /* 🎯 ALIGNMENT & SPACING RULES */
   .login-card-logo {
     justify-content: flex-start !important;
     margin-bottom: 0 !important;
@@ -353,7 +361,9 @@ body {
   .auth-header-titles {
     text-align: center;
     width: 100%;
-    margin-bottom: 24px;
+    margin-bottom: 24px; /* 50% INCREASED SPACE SPLIT: 24 margin + 12 padding = 36px total from text to form */
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(15, 42, 68, 0.08); /* 📐 ELEGANT DIVIDER */
   }
 
   .auth-header-titles h2, 
