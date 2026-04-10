@@ -61,20 +61,21 @@ body {
   100% { transform: scale(1.15); }
 }
 
-/* 📐 MOBILE SECTIONS (Sequential) */
+/* 📐 MOBILE SECTIONS (Sequential & Unified) */
 .hero-section {
   display: flex;
   flex-direction: column;
-  padding: 40px 24px;
-  min-height: auto;
+  padding: 48px 24px 32px 24px;
+  min-height: auto; /* FLOWS INTO LOGIN PANEL */
 }
 
 .login-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 16px 64px 16px;
-  position: relative;
+  padding: 0;
+  background: transparent; /* PANEL RIGHT DISAPPEARS */
+  width: 100%;
 }
 
 /* 🏙️ DESKTOP OVERRIDES (> 1024px) */
