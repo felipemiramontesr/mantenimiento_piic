@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  /* 🎨 OFFICIAL PIIC COLOR PALETTE */
+  /* 🎨 OFFICIAL PIIC COLOR PALETTE - FROM guia_diseno_hero.md */
   --color-primary: #0f2a44;   /* Azul Corporativo */
   --color-accent: #f2b705;    /* Amarillo PIIC */
   --color-white: #ffffff;
-  --color-subtitle: #BFCAD4; 
+  --color-subtitle: #E5E7EB; 
   --bg-pristine: #F2F4F7;
 }
 
@@ -118,7 +118,7 @@ body {
   .hero-footer { height: 10%; display: flex; align-items: center; justify-content: space-between; }
 }
 
-/* 🧪 TYPOGRAPHY */
+/* 🧪 TYPOGRAPHY (MANUAL V5 STANDARDS) */
 .hero-title {
   font-size: clamp(28px, 6vw, 48px);
   font-weight: 700;
@@ -138,6 +138,56 @@ body {
 
 @media (min-width: 1024px) {
   .hero-title, .hero-subtitle { text-align: left; }
+}
+
+/* 🔗 PIIC LOGO SYSTEM (EXACT SECTION 6) */
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-icon {
+  width: 36px;  /* Desktop */
+  height: 36px;
+  overflow: visible;
+}
+
+.logo-text {
+  font-size: 32px;
+  font-weight: 800; /* Authority weight */
+  color: var(--color-white);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+  margin-left: 12px;
+}
+
+@media (max-width: 768px) {
+  .logo-icon { width: 28px; height: 28px; }
+  .logo-text { font-size: 24px; margin-left: 8px; }
+}
+
+/* ⚡ OFFICIAL KEYFRAMES (EXACT SECTION 7 - 30S LOOP) */
+.sun-grow-left-v5 { animation: sunGrowLeftV5 30s infinite linear; }
+.luna-full-rl-v5 { animation: lunaFullRLV5 30s infinite linear; }
+.sol-half-rl-v5 { animation: solHalfRLV5 30s infinite linear; }
+
+@keyframes sunGrowLeftV5 {
+  0%, 10% { x: 50px; width: 0px; }
+  15% { x: 0px; width: 50px; }
+  15.01%, 100% { x: 0px; width: 50px; }
+}
+
+@keyframes lunaFullRLV5 {
+  0%, 15% { x: 100px; }
+  25% { x: 0px; }
+  25.01%, 100% { x: 0px; }
+}
+
+@keyframes solHalfRLV5 {
+  0%, 25% { x: 100px; }
+  30% { x: 50px; }
+  30.01%, 100% { x: 50px; }
 }
 
 /* 🔗 PIIC BUTTON SYSTEM */
@@ -161,7 +211,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 28px; /* Original corporate padding */
+  padding: 14px 28px;
   border-radius: 4px;
   font-weight: 600;
   font-size: 16px;
@@ -248,8 +298,8 @@ body {
 .diamond-input {
   width: 100%;
   padding: 18px 22px;
-  background: rgba(255, 255, 255, 0.05); /* Same as btn-outline */
-  border: 1px solid rgba(255, 255, 255, 0.4); /* Same as btn-outline */
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(5px);
   border-radius: 4px;
   font-size: 16px; 
@@ -268,17 +318,16 @@ body {
 /* ⚙️ SYNCED BUTTONS (Matches btn-primary) */
 .diamond-button {
   width: 100%;
-  padding: 14px 28px; /* Same as btn-primary */
+  padding: 14px 28px;
   border: none;
   border-radius: 4px;
-  font-weight: 600; /* Same as btn-primary */
-  font-size: 16px; /* Same as btn-primary */
-  text-transform: none; /* Removed uppercase to match btn text exactly if needed, or keep for institutional */
+  font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.3s;
-  background-color: var(--color-accent); /* Same as btn-primary */
-  color: var(--color-primary); /* Same as btn-primary */
-  box-shadow: 0 4px 12px rgba(242, 183, 5, 0.2); /* Same as btn-primary */
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(242, 183, 5, 0.2);
   margin-top: 16px;
 }
 
