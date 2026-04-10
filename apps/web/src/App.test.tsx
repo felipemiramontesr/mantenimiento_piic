@@ -27,7 +27,7 @@ describe('PIIC ARCHON - Authentication Interface', () => {
     const loginButton = screen.getByRole('button', { name: /Ingresar/i });
     expect(loginButton).toBeInTheDocument();
 
-    const contactButton = screen.getByText(/Contactar Asesor/i);
+    const contactButton = screen.getByText(/Contactar a un asesor/i);
     expect(contactButton).toBeInTheDocument();
   });
 

@@ -77,7 +77,7 @@ const LoginPage: React.FC = () => {
               rel="noopener noreferrer"
               className="btn btn-primary"
             >
-              Contactar Asesor
+              Contactar a un asesor
             </a>
             <a 
               href="https://piic.com.mx/" 
