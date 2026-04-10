@@ -335,7 +335,7 @@ body {
   .auth-card-body {
     height: 80vh;
     background-color: var(--color-white);
-    padding: 40px 24px;
+    padding: 20px 24px 40px 24px; /* 📉 REDUCED TOP PADDING BY 50% */
     display: flex;
     flex-direction: column;
     justify-content: center; /* 🌌 VERTICAL CENTERING */
@@ -374,6 +374,10 @@ body {
   .login-form {
     text-align: left;
     margin-top: 0 !important;
+  }
+
+  .forgot-password-link {
+    margin-top: 8px !important; /* 📉 REDUCED LINK GAP BY 50% */
   }
 
   .form-group label {
