@@ -122,7 +122,24 @@ body {
     padding: 24px;
   }
 
-  /* Spacing for hero components in split screen */
+  /* Spacing for hero components in split screen (10/80/10 Rule) */
+  .hero-header, .hero-body, .hero-footer {
+    padding: 0 clamp(40px, 8vw, 120px);
+  }
+
+  .hero-header { 
+    height: 10%; 
+    display: flex; 
+    align-items: center; 
+  }
+
+  .hero-body { 
+    height: 80%; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+  }
+
   .hero-footer { 
     height: 10%; 
     display: flex; 
@@ -130,7 +147,6 @@ body {
     align-items: center; 
     justify-content: space-between !important; /* REINFORCED SPLIT */
     width: 100% !important;
-    padding: 0 clamp(40px, 8vw, 120px);
   }
 }
 
