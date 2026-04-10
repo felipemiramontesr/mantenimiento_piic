@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="auth-grid-container relative">
-      {/* 🌌 HERO SECTION (70% Desktop) - 10/80/10 Proportion */}
+      {/* 🌌 HERO SECTION (70% Desktop) - Official Corporate Narrative */}
       <section className="hero-section">
         <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
         <div className="hero-overlay"></div>
@@ -64,10 +64,10 @@ const LoginPage: React.FC = () => {
         {/* BODY (80%) */}
         <main className="hero-body animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
           <h1 className="hero-title">
-            Mantenimiento preventivo y correctivo para que tu flota nunca se detenga
+            Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
           </h1>
           <p className="hero-subtitle">
-            Especialistas en Tacoma, NP300 y vehículos comerciales. El estándar PIIC para el sector industrial.
+            Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
           
           <div className="hero-actions">
@@ -77,7 +77,7 @@ const LoginPage: React.FC = () => {
               rel="noopener noreferrer"
               className="btn btn-primary"
             >
-              Solicitar cotización
+              Contactar Asesor
             </a>
             <a 
               href="https://piic.com.mx/" 
@@ -98,27 +98,27 @@ const LoginPage: React.FC = () => {
         </footer>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (30% Desktop) - Mesh Gradient & Glassmorphism */}
+      {/* 🛡️ LOGIN PANEL (30% Desktop) - Identity Hub */}
       <section className="login-panel">
         <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
-          <header className="mb-14">
-            <h2 className="text-4xl font-black text-white tracking-tighter">
+          <header>
+            <h2 className="text-4xl font-black tracking-tighter">
               Acceso Archon
             </h2>
-            <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.3em] mt-4">
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] mt-4">
               Control de Flotas | PIIC Identity
             </p>
           </header>
 
-          <form onSubmit={handleLogin} className="space-y-10">
+          <form onSubmit={handleLogin} className="login-form">
             {error && (
-              <div className="p-5 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
+              <div className="p-5 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-8">
                  Error de Sistema: {error}
               </div>
             )}
             
-            <div className="space-y-4">
-              <label className="text-[11px] font-bold text-white/60 uppercase tracking-[0.3em] ml-1">
+            <div className="form-group mb-8">
+              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 mb-4 block">
                 Identidad de Usuario
               </label>
               <input 
@@ -132,8 +132,8 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-4">
-              <label className="text-[11px] font-bold text-white/60 uppercase tracking-[0.3em] ml-1">
+            <div className="form-group mb-12">
+              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 mb-4 block">
                 Clave de Seguridad
               </label>
               <input 
@@ -147,17 +147,17 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <div className="pt-4">
+            <div className="pt-2">
               <button 
                 type="submit"
                 disabled={loading}
                 className="diamond-button"
               >
-                {loading ? 'Validando...' : 'Iniciar Autenticación'}
+                {loading ? 'Validando...' : 'Ingresar'}
               </button>
             </div>
             
-            <div className="text-center pt-12">
+            <div className="text-center mt-16 pb-2">
               <span className="text-[10px] text-white/20 font-black uppercase tracking-[0.5em]">
                 © 2026 PIIC GROUP
               </span>
