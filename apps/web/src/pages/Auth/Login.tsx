@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
       <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
       <div className="hero-overlay"></div>
 
-      {/* 🏙️ HERO CONTENT (Brand Narrative - Default hidden on mobile) */}
+      {/* 🏙️ HERO CONTENT (Brand Narrative) */}
       <section className="hero-section">
         <header className="hero-header animate-in fade-in duration-1000">
            <PiicLogo />
@@ -89,7 +89,7 @@ const LoginPage: React.FC = () => {
           </div>
         </main>
 
-        <footer className="hero-footer hidden lg:flex animate-in fade-in duration-1000 delay-500">
+        <footer className="hero-footer animate-in fade-in duration-1000 delay-500">
           <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
             Archon System | Powered by PIIC TECH
           </div>
@@ -99,15 +99,15 @@ const LoginPage: React.FC = () => {
         </footer>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (Primary viewport on mobile) */}
+      {/* 🛡️ LOGIN PANEL (Top priority on mobile) */}
       <section className="login-panel">
-        {/* 📱 MOBILE LOGO ANCHOR (Hidden on desktop) */}
-        <div className="mobile-brand-container animate-in fade-in duration-1000">
-          <PiicLogo />
-        </div>
-
         <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
           <header>
+            {/* 📱 INTERNAL BRANDING (Mobile Only - Matches Desktop Logic) */}
+            <div className="login-card-logo animate-in fade-in duration-1000">
+              <PiicLogo />
+            </div>
+
             <h2 className="font-black tracking-tighter">
               Acceso Archon
             </h2>
@@ -181,7 +181,7 @@ const LoginPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🍪 COOKIE BANNER PIIC (Reverted Original Style) */}
+      {/* 🍪 COOKIE BANNER PIIC */}
       {showCookies && (
         <div className="cookie-banner animate-in slide-in-from-bottom duration-500">
           <p className="cookie-text">

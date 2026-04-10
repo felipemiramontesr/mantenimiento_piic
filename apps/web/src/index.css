@@ -25,10 +25,10 @@ body {
   overflow-x: hidden;
 }
 
-/* 🏗️ MOBILE-FIRST GRID (Action Priority) */
+/* 🏗️ MOBILE-REVERSE GRID (V8 Logic) */
 .auth-grid-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse; /* Login on TOP, Hero on BOTTOM */
   min-height: 100vh;
   position: relative;
 }
@@ -61,11 +61,11 @@ body {
   100% { transform: scale(1.15); }
 }
 
-/* 📐 MOBILE-FIRST LAYOUT PARADIGM */
+/* 📐 MOBILE SECTIONS (V8) */
 .hero-section {
-  display: none; /* Priority: Action on mobile */
+  display: flex;
   flex-direction: column;
-  padding: 48px 24px;
+  padding: 64px 24px;
 }
 
 .login-panel {
@@ -84,22 +84,26 @@ body {
   position: relative;
 }
 
-.mobile-brand-container {
+/* 🛡️ INTERNAL BRANDING (Mobile Only - Matches Desktop Logic) */
+.login-card-logo {
   display: flex;
   justify-content: center;
-  margin-bottom: 32px; /* 4x8px */
+  margin-bottom: 32px;
 }
 
-@media (min-width: 1024px) {
-  .mobile-brand-container { display: none; }
+.login-card-logo .logo-text {
+  color: var(--color-primary) !important; /* Force primary on white card */
 }
 
-/* 🏙️ DESKTOP OVERRIDES (Fluid Multi-Column) */
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
+  .login-card-logo { display: none; }
+}
+
+/* 🏙️ TABLET & DESKTOP UNIFICATION (>= 768px) */
+@media (min-width: 768px) {
   .auth-grid-container { flex-direction: row; }
 
   .hero-section {
-    display: flex; /* Narrative restored on bigger screens */
     width: 70%;
     min-height: 100vh;
     padding: 0;
@@ -107,19 +111,14 @@ body {
 
   .login-panel {
     width: 30%;
-    padding: 40px;
+    padding: 24px; /* Tighter for Tablets */
     background-color: var(--color-white);
+    min-height: 100vh;
   }
 
-  .hero-overlay {
-    position: absolute;
-    background: 
-      linear-gradient(rgba(15, 42, 68, 0.7), rgba(15, 42, 68, 0.85)),
-      radial-gradient(circle at 20% 50%, rgba(242, 183, 5, 0.1), transparent 50%);
-  }
-
+  /* Specific spacing for hero axis */
   .hero-header, .hero-body, .hero-footer {
-    padding: 0 80px;
+    padding: 0 clamp(40px, 8vw, 120px);
   }
 
   .hero-header { height: 10%; display: flex; align-items: center; }
@@ -127,9 +126,14 @@ body {
   .hero-footer { height: 10%; display: flex; align-items: center; justify-content: space-between; }
 }
 
-/* 🧪 FLUID TYPOGRAPHY (Clamp Architecture) */
+@media (min-width: 1024px) {
+  .login-panel { padding: 40px; }
+  .hero-header, .hero-body, .hero-footer { padding: 0 80px; }
+}
+
+/* 🧪 FLUID TYPOGRAPHY */
 .hero-title {
-  font-size: clamp(2rem, 5vw, 3rem); /* Fluid Heading */
+  font-size: clamp(1.75rem, 5vw, 3rem);
   font-weight: 700;
   color: var(--color-white);
   line-height: 1.25;
@@ -137,7 +141,7 @@ body {
 }
 
 .hero-subtitle {
-  font-size: clamp(1rem, 2vw, 1.25rem); /* Fluid Subtitle */
+  font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 400;
   color: var(--color-subtitle);
   margin-top: 16px;
@@ -145,7 +149,7 @@ body {
   text-align: center;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .hero-title, .hero-subtitle { text-align: left; }
 }
 
@@ -156,28 +160,19 @@ body {
 }
 
 .logo-icon {
-  width: 36px;
-  height: 36px;
+  width: clamp(28px, 4vw, 36px);
+  height: clamp(28px, 4vw, 36px);
   overflow: visible;
 }
 
 .logo-text {
-  font-size: 32px;
+  font-size: clamp(24px, 3vw, 32px);
   font-weight: 800;
   color: var(--color-white);
   letter-spacing: 2px;
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
-  margin-left: 12px;
-}
-
-.mobile-brand-container .logo-text {
-    color: var(--color-primary); /* Contrast for white grid bg */
-}
-
-@media (max-width: 768px) {
-  .logo-icon { width: 28px; height: 28px; }
-  .logo-text { font-size: 24px; margin-left: 8px; }
+  margin-left: clamp(8px, 1.5vw, 12px);
 }
 
 /* ⚡ OFFICIAL KEYFRAMES (EXACT SECTION 7 - 30S LOOP) */
@@ -216,7 +211,7 @@ body {
   .hero-actions { flex-direction: row; justify-content: center; }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .hero-actions { justify-content: flex-start; margin-top: 48px; }
 }
 
@@ -263,17 +258,16 @@ body {
   transform: translateY(-2px);
 }
 
-/* 💎 MILKY GLASSMORPHISM CARD (Fluid Refinement) */
+/* 💎 MILKY GLASSMORPHISM CARD */
 .auth-card {
   width: 100%;
   max-width: 480px;
-  min-width: 280px; /* Fluid boundary */
   background: rgba(255, 255, 255, 0.7); 
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid rgba(15, 42, 68, 0.1);
   border-radius: 4px;
-  padding: clamp(24px, 5vw, 60px); /* Fluid internal padding */
+  padding: clamp(24px, 8vw, 60px); 
   box-shadow: 0 40px 100px rgba(15, 42, 68, 0.15);
   display: flex;
   flex-direction: column;
@@ -283,7 +277,7 @@ body {
 .auth-card h2 {
   color: var(--color-primary);
   letter-spacing: -0.02em;
-  font-size: clamp(1.5rem, 4vw, 2.25rem); /* Fluid Heading */
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
 }
 
 .auth-card p.subtitle-brand {
@@ -294,7 +288,7 @@ body {
 .login-form {
   display: flex;
   flex-direction: column;
-  margin-top: clamp(24px, 6vw, 48px);
+  margin-top: clamp(24px, 8vw, 48px);
 }
 
 .form-group { margin-bottom: 24px; }
@@ -358,7 +352,7 @@ body {
 }
 
 .copyright-container { margin-top: 48px; text-align: center; }
-@media (min-width: 1024px) { .copyright-container { text-align: right; margin-top: 64px; } }
+@media (min-width: 768px) { .copyright-container { text-align: right; margin-top: 64px; } }
 .copyright-text { font-size: 10px; color: rgba(15, 42, 68, 0.3); font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; }
 
 /* 🍪 COOKIE BANNER PIIC */
@@ -368,7 +362,7 @@ body {
   left: 0;
   width: 100%;
   background-color: var(--color-accent);
-  padding: 20px 40px;
+  padding: clamp(16px, 4vw, 20px) 40px;
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -414,6 +408,6 @@ body {
   font-weight: 700;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .cookie-banner { flex-direction: column; text-align: center; padding: 20px; }
 }
