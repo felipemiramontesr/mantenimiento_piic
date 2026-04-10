@@ -341,6 +341,12 @@ body {
   text-transform: uppercase;
 }
 
+.cookie-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  font-weight: 700;
+}
+
 @media (max-width: 768px) {
   .cookie-banner { flex-direction: column; text-align: center; padding: 20px; }
 }
