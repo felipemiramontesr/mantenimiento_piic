@@ -578,8 +578,15 @@ body {
     justify-content: center !important;
     align-items: center !important;
     text-align: center !important;
-    padding: 0 24px !important;
+    padding: 0 16px !important; /* 📏 MAXIMIZED HORIZONTAL SPACE */
     gap: 4px !important;
+  }
+
+  .auth-grid-container .hero-footer div {
+    font-size: 9px !important; /* 🖋️ REFINED SIZE */
+    letter-spacing: 0.2em !important; /* 📏 COMPRESSED SPACING */
+    line-height: 1.2 !important;
+    width: 100% !important;
   }
 
   .hero-title, .hero-subtitle {
