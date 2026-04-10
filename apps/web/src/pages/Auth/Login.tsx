@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
       <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
       <div className="hero-overlay"></div>
 
-      {/* 🏙️ HERO CONTENT (Brand Narrative) */}
+      {/* 🏙️ HERO CONTENT (Brand Narrative - Default hidden on mobile) */}
       <section className="hero-section">
         <header className="hero-header animate-in fade-in duration-1000">
            <PiicLogo />
@@ -91,7 +91,7 @@ const LoginPage: React.FC = () => {
 
         <footer className="hero-footer hidden lg:flex animate-in fade-in duration-1000 delay-500">
           <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
-            Archon System | PIIC High Tech Standard
+            Archon System | Powered by PIIC TECH
           </div>
           <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
             Todos los derechos reservados © 2026 PIIC GROUP
@@ -99,14 +99,19 @@ const LoginPage: React.FC = () => {
         </footer>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (Auth Card) */}
+      {/* 🛡️ LOGIN PANEL (Primary viewport on mobile) */}
       <section className="login-panel">
+        {/* 📱 MOBILE LOGO ANCHOR (Hidden on desktop) */}
+        <div className="mobile-brand-container animate-in fade-in duration-1000">
+          <PiicLogo />
+        </div>
+
         <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
           <header>
             <h2 className="font-black tracking-tighter">
               Acceso Archon
             </h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
               Control de Flotas | Powered by PIIC TECH
             </p>
           </header>
@@ -173,7 +178,7 @@ const LoginPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🍪 COOKIE BANNER (Simplified) */}
+      {/* 🍪 COOKIE BANNER PIIC (Reverted Original Style) */}
       {showCookies && (
         <div className="cookie-banner animate-in slide-in-from-bottom duration-500">
           <p className="cookie-text">
