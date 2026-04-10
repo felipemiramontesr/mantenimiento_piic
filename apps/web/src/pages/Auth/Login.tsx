@@ -55,7 +55,90 @@ const LoginPage: React.FC = () => {
       <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
       <div className="hero-overlay"></div>
 
-      {/* 🏙️ HERO CONTENT (Brand Narrative) */}
+      {/* 🛡️ LOGIN PANEL (TOP PRIORITY - 10/80/10 CHASSIS) */}
+      <section className="login-panel">
+        <header className="login-panel-header">
+           <PiicLogo />
+        </header>
+
+        <main className="login-panel-body">
+          <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
+            <header className="auth-card-header-v11">
+              <h2 className="font-black tracking-tighter">
+                Acceso Archon
+              </h2>
+              <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+                Control de Flotas
+              </p>
+              <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-1">
+                Powered by PIIC TECH
+              </p>
+            </header>
+
+            <form onSubmit={handleLogin} className="login-form-v11">
+              {error && (
+                <div className="p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-6">
+                   Error de Sistema: {error}
+                </div>
+              )}
+              
+              <div className="form-group-v11">
+                <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+                  Identidad de Usuario
+                </label>
+                <input 
+                  type="text" 
+                  className="diamond-input"
+                  value={username}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUsername(e.target.value)}
+                  placeholder="ID de Archon"
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <div className="form-group-v11">
+                <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+                  Clave de Seguridad
+                </label>
+                <input 
+                  type="password" 
+                  className="diamond-input"
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  required
+                />
+              </div>
+
+              <div className="pt-2">
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="diamond-button"
+                >
+                  {loading ? 'Validando...' : 'Ingresar'}
+                </button>
+              </div>
+
+              <div className="forgot-password-container">
+                <a href="#" className="forgot-password-link">
+                  ¿Olvidaste tu contraseña?
+                </a>
+              </div>
+            </form>
+          </div>
+        </main>
+
+        <footer className="login-panel-footer">
+           <span className="copyright-text-banded">
+             © 2026 PIIC GROUP
+           </span>
+        </footer>
+      </section>
+
+      {/* 🏙️ HERO CONTENT (CLEAN NARRATIVE - 100vh SYMMETRY) */}
       <section className="hero-section">
         <header className="hero-header animate-in fade-in duration-1000">
            <PiicLogo />
@@ -97,88 +180,6 @@ const LoginPage: React.FC = () => {
             Todos los derechos reservados © 2026 PIIC GROUP
           </div>
         </footer>
-      </section>
-
-      {/* 🛡️ LOGIN PANEL (Top priority on mobile) */}
-      <section className="login-panel">
-        <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
-          <header>
-            {/* 📱 INTERNAL BRANDING (Mobile Only - Matches Desktop Logic) */}
-            <div className="login-card-logo animate-in fade-in duration-1000">
-              <PiicLogo />
-            </div>
-
-            <h2 className="font-black tracking-tighter">
-              Acceso Archon
-            </h2>
-            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
-              Control de Flotas
-            </p>
-            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-1">
-              Powered by PIIC TECH
-            </p>
-          </header>
-
-          <form onSubmit={handleLogin} className="login-form">
-            {error && (
-              <div className="p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-6">
-                 Error de Sistema: {error}
-              </div>
-            )}
-            
-            <div className="form-group">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
-                Identidad de Usuario
-              </label>
-              <input 
-                type="text" 
-                className="diamond-input"
-                value={username}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUsername(e.target.value)}
-                placeholder="ID de Archon"
-                disabled={loading}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
-                Clave de Seguridad
-              </label>
-              <input 
-                type="password" 
-                className="diamond-input"
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={loading}
-                required
-              />
-            </div>
-
-            <div className="pt-2">
-              <button 
-                type="submit"
-                disabled={loading}
-                className="diamond-button"
-              >
-                {loading ? 'Validando...' : 'Ingresar'}
-              </button>
-            </div>
-
-            <div className="forgot-password-container">
-              <a href="#" className="forgot-password-link">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-            
-            <div className="copyright-container">
-              <span className="copyright-text">
-                © 2026 PIIC GROUP
-              </span>
-            </div>
-          </form>
-        </div>
       </section>
 
       {/* 🍪 COOKIE BANNER PIIC */}
