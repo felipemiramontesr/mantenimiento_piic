@@ -335,7 +335,7 @@ body {
   .auth-card-body {
     height: 80vh;
     background-color: var(--color-white);
-    padding: 40px 24px; /* ⚖️ BALANCED PADDING FOR SYMMETRY */
+    padding: 32px 24px 40px 24px; /* ⚖️ SYMMETRICAL TOP GAP (32px) */
     display: flex;
     flex-direction: column;
     justify-content: center; /* 🌌 RESTORED VERTICAL SYMMETRY */
@@ -361,8 +361,8 @@ body {
   .auth-header-titles {
     text-align: center;
     width: 100%;
-    margin-bottom: 24px; /* 50% INCREASED SPACE SPLIT: 24 margin + 12 padding = 36px total from text to form */
-    padding-bottom: 12px;
+    margin-bottom: 32px; /* 📏 BALANCED SPACE FROM LINE TO FORM (32px) */
+    padding-bottom: 32px; /* 📏 SYMMETRICAL GAP FROM TEXT TO LINE (32px) */
     border-bottom: 1px solid rgba(15, 42, 68, 0.08); /* 📐 ELEGANT DIVIDER */
   }
 
