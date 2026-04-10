@@ -179,7 +179,7 @@ const LoginPage: React.FC = () => {
             </a>
           </p>
           <div className="cookie-actions">
-            <button onClick={() => setShowCookies(false)} className="cookie-btn-secondary">
+            <button onClick={(): void => setShowCookies(false)} className="cookie-btn-secondary">
               RECHAZAR
             </button>
             <button onClick={acceptCookies} className="cookie-btn">
