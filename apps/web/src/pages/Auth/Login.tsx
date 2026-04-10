@@ -51,16 +51,14 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="auth-grid-container">
-      {/* 🌌 ATMOSPHERIC LAYER (Fixed for performance) */}
+      {/* 🌌 ATMOSPHERIC LAYER */}
       <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
       <div className="hero-overlay"></div>
 
       {/* 🏙️ HERO CONTENT (Brand Narrative) */}
       <section className="hero-section">
         <header className="hero-header animate-in fade-in duration-1000">
-           <div className="flex justify-center lg:justify-start w-full">
-             <PiicLogo />
-           </div>
+           <PiicLogo />
         </header>
 
         <main className="hero-body animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
@@ -104,7 +102,7 @@ const LoginPage: React.FC = () => {
       {/* 🛡️ LOGIN PANEL (Auth Card) */}
       <section className="login-panel">
         <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
-          <header className="text-center lg:text-left">
+          <header>
             <h2 className="font-black tracking-tighter">
               Acceso Archon
             </h2>
@@ -175,7 +173,7 @@ const LoginPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🍪 COOKIE BANNER */}
+      {/* 🍪 COOKIE BANNER (Simplified) */}
       {showCookies && (
         <div className="cookie-banner animate-in slide-in-from-bottom duration-500">
           <p className="cookie-text">
