@@ -156,6 +156,12 @@ const LoginPage: React.FC = () => {
                 {loading ? 'Validando...' : 'Ingresar'}
               </button>
             </div>
+
+            <div className="forgot-password-container">
+              <a href="#" className="forgot-password-link">
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
             
             <div className="copyright-container">
               <span className="copyright-text">
