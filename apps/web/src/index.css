@@ -543,40 +543,43 @@ body {
 }
 
 @media (max-width: 767px) {
-  .hero-section {
-    padding: 0;
-    justify-content: flex-start;
-    height: 100vh;
+  /* 🏗️ FORCED MOBILE HERO ENGINE (V1.8.27) */
+  .auth-grid-container .hero-section {
+    padding: 0 !important;
+    justify-content: flex-start !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  .hero-header {
-    height: 10vh;
-    display: flex;
-    align-items: center;
-    padding: 0 24px;
-    width: 100%;
+  .auth-grid-container .hero-header {
+    height: 10vh !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 24px !important;
+    width: 100% !important;
     justify-content: flex-start !important;
   }
 
-  .hero-body {
-    height: 80vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 0 24px;
-    gap: 32px; /* 🌌 BREATHABLE DISTRIBUTION */
+  .auth-grid-container .hero-body {
+    height: 80vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 24px !important;
+    gap: 48px !important; /* 🌌 ULTIMATE BREATHABILITY */
   }
 
-  .hero-footer {
-    height: 10vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 0 24px;
-    gap: 4px;
+  .auth-grid-container .hero-footer {
+    height: 10vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 0 24px !important;
+    gap: 4px !important;
   }
 
   .hero-title, .hero-subtitle {
@@ -587,7 +590,7 @@ body {
   .hero-actions {
     margin-top: 0 !important;
     justify-content: center !important;
-    width: 100%;
+    width: 100% !important;
   }
 
   .cookie-banner { flex-direction: column; text-align: center; padding: 20px; }
