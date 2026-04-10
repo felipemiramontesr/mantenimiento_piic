@@ -178,9 +178,14 @@ const LoginPage: React.FC = () => {
               política de uso, tratamiento de información y cookies.
             </a>
           </p>
-          <button onClick={acceptCookies} className="cookie-btn">
-            ACEPTAR
-          </button>
+          <div className="cookie-actions">
+            <button onClick={() => setShowCookies(false)} className="cookie-btn-secondary">
+              RECHAZAR
+            </button>
+            <button onClick={acceptCookies} className="cookie-btn">
+              ACEPTAR
+            </button>
+          </div>
         </div>
       )}
     </div>
