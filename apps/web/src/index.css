@@ -129,7 +129,14 @@ body {
 
   .hero-header { height: 10%; display: flex; align-items: center; }
   .hero-body { height: 80%; display: flex; flex-direction: column; justify-content: center; }
-  .hero-footer { height: 10%; display: flex; align-items: center; justify-content: space-between; }
+  .hero-footer { 
+    height: 10%; 
+    display: flex; 
+    flex-direction: row; /* FORCE HORIZONTAL ROW */
+    align-items: center; 
+    justify-content: space-between; 
+    width: 100%;
+  }
 }
 
 @media (min-width: 1024px) {
