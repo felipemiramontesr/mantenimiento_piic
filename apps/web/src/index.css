@@ -99,6 +99,7 @@ body {
 
 @media (min-width: 768px) {
   .login-card-logo { display: none; }
+  .auth-card-header, .auth-card-footer { display: none; } /* HIDDEN ON DESKTOP CARD VIEW */
 }
 
 /* 🏙️ DESKTOP & TABLET UNIFICATION (>= 768px - Side by Side) */
@@ -298,8 +299,82 @@ body {
 }
 
 @media (max-width: 767px) {
+  .login-panel {
+    padding: 0; /* REMOVE PADDING TO ALLOW FULL-WIDTH STRIPES */
+    background-image: none; /* CLEANER LOOK FOR STRIPED LAYOUT */
+  }
+
   .auth-card { 
-    padding: 40px; /* ERGONOMIC PADDING FOR CELLPHONES */
+    padding: 0;
+    max-width: 100%;
+    height: 100vh;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  /* 📏 10/80/10 CORE ENGINE */
+  .auth-card-header {
+    height: 10vh;
+    background-color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    width: 100%;
+  }
+
+  .auth-card-body {
+    height: 80vh;
+    background-color: var(--color-white);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .auth-card-footer {
+    height: 10vh;
+    background-color: var(--color-accent);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* 🎯 ALIGNMENT RULES */
+  .login-card-logo {
+    justify-content: flex-start !important;
+    margin-bottom: 0 !important;
+  }
+
+  .auth-header-titles {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .auth-header-titles h2, 
+  .auth-header-titles p {
+    text-align: center !important;
+  }
+
+  .login-form {
+    text-align: left;
+    margin-top: 0 !important;
+  }
+
+  .form-group label {
+    text-align: left;
+  }
+
+  .auth-card-footer p,
+  .auth-card-footer .copyright-container {
+    color: var(--color-primary) !important;
+    text-align: center;
+    margin: 0;
   }
 }
 

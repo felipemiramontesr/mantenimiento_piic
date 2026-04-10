@@ -102,82 +102,90 @@ const LoginPage: React.FC = () => {
       {/* 🛡️ LOGIN PANEL (Top priority on mobile) */}
       <section className="login-panel">
         <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
-          <header>
-            {/* 📱 INTERNAL BRANDING (Mobile Only - Matches Desktop Logic) */}
+          {/* 📱 10% HEADER */}
+          <header className="auth-card-header">
             <div className="login-card-logo animate-in fade-in duration-1000">
               <PiicLogo />
             </div>
-
-            <h2 className="font-black tracking-tighter">
-              Acceso Archon
-            </h2>
-            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
-              Control de Flotas
-            </p>
-            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-1">
-              Powered by PIIC TECH
-            </p>
           </header>
 
-          <form onSubmit={handleLogin} className="login-form">
-            {error && (
-              <div className="p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-6">
-                 Error de Sistema: {error}
+          {/* 🏙️ 80% BODY */}
+          <main className="auth-card-body">
+            <div className="auth-header-titles">
+              <h2 className="font-black tracking-tighter">
+                Acceso Archon
+              </h2>
+              <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+                Control de Flotas
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="login-form">
+              {error && (
+                <div className="p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-6">
+                   Error de Sistema: {error}
+                </div>
+              )}
+              
+              <div className="form-group">
+                <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+                  Identidad de Usuario
+                </label>
+                <input 
+                  type="text" 
+                  className="diamond-input"
+                  value={username}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUsername(e.target.value)}
+                  placeholder="ID de Archon"
+                  disabled={loading}
+                  required
+                />
               </div>
-            )}
-            
-            <div className="form-group">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
-                Identidad de Usuario
-              </label>
-              <input 
-                type="text" 
-                className="diamond-input"
-                value={username}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUsername(e.target.value)}
-                placeholder="ID de Archon"
-                disabled={loading}
-                required
-              />
-            </div>
 
-            <div className="form-group">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
-                Clave de Seguridad
-              </label>
-              <input 
-                type="password" 
-                className="diamond-input"
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={loading}
-                required
-              />
-            </div>
+              <div className="form-group">
+                <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+                  Clave de Seguridad
+                </label>
+                <input 
+                  type="password" 
+                  className="diamond-input"
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  required
+                />
+              </div>
 
-            <div className="pt-2">
-              <button 
-                type="submit"
-                disabled={loading}
-                className="diamond-button"
-              >
-                {loading ? 'Validando...' : 'Ingresar'}
-              </button>
-            </div>
+              <div className="pt-2">
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="diamond-button"
+                >
+                  {loading ? 'Validando...' : 'Ingresar'}
+                </button>
+              </div>
 
-            <div className="forgot-password-container">
-              <a href="#" className="forgot-password-link">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-            
-            <div className="copyright-container">
+              <div className="forgot-password-container">
+                <a href="#" className="forgot-password-link">
+                  ¿Olvidaste tu contraseña?
+                </a>
+              </div>
+            </form>
+          </main>
+
+          {/* 🏗️ 10% FOOTER */}
+          <footer className="auth-card-footer">
+            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em]">
+              Powered by PIIC TECH
+            </p>
+            <div className="copyright-container mt-2">
               <span className="copyright-text">
                 © 2026 PIIC GROUP
               </span>
             </div>
-          </form>
+          </footer>
         </div>
       </section>
 
