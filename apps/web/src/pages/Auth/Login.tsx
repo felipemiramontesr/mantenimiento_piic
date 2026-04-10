@@ -93,7 +93,10 @@ const LoginPage: React.FC = () => {
         {/* FOOTER (10%) */}
         <footer className="hero-footer animate-in fade-in duration-1000 delay-500">
           <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
-            Archon Systems | PIIC Identity Standard
+            Archon System | PIIC High Tech Standard
+          </div>
+          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
+            Todos los derechos reservados © 2026 PIIC GROUP
           </div>
         </footer>
       </section>

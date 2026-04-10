@@ -105,7 +105,9 @@ body {
   height: 10%;
   display: flex;
   align-items: center;
+  justify-content: space-between; /* DUAL COLUMN ALIGNMENT */
   padding: 0 80px;
+  width: 100%;
 }
 
 @media (max-width: 1024px) {
