@@ -16,7 +16,7 @@ describe('PIIC ARCHON - Authentication Interface', () => {
     const heading = screen.getByText(/Acceso Archon/i);
     expect(heading).toBeInTheDocument();
     
-    const subtitle = screen.getByText(/Mantenimiento Vehicular/i);
+    const subtitle = screen.getByText(/Control de Flotas/i);
     expect(subtitle).toBeInTheDocument();
   });
 

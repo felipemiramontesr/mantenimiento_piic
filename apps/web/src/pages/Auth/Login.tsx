@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
-import backgroundImage from '../../assets/hangar-bg.png';
+import serviceBackground from '../../assets/service-bg.png';
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -53,7 +53,7 @@ const LoginPage: React.FC = () => {
     <div className="auth-grid-container relative">
       {/* 🌌 HERO SECTION (70% Desktop) - 10/80/10 Proportion */}
       <section className="hero-section">
-        <img src={backgroundImage} alt="Background" className="hero-bg-image" />
+        <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
         <div className="hero-overlay"></div>
         
         {/* HEADER (10%) */}
@@ -64,10 +64,10 @@ const LoginPage: React.FC = () => {
         {/* BODY (80%) */}
         <main className="hero-body animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
           <h1 className="hero-title">
-            Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
+            Mantenimiento preventivo y correctivo para que tu flota nunca se detenga
           </h1>
           <p className="hero-subtitle">
-            Respuesta rápida y suministro confiable para el sector minero e industrial.
+            Especialistas en Tacoma, NP300 y vehículos comerciales. El estándar PIIC para el sector industrial.
           </p>
           
           <div className="hero-actions">
@@ -98,28 +98,28 @@ const LoginPage: React.FC = () => {
         </footer>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (30% Desktop) */}
+      {/* 🛡️ LOGIN PANEL (30% Desktop) - Mesh Gradient & Glassmorphism */}
       <section className="login-panel">
-        <div className="auth-card">
-          <header className="mb-12">
-            <h2 className="text-3xl font-black text-[#0f2a44] tracking-tighter">
+        <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
+          <header className="mb-14">
+            <h2 className="text-4xl font-black text-white tracking-tighter">
               Acceso Archon
             </h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
-              Mantenimiento Vehicular | PIIC
+            <p className="text-white/40 text-[11px] font-black uppercase tracking-[0.3em] mt-4">
+              Control de Flotas | PIIC Identity
             </p>
           </header>
 
-          <form onSubmit={handleLogin} className="space-y-8">
+          <form onSubmit={handleLogin} className="space-y-10">
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black uppercase rounded border-l-4 border-red-200">
-                Error de Sistema: {error}
+              <div className="p-5 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
+                 Error de Sistema: {error}
               </div>
             )}
             
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-[#0f2a44] uppercase tracking-[0.3em] ml-1">
-                Identidad / Usuario
+            <div className="space-y-4">
+              <label className="text-[11px] font-bold text-white/60 uppercase tracking-[0.3em] ml-1">
+                Identidad de Usuario
               </label>
               <input 
                 type="text" 
@@ -132,8 +132,8 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-[#0f2a44] uppercase tracking-[0.3em] ml-1">
+            <div className="space-y-4">
+              <label className="text-[11px] font-bold text-white/60 uppercase tracking-[0.3em] ml-1">
                 Clave de Seguridad
               </label>
               <input 
@@ -147,16 +147,18 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <button 
-              type="submit"
-              disabled={loading}
-              className="diamond-button"
-            >
-              {loading ? 'Validando...' : 'Iniciar Autenticación'}
-            </button>
+            <div className="pt-4">
+              <button 
+                type="submit"
+                disabled={loading}
+                className="diamond-button"
+              >
+                {loading ? 'Validando...' : 'Iniciar Autenticación'}
+              </button>
+            </div>
             
-            <div className="text-center pt-10">
-              <span className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em]">
+            <div className="text-center pt-12">
+              <span className="text-[10px] text-white/20 font-black uppercase tracking-[0.5em]">
                 © 2026 PIIC GROUP
               </span>
             </div>
