@@ -335,10 +335,10 @@ body {
   .auth-card-body {
     height: 80vh;
     background-color: var(--color-white);
-    padding: 20px 24px 40px 24px; /* 📉 REDUCED TOP PADDING BY 50% */
+    padding: 24px 24px 40px 24px; /* 🌌 TOP ALIGNMENT + CONTROLLED GAP */
     display: flex;
     flex-direction: column;
-    justify-content: center; /* 🌌 VERTICAL CENTERING */
+    justify-content: flex-start; /* 📌 PINNED TO TOP FOR PRECISION SPACING */
     overflow-y: auto;
   }
 
@@ -377,7 +377,7 @@ body {
   }
 
   .forgot-password-link {
-    margin-top: 8px !important; /* 📉 REDUCED LINK GAP BY 50% */
+    margin-top: 4px !important; /* 📉 DRASTIC REDUCTION (4px) FOR COHESION */
   }
 
   .form-group label {
