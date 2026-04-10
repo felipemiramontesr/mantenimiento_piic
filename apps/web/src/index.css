@@ -25,7 +25,7 @@ body {
   overflow-x: hidden;
 }
 
-/* 🏗️ MOBILE-REVERSE GRID (V9 Logic) */
+/* 🏗️ MOBILE-REVERSE GRID (V8 Logic) */
 .auth-grid-container {
   display: flex;
   flex-direction: column-reverse; /* Login on TOP, Hero on BOTTOM */
@@ -61,62 +61,42 @@ body {
   100% { transform: scale(1.15); }
 }
 
-/* 📐 MOBILE SECTIONS (V9 Symmetric 100vh) */
+/* 📐 MOBILE SECTIONS (V8) */
 .hero-section {
   display: flex;
   flex-direction: column;
   padding: 64px 24px;
-  min-height: 100vh; /* SYMMETRY */
 }
 
 .login-panel {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* SYMMETRY */
-  width: 100%;
-  background-color: var(--color-white);
-  position: relative;
-}
-
-/* 🛡️ BANDED STRUCTURE (V9 Mobile Default) */
-.login-panel-header {
-  height: 10vh;
-  min-height: 60px;
-  background-color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  justify-content: flex-start; /* Logo LEFT */
-}
-
-.login-panel-body {
-  height: 80vh;
-  display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
+  background-color: var(--color-white);
   background-image: 
     linear-gradient(var(--color-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
   background-size: 16px 16px;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
 }
 
-.login-panel-footer {
-  height: 10vh;
-  min-height: 40px;
-  background-color: var(--color-accent);
+/* 🛡️ INTERNAL BRANDING (Mobile Only - Matches Desktop Logic) */
+.login-card-logo {
   display: flex;
-  align-items: center;
-  padding: 0 24px;
-  justify-content: flex-end; /* Copyright RIGHT */
+  justify-content: center;
+  margin-bottom: 32px;
 }
 
-.copyright-text-banded {
-  font-size: 10px;
-  color: var(--color-primary);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
+.login-card-logo .logo-text {
+  color: var(--color-primary) !important; /* Force primary on white card */
+}
+
+@media (min-width: 768px) {
+  .login-card-logo { display: none; }
 }
 
 /* 🏙️ TABLET & DESKTOP UNIFICATION (>= 768px) */
@@ -129,28 +109,14 @@ body {
     padding: 0;
   }
 
-  /* Un-band for desktop split-view */
   .login-panel {
     width: 30%;
+    padding: 24px; /* Tighter for Tablets */
+    background-color: var(--color-white);
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
   }
 
-  .login-panel-header {
-    display: none; /* Hero header takes care of branding */
-  }
-
-  .login-panel-body {
-    height: 100vh; /* Fill entire panel height */
-    padding: 24px;
-  }
-
-  .login-panel-footer {
-    display: none; /* Original right-aligned absolute copyright from Login.tsx is used or hidden */
-  }
-
-  /* Spacing for hero components */
+  /* Specific spacing for hero axis */
   .hero-header, .hero-body, .hero-footer {
     padding: 0 clamp(40px, 8vw, 120px);
   }
@@ -161,7 +127,7 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .login-panel-body { padding: 40px; }
+  .login-panel { padding: 40px; }
   .hero-header, .hero-body, .hero-footer { padding: 0 80px; }
 }
 
@@ -385,11 +351,8 @@ body {
   text-decoration: underline; 
 }
 
-/* Original absolute copyright from Login.tsx - reused or hidden by banded footer */
-.copyright-container { margin-top: 24px; text-align: center; }
-@media (min-width: 768px) { 
-  .copyright-container { text-align: right; margin-top: 64px; } 
-}
+.copyright-container { margin-top: 48px; text-align: center; }
+@media (min-width: 768px) { .copyright-container { text-align: right; margin-top: 64px; } }
 .copyright-text { font-size: 10px; color: rgba(15, 42, 68, 0.3); font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; }
 
 /* 🍪 COOKIE BANNER PIIC */
@@ -447,5 +410,4 @@ body {
 
 @media (max-width: 767px) {
   .cookie-banner { flex-direction: column; text-align: center; padding: 20px; }
-  .copyright-container { display: none; } /* Hidden on mobile because we use the yellow band */
 }
