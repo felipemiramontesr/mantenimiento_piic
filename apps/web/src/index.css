@@ -7,6 +7,7 @@
   --color-white: #ffffff;
   --color-subtitle: #E5E7EB; 
   --bg-pristine: #F2F4F7;
+  --color-grid: rgba(15, 42, 68, 0.04); /* Subtle technical grid color */
 }
 
 * {
@@ -60,7 +61,7 @@ body {
   100% { transform: scale(1.15); }
 }
 
-/* 📐 MOBILE SECTIONS */
+/* 📐 MOBILE SECTIONS (Combined Hero Atmosphere on Mobile) */
 .hero-section {
   display: flex;
   flex-direction: column;
@@ -72,7 +73,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 0 0 64px 0; /* Extra space on mobile */
   background: transparent;
   width: 100%;
 }
@@ -89,17 +90,18 @@ body {
     padding: 0;
   }
 
+  /* ⚙️ INDUSTRIAL GRID SYSTEM (Technical Precision) */
   .login-panel {
     width: 30%;
     min-height: 100vh;
     padding: 40px;
-    background-color: #0f2a44;
+    background-color: var(--color-white);
+    /* 8px-based Grid Architecture */
     background-image: 
-      radial-gradient(at 0% 0%, hsla(210, 64%, 16%, 1) 0, transparent 50%), 
-      radial-gradient(at 50% 0%, hsla(210, 64%, 20%, 1) 0, transparent 50%), 
-      radial-gradient(at 100% 0%, hsla(210, 64%, 25%, 1) 0, transparent 50%), 
-      radial-gradient(at 0% 50%, hsla(210, 64%, 12%, 1) 0, transparent 50%), 
-      radial-gradient(at 100% 50%, hsla(210, 64%, 18%, 1) 0, transparent 50%);
+      linear-gradient(var(--color-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+    background-size: 16px 16px; /* Primary grid based on 8px rule */
+    position: relative;
   }
 
   .hero-overlay {
@@ -250,17 +252,17 @@ body {
   transform: translateY(-2px);
 }
 
-/* 💎 MILKY GLASSMORPHISM CARD (Archon Standard) */
+/* 💎 MILKY GLASSMORPHISM CARD (Archon Desktop Refinement) */
 .auth-card {
   width: 100%;
   max-width: 480px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.7); /* More transparent for grid visibility */
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(15, 42, 68, 0.1); /* Darker border for white background */
   border-radius: 4px;
   padding: 40px 24px;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 40px 100px rgba(15, 42, 68, 0.15); /* Tech-Color shadow */
   display: flex;
   flex-direction: column;
 }
@@ -269,15 +271,14 @@ body {
   .auth-card { padding: 60px; }
 }
 
-/* 🖋️ ENGRAVED TEXT EFFECT */
+/* 🖋️ ENGRAVED TEXT EFFECT (Light-Background Ready) */
 .auth-card h2 {
-  color: rgba(255, 255, 255, 0.98);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  color: var(--color-primary); /* Darker for light background */
   letter-spacing: -0.02em;
 }
 
 .auth-card p {
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(15, 42, 68, 0.5); 
   letter-spacing: 0.1em;
 }
 
@@ -289,31 +290,31 @@ body {
 
 .form-group { margin-bottom: 24px; }
 .form-group label {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-primary);
   margin-bottom: 12px;
   display: block;
 }
 
-/* ⚙️ SYNCED INPUTS (Matches btn-outline) */
+/* ⚙️ SYNCED INPUTS (Matches btn-outline but logic for light background) */
 .diamond-input {
   width: 100%;
   padding: 18px 22px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(5px);
+  background: rgba(15, 42, 68, 0.02);
+  border: 1px solid rgba(15, 42, 68, 0.1);
   border-radius: 4px;
   font-size: 16px; 
-  color: var(--color-white);
+  color: var(--color-primary);
   outline: none;
   transition: all 0.3s;
 }
 
 .diamond-input:focus {
   border-color: var(--color-accent);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.1);
 }
 
-.diamond-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.diamond-input::placeholder { color: rgba(15, 42, 68, 0.3); }
 
 /* ⚙️ SYNCED BUTTONS (Matches btn-primary) */
 .diamond-button {
@@ -336,12 +337,23 @@ body {
   transform: translateY(-2px);
 }
 
-.forgot-password-link { font-size: 13px; color: rgba(255, 255, 255, 0.5); text-decoration: none; }
-.forgot-password-link:hover { color: var(--color-white); text-decoration: underline; }
+/* 🔗 RECOVERY LINK (Strategic Interaction) */
+.forgot-password-link { 
+  font-size: 13px; 
+  color: var(--color-accent); /* Corporate Yellow */
+  text-decoration: none; 
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.forgot-password-link:hover { 
+  color: var(--color-primary); /* Transition to Corporate Blue */
+  text-decoration: underline; 
+}
 
 .copyright-container { margin-top: 48px; text-align: center; }
 @media (min-width: 1024px) { .copyright-container { text-align: right; margin-top: 64px; } }
-.copyright-text { font-size: 10px; color: rgba(255, 255, 255, 0.4); font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; }
+.copyright-text { font-size: 10px; color: rgba(15, 42, 68, 0.3); font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; }
 
 /* 🍪 COOKIE BANNER PIIC (Reverted Original Style) */
 .cookie-banner {
