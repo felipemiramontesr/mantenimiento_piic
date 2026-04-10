@@ -2,11 +2,11 @@
 
 :root {
   /* 🎨 OFFICIAL PIIC COLOR PALETTE - FROM guia_diseno_hero.md */
-  --color-primary: #0f2a44;   /* Azul Corporativo */
-  --color-accent: #f2b705;    /* Amarillo PIIC */
+  --color-primary: #0f2a44;   /* Deep Space Blue */
+  --color-accent: #f2b705;    /* Teck Yellow */
+  --color-dark: #1A1A1A;      /* High Contrast Dark */
   --color-white: #ffffff;
   --color-subtitle: #E5E7EB; 
-  --bg-pristine: #F2F4F7;
   --color-grid: rgba(15, 42, 68, 0.04);
 }
 
@@ -25,7 +25,7 @@ body {
   overflow-x: hidden;
 }
 
-/* 🏗️ MOBILE-REVERSE GRID (V8 Logic) */
+/* 🏗️ MOBILE CHASSIS (V13 Phase 4.13) */
 .auth-grid-container {
   display: flex;
   flex-direction: column-reverse; /* Login on TOP, Hero on BOTTOM */
@@ -61,45 +61,69 @@ body {
   100% { transform: scale(1.15); }
 }
 
-/* 📐 MOBILE SECTIONS (V8) */
-.hero-section {
-  display: flex;
-  flex-direction: column;
-  padding: 64px 24px;
-}
-
+/* 🛡️ LOGIN PANEL CHASSIS (15/70/15 - MOBILE ONLY) */
 .login-panel {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: var(--color-white);
+  position: relative;
+}
+
+.login-panel-header-v13 {
+  height: 15vh;
+  min-height: 80px;
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center; /* CENTERED LOGO */
+  padding: 0 24px;
+}
+
+.login-panel-body-v13 {
+  height: 70vh;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px;
-  background-color: var(--color-white);
+  padding: 32px 24px;
   background-image: 
     linear-gradient(var(--color-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
   background-size: 16px 16px;
-  min-height: 100vh;
-  width: 100%;
+  overflow-y: auto;
+}
+
+.login-panel-footer-v13 {
+  height: 15vh;
+  min-height: 60px;
+  background-color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center; /* CENTERED COPYRIGHT */
+  padding: 0 24px;
+}
+
+.copyright-text-v13 {
+  font-size: 12px;
+  color: var(--color-dark);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-family: 'Inter', sans-serif;
+}
+
+/* 🏙️ HERO SECTION (1:1 PARITY - MOBILE STACK) */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  padding: 64px 24px;
+  min-height: 100vh; /* HEIGHT PARITY */
+  justify-content: center; /* CENTERED HERO ASSETS */
   position: relative;
 }
 
-/* 🛡️ INTERNAL BRANDING (Mobile Only - Matches Desktop Logic) */
-.login-card-logo {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 32px;
-}
-
-.login-card-logo .logo-text {
-  color: var(--color-primary) !important; /* Force primary on white card */
-}
-
-@media (min-width: 768px) {
-  .login-card-logo { display: none; }
-}
-
-/* 🏙️ TABLET & DESKTOP UNIFICATION (>= 768px) */
+/* 🏙️ DESKTOP & TABLET ISOLATION (>= 768px) */
 @media (min-width: 768px) {
   .auth-grid-container { flex-direction: row; }
 
@@ -107,16 +131,28 @@ body {
     width: 70%;
     min-height: 100vh;
     padding: 0;
+    justify-content: flex-start; /* Restore Layout Axis */
   }
 
+  /* Restore Panel to standard side mode */
   .login-panel {
     width: 30%;
-    padding: 24px; /* Tighter for Tablets */
-    background-color: var(--color-white);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-white);
   }
 
-  /* Specific spacing for hero axis */
+  .login-panel-header-v13, .login-panel-footer-v13 {
+    display: none; /* Hide branding bands on desktop */
+  }
+
+  .login-panel-body-v13 {
+    height: 100vh;
+    padding: 40px;
+  }
+
+  /* Spacing for hero components in split screen */
   .hero-header, .hero-body, .hero-footer {
     padding: 0 clamp(40px, 8vw, 120px);
   }
@@ -127,7 +163,6 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .login-panel { padding: 40px; }
   .hero-header, .hero-body, .hero-footer { padding: 0 80px; }
 }
 
@@ -153,7 +188,7 @@ body {
   .hero-title, .hero-subtitle { text-align: left; }
 }
 
-/* 🔗 PIIC LOGO SYSTEM (EXACT SECTION 6) */
+/* 🔗 PIIC LOGO SYSTEM (SVG GPU OPTIMIZED) */
 .logo {
   display: flex;
   align-items: center;
@@ -175,7 +210,7 @@ body {
   margin-left: clamp(8px, 1.5vw, 12px);
 }
 
-/* ⚡ OFFICIAL KEYFRAMES (EXACT SECTION 7 - 30S LOOP) */
+/* ⚡ OFFICIAL KEYFRAMES (30S LOOP) */
 .sun-grow-left-v5 { animation: sunGrowLeftV5 30s infinite linear; }
 .luna-full-rl-v5 { animation: lunaFullRLV5 30s infinite linear; }
 .sol-half-rl-v5 { animation: solHalfRLV5 30s infinite linear; }
@@ -350,10 +385,6 @@ body {
   color: var(--color-primary);
   text-decoration: underline; 
 }
-
-.copyright-container { margin-top: 48px; text-align: center; }
-@media (min-width: 768px) { .copyright-container { text-align: right; margin-top: 64px; } }
-.copyright-text { font-size: 10px; color: rgba(15, 42, 68, 0.3); font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; }
 
 /* 🍪 COOKIE BANNER PIIC */
 .cookie-banner {
