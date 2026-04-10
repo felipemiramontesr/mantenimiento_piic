@@ -2,8 +2,8 @@
 
 :root {
   /* 🎨 OFFICIAL PIIC COLOR PALETTE - FROM guia_diseno_hero.md */
-  --color-primary: #0f2a44;   /* Azul Corporativo */
-  --color-accent: #f2b705;    /* Amarillo PIIC */
+  --color-primary: #0f2a44;   /* Deep Space Blue */
+  --color-accent: #f2b705;    /* Teck Yellow */
   --color-white: #ffffff;
   --color-subtitle: #E5E7EB; 
   --bg-pristine: #F2F4F7;
@@ -25,7 +25,7 @@ body {
   overflow-x: hidden;
 }
 
-/* 🏗️ MOBILE-REVERSE GRID (V8 Logic) */
+/* 🏗️ MOBILE CHASSIS (V14 Ergonomic Precision) */
 .auth-grid-container {
   display: flex;
   flex-direction: column-reverse; /* Login on TOP, Hero on BOTTOM */
@@ -61,11 +61,13 @@ body {
   100% { transform: scale(1.15); }
 }
 
-/* 📐 MOBILE SECTIONS (V8) */
+/* 📐 MOBILE SECTIONS (V14 1:1 Parity) */
 .hero-section {
   display: flex;
   flex-direction: column;
   padding: 64px 24px;
+  min-height: 100vh; /* SYMMETRY CORE */
+  justify-content: center; /* CENETRED CONTENT */
 }
 
 .login-panel {
@@ -79,12 +81,12 @@ body {
     linear-gradient(var(--color-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
   background-size: 16px 16px;
-  min-height: 100vh;
+  min-height: 100vh; /* SYMMETRY CORE */
   width: 100%;
   position: relative;
 }
 
-/* 🛡️ INTERNAL BRANDING (Mobile Only - Matches Desktop Logic) */
+/* 🛡️ INTERNAL BRANDING (Mobile Only) */
 .login-card-logo {
   display: flex;
   justify-content: center;
@@ -92,14 +94,14 @@ body {
 }
 
 .login-card-logo .logo-text {
-  color: var(--color-primary) !important; /* Force primary on white card */
+  color: var(--color-primary) !important;
 }
 
 @media (min-width: 768px) {
   .login-card-logo { display: none; }
 }
 
-/* 🏙️ TABLET & DESKTOP UNIFICATION (>= 768px) */
+/* 🏙️ DESKTOP & TABLET UNIFICATION (>= 768px - Side by Side) */
 @media (min-width: 768px) {
   .auth-grid-container { flex-direction: row; }
 
@@ -107,16 +109,20 @@ body {
     width: 70%;
     min-height: 100vh;
     padding: 0;
+    justify-content: flex-start;
   }
 
+  /* Unfurl Panel for desktop split-view */
   .login-panel {
     width: 30%;
-    padding: 24px; /* Tighter for Tablets */
-    background-color: var(--color-white);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-white);
+    padding: 24px;
   }
 
-  /* Specific spacing for hero axis */
+  /* Spacing for hero components in split screen */
   .hero-header, .hero-body, .hero-footer {
     padding: 0 clamp(40px, 8vw, 120px);
   }
@@ -153,7 +159,7 @@ body {
   .hero-title, .hero-subtitle { text-align: left; }
 }
 
-/* 🔗 PIIC LOGO SYSTEM (EXACT SECTION 6) */
+/* 🔗 PIIC LOGO SYSTEM (SVG GPU OPTIMIZED) */
 .logo {
   display: flex;
   align-items: center;
@@ -175,7 +181,7 @@ body {
   margin-left: clamp(8px, 1.5vw, 12px);
 }
 
-/* ⚡ OFFICIAL KEYFRAMES (EXACT SECTION 7 - 30S LOOP) */
+/* ⚡ OFFICIAL KEYFRAMES (30S LOOP) */
 .sun-grow-left-v5 { animation: sunGrowLeftV5 30s infinite linear; }
 .luna-full-rl-v5 { animation: lunaFullRLV5 30s infinite linear; }
 .sol-half-rl-v5 { animation: solHalfRLV5 30s infinite linear; }
@@ -258,7 +264,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* 💎 MILKY GLASSMORPHISM CARD */
+/* 💎 MILKY GLASSMORPHISM CARD (AIR ENFORCEMENT) */
 .auth-card {
   width: 100%;
   max-width: 480px;
@@ -267,10 +273,16 @@ body {
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid rgba(15, 42, 68, 0.1);
   border-radius: 4px;
-  padding: clamp(24px, 8vw, 60px); 
+  padding: 32px;
   box-shadow: 0 40px 100px rgba(15, 42, 68, 0.15);
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 767px) {
+  .auth-card { 
+    padding: 40px; /* ERGONOMIC PADDING FOR CELLPHONES */
+  }
 }
 
 /* 🖋️ ENGRAVED TEXT EFFECT */
@@ -291,7 +303,23 @@ body {
   margin-top: clamp(24px, 8vw, 48px);
 }
 
+@media (max-width: 767px) {
+  .login-form { 
+    gap: 24px; /* ERGONOMIC GAP FOR CELLPHONES */
+  }
+}
+
 .form-group { margin-bottom: 24px; }
+
+@media (max-width: 767px) {
+  .form-group { 
+    margin-bottom: 0px; 
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* ERGONOMIC LABEL GAP */
+  }
+}
+
 .form-group label {
   color: var(--color-primary);
   margin-bottom: 12px;
@@ -344,6 +372,7 @@ body {
   transition: all 0.3s ease;
   display: inline-block;
   margin-top: 16px;
+  text-align: center;
 }
 
 .forgot-password-link:hover { 
@@ -351,9 +380,17 @@ body {
   text-decoration: underline; 
 }
 
-.copyright-container { margin-top: 48px; text-align: center; }
-@media (min-width: 768px) { .copyright-container { text-align: right; margin-top: 64px; } }
-.copyright-text { font-size: 10px; color: rgba(15, 42, 68, 0.3); font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; }
+.hero-footer {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .hero-footer { align-items: flex-start; }
+}
 
 /* 🍪 COOKIE BANNER PIIC */
 .cookie-banner {
