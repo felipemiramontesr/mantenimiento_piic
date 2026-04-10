@@ -117,8 +117,8 @@ const LoginPage: React.FC = () => {
               </div>
             )}
             
-            <div className="form-group mb-8">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 mb-4 block">
+            <div className="form-group">
+              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
                 Identidad de Usuario
               </label>
               <input 
@@ -132,8 +132,8 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <div className="form-group mb-12">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 mb-4 block">
+            <div className="form-group">
+              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
                 Clave de Seguridad
               </label>
               <input 
@@ -157,8 +157,8 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
             
-            <div className="text-center mt-16 pb-2">
-              <span className="text-[10px] text-white/20 font-black uppercase tracking-[0.5em]">
+            <div className="copyright-container">
+              <span className="copyright-text">
                 © 2026 PIIC GROUP
               </span>
             </div>
