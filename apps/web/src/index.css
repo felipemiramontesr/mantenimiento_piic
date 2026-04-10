@@ -335,10 +335,10 @@ body {
   .auth-card-body {
     height: 80vh;
     background-color: var(--color-white);
-    padding: 24px 24px 40px 24px; /* 🌌 TOP ALIGNMENT + CONTROLLED GAP */
+    padding: 40px 24px; /* ⚖️ BALANCED PADDING FOR SYMMETRY */
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* 📌 PINNED TO TOP FOR PRECISION SPACING */
+    justify-content: center; /* 🌌 RESTORED VERTICAL SYMMETRY */
     overflow-y: auto;
   }
 
