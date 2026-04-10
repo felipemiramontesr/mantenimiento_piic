@@ -50,18 +50,19 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="auth-grid-container relative">
-      {/* 🌌 HERO SECTION (70% Desktop) - Official Corporate Narrative */}
+    <div className="auth-grid-container">
+      {/* 🌌 ATMOSPHERIC LAYER (Fixed for performance) */}
+      <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
+      <div className="hero-overlay"></div>
+
+      {/* 🏙️ HERO CONTENT (Brand Narrative) */}
       <section className="hero-section">
-        <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
-        <div className="hero-overlay"></div>
-        
-        {/* HEADER (10%) */}
         <header className="hero-header animate-in fade-in duration-1000">
-           <PiicLogo />
+           <div className="flex justify-center lg:justify-start w-full">
+             <PiicLogo />
+           </div>
         </header>
 
-        {/* BODY (80%) */}
         <main className="hero-body animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
           <h1 className="hero-title">
             Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
@@ -90,8 +91,7 @@ const LoginPage: React.FC = () => {
           </div>
         </main>
 
-        {/* FOOTER (10%) */}
-        <footer className="hero-footer animate-in fade-in duration-1000 delay-500">
+        <footer className="hero-footer hidden lg:flex animate-in fade-in duration-1000 delay-500">
           <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
             Archon System | PIIC High Tech Standard
           </div>
@@ -101,21 +101,21 @@ const LoginPage: React.FC = () => {
         </footer>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (30% Desktop) - Identity Hub */}
+      {/* 🛡️ LOGIN PANEL (Auth Card) */}
       <section className="login-panel">
         <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
-          <header>
-            <h2 className="text-4xl font-black tracking-tighter">
+          <header className="text-center lg:text-left">
+            <h2 className="font-black tracking-tighter">
               Acceso Archon
             </h2>
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] mt-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] mt-2">
               Control de Flotas | PIIC Identity
             </p>
           </header>
 
           <form onSubmit={handleLogin} className="login-form">
             {error && (
-              <div className="p-5 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-8">
+              <div className="p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-6">
                  Error de Sistema: {error}
               </div>
             )}
