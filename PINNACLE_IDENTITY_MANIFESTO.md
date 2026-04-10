@@ -103,4 +103,4 @@ Para el sistema de mantenimiento, los inputs deben seguir esta lógica:
 - **Sombra de Focus**: `0 0 0 3px rgba(242, 183, 5, 0.1)`.
 
 ---
-© 2026 **PIIC Identity System**. *Engineered for visual immortality.*
+© 2026 **Powered by PIIC TECH System**. *Engineered for visual immortality.*

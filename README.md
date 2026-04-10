@@ -50,4 +50,4 @@ graph TD
 - **Grid**: 8px Base
 
 ---
-© 2026 PIIC Identity System. Engineered for professional excellence.
+© 2026 Powered by PIIC TECH System. Engineered for professional excellence.
