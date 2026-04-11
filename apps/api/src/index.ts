@@ -3,11 +3,11 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
+import argon2 from 'argon2';
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
 import db from './services/db';
-import argon2 from 'argon2';
 import EncryptionService from './services/encryption';
 
 dotenv.config({ path: '../../.env' });
@@ -59,6 +59,7 @@ fastify.get(
 // Master System Setup (Temporary for Production Launch)
 fastify.get('/v1/sys/setup', async (request, reply) => {
   try {
+    // eslint-disable-next-line no-console
     console.log('🏁 [Archon Setup] Starting database initialization...');
 
     // 1. Create Tables
