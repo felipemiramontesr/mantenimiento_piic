@@ -2,6 +2,16 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
 import LoginPage from './pages/Auth/Login';
+import api from './api/client';
+
+vi.mock('./api/client', () => ({
+  default: {
+    post: vi.fn(),
+    defaults: {
+      baseURL: 'https://apiv1.piic.com.mx/v1',
+    },
+  },
+}));
 
 describe('PIIC ARCHON - Authentication Interface', () => {
   const renderLogin = (): void => {

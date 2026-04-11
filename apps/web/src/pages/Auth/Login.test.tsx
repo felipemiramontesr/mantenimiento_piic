@@ -7,6 +7,9 @@ import api from '../../api/client';
 vi.mock('../../api/client', () => ({
   default: {
     post: vi.fn(),
+    defaults: {
+      baseURL: 'https://apiv1.piic.com.mx/v1',
+    },
   },
 }));
 
