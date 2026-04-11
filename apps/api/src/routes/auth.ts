@@ -68,9 +68,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           role_id: user.role_id,
         },
       });
-    } catch (err) {
+    } catch (err: any) {
       fastify.log.error(err);
-      return reply.code(500).send({ error: 'Internal Server Error' });
+      return reply.code(500).send({ 
+        error: 'Internal Server Error', 
+        message: err.message, // Revelation for debugging
+        code: err.code 
+      });
     }
   });
 }

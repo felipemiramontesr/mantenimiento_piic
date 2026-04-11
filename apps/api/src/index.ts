@@ -53,6 +53,20 @@ fastify.get(
   })
 );
 
+// Database Diagnostic
+fastify.get('/health/db', async (request, reply) => {
+  try {
+    const [rows] = await db.execute('SELECT 1 as connected');
+    return { status: 'connected', data: rows };
+  } catch (err: any) {
+    return reply.code(500).send({ 
+      status: 'disconnected', 
+      error: err.message,
+      code: err.code 
+    });
+  }
+});
+
 const start = async (): Promise<void> => {
   try {
     const port = Number(process.env.PORT) || 3001;
