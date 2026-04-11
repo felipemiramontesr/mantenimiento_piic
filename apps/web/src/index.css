@@ -103,10 +103,8 @@ body {
 }
 
 /* 🏙️ ADAPTIVE CHASSIS ENGINE - SENIOR PRO UI/UX (Tiered Splitting) */
-@media (min-width: 768px) and (max-width: 1279px) {
+@media (min-width: 768px) {
   .auth-grid-container { 
-    height: 100vh !important; /* 🔲 SINGLE PAGE ENFORCED */
-    overflow: hidden !important; /* 🔲 NO-SCROLL GUARANTEE */
     flex-direction: row; 
     --hero-width: 50%; /* ⚖️ SYMMETRY PRO STANDARD */
     --login-width: 50%; /* ⚖️ SYMMETRY PRO STANDARD */
@@ -115,8 +113,6 @@ body {
 
 @media (min-width: 1280px) {
   .auth-grid-container {
-    height: 100vh;
-    overflow: hidden;
     --hero-width: 70%; /* 🖥️ DESKTOP STANDARD RESTORED */
     --login-width: 30%; /* 🖥️ DESKTOP STANDARD RESTORED */
   }
@@ -125,26 +121,24 @@ body {
 @media (min-width: 768px) {
   .hero-section {
     width: var(--hero-width);
-    height: 100vh; /* 📏 FIXED VIEWPORT HEIGHT */
+    min-height: 100vh;
     padding: 0;
     justify-content: flex-start;
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
   }
 
   /* Unfurl Panel for desktop split-view - ENFORCED CENTER GRAVITY */
   .login-panel {
     width: var(--login-width);
-    height: 100vh; /* 📏 FIXED VIEWPORT HEIGHT */
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center; /* 🌌 AIR ENFORCEMENT (CENTERED) */
     justify-content: center; /* 🌌 AIR ENFORCEMENT (CENTERED) */
     background-color: var(--color-white);
-    padding: 2vh 40px; /* 📉 DYNAMIC VERTICAL PADDING */
+    padding: 40px;
     position: relative;
     transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
   }
 
   /* Spacing for hero components in split screen (10/80/10 Rule) */
@@ -153,21 +147,21 @@ body {
   }
 
   .hero-header { 
-    height: 10vh; 
+    height: 10%; 
     display: flex; 
     align-items: center; 
   }
 
   .hero-body { 
-    height: 80vh; 
+    height: 80%; 
     display: flex; 
     flex-direction: column; 
     justify-content: center; 
-    gap: clamp(16px, 3vh, 48px); /* 🌊 DYNAMIC COMPRESSION */
+    gap: clamp(24px, 4vh, 48px); /* 🌊 DYNAMIC BREATHING */
   }
 
   .hero-footer { 
-    height: 10vh; 
+    height: 10%; 
     display: flex; 
     flex-direction: row !important; /* REINFORCED ROW */
     align-items: center; 
@@ -182,7 +176,7 @@ body {
     flex-direction: column !important; /* 🔲 STACKED ROWS FOR TABLETS */
     align-items: flex-start !important;
     justify-content: center !important;
-    gap: 4px !important;
+    gap: 8px !important;
   }
 
   .hero-footer div {
