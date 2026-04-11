@@ -9,7 +9,13 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => (
-  <div className={`flex items-center gap-16 p-16 rounded-pinnacle-input cursor-pointer transition-all ${active ? 'bg-pinnacle-accent text-pinnacle-primary font-bold' : 'hover:bg-white/5 text-white/60'}`}>
+  <div
+    className={`flex items-center gap-16 p-16 rounded-pinnacle-input cursor-pointer transition-all ${
+      active
+        ? 'bg-pinnacle-accent text-pinnacle-primary font-bold'
+        : 'hover:bg-white/5 text-white/60'
+    }`}
+  >
     {icon}
     <span>{label}</span>
   </div>
@@ -49,7 +55,9 @@ const ArchonDashboard: React.FC = () => {
           <div className="w-10 h-10 bg-pinnacle-accent rounded-full" />
           <div>
             <h1 className="text-[20px] font-bold tracking-tight">ARCHON CORE</h1>
-            <p className="text-[10px] text-pinnacle-accent font-bold tracking-widest">ID: {userData.username || 'UNKNOWN'}</p>
+            <p className="text-[10px] text-pinnacle-accent font-bold tracking-widest">
+              ID: {userData.username || 'UNKNOWN'}
+            </p>
           </div>
         </div>
 
@@ -60,7 +68,7 @@ const ArchonDashboard: React.FC = () => {
           <NavItem icon={<Settings size={20} />} label="System Config" />
         </nav>
 
-        <button 
+        <button
           onClick={handleLogout}
           className="flex items-center gap-16 p-16 text-white/60 hover:text-pinnacle-accent transition-colors"
         >

@@ -5,10 +5,10 @@ describe('EncryptionService (ARCHON CORE)', () => {
   it('should encrypt and decrypt a string correctly', () => {
     const originalText = 'PIIC_TACTICAL_DATA_2026';
     const encrypted = EncryptionService.encrypt(originalText);
-    
+
     expect(encrypted).not.to.equal(originalText);
     expect(encrypted).to.contain(':'); // iv:tag:content format
-    
+
     const decrypted = EncryptionService.decrypt(encrypted);
     expect(decrypted).to.equal(originalText);
   });
@@ -23,7 +23,35 @@ describe('EncryptionService (ARCHON CORE)', () => {
     const text = 'pinnacle_standard';
     const enc1 = EncryptionService.encrypt(text);
     const enc2 = EncryptionService.encrypt(text);
-    
+
     expect(enc1).not.to.equal(enc2);
+  });
+
+  it('should fallback to utf-8 strategy if key is not a 64-char hex', () => {
+    const originalKey = process.env.DB_ENCRYPTION_KEY;
+    process.env.DB_ENCRYPTION_KEY = 'exact32charspinnaclearchon_12345'; // length=32 utf8
+
+    const text = 'Fallback Strategy Payload';
+    const encrypted = EncryptionService.encrypt(text);
+    const decrypted = EncryptionService.decrypt(encrypted);
+
+    expect(decrypted).to.equal(text);
+
+    // Restore environment
+    process.env.DB_ENCRYPTION_KEY = originalKey;
+  });
+
+  it('should use default hardcoded key if env var is missing', () => {
+    const originalKey = process.env.DB_ENCRYPTION_KEY;
+    delete process.env.DB_ENCRYPTION_KEY; // Force undefined
+
+    const text = 'Fallback Default Key Payload';
+    const encrypted = EncryptionService.encrypt(text);
+    const decrypted = EncryptionService.decrypt(encrypted);
+
+    expect(decrypted).to.equal(text);
+
+    // Restore environment
+    process.env.DB_ENCRYPTION_KEY = originalKey;
   });
 });

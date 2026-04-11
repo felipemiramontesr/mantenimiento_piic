@@ -2,11 +2,11 @@
 
 :root {
   /* 🎨 OFFICIAL PIIC COLOR PALETTE - FROM guia_diseno_hero.md */
-  --color-primary: #0f2a44;   /* Deep Space Blue */
-  --color-accent: #f2b705;    /* Teck Yellow */
+  --color-primary: #0f2a44; /* Deep Space Blue */
+  --color-accent: #f2b705; /* Teck Yellow */
   --color-white: #ffffff;
-  --color-subtitle: #E5E7EB; 
-  --bg-pristine: #F2F4F7;
+  --color-subtitle: #e5e7eb;
+  --bg-pristine: #f2f4f7;
   --color-grid: rgba(15, 42, 68, 0.04);
 }
 
@@ -50,15 +50,18 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: 
-    linear-gradient(rgba(15, 42, 68, 0.8), rgba(15, 42, 68, 0.95)),
+  background: linear-gradient(rgba(15, 42, 68, 0.8), rgba(15, 42, 68, 0.95)),
     radial-gradient(circle at 50% 50%, rgba(242, 183, 5, 0.05), transparent 70%);
   z-index: -1;
 }
 
 @keyframes static-zoom {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.15); }
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.15);
+  }
 }
 
 /* 📐 MOBILE SECTIONS (V14 1:1 Parity) */
@@ -77,8 +80,7 @@ body {
   justify-content: center;
   padding: 40px 24px;
   background-color: var(--color-white);
-  background-image: 
-    linear-gradient(var(--color-grid) 1px, transparent 1px),
+  background-image: linear-gradient(var(--color-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
   background-size: 16px 16px;
   min-height: 100vh; /* SYMMETRY CORE */
@@ -98,14 +100,19 @@ body {
 }
 
 @media (min-width: 768px) {
-  .login-card-logo { display: none; }
-  .auth-card-header, .auth-card-footer { display: none; } /* HIDDEN ON DESKTOP CARD VIEW */
+  .login-card-logo {
+    display: none;
+  }
+  .auth-card-header,
+  .auth-card-footer {
+    display: none;
+  } /* HIDDEN ON DESKTOP CARD VIEW */
 }
 
 /* 🏙️ ADAPTIVE CHASSIS ENGINE - SENIOR PRO UI/UX (Tiered Splitting) */
 @media (min-width: 768px) {
-  .auth-grid-container { 
-    flex-direction: row; 
+  .auth-grid-container {
+    flex-direction: row;
     --hero-width: 50%; /* ⚖️ SYMMETRY PRO STANDARD */
     --login-width: 50%; /* ⚖️ SYMMETRY PRO STANDARD */
   }
@@ -142,29 +149,31 @@ body {
   }
 
   /* Spacing for hero components in split screen (10/80/10 Rule) */
-  .hero-header, .hero-body, .hero-footer {
+  .hero-header,
+  .hero-body,
+  .hero-footer {
     padding: 0 clamp(24px, 5vw, 120px); /* 📏 REDUCED FOR TABLETS */
   }
 
-  .hero-header { 
-    height: 10%; 
-    display: flex; 
-    align-items: center; 
+  .hero-header {
+    height: 10%;
+    display: flex;
+    align-items: center;
   }
 
-  .hero-body { 
-    height: 80%; 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: center; 
+  .hero-body {
+    height: 80%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     gap: clamp(24px, 4vh, 48px); /* 🌊 DYNAMIC BREATHING */
   }
 
-  .hero-footer { 
-    height: 10%; 
-    display: flex; 
+  .hero-footer {
+    height: 10%;
+    display: flex;
     flex-direction: row !important; /* REINFORCED ROW */
-    align-items: center; 
+    align-items: center;
     justify-content: space-between !important; /* REINFORCED SPLIT */
     width: 100% !important;
   }
@@ -182,7 +191,7 @@ body {
   .hero-footer div {
     white-space: nowrap !important; /* 🔒 FORCED 1-LINE PER BLOCK */
     font-size: 10px !important; /* 🖋️ DENSITY FITTED */
-    letter-spacing: 0.10em !important; /* 📏 X-AXIS OVERFLOW PREVENTION */
+    letter-spacing: 0.1em !important; /* 📏 X-AXIS OVERFLOW PREVENTION */
     line-height: 1.2 !important;
     width: auto !important;
     text-align: left !important;
@@ -207,8 +216,14 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .login-panel { padding: 40px; }
-  .hero-header, .hero-body, .hero-footer { padding: 0 80px; }
+  .login-panel {
+    padding: 40px;
+  }
+  .hero-header,
+  .hero-body,
+  .hero-footer {
+    padding: 0 80px;
+  }
 }
 
 /* 🧪 FLUID TYPOGRAPHY */
@@ -226,7 +241,7 @@ body {
     font-size: clamp(1.75rem, 4vw, 2.1rem) !important; /* ⚖️ SLIM FIT FOR 50% PANEL */
     max-width: 95%;
   }
-  
+
   .hero-subtitle {
     font-size: clamp(0.95rem, 1.8vw, 1.1rem) !important;
     max-width: 90%;
@@ -243,7 +258,10 @@ body {
 }
 
 @media (min-width: 768px) {
-  .hero-title, .hero-subtitle { text-align: left; }
+  .hero-title,
+  .hero-subtitle {
+    text-align: left;
+  }
 }
 
 /* 🔗 PIIC LOGO SYSTEM (SVG GPU OPTIMIZED) */
@@ -269,26 +287,59 @@ body {
 }
 
 /* ⚡ OFFICIAL KEYFRAMES (30S LOOP) */
-.sun-grow-left-v5 { animation: sunGrowLeftV5 30s infinite linear; }
-.luna-full-rl-v5 { animation: lunaFullRLV5 30s infinite linear; }
-.sol-half-rl-v5 { animation: solHalfRLV5 30s infinite linear; }
+.sun-grow-left-v5 {
+  animation: sunGrowLeftV5 30s infinite linear;
+}
+.luna-full-rl-v5 {
+  animation: lunaFullRLV5 30s infinite linear;
+}
+.sol-half-rl-v5 {
+  animation: solHalfRLV5 30s infinite linear;
+}
 
 @keyframes sunGrowLeftV5 {
-  0%, 10% { x: 50px; width: 0px; }
-  15% { x: 0px; width: 50px; }
-  15.01%, 100% { x: 0px; width: 50px; }
+  0%,
+  10% {
+    x: 50px;
+    width: 0px;
+  }
+  15% {
+    x: 0px;
+    width: 50px;
+  }
+  15.01%,
+  100% {
+    x: 0px;
+    width: 50px;
+  }
 }
 
 @keyframes lunaFullRLV5 {
-  0%, 15% { x: 100px; }
-  25% { x: 0px; }
-  25.01%, 100% { x: 0px; }
+  0%,
+  15% {
+    x: 100px;
+  }
+  25% {
+    x: 0px;
+  }
+  25.01%,
+  100% {
+    x: 0px;
+  }
 }
 
 @keyframes solHalfRLV5 {
-  0%, 25% { x: 100px; }
-  30% { x: 50px; }
-  30.01%, 100% { x: 50px; }
+  0%,
+  25% {
+    x: 100px;
+  }
+  30% {
+    x: 50px;
+  }
+  30.01%,
+  100% {
+    x: 50px;
+  }
 }
 
 /* 🔗 PIIC BUTTON SYSTEM */
@@ -301,11 +352,17 @@ body {
 }
 
 @media (min-width: 640px) {
-  .hero-actions { flex-direction: row; justify-content: center; }
+  .hero-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
 }
 
 @media (min-width: 768px) {
-  .hero-actions { justify-content: flex-start; margin-top: 48px; }
+  .hero-actions {
+    justify-content: flex-start;
+    margin-top: 48px;
+  }
 }
 
 .btn {
@@ -324,7 +381,9 @@ body {
 }
 
 @media (min-width: 640px) {
-  .btn { min-width: 220px; }
+  .btn {
+    min-width: 220px;
+  }
 }
 
 .btn-primary {
@@ -355,7 +414,7 @@ body {
 .auth-card {
   width: 100%;
   max-width: 480px;
-  background: rgba(255, 255, 255, 0.7); 
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid rgba(15, 42, 68, 0.1);
@@ -372,7 +431,7 @@ body {
     background-image: none; /* CLEANER LOOK FOR STRIPED LAYOUT */
   }
 
-  .auth-card { 
+  .auth-card {
     padding: 0;
     max-width: 100%;
     height: 100vh;
@@ -434,7 +493,7 @@ body {
     border-bottom: 1px solid rgba(15, 42, 68, 0.08); /* 📐 ELEGANT DIVIDER */
   }
 
-  .auth-header-titles h2, 
+  .auth-header-titles h2,
   .auth-header-titles p {
     text-align: center !important;
   }
@@ -468,7 +527,7 @@ body {
 }
 
 .auth-card p.subtitle-brand {
-  color: rgba(15, 42, 68, 0.5); 
+  color: rgba(15, 42, 68, 0.5);
   letter-spacing: 0.1em;
 }
 
@@ -479,16 +538,18 @@ body {
 }
 
 @media (max-width: 767px) {
-  .login-form { 
+  .login-form {
     gap: 24px; /* ERGONOMIC GAP FOR CELLPHONES */
   }
 }
 
-.form-group { margin-bottom: 24px; }
+.form-group {
+  margin-bottom: 24px;
+}
 
 @media (max-width: 767px) {
-  .form-group { 
-    margin-bottom: 0px; 
+  .form-group {
+    margin-bottom: 0px;
     display: flex;
     flex-direction: column;
     gap: 12px; /* ERGONOMIC LABEL GAP */
@@ -507,7 +568,7 @@ body {
   background: rgba(15, 42, 68, 0.02);
   border: 1px solid rgba(15, 42, 68, 0.1);
   border-radius: 4px;
-  font-size: 16px; 
+  font-size: 16px;
   color: var(--color-primary);
   outline: none;
   transition: all 0.3s;
@@ -539,10 +600,10 @@ body {
   transform: translateY(-2px);
 }
 
-.forgot-password-link { 
-  font-size: 13px; 
+.forgot-password-link {
+  font-size: 13px;
   color: var(--color-accent);
-  text-decoration: none; 
+  text-decoration: none;
   font-weight: 600;
   transition: all 0.3s ease;
   display: inline-block;
@@ -550,9 +611,9 @@ body {
   text-align: center;
 }
 
-.forgot-password-link:hover { 
+.forgot-password-link:hover {
   color: var(--color-primary);
-  text-decoration: underline; 
+  text-decoration: underline;
 }
 
 /* Global hero-footer removed to use consolidated logic above */
@@ -580,7 +641,10 @@ body {
   flex: 1;
 }
 
-.cookie-actions { display: flex; gap: 12px; }
+.cookie-actions {
+  display: flex;
+  gap: 12px;
+}
 
 .cookie-btn {
   background-color: var(--color-primary);
@@ -657,7 +721,8 @@ body {
     width: 100% !important;
   }
 
-  .hero-title, .hero-subtitle {
+  .hero-title,
+  .hero-subtitle {
     text-align: center !important;
     margin: 0 !important;
   }
@@ -668,5 +733,9 @@ body {
     width: 100% !important;
   }
 
-  .cookie-banner { flex-direction: column; text-align: center; padding: 20px; }
+  .cookie-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
 }

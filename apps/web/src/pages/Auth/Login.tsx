@@ -5,6 +5,19 @@ import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
 import serviceBackground from '../../assets/service-bg.png';
 
+/**
+ * LoginPage Component - ARCHON System
+ * 
+ * @remarks
+ * This is the primary entry point for the Archon UI. It implements a fully responsive,
+ * dual-panel layout supporting mobile (10/80/10 vertical split) and tablet/desktop 
+ * symmetry logic. 
+ * 
+ * Contains logical boundaries for managing authentication state, token storage securely 
+ * in localStorage, and routing upon successful Archon API verification.
+ * 
+ * @returns React Functional Component rendering the Archon Login View.
+ */
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,11 +33,23 @@ const LoginPage: React.FC = () => {
     }
   }, []);
 
+  /**
+   * Stores the user's cookie consent preference indefinitely.
+   * Modifies localStorage directly to prevent re-renders on page reload.
+   */
   const acceptCookies = (): void => {
     localStorage.setItem('cookies_accepted', 'true');
     setShowCookies(false);
   };
 
+  /**
+   * Handles the secure form submission to the Archon Auth Router.
+   * If successful, parses the JWT and redirects to the internal Dashboard.
+   * Catches `401 Unauthorized` specifically to display a generic fallback message 
+   * (Zero-Trust policy restricts specific UI error details).
+   * 
+   * @param e - Prevented default native form event
+   */
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setLoading(true);
@@ -32,7 +57,7 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await api.post('/auth/login', { username, password });
-      
+
       if (response.data.token) {
         localStorage.setItem('auth_token', response.data.token);
         localStorage.setItem('user_data', JSON.stringify(response.data.user));
@@ -40,9 +65,10 @@ const LoginPage: React.FC = () => {
       }
     } catch (err) {
       const axiosError = err as AxiosError<{ error: string }>;
-      const message = axiosError.response?.status === 401 
-        ? 'Credenciales inválidas. Verifique su ID de Archon.' 
-        : 'Error de conexión. Intente de nuevo más tarde.';
+      const message =
+        axiosError.response?.status === 401
+          ? 'Credenciales inválidas. Verifique su ID de Archon.'
+          : 'Error de conexión. Intente de nuevo más tarde.';
       setError(message);
     } finally {
       setLoading(false);
@@ -58,7 +84,7 @@ const LoginPage: React.FC = () => {
       {/* 🏙️ HERO CONTENT (Brand Narrative) */}
       <section className="hero-section">
         <header className="hero-header animate-in fade-in duration-1000">
-           <PiicLogo />
+          <PiicLogo />
         </header>
 
         <main className="hero-body animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
@@ -68,19 +94,19 @@ const LoginPage: React.FC = () => {
           <p className="hero-subtitle">
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
-          
+
           <div className="hero-actions">
-            <a 
-              href="https://wa.me/5214929421780" 
-              target="_blank" 
+            <a
+              href="https://wa.me/5214929421780"
+              target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"
             >
               Contactar a un asesor
             </a>
-            <a 
-              href="https://piic.com.mx/" 
-              target="_blank" 
+            <a
+              href="https://piic.com.mx/"
+              target="_blank"
               rel="noopener noreferrer"
               className="btn btn-outline"
             >
@@ -112,9 +138,7 @@ const LoginPage: React.FC = () => {
           {/* 🏙️ 80% BODY */}
           <main className="auth-card-body">
             <div className="auth-header-titles">
-              <h2 className="font-black tracking-tighter">
-                Acceso Archon
-              </h2>
+              <h2 className="font-black tracking-tighter">Acceso Archon</h2>
               <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
                 Control de Flotas
               </p>
@@ -123,19 +147,21 @@ const LoginPage: React.FC = () => {
             <form onSubmit={handleLogin} className="login-form">
               {error && (
                 <div className="p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-6">
-                   Error de Sistema: {error}
+                  Error de Sistema: {error}
                 </div>
               )}
-              
+
               <div className="form-group">
                 <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
                   Identidad de Usuario
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="diamond-input"
                   value={username}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUsername(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setUsername(e.target.value)
+                  }
                   placeholder="ID de Archon"
                   disabled={loading}
                   required
@@ -146,11 +172,13 @@ const LoginPage: React.FC = () => {
                 <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
                   Clave de Seguridad
                 </label>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   className="diamond-input"
                   value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setPassword(e.target.value)
+                  }
                   placeholder="••••••••"
                   disabled={loading}
                   required
@@ -158,11 +186,7 @@ const LoginPage: React.FC = () => {
               </div>
 
               <div className="pt-2">
-                <button 
-                  type="submit"
-                  disabled={loading}
-                  className="diamond-button"
-                >
+                <button type="submit" disabled={loading} className="diamond-button">
                   {loading ? 'Validando...' : 'Ingresar'}
                 </button>
               </div>
@@ -181,9 +205,7 @@ const LoginPage: React.FC = () => {
               Powered by PIIC TECH
             </p>
             <div className="copyright-container mt-2">
-              <span className="copyright-text">
-                © 2026 PIIC GROUP
-              </span>
+              <span className="copyright-text">© 2026 PIIC GROUP</span>
             </div>
           </footer>
         </div>
@@ -194,10 +216,10 @@ const LoginPage: React.FC = () => {
         <div className="cookie-banner animate-in slide-in-from-bottom duration-500">
           <p className="cookie-text">
             Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
-            <a 
-              href="https://piic.com.mx/politicas" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://piic.com.mx/politicas"
+              target="_blank"
+              rel="noopener noreferrer"
               className="cookie-link"
             >
               política de uso, tratamiento de información y cookies.

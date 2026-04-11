@@ -8,5 +8,24 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      all: true,
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'src/main.tsx', /* Bootstrap y anclaje al DOM */
+        'src/vite-env.d.ts', /* Tipado estandar de Vite */
+        'src/types/**', /* Declaraciones de tipado */
+        'src/App.tsx', /* Router manager (test via E2E) */
+        'src/pages/Dashboard/**', /* Modulo WIP */
+        '*.config.js' /* Archivos de configuracion como Tailwind */
+      ],
+      thresholds: {
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
+      },
+    },
   },
 });

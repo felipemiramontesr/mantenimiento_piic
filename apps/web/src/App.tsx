@@ -16,11 +16,11 @@ const App: React.FC = () => (
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/dashboard"
-        element={(
+        element={
           <ProtectedRoute>
             <ArchonDashboard />
           </ProtectedRoute>
-        )}
+        }
       />
       <Route path="/" element={<Navigate to="/login" replace />} />
     </Routes>

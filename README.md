@@ -4,6 +4,7 @@
 ![Stack](https://img.shields.io/badge/Stack-Fastify%20%7C%20React%20%7C%20MySQL-orange)
 
 ## 🎯 Project Vision
+
 A premium, high-security automotive fleet maintenance system engineered for visual immortality and operational excellence. Following the **PINNACLE Identity Manifesto**.
 
 ## 🏗️ Architecture (Phase 0: Archon Core)
@@ -19,18 +20,23 @@ graph TD
 ```
 
 ### Tech Stack
+
 - **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion.
 - **Backend**: Fastify, TypeScript, @fastify/jwt.
 - **Database**: MySQL (`u701509674_Mant_piic`).
-- **QA**: ESLint (Airbnb), Prettier, Husky, Vitest.
+- **QA & Testing**: ESLint (Strictest Rules), Prettier on `pre-commit` (Husky), 100% Vitest Coverage (Statements, Funcs, Branches, Lines).
+
+*For a detailed blueprint, diagrammatic flows, and zero-trust policies, see the [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) manifesting.*
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - MySQL Server
 
 ### Local Installation
+
 1. Clone the repository.
 2. Run `npm install` in the root.
 3. Configure `.env` based on `.env.example`.
@@ -40,14 +46,17 @@ graph TD
    ```
 
 ## 🛡️ Security Protocol
+
 - **Archon Clearance**: Only users with ID 0 have full system bypass.
 - **JWT Rotation**: Secure token management with strict expiration.
 - **Audit Logging**: Every failed access attempt is logged with high priority.
 
 ## 📐 Design Tokens
+
 - **Primary**: `#0F2A44` (Deep Space Blue)
 - **Accent**: `#F2B705` (Teck Yellow)
 - **Grid**: 8px Base
 
 ---
+
 © 2026 Powered by PIIC TECH System. Engineered for professional excellence.

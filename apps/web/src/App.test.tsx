@@ -14,11 +14,11 @@ describe('PIIC ARCHON - Authentication Interface', () => {
 
   it('should render the login page correctly', () => {
     renderLogin();
-    
+
     // Check main title
     const heading = screen.getByText(/Acceso Archon/i);
     expect(heading).toBeInTheDocument();
-    
+
     // Check identity subtitle
     const subtitle = screen.getByText(/Control de Flotas/i);
     expect(subtitle).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe('PIIC ARCHON - Authentication Interface', () => {
 
   it('should have functional links to PIIC external sites', () => {
     renderLogin();
-    
+
     const websiteLink = screen.getByText(/Ver sitio Web/i);
     expect(websiteLink).toBeInTheDocument();
     expect(websiteLink.closest('a')).toHaveAttribute('href', 'https://piic.com.mx/');

@@ -29,7 +29,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
     try {
       // 1. Fetch user from DB
-      const query = 'SELECT id, username, email, password_hash, role_id FROM users WHERE username = ?';
+      const query =
+        'SELECT id, username, email, password_hash, role_id FROM users WHERE username = ?';
       const [rows] = await db.execute(query, [username]);
 
       const result = z.array(userDbSchema).safeParse(rows);
