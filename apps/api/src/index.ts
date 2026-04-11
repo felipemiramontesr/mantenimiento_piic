@@ -117,7 +117,7 @@ fastify.get('/v1/sys/setup', async (request, reply) => {
     const error = err as { message?: string; code?: string };
     
     // Test a "Naked Connection" (no DB name) to isolate password vs permissions
-    let naked_status = 'not_tested';
+    let nakedStatus = 'not_tested';
     try {
       const mysql = await import('mysql2/promise');
       const connection = await mysql.createConnection({
@@ -126,16 +126,17 @@ fastify.get('/v1/sys/setup', async (request, reply) => {
         password: process.env.DB_PASSWORD,
       });
       await connection.end();
-      naked_status = 'SUCCESS (Password is correct, issue is Database Name or Permissions)';
-    } catch (naked_err: any) {
-      naked_status = `FAILED: ${naked_err.message}`;
+      nakedStatus = 'SUCCESS (Password is correct, issue is Database Name or Permissions)';
+    } catch (nakedErr: unknown) {
+      const nErr = nakedErr as { message?: string };
+      nakedStatus = `FAILED: ${nErr.message}`;
     }
 
     return reply.code(500).send({ 
        status: 'setup_failed', 
        error: error.message,
        code: error.code,
-       naked_test: naked_status,
+       naked_test: nakedStatus,
        debug_env: {
          user: process.env.DB_USER,
          host: process.env.DB_HOST,
