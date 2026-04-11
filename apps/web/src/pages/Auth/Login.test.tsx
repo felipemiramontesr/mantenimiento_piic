@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
 import LoginPage from './Login';
 import api from '../../api/client';
-import { BrowserRouter } from 'react-router-dom';
 
 vi.mock('../../api/client', () => ({
   default: {
@@ -15,7 +15,7 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate,
+    useNavigate: (): ReturnType<typeof vi.fn> => mockNavigate,
   };
 });
 
@@ -25,13 +25,11 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     localStorage.clear();
   });
 
-  const renderComponent = () => {
-    return render(
-      <BrowserRouter>
-        <LoginPage />
-      </BrowserRouter>
-    );
-  };
+  const renderComponent = (): ReturnType<typeof render> => render(
+    <BrowserRouter>
+      <LoginPage />
+    </BrowserRouter>
+  );
 
   it('renders login form and inputs correctly', () => {
     renderComponent();

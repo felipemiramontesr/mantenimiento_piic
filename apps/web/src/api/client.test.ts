@@ -1,19 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import api from './client';
+import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
+import api from './client';
 
 describe('Axios API Client (ARCHON CORE)', () => {
   const originalLocation = window.location;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Setup localStorage mock
     Storage.prototype.getItem = vi.fn();
     Storage.prototype.removeItem = vi.fn();
 
-    // Mock window.location
+    // Bypass strict TS window location safety explicitly for test env
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).location;
-    window.location = { ...originalLocation, href: '' } as any;
+    window.location = { ...originalLocation, href: '' } as unknown as Location;
   });
 
   afterEach(() => {
@@ -21,10 +21,10 @@ describe('Axios API Client (ARCHON CORE)', () => {
   });
 
   it('should add Authorization header if token exists in localStorage', async () => {
-    (localStorage.getItem as any).mockReturnValue('mocked-token');
+    (localStorage.getItem as Mock).mockReturnValue('mocked-token');
 
-    // Manually trigger request interceptor
-    const config: InternalAxiosRequestConfig = { headers: {} as any } as any;
+    const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestInterceptor = (api.interceptors.request as any).handlers[0].fulfilled;
     const result = await requestInterceptor(config);
 
@@ -33,9 +33,10 @@ describe('Axios API Client (ARCHON CORE)', () => {
   });
 
   it('should not add Authorization header if no token', async () => {
-    (localStorage.getItem as any).mockReturnValue(null);
+    (localStorage.getItem as Mock).mockReturnValue(null);
 
-    const config: InternalAxiosRequestConfig = { headers: {} as any } as any;
+    const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestInterceptor = (api.interceptors.request as any).handlers[0].fulfilled;
     const result = await requestInterceptor(config);
 
@@ -45,6 +46,7 @@ describe('Axios API Client (ARCHON CORE)', () => {
   it('should remove token and redirect to login on 401 response error', async () => {
     const errorWith401 = { response: { status: 401 } };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const responseInterceptorError = (api.interceptors.response as any).handlers[0].rejected;
 
     await expect(responseInterceptorError(errorWith401)).rejects.toEqual(errorWith401);
@@ -56,6 +58,7 @@ describe('Axios API Client (ARCHON CORE)', () => {
   it('should just reject if error is not 401', async () => {
     const errorWith500 = { response: { status: 500 } };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const responseInterceptorError = (api.interceptors.response as any).handlers[0].rejected;
 
     await expect(responseInterceptorError(errorWith500)).rejects.toEqual(errorWith500);
