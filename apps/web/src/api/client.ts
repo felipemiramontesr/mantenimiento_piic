@@ -15,6 +15,7 @@ const api = axios.create({
   },
 });
 
+// eslint-disable-next-line no-console
 console.log('🚀 [Archon API Client] Active Gateway:', api.defaults.baseURL);
 
 // Request Interceptor for JWT
@@ -30,6 +31,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
+    // eslint-disable-next-line no-console
     console.error('🌐 [Archon API Client] Networking Error:', {
       message: error.message,
       status: error.response?.status,

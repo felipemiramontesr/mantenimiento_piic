@@ -54,23 +54,29 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    // eslint-disable-next-line no-console
     console.log('🚀 [Archon Auth] Engagement Sequence Triggered');
+    // eslint-disable-next-line no-console
     console.log('🔍 Identifying:', username);
 
     try {
       const response = await api.post('/auth/login', { username, password });
+      // eslint-disable-next-line no-console
       console.log('✅ [Archon Auth] Response Received:', response.status);
 
       if (response.data.token) {
+        // eslint-disable-next-line no-console
         console.log('🔑 [Archon Auth] Token Verification Successful');
         localStorage.setItem('auth_token', response.data.token);
         localStorage.setItem('user_data', JSON.stringify(response.data.user));
         navigate('/dashboard');
       } else {
+        // eslint-disable-next-line no-console
         console.error('❌ [Archon Auth] Protocol Error: Token missing in payload');
         setError('Error de protocolo: El servidor no devolvió una clave de acceso válida.');
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('🚨 [Archon Auth] Terminal Exception:', err);
       const axiosError = err as AxiosError<{ error: string }>;
       const message =
