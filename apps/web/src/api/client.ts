@@ -3,9 +3,9 @@ import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'ax
 const isProduction = import.meta.env.PROD;
 const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 
-// En Hostinger, si la web está en la raíz y la API en /api_service, la ruta relativa funciona mejor.
+// En Hostinger, usamos el nuevo subdominio apiv1 creado específicamente para Node 24.
 const defaultURL = isProduction 
-  ? `${window.location.origin}/api_service/v1` 
+  ? 'https://apiv1.piic.com.mx/v1' 
   : `http://${hostname}:3001/v1`;
 
 const api = axios.create({
