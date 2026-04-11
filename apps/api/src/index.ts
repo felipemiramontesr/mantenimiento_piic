@@ -57,7 +57,9 @@ const start = async (): Promise<void> => {
   try {
     const port = Number(process.env.PORT) || 3001;
     await fastify.listen({ port, host: '0.0.0.0' });
+    // eslint-disable-next-line no-console
     console.log(`✅ [Archon API] System Online at port ${port}`);
+    // eslint-disable-next-line no-console
     console.log(`📡 CORS Policy: Permissive (*)`);
   } catch (err) {
     fastify.log.error(err);
