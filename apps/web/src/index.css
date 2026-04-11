@@ -173,16 +173,17 @@ body {
 /* 🖋️ TABLET-SPECIFIC UI/UX REFINEMENT (768px - 1279px) */
 @media (min-width: 768px) and (max-width: 1279px) {
   .hero-footer {
-    flex-direction: column !important; /* 🔲 STACKED ROWS FOR TABLETS */
+    flex-direction: column !important; /* 🔲 3-LINE STACKED FOR TABLETS */
     align-items: flex-start !important;
     justify-content: center !important;
-    gap: 8px !important;
+    gap: 4px !important; /* 📏 MICRO-GAP FOR 10VH COMPRESSION */
   }
 
   .hero-footer div {
-    white-space: nowrap !important;
-    font-size: 11px !important; /* 🖋️ ENHANCED LEGIBILITY */
-    letter-spacing: 0.15em !important; /* 📏 SOLDIER BALANCE */
+    white-space: nowrap !important; /* 🔒 FORCED 1-LINE PER BLOCK */
+    font-size: 10px !important; /* 🖋️ DENSITY FITTED */
+    letter-spacing: 0.10em !important; /* 📏 X-AXIS OVERFLOW PREVENTION */
+    line-height: 1.2 !important;
     width: auto !important;
     text-align: left !important;
   }
@@ -229,13 +230,6 @@ body {
   .hero-subtitle {
     font-size: clamp(0.95rem, 1.8vw, 1.1rem) !important;
     max-width: 90%;
-  }
-
-  .hero-footer div {
-    font-size: 11px !important; /* 🖊️ ENHANCED LEGIBILITY */
-    letter-spacing: 0.15em !important; /* 📏 SOLDIER BALANCE */
-    white-space: nowrap !important;
-    width: auto !important;
   }
 }
 
