@@ -11,14 +11,14 @@ describe('Axios API Client (ARCHON CORE)', () => {
     Storage.prototype.removeItem = vi.fn();
 
     // Bypass strict TS window location safety explicitly for test env
-    // @ts-expect-error
+    // @ts-expect-error Mocking DOM for tests
     delete window.location;
-    // @ts-expect-error
+    // @ts-expect-error Mocking DOM for tests
     window.location = { ...originalLocation, href: '' };
   });
 
   afterEach(() => {
-    // @ts-expect-error
+    // @ts-expect-error Mocking DOM for tests
     window.location = originalLocation;
   });
 
