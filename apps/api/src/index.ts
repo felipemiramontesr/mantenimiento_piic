@@ -7,6 +7,8 @@ import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
 import db from './services/db';
+import argon2 from 'argon2';
+import EncryptionService from './services/encryption';
 
 dotenv.config({ path: '../../.env' });
 
@@ -54,17 +56,63 @@ fastify.get(
   })
 );
 
-// Database Diagnostic
-fastify.get('/health/db', async (request, reply) => {
+// Master System Setup (Temporary for Production Launch)
+fastify.get('/v1/sys/setup', async (request, reply) => {
   try {
-    const [rows] = await db.execute('SELECT 1 as connected');
-    return { status: 'connected', data: rows };
+    console.log('🏁 [Archon Setup] Starting database initialization...');
+
+    // 1. Create Tables
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS roles (
+        id INT PRIMARY KEY,
+        name VARCHAR(50) NOT NULL UNIQUE,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        role_id INT DEFAULT 1,
+        avatar_url TEXT,
+        last_login TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (role_id) REFERENCES roles(id)
+      )
+    `);
+
+    // 2. Seed Roles
+    await db.execute(`
+      INSERT IGNORE INTO roles (id, name, description) VALUES 
+      (0, 'Archon', 'Master system administrator'),
+      (1, 'Operator', 'Standard user'),
+      (2, 'Manager', 'Fleet manager')
+    `);
+
+    // 3. Seed Master User
+    const passwordHash = await argon2.hash('pinnacle2026');
+    const encryptedEmail = EncryptionService.encrypt('admin@piic.com.mx');
+    
+    await db.execute(
+      'INSERT IGNORE INTO users (username, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
+      ['archon', encryptedEmail, passwordHash, 0]
+    );
+
+    return { 
+      status: 'success', 
+      message: 'Archon System Initialized Successfully',
+      gateway: 'Production V2'
+    };
   } catch (err: unknown) {
     const error = err as { message?: string; code?: string };
     return reply.code(500).send({ 
-       status: 'disconnected', 
-       error: error.message,
-       code: error.code 
+      status: 'setup_failed', 
+      error: error.message,
+      code: error.code 
     });
   }
 });
