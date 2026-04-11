@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
+import db from './services/db';
 
 dotenv.config({ path: '../../.env' });
 
@@ -58,11 +59,12 @@ fastify.get('/health/db', async (request, reply) => {
   try {
     const [rows] = await db.execute('SELECT 1 as connected');
     return { status: 'connected', data: rows };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as { message?: string; code?: string };
     return reply.code(500).send({ 
-      status: 'disconnected', 
-      error: err.message,
-      code: err.code 
+       status: 'disconnected', 
+       error: error.message,
+       code: error.code 
     });
   }
 });
