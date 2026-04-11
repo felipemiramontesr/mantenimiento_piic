@@ -15,14 +15,11 @@ const fastify = Fastify({
 
 // Plugins Setup
 fastify.register(cors, {
-  origin: [
-    'https://mantenimiento.piic.com.mx',
-    'http://localhost:5173', // Para desarrollo local
-    'http://localhost:4173'
-  ],
+  origin: true, // Echoes the origin of the requester for testing
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
+  optionsSuccessStatus: 204,
 });
 
 fastify.register(jwt, {

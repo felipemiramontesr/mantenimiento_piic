@@ -159,11 +159,13 @@ const LoginPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleLogin} className="login-form">
-              {error && (
-                <div className="p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md mb-6">
-                  Error de Sistema: {error}
-                </div>
-              )}
+              <div className="min-h-[60px] mb-2 flex items-center">
+                {error && (
+                  <div className="w-full p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
+                    Error de Sistema: {error}
+                  </div>
+                )}
+              </div>
 
               <div className="form-group">
                 <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
