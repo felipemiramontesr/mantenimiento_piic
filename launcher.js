@@ -1,38 +1,39 @@
 /**
- * Archon Master Launcher for Hostinger
- * This script ensures the API is built and the Fastify server starts correctly
- * even in restricted environments.
+ * Archon Master Launcher for Hostinger (Light Version)
+ * Optimized to avoid 503 timeouts by skipping build if already present.
  */
-const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-console.log('🚀 [Archon Launcher] Initializing deployment sequence...');
+console.log('🚀 [Archon Launcher] Starting production boot sequence...');
 
-try {
-  // 1. Install dependencies if node_modules is missing
-  if (!fs.existsSync(path.join(__dirname, 'node_modules'))) {
-    console.log('📦 [Archon Launcher] Installing dependencies...');
-    execSync('npm install --production', { stdio: 'inherit' });
+// Check for the compiled entry point
+const entryPoint = path.join(__dirname, 'apps/api/dist/index.js');
+
+if (fs.existsSync(entryPoint)) {
+  console.log('✨ [Archon Launcher] Compiled files found. Launching server...');
+  try {
+    require(entryPoint);
+  } catch (error) {
+    console.error('❌ [Archon Launcher] Server failed to start:', error);
+    process.exit(1);
   }
-
-  // 2. Build the API
-  console.log('🏗️ [Archon Launcher] Building TypeScript API...');
-  execSync('npm run build --workspace=@mantenimiento/api', { stdio: 'inherit' });
-
-  // 3. Verify build output
-  const entryPoint = path.join(__dirname, 'apps/api/dist/index.js');
-  if (!fs.existsSync(entryPoint)) {
-    throw new Error('Build output (dist/index.js) not found after compilation.');
+} else {
+  console.log('🏗️ [Archon Launcher] dist/index.js not found. Attempting emergency build...');
+  try {
+    const { execSync } = require('child_process');
+    // We only build if we absolutely have to, as this takes time and memory
+    execSync('npm run build --workspace=@mantenimiento/api', { stdio: 'inherit' });
+    
+    if (fs.existsSync(entryPoint)) {
+      console.log('✅ [Archon Launcher] Emergency build successful. Launching...');
+      require(entryPoint);
+    } else {
+      throw new Error('Build finished but entry point still missing.');
+    }
+  } catch (error) {
+    console.error('❌ [Archon Launcher] Emergency build/launch failed:');
+    console.error(error);
+    process.exit(1);
   }
-
-  console.log('✨ [Archon Launcher] Build successful. Launching Fastify server...');
-  
-  // 4. Require and run the compiled server
-  require(entryPoint);
-
-} catch (error) {
-  console.error('❌ [Archon Launcher] CRITICAL FAILURE during launch:');
-  console.error(error);
-  process.exit(1);
 }
