@@ -94,7 +94,10 @@ const LoginPage: React.FC = () => {
             Archon System | Powered by PIIC TECH
           </div>
           <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
-            Todos los derechos reservados © 2026 PIIC GROUP
+            Todos los derechos reservados ©
+          </div>
+          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
+            2026 PIIC GROUP
           </div>
         </footer>
       </section>
