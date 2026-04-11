@@ -35,7 +35,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     renderComponent();
     expect(screen.getByPlaceholderText('ID de Archon')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /ingresar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /acceder al sistema/i })).toBeInTheDocument();
   });
 
   it('shows cookie banner if cookies_accepted is not set and allows accepting', () => {
@@ -77,10 +77,10 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     fireEvent.change(screen.getByPlaceholderText('ID de Archon'), { target: { value: 'admin' } });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /ingresar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
 
     expect(api.post).toHaveBeenCalledWith('/auth/login', { username: 'admin', password: 'password123' });
-    expect(screen.getByRole('button', { name: /validando/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /autenticando archon/i })).toBeDisabled();
 
     await waitFor(() => {
       expect(localStorage.getItem('auth_token')).toBe('mock-jwt-token');
@@ -95,7 +95,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     });
 
     renderComponent();
-    fireEvent.submit(screen.getByRole('button', { name: /ingresar/i })); // Alternatively submit form
+    fireEvent.submit(screen.getByRole('button', { name: /acceder al sistema/i })); // Alternatively submit form
 
     await waitFor(() => {
       expect(screen.getByText(/Credenciales inválidas. Verifique su ID de Archon./i)).toBeInTheDocument();
@@ -112,10 +112,10 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     // Simulate user typing values
     fireEvent.change(screen.getByPlaceholderText('ID de Archon'), { target: { value: 'user' } });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'pass' } });
-    fireEvent.click(screen.getByRole('button', { name: /ingresar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Error de conexión. Intente de nuevo más tarde./i)).toBeInTheDocument();
+      expect(screen.getByText(/Error de conexión. Intente de nuevo más tarde/i)).toBeInTheDocument();
     });
     
     // Verify loaders disable after request
