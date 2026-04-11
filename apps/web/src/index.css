@@ -102,25 +102,49 @@ body {
   .auth-card-header, .auth-card-footer { display: none; } /* HIDDEN ON DESKTOP CARD VIEW */
 }
 
-/* 🏙️ DESKTOP & TABLET UNIFICATION (>= 768px - Side by Side) */
+/* 🏙️ ADAPTIVE CHASSIS ENGINE - SENIOR PRO UI/UX (Tiered Splitting) */
 @media (min-width: 768px) {
-  .auth-grid-container { flex-direction: row; }
+  .auth-grid-container { 
+    flex-direction: row; 
+    --hero-width: 55%;
+    --login-width: 45%;
+  }
+}
 
+@media (min-width: 1024px) {
+  .auth-grid-container {
+    --hero-width: 60%;
+    --login-width: 40%;
+  }
+}
+
+@media (min-width: 1440px) {
+  .auth-grid-container {
+    --hero-width: 70%;
+    --login-width: 30%;
+  }
+}
+
+@media (min-width: 768px) {
   .hero-section {
-    width: 70%;
+    width: var(--hero-width);
     min-height: 100vh;
     padding: 0;
     justify-content: flex-start;
   }
 
-  /* Unfurl Panel for desktop split-view */
+  /* Unfurl Panel for desktop split-view - ENFORCED CENTER GRAVITY */
   .login-panel {
-    width: 30%;
+    width: var(--login-width);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    align-items: center; /* 🌌 AIR ENFORCEMENT (CENTERED) */
+    justify-content: center; /* 🌌 AIR ENFORCEMENT (CENTERED) */
     background-color: var(--color-white);
-    padding: 24px;
+    padding: 40px;
+    position: relative;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Spacing for hero components in split screen (10/80/10 Rule) */
@@ -139,6 +163,7 @@ body {
     display: flex; 
     flex-direction: column; 
     justify-content: center; 
+    gap: 48px; /* 🌌 CINEMATIC DISTRIBUTION */
   }
 
   .hero-footer { 
