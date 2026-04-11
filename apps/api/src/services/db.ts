@@ -23,7 +23,7 @@ const db = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   ssl: {
-    rejectUnauthorized: process.env.NODE_ENV === 'production',
+    rejectUnauthorized: false, // More compatible with shared hosting local MySQL
   },
 });
 
