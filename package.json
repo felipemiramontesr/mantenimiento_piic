@@ -1,6 +1,9 @@
 {
   "name": "mantenimiento-piic",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "description": "Automotive Maintenance Management System - PIIC Premium",
   "private": true,
   "workspaces": [
@@ -9,7 +12,8 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=@mantenimiento/api",
+    "start": "node apps/api/dist/index.js",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "db:validate": "tsx packages/database/scripts/validate-sql.ts",

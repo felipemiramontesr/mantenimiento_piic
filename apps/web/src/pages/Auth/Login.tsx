@@ -54,21 +54,29 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    console.log('🚀 [Archon Auth] Engagement Sequence Triggered');
+    console.log('🔍 Identifying:', username);
 
     try {
       const response = await api.post('/auth/login', { username, password });
+      console.log('✅ [Archon Auth] Response Received:', response.status);
 
       if (response.data.token) {
+        console.log('🔑 [Archon Auth] Token Verification Successful');
         localStorage.setItem('auth_token', response.data.token);
         localStorage.setItem('user_data', JSON.stringify(response.data.user));
         navigate('/dashboard');
+      } else {
+        console.error('❌ [Archon Auth] Protocol Error: Token missing in payload');
+        setError('Error de protocolo: El servidor no devolvió una clave de acceso válida.');
       }
     } catch (err) {
+      console.error('🚨 [Archon Auth] Terminal Exception:', err);
       const axiosError = err as AxiosError<{ error: string }>;
       const message =
         axiosError.response?.status === 401
           ? 'Credenciales inválidas. Verifique su ID de Archon.'
-          : 'Error de conexión. Intente de nuevo más tarde.';
+          : 'Error de conexión. Intente de nuevo más tarde (Verifique que la API esté encendida).';
       setError(message);
     } finally {
       setLoading(false);
@@ -187,7 +195,7 @@ const LoginPage: React.FC = () => {
 
               <div className="pt-2">
                 <button type="submit" disabled={loading} className="diamond-button">
-                  {loading ? 'Validando...' : 'Ingresar'}
+                  {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>
               </div>
 
