@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
+import fleetRoutes from './routes/fleet';
 
 dotenv.config({ path: '../../.env' });
 
@@ -29,6 +30,7 @@ fastify.register(rateLimit, {
 // Routes
 fastify.register(authRoutes, { prefix: '/v1/auth' });
 fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
+fastify.register(fleetRoutes, { prefix: '/v1' });
 
 // Health Check
 fastify.get(

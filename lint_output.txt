@@ -1,0 +1,43 @@
+
+> mantenimiento-piic@1.0.0 lint
+> npm run lint --workspaces --if-present
+
+
+> @mantenimiento/api@1.0.0 lint
+> eslint . --ext ts --report-unused-disable-directives --max-warnings 0
+
+
+> @mantenimiento/web@1.0.0 lint
+> eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
+
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\components\Navigation\Sidebar.test.tsx
+   1:1   error  Unused eslint-disable directive (no problems were reported from 'import/no-extraneous-dependencies')
+  12:18  error  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\components\Navigation\Sidebar.tsx
+  16:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  44:79  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\pages\Dashboard\ArchonCenter.tsx
+  21:38  error  Unexpected block statement surrounding arrow body; move the returned value immediately after the `=>`  arrow-body-style
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\pages\Dashboard\FleetModule.tsx
+    3:1   error    `lucide-react` import should occur before import of `../../api/client`                                 import/order
+   13:96  error    Unexpected block statement surrounding arrow body; move the returned value immediately after the `=>`  arrow-body-style
+   64:11  error    'fetchFleet' is assigned a value but never used                                                        no-unused-vars
+   64:11  warning  'fetchFleet' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
+   64:24  error    Missing return type on function                                                                        @typescript-eslint/explicit-function-return-type
+   66:15  error    'res' is assigned a value but never used                                                               no-unused-vars
+   66:15  warning  'res' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+   70:9   error    Unexpected console statement                                                                           no-console
+   79:9   error    Unexpected console statement                                                                           no-console
+   86:79  error    Expected to return a value at the end of arrow function                                                consistent-return
+   87:5   error    Expected a default case                                                                                default-case
+  105:20  error    Missing return type on function                                                                        @typescript-eslint/explicit-function-return-type
+  139:14  error    Do not nest ternary expressions                                                                        no-nested-ternary
+  165:52  error    Missing return type on function                                                                        @typescript-eslint/explicit-function-return-type
+
+✖ 19 problems (17 errors, 2 warnings)
+  4 errors and 0 warnings potentially fixable with the `--fix` option.
+

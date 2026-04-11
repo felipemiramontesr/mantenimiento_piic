@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/Auth/Login';
-import ArchonDashboard from './pages/Dashboard/ArchonCenter';
+import DashboardLayout from './pages/Dashboard/Layout';
+import ArchonCenter from './pages/Dashboard/ArchonCenter';
+import FleetModule from './pages/Dashboard/FleetModule';
 import './index.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -14,15 +16,11 @@ const App: React.FC = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <ArchonDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route index element={<ArchonCenter />} />
+        <Route path="fleet" element={<FleetModule />} />
+      </Route>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   </BrowserRouter>
 );
