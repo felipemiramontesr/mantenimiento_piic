@@ -172,10 +172,23 @@ body {
 
 /* 🖋️ TABLET-SPECIFIC UI/UX REFINEMENT (768px - 1279px) */
 @media (min-width: 768px) and (max-width: 1279px) {
+  .hero-footer {
+    flex-direction: column !important; /* 🔲 STACKED ROWS FOR TABLETS */
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+
   .hero-footer div {
     white-space: nowrap !important;
     font-size: 9px !important;
     width: auto !important;
+    text-align: left !important;
+  }
+
+  .auth-card h2 {
+    font-size: 1.65rem !important; /* 🔲 ENSURE ACCESO ARCHON IS ONE-LINE */
+    white-space: nowrap !important;
   }
 
   .hero-actions {
