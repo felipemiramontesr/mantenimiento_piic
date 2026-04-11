@@ -106,8 +106,8 @@ body {
 @media (min-width: 768px) {
   .auth-grid-container { 
     flex-direction: row; 
-    --hero-width: 60%; /* 📏 TABLET PRO STANDARD */
-    --login-width: 40%; /* 📏 TABLET PRO STANDARD */
+    --hero-width: 50%; /* ⚖️ SYMMETRY PRO STANDARD */
+    --login-width: 50%; /* ⚖️ SYMMETRY PRO STANDARD */
   }
 }
 
@@ -208,13 +208,19 @@ body {
 /* 🖋️ TABLET-SPECIFIC TYPOGRAPHY REFINEMENT (Isolated Range) */
 @media (min-width: 768px) and (max-width: 1279px) {
   .hero-title {
-    font-size: clamp(1.85rem, 4.5vw, 2.45rem) !important; /* ⚖️ BALANCED FOR 60% PANEL */
-    max-width: 90%;
+    font-size: clamp(1.75rem, 4vw, 2.1rem) !important; /* ⚖️ SLIM FIT FOR 50% PANEL */
+    max-width: 95%;
   }
   
   .hero-subtitle {
-    font-size: clamp(1rem, 2vw, 1.15rem) !important;
-    max-width: 85%;
+    font-size: clamp(0.95rem, 1.8vw, 1.1rem) !important;
+    max-width: 90%;
+  }
+
+  .hero-footer div {
+    font-size: 8.5px !important; /* 📏 MICRO-PRECISION */
+    white-space: nowrap !important;
+    width: auto !important;
   }
 }
 
