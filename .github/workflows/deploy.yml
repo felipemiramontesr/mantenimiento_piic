@@ -79,20 +79,15 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build --workspace=@mantenimiento/web
 
-      - name: 📂 Generate Server .env
-        run: |
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> apps/api/.env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> apps/api/.env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> apps/api/.env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> apps/api/.env
-          echo "DB_ENCRYPTION_KEY=${{ secrets.DB_ENCRYPTION_KEY }}" >> apps/api/.env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> apps/api/.env
-          echo "NODE_ENV=production" >> apps/api/.env
+      - name: Build Web Application
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: npm run build --workspace=@mantenimiento/web
 
       - name: 🚀 Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: 🚀 Deploy Web and API via Native LFTP
+      - name: 🚀 Deploy Web assets via Native LFTP
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -101,5 +96,4 @@ jobs:
           lftp -c "set ftp:ssl-allow no; 
           open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER; 
           mirror -R ./apps/web/dist/ .;
-          mirror -R --exclude-glob node_modules/ --exclude-glob tests/ --exclude-glob src/ --exclude-glob .git/ ./apps/api/ ./api_service/;
           quit"
