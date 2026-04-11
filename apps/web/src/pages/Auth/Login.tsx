@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
     // eslint-disable-next-line no-console
-    console.log('🚀 [Archon Auth] Engagement Sequence Triggered');
+    console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
     // eslint-disable-next-line no-console
     console.log('🔍 Identifying:', username);
 
@@ -159,7 +159,7 @@ const LoginPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleLogin} className="login-form">
-              <div className="min-h-[60px] mb-2 flex items-center">
+              <div style={{ minHeight: '85px' }} className="mb-2 flex items-center">
                 {error && (
                   <div className="w-full p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
                     Error de Sistema: {error}

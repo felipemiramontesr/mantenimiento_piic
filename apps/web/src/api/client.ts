@@ -16,7 +16,7 @@ const api = axios.create({
 });
 
 // eslint-disable-next-line no-console
-console.log('🚀 [Archon API Client] Active Gateway:', api.defaults.baseURL);
+console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
 
 // Request Interceptor for JWT
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
