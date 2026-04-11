@@ -15,10 +15,10 @@ const fastify = Fastify({
 
 // Plugins Setup
 fastify.register(cors, {
-  origin: true, // Echoes the origin of the requester for testing
+  origin: '*', // Most compatible with simple proxies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  credentials: false, // Not needed for JWT Bearer tokens
   optionsSuccessStatus: 204,
 });
 
@@ -57,6 +57,8 @@ const start = async (): Promise<void> => {
   try {
     const port = Number(process.env.PORT) || 3001;
     await fastify.listen({ port, host: '0.0.0.0' });
+    console.log(`✅ [Archon API] System Online at port ${port}`);
+    console.log(`📡 CORS Policy: Permissive (*)`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
