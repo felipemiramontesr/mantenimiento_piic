@@ -11,12 +11,14 @@ describe('Axios API Client (ARCHON CORE)', () => {
     Storage.prototype.removeItem = vi.fn();
 
     // Bypass strict TS window location safety explicitly for test env
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).location;
-    window.location = { ...originalLocation, href: '' } as unknown as Location;
+    // @ts-expect-error
+    delete window.location;
+    // @ts-expect-error
+    window.location = { ...originalLocation, href: '' };
   });
 
   afterEach(() => {
+    // @ts-expect-error
     window.location = originalLocation;
   });
 

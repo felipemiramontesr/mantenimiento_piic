@@ -12,7 +12,7 @@ vi.mock('../../api/client', () => ({
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
   return {
     ...actual,
     useNavigate: (): ReturnType<typeof vi.fn> => mockNavigate,
