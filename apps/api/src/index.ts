@@ -118,7 +118,14 @@ fastify.get('/v1/sys/setup', async (request, reply) => {
     return reply.code(500).send({ 
       status: 'setup_failed', 
       error: error.message,
-      code: error.code 
+      code: error.code,
+      debug_env: {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        pass_len: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 0,
+        pass_peek: process.env.DB_PASSWORD ? 
+          `${process.env.DB_PASSWORD.slice(0, 3)}...${process.env.DB_PASSWORD.slice(-3)}` : 'null'
+      }
     });
   }
 });
