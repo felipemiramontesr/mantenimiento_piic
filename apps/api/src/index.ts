@@ -106,7 +106,12 @@ fastify.get('/v1/sys/setup', async (request, reply) => {
     return { 
       status: 'success', 
       message: 'Archon System Initialized Successfully',
-      gateway: 'Production V2'
+      gateway: 'Production V3 (Clean Cache)',
+      debug_env: {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        pass_len: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 0
+      }
     };
   } catch (err: unknown) {
     const error = err as { message?: string; code?: string };
