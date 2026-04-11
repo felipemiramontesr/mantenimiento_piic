@@ -10,7 +10,38 @@ interface FleetUnit {
   assigned_to: number | null;
 }
 
-const SlideOver: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => (
+interface SlideOverProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const SlideOver: React.FC<SlideOverProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [tag, setTag] = useState('');
+  const [type, setType] = useState('Camioneta 4x4');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      await api.post('/fleet', { tag, type });
+      setTag('');
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      const message = axiosError.response?.data?.error || 'Failed to initialize unit';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
     <>
       <div 
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 z-40 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
@@ -21,6 +52,7 @@ const SlideOver: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen,
       <div className={`fixed top-0 right-0 h-full w-[400px] bg-[#0A1A2A] shadow-2xl z-50 transform transition-transform duration-500 border-l border-white/10 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-32 flex flex-col h-full relative">
           <button 
+            type="button"
             onClick={onClose}
             className="absolute top-24 right-24 text-white/50 hover:text-white"
           >
@@ -30,45 +62,75 @@ const SlideOver: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen,
           <h2 className="text-2xl font-black text-pinnacle-primary mb-8 tracking-tight">Add Unit</h2>
           <p className="text-xs text-white/40 uppercase tracking-widest font-bold mb-32">Initialize Core Fleet Parameter</p>
 
-          <form className="space-y-24 flex-1">
+          <form onSubmit={handleSubmit} className="space-y-24 flex-1">
             <div className="form-group">
               <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 text-pinnacle-text">Identity Tag</label>
-              <input type="text" className="diamond-input" placeholder="e.g. PIIC-003" />
+              <input 
+                type="text" 
+                required
+                value={tag}
+                onChange={(e): void => setTag(e.target.value.toUpperCase())}
+                className="diamond-input" 
+                placeholder="e.g. PIIC-003" 
+              />
             </div>
             <div className="form-group">
               <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 text-pinnacle-text">Vehicle Class</label>
-              <select className="diamond-input">
+              <select 
+                value={type}
+                onChange={(e): void => setType(e.target.value)}
+                className="diamond-input"
+              >
                 <option value="Camioneta 4x4">Camioneta 4x4</option>
                 <option value="Retroexcavadora">Retroexcavadora</option>
                 <option value="Camión de Volteo">Camión de Volteo</option>
+                <option value="Tractor">Tractor</option>
               </select>
             </div>
-          </form>
 
-          <div className="mt-auto pt-24 border-t border-white/10">
-            <button className="diamond-button w-full">Engage Registration</button>
-          </div>
+            {error && (
+              <div className="p-16 bg-red-500/10 border border-red-500/20 rounded text-red-500 text-xs font-bold animate-pulse">
+                {error}
+              </div>
+            )}
+            
+            <div className="mt-auto pt-24 border-t border-white/10">
+              <button 
+                type="submit" 
+                disabled={loading || !tag}
+                className="diamond-button w-full disabled:opacity-50"
+              >
+                {loading ? 'Processing Engagement...' : 'Engage Registration'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </>
-);
+  );
+};
 
 const FleetModule: React.FC = () => {
   const [units, setUnits] = useState<FleetUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSlideOverOpen, setSlideOverOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchFleet = (): void => {
+    setLoading(true);
     api.get<{ data: FleetUnit[] }>('/fleet')
       .then((response) => {
         setUnits(response.data.data);
       })
       .catch(() => {
-        // Ignored in mockup
+        // Silently fail or log for production
       })
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchFleet();
   }, []);
 
   const StatusBadge: React.FC<{ status: FleetUnit['status'] }> = ({ status }) => {
@@ -83,7 +145,7 @@ const FleetModule: React.FC = () => {
   };
 
   const renderTableContent = (): React.ReactNode => {
-    if (loading) {
+    if (loading && units.length === 0) {
       return (
         <div className="p-32 text-center text-white/40 text-[10px] font-black uppercase tracking-widest">
           Syncing Archon Matrices...
@@ -131,15 +193,15 @@ const FleetModule: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-24 mb-40">
         <div className="glass-morphism p-24 rounded-pinnacle-card border-l-2 border-l-pinnacle-primary">
           <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/50 mb-4">Total Inventory</p>
-          <h3 className="text-4xl font-black text-white">{loading ? '-' : units.length}</h3>
+          <h3 className="text-4xl font-black text-white">{loading && units.length === 0 ? '-' : units.length}</h3>
         </div>
         <div className="glass-morphism p-24 rounded-pinnacle-card border-l-2 border-l-green-500">
           <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/50 mb-4">Active Deployments</p>
-          <h3 className="text-4xl font-black text-green-400">{loading ? '-' : units.filter(u => u.status === 'ACTIVE').length}</h3>
+          <h3 className="text-4xl font-black text-green-400">{loading && units.length === 0 ? '-' : units.filter(u => u.status === 'ACTIVE').length}</h3>
         </div>
         <div className="glass-morphism p-24 rounded-pinnacle-card border-l-2 border-l-pinnacle-accent">
           <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/50 mb-4">In Maintenance</p>
-          <h3 className="text-4xl font-black text-pinnacle-accent">{loading ? '-' : units.filter(u => u.status === 'MAINTENANCE').length}</h3>
+          <h3 className="text-4xl font-black text-pinnacle-accent">{loading && units.length === 0 ? '-' : units.filter(u => u.status === 'MAINTENANCE').length}</h3>
         </div>
       </div>
 
@@ -159,7 +221,11 @@ const FleetModule: React.FC = () => {
         </div>
       </div>
 
-      <SlideOver isOpen={isSlideOverOpen} onClose={(): void => setSlideOverOpen(false)} />
+      <SlideOver 
+        isOpen={isSlideOverOpen} 
+        onClose={(): void => setSlideOverOpen(false)} 
+        onSuccess={(): void => fetchFleet()}
+      />
     </div>
   );
 };

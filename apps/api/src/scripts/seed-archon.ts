@@ -1,7 +1,7 @@
 import argon2 from 'argon2';
 import dotenv from 'dotenv';
-import { db } from '../services/db';
-import { EncryptionService } from '../services/encryption';
+import db from '../services/db';
+import EncryptionService from '../services/encryption';
 
 dotenv.config({ path: '../../.env' });
 
