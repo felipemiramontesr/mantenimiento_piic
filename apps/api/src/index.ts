@@ -36,6 +36,14 @@ fastify.register(authRoutes, { prefix: '/v1/auth' });
 fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
 fastify.register(fleetRoutes, { prefix: '/v1' });
 
+// Diagnostic Root V2
+fastify.get('/', async () => ({ 
+  service: 'Archon API (Fleet Core)', 
+  version: '2.0.0-PROD', 
+  status: 'online',
+  timestamp: new Date().toISOString() 
+}));
+
 // Health Check
 fastify.get(
   '/health',
