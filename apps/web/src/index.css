@@ -143,7 +143,7 @@ body {
 
   /* Spacing for hero components in split screen (10/80/10 Rule) */
   .hero-header, .hero-body, .hero-footer {
-    padding: 0 clamp(40px, 8vw, 120px);
+    padding: 0 clamp(24px, 5vw, 120px); /* 📏 REDUCED FOR TABLETS */
   }
 
   .hero-header { 
@@ -157,7 +157,7 @@ body {
     display: flex; 
     flex-direction: column; 
     justify-content: center; 
-    gap: 48px; /* 🌌 CINEMATIC DISTRIBUTION */
+    gap: clamp(24px, 4vh, 48px); /* 🌊 DYNAMIC BREATHING */
   }
 
   .hero-footer { 
@@ -167,6 +167,27 @@ body {
     align-items: center; 
     justify-content: space-between !important; /* REINFORCED SPLIT */
     width: 100% !important;
+  }
+}
+
+/* 🖋️ TABLET-SPECIFIC UI/UX REFINEMENT (768px - 1279px) */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .hero-footer div {
+    white-space: nowrap !important;
+    font-size: 9px !important;
+    width: auto !important;
+  }
+
+  .hero-actions {
+    gap: 12px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .btn {
+    font-size: 14px !important;
+    min-width: auto !important; /* UNBLOCK ONE-LINE FIT */
+    padding: 12px 16px !important;
+    white-space: nowrap !important;
   }
 }
 
