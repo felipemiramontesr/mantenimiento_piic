@@ -181,7 +181,8 @@ body {
 
   .hero-footer div {
     white-space: nowrap !important;
-    font-size: 9px !important;
+    font-size: 11px !important; /* 🖋️ ENHANCED LEGIBILITY */
+    letter-spacing: 0.15em !important; /* 📏 SOLDIER BALANCE */
     width: auto !important;
     text-align: left !important;
   }
@@ -231,7 +232,8 @@ body {
   }
 
   .hero-footer div {
-    font-size: 8.5px !important; /* 📏 MICRO-PRECISION */
+    font-size: 11px !important; /* 🖊️ ENHANCED LEGIBILITY */
+    letter-spacing: 0.15em !important; /* 📏 SOLDIER BALANCE */
     white-space: nowrap !important;
     width: auto !important;
   }
