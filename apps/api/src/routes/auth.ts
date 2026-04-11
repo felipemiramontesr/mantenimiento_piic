@@ -69,13 +69,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         },
       });
     } catch (err: unknown) {
-      const error = err as { message?: string; code?: string };
-      fastify.log.error(error);
-      return reply.code(500).send({ 
-        error: 'Internal Server Error', 
-        message: error.message, // Revelation for debugging
-        code: error.code 
-      });
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Internal Server Error' });
     }
   });
 }

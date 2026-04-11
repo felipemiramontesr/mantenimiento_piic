@@ -3,12 +3,9 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
-import argon2 from 'argon2';
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
-import db from './services/db';
-import EncryptionService from './services/encryption';
 
 dotenv.config({ path: '../../.env' });
 
@@ -21,7 +18,7 @@ fastify.register(cors, {
   origin: '*', // Most compatible with simple proxies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false, // Not needed for JWT Bearer tokens
+  credentials: false,
   optionsSuccessStatus: 204,
 });
 
@@ -39,12 +36,12 @@ fastify.register(authRoutes, { prefix: '/v1/auth' });
 fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
 fastify.register(fleetRoutes, { prefix: '/v1' });
 
-// Diagnostic Root V2
+// Diagnostic Root V2 (Secure)
 fastify.get('/', async () => ({ 
   service: 'Archon API (Fleet Core)', 
-  version: '2.0.0-PROD', 
+  version: '2.0.1-PROD', 
   status: 'online',
-  timestamp: new Date().toISOString() 
+  uptime: process.uptime()
 }));
 
 // Health Check
@@ -56,106 +53,12 @@ fastify.get(
   })
 );
 
-// Master System Setup (Temporary for Production Launch)
-fastify.get('/v1/sys/setup', async (request, reply) => {
-  try {
-    // eslint-disable-next-line no-console
-    console.log('🏁 [Archon Setup] Starting database initialization...');
-
-    // 1. Create Tables
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS roles (
-        id INT PRIMARY KEY,
-        name VARCHAR(50) NOT NULL UNIQUE,
-        description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(100) NOT NULL UNIQUE,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password_hash VARCHAR(255) NOT NULL,
-        role_id INT DEFAULT 1,
-        avatar_url TEXT,
-        last_login TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (role_id) REFERENCES roles(id)
-      )
-    `);
-
-    // 2. Seed Roles
-    await db.execute(`
-      INSERT IGNORE INTO roles (id, name, description) VALUES 
-      (0, 'Archon', 'Master system administrator'),
-      (1, 'Operator', 'Standard user'),
-      (2, 'Manager', 'Fleet manager')
-    `);
-
-    // 3. Seed Master User
-    const passwordHash = await argon2.hash('pinnacle2026');
-    const encryptedEmail = EncryptionService.encrypt('admin@piic.com.mx');
-    
-    await db.execute(
-      'INSERT IGNORE INTO users (username, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
-      ['archon', encryptedEmail, passwordHash, 0]
-    );
-
-    return { 
-      status: 'success', 
-      message: 'Archon System Initialized Successfully',
-      gateway: 'Production V3 (Clean Cache)',
-      debug_env: {
-        user: process.env.DB_USER,
-        host: process.env.DB_HOST,
-        pass_len: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 0
-      }
-    };
-  } catch (err: unknown) {
-    const error = err as { message?: string; code?: string };
-    
-    // Test a "Naked Connection" (no DB name) to isolate password vs permissions
-    let nakedStatus = 'not_tested';
-    try {
-      const mysql = await import('mysql2/promise');
-      const connection = await mysql.createConnection({
-        host: process.env.DB_HOST || '127.0.0.1',
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-      });
-      await connection.end();
-      nakedStatus = 'SUCCESS (Password is correct, issue is Database Name or Permissions)';
-    } catch (nakedErr: unknown) {
-      const nErr = nakedErr as { message?: string };
-      nakedStatus = `FAILED: ${nErr.message}`;
-    }
-
-    return reply.code(500).send({ 
-       status: 'setup_failed', 
-       error: error.message,
-       code: error.code,
-       naked_test: nakedStatus,
-       debug_env: {
-         user: process.env.DB_USER,
-         host: process.env.DB_HOST,
-         pass_len: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 0,
-         pass_peek: process.env.DB_PASSWORD ? 
-           `${process.env.DB_PASSWORD.slice(0, 3)}...${process.env.DB_PASSWORD.slice(-3)}` : 'null'
-       }
-    });
-  }
-});
-
 const start = async (): Promise<void> => {
   try {
     const port = Number(process.env.PORT) || 3001;
     await fastify.listen({ port, host: '0.0.0.0' });
     // eslint-disable-next-line no-console
     console.log(`✅ [Archon API] System Online at port ${port}`);
-    // eslint-disable-next-line no-console
-    console.log(`📡 CORS Policy: Permissive (*)`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
