@@ -1,39 +1,45 @@
 /**
- * Archon Master Launcher for Hostinger (Light Version)
- * Optimized to avoid 503 timeouts by skipping build if already present.
+ * Archon Survival Launcher for Hostinger
+ * If the main API fails to start, this script starts a basic HTTP server
+ * to display the diagnostics in the browser, bypassing the 503 error.
  */
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 
-console.log('🚀 [Archon Launcher] Starting production boot sequence...');
-
-// Check for the compiled entry point
+const PORT = Number(process.env.PORT) || 3001;
 const entryPoint = path.join(__dirname, 'apps/api/dist/index.js');
 
-if (fs.existsSync(entryPoint)) {
-  console.log('✨ [Archon Launcher] Compiled files found. Launching server...');
-  try {
+console.log('🚀 [Archon Launcher] Booting Survival Sequence...');
+
+function startSurvivalServer(errorInfo) {
+  console.error('🆘 [Archon Launcher] Entering SURVIVAL MODE...');
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`
+      <body style="background:#111;color:#eee;font-family:sans-serif;padding:40px;">
+        <h1 style="color:#ff4d4d">⚠️ Archon System Exception</h1>
+        <p>El servidor principal no pudo iniciar. Aquí están los detalles del fallo:</p>
+        <pre style="background:#222;padding:20px;border-radius:8px;border:1px solid #333;overflow:auto;">${errorInfo}</pre>
+        <hr style="border:0;border-top:1px solid #333;margin:40px 0;">
+        <p style="font-size:0.8em;color:#888;">Hostinger Node Environment | Entry: ${entryPoint}</p>
+      </body>
+    `);
+  });
+  server.listen(PORT, () => {
+    console.log(`📡 [Archon Launcher] Survival Server online on port ${PORT}`);
+  });
+}
+
+try {
+  if (fs.existsSync(entryPoint)) {
+    console.log('✨ [Archon Launcher] Production files present. Igniting Fastify...');
+    // Clear cache to ensure fresh start
+    delete require.cache[require.resolve(entryPoint)];
     require(entryPoint);
-  } catch (error) {
-    console.error('❌ [Archon Launcher] Server failed to start:', error);
-    process.exit(1);
+  } else {
+    throw new Error(`MISSING_BUILD: El archivo ${entryPoint} no existe. Hostinger no ejecutó la compilación correctamente.`);
   }
-} else {
-  console.log('🏗️ [Archon Launcher] dist/index.js not found. Attempting emergency build...');
-  try {
-    const { execSync } = require('child_process');
-    // We only build if we absolutely have to, as this takes time and memory
-    execSync('npm run build --workspace=@mantenimiento/api', { stdio: 'inherit' });
-    
-    if (fs.existsSync(entryPoint)) {
-      console.log('✅ [Archon Launcher] Emergency build successful. Launching...');
-      require(entryPoint);
-    } else {
-      throw new Error('Build finished but entry point still missing.');
-    }
-  } catch (error) {
-    console.error('❌ [Archon Launcher] Emergency build/launch failed:');
-    console.error(error);
-    process.exit(1);
-  }
+} catch (err) {
+  startSurvivalServer(err.stack || err.toString());
 }
