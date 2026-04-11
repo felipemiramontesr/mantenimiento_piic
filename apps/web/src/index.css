@@ -106,22 +106,15 @@ body {
 @media (min-width: 768px) {
   .auth-grid-container { 
     flex-direction: row; 
-    --hero-width: 55%;
-    --login-width: 45%;
+    --hero-width: 60%; /* 📏 TABLET PRO STANDARD */
+    --login-width: 40%; /* 📏 TABLET PRO STANDARD */
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .auth-grid-container {
-    --hero-width: 60%;
-    --login-width: 40%;
-  }
-}
-
-@media (min-width: 1440px) {
-  .auth-grid-container {
-    --hero-width: 70%;
-    --login-width: 30%;
+    --hero-width: 70%; /* 🖥️ DESKTOP STANDARD RESTORED */
+    --login-width: 30%; /* 🖥️ DESKTOP STANDARD RESTORED */
   }
 }
 
@@ -131,6 +124,7 @@ body {
     min-height: 100vh;
     padding: 0;
     justify-content: flex-start;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Unfurl Panel for desktop split-view - ENFORCED CENTER GRAVITY */
@@ -188,6 +182,19 @@ body {
   color: var(--color-white);
   line-height: 1.25;
   text-align: center;
+}
+
+/* 🖋️ TABLET-SPECIFIC TYPOGRAPHY REFINEMENT (Isolated Range) */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .hero-title {
+    font-size: clamp(1.85rem, 4.5vw, 2.45rem) !important; /* ⚖️ BALANCED FOR 60% PANEL */
+    max-width: 90%;
+  }
+  
+  .hero-subtitle {
+    font-size: clamp(1rem, 2vw, 1.15rem) !important;
+    max-width: 85%;
+  }
 }
 
 .hero-subtitle {
