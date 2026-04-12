@@ -30,7 +30,7 @@ const ArchonCenter: React.FC = () => {
       type: 'area', 
       toolbar: { show: false },
       sparkline: { enabled: false },
-      animations: { enabled: true, easing: 'linear', dynamicAnimation: { speed: 1000 } }
+      animations: { enabled: true, dynamicAnimation: { speed: 1000 } }
     },
     dataLabels: { enabled: false },
     stroke: { curve: 'smooth', width: 2, colors: ['#0f2a44'] },
