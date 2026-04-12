@@ -34,7 +34,7 @@ describe('Sidebar Component (Archon Core)', () => {
     );
 
     expect(screen.getByText(/ARCHON/i)).toBeDefined();
-    expect(screen.getByText(/SYS_AUTH: Operator/i)).toBeDefined();
+    expect(screen.getByText(/Operator/i)).toBeDefined();
     
     expect(screen.getByText('Command Center')).toBeDefined();
     expect(screen.getByText('Fleet Status')).toBeDefined();
@@ -67,12 +67,12 @@ describe('Sidebar Component (Archon Core)', () => {
     );
 
     // First click: should enter confirmation state
-    fireEvent.click(screen.getByText('Terminate Session'));
-    expect(screen.getByText('Confirm Logout?')).toBeDefined();
+    fireEvent.click(screen.getByText('Logout'));
+    expect(screen.getByText('Confirm?')).toBeDefined();
     expect(localStorage.removeItem).not.toHaveBeenCalled();
 
     // Second click: should actually logout
-    fireEvent.click(screen.getByText('Confirm Logout?'));
+    fireEvent.click(screen.getByText('Confirm?'));
     
     expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
     expect(localStorage.removeItem).toHaveBeenCalledWith('user_data');
