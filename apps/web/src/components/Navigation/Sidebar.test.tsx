@@ -67,7 +67,7 @@ describe('Sidebar Component (Archon Core)', () => {
     );
 
     // First click: should enter confirmation state
-    fireEvent.click(screen.getByText('Logout'));
+    fireEvent.click(screen.getByText('Terminate Session'));
     expect(screen.getByText('Confirm?')).toBeDefined();
     expect(localStorage.removeItem).not.toHaveBeenCalled();
 

@@ -1,14 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --color-primary: #0f2a44; /* Deep Space Blue */
-  --color-accent: #f2b705; /* Teck Yellow */
-  --color-white: #ffffff;
-  --color-subtitle: #e5e7eb;
-  --bg-pristine: #f2f4f7;
-  --color-border: rgba(255, 255, 255, 0.05);
-  --sidebar-bg: #0b141d; /* Neutral Solid Navy */
-  --card-bg: #14283b; /* Solid Card Navy */
+  --color-primary: #0f2a44; /* Deep Space Blue (Sidebar) */
+  --color-accent: #f2b705;  /* Teck Yellow (Action) */
+  --color-white: #ffffff;   /* Pure Workspace White */
+  --color-navy: #0f2a44;    /* Text over white */
+  --color-grey-pro: #64748b; /* Secondary text */
+  --bg-sidebar: #0f2a44;    /* Solid Blue */
+  --bg-workspace: #ffffff;  /* Solid White */
+  --card-border: #e2e8f0;   /* Clean light gray border */
 }
 
 * {
@@ -19,8 +19,8 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--color-primary);
-  color: var(--color-white);
+  background-color: var(--bg-workspace);
+  color: var(--color-navy);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
@@ -743,35 +743,79 @@ body {
 }
 
 
-/* 🏗️ PREMIUM MINIMALIST SYSTEM (V2.2.0) */
-.sidebar-solid {
-  background-color: var(--sidebar-bg);
-  border-right: 1px solid var(--color-border);
+
+/* 🏗️ SILICON VALLEY PRO SYSTEM (V2.4.0) */
+.sidebar-solid-pro {
+  background-color: var(--bg-sidebar);
+  color: white;
 }
 
-.card-minimalist {
-  background-color: var(--card-bg);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+.workspace-pro {
+  background-color: var(--bg-workspace);
+  color: var(--color-navy);
 }
 
-.text-data-pro {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+.card-pro {
+  background-color: white;
+  border: 1px solid var(--card-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.nav-item-minimal {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+.card-pro:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.nav-item-minimal:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-  color: var(--color-white);
-}
-
-.nav-item-active {
+.btn-yellow-pro {
   background-color: var(--color-accent);
   color: var(--color-primary);
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 20px;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
+
+.btn-yellow-pro:hover {
+  background-color: #d9a404;
+  transform: translateY(-1px);
+}
+
+.btn-blue-pro {
+  background-color: var(--color-primary);
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 20px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-blue-pro:hover {
+  background-color: #1a3a5a;
+  transform: translateY(-1px);
+}
+
+.nav-item-pro {
+  color: rgba(255, 255, 255, 0.6);
+  padding: 12px;
+  margin: 4px 0;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.nav-item-pro:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.nav-item-pro.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-left-color: var(--color-accent);
+}
+
 

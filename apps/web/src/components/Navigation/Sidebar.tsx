@@ -16,16 +16,12 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active }) => {
       onClick={(): void => navigate(path)}
       role="button"
       tabIndex={0}
-      className={`flex items-center gap-12 p-12 nav-item-minimal cursor-pointer ${
-        active
-          ? 'nav-item-active'
-          : 'text-white/40 hover:text-white/80'
-      }`}
+      className={`nav-item-pro cursor-pointer flex items-center gap-12 ${active ? 'active' : ''}`}
     >
-      <div className={`${active ? 'text-pinnacle-primary' : 'text-pinnacle-accent/60'}`}>
+      <div className={`${active ? 'text-pinnacle-accent' : 'text-white/40'}`}>
         {icon}
       </div>
-      <span className="text-sm tracking-tight">{label}</span>
+      <span className="text-sm font-medium tracking-tight">{label}</span>
     </div>
   );
 };
@@ -58,19 +54,20 @@ export const Sidebar: React.FC = () => {
   }, []);
 
   return (
-    <aside className="w-[260px] h-screen sidebar-solid text-white flex flex-col p-24 shrink-0 relative">
+    <aside className="w-[260px] h-screen sidebar-solid-pro flex flex-col p-24 shrink-0 relative transition-all duration-300">
       <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5" />
+
 
       
       <div className="flex items-center gap-12 mb-64 cursor-pointer group" onClick={(): void => navigate('/dashboard')} role="button" tabIndex={0}>
-        <div className="w-8 h-8 bg-pinnacle-accent rounded-sm" />
+        <div className="w-8 h-8 bg-pinnacle-accent rounded-sm shadow-[0_0_15px_rgba(242,183,5,0.3)]" />
         <div>
-          <h1 className="text-[16px] font-black tracking-widest text-white uppercase">ARCHON<span className="text-pinnacle-accent/80">CORE</span></h1>
+          <h1 className="text-[14px] font-black tracking-widest text-white uppercase opacity-90">ARCHON<span className="text-pinnacle-accent">CORE</span></h1>
           <div className="flex items-center gap-8 mt-1">
-            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+            <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest leading-none">
               {userData.username || 'archon'}
             </p>
-            <div className="w-1.5 h-1.5 bg-green-500/50 rounded-full" />
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
           </div>
         </div>
       </div>
@@ -104,14 +101,14 @@ export const Sidebar: React.FC = () => {
 
       <button
         onClick={handleLogout}
-        className={`flex items-center gap-12 p-12 transition-all duration-200 w-full ${
+        className={`flex items-center gap-12 p-12 transition-all duration-200 w-full group ${
           isConfirming 
-            ? 'bg-red-500/10 text-red-500 font-bold' 
-            : 'text-white/20 hover:text-white/60'
+            ? 'bg-red-500/20 text-red-500 font-bold rounded-sm' 
+            : 'text-white/30 hover:text-white/70'
         }`}
       >
-        <LogOut size={18} />
-        <span className="text-xs font-bold uppercase tracking-wider">{isConfirming ? 'Confirm?' : 'Logout'}</span>
+        <LogOut size={16} />
+        <span className="text-[10px] font-bold uppercase tracking-widest">{isConfirming ? 'Confirm?' : 'Terminate Session'}</span>
       </button>
     </aside>
   );
