@@ -18,8 +18,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active }) => {
       tabIndex={0}
       className={`flex items-center gap-16 p-16 rounded-pinnacle-input cursor-pointer transition-all ${
         active
-          ? 'bg-pinnacle-accent text-pinnacle-primary font-bold'
-          : 'hover:bg-white/5 text-white/60'
+          ? 'bg-pinnacle-accent text-pinnacle-primary font-bold shadow-[0_0_20px_rgba(242,183,5,0.2)]'
+          : 'hover:bg-white/5 text-white/40 hover:text-white/80'
       }`}
     >
       {icon}
@@ -56,14 +56,21 @@ export const Sidebar: React.FC = () => {
   }, []);
 
   return (
-    <aside className="w-[280px] bg-pinnacle-primary text-white flex flex-col p-24">
-      <div className="flex items-center gap-16 mb-80 cursor-pointer" onClick={(): void => navigate('/dashboard')} role="button" tabIndex={0}>
-        <div className="w-10 h-10 bg-pinnacle-accent rounded-full" />
+    <aside className="w-[300px] frosted-panel border-r border-white/5 text-white flex flex-col p-24 m-16 rounded-[4px] shadow-2xl relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-pinnacle-accent/30" />
+      
+      <div className="flex items-center gap-16 mb-80 cursor-pointer group" onClick={(): void => navigate('/dashboard')} role="button" tabIndex={0}>
+        <div className="w-12 h-12 bg-pinnacle-accent rounded-sm rotate-45 group-hover:rotate-90 transition-transform duration-500" />
         <div>
-          <h1 className="text-[20px] font-bold tracking-tight">ARCHON CORE</h1>
-          <p className="text-[10px] text-pinnacle-accent font-bold tracking-widest">
-            ID: {userData.username || 'UNKNOWN'}
-          </p>
+          <h1 className="text-[18px] font-black tracking-[-0.05em] text-white">ARCHON<span className="text-pinnacle-accent">CORE</span></h1>
+          <div className="flex items-center gap-8 mt-1">
+            <div className="px-6 py-1 bg-white/5 border border-white/10 rounded-[2px]">
+              <p className="text-[9px] text-pinnacle-accent font-black uppercase tracking-[0.2em] leading-none">
+                SYS_AUTH: {userData.username || 'UNKNOWN'}
+              </p>
+            </div>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          </div>
         </div>
       </div>
 
