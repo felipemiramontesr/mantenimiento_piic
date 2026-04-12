@@ -16,14 +16,16 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active }) => {
       onClick={(): void => navigate(path)}
       role="button"
       tabIndex={0}
-      className={`flex items-center gap-16 p-16 rounded-pinnacle-input cursor-pointer transition-all ${
+      className={`flex items-center gap-12 p-12 nav-item-minimal cursor-pointer ${
         active
-          ? 'bg-pinnacle-accent text-pinnacle-primary font-bold shadow-[0_0_20px_rgba(242,183,5,0.2)]'
-          : 'hover:bg-white/5 text-white/40 hover:text-white/80'
+          ? 'nav-item-active'
+          : 'text-white/40 hover:text-white/80'
       }`}
     >
-      {icon}
-      <span>{label}</span>
+      <div className={`${active ? 'text-pinnacle-primary' : 'text-pinnacle-accent/60'}`}>
+        {icon}
+      </div>
+      <span className="text-sm tracking-tight">{label}</span>
     </div>
   );
 };
@@ -56,20 +58,19 @@ export const Sidebar: React.FC = () => {
   }, []);
 
   return (
-    <aside className="w-[300px] frosted-panel border-r border-white/5 text-white flex flex-col p-24 m-16 rounded-[4px] shadow-2xl relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-pinnacle-accent/30" />
+    <aside className="w-[260px] h-screen sidebar-solid text-white flex flex-col p-24 shrink-0 relative">
+      <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5" />
+
       
-      <div className="flex items-center gap-16 mb-80 cursor-pointer group" onClick={(): void => navigate('/dashboard')} role="button" tabIndex={0}>
-        <div className="w-12 h-12 bg-pinnacle-accent rounded-sm rotate-45 group-hover:rotate-90 transition-transform duration-500" />
+      <div className="flex items-center gap-12 mb-64 cursor-pointer group" onClick={(): void => navigate('/dashboard')} role="button" tabIndex={0}>
+        <div className="w-8 h-8 bg-pinnacle-accent rounded-sm" />
         <div>
-          <h1 className="text-[18px] font-black tracking-[-0.05em] text-white">ARCHON<span className="text-pinnacle-accent">CORE</span></h1>
+          <h1 className="text-[16px] font-black tracking-widest text-white uppercase">ARCHON<span className="text-pinnacle-accent/80">CORE</span></h1>
           <div className="flex items-center gap-8 mt-1">
-            <div className="px-6 py-1 bg-white/5 border border-white/10 rounded-[2px]">
-              <p className="text-[9px] text-pinnacle-accent font-black uppercase tracking-[0.2em] leading-none">
-                SYS_AUTH: {userData.username || 'UNKNOWN'}
-              </p>
-            </div>
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+              {userData.username || 'archon'}
+            </p>
+            <div className="w-1.5 h-1.5 bg-green-500/50 rounded-full" />
           </div>
         </div>
       </div>
@@ -103,14 +104,14 @@ export const Sidebar: React.FC = () => {
 
       <button
         onClick={handleLogout}
-        className={`flex items-center gap-16 p-16 transition-all duration-300 w-full rounded-pinnacle-input ${
+        className={`flex items-center gap-12 p-12 transition-all duration-200 w-full ${
           isConfirming 
-            ? 'bg-red-500/20 text-red-500 font-bold animate-pulse' 
-            : 'text-white/60 hover:text-pinnacle-accent hover:bg-white/5'
+            ? 'bg-red-500/10 text-red-500 font-bold' 
+            : 'text-white/20 hover:text-white/60'
         }`}
       >
-        <LogOut size={20} className={isConfirming ? 'rotate-12 transition-transform' : ''} />
-        <span>{isConfirming ? 'Confirm Logout?' : 'Terminate Session'}</span>
+        <LogOut size={18} />
+        <span className="text-xs font-bold uppercase tracking-wider">{isConfirming ? 'Confirm?' : 'Logout'}</span>
       </button>
     </aside>
   );
