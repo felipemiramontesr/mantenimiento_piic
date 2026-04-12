@@ -1,5 +1,4 @@
 import React from 'react';
-import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../../components/Navigation/Sidebar';
 
@@ -32,6 +31,5 @@ const DashboardLayout: React.FC = () => {
         </div>
     );
 };
-
 
 export default DashboardLayout;
