@@ -29,7 +29,7 @@ describe('Sidebar Component (Archon Core)', () => {
   it('renders all navigation items properly and respects location', () => {
     render(
       <BrowserRouter>
-        <Sidebar />
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
       </BrowserRouter>
     );
 
@@ -45,7 +45,7 @@ describe('Sidebar Component (Archon Core)', () => {
   it('navigates when clicking navigation items', () => {
     render(
       <BrowserRouter>
-        <Sidebar />
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
       </BrowserRouter>
     );
 
@@ -62,7 +62,7 @@ describe('Sidebar Component (Archon Core)', () => {
   it('terminates session on logout click after confirmation', () => {
     render(
       <BrowserRouter>
-        <Sidebar />
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
       </BrowserRouter>
     );
 
