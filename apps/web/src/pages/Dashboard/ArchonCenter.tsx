@@ -1,7 +1,7 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
-import { ShieldAlert, Activity, Truck, Zap, Bell, Server } from 'lucide-react';
+import { ShieldAlert, Activity, Zap, Bell, Server } from 'lucide-react';
 
 const ArchonCenter: React.FC = () => {
   // Configuración de Salud Global (Radial)
