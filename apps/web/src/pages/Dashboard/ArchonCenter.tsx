@@ -32,7 +32,16 @@ const TelemetryWidget: React.FC<TelemetryWidgetProps> = ({ label, value, trend }
 );
 
 const ArchonCenter: React.FC = () => (
-    <div className="workspace-pro min-h-screen p-48 lg:p-80 animate-in fade-in duration-500">
+    <div 
+      style={{ 
+        backgroundColor: '#ffffff', 
+        minHeight: '100vh', 
+        width: '100%', 
+        padding: '48px 80px',
+        color: '#0f2a44'
+      }}
+      className="workspace-pro animate-in fade-in duration-500"
+    >
       <header className="mb-64">
         <div className="flex items-center gap-12 mb-12">
           <span className="w-12 h-1 bg-pinnacle-accent" />

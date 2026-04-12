@@ -71,7 +71,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
   return (
     <aside 
-      className={`h-screen sidebar-solid-pro flex flex-col p-24 shrink-0 relative transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-full'}`}
+      style={{ 
+        backgroundColor: '#0f2a44', 
+        width: '100%', 
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        padding: '24px', 
+        position: 'relative' 
+      }}
+      className="sidebar-solid-pro shrink-0 transition-all duration-300 ease-in-out"
     >
       <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5" />
 
