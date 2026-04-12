@@ -159,7 +159,14 @@ const LoginPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleLogin} className="login-form">
-              <div style={{ minHeight: '85px' }} className="mb-2 flex items-center">
+              <div 
+                style={{ 
+                  minHeight: error ? '80px' : '0px', 
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: error ? 1 : 0
+                }} 
+                className="mb-4 flex items-center overflow-hidden"
+              >
                 {error && (
                   <div className="w-full p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
                     Error de Sistema: {error}

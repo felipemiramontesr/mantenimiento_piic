@@ -534,7 +534,7 @@ body {
 .login-form {
   display: flex;
   flex-direction: column;
-  margin-top: clamp(24px, 8vw, 48px);
+  margin-top: clamp(12px, 4vw, 24px);
 }
 
 @media (max-width: 767px) {
