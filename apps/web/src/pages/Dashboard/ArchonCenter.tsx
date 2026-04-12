@@ -1,107 +1,173 @@
 import React from 'react';
-import { Settings, ShieldAlert } from 'lucide-react';
+import Chart from 'react-apexcharts';
+import { ShieldAlert, Activity, Truck, Zap } from 'lucide-react';
 
+const ArchonCenter: React.FC = () => {
+  // Configuración de Health Gauge (Estado de Flota)
+  const healthOptions: ApexCharts.ApexOptions = {
+    chart: { type: 'radialBar', sparkline: { enabled: true } },
+    plotOptions: {
+      radialBar: {
+        startAngle: -90,
+        endAngle: 90,
+        track: { background: "#f1f5f9", strokeWidth: '97%', margin: 5 },
+        dataLabels: {
+          name: { show: false },
+          value: { offsetY: -2, fontSize: '22px', fontWeight: 900, color: '#0f2a44' }
+        }
+      }
+    },
+    colors: ['#f2b705'],
+    fill: { type: 'solid' },
+    stroke: { lineCap: 'butt' },
+    labels: ['Health'],
+  };
 
+  // Configuración de Activity Pulse (Evento / Tiempo)
+  const pulseOptions: ApexCharts.ApexOptions = {
+    chart: { 
+      type: 'area', 
+      toolbar: { show: false },
+      sparkline: { enabled: false },
+      animations: { enabled: true, easing: 'linear', dynamicAnimation: { speed: 1000 } }
+    },
+    dataLabels: { enabled: false },
+    stroke: { curve: 'smooth', width: 2, colors: ['#0f2a44'] },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.1, opacityTo: 0, stops: [0, 90, 100] }
+    },
+    xaxis: { 
+      type: 'datetime',
+      labels: { show: false },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: { show: false },
+    grid: { show: false },
+    tooltip: { theme: 'light', x: { show: false } }
+  };
 
-interface TelemetryWidgetProps {
-  label: string;
-  value: string;
-  trend: string;
-}
+  const pulseSeries = [{
+    name: 'Throughput',
+    data: Array.from({ length: 20 }, (_, i) => ({
+      x: new Date().getTime() - (20 - i) * 60000,
+      y: Math.floor(Math.random() * 100)
+    }))
+  }];
 
-const TelemetryWidget: React.FC<TelemetryWidgetProps> = ({ label, value, trend }) => (
-  <div className="card-pro p-24 transition-all duration-300">
-    <div className="flex justify-between items-start mb-12">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-pinnacle-navy/40 font-bold">{label}</p>
-      <div className="w-4 h-[1px] bg-pinnacle-accent" />
-    </div>
-    <div className="flex items-baseline gap-12">
-      <h3 className="text-4xl font-black text-pinnacle-navy tracking-tight">{value}</h3>
-      <span className={`text-[10px] font-bold uppercase tracking-widest px-8 py-2 rounded-full ${
-        trend === 'Online' || trend.startsWith('+') 
-          ? 'bg-green-100 text-green-700' 
-          : 'bg-yellow-100 text-yellow-700'
-      }`}>
-        {trend}
-      </span>
-    </div>
-    <div className="mt-16 h-[2px] w-full bg-slate-100 rounded-full overflow-hidden">
-      <div className="h-full bg-pinnacle-navy/10 w-[45%]" />
-    </div>
-  </div>
-);
-
-const ArchonCenter: React.FC = () => (
+  return (
     <div 
       style={{ 
         backgroundColor: '#ffffff', 
         minHeight: '100vh', 
         width: '100%', 
-        padding: '48px 80px',
-        color: '#0f2a44'
+        padding: '40px 60px',
+        color: '#0f2a44',
+        fontFamily: 'Inter, system-ui, sans-serif'
       }}
-      className="workspace-pro animate-in fade-in duration-500"
+      className="workspace-pro animate-in fade-in duration-700"
     >
-      <header className="mb-64">
-        <div className="flex items-center gap-12 mb-12">
-          <span className="w-12 h-1 bg-pinnacle-accent" />
-          <p className="text-[11px] font-bold uppercase tracking-[0.4em] text-pinnacle-navy/30">Operations Terminal v2.4</p>
+      {/* Header Sentinel V.4.0 */}
+      <header className="mb-48">
+        <div className="flex items-center gap-12 mb-8">
+          <span className="w-8 h-[2px] bg-[#f2b705]" />
+          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0f2a44]/20">Sentinel Nexus v4.0.0</p>
         </div>
-        <div className="flex justify-between items-end border-b border-slate-100 pb-32">
+        <div className="flex justify-between items-end border-b border-slate-100 pb-24">
           <div>
-            <h2 className="text-pinnacle-navy tracking-tighter font-black text-5xl mb-2">Operational <span className="text-pinnacle-navy/40 font-light">Insight</span></h2>
-            <p className="text-slate-400 text-sm font-medium">Real-time system telemetry and authorization logs</p>
+            <h2 className="text-[#0f2a44] tracking-tighter font-black text-4xl mb-2">Command <span className="font-light opacity-40">Center</span></h2>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-tight">Active Fleet Telemetry & Intelligence Feed</p>
           </div>
-          <div className="flex items-center gap-16">
-            <button className="btn-blue-pro shadow-lg">Refresh Sync</button>
-            <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">System Status</span>
-              <span className="text-pinnacle-navy font-bold text-xs uppercase">100% Nominal</span>
+          <div className="flex items-center gap-24">
+            <div className="text-right">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 block">System Pulse</span>
+              <div className="flex items-center gap-8">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[#0f2a44] font-black text-xs">NOMINAL_SYNC</span>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
-        <TelemetryWidget label="Cloud Infrastructure" value="99.9" trend="+0.01" />
-        <TelemetryWidget label="Active Fleet Units" value="842" trend="Sync" />
-        <TelemetryWidget label="Core Security" value="v2.4" trend="Secure" />
-      </div>
-
-      <div className="mt-32 card-pro p-40 relative group">
-        <div className="absolute top-0 right-0 p-24 opacity-5">
-          <Settings className="w-32 h-32 text-pinnacle-navy" />
-        </div>
+      {/* Main Telemetry Grid */}
+      <div className="grid grid-cols-12 gap-24 mb-24">
         
-        <div className="flex items-center justify-between mb-40 pb-20 border-b border-slate-50">
-          <div className="flex items-center gap-16">
-            <div className="p-10 bg-pinnacle-accent/10 rounded-sm">
-              <ShieldAlert className="w-16 h-16 text-pinnacle-accent" />
+        {/* Unit Alpha: Overall Health Gauge */}
+        <div className="col-span-12 md:col-span-4 p-32 bg-slate-50 border border-slate-100/50 rounded-sm relative overflow-hidden group">
+          <div className="relative z-10">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-24 flex items-center gap-8">
+              <Zap size={12} className="text-[#f2b705]" /> Fleet Health Index
+            </h4>
+            <div className="flex justify-center -mb-24">
+              <Chart options={healthOptions} series={[84]} type="radialBar" height={240} />
             </div>
-            <div>
-              <h3 className="text-pinnacle-navy tracking-widest font-black uppercase text-xs">Authorization Flow</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Encrypted Node Access Logs</p>
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Operational Units</p>
             </div>
           </div>
-          <button className="btn-yellow-pro text-[10px] shadow-md">Export Audit</button>
         </div>
 
-        <div className="space-y-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex justify-between items-center p-12 hover:bg-slate-50 transition-all rounded-sm border-l-2 border-transparent hover:border-pinnacle-accent">
-              <div className="flex items-center gap-24">
-                <span className="text-[11px] font-mono text-slate-400">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
-                <span className="text-xs font-bold text-pinnacle-navy/70 tracking-tight">NODE_AUTH_SUCCESS: <span className="text-pinnacle-navy font-black">X-CLUSTER-0{i}</span></span>
-              </div>
-              <div className="flex items-center gap-8">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Verified</span>
-              </div>
-            </div>
-          ))}
+        {/* Unit Beta: Activity Pulse monitor */}
+        <div className="col-span-12 md:col-span-8 p-32 bg-slate-50 border border-slate-100/50 rounded-sm">
+          <div className="flex justify-between items-center mb-24">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] flex items-center gap-8">
+              <Activity size={12} className="text-[#0f2a44]" /> Throughput Pulse
+            </h4>
+            <span className="text-[10px] font-bold text-slate-400">REALTIME_LOG_SYNC</span>
+          </div>
+          <Chart options={pulseOptions} series={pulseSeries} type="area" height={180} />
         </div>
+
+      </div>
+
+      {/* Tertiary Metrics & Intelligence Feed */}
+      <div className="grid grid-cols-12 gap-24">
+        
+        {/* Fleet Distribution Summary */}
+        <div className="col-span-4 grid grid-cols-1 gap-12">
+          <div className="p-20 border border-slate-100 rounded-sm flex items-center justify-between">
+            <div className="flex items-center gap-12">
+              <Truck size={16} className="text-slate-400" />
+              <span className="text-[10px] font-black uppercase text-slate-400">Active Fleet</span>
+            </div>
+            <span className="text-xl font-black text-[#0f2a44]">842</span>
+          </div>
+          <div className="p-20 border border-slate-100 rounded-sm bg-[#f2b705]/5 flex items-center justify-between">
+            <div className="flex items-center gap-12">
+              <ShieldAlert size={16} className="text-[#f2b705]" />
+              <span className="text-[10px] font-black uppercase text-[#f2b705]">Maintenace Alert</span>
+            </div>
+            <span className="text-xl font-black text-[#f2b705]">12</span>
+          </div>
+        </div>
+
+        {/* Intelligence feed (Compact) */}
+        <div className="col-span-8 p-24 bg-white border border-slate-100 rounded-sm">
+          <div className="flex justify-between items-center mb-16 pb-8 border-b border-slate-50">
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-[#0f2a44]">Intelligence Feed</h4>
+            <span className="text-[9px] font-bold text-slate-300">AUTO_AUDIT_ON</span>
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex justify-between items-center py-8 text-[11px] border-b border-transparent hover:border-[#f2b705]/20 transition-all">
+                <div className="flex items-center gap-16">
+                  <span className="text-slate-300 font-mono">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
+                  <span className="font-bold text-[#0f2a44]/70 tracking-tight">SEC_EVENT: <span className="text-[#0f2a44] font-black">NODE_AUTH_PASS_01{i}</span></span>
+                </div>
+                <div className="flex items-center gap-8">
+                  <div className="w-1 h-1 bg-green-500 rounded-full" />
+                  <span className="text-[8px] font-black text-slate-300 uppercase underline">Verified</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
-);
+  );
+};
 
 export default ArchonCenter;
