@@ -53,7 +53,7 @@ const ArchonLogo: React.FC<ArchonLogoProps> = ({ isCollapsed, size = 44 }) => (
           width="15" // Increased by 50% (from 10)
           height="15" // Increased by 50% (from 10)
           viewBox="0 0 100 100" 
-          style={{ marginLeft: '4px', alignSelf: 'baseline', marginBottom: '4px' }}
+          style={{ marginLeft: '4px', alignSelf: 'baseline' }} 
         >
           <path 
             d="M50 5L89.5 27.5V72.5L50 95L10.5 72.5V27.5L50 5Z" 
