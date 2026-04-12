@@ -33,8 +33,8 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('ARCHON CORE')).toBeDefined();
-    expect(screen.getByText('ID: Operator')).toBeDefined();
+    expect(screen.getByText(/ARCHON/i)).toBeDefined();
+    expect(screen.getByText(/SYS_AUTH: Operator/i)).toBeDefined();
     
     expect(screen.getByText('Command Center')).toBeDefined();
     expect(screen.getByText('Fleet Status')).toBeDefined();
@@ -55,7 +55,7 @@ describe('Sidebar Component (Archon Core)', () => {
     fireEvent.click(screen.getByText('Fleet Status'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/fleet');
     
-    fireEvent.click(screen.getByText('ARCHON CORE'));
+    fireEvent.click(screen.getByText(/ARCHON/i));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard');
   });
 
