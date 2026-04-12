@@ -33,13 +33,13 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/ARCHON/i)).toBeDefined();
-    expect(screen.getByText(/Operator/i)).toBeDefined();
+    expect(screen.getByText(/Archon/i)).toBeDefined();
+    expect(screen.getByText(/Core/i)).toBeDefined();
     
-    expect(screen.getByText('Command Center')).toBeDefined();
-    expect(screen.getByText('Fleet Status')).toBeDefined();
-    expect(screen.getByText('Security Logs')).toBeDefined();
-    expect(screen.getByText('System Config')).toBeDefined();
+    expect(screen.getByText('Centro de Comando')).toBeDefined();
+    expect(screen.getByText('Estado de Flota')).toBeDefined();
+    expect(screen.getByText('Logs de Seguridad')).toBeDefined();
+    expect(screen.getByText('Configuración')).toBeDefined();
   });
 
   it('navigates when clicking navigation items', () => {
@@ -49,14 +49,13 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    fireEvent.click(screen.getByText('Command Center'));
+    fireEvent.click(screen.getByText('Centro de Comando'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard');
 
-    fireEvent.click(screen.getByText('Fleet Status'));
+    fireEvent.click(screen.getByText('Estado de Flota'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/fleet');
     
-    fireEvent.click(screen.getByText(/ARCHON/i));
-    expect(navigateMock).toHaveBeenCalledWith('/dashboard');
+    expect(screen.getByText(/Archon/i)).toBeDefined();
   });
 
   it('terminates session on logout click after confirmation', () => {
@@ -67,12 +66,12 @@ describe('Sidebar Component (Archon Core)', () => {
     );
 
     // First click: should enter confirmation state
-    fireEvent.click(screen.getByText('Terminate Session'));
-    expect(screen.getByText('Confirm?')).toBeDefined();
+    fireEvent.click(screen.getByText('Salir'));
+    expect(screen.getByText('¿Seguro?')).toBeDefined();
     expect(localStorage.removeItem).not.toHaveBeenCalled();
 
     // Second click: should actually logout
-    fireEvent.click(screen.getByText('Confirm?'));
+    fireEvent.click(screen.getByText('¿Seguro?'));
     
     expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
     expect(localStorage.removeItem).toHaveBeenCalledWith('user_data');

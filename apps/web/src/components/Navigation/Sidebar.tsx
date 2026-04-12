@@ -30,13 +30,34 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
       onClick={(): void => navigate(path)}
       role="button"
       tabIndex={0}
-      className={`nav-item-pro cursor-pointer flex items-center ${isCollapsed ? 'justify-center p-12' : 'gap-12 p-12'} ${active ? 'active' : ''}`}
+      style={{
+        padding: isCollapsed ? '16px 0' : '16px 24px',
+        margin: '4px 0',
+        borderRadius: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: isCollapsed ? 'center' : 'flex-start',
+        gap: isCollapsed ? '0' : '16px',
+        transition: 'all 0.2s ease',
+        borderLeft: active ? '3px solid #f2b705' : '3px solid transparent',
+        backgroundColor: active ? 'rgba(242, 183, 5, 0.05)' : 'transparent'
+      }}
+      className="nav-item-pro cursor-pointer group"
       title={isCollapsed ? label : ''}
     >
-      <div className={`${active ? 'text-pinnacle-accent' : 'text-white/40'}`}>
+      <div style={{ color: active ? '#f2b705' : 'rgba(255,255,255,0.4)' }}>
         {icon}
       </div>
-      {!isCollapsed && <span className="text-sm font-medium tracking-tight whitespace-nowrap">{label}</span>}
+      {!isCollapsed && (
+        <span style={{ 
+          fontSize: '13px', 
+          fontWeight: 500, 
+          color: active ? '#ffffff' : 'rgba(255,255,255,0.7)',
+          letterSpacing: '-0.01em'
+        }}>
+          {label}
+        </span>
+      )}
     </div>
   );
 };
@@ -77,78 +98,136 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         height: '100%', 
         display: 'flex', 
         flexDirection: 'column', 
-        padding: '24px', 
-        position: 'relative' 
+        position: 'relative',
+        boxShadow: '4px 0 20px rgba(0,0,0,0.2)'
       }}
       className="sidebar-solid-pro shrink-0 transition-all duration-300 ease-in-out"
     >
       <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5" />
 
-      {/* Toggle Button */}
+      {/* Toggle Pestaña Central */}
       <button 
         onClick={onToggle}
-        className="absolute -right-12 top-24 bg-pinnacle-accent text-pinnacle-primary p-4 rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
+        style={{
+          position: 'absolute',
+          right: '-14px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          backgroundColor: '#f2b705',
+          color: '#0f2a44',
+          width: '28px',
+          height: '48px',
+          borderRadius: '0 8px 8px 0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: 'none',
+          boxShadow: '4px 0 10px rgba(0,0,0,0.3)',
+          zIndex: 100,
+          cursor: 'pointer'
+        }}
+        className="hover:translate-x-1 transition-transform"
       >
-        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
 
-      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-12'} mb-64 cursor-pointer group`} onClick={(): void => navigate('/dashboard')} role="button" tabIndex={0}>
-        <div className="w-8 h-8 bg-pinnacle-accent rounded-sm shadow-[0_0_15px_rgba(242,183,5,0.3)] shrink-0" />
+      {/* Header (10%) */}
+      <div style={{
+        height: '10%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderBottom: '1px solid rgba(255,255,255,0.05)'
+      }}>
         {!isCollapsed && (
-          <div>
-            <h1 className="text-[14px] font-black tracking-widest text-white uppercase opacity-90">ARCHON<span className="text-pinnacle-accent">CORE</span></h1>
-            <div className="flex items-center gap-8 mt-1">
-              <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest leading-none">
-                {userData.username || 'archon'}
-              </p>
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-            </div>
-          </div>
+          <h1 style={{ 
+            fontSize: '18px', 
+            fontWeight: 800, 
+            color: '#f2b705', 
+            letterSpacing: '0.05em',
+            textTransform: 'none'
+          }}>
+            Archon <span style={{ color: '#ffffff' }}>Core</span>
+          </h1>
+        )}
+        {isCollapsed && (
+           <div style={{ width: '12px', height: '12px', backgroundColor: '#f2b705', borderRadius: '2px' }} />
         )}
       </div>
 
-      <nav className="flex-1 space-y-16">
-        <NavItem 
-          icon={<LayoutDashboard size={20} />} 
-          label="Command Center" 
-          path="/dashboard" 
-          active={location.pathname === '/dashboard'}
-          isCollapsed={isCollapsed}
-        />
-        <NavItem 
-          icon={<Truck size={20} />} 
-          label="Fleet Status" 
-          path="/dashboard/fleet" 
-          active={location.pathname === '/dashboard/fleet'}
-          isCollapsed={isCollapsed}
-        />
-        <NavItem 
-          icon={<ShieldAlert size={20} />} 
-          label="Security Logs" 
-          path="/dashboard/logs" 
-          active={location.pathname === '/dashboard/logs'}
-          isCollapsed={isCollapsed}
-        />
-        <NavItem 
-          icon={<Settings size={20} />} 
-          label="System Config" 
-          path="/dashboard/settings" 
-          active={location.pathname === '/dashboard/settings'}
-          isCollapsed={isCollapsed}
-        />
-      </nav>
+      {/* Body (80%) */}
+      <div style={{
+        height: '80%',
+        padding: '24px 12px',
+        overflowY: 'auto'
+      }}>
+        <nav style={{ display: 'flex', flexDirection: 'column' }}>
+          <NavItem 
+            icon={<LayoutDashboard size={20} />} 
+            label="Centro de Comando" 
+            path="/dashboard" 
+            active={location.pathname === '/dashboard'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem 
+            icon={<Truck size={20} />} 
+            label="Estado de Flota" 
+            path="/dashboard/fleet" 
+            active={location.pathname === '/dashboard/fleet'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem 
+            icon={<ShieldAlert size={20} />} 
+            label="Logs de Seguridad" 
+            path="/dashboard/logs" 
+            active={location.pathname === '/dashboard/logs'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem 
+            icon={<Settings size={20} />} 
+            label="Configuración" 
+            path="/dashboard/settings" 
+            active={location.pathname === '/dashboard/settings'}
+            isCollapsed={isCollapsed}
+          />
+        </nav>
+      </div>
 
-      <button
-        onClick={handleLogout}
-        className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-12'} p-12 transition-all duration-200 w-full group ${
-          isConfirming 
-            ? 'bg-red-500/20 text-red-500 font-bold rounded-sm' 
-            : 'text-white/30 hover:text-white/70'
-        }`}
-      >
-        <LogOut size={16} />
-        {!isCollapsed && <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">{isConfirming ? 'Confirm?' : 'Terminate Session'}</span>}
-      </button>
+      {/* Footer (10%) */}
+      <div style={{
+        height: '10%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 24px',
+        borderTop: '1px solid rgba(255,255,255,0.05)'
+      }}>
+        <button
+          onClick={handleLogout}
+          style={{
+            backgroundColor: isConfirming ? '#ef4444' : '#f2b705',
+            color: '#0f2a44',
+            width: '100%',
+            padding: '10px',
+            borderRadius: '4px',
+            fontWeight: 700,
+            fontSize: '11px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          title="Salir del Sistema"
+        >
+          <LogOut size={14} />
+          {!isCollapsed && <span>{isConfirming ? '¿Seguro?' : 'Salir'}</span>}
+        </button>
+      </div>
     </aside>
   );
 };
