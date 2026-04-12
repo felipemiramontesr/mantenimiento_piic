@@ -104,12 +104,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     >
       <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5" />
 
-      {/* Toggle Pestaña Central */}
       <button 
         onClick={onToggle}
         style={{
           position: 'absolute',
-          right: '-14px',
+          right: '-28px', // Stuck to the border (projecting outward)
           top: '50%',
           transform: 'translateY(-50%)',
           backgroundColor: '#f2b705',
