@@ -91,45 +91,65 @@ const ArchonCenter: React.FC = () => {
         </div>
       </header>
 
-      {/* Grid Táctico de 3 Columnas (KPI Glassmorphism) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-24 mb-32">
+      {/* Grid Táctico de 3 Columnas (KPI Glassmorphism Blindado) */}
+      <div 
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: '24px', 
+          marginBottom: '32px' 
+        }}
+      >
         
-        {/* KPI 1: Salud de Flota */}
-        <div className="glass-card-pro p-24 flex flex-col items-center">
-          <div className="w-full flex justify-between items-start mb-16">
-            <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#0f2a44]/40">Salud de Flota</h4>
-            <Zap size={14} className="text-[#f2b705]" />
+        {/* KPI 1: Salud de Flota (Panel Centralizado) */}
+        <div className="glass-card-pro p-24">
+          <div className="flex justify-between items-start mb-8 border-b border-slate-100/50 pb-12">
+            <div className="flex items-center gap-8">
+              <Zap size={12} className="text-[#f2b705]" />
+              <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#0f2a44]/60">Salud Operativa</h4>
+            </div>
+            <span className="text-[8px] font-bold text-slate-300">NODO_ALPHA</span>
           </div>
-          <Chart options={healthOptions} series={[92]} type="radialBar" height={160} width="100%" />
-          <p className="text-[10px] font-black text-[#0f2a44] uppercase mt-8">Unidades Activas</p>
-        </div>
-
-        {/* KPI 2: Estado de Red */}
-        <div className="glass-card-pro p-24 flex flex-col justify-between">
-          <div className="w-full flex justify-between items-start">
-            <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#0f2a44]/40">Carga del Sistema</h4>
-            <Server size={14} className="text-[#0f2a44]" />
-          </div>
-          <div className="my-16">
-            <h3 className="text-3xl font-black text-[#0f2a44]">42<span className="text-xs ml-4 opacity-30">ms</span></h3>
-            <p className="text-[9px] font-bold text-slate-400 uppercase">Latencia de Nodo Core</p>
-          </div>
-          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-[#0f2a44] w-[65%]" />
+          <div className="flex flex-col items-center justify-center flex-1">
+            <Chart options={healthOptions} series={[92]} type="radialBar" height={160} width="100%" />
+            <p className="text-[10px] font-black text-[#0f2a44] uppercase tracking-widest -mt-12">Unidades Activas</p>
           </div>
         </div>
 
-        {/* KPI 3: Alertas Activas */}
-        <div className="glass-card-pro p-24 flex flex-col justify-between border-l-4 border-[#f2b705]">
-          <div className="w-full flex justify-between items-start">
-            <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f2b705]">Alertas Críticas</h4>
-            <Bell size={14} className="text-[#f2b705]" />
+        {/* KPI 2: Estado de Red (Panel de Latencia) */}
+        <div className="glass-card-pro p-24">
+          <div className="flex justify-between items-start mb-24 border-b border-slate-100/50 pb-12">
+            <div className="flex items-center gap-8">
+              <Server size={12} className="text-[#0f2a44]" />
+              <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#0f2a44]/60">Rendimiento Core</h4>
+            </div>
+            <span className="text-[8px] font-bold text-slate-300">LATENCY_MS</span>
           </div>
-          <div className="my-16">
-            <h3 className="text-3xl font-black text-[#f2b705]">07</h3>
-            <p className="text-[9px] font-bold text-slate-400 uppercase">Unidades en Mantenimiento</p>
+          <div className="flex-1 flex flex-col justify-center">
+            <h3 className="text-4xl font-black text-[#0f2a44] mb-4">42<span className="text-sm ml-4 opacity-30">ms</span></h3>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mb-16">Latencia de Respuesta Sentinel</p>
+            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full bg-[#0f2a44] w-[65%] transition-all duration-1000" />
+            </div>
           </div>
-          <button className="text-[9px] font-black uppercase text-[#0f2a44] underline text-left hover:text-[#f2b705] transition-colors">Ver Detalles de Alarma</button>
+        </div>
+
+        {/* KPI 3: Alertas Críticas (Panel de Alarma) */}
+        <div className="glass-card-pro p-24" style={{ borderColor: 'rgba(242, 183, 5, 0.3)' }}>
+          <div className="flex justify-between items-start mb-24 border-b border-slate-100/50 pb-12">
+            <div className="flex items-center gap-8">
+              <Bell size={12} className="text-[#f2b705]" />
+              <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#f2b705]">Alertas de Sistema</h4>
+            </div>
+            <span className="text-[8px] font-bold text-[#f2b705]/50">CRITICAL_COUNT</span>
+          </div>
+          <div className="flex-1 flex flex-col justify-center">
+            <h3 className="text-4xl font-black text-[#f2b705] mb-4">07</h3>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mb-16">Unidades en Mantenimiento Táctico</p>
+            <button className="text-[9px] font-black uppercase text-[#0f2a44] underline text-left hover:text-[#f2b705] transition-colors">
+              Explorar Diagnósticos de Alarma
+            </button>
+          </div>
         </div>
 
       </div>
