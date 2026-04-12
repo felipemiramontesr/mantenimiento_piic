@@ -69,8 +69,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [isConfirming, setIsConfirming] = React.useState(false);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const userData = JSON.parse(localStorage.getItem('user_data') || '{}') as { username?: string };
-
   const handleLogout = (): void => {
     if (!isConfirming) {
       setIsConfirming(true);
