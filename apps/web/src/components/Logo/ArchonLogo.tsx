@@ -10,7 +10,7 @@ const ArchonLogo: React.FC<ArchonLogoProps> = ({ isCollapsed, size = 44 }) => (
     style={{ 
       display: 'flex', 
       alignItems: 'center', 
-      gap: isCollapsed ? '0' : '8px', // Reduced gap for unified logo look
+      gap: isCollapsed ? '0' : '5.3px', // Reduced by 1/3 (from 8px)
       justifyContent: isCollapsed ? 'center' : 'flex-start',
       transition: 'all 0.3s ease'
     }}
@@ -50,8 +50,8 @@ const ArchonLogo: React.FC<ArchonLogoProps> = ({ isCollapsed, size = 44 }) => (
         </h1>
         {/* Hexagonal Terminal Point (Technological Period) */}
         <svg 
-          width="10" 
-          height="10" 
+          width="15" // Increased by 50% (from 10)
+          height="15" // Increased by 50% (from 10)
           viewBox="0 0 100 100" 
           style={{ marginLeft: '4px', alignSelf: 'baseline', marginBottom: '4px' }}
         >
