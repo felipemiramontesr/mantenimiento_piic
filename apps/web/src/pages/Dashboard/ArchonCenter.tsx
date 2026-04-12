@@ -1,10 +1,11 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
+import { ApexOptions } from 'apexcharts';
 import { ShieldAlert, Activity, Truck, Zap } from 'lucide-react';
 
 const ArchonCenter: React.FC = () => {
   // Configuración de Health Gauge (Estado de Flota)
-  const healthOptions: ApexCharts.ApexOptions = {
+  const healthOptions: ApexOptions = {
     chart: { type: 'radialBar', sparkline: { enabled: true } },
     plotOptions: {
       radialBar: {
@@ -24,7 +25,7 @@ const ArchonCenter: React.FC = () => {
   };
 
   // Configuración de Activity Pulse (Evento / Tiempo)
-  const pulseOptions: ApexCharts.ApexOptions = {
+  const pulseOptions: ApexOptions = {
     chart: { 
       type: 'area', 
       toolbar: { show: false },
