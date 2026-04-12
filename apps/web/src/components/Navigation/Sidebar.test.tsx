@@ -33,7 +33,8 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/ArchonCore/i)).toBeDefined();
+    expect(screen.getByText(/Archon/i)).toBeDefined();
+    expect(screen.getByText(/Core/i)).toBeDefined();
     
     expect(screen.getByText('Centro de Comando')).toBeDefined();
     expect(screen.getByText('Estado de Flota')).toBeDefined();
