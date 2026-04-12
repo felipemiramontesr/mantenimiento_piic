@@ -767,33 +767,54 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* 💎 SENTINEL GLASS NEXUS (V4.1.0) - REFORZADO V4.2.0 - HERITAGE V4.3.0 */
+/* 💎 SENTINEL GLASS NEXUS (V4.1.0) - HERITAGE V4.3.0 - SOVEREIGN V4.4.0 */
 .glass-card-pro {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4));
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.45));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(15, 42, 68, 0.08);
   border-radius: 4px;
-  /* Double Border / Inner Highlight Effect */
+  padding: 40px; /* Golden Padding V.4.4.0 */
+  /* Triple Layer Depth */
   box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.04),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.8),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.02);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    0 20px 60px rgba(0, 0, 0, 0.04),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.9),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
 .glass-card-pro:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(15, 42, 68, 0.2);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
-  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(242, 183, 5, 0.3);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px);
+}
+
+/* 🖋️ SOVEREIGN TYPOGRAPHY (NAVY HIERARCHY) */
+.text-navy-main { color: var(--color-primary); }
+.text-navy-muted { color: rgba(15, 42, 68, 0.6); }
+.text-navy-dim { color: rgba(15, 42, 68, 0.3); }
+
+.text-kpi-black {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.text-instrument-header {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
 }
 
 .text-technical-mono {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
   letter-spacing: -0.02em;
 }
 
