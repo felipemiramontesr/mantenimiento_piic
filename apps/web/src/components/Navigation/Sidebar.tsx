@@ -9,6 +9,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import ArchonLogo from '../Logo/ArchonLogo';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -135,22 +136,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        borderBottom: '1px solid rgba(255,255,255,0.05)'
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        padding: isCollapsed ? '0' : '0 24px'
       }}>
-        {!isCollapsed && (
-          <h1 style={{ 
-            fontSize: '18px', 
-            fontWeight: 800, 
-            color: '#f2b705', 
-            letterSpacing: '0.05em',
-            textTransform: 'none'
-          }}>
-            Archon <span style={{ color: '#ffffff' }}>Core</span>
-          </h1>
-        )}
-        {isCollapsed && (
-           <div style={{ width: '12px', height: '12px', backgroundColor: '#f2b705', borderRadius: '2px' }} />
-        )}
+        <ArchonLogo isCollapsed={isCollapsed} size={isCollapsed ? 28 : 32} />
       </div>
 
       {/* Body (80%) */}
