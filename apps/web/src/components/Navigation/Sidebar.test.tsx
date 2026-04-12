@@ -59,14 +59,20 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(navigateMock).toHaveBeenCalledWith('/dashboard');
   });
 
-  it('terminates session on logout click', () => {
+  it('terminates session on logout click after confirmation', () => {
     render(
       <BrowserRouter>
         <Sidebar />
       </BrowserRouter>
     );
 
+    // First click: should enter confirmation state
     fireEvent.click(screen.getByText('Terminate Session'));
+    expect(screen.getByText('Confirm Logout?')).toBeDefined();
+    expect(localStorage.removeItem).not.toHaveBeenCalled();
+
+    // Second click: should actually logout
+    fireEvent.click(screen.getByText('Confirm Logout?'));
     
     expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
     expect(localStorage.removeItem).toHaveBeenCalledWith('user_data');
