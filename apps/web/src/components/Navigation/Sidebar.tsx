@@ -32,7 +32,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isConfirming, setIsConfirming] = React.useState(false);
-  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}') as { username?: string };
 
@@ -51,10 +51,8 @@ export const Sidebar: React.FC = () => {
     navigate('/login');
   };
 
-  React.useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+  React.useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
   return (
