@@ -31,13 +31,31 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active }) => {
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isConfirming, setIsConfirming] = React.useState(false);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}') as { username?: string };
 
   const handleLogout = (): void => {
+    if (!isConfirming) {
+      setIsConfirming(true);
+      timerRef.current = setTimeout(() => {
+        setIsConfirming(false);
+      }, 3000);
+      return;
+    }
+
+    if (timerRef.current) clearTimeout(timerRef.current);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     navigate('/login');
   };
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   return (
     <aside className="w-[280px] bg-pinnacle-primary text-white flex flex-col p-24">
@@ -80,10 +98,14 @@ export const Sidebar: React.FC = () => {
 
       <button
         onClick={handleLogout}
-        className="flex items-center gap-16 p-16 text-white/60 hover:text-pinnacle-accent transition-colors w-full"
+        className={`flex items-center gap-16 p-16 transition-all duration-300 w-full rounded-pinnacle-input ${
+          isConfirming 
+            ? 'bg-red-500/20 text-red-500 font-bold animate-pulse' 
+            : 'text-white/60 hover:text-pinnacle-accent hover:bg-white/5'
+        }`}
       >
-        <LogOut size={20} />
-        <span>Terminate Session</span>
+        <LogOut size={20} className={isConfirming ? 'rotate-12 transition-transform' : ''} />
+        <span>{isConfirming ? 'Confirm Logout?' : 'Terminate Session'}</span>
       </button>
     </aside>
   );
