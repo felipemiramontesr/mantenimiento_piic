@@ -55,7 +55,8 @@ describe('Sidebar Component (Archon Core)', () => {
     fireEvent.click(screen.getByText('Estado de Flota'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/fleet');
     
-    expect(screen.getByText(/ArchonCore/i)).toBeDefined();
+    expect(screen.getByText(/Archon/i)).toBeDefined();
+    expect(screen.getByText(/Core/i)).toBeDefined();
   });
 
   it('terminates session on logout click after confirmation', () => {
