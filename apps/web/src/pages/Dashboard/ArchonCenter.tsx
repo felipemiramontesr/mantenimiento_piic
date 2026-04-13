@@ -47,7 +47,7 @@ const ArchonCenter: React.FC = () => (
             <p 
               className="text-[14px] font-bold" 
               style={{ 
-                color: '#0052cc', 
+                color: '#0f2a44', 
                 whiteSpace: 'nowrap', 
                 marginTop: '16px' 
               }}
