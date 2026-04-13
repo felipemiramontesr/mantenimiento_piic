@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban, Route } from 'lucide-react';
+import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban, Navigation } from 'lucide-react';
 
 const ArchonCenter: React.FC = () => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -204,7 +204,7 @@ const ArchonCenter: React.FC = () => (
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
-            <Route size={20} style={{ color: '#0ea5e9' }} />
+            <Navigation size={20} style={{ color: '#0ea5e9' }} />
             <span className="text-instrument-header text-[#0f2a44] opacity-80">
               Flotilla en ruta
             </span>
