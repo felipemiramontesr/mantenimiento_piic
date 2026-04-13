@@ -24,7 +24,7 @@ const ArchonCenter: React.FC = () => (
         <div
           className="glass-card-pro"
           style={{
-            borderTop: '4px solid #f2b705',
+            borderTop: '4px solid #8b5cf6',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -33,7 +33,7 @@ const ArchonCenter: React.FC = () => (
         >
           {/* Header de Tarjeta: Icono + Texto INLINE CENTRADO */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
-            <Gauge size={20} style={{ color: '#f2b705' }} />
+            <Gauge size={20} style={{ color: '#8b5cf6' }} />
             <span className="text-instrument-header text-[#0f2a44] opacity-80">
               Índice de Mantenimiento
             </span>
@@ -58,8 +58,8 @@ const ArchonCenter: React.FC = () => (
 
           {/* Acción de Tarjeta: Botón Sentinel */}
           <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <button className="btn-sentinel-yellow">
-              Ver detalles tácticos <ArrowRight size={10} className="text-[#0f2a44]" />
+            <button className="btn-sentinel-yellow" style={{ backgroundColor: '#8b5cf6', color: 'white', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>
+              Ver detalles tácticos <ArrowRight size={10} className="text-white" />
             </button>
           </div>
         </div>
