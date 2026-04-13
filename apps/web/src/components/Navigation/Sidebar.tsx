@@ -4,7 +4,6 @@ import {
   Truck, 
   ShieldAlert, 
   Settings, 
-  LogOut,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';

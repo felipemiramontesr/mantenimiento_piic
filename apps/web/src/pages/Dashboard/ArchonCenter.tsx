@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban, Navigation, User, Settings, LogOut } from 'lucide-react';
 
@@ -330,10 +331,10 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.5 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.6 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.5.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.6.</p>
       </footer>
     </main>
   );
