@@ -1,232 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Settings, AlertCircle, CheckCircle2 } from 'lucide-react';
-import api from '../../api/client';
+import React from 'react';
+import { Truck, ArrowRight } from 'lucide-react';
 
-interface FleetUnit {
-  id: string;
-  tag: string;
-  type: string;
-  status: 'ACTIVE' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
-  assigned_to: number | null;
-}
-
-interface SlideOverProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-const SlideOver: React.FC<SlideOverProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [tag, setTag] = useState('');
-  const [type, setType] = useState('Camioneta 4x4');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      await api.post('/fleet', { tag, type });
-      setTag('');
-      onSuccess();
-      onClose();
-    } catch (err) {
-      const axiosError = err as { response?: { data?: { error?: string } } };
-      const message = axiosError.response?.data?.error || 'Failed to initialize unit';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const FleetModule: React.FC = (): React.ReactElement => {
   return (
-    <>
-      <div 
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 z-40 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
-        onClick={onClose}
-        role="button"
-        tabIndex={0}
-      />
-      <div className={`fixed top-0 right-0 h-full w-[400px] bg-[#0A1A2A] shadow-2xl z-50 transform transition-transform duration-500 border-l border-white/10 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="p-32 flex flex-col h-full relative">
-          <button 
-            type="button"
-            onClick={onClose}
-            className="absolute top-24 right-24 text-white/50 hover:text-white"
-          >
-            ✕
-          </button>
-          
-          <h2 className="text-2xl font-black text-pinnacle-primary mb-8 tracking-tight">Add Unit</h2>
-          <p className="text-xs text-white/40 uppercase tracking-widest font-bold mb-32">Initialize Core Fleet Parameter</p>
-
-          <form onSubmit={handleSubmit} className="space-y-24 flex-1">
-            <div className="form-group">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 text-pinnacle-text">Identity Tag</label>
-              <input 
-                type="text" 
-                required
-                value={tag}
-                onChange={(e): void => setTag(e.target.value.toUpperCase())}
-                className="diamond-input" 
-                placeholder="e.g. PIIC-003" 
-              />
+    <main className="workspace-container-pro animate-in fade-in duration-700">
+      {/* 🚀 HEADER SOBERANO (Zen Mode) - V.4.8.2 */}
+      <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          {/* Left Panel: Administrative Context */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <Truck size={28} style={{ color: '#f2b705' }} />
+              <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl" style={{ margin: 0, padding: 0, lineHeight: 1 }}>
+                Administrar Flota
+              </h2>
             </div>
-            <div className="form-group">
-              <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1 text-pinnacle-text">Vehicle Class</label>
-              <select 
-                value={type}
-                onChange={(e): void => setType(e.target.value)}
-                className="diamond-input"
-              >
-                <option value="Camioneta 4x4">Camioneta 4x4</option>
-                <option value="Retroexcavadora">Retroexcavadora</option>
-                <option value="Camión de Volteo">Camión de Volteo</option>
-                <option value="Tractor">Tractor</option>
-              </select>
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+              Gestión Centralizada de Activos Vehiculares
+            </p>
+          </div>
+
+          {/* Right Panel: Identity (Sync with ArchonCenter) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
+            <h1 style={{ 
+              fontSize: '26px', 
+              fontWeight: 900, 
+              margin: 0, 
+              letterSpacing: '-0.03em', 
+              fontFamily: 'Inter, system-ui, sans-serif', 
+              color: '#0f2a44' 
+            }}>
+              Archon
+            </h1>
+            <div 
+              style={{ 
+                width: '44px', 
+                height: '44px', 
+                borderRadius: '4px', 
+                border: '2px solid #f2b705', 
+                backgroundColor: '#0f2a44',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center'
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 100 100">
+                <path d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z" stroke="#f2b705" strokeWidth="16" fill="none" />
+              </svg>
             </div>
-
-            {error && (
-              <div className="p-16 bg-red-500/10 border border-red-500/20 rounded text-red-500 text-xs font-bold animate-pulse">
-                {error}
-              </div>
-            )}
-            
-            <div className="mt-auto pt-24 border-t border-white/10">
-              <button 
-                type="submit" 
-                disabled={loading || !tag}
-                className="diamond-button w-full disabled:opacity-50"
-              >
-                {loading ? 'Processing Engagement...' : 'Engage Registration'}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
-    </>
-  );
-};
-
-const FleetModule: React.FC = () => {
-  const [units, setUnits] = useState<FleetUnit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isSlideOverOpen, setSlideOverOpen] = useState(false);
-
-  const fetchFleet = (): void => {
-    setLoading(true);
-    api.get<{ data: FleetUnit[] }>('/fleet')
-      .then((response) => {
-        setUnits(response.data.data);
-      })
-      .catch(() => {
-        // Silently fail or log for production
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    fetchFleet();
-  }, []);
-
-  const StatusBadge: React.FC<{ status: FleetUnit['status'] }> = ({ status }) => {
-    switch (status) {
-      case 'ACTIVE':
-        return <span className="inline-flex items-center gap-2 px-8 py-4 rounded bg-green-500/20 text-green-400 text-[10px] font-black uppercase tracking-wider border border-green-500/30"><CheckCircle2 size={12}/> Optima</span>;
-      case 'MAINTENANCE':
-        return <span className="inline-flex items-center gap-2 px-8 py-4 rounded bg-pinnacle-accent/20 text-pinnacle-accent text-[10px] font-black uppercase tracking-wider border border-pinnacle-accent/30"><Settings size={12}/> Maintenance</span>;
-      default:
-        return <span className="inline-flex items-center gap-2 px-8 py-4 rounded bg-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-wider border border-red-500/30"><AlertCircle size={12}/> Offline</span>;
-    }
-  };
-
-  const renderTableContent = (): React.ReactNode => {
-    if (loading && units.length === 0) {
-      return (
-        <div className="p-32 text-center text-white/40 text-[10px] font-black uppercase tracking-widest">
-          Syncing Archon Matrices...
-        </div>
-      );
-    }
-    if (units.length === 0) {
-      return (
-        <div className="p-32 text-center text-white/40 text-[10px] font-black uppercase tracking-widest">
-          No fleet units registered
-        </div>
-      );
-    }
-    return units.map((unit) => (
-      <div key={unit.id} className="grid grid-cols-5 px-32 py-24 border-b border-white/5 items-center hover:bg-white/[0.02] transition-colors group">
-        <div className="col-span-1 font-bold text-pinnacle-primary">{unit.tag}</div>
-        <div className="col-span-2 font-medium text-white/80">{unit.type}</div>
-        <div className="col-span-1">
-          <StatusBadge status={unit.status} />
-        </div>
-        <div className="col-span-1 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-          <button type="button" className="text-[10px] font-black uppercase tracking-widest text-pinnacle-accent hover:text-white">Audit</button>
-        </div>
-      </div>
-    ));
-  };
-
-  return (
-    <div className="p-32 animate-in fade-in duration-500">
-      <header className="flex justify-between items-center mb-40">
-        <div>
-          <h2 className="text-pinnacle-primary tracking-tight font-black text-3xl">Fleet Registry</h2>
-          <p className="text-pinnacle-text/60 mt-2">Centralized vehicular control mapping</p>
-        </div>
-        <button 
-          type="button"
-          onClick={(): void => setSlideOverOpen(true)}
-          className="bg-pinnacle-accent/10 hover:bg-pinnacle-accent/20 text-pinnacle-accent border border-pinnacle-accent/30 px-16 py-8 rounded font-black text-[11px] uppercase tracking-widest flex items-center gap-8 transition-colors"
-        >
-          <Plus size={16} /> Add Unit
-        </button>
       </header>
 
-      {/* Grid KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-24 mb-40">
-        <div className="glass-morphism p-24 rounded-pinnacle-card border-l-2 border-l-pinnacle-primary">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/50 mb-4">Total Inventory</p>
-          <h3 className="text-4xl font-black text-white">{loading && units.length === 0 ? '-' : units.length}</h3>
-        </div>
-        <div className="glass-morphism p-24 rounded-pinnacle-card border-l-2 border-l-green-500">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/50 mb-4">Active Deployments</p>
-          <h3 className="text-4xl font-black text-green-400">{loading && units.length === 0 ? '-' : units.filter(u => u.status === 'ACTIVE').length}</h3>
-        </div>
-        <div className="glass-morphism p-24 rounded-pinnacle-card border-l-2 border-l-pinnacle-accent">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/50 mb-4">In Maintenance</p>
-          <h3 className="text-4xl font-black text-pinnacle-accent">{loading && units.length === 0 ? '-' : units.filter(u => u.status === 'MAINTENANCE').length}</h3>
-        </div>
-      </div>
-
-      {/* Tilted Database Log */}
-      <div className="glass-morphism p-[1px] rounded overflow-hidden">
-        <div className="bg-[#0b172a]/80 backdrop-blur-xl w-full">
-          <div className="grid grid-cols-5 px-32 py-16 border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-            <div className="col-span-1">Identity Tag</div>
-            <div className="col-span-2">Classification</div>
-            <div className="col-span-1">System Status</div>
-            <div className="col-span-1 text-right">Actions</div>
-          </div>
-          
-          <div className="flex flex-col">
-            {renderTableContent()}
+      {/* 📊 BODY MODULAR (Zen Skeleton) */}
+      <section className="workspace-body-pro">
+        <div 
+          style={{ 
+            width: '100%', 
+            height: '60vh', 
+            border: '1px dashed rgba(15, 42, 68, 0.1)', 
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(15, 42, 68, 0.02)'
+          }}
+        >
+          <div className="text-center">
+            <Truck size={48} className="text-[#0f2a44] opacity-10 mb-16 mx-auto" />
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">
+              Panel de Administración en Espera de Parámetros
+            </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <SlideOver 
-        isOpen={isSlideOverOpen} 
-        onClose={(): void => setSlideOverOpen(false)} 
-        onSuccess={(): void => fetchFleet()}
-      />
-    </div>
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.8.2 */}
+      <footer className="workspace-footer-pro">
+        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.8.2.</p>
+      </footer>
+    </main>
   );
 };
 

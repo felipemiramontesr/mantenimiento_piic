@@ -1009,3 +1009,15 @@ body {
   box-shadow: 0 0 15px rgba(242, 183, 5, 0.4);
   border-color: #ffffff !important;
 }
+
+/* ?? SIDEBAR NAVIGATION HOVER */
+.nav-item-pro:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-left-color: rgba(242, 183, 5, 0.4) !important;
+}
+
+.nav-item-pro:hover svg {
+  color: #f2b705 !important;
+  filter: drop-shadow(0 0 4px rgba(242, 183, 5, 0.3));
+  transition: all 0.3s ease;
+}
