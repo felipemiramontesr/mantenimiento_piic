@@ -331,10 +331,10 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.9 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.8.0 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.9.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.8.0.</p>
       </footer>
     </main>
   );

@@ -4,6 +4,7 @@ import {
   Truck, 
   ShieldAlert, 
   Settings, 
+  Users,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -138,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           />
           <NavItem 
             icon={<Truck size={20} />} 
-            label="Estado de Flota" 
+            label="Administrar Flota" 
             path="/dashboard/fleet" 
             active={location.pathname === '/dashboard/fleet'}
             isCollapsed={isCollapsed}
@@ -148,6 +149,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             label="Logs de Seguridad" 
             path="/dashboard/logs" 
             active={location.pathname === '/dashboard/logs'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem 
+            icon={<Users size={20} />} 
+            label="Administrar Usuarios" 
+            path="/dashboard/users" 
+            active={location.pathname === '/dashboard/users'}
             isCollapsed={isCollapsed}
           />
 
