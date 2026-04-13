@@ -5,9 +5,11 @@ const ArchonCenter: React.FC = () => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
     {/* 🚀 HEADER SOBERANO (Flexible) - ALINEACIÓN QUIRÚRGICA V.4.7.1 */}
     <header className="workspace-header-pro flex flex-col items-start justify-center">
-      <div className="flex flex-row items-center flex-nowrap gap-4 mb-4">
-        <LayoutDashboard size={24} style={{ color: '#f2b705' }} />
-        <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl">Centro de Comando</h2>
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <LayoutDashboard size={28} style={{ color: '#f2b705', display: 'block' }} />
+        <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl" style={{ margin: 0, padding: 0, lineHeight: 1 }}>
+          Centro de Comando
+        </h2>
       </div>
       <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
         Eje de Control de Flota & Telemetría Táctica de Inteligencia
@@ -16,11 +18,11 @@ const ArchonCenter: React.FC = () => (
 
     {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
     <section className="workspace-body-pro">
-      {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas) */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas en duro) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', width: '100%' }}>
         {/* KPI MÓDULO: Índice de Mantenimiento de Flotilla */}
         <div
-          className="glass-card-pro col-span-1"
+          className="glass-card-pro"
           style={{
             borderTop: '4px solid #f2b705',
             textAlign: 'left',
