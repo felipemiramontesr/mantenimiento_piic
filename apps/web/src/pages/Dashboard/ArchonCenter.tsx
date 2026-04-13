@@ -1,4 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
 import React from 'react';
 import { ArrowRight, Wrench, LayoutDashboard } from 'lucide-react';
 
