@@ -18,15 +18,9 @@ describe('Sidebar Component (Archon Core)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (useNavigate as unknown as ReturnType<typeof vi.fn>).mockReturnValue(navigateMock);
-    
-    Storage.prototype.getItem = vi.fn((key) => {
-      if (key === 'user_data') return JSON.stringify({ username: 'Operator' });
-      return null;
-    });
-    Storage.prototype.removeItem = vi.fn();
   });
 
-  it('renders all navigation items properly and respects location', () => {
+  it('renders all navigation items properly and avoids redundancy', () => {
     render(
       <BrowserRouter>
         <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -39,10 +33,12 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Centro de Comando')).toBeDefined();
     expect(screen.getByText('Estado de Flota')).toBeDefined();
     expect(screen.getByText('Logs de Seguridad')).toBeDefined();
+    
+    // Configuración should now be found as the bottom action button
     expect(screen.getByText('Configuración')).toBeDefined();
   });
 
-  it('navigates when clicking navigation items', () => {
+  it('navigates to dashboard items when clicking main nav items', () => {
     render(
       <BrowserRouter>
         <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -54,28 +50,17 @@ describe('Sidebar Component (Archon Core)', () => {
 
     fireEvent.click(screen.getByText('Estado de Flota'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/fleet');
-    
-    expect(screen.getByText(/Archon/i)).toBeDefined();
-    expect(screen.getByText(/Core/i)).toBeDefined();
   });
 
-  it('terminates session on logout click after confirmation', () => {
+  it('navigates to settings when clicking the bottom action button', () => {
     render(
       <BrowserRouter>
         <Sidebar isCollapsed={false} onToggle={vi.fn()} />
       </BrowserRouter>
     );
 
-    // First click: should enter confirmation state
-    fireEvent.click(screen.getByText('Salir'));
-    expect(screen.getByText('¿Seguro?')).toBeDefined();
-    expect(localStorage.removeItem).not.toHaveBeenCalled();
-
-    // Second click: should actually logout
-    fireEvent.click(screen.getByText('¿Seguro?'));
-    
-    expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('user_data');
-    expect(navigateMock).toHaveBeenCalledWith('/login');
+    const settingsBtn = screen.getByTitle('Configuración de Sistema');
+    fireEvent.click(settingsBtn);
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/settings');
   });
 });
