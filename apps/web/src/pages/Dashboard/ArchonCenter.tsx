@@ -22,7 +22,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.4.7.4 */}
+      {/* ðŸš€ HEADER SOBERANO (Dual Panel) - V.4.7.4 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Left Panel: Operational Context */}
@@ -34,7 +34,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Eje de Control de Flota & Telemetría de Inteligencia
+              Eje de Control de Flota & TelemetrÃ­a de Inteligencia
             </p>
           </div>
 
@@ -113,7 +113,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                   className="dropdown-item-mock dropdown-item-mock-danger" 
                   onClick={handleLogout}
                 >
-                  <LogOut size={14} /> Cerrar Sesión
+                  <LogOut size={14} /> Cerrar SesiÃ³n
                 </button>
               </div>
             )}
@@ -121,11 +121,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
+      {/* ðŸ“Š BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
       <section className="workspace-body-pro">
-        {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas en duro con constraint minmax para matar scroll horizontal) */}
+        {/* Sistema de CuadrÃ­cula Sentinel (3 Columnas estrictas en duro con constraint minmax para matar scroll horizontal) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
-          {/* KPI MÓDULO: Índice de Mantenimiento de Flotilla */}
+          {/* KPI MÃ“DULO: Ãndice de Mantenimiento de Flotilla */}
           <div
             className="glass-card-pro"
             style={{
@@ -140,11 +140,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
               <Gauge size={20} style={{ color: '#0f2a44' }} />
               <span className="text-instrument-header text-[#0f2a44] opacity-80">
-                Índice de Mantenimiento
+                Ãndice de Mantenimiento
               </span>
             </div>
 
-            {/* Cuerpo de Tarjeta: Valor KPI + Descripción */}
+            {/* Cuerpo de Tarjeta: Valor KPI + DescripciÃ³n */}
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
                 94.2<span className="text-xl ml-4 opacity-20">%</span>
@@ -164,12 +164,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             {/* Acción de Tarjeta: Botón Sentinel */}
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
               <button className="btn-sentinel-yellow" style={{ backgroundColor: '#0f2a44', color: 'white', boxShadow: '0 4px 12px rgba(15, 42, 68, 0.3)' }}>
-                Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+                Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 2: Nuestra Flotilla */}
+          {/* KPI MÃ“DULO 2: Nuestra Flotilla */}
           <div
             className="glass-card-pro"
             style={{
@@ -196,12 +196,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
               <button className="btn-sentinel-yellow" style={{ backgroundColor: '#8b5cf6', color: 'white', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>
-                Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+                Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 3: Flotilla disponible */}
+          {/* KPI MÃ“DULO 3: Flotilla disponible */}
           <div
             className="glass-card-pro"
             style={{
@@ -228,12 +228,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
               <button className="btn-sentinel-yellow" style={{ backgroundColor: '#10b981', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
-                Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+                Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 4: Flotilla en ruta */}
+          {/* KPI MÃ“DULO 4: Flotilla en ruta */}
           <div
             className="glass-card-pro"
             style={{
@@ -255,17 +255,17 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                 47
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
-                Unidades en operación
+                Unidades en operaciÃ³n
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
               <button className="btn-sentinel-yellow" style={{ backgroundColor: '#0ea5e9', color: 'white', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)' }}>
-                Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+                Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 5: Flotilla en mantenimiento */}
+          {/* KPI MÃ“DULO 5: Flotilla en mantenimiento */}
           <div
             className="glass-card-pro"
             style={{
@@ -287,17 +287,17 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                 21
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
-                Unidades en taller o reparación activa
+                Unidades en taller o reparaciÃ³n activa
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
               <button className="btn-sentinel-yellow">
-                Ver detalles tácticos <ArrowRight size={10} className="text-[#0f2a44]" />
+                Ver detalles <ArrowRight size={10} className="text-[#0f2a44]" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 6: Flotilla descontinuada */}
+          {/* KPI MÃ“DULO 6: Flotilla descontinuada */}
           <div
             className="glass-card-pro"
             style={{
@@ -324,17 +324,17 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
               <button className="btn-sentinel-yellow" style={{ backgroundColor: '#ef4444', color: 'white', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
-                Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+                Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.7 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.8 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.7.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.8.</p>
       </footer>
     </main>
   );

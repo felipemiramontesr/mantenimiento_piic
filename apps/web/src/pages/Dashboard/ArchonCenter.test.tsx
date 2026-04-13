@@ -90,7 +90,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(screen.getByText('Flotilla descontinuada')).toBeDefined();
     
     // Verify "Táctica" is NOT present in buttons
-    const detailButtons = screen.getAllByText('Ver detalles');
+    const detailButtons = screen.getAllByText(/Ver detalles/i);
     expect(detailButtons.length).toBe(6);
   });
 });
