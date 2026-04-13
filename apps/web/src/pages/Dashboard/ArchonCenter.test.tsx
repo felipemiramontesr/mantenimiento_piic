@@ -29,7 +29,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Anchor')).toBeDefined();
+    expect(screen.getByText('Archon')).toBeDefined();
     expect(screen.getByText('Centro de Comando')).toBeDefined();
     expect(screen.getByText(/Eje de Control de Flota/i)).toBeDefined();
   });
@@ -49,7 +49,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     // Click to open
     fireEvent.click(avatarBtn);
     expect(screen.getByText('Perfil')).toBeDefined();
-    expect(screen.getByText('Cerrar Sesión')).toBeDefined();
+    expect(screen.getByText(/Cerrar Sesión/i)).toBeDefined();
 
     // Click to close (or toggle back)
     fireEvent.click(avatarBtn);
@@ -67,7 +67,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     fireEvent.click(screen.getByLabelText('User Menu'));
     
     // Click Logout
-    const logoutBtn = screen.getByText('Cerrar Sesión');
+    const logoutBtn = screen.getByText(/Cerrar Sesión/i);
     fireEvent.click(logoutBtn);
 
     expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
@@ -82,12 +82,12 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Índice de Mantenimiento')).toBeDefined();
-    expect(screen.getByText('Nuestra Flotilla')).toBeDefined();
-    expect(screen.getByText('Flotilla disponible')).toBeDefined();
-    expect(screen.getByText('Flotilla en ruta')).toBeDefined();
-    expect(screen.getByText('Flotilla en mantenimiento')).toBeDefined();
-    expect(screen.getByText('Flotilla descontinuada')).toBeDefined();
+    expect(screen.getByText(/Índice de Mantenimiento/i)).toBeDefined();
+    expect(screen.getByText(/Nuestra Flotilla/i)).toBeDefined();
+    expect(screen.getByText(/Flotilla disponible/i)).toBeDefined();
+    expect(screen.getByText(/Flotilla en ruta/i)).toBeDefined();
+    expect(screen.getByText(/Flotilla en mantenimiento/i)).toBeDefined();
+    expect(screen.getByText(/Flotilla descontinuada/i)).toBeDefined();
     
     // Verify "Táctica" is NOT present in buttons
     const detailButtons = screen.getAllByText(/Ver detalles/i);

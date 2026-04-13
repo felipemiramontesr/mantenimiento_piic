@@ -22,7 +22,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* ðŸš€ HEADER SOBERANO (Dual Panel) - V.4.7.4 */}
+      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.4.7.9 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Left Panel: Operational Context */}
@@ -34,7 +34,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Eje de Control de Flota & TelemetrÃ­a de Inteligencia
+              Eje de Control de Flota & Telemetría de Inteligencia
             </p>
           </div>
 
@@ -49,7 +49,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               fontFamily: 'Inter, system-ui, sans-serif', 
               color: '#0f2a44' 
             }}>
-              Anchor
+              Archon
             </h1>
 
             {/* Tactical Avatar Trigger */}
@@ -113,7 +113,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                   className="dropdown-item-mock dropdown-item-mock-danger" 
                   onClick={handleLogout}
                 >
-                  <LogOut size={14} /> Cerrar SesiÃ³n
+                  <LogOut size={14} /> Cerrar Sesión
                 </button>
               </div>
             )}
@@ -121,11 +121,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* ðŸ“Š BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
+      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
       <section className="workspace-body-pro">
-        {/* Sistema de CuadrÃ­cula Sentinel (3 Columnas estrictas en duro con constraint minmax para matar scroll horizontal) */}
+        {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas en duro con constraint minmax para matar scroll horizontal) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
-          {/* KPI MÃ“DULO: Ãndice de Mantenimiento de Flotilla */}
+          {/* KPI MÓDULO: Índice de Mantenimiento de Flotilla */}
           <div
             className="glass-card-pro"
             style={{
@@ -140,11 +140,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
               <Gauge size={20} style={{ color: '#0f2a44' }} />
               <span className="text-instrument-header text-[#0f2a44] opacity-80">
-                Ãndice de Mantenimiento
+                Índice de Mantenimiento
               </span>
             </div>
 
-            {/* Cuerpo de Tarjeta: Valor KPI + DescripciÃ³n */}
+            {/* Cuerpo de Tarjeta: Valor KPI + Descripción */}
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
                 94.2<span className="text-xl ml-4 opacity-20">%</span>
@@ -169,7 +169,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
           </div>
 
-          {/* KPI MÃ“DULO 2: Nuestra Flotilla */}
+          {/* KPI MÓDULO 2: Nuestra Flotilla */}
           <div
             className="glass-card-pro"
             style={{
@@ -201,7 +201,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
           </div>
 
-          {/* KPI MÃ“DULO 3: Flotilla disponible */}
+          {/* KPI MÓDULO 3: Flotilla disponible */}
           <div
             className="glass-card-pro"
             style={{
@@ -233,7 +233,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
           </div>
 
-          {/* KPI MÃ“DULO 4: Flotilla en ruta */}
+          {/* KPI MÓDULO 4: Flotilla en ruta */}
           <div
             className="glass-card-pro"
             style={{
@@ -255,7 +255,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                 47
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
-                Unidades en operaciÃ³n
+                Unidades en operación
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
@@ -265,7 +265,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
           </div>
 
-          {/* KPI MÃ“DULO 5: Flotilla en mantenimiento */}
+          {/* KPI MÓDULO 5: Flotilla en mantenimiento */}
           <div
             className="glass-card-pro"
             style={{
@@ -287,7 +287,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                 21
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
-                Unidades en taller o reparaciÃ³n activa
+                Unidades en taller o reparación activa
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
@@ -297,7 +297,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
           </div>
 
-          {/* KPI MÃ“DULO 6: Flotilla descontinuada */}
+          {/* KPI MÓDULO 6: Flotilla descontinuada */}
           <div
             className="glass-card-pro"
             style={{
@@ -331,10 +331,10 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.8 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.9 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.8.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.9.</p>
       </footer>
     </main>
   );
