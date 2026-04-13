@@ -9,6 +9,13 @@ const createFleetSchema = z.object({
   type: z.string().min(2).max(50),
 });
 
+const updateFleetSchema = z.object({
+  tag: z.string().min(2).max(50).optional(),
+  type: z.string().min(2).max(50).optional(),
+  status: z.enum(['ACTIVE', 'MAINTENANCE', 'OUT_OF_SERVICE']).optional(),
+  assigned_to: z.number().nullable().optional(),
+});
+
 interface FleetUnit extends RowDataPacket {
   id: string;
   tag: string;
@@ -81,6 +88,73 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     } catch (error) {
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Failed to commit unit to registry' });
+    }
+  });
+
+  /**
+   * PATCH /api/v1/fleet/:id
+   * Update metadata or status of an existing vehicle unit.
+   */
+  fastify.patch('/fleet/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const parse = updateFleetSchema.safeParse(request.body);
+
+    if (!parse.success) {
+      return reply.code(400).send({ error: 'Invalid update data', details: parse.error.format() });
+    }
+
+    const updates = parse.data;
+    const fields = Object.keys(updates);
+    
+    if (fields.length === 0) {
+      return reply.code(400).send({ error: 'No update parameters provided' });
+    }
+
+    try {
+      const setClause = fields.map(f => `${f} = ?`).join(', ');
+      const values = [...Object.values(updates), id];
+
+      const [result] = await db.execute(
+        `UPDATE fleet_units SET ${setClause} WHERE id = ?`,
+        values
+      );
+
+      const affected = (result as { affectedRows: number }).affectedRows;
+      
+      if (affected === 0) {
+        return reply.code(404).send({ error: 'Unit not found in registry' });
+      }
+
+      return reply.send({ success: true });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failed to update system registry' });
+    }
+  });
+
+  /**
+   * DELETE /api/v1/fleet/:id
+   * Permanently decommission a unit from the active registry.
+   */
+  fastify.delete('/fleet/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      const [result] = await db.execute(
+        'DELETE FROM fleet_units WHERE id = ?',
+        [id]
+      );
+
+      const affected = (result as { affectedRows: number }).affectedRows;
+      
+      if (affected === 0) {
+        return reply.code(404).send({ error: 'Unit not found in registry' });
+      }
+
+      return reply.send({ success: true });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Critical failure during unit decommissioning' });
     }
   });
 }

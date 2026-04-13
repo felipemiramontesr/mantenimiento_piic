@@ -147,7 +147,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             {/* Cuerpo de Tarjeta: Valor KPI + Descripción */}
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                94.2<span className="text-xl ml-4 opacity-20">%</span>
+                0.0<span className="text-xl ml-4 opacity-20">%</span>
               </h3>
               <p 
                 className="text-[11px] tracking-wide font-bold"  
@@ -188,7 +188,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                153
+                0
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades totales registradas
@@ -220,7 +220,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                128
+                0
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades aptas y listas para despliegue
@@ -252,7 +252,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                47
+                0
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades en operación
@@ -284,7 +284,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                21
+                0
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades en taller o reparación activa
@@ -316,7 +316,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                4
+                0
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Aparatos inactivos, mermas o baja definitiva
@@ -331,10 +331,10 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.8.5 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.9.0 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.8.5.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.9.0.</p>
       </footer>
     </main>
   );
