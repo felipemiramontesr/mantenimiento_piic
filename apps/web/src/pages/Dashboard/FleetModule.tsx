@@ -1,9 +1,8 @@
 import React from 'react';
-import { Truck, ArrowRight } from 'lucide-react';
+import { Truck } from 'lucide-react';
 
-const FleetModule: React.FC = (): React.ReactElement => {
-  return (
-    <main className="workspace-container-pro animate-in fade-in duration-700">
+const FleetModule: React.FC = (): React.ReactElement => (
+  <main className="workspace-container-pro animate-in fade-in duration-700">
       {/* 🚀 HEADER SOBERANO (Zen Mode) - V.4.8.2 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -78,10 +77,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.8.2 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.8.2.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.8.3.</p>
       </footer>
     </main>
-  );
-};
+);
 
 export default FleetModule;
