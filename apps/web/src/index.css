@@ -998,3 +998,14 @@ body {
 .dropdown-item-mock-danger:hover {
   background-color: rgba(239, 68, 68, 0.05);
 }
+
+/* ?? USER AVATAR SYSTEM */
+.avatar-trigger-pro {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.avatar-trigger-pro:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(242, 183, 5, 0.4);
+  border-color: #ffffff !important;
+}

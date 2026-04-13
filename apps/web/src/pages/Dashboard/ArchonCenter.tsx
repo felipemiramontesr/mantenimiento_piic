@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban, Navigation, User, Settings, LogOut } from 'lucide-react';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = (): void => {
@@ -10,6 +11,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
   const closeMenu = (): void => {
     setIsMenuOpen(false);
+  };
+
+  const handleLogout = (): void => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    navigate('/login');
   };
 
   return (
@@ -26,7 +33,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Eje de Control de Flota & Telemetría Táctica de Inteligencia
+              Eje de Control de Flota & Telemetría de Inteligencia
             </p>
           </div>
 
@@ -48,6 +55,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             <button 
               onClick={toggleMenu}
               aria-label="User Menu"
+              className="avatar-trigger-pro"
               style={{ 
                 width: '44px', 
                 height: '44px', 
@@ -91,7 +99,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                   className="dropdown-item-mock" 
                   onClick={closeMenu}
                 >
-                  <User size={14} /> Perfil Táctico
+                  <User size={14} /> Perfil
                 </button>
                 <button 
                   className="dropdown-item-mock" 
@@ -102,7 +110,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                 <div style={{ height: '1px', background: 'rgba(15, 42, 68, 0.05)', margin: '4px 0' }} />
                 <button 
                   className="dropdown-item-mock dropdown-item-mock-danger" 
-                  onClick={closeMenu}
+                  onClick={handleLogout}
                 >
                   <LogOut size={14} /> Cerrar Sesión
                 </button>
@@ -322,10 +330,10 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.4 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.5 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.4.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.5.</p>
       </footer>
     </main>
   );

@@ -67,27 +67,9 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isConfirming, setIsConfirming] = React.useState(false);
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleLogout = (): void => {
-    if (!isConfirming) {
-      setIsConfirming(true);
-      timerRef.current = setTimeout(() => {
-        setIsConfirming(false);
-      }, 3000);
-      return;
-    }
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    navigate('/login');
+  const goToSettings = (): void => {
+    navigate('/dashboard/settings');
   };
-
-  React.useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
 
   return (
     <aside 
@@ -169,13 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             active={location.pathname === '/dashboard/logs'}
             isCollapsed={isCollapsed}
           />
-          <NavItem 
-            icon={<Settings size={20} />} 
-            label="Configuración" 
-            path="/dashboard/settings" 
-            active={location.pathname === '/dashboard/settings'}
-            isCollapsed={isCollapsed}
-          />
+
         </nav>
       </div>
 
@@ -189,9 +165,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         borderTop: '1px solid rgba(255,255,255,0.05)'
       }}>
         <button
-          onClick={handleLogout}
+          onClick={goToSettings}
           style={{
-            backgroundColor: isConfirming ? '#ef4444' : '#f2b705',
+            backgroundColor: location.pathname === '/dashboard/settings' ? '#ffffff' : '#f2b705',
             color: '#0f2a44',
             width: '100%',
             padding: '10px',
@@ -208,10 +184,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             cursor: 'pointer',
             transition: 'all 0.2s ease'
           }}
-          title="Salir del Sistema"
+          title="Configuración de Sistema"
         >
-          <LogOut size={14} />
-          {!isCollapsed && <span>{isConfirming ? '¿Seguro?' : 'Salir'}</span>}
+          <Settings size={14} />
+          {!isCollapsed && <span>Configuración</span>}
         </button>
       </div>
     </aside>
