@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Gauge, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban } from 'lucide-react';
 
 const ArchonCenter: React.FC = () => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -60,6 +60,134 @@ const ArchonCenter: React.FC = () => (
           <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
             <button className="btn-sentinel-yellow">
               Ver detalles tácticos <ArrowRight size={10} className="text-[#0f2a44]" />
+            </button>
+          </div>
+        </div>
+
+        {/* KPI MÓDULO 2: Nuestra Flotilla */}
+        <div
+          className="glass-card-pro"
+          style={{
+            borderTop: '4px solid #0f2a44',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+            <Truck size={20} style={{ color: '#0f2a44' }} />
+            <span className="text-instrument-header text-[#0f2a44] opacity-80">
+              Nuestra Flotilla
+            </span>
+          </div>
+          <div className="mb-24" style={{ width: '100%' }}>
+            <h3 className="text-kpi-black text-[#0f2a44]">
+              153
+            </h3>
+            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+              Unidades totales registradas en el parque vehicular
+            </p>
+          </div>
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <button className="btn-sentinel-yellow" style={{ backgroundColor: '#0f2a44', color: 'white', boxShadow: '0 4px 12px rgba(15, 42, 68, 0.3)' }}>
+              Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* KPI MÓDULO 3: Flotilla disponible */}
+        <div
+          className="glass-card-pro"
+          style={{
+            borderTop: '4px solid #10b981',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+            <ShieldCheck size={20} style={{ color: '#10b981' }} />
+            <span className="text-instrument-header text-[#0f2a44] opacity-80">
+              Flotilla disponible
+            </span>
+          </div>
+          <div className="mb-24" style={{ width: '100%' }}>
+            <h3 className="text-kpi-black text-[#0f2a44]">
+              128
+            </h3>
+            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+              Unidades aptas y listas para despliegue
+            </p>
+          </div>
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <button className="btn-sentinel-yellow" style={{ backgroundColor: '#10b981', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+              Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* KPI MÓDULO 4: Flotilla en mantenimiento */}
+        <div
+          className="glass-card-pro"
+          style={{
+            borderTop: '4px solid #f2b705',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+            <Wrench size={20} style={{ color: '#f2b705' }} />
+            <span className="text-instrument-header text-[#0f2a44] opacity-80">
+              Flotilla en mantenimiento
+            </span>
+          </div>
+          <div className="mb-24" style={{ width: '100%' }}>
+            <h3 className="text-kpi-black text-[#0f2a44]">
+              21
+            </h3>
+            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+              Unidades en taller o reparación activa
+            </p>
+          </div>
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <button className="btn-sentinel-yellow">
+              Ver detalles tácticos <ArrowRight size={10} className="text-[#0f2a44]" />
+            </button>
+          </div>
+        </div>
+
+        {/* KPI MÓDULO 5: Flotilla descontinuada */}
+        <div
+          className="glass-card-pro"
+          style={{
+            borderTop: '4px solid #ef4444',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+            <Ban size={20} style={{ color: '#ef4444' }} />
+            <span className="text-instrument-header text-[#0f2a44] opacity-80">
+              Flotilla descontinuada
+            </span>
+          </div>
+          <div className="mb-24" style={{ width: '100%' }}>
+            <h3 className="text-kpi-black text-[#0f2a44]">
+              4
+            </h3>
+            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+              Aparatos inactivos, mermas o baja definitiva
+            </p>
+          </div>
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <button className="btn-sentinel-yellow" style={{ backgroundColor: '#ef4444', color: 'white', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+              Ver detalles tácticos <ArrowRight size={10} className="text-white" />
             </button>
           </div>
         </div>
