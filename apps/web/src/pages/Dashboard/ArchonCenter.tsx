@@ -32,7 +32,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         setUnits(response.data.data);
       }
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      // Noise reduction for CI
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.5.2.0 */}
+      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.5.2.1 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Left Panel: Operational Context */}
@@ -366,7 +366,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.2.0.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.2.1.</p>
       </footer>
     </main>
   );

@@ -6,30 +6,30 @@ import db from '../services/db';
 
 const createFleetSchema = z.object({
   tag: z.string().min(2).max(50),
-  unit_name: z.string().min(2).max(100),
+  unitName: z.string().min(2).max(100),
   year: z.number().int().min(1900).max(new Date().getFullYear() + 1),
-  fuel_type: z.enum(['Gasolina', 'Diesel']),
-  tire_spec: z.string().max(50).optional(),
-  tire_brand: z.string().max(100).optional(),
-  unit_type: z.string().min(2).max(100),
-  unit_usage: z.string().min(2).max(100),
+  fuelType: z.enum(['Gasolina', 'Diesel']),
+  tireSpec: z.string().max(50).optional(),
+  tireBrand: z.string().max(100).optional(),
+  unitType: z.string().min(2).max(100),
+  unitUsage: z.string().min(2).max(100),
   status: z.enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada']).default('Disponible'),
   odometer: z.number().min(0).default(0),
-  assigned_operator_id: z.number().int().optional().nullable(),
+  assignedOperatorId: z.number().int().optional().nullable(),
 });
 
 const updateFleetSchema = z.object({
   tag: z.string().min(2).max(50).optional(),
-  unit_name: z.string().min(2).max(100).optional(),
+  unitName: z.string().min(2).max(100).optional(),
   year: z.number().int().min(1900).max(new Date().getFullYear() + 1).optional(),
-  fuel_type: z.enum(['Gasolina', 'Diesel']).optional(),
-  tire_spec: z.string().max(50).optional(),
-  tire_brand: z.string().max(100).optional(),
-  unit_type: z.string().min(2).max(100).optional(),
-  unit_usage: z.string().min(2).max(100).optional(),
+  fuelType: z.enum(['Gasolina', 'Diesel']).optional(),
+  tireSpec: z.string().max(50).optional(),
+  tireBrand: z.string().max(100).optional(),
+  unitType: z.string().min(2).max(100).optional(),
+  unitUsage: z.string().min(2).max(100).optional(),
   status: z.enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada']).optional(),
   odometer: z.number().min(0).optional(),
-  assigned_operator_id: z.number().int().optional().nullable(),
+  assignedOperatorId: z.number().int().optional().nullable(),
 });
 
 interface FleetUnit extends RowDataPacket {
@@ -89,7 +89,19 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send({ error: 'Invalid data format', details: parse.error.format() });
     }
 
-    const { tag, unit_name, year, fuel_type, tire_spec, tire_brand, unit_type, unit_usage, status, odometer, assigned_operator_id } = parse.data;
+    const { 
+      tag, 
+      unitName, 
+      year, 
+      fuelType, 
+      tireSpec, 
+      tireBrand, 
+      unitType, 
+      unitUsage, 
+      status, 
+      odometer, 
+      assignedOperatorId 
+    } = parse.data;
     const uuid = randomUUID();
 
     try {
@@ -115,14 +127,14 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         nextId = `FL${String(lastNum + 1).padStart(3, '0')}`;
       }
 
-      // 3. Insert into DB
+      // 3. Insert into DB (Mapping camelCase back to snake_case columns)
       await db.execute(
         `INSERT INTO fleet_units (
           id, uuid, tag, unit_name, year, fuel_type, tire_spec, tire_brand, unit_type, unit_usage, status, odometer, assigned_operator_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          nextId, uuid, tag, unit_name, year, fuel_type, tire_spec || null, tire_brand || null, 
-          unit_type, unit_usage, status, odometer, assigned_operator_id || null
+          nextId, uuid, tag, unitName, year, fuelType, tireSpec || null, tireBrand || null, 
+          unitType, unitUsage, status, odometer, assignedOperatorId || null
         ]
       );
 
@@ -145,7 +157,22 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send({ error: 'Invalid update data', details: parse.error.format() });
     }
 
-    const updates = parse.data;
+    const rawUpdates = parse.data;
+    const updates: Record<string, string | number | boolean | null> = {};
+
+    // Map camelCase DTO to snake_case DB columns
+    if (rawUpdates.tag !== undefined) updates.tag = rawUpdates.tag;
+    if (rawUpdates.unitName !== undefined) updates.unit_name = rawUpdates.unitName;
+    if (rawUpdates.year !== undefined) updates.year = rawUpdates.year;
+    if (rawUpdates.fuelType !== undefined) updates.fuel_type = rawUpdates.fuelType;
+    if (rawUpdates.tireSpec !== undefined) updates.tire_spec = rawUpdates.tireSpec;
+    if (rawUpdates.tireBrand !== undefined) updates.tire_brand = rawUpdates.tireBrand;
+    if (rawUpdates.unitType !== undefined) updates.unit_type = rawUpdates.unitType;
+    if (rawUpdates.unitUsage !== undefined) updates.unit_usage = rawUpdates.unitUsage;
+    if (rawUpdates.status !== undefined) updates.status = rawUpdates.status;
+    if (rawUpdates.odometer !== undefined) updates.odometer = rawUpdates.odometer;
+    if (rawUpdates.assignedOperatorId !== undefined) updates.assigned_operator_id = rawUpdates.assignedOperatorId;
+
     const fields = Object.keys(updates);
     
     if (fields.length === 0) {
