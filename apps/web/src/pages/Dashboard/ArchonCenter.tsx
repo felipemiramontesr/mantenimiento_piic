@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Wrench, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, Gauge, LayoutDashboard } from 'lucide-react';
 
 const ArchonCenter: React.FC = () => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -25,29 +25,39 @@ const ArchonCenter: React.FC = () => (
           className="glass-card-pro"
           style={{
             borderTop: '4px solid #f2b705',
-            textAlign: 'left',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
           }}
         >
-          {/* Header de Tarjeta: Icono + Texto INLINE */}
-          <div className="flex items-center gap-8 mb-16">
-            <Wrench size={12} style={{ color: '#f2b705' }} />
+          {/* Header de Tarjeta: Icono + Texto INLINE CENTRADO */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+            <Gauge size={20} style={{ color: '#f2b705' }} />
             <span className="text-instrument-header text-[#0f2a44] opacity-80">
               Índice de Mantenimiento
             </span>
           </div>
 
           {/* Cuerpo de Tarjeta: Valor KPI + Descripción */}
-          <div className="mb-24">
+          <div className="mb-24" style={{ width: '100%' }}>
             <h3 className="text-kpi-black text-[#0f2a44]">
               94.2<span className="text-xl ml-4 opacity-20">%</span>
             </h3>
-            <p className="text-[14px] font-bold text-[#0f2a44] opacity-80 leading-relaxed mt-8">
+            <p 
+              className="text-[14px] font-bold" 
+              style={{ 
+                color: '#0052cc', 
+                whiteSpace: 'nowrap', 
+                marginTop: '16px' 
+              }}
+            >
               Estado operativo de la flota en tiempo real
             </p>
           </div>
 
           {/* Acción de Tarjeta: Botón Sentinel */}
-          <div className="mt-8">
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
             <button className="btn-sentinel-yellow">
               Ver detalles tácticos <ArrowRight size={10} className="text-[#0f2a44]" />
             </button>
