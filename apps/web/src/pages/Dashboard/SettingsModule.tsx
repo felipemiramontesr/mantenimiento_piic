@@ -1,21 +1,21 @@
 import React from 'react';
-import { Users } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
-const UsersModule: React.FC = (): React.ReactElement => (
+const SettingsModule: React.FC = (): React.ReactElement => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
-    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.4.8.4 */}
+    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.4.8.5 */}
     <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        {/* Left Panel: Administrative Context */}
+        {/* Left Panel: Configuration Context */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <Users size={28} style={{ color: '#f2b705' }} />
+            <Settings size={28} style={{ color: '#f2b705' }} />
             <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl" style={{ margin: 0, padding: 0, lineHeight: 1 }}>
-              Administrar Usuarios
+              Configuración de Sistema
             </h2>
           </div>
           <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-            Gestión de Operadores y Personal del Sistema
+            Ajustes Globales y Optimización de ArchonCore
           </p>
         </div>
 
@@ -66,9 +66,9 @@ const UsersModule: React.FC = (): React.ReactElement => (
         }}
       >
         <div className="text-center">
-          <Users size={48} className="text-[#0f2a44] opacity-10 mb-16 mx-auto" />
+          <Settings size={48} className="text-[#0f2a44] opacity-10 mb-16 mx-auto" />
           <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">
-            Panel de Gestión de Usuarios en Espera de Parámetros
+            Panel de Configuración en Espera de Parámetros
           </p>
         </div>
       </div>
@@ -82,4 +82,4 @@ const UsersModule: React.FC = (): React.ReactElement => (
   </main>
 );
 
-export default UsersModule;
+export default SettingsModule;

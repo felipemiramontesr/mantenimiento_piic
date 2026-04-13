@@ -6,6 +6,7 @@ import ArchonCenter from './pages/Dashboard/ArchonCenter';
 import FleetModule from './pages/Dashboard/FleetModule';
 import UsersModule from './pages/Dashboard/UsersModule';
 import LogsModule from './pages/Dashboard/LogsModule';
+import SettingsModule from './pages/Dashboard/SettingsModule';
 import './index.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -23,6 +24,7 @@ const App: React.FC = () => (
         <Route path="fleet" element={<FleetModule />} />
         <Route path="users" element={<UsersModule />} />
         <Route path="logs" element={<LogsModule />} />
+        <Route path="settings" element={<SettingsModule />} />
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
