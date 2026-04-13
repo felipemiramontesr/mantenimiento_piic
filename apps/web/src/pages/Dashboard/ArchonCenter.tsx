@@ -18,8 +18,8 @@ const ArchonCenter: React.FC = () => (
 
     {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
     <section className="workspace-body-pro">
-      {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas en duro) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', width: '100%' }}>
+      {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas en duro con constraint minmax para matar scroll horizontal) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
         {/* KPI MÓDULO: Índice de Mantenimiento de Flotilla */}
         <div
           className="glass-card-pro"
@@ -45,7 +45,7 @@ const ArchonCenter: React.FC = () => (
               94.2<span className="text-xl ml-4 opacity-20">%</span>
             </h3>
             <p 
-              className="text-[14px] font-bold" 
+              className="text-[11px] tracking-wide font-bold"  
               style={{ 
                 color: '#0f2a44', 
                 whiteSpace: 'nowrap', 
@@ -85,7 +85,7 @@ const ArchonCenter: React.FC = () => (
             <h3 className="text-kpi-black text-[#0f2a44]">
               153
             </h3>
-            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+            <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
               Unidades totales registradas en el parque vehicular
             </p>
           </div>
@@ -117,7 +117,7 @@ const ArchonCenter: React.FC = () => (
             <h3 className="text-kpi-black text-[#0f2a44]">
               128
             </h3>
-            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+            <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
               Unidades aptas y listas para despliegue
             </p>
           </div>
@@ -149,7 +149,7 @@ const ArchonCenter: React.FC = () => (
             <h3 className="text-kpi-black text-[#0f2a44]">
               21
             </h3>
-            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+            <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
               Unidades en taller o reparación activa
             </p>
           </div>
@@ -181,7 +181,7 @@ const ArchonCenter: React.FC = () => (
             <h3 className="text-kpi-black text-[#0f2a44]">
               4
             </h3>
-            <p className="text-[14px] font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+            <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
               Aparatos inactivos, mermas o baja definitiva
             </p>
           </div>
