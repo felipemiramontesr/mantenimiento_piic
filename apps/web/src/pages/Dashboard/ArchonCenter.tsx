@@ -1,28 +1,20 @@
 import React, { useState } from 'react';
 import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban, Navigation, User, Settings, LogOut } from 'lucide-react';
 
-const dropdownItemStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 16px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  fontSize: '11px',
-  fontWeight: 700,
-  color: '#0f2a44',
-  border: 'none',
-  background: 'none',
-  cursor: 'pointer',
-  textAlign: 'left',
-  transition: 'background 0.2s ease',
-};
-
-const ArchonCenter: React.FC = () => {
+const ArchonCenter: React.FC = (): React.ReactElement => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = (): void => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const closeMenu = (): void => {
+    setIsMenuOpen(false);
+  };
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.4.7.3 */}
+      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.4.7.4 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Left Panel: Operational Context */}
@@ -53,8 +45,9 @@ const ArchonCenter: React.FC = () => {
             </h1>
 
             {/* Tactical Avatar Trigger */}
-            <div 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            <button 
+              onClick={toggleMenu}
+              aria-label="User Menu"
               style={{ 
                 width: '44px', 
                 height: '44px', 
@@ -67,13 +60,14 @@ const ArchonCenter: React.FC = () => {
                 cursor: 'pointer',
                 transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                 boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
-                transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)'
+                transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
+                padding: 0
               }}
             >
               <svg width="24" height="24" viewBox="0 0 100 100">
                 <path d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z" stroke="#f2b705" strokeWidth="16" fill="none" />
               </svg>
-            </div>
+            </button>
 
             {/* Identity Dropdown Menu (Mock) */}
             {isMenuOpen && (
@@ -93,14 +87,23 @@ const ArchonCenter: React.FC = () => {
                 <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}>
                   <span style={{ fontSize: '9px', fontWeight: 900, color: '#f2b705', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sovereign Access</span>
                 </div>
-                <button style={dropdownItemStyle} onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(15,42,68,0.03)'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <button 
+                  className="dropdown-item-mock" 
+                  onClick={closeMenu}
+                >
                   <User size={14} /> Perfil Táctico
                 </button>
-                <button style={dropdownItemStyle} onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(15,42,68,0.03)'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <button 
+                  className="dropdown-item-mock" 
+                  onClick={closeMenu}
+                >
                   <Settings size={14} /> Ajustes
                 </button>
                 <div style={{ height: '1px', background: 'rgba(15, 42, 68, 0.05)', margin: '4px 0' }} />
-                <button style={{ ...dropdownItemStyle, color: '#ef4444' }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.05)'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <button 
+                  className="dropdown-item-mock dropdown-item-mock-danger" 
+                  onClick={closeMenu}
+                >
                   <LogOut size={14} /> Cerrar Sesión
                 </button>
               </div>
@@ -319,10 +322,10 @@ const ArchonCenter: React.FC = () => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.3 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.7.4 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.3.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.4.</p>
       </footer>
     </main>
   );
