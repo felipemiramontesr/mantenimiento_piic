@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban } from 'lucide-react';
+import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban, Route } from 'lucide-react';
 
 const ArchonCenter: React.FC = () => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -187,6 +187,38 @@ const ArchonCenter: React.FC = () => (
           </div>
           <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
             <button className="btn-sentinel-yellow" style={{ backgroundColor: '#ef4444', color: 'white', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+              Ver detalles tácticos <ArrowRight size={10} className="text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* KPI MÓDULO 6: Flotilla en ruta */}
+        <div
+          className="glass-card-pro"
+          style={{
+            borderTop: '4px solid #0ea5e9',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+            <Route size={20} style={{ color: '#0ea5e9' }} />
+            <span className="text-instrument-header text-[#0f2a44] opacity-80">
+              Flotilla en ruta
+            </span>
+          </div>
+          <div className="mb-24" style={{ width: '100%' }}>
+            <h3 className="text-kpi-black text-[#0f2a44]">
+              47
+            </h3>
+            <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+              Unidades en operación
+            </p>
+          </div>
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <button className="btn-sentinel-yellow" style={{ backgroundColor: '#0ea5e9', color: 'white', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)' }}>
               Ver detalles tácticos <ArrowRight size={10} className="text-white" />
             </button>
           </div>
