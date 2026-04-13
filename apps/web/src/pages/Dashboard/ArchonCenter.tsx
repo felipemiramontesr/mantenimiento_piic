@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, NavigateFunction } from 'react-router-dom';
 import { ArrowRight, Gauge, LayoutDashboard, Truck, ShieldCheck, Wrench, Ban, Navigation, User, Settings, LogOut } from 'lucide-react';
+import api from '../../api/client';
+import { FleetUnit } from '../../types/fleet';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
-  const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate: NavigateFunction = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [units, setUnits] = useState<FleetUnit[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const toggleMenu = (): void => {
     setIsMenuOpen(!isMenuOpen);
@@ -20,9 +24,35 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     navigate('/login');
   };
 
+  const fetchStats = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      const response = await api.get('/fleet');
+      if (response.data.success) {
+        setUnits(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect((): void => {
+    fetchStats();
+  }, []);
+
+  const stats = {
+    total: units.length,
+    available: units.filter((u: FleetUnit): boolean => u.status === 'Disponible').length,
+    inRoute: units.filter((u: FleetUnit): boolean => u.status === 'En Ruta').length,
+    maintenance: units.filter((u: FleetUnit): boolean => u.status === 'En Mantenimiento').length,
+    discontinued: units.filter((u: FleetUnit): boolean => u.status === 'Descontinuada').length,
+  };
+
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.4.7.9 */}
+      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.5.2.0 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Left Panel: Operational Context */}
@@ -40,7 +70,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
           {/* Right Panel: Identity & Access */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-            {/* Branding-Accurate Username */}
             <h1 style={{ 
               fontSize: '26px', 
               fontWeight: 900, 
@@ -52,7 +81,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               Archon
             </h1>
 
-            {/* Tactical Avatar Trigger */}
             <button 
               onClick={toggleMenu}
               aria-label="User Menu"
@@ -78,7 +106,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </svg>
             </button>
 
-            {/* Identity Dropdown Menu (Mock) */}
             {isMenuOpen && (
               <div style={{
                 position: 'absolute',
@@ -123,9 +150,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
       <section className="workspace-body-pro">
-        {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas en duro con constraint minmax para matar scroll horizontal) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
-          {/* KPI MÓDULO: Índice de Mantenimiento de Flotilla */}
           <div
             className="glass-card-pro"
             style={{
@@ -136,7 +161,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               textAlign: 'center'
             }}
           >
-            {/* Header de Tarjeta: Icono + Texto INLINE CENTRADO */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
               <Gauge size={20} style={{ color: '#0f2a44' }} />
               <span className="text-instrument-header text-[#0f2a44] opacity-80">
@@ -144,32 +168,26 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </span>
             </div>
 
-            {/* Cuerpo de Tarjeta: Valor KPI + Descripción */}
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                0.0<span className="text-xl ml-4 opacity-20">%</span>
+                {loading ? '...' : '0.0'}<span className="text-xl ml-4 opacity-20">%</span>
               </h3>
-              <p 
-                className="text-[11px] tracking-wide font-bold"  
-                style={{ 
-                  color: '#0f2a44', 
-                  whiteSpace: 'nowrap', 
-                  marginTop: '16px' 
-                }}
-              >
+              <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Estado operativo de la flota en tiempo real
               </p>
             </div>
 
-            {/* Acción de Tarjeta: Botón Sentinel */}
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <button className="btn-sentinel-yellow" style={{ backgroundColor: '#0f2a44', color: 'white', boxShadow: '0 4px 12px rgba(15, 42, 68, 0.3)' }}>
+              <button 
+                onClick={(): void => navigate('/dashboard/fleet')}
+                className="btn-sentinel-yellow" 
+                style={{ backgroundColor: '#0f2a44', color: 'white', boxShadow: '0 4px 12px rgba(15, 42, 68, 0.3)' }}
+              >
                 Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 2: Nuestra Flotilla */}
           <div
             className="glass-card-pro"
             style={{
@@ -188,20 +206,23 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                0
+                {loading ? '...' : stats.total}
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades totales registradas
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <button className="btn-sentinel-yellow" style={{ backgroundColor: '#8b5cf6', color: 'white', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>
+              <button 
+                onClick={(): void => navigate('/dashboard/fleet')}
+                className="btn-sentinel-yellow" 
+                style={{ backgroundColor: '#8b5cf6', color: 'white', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}
+              >
                 Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 3: Flotilla disponible */}
           <div
             className="glass-card-pro"
             style={{
@@ -220,20 +241,23 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                0
+                {loading ? '...' : stats.available}
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades aptas y listas para despliegue
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <button className="btn-sentinel-yellow" style={{ backgroundColor: '#10b981', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+              <button 
+                onClick={(): void => navigate('/dashboard/fleet')}
+                className="btn-sentinel-yellow" 
+                style={{ backgroundColor: '#10b981', color: 'white', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}
+              >
                 Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 4: Flotilla en ruta */}
           <div
             className="glass-card-pro"
             style={{
@@ -252,20 +276,23 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                0
+                {loading ? '...' : stats.inRoute}
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades en operación
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <button className="btn-sentinel-yellow" style={{ backgroundColor: '#0ea5e9', color: 'white', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)' }}>
+              <button 
+                onClick={(): void => navigate('/dashboard/fleet')}
+                className="btn-sentinel-yellow" 
+                style={{ backgroundColor: '#0ea5e9', color: 'white', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)' }}
+              >
                 Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 5: Flotilla en mantenimiento */}
           <div
             className="glass-card-pro"
             style={{
@@ -284,20 +311,22 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                0
+                {loading ? '...' : stats.maintenance}
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Unidades en taller o reparación activa
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <button className="btn-sentinel-yellow">
+              <button 
+                onClick={(): void => navigate('/dashboard/fleet')}
+                className="btn-sentinel-yellow"
+              >
                 Ver detalles <ArrowRight size={10} className="text-[#0f2a44]" />
               </button>
             </div>
           </div>
 
-          {/* KPI MÓDULO 6: Flotilla descontinuada */}
           <div
             className="glass-card-pro"
             style={{
@@ -316,14 +345,18 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
             <div className="mb-24" style={{ width: '100%' }}>
               <h3 className="text-kpi-black text-[#0f2a44]">
-                0
+                {loading ? '...' : stats.discontinued}
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
                 Aparatos inactivos, mermas o baja definitiva
               </p>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-              <button className="btn-sentinel-yellow" style={{ backgroundColor: '#ef4444', color: 'white', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+              <button 
+                onClick={(): void => navigate('/dashboard/fleet')}
+                className="btn-sentinel-yellow" 
+                style={{ backgroundColor: '#ef4444', color: 'white', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}
+              >
                 Ver detalles <ArrowRight size={10} className="text-white" />
               </button>
             </div>
@@ -331,10 +364,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.4.9.0 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.9.0.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.2.0.</p>
       </footer>
     </main>
   );
