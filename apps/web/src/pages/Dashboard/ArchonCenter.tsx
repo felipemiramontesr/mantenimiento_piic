@@ -86,7 +86,7 @@ const ArchonCenter: React.FC = () => (
               153
             </h3>
             <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
-              Unidades totales registradas en el parque vehicular
+              Unidades totales registradas
             </p>
           </div>
           <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
