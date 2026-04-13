@@ -804,13 +804,14 @@ body {
 }
 
 .workspace-header-pro {
-  height: 10vh;
+  min-height: 10vh;
+  height: auto; /* Dinámico para soportar Padding V.4.7.1 */
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start; /* Pivote Izquierdo V.4.5.1 */
+  align-items: flex-start;
   border-bottom: 1px solid rgba(15, 42, 68, 0.05);
-  padding: 0 60px;
+  padding: 40px 60px 20px 60px; /* Golden Padding Top aplicado V.4.7.1 */
 }
 
 .workspace-body-pro {

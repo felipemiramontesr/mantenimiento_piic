@@ -4,12 +4,12 @@ import { ArrowRight, Wrench, LayoutDashboard } from 'lucide-react';
 const ArchonCenter: React.FC = () => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
     
-    {/* 🚀 HEADER SOBERANO (10vh) - ALINEACIÓN IZQUIERDA & INLINE V.4.7.0 */}
+    {/* 🚀 HEADER SOBERANO (Flexible) - ALINEACIÓN QUIRÚRGICA V.4.7.1 */}
     <header className="workspace-header-pro flex flex-col items-start justify-center">
-      <div className="flex items-center gap-12 mb-4">
-        <LayoutDashboard size={24} className="text-[#f2b705]" />
+      <div className="flex flex-row items-center gap-12 mb-4">
+        <LayoutDashboard size={24} style={{ color: '#f2b705' }} />
         <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl">
-          Centro de Comando
+          Centro de Comando <span className="text-[10px] font-bold opacity-30 ml-8">[V.4.7.1]</span>
         </h2>
       </div>
       <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
@@ -17,13 +17,13 @@ const ArchonCenter: React.FC = () => (
       </p>
     </header>
 
-    {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM V.4.7.0 */}
+    {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
     <section className="workspace-body-pro">
       
-      {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas para expansión) */}
+      {/* Sistema de Cuadrícula Sentinel (3 Columnas estrictas) */}
       <div className="grid grid-cols-3 gap-24">
         
-        {/* KPI MÓDULO: Índice de Mantenimiento de Flotilla (Blueprint Ref) */}
+        {/* KPI MÓDULO: Índice de Mantenimiento de Flotilla */}
         <div 
           className="glass-card-pro" 
           style={{ 
@@ -33,7 +33,7 @@ const ArchonCenter: React.FC = () => (
         >
           {/* Header de Tarjeta: Icono + Texto INLINE */}
           <div className="flex items-center gap-8 mb-16">
-            <Wrench size={12} className="text-[#f2b705]" />
+            <Wrench size={12} style={{ color: '#f2b705' }} />
             <span className="text-instrument-header text-[#0f2a44] opacity-80">
               Índice de Mantenimiento
             </span>
@@ -55,16 +55,14 @@ const ArchonCenter: React.FC = () => (
           </div>
         </div>
 
-        {/* Los espacios restantes (2/3 de la fila) quedan preparados para futuros nodos */}
-
       </div>
 
     </section>
 
-    {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN V.4.7.0 */}
+    {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN V.4.7.1 */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.0.</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.4.7.1.</p>
     </footer>
   </main>
 );
