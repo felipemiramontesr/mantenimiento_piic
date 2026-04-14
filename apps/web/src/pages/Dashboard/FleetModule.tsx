@@ -23,7 +23,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
   
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.0.0.2)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.0.0.3)
   const [units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -137,7 +137,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             )}
         </div>
 
-        {/* Right: Operational KPI (Conditional v.7.0.0.2) */}
+        {/* Right: Operational KPI (Conditional v.7.0.0.3) */}
         {currentView === 'GRID' && (
             <div className="flex flex-row items-center ml-auto whitespace-nowrap" style={{ flexWrap: 'nowrap' }}>
                 <span style={{ 
@@ -385,7 +385,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.0.0.2 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.0.0.3 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           
@@ -483,7 +483,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.0.0.2) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.0.0.3) */}
       <section className="archon-workspace-chassis">
         {/* OPERATIONAL SUBHEADER (Unified Grid Row 1) */}
         {renderSubheader()}
@@ -493,10 +493,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.7.0.0.2 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.7.0.0.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.0.0.2.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.0.0.3.</p>
       </footer>
     </main>
   );

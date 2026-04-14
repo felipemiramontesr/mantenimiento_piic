@@ -1224,18 +1224,15 @@ body {
   letter-spacing: 0.2em !important;
 }
 
-/* 🛠️ GLOBAL UTILITIES (V.7.0.0.2) */
+.archon-label svg {
+  color: #f2b705 !important;
+  margin-right: 4px;
+}
+
+/* 🛠️ GLOBAL UTILITIES (V.7.0.0.3) */
 .w-full { width: 100% !important; }
 .flex { display: flex !important; }
 .flex-row { flex-direction: row !important; }
 .items-center { align-items: center !important; }
 .ml-auto { margin-left: auto !important; }
 .whitespace-nowrap { white-space: nowrap !important; }
-
-.archon-label svg {
-  color: #f2b705 !important;
-  margin-right: 4px;
-/* 🛠️ GLOBAL UTILITIES (V.6.0.1) */
-.w-full {
-  width: 100% !important;
-}
