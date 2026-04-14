@@ -131,7 +131,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 Registrar Unidad
               </h3>
               <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
-                Ingreso de nuevos vehículos al ecosistema Archon
+                Ingreso de nuevos vehículos
               </p>
             </div>
 
