@@ -22,6 +22,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
   const [units, setUnits] = useState<FleetUnit[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isMenuOpen] = useState<boolean>(false); // Placeholder for standardized header items
 
   // Form State
   const [formData, setFormData] = useState({
@@ -80,6 +81,52 @@ const FleetModule: React.FC = (): React.ReactElement => {
     }
   };
 
+  // 🛠️ SHARED COMPONENT: OPERATIONAL SUBHEADER
+  const renderSubheader = (): React.ReactElement => (
+    <div 
+        className="flex items-center justify-between w-full mb-32 animate-in fade-in duration-500"
+        style={{ padding: '0 4px' }}
+    >
+        {/* Left: Navigation (Conditional) */}
+        <div className="flex items-center min-w-[120px]">
+            {currentView === 'CREATE' && (
+                <button 
+                    onClick={(): void => setCurrentView('GRID')}
+                    className="flex items-center gap-12 group transition-all"
+                >
+                    <div className="p-10 bg-[#0f2a44]/5 rounded-4 group-hover:bg-[#f2b705]/10 transition-colors">
+                        <ArrowLeft size={20} className="text-[#0f2a44] group-hover:-translate-x-2 transition-transform" />
+                    </div>
+                    <span className="text-[12px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 group-hover:opacity-100 transition-opacity">Volver al Panel</span>
+                </button>
+            )}
+        </div>
+
+        {/* Right: Operational KPI (Always Visible) */}
+        <div className="flex items-center gap-12">
+            <span style={{ 
+                fontSize: '26px', 
+                fontWeight: 900, 
+                color: '#0f2a44',
+                fontFamily: 'Inter, sans-serif',
+                letterSpacing: '-0.02em',
+                lineHeight: 1
+            }}>
+                Total de Unidades:
+            </span>
+            <span style={{ 
+                fontSize: '26px', 
+                fontWeight: 900, 
+                color: '#f2b705',
+                fontFamily: 'Inter, sans-serif',
+                lineHeight: 1
+            }}>
+                {loading ? '...' : units.length}
+            </span>
+        </div>
+    </div>
+  );
+
   // 🏛️ RENDERING LOGIC: PORTAL GRID
   const renderGridView = (): React.ReactElement => (
     <div className="archon-grid-3">
@@ -131,7 +178,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>Visualización técnica y estados</p>
         </div>
         <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <button disabled className="btn-sentinel-yellow opacity-40 cursor-not-allowed" style={{ backgroundColor: '#8b5cf6', color: 'white' }}>
+            <button disabled className="btn-sentinel-yellow opacity-40 cursor-not-allowed" style={{ backgroundColor: '#8b5cf6', color: 'white' }}>
             Próximamente <ArrowRight size={10} className="text-white" />
           </button>
         </div>
@@ -156,16 +203,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
     </div>
   );
 
-  // 🛠️ RENDERING LOGIC: DEDICATED REGISTRATION PANEL (REFRACTORED v.5.3.1)
+  // 🛠️ RENDERING LOGIC: DEDICATED REGISTRATION PANEL (REFRACTORED v.5.3.2)
   const renderCreateView = (): React.ReactElement => (
-    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-40">
-        <form onSubmit={handleSubmit} className="space-y-40">
+    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-64">
+        <form onSubmit={handleSubmit} className="space-y-48">
             <div className="archon-grid-2">
                 
                 {/* ADN del Vehículo */}
-                <div className="glass-card-pro bg-white/60 p-40 space-y-32" style={{ borderTop: '4px solid #f2b705' }}>
-                    <div className="flex items-center gap-12 border-b border-[#0f2a44]/5 pb-16">
-                        <ShieldCheck size={18} className="text-[#f2b705]" />
+                <div className="glass-card-pro bg-white/60 p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
+                    <div className="flex items-center gap-12 border-b border-[#0f2a44]/5 pb-20">
+                        <ShieldCheck size={20} className="text-[#f2b705]" />
                         <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#0f2a44]">
                             Identidad & ADN Soberano
                         </h3>
@@ -232,9 +279,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 </div>
 
                 {/* Parámetros de Operación */}
-                <div className="glass-card-pro bg-white/60 p-40 space-y-32" style={{ borderTop: '4px solid #0f2a44' }}>
-                    <div className="flex items-center gap-12 border-b border-[#0f2a44]/5 pb-16">
-                        <Zap size={18} className="text-[#0f2a44]" />
+                <div className="glass-card-pro bg-white/60 p-64 space-y-40" style={{ borderTop: '4px solid #0f2a44' }}>
+                    <div className="flex items-center gap-12 border-b border-[#0f2a44]/5 pb-20">
+                        <Zap size={20} className="text-[#0f2a44]" />
                         <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#0f2a44]">
                             Estrategia Operativa
                         </h3>
@@ -285,12 +332,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
                         </div>
                     </div>
                     
-                    <div className="pt-8">
+                    <div className="pt-12">
                         <button 
                             type="submit"
                             className="btn-archon-primary w-full"
                         >
-                            <Save size={16} /> Confirmar Incorporación de Activo
+                            <Save size={18} /> Confirmar Incorporación de Activo
                         </button>
                     </div>
                 </div>
@@ -301,51 +348,74 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.5.3.1 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.5.3.2 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           
-          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '24px' }}>
-            {currentView === 'CREATE' && (
-                <button 
-                    onClick={(): void => setCurrentView('GRID')}
-                    className="p-12 hover:bg-[#0f2a44]/5 rounded-4 transition-all flex items-center gap-8 group"
-                >
-                    <ArrowLeft size={24} className="text-[#0f2a44] group-hover:-translate-x-4 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-40">Volver</span>
-                </button>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          {/* Section Left: Contextual Identity */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                 <Truck size={28} style={{ color: '#f2b705' }} />
                 <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl" style={{ margin: 0, padding: 0, lineHeight: 1 }}>
                     {currentView === 'GRID' ? 'Administrar Flota' : 'Registro de Unidad'}
                 </h2>
-                </div>
-                <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-                {currentView === 'GRID' ? 'Gestión de Activos Vehiculares • Industrial Grade' : 'Protocolo de Incorporación de Activo'}
-                </p>
             </div>
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+                {currentView === 'GRID' ? 'Gestión de Activos Vehiculares • Industrial Grade' : 'Protocolo de Incorporación de Activo'}
+            </p>
           </div>
 
-          <div className="flex gap-12">
-            <div className="bg-[#0f2a44]/5 px-16 py-8 rounded-4 border border-[#0f2a44]/10 flex flex-col items-end">
-                <span className="text-[9px] font-black uppercase tracking-widest text-[#0f2a44] opacity-40">Total Unidades</span>
-                <span className="text-xl font-black text-[#0f2a44]">{loading ? '...' : units.length}</span>
-            </div>
+          {/* Section Right: Standard User Identity & Access */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
+            <h1 style={{ 
+                fontSize: '26px', 
+                fontWeight: 900, 
+                margin: 0, 
+                letterSpacing: '-0.03em', 
+                fontFamily: 'Inter, system-ui, sans-serif', 
+                color: '#0f2a44' 
+            }}>
+                Archon
+            </h1>
+
+            <button 
+                className="avatar-trigger-pro"
+                style={{ 
+                    width: '44px', 
+                    height: '44px', 
+                    borderRadius: '4px', 
+                    border: '2px solid #f2b705', 
+                    backgroundColor: '#0f2a44',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
+                    transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
+                }}
+            >
+                <User size={20} className="text-[#f2b705]" />
+            </button>
           </div>
+
         </div>
       </header>
 
       {/* 📊 ÁREA DE TRABAJO DINÁMICA */}
       <section className="workspace-body-pro">
-        {currentView === 'GRID' ? renderGridView() : renderCreateView()}
+        {/* OPERATIONAL SUBHEADER (v.5.3.2) */}
+        {renderSubheader()}
+
+        <div className="flex-1 w-full mt-8">
+            {currentView === 'GRID' ? renderGridView() : renderCreateView()}
+        </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.1 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.2 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.1.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.2.</p>
       </footer>
     </main>
   );
