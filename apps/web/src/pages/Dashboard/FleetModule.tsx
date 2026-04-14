@@ -109,7 +109,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             )}
         </div>
 
-        {/* Right: Operational KPI (Conditional v.5.5.5) */}
+        {/* Right: Operational KPI (Conditional v.5.5.6) */}
         {currentView === 'GRID' && (
             <div className="flex items-center ml-auto">
                 <span style={{ 
@@ -219,16 +219,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 
                 {/* ADN del Vehículo */}
                 <div className="glass-card-pro bg-white p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
-                    <div className="flex items-center gap-16 pb-24 border-b border-[#f2b705]/20">
+                    <div className="flex flex-row items-center gap-16 pb-24 mb-32 border-b border-[#f2b705]/20">
                         <ShieldCheck size={22} className="text-[#f2b705]" />
-                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#f2b705] m-0">
+                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#0f2a44] m-0">
                             Identidad & ADN Soberano
                         </h3>
                     </div>
                     
                     <div className="archon-grid-2">
                         <div className="archon-form-group">
-                            <label className="archon-label"><Tag size={12} /> Tag Institucional</label>
+                            <label className="archon-label"><Tag size={12} className="text-[#f2b705]" /> Tag Institucional</label>
                             <input 
                                 required
                                 type="text"
@@ -239,7 +239,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                             />
                         </div>
                         <div className="archon-form-group">
-                            <label className="archon-label"><Calendar size={12} /> Año Modelo</label>
+                            <label className="archon-label"><Calendar size={12} className="text-[#f2b705]" /> Año Modelo</label>
                             <input 
                                 required
                                 type="number"
@@ -251,7 +251,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     </div>
 
                     <div className="archon-form-group">
-                        <label className="archon-label"><Edit3 size={12} /> Nombre del Activo</label>
+                        <label className="archon-label"><Edit3 size={12} className="text-[#f2b705]" /> Nombre del Activo</label>
                         <input 
                             required
                             type="text"
@@ -264,7 +264,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
                     <div className="archon-grid-2">
                         <div className="archon-form-group">
-                            <label className="archon-label"><Fuel size={12} /> Combustible</label>
+                            <label className="archon-label"><Fuel size={12} className="text-[#f2b705]" /> Combustible</label>
                             <select 
                                 className="archon-select"
                                 value={formData.fuelType}
@@ -275,7 +275,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                             </select>
                         </div>
                         <div className="archon-form-group">
-                            <label className="archon-label"><Gauge size={12} /> Odómetro (KM)</label>
+                            <label className="archon-label"><Gauge size={12} className="text-[#f2b705]" /> Odómetro (KM)</label>
                             <input 
                                 type="number"
                                 className="archon-input"
@@ -288,15 +288,15 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
                 {/* Parámetros de Operación */}
                 <div className="glass-card-pro bg-white p-64 space-y-40" style={{ borderTop: '4px solid #0f2a44' }}>
-                    <div className="flex items-center gap-16 pb-24 border-b border-[#f2b705]/20">
+                    <div className="flex flex-row items-center gap-16 pb-24 mb-32 border-b border-[#f2b705]/20">
                         <Zap size={22} className="text-[#f2b705]" />
-                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#f2b705] m-0">
+                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#0f2a44] m-0">
                             Estrategia Operativa
                         </h3>
                     </div>
 
                     <div className="archon-form-group">
-                        <label className="archon-label"><Layers size={12} /> Categoría de Unidad</label>
+                        <label className="archon-label"><Layers size={12} className="text-[#f2b705]" /> Categoría de Unidad</label>
                         <select 
                             className="archon-select"
                             value={formData.unitType}
@@ -307,7 +307,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     </div>
 
                     <div className="archon-form-group">
-                        <label className="archon-label"><Box size={12} /> Uso Industrial</label>
+                        <label className="archon-label"><Box size={12} className="text-[#f2b705]" /> Uso Industrial</label>
                         <select 
                             className="archon-select"
                             value={formData.unitUsage}
@@ -319,7 +319,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
                     <div className="archon-grid-2">
                         <div className="archon-form-group">
-                            <label className="archon-label">Especificación Llantas</label>
+                            <label className="archon-label"><Plus size={12} className="text-[#f2b705]" /> Especificación Llantas</label>
                             <input 
                                 type="text"
                                 placeholder="255/70 R15"
@@ -329,7 +329,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                             />
                         </div>
                         <div className="archon-form-group">
-                            <label className="archon-label">Marca Neumáticos</label>
+                            <label className="archon-label"><Plus size={12} className="text-[#f2b705]" /> Marca Neumáticos</label>
                             <input 
                                 type="text"
                                 placeholder="Michelin"
@@ -356,7 +356,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.5.5.5 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.5.5.6 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           
