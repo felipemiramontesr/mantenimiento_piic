@@ -109,7 +109,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             )}
         </div>
 
-        {/* Right: Operational KPI (Conditional v.5.5.6) */}
+        {/* Right: Operational KPI (Conditional v.6.0.0) */}
         {currentView === 'GRID' && (
             <div className="flex items-center ml-auto">
                 <span style={{ 
@@ -219,16 +219,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 
                 {/* ADN del Vehículo */}
                 <div className="glass-card-pro bg-white p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
-                    <div className="flex flex-row items-center gap-16 pb-24 mb-32 border-b border-[#f2b705]/20">
-                        <ShieldCheck size={22} className="text-[#f2b705]" />
-                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#0f2a44] m-0">
-                            Identidad & ADN Soberano
-                        </h3>
+                    <div className="archon-card-header-pro">
+                        <ShieldCheck size={22} />
+                        <h3>Identidad & ADN Soberano</h3>
                     </div>
                     
                     <div className="archon-grid-2">
                         <div className="archon-form-group">
-                            <label className="archon-label"><Tag size={12} className="text-[#f2b705]" /> Tag Institucional</label>
+                            <label className="archon-label"><Tag size={12} /> Tag Institucional</label>
                             <input 
                                 required
                                 type="text"
@@ -239,7 +237,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                             />
                         </div>
                         <div className="archon-form-group">
-                            <label className="archon-label"><Calendar size={12} className="text-[#f2b705]" /> Año Modelo</label>
+                            <label className="archon-label"><Calendar size={12} /> Año Modelo</label>
                             <input 
                                 required
                                 type="number"
@@ -251,7 +249,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     </div>
 
                     <div className="archon-form-group">
-                        <label className="archon-label"><Edit3 size={12} className="text-[#f2b705]" /> Nombre del Activo</label>
+                        <label className="archon-label"><Edit3 size={12} /> Nombre del Activo</label>
                         <input 
                             required
                             type="text"
@@ -264,7 +262,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
                     <div className="archon-grid-2">
                         <div className="archon-form-group">
-                            <label className="archon-label"><Fuel size={12} className="text-[#f2b705]" /> Combustible</label>
+                            <label className="archon-label"><Fuel size={12} /> Combustible</label>
                             <select 
                                 className="archon-select"
                                 value={formData.fuelType}
@@ -275,7 +273,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                             </select>
                         </div>
                         <div className="archon-form-group">
-                            <label className="archon-label"><Gauge size={12} className="text-[#f2b705]" /> Odómetro (KM)</label>
+                            <label className="archon-label"><Gauge size={12} /> Odómetro (KM)</label>
                             <input 
                                 type="number"
                                 className="archon-input"
@@ -288,11 +286,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
                 {/* Parámetros de Operación */}
                 <div className="glass-card-pro bg-white p-64 space-y-40" style={{ borderTop: '4px solid #0f2a44' }}>
-                    <div className="flex flex-row items-center gap-16 pb-24 mb-32 border-b border-[#f2b705]/20">
-                        <Zap size={22} className="text-[#f2b705]" />
-                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#0f2a44] m-0">
-                            Estrategia Operativa
-                        </h3>
+                    <div className="archon-card-header-pro">
+                        <Zap size={22} />
+                        <h3>Estrategia Operativa</h3>
                     </div>
 
                     <div className="archon-form-group">
@@ -356,7 +352,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.5.5.6 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.6.0.0 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           
@@ -454,7 +450,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.5.4.3) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.6.0.0) */}
       <section className="archon-workspace-chassis">
         {/* OPERATIONAL SUBHEADER (Unified Grid Row 1) */}
         {renderSubheader()}
@@ -464,10 +460,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.4.3 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.6.0.0 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.4.3.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.6.0.0.</p>
       </footer>
     </main>
   );

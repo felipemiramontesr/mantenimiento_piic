@@ -1026,10 +1026,10 @@ body {
 .archon-form-group {
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important; /* Tight-Bonding v.5.5.5 */
+  gap: 4px !important; /* Tight-Bonding v.6.0.0 */
   position: relative;
   transition: transform 0.3s ease;
-  margin-bottom: 32px !important; /* Block separation v.5.5.5 */
+  margin-bottom: 32px !important; /* Block separation v.6.0.0 */
 }
 
 .archon-label {
@@ -1167,7 +1167,7 @@ body {
   }
 }
 
-/* 🏛️ ARCHON WORKSPACE CHASSIS (V.5.4.1) - GRID TRACK SYSTEM */
+/* 🏛️ ARCHON WORKSPACE CHASSIS (V.6.0.0) - GRID TRACK SYSTEM */
 .archon-workspace-chassis {
   display: grid !important;
   grid-template-rows: auto 1fr;
@@ -1175,4 +1175,34 @@ body {
   padding: 16px 60px 80px 60px !important;
   height: 80vh;
   overflow-y: auto;
+}
+
+/* 🏆 SOVEREIGN COMPONENT DEFINITIONS (V.6.0.0) */
+.archon-card-header-pro {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding-bottom: 24px !important;
+  margin-bottom: 32px !important;
+  border-bottom: 1px solid rgba(242, 183, 5, 0.2) !important;
+}
+
+.archon-card-header-pro svg {
+  color: #f2b705 !important;
+  flex-shrink: 0;
+}
+
+.archon-card-header-pro h3 {
+  color: #0f2a44 !important;
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.2em !important;
+}
+
+.archon-label svg {
+  color: #f2b705 !important;
+  margin-right: 4px;
 }
