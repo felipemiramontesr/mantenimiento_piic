@@ -396,7 +396,7 @@ body {
 
 .btn-primary:hover {
   background-color: #d9a404;
-  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(242, 183, 5, 0.35);
 }
 
 .btn-outline {
@@ -409,7 +409,7 @@ body {
 .btn-outline:hover {
   background-color: var(--color-white);
   color: var(--color-primary);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 18px rgba(255, 255, 255, 0.15);
 }
 
 /* 💎 MILKY GLASSMORPHISM CARD (AIR ENFORCEMENT) */
@@ -599,7 +599,7 @@ body {
 
 .diamond-button:hover {
   background-color: #d9a404;
-  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(242, 183, 5, 0.35);
 }
 
 .forgot-password-link {
@@ -787,10 +787,11 @@ body {
 }
 
 .glass-card-pro:hover {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(242, 183, 5, 0.3);
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
-  transform: translateY(-6px);
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(242, 183, 5, 0.35);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.07),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* 🏛️ SOVEREIGN WORKSPACE CHASSIS (V4.5.0) - 10/80/10 ENGINE */
@@ -913,8 +914,7 @@ body {
 
 .btn-sentinel-yellow:hover {
   background-color: #d9a404;
-  transform: scale(1.02);
-  box-shadow: 0 6px 20px rgba(242, 183, 5, 0.4);
+  box-shadow: 0 6px 20px rgba(242, 183, 5, 0.45);
 }
 
 .btn-yellow-pro {
@@ -930,7 +930,7 @@ body {
 
 .btn-yellow-pro:hover {
   background-color: #d9a404;
-  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(242, 183, 5, 0.35);
 }
 
 .btn-blue-pro {
@@ -946,7 +946,7 @@ body {
 
 .btn-blue-pro:hover {
   background-color: #1a3a5a;
-  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(15, 42, 68, 0.25);
 }
 
 .nav-item-pro {
@@ -1005,8 +1005,7 @@ body {
 }
 
 .avatar-trigger-pro:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px rgba(242, 183, 5, 0.4);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.35);
   border-color: #ffffff !important;
 }
 
@@ -1028,7 +1027,7 @@ body {
   flex-direction: column !important;
   gap: 4px !important; /* Tight-Bonding v.6.0.0 */
   position: relative;
-  transition: transform 0.3s ease;
+  transition: opacity 0.3s ease;
   margin-bottom: 32px !important; /* Block separation v.6.0.0 */
 }
 
@@ -1050,7 +1049,6 @@ body {
 .archon-form-group:focus-within .archon-label {
   opacity: 1;
   color: var(--color-accent);
-  transform: translateX(4px);
 }
 
 .archon-input, .archon-select {
@@ -1100,21 +1098,19 @@ body {
 
 .btn-archon-primary:hover {
   background-color: #1a3a5a;
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(15, 42, 68, 0.25);
+  box-shadow: 0 12px 36px rgba(15, 42, 68, 0.28);
 }
 
 .btn-archon-primary:active {
-  transform: translateY(-1px);
+  opacity: 0.9;
 }
 
 .btn-archon-primary svg {
-  transition: transform 0.3s ease;
   color: var(--color-accent);
 }
 
 .btn-archon-primary:hover svg {
-  transform: scale(1.2) rotate(5deg);
+  opacity: 0.85;
 }
 
 /* ⚡ SENTINEL ACTION COMPONENTS (V.6.0.1) */
@@ -1139,12 +1135,11 @@ body {
 
 .btn-sentinel-yellow:hover {
   background-color: #ffd000;
-  transform: translateY(-4px);
-  box-shadow: 0 15px 35px rgba(242, 183, 5, 0.3);
+  box-shadow: 0 8px 28px rgba(242, 183, 5, 0.38);
 }
 
 .btn-sentinel-yellow:active {
-  transform: translateY(-1px);
+  opacity: 0.9;
 }
 
 /* 🏢 FORM GRID SYSTEM */
@@ -1334,15 +1329,13 @@ body {
 }
 
 .archon-datepicker-day:hover {
-  background: rgba(242, 183, 5, 0.18);
-  transform: scale(1.1);
+  background: rgba(242, 183, 5, 0.22);
 }
 
 .archon-datepicker-day--selected {
   background: #f2b705 !important;
   color: #0f2a44 !important;
   font-weight: 900 !important;
-  transform: scale(1.05) !important;
 }
 
 .archon-datepicker-day--today {
