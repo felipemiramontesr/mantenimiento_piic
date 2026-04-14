@@ -84,7 +84,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // 🛠️ SHARED COMPONENT: OPERATIONAL SUBHEADER
   const renderSubheader = (): React.ReactElement => (
     <div 
-        className="flex items-center justify-between w-full mb-48 animate-in fade-in duration-500"
+        className="flex items-center justify-between w-full animate-in fade-in duration-500"
         style={{ padding: '0 4px' }}
     >
         {/* Left: Navigation (Conditional) */}
@@ -406,19 +406,19 @@ const FleetModule: React.FC = (): React.ReactElement => {
       </header>
 
       {/* 📊 ÁREA DE TRABAJO DINÁMICA */}
-      <section className="workspace-body-pro">
-        {/* OPERATIONAL SUBHEADER (v.5.3.4) */}
+      <section className="workspace-body-pro flex flex-col gap-64">
+        {/* OPERATIONAL SUBHEADER (v.5.3.5) */}
         {renderSubheader()}
 
-        <div className="flex-1 w-full mt-32">
+        <div className="flex-1 w-full">
             {currentView === 'GRID' ? renderGridView() : renderCreateView()}
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.3 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.5 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.3.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.5.</p>
       </footer>
     </main>
   );
