@@ -52,7 +52,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.5.3.2 */}
+      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.5.3.4 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           {/* Left Panel: Operational Context */}
@@ -150,7 +150,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM */}
       <section className="workspace-body-pro">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%', marginTop: '24px' }}>
           <div
             className="glass-card-pro"
             style={{
@@ -366,7 +366,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.2.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.4.</p>
       </footer>
     </main>
   );

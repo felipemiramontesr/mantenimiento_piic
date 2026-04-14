@@ -84,7 +84,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // 🛠️ SHARED COMPONENT: OPERATIONAL SUBHEADER
   const renderSubheader = (): React.ReactElement => (
     <div 
-        className="flex items-center justify-between w-full mb-32 animate-in fade-in duration-500"
+        className="flex items-center justify-between w-full mb-48 animate-in fade-in duration-500"
         style={{ padding: '0 4px' }}
     >
         {/* Left: Navigation (Conditional) */}
@@ -407,10 +407,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 ÁREA DE TRABAJO DINÁMICA */}
       <section className="workspace-body-pro">
-        {/* OPERATIONAL SUBHEADER (v.5.3.3) */}
+        {/* OPERATIONAL SUBHEADER (v.5.3.4) */}
         {renderSubheader()}
 
-        <div className="flex-1 w-full mt-8">
+        <div className="flex-1 w-full mt-32">
             {currentView === 'GRID' ? renderGridView() : renderCreateView()}
         </div>
       </section>
