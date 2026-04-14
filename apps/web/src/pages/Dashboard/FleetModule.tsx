@@ -113,7 +113,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
 
         {/* Right: Operational KPI (Always Visible) */}
-        <div className="flex items-center gap-12">
+        <div className="flex items-center gap-24">
             <span style={{ 
                 fontSize: '26px', 
                 fontWeight: 900, 
@@ -456,7 +456,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.5.4.0) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.5.4.1) */}
       <section className="archon-workspace-chassis">
         {/* OPERATIONAL SUBHEADER (Unified Grid Row 1) */}
         {renderSubheader()}
@@ -466,10 +466,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.4.0 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.4.1 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.4.0.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.4.1.</p>
       </footer>
     </main>
   );
