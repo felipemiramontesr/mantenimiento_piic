@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Plus, X, Search, Filter, MoreVertical, Wrench, Navigation, CheckCircle2, Ban, Gauge } from 'lucide-react';
+import { Truck, Plus, X, Search, ArrowRight, User } from 'lucide-react';
 import api from '../../api/client';
 import { FleetUnit } from '../../types/fleet';
 
@@ -20,7 +20,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const [units, setUnits] = useState<FleetUnit[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSlideOverOpen, setIsSlideOverOpen] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>('');
 
   // Form State (Standardized to camelCase for Pinnacle Standards)
   const [formData, setFormData] = useState({
@@ -44,7 +43,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         setUnits(response.data.data);
       }
     } catch (error) {
-      // Logic for failed fetch - Noise reduced for CI
+      // Noise reduction for CI
     } finally {
       setLoading(false);
     }
@@ -79,77 +78,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
     }
   };
 
-  const statusIcons: Record<string, React.ReactElement> = {
-    'Disponible': <CheckCircle2 size={14} className="text-emerald-500" />,
-    'En Ruta': <Navigation size={14} className="text-blue-500" />,
-    'En Mantenimiento': <Wrench size={14} className="text-amber-500" />,
-    'Descontinuada': <Ban size={14} className="text-rose-500" />
-  };
-
-  const filteredUnits = units.filter((u: FleetUnit): boolean => 
-    u.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.unit_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.tag.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Functional logic to avoid nested ternaries in JSX
-  const renderTableBody = (): React.ReactElement => {
-    if (loading) {
-      return <tr><td colSpan={6} className="p-40 text-center text-neutral-400 text-sm italic">Cargando unidades...</td></tr>;
-    }
-    
-    if (filteredUnits.length === 0) {
-      return <tr><td colSpan={6} className="p-40 text-center text-neutral-400 text-sm italic">No hay unidades registradas.</td></tr>;
-    }
-
-    return (
-        <>
-            {filteredUnits.map((unit: FleetUnit): React.ReactElement => (
-                <tr key={unit.uuid} className="hover:bg-neutral-50/50 transition-colors group">
-                    <td className="p-16">
-                        <div className="flex flex-col">
-                            <span className="text-[#0f2a44] font-black text-sm tracking-tight">{unit.id}</span>
-                            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{unit.tag}</span>
-                        </div>
-                    </td>
-                    <td className="p-16">
-                        <div className="flex flex-col">
-                            <span className="text-neutral-800 font-bold text-sm">{unit.unit_name}</span>
-                            <span className="text-xs text-neutral-500">{unit.year} • {unit.fuel_type}</span>
-                        </div>
-                    </td>
-                    <td className="p-16">
-                        <div className="flex flex-col">
-                            <span className="text-xs font-bold text-neutral-600 capitalize">{unit.unit_type}</span>
-                            <span className="text-[10px] text-neutral-400">{unit.unit_usage}</span>
-                        </div>
-                    </td>
-                    <td className="p-16">
-                        <div className="flex items-center gap-4 text-xs font-mono font-bold text-neutral-700">
-                            <Gauge size={12} className="opacity-40" />
-                            {Number(unit.odometer).toLocaleString()} <span className="text-[10px] opacity-40 font-sans">KM</span>
-                        </div>
-                    </td>
-                    <td className="p-16">
-                        <div className="flex items-center gap-6 bg-white px-8 py-4 rounded-full border border-neutral-100 shadow-sm w-fit">
-                            {statusIcons[unit.status]}
-                            <span className="text-[10px] font-bold text-neutral-600">{unit.status}</span>
-                        </div>
-                    </td>
-                    <td className="p-16 text-right">
-                        <button className="p-8 hover:bg-white rounded-4 transition-all opacity-0 group-hover:opacity-100">
-                            <MoreVertical size={16} className="text-neutral-400" />
-                        </button>
-                    </td>
-                </tr>
-            ))}
-        </>
-    );
-  };
-
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO - V.5.2.1 */}
+      {/* 🚀 HEADER SOBERANO - V.5.2.2 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -164,54 +95,128 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </p>
           </div>
 
-          <button 
-            onClick={(): void => setIsSlideOverOpen(true)}
-            className="flex items-center gap-8 bg-[#0f2a44] text-white px-20 py-10 rounded-4 font-bold text-sm hover:bg-[#1a3a5a] transition-all shadow-lg"
-          >
-            <Plus size={16} /> Registrar Unidad
-          </button>
+          <div className="flex gap-12">
+            <div className="bg-[#0f2a44]/5 px-16 py-8 rounded-4 border border-[#0f2a44]/10 flex flex-col items-end">
+                <span className="text-[9px] font-black uppercase tracking-widest text-[#0f2a44] opacity-40">Total Unidades</span>
+                <span className="text-xl font-black text-[#0f2a44]">{loading ? '...' : units.length}</span>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* 📊 DASHBOARD & TABLE */}
-      <section className="workspace-body-pro" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
-        {/* Filtros Tácticos */}
-        <div className="flex justify-between items-center bg-white p-12 rounded-8 border border-neutral-100 shadow-sm">
-            <div className="flex items-center gap-12 bg-neutral-50 px-12 py-8 rounded-4 border border-neutral-200 w-full max-w-sm">
-                <Search size={16} className="text-neutral-400" />
-                <input 
-                    type="text" 
-                    placeholder="Buscar por ID, Nombre o Tag..."
-                    className="bg-transparent border-none outline-none text-sm w-full font-medium"
-                    value={searchTerm}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setSearchTerm(e.target.value)}
-                />
+      {/* 📊 BODY MODULAR (Instrument Cluster Logic) */}
+      <section className="workspace-body-pro">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
+          
+          {/* Card 1: Registrar Nueva Unidad */}
+          <div
+            className="glass-card-pro"
+            style={{
+              borderTop: '4px solid #f2b705',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+              <Plus size={20} style={{ color: '#f2b705' }} />
+              <span className="text-instrument-header text-[#0f2a44] opacity-80">
+                Incorporación de Activos
+              </span>
             </div>
-            <div className="flex items-center gap-12">
-                <button className="flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-neutral-500 hover:text-[#0f2a44]">
-                    <Filter size={14} /> Filtros
-                </button>
-            </div>
-        </div>
 
-        {/* Tabla Industrial */}
-        <div className="bg-white rounded-8 border border-neutral-100 shadow-sm overflow-hidden min-h-[50vh]">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                    <tr className="bg-neutral-50 border-b border-neutral-100">
-                        <th className="p-16 text-[10px] font-black uppercase tracking-widest text-neutral-400">Identity</th>
-                        <th className="p-16 text-[10px] font-black uppercase tracking-widest text-neutral-400">Unidad</th>
-                        <th className="p-16 text-[10px] font-black uppercase tracking-widest text-neutral-400">Especificación</th>
-                        <th className="p-16 text-[10px] font-black uppercase tracking-widest text-neutral-400">Odómetro</th>
-                        <th className="p-16 text-[10px] font-black uppercase tracking-widest text-neutral-400">Estado</th>
-                        <th className="p-16 text-[10px] font-black uppercase tracking-widest text-neutral-400"></th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-50">
-                    {renderTableBody()}
-                </tbody>
-            </table>
+            <div className="mb-24" style={{ width: '100%' }}>
+              <h3 className="text-kpi-black text-[#0f2a44] text-xl" style={{ fontSize: '1.5rem' }}>
+                Registrar Unidad
+              </h3>
+              <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+                Ingreso de nuevos vehículos al ecosistema Archon
+              </p>
+            </div>
+
+            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <button 
+                onClick={(): void => setIsSlideOverOpen(true)}
+                className="btn-sentinel-yellow" 
+              >
+                Iniciar Registro <ArrowRight size={10} className="text-[#0f2a44]" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Exploración de Inventario (Placeholder Logic) */}
+          <div
+            className="glass-card-pro"
+            style={{
+              borderTop: '4px solid #8b5cf6',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+              <Search size={20} style={{ color: '#8b5cf6' }} />
+              <span className="text-instrument-header text-[#0f2a44] opacity-80">
+                Exploración de Datos
+              </span>
+            </div>
+            <div className="mb-24" style={{ width: '100%' }}>
+              <h3 className="text-kpi-black text-[#0f2a44] text-xl" style={{ fontSize: '1.5rem' }}>
+                Inventario General
+              </h3>
+              <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+                Visualización técnica y estados de la flota
+              </p>
+            </div>
+            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <button 
+                disabled
+                className="btn-sentinel-yellow opacity-40 cursor-not-allowed" 
+                style={{ backgroundColor: '#8b5cf6', color: 'white' }}
+              >
+                Próximamente <ArrowRight size={10} className="text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: Gestión de Operadores (Placeholder Logic) */}
+          <div
+            className="glass-card-pro"
+            style={{
+              borderTop: '4px solid #10b981',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+              <User size={20} style={{ color: '#10b981' }} />
+              <span className="text-instrument-header text-[#0f2a44] opacity-80">
+                Logística Humana
+              </span>
+            </div>
+            <div className="mb-24" style={{ width: '100%' }}>
+              <h3 className="text-kpi-black text-[#0f2a44] text-xl" style={{ fontSize: '1.5rem' }}>
+                Gestión Operadores
+              </h3>
+              <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+                Asignación de personal a unidades de flota
+              </p>
+            </div>
+            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <button 
+                disabled
+                className="btn-sentinel-yellow opacity-40 cursor-not-allowed" 
+                style={{ backgroundColor: '#10b981', color: 'white' }}
+              >
+                Próximamente <ArrowRight size={10} className="text-white" />
+              </button>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -369,10 +374,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       )}
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.2.1 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.2.2 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.2.1.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.2.2.</p>
       </footer>
     </main>
   );
