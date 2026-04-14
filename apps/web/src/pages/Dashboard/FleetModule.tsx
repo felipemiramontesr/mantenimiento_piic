@@ -406,8 +406,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
       </header>
 
       {/* 📊 ÁREA DE TRABAJO DINÁMICA */}
-      <section className="workspace-body-pro flex flex-col gap-64">
-        {/* OPERATIONAL SUBHEADER (v.5.3.5) */}
+      <section className="workspace-body-pro flex flex-col gap-64 !pt-12">
+        {/* OPERATIONAL SUBHEADER (v.5.3.6) */}
         {renderSubheader()}
 
         <div className="flex-1 w-full">
@@ -415,10 +415,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.5 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.6 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.5.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.6.</p>
       </footer>
     </main>
   );
