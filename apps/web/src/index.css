@@ -1021,3 +1021,117 @@ body {
   filter: drop-shadow(0 0 4px rgba(242, 183, 5, 0.3));
   transition: all 0.3s ease;
 }
+
+/* 🏛️ ARCHON FORM DESIGN SYSTEM (V.5.3.1) - SENIOR WORLD-CLASS STANDARD */
+.archon-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.archon-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 950;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  opacity: 0.45;
+  margin-bottom: 2px;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.archon-form-group:focus-within .archon-label {
+  opacity: 1;
+  color: var(--color-accent);
+  transform: translateX(4px);
+}
+
+.archon-input, .archon-select {
+  width: 100%;
+  background: rgba(15, 42, 68, 0.03);
+  border: none;
+  border-bottom: 2px solid rgba(15, 42, 68, 0.1);
+  padding: 14px 0; /* Axial Breathing */
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary);
+  outline: none;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 0; /* Industrial Flat */
+}
+
+.archon-input::placeholder {
+  color: rgba(15, 42, 68, 0.2);
+  font-weight: 500;
+}
+
+.archon-input:focus, .archon-select:focus {
+  background: transparent;
+  border-bottom-color: var(--color-accent);
+  padding-left: 12px; /* Unfurl transition */
+}
+
+/* ⚡ MASTER ACTION COMPONENTS */
+.btn-archon-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 16px 32px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(15, 42, 68, 0.15);
+}
+
+.btn-archon-primary:hover {
+  background-color: #1a3a5a;
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(15, 42, 68, 0.25);
+}
+
+.btn-archon-primary:active {
+  transform: translateY(-1px);
+}
+
+.btn-archon-primary svg {
+  transition: transform 0.3s ease;
+  color: var(--color-accent);
+}
+
+.btn-archon-primary:hover svg {
+  transform: scale(1.2) rotate(5deg);
+}
+
+/* 🏢 FORM GRID SYSTEM */
+.archon-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px; /* Golden Spacing */
+}
+
+.archon-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .archon-grid-2, .archon-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}

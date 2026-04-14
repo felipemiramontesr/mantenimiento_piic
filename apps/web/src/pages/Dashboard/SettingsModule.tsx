@@ -3,7 +3,7 @@ import { Settings } from 'lucide-react';
 
 const SettingsModule: React.FC = (): React.ReactElement => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
-    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.5.3.0 */}
+    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.5.3.1 */}
     <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
         {/* Left Panel: Configuration Context */}
@@ -74,10 +74,10 @@ const SettingsModule: React.FC = (): React.ReactElement => (
       </div>
     </section>
 
-    {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.0 */}
+    {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.1 */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.0.</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.1.</p>
     </footer>
   </main>
 );
