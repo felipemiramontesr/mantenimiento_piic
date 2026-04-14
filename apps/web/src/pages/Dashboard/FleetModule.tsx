@@ -393,9 +393,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                     boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
                     transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
+                    padding: 0
                 }}
             >
-                <User size={20} className="text-[#f2b705]" />
+                <svg width="24" height="24" viewBox="0 0 100 100">
+                    <path d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z" stroke="#f2b705" strokeWidth="16" fill="none" />
+                </svg>
             </button>
           </div>
 
@@ -404,7 +407,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 ÁREA DE TRABAJO DINÁMICA */}
       <section className="workspace-body-pro">
-        {/* OPERATIONAL SUBHEADER (v.5.3.2) */}
+        {/* OPERATIONAL SUBHEADER (v.5.3.3) */}
         {renderSubheader()}
 
         <div className="flex-1 w-full mt-8">
@@ -412,10 +415,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.2 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.2.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.3.</p>
       </footer>
     </main>
   );
