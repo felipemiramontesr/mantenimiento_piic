@@ -411,8 +411,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </div>
         </div>
 
-        {/* ── ROW 2: Configuración Mecánica + Operación ────────────────────── */}
-        <div className="archon-grid-2">
+        {/* ── ROW 2: Configuración Mecánica + Organización ────────────────────── */}
+        <div className="archon-grid-2" style={{ marginTop: '48px' }}>
 
           {/* CARD: Configuración Mecánica */}
           <div className="glass-card-pro bg-white p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
@@ -513,6 +513,26 @@ const FleetModule: React.FC = (): React.ReactElement => {
               <h3>Organización &amp; Cumplimiento</h3>
             </div>
 
+            {/* Vigencia del Seguro */}
+            <div className="archon-form-group">
+              <label className="archon-label"><Calendar size={12} /> Vigencia del Seguro</label>
+              <ArchonDatePicker
+                value={formData.vigenciaSeguro}
+                onChange={(v: string): void => setFormData({ ...formData, vigenciaSeguro: v })}
+                placeholder="Selecciona fecha"
+              />
+            </div>
+
+            {/* Vencimiento de Verificación */}
+            <div className="archon-form-group">
+              <label className="archon-label"><Calendar size={12} /> Vencimiento de Verificación</label>
+              <ArchonDatePicker
+                value={formData.vencimientoVerificacion}
+                onChange={(v: string): void => setFormData({ ...formData, vencimientoVerificacion: v })}
+                placeholder="Selecciona fecha"
+              />
+            </div>
+
             {/* Sede */}
             <div className="archon-form-group">
               <label className="archon-label"><MapPin size={12} /> Sede</label>
@@ -541,26 +561,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
               </select>
             </div>
 
-            {/* Vigencia del Seguro */}
-            <div className="archon-form-group">
-              <label className="archon-label"><Calendar size={12} /> Vigencia del Seguro</label>
-              <ArchonDatePicker
-                value={formData.vigenciaSeguro}
-                onChange={(v: string): void => setFormData({ ...formData, vigenciaSeguro: v })}
-                placeholder="Selecciona fecha"
-              />
-            </div>
-
-            {/* Vencimiento de Verificación */}
-            <div className="archon-form-group">
-              <label className="archon-label"><Calendar size={12} /> Vencimiento de Verificación</label>
-              <ArchonDatePicker
-                value={formData.vencimientoVerificacion}
-                onChange={(v: string): void => setFormData({ ...formData, vencimientoVerificacion: v })}
-                placeholder="Selecciona fecha"
-              />
-            </div>
-
             {/* Submit */}
             <div className="pt-40">
               <button type="submit" className="btn-sentinel-yellow w-full">
@@ -579,7 +579,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // ============================================================================
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.1.0.1 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.1.0.2 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
 
@@ -592,7 +592,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              {currentView === 'GRID' ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade' : 'Protocolo de Incorporación de Activo v.7.1.0.1'}
+              {currentView === 'GRID' ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade' : 'Protocolo de Incorporación de Activo v.7.1.0.2'}
             </p>
           </div>
 
@@ -628,7 +628,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.0.1) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.0.2) */}
       <section className="archon-workspace-chassis">
         {renderSubheader()}
         <div className="w-full">
@@ -636,10 +636,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.0.1 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.0.2 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.0.1.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.0.2.</p>
       </footer>
     </main>
   );
