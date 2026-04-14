@@ -1039,7 +1039,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   opacity: 0.45;
-  margin-bottom: 2px;
+  margin-bottom: 6px; /* Increased separation for clarity v.5.5.0 */
   display: flex !important;
   align-items: center;
   gap: 8px;
@@ -1057,13 +1057,13 @@ body {
   background: rgba(15, 42, 68, 0.03);
   border: none;
   border-bottom: 2px solid rgba(15, 42, 68, 0.1);
-  padding: 14px 0; /* Axial Breathing */
+  padding: 14px 20px; /* Enhanced horizontal breathing v.5.5.0 */
   font-size: 15px;
   font-weight: 700;
   color: var(--color-primary);
   outline: none;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 0; /* Industrial Flat */
+  border-radius: 4px; /* Soft precision v.5.5.0 */
 }
 
 .archon-input::placeholder {
@@ -1114,6 +1114,36 @@ body {
 
 .btn-archon-primary:hover svg {
   transform: scale(1.2) rotate(5deg);
+}
+
+/* ⚡ SENTINEL ACTION COMPONENTS (V.5.5.0) */
+.btn-sentinel-yellow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(242, 183, 5, 0.2);
+}
+
+.btn-sentinel-yellow:hover {
+  background-color: #ffd000;
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(242, 183, 5, 0.3);
+}
+
+.btn-sentinel-yellow:active {
+  transform: translateY(-1px);
 }
 
 /* 🏢 FORM GRID SYSTEM */

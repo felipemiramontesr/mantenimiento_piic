@@ -102,37 +102,36 @@ const FleetModule: React.FC = (): React.ReactElement => {
             {currentView === 'CREATE' && (
                 <button 
                     onClick={(): void => setCurrentView('GRID')}
-                    className="flex items-center gap-12 group transition-all"
+                    className="btn-sentinel-yellow"
                 >
-                    <div className="p-10 bg-[#0f2a44]/5 rounded-4 group-hover:bg-[#f2b705]/10 transition-colors">
-                        <ArrowLeft size={20} className="text-[#0f2a44] group-hover:-translate-x-2 transition-transform" />
-                    </div>
-                    <span className="text-[12px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 group-hover:opacity-100 transition-opacity">Volver al Panel</span>
+                    <ArrowLeft size={14} /> Volver al Panel
                 </button>
             )}
         </div>
 
-        {/* Right: Operational KPI (Always Visible) */}
-        <div className="flex items-center">
-            <span style={{ 
-                fontSize: '26px', 
-                fontWeight: 900, 
-                color: '#0f2a44',
-                fontFamily: 'Inter, sans-serif',
-                letterSpacing: '-0.02em'
-            }}>
-                Total de Unidades:
-            </span>
-            <span style={{ 
-                fontSize: '26px', 
-                fontWeight: 900, 
-                color: '#f2b705',
-                fontFamily: 'Inter, sans-serif',
-                marginLeft: '12px'
-            }}>
-                {loading ? '...' : units.length}
-            </span>
-        </div>
+        {/* Right: Operational KPI (Conditional v.5.5.0) */}
+        {currentView === 'GRID' && (
+            <div className="flex items-center">
+                <span style={{ 
+                    fontSize: '26px', 
+                    fontWeight: 900, 
+                    color: '#0f2a44',
+                    fontFamily: 'Inter, sans-serif',
+                    letterSpacing: '-0.02em'
+                }}>
+                    Total de Unidades:
+                </span>
+                <span style={{ 
+                    fontSize: '26px', 
+                    fontWeight: 900, 
+                    color: '#f2b705',
+                    fontFamily: 'Inter, sans-serif',
+                    marginLeft: '12px'
+                }}>
+                    {loading ? '...' : units.length}
+                </span>
+            </div>
+        )}
     </div>
   );
 
@@ -219,10 +218,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
             <div className="archon-grid-2">
                 
                 {/* ADN del Vehículo */}
-                <div className="glass-card-pro bg-white/60 p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
-                    <div className="flex items-center gap-12 border-b border-[#0f2a44]/5 pb-20">
-                        <ShieldCheck size={20} className="text-[#f2b705]" />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#0f2a44]">
+                <div className="glass-card-pro bg-white p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
+                    <div className="flex items-center gap-16 pb-24 border-b border-[#f2b705]/20">
+                        <ShieldCheck size={22} className="text-[#f2b705]" />
+                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#f2b705] m-0">
                             Identidad & ADN Soberano
                         </h3>
                     </div>
@@ -288,10 +287,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 </div>
 
                 {/* Parámetros de Operación */}
-                <div className="glass-card-pro bg-white/60 p-64 space-y-40" style={{ borderTop: '4px solid #0f2a44' }}>
-                    <div className="flex items-center gap-12 border-b border-[#0f2a44]/5 pb-20">
-                        <Zap size={20} className="text-[#0f2a44]" />
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#0f2a44]">
+                <div className="glass-card-pro bg-white p-64 space-y-40" style={{ borderTop: '4px solid #0f2a44' }}>
+                    <div className="flex items-center gap-16 pb-24 border-b border-[#f2b705]/20">
+                        <Zap size={22} className="text-[#f2b705]" />
+                        <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-[#f2b705] m-0">
                             Estrategia Operativa
                         </h3>
                     </div>
@@ -341,10 +340,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                         </div>
                     </div>
                     
-                    <div className="pt-12">
+                    <div className="pt-40">
                         <button 
                             type="submit"
-                            className="btn-archon-primary w-full"
+                            className="btn-sentinel-yellow w-full"
                         >
                             <Save size={18} /> Confirmar Incorporación de Activo
                         </button>
