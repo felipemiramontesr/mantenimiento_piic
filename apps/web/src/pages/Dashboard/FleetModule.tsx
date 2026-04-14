@@ -22,7 +22,15 @@ type FleetView = 'GRID' | 'CREATE';
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
-  const [units, setUnits] = useState<FleetUnit[]>([]);
+  
+  // ⚡ SOVEREIGN HYDRATION LOGIC (v.7.0.0)
+  const [units, setUnits] = useState<FleetUnit[]>(() => {
+    try {
+      const cached = localStorage.getItem('archon_fleet_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
+
   const [loading, setLoading] = useState<boolean>(true);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
@@ -53,7 +61,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
       setLoading(true);
       const response = await api.get('/fleet');
       if (response.data.success) {
-        setUnits(response.data.data);
+        const freshData = response.data.data;
+        setUnits(freshData);
+        // Persist for zero-lag next load
+        localStorage.setItem('archon_fleet_cache', JSON.stringify(freshData));
       }
     } catch (error) {
       // Noise reduction for CI
@@ -109,7 +120,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             )}
         </div>
 
-        {/* Right: Operational KPI (Conditional v.6.0.1) */}
+        {/* Right: Operational KPI (Conditional v.7.0.0) */}
         {currentView === 'GRID' && (
             <div className="flex items-center ml-auto">
                 <span style={{ 
@@ -126,9 +137,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     fontWeight: 900, 
                     color: '#f2b705',
                     fontFamily: 'Inter, sans-serif',
-                    marginLeft: '12px'
+                    marginLeft: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    minWidth: '40px'
                 }}>
-                    {loading ? '...' : units.length}
+                    {loading && units.length === 0 ? <span className="archon-shimmer" /> : units.length}
                 </span>
             </div>
         )}
@@ -352,7 +366,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.6.0.1 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.0.0 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           
@@ -450,7 +464,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.6.0.1) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.0.0) */}
       <section className="archon-workspace-chassis">
         {/* OPERATIONAL SUBHEADER (Unified Grid Row 1) */}
         {renderSubheader()}
@@ -460,10 +474,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.6.0.1 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.7.0.0 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.6.0.1.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.0.0.</p>
       </footer>
     </main>
   );

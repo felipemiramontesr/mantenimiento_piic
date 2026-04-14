@@ -1177,6 +1177,28 @@ body {
   overflow-y: auto;
 }
 
+/* ✨ KINETIC SHIMMER SYSTEM (V.7.0.0) */
+@keyframes archonShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.archon-shimmer {
+  display: inline-block;
+  height: 24px;
+  width: 40px;
+  background: linear-gradient(
+    90deg,
+    rgba(242, 183, 5, 0.1) 25%,
+    rgba(242, 183, 5, 0.2) 37%,
+    rgba(242, 183, 5, 0.1) 63%
+  );
+  background-size: 200% 100%;
+  animation: archonShimmer 1.4s ease-in-out infinite;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
 /* 🏆 SOVEREIGN COMPONENT DEFINITIONS (V.6.0.0) */
 .archon-card-header-pro {
   display: flex !important;
