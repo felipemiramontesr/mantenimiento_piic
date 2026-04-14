@@ -1117,9 +1117,9 @@ body {
   transform: scale(1.2) rotate(5deg);
 }
 
-/* ⚡ SENTINEL ACTION COMPONENTS (V.5.5.0) */
+/* ⚡ SENTINEL ACTION COMPONENTS (V.6.0.1) */
 .btn-sentinel-yellow {
-  display: inline-flex;
+  display: flex !important; /* Force predictable block behavior */
   align-items: center;
   justify-content: center;
   gap: 12px;
@@ -1205,4 +1205,9 @@ body {
 .archon-label svg {
   color: #f2b705 !important;
   margin-right: 4px;
+}
+
+/* 🛠️ GLOBAL UTILITIES (V.6.0.1) */
+.w-full {
+  width: 100% !important;
 }

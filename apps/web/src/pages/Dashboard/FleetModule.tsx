@@ -109,7 +109,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             )}
         </div>
 
-        {/* Right: Operational KPI (Conditional v.6.0.0) */}
+        {/* Right: Operational KPI (Conditional v.6.0.1) */}
         {currentView === 'GRID' && (
             <div className="flex items-center ml-auto">
                 <span style={{ 
@@ -352,7 +352,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.6.0.0 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.6.0.1 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           
@@ -450,7 +450,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.6.0.0) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.6.0.1) */}
       <section className="archon-workspace-chassis">
         {/* OPERATIONAL SUBHEADER (Unified Grid Row 1) */}
         {renderSubheader()}
@@ -460,10 +460,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.6.0.0 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.6.0.1 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.6.0.0.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.6.0.1.</p>
       </footer>
     </main>
   );
