@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Plus, Search, ArrowRight, User, ArrowLeft, Save, ShieldCheck, Zap, Calendar, Fuel, Gauge, Box, Layers, Tag, Edit3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Truck, Plus, Search, ArrowRight, User, ArrowLeft, Save, ShieldCheck, Zap, Calendar, Fuel, Gauge, Box, Layers, Tag, Edit3, Settings, LogOut } from 'lucide-react';
 import api from '../../api/client';
 import { FleetUnit } from '../../types/fleet';
 
@@ -19,10 +20,19 @@ const METRICS: string[] = [
 type FleetView = 'GRID' | 'CREATE';
 
 const FleetModule: React.FC = (): React.ReactElement => {
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
   const [units, setUnits] = useState<FleetUnit[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isMenuOpen] = useState<boolean>(false); // Placeholder for standardized header items
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = (): void => setIsMenuOpen(false);
+
+  const handleLogout = (): void => {
+    localStorage.removeItem('archon_token');
+    navigate('/login');
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -379,6 +389,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </h1>
 
             <button 
+                onClick={toggleMenu}
+                aria-label="User Menu"
                 className="avatar-trigger-pro"
                 style={{ 
                     width: '44px', 
@@ -400,14 +412,53 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     <path d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z" stroke="#f2b705" strokeWidth="16" fill="none" />
                 </svg>
             </button>
+
+            {isMenuOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '60px',
+                right: '0',
+                width: '180px',
+                backgroundColor: '#ffffff',
+                borderRadius: '4px',
+                boxShadow: '0 10px 30px rgba(15, 42, 68, 0.15)',
+                border: '1px solid rgba(15, 42, 68, 0.08)',
+                zIndex: 100,
+                padding: '4px 0',
+                animation: 'fade-in 0.2s ease-out'
+              }}>
+                <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 900, color: '#f2b705', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sovereign Access</span>
+                </div>
+                <button 
+                  className="dropdown-item-mock" 
+                  onClick={closeMenu}
+                >
+                  <User size={14} /> Perfil
+                </button>
+                <button 
+                  className="dropdown-item-mock" 
+                  onClick={closeMenu}
+                >
+                  <Settings size={14} /> Ajustes
+                </button>
+                <div style={{ height: '1px', background: 'rgba(15, 42, 68, 0.05)', margin: '4px 0' }} />
+                <button 
+                  className="dropdown-item-mock dropdown-item-mock-danger" 
+                  onClick={handleLogout}
+                >
+                  <LogOut size={14} /> Cerrar Sesión
+                </button>
+              </div>
+            )}
           </div>
 
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA */}
-      <section className="workspace-body-pro !pt-16 pb-64">
-        {/* OPERATIONAL SUBHEADER (v.5.3.7) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.5.4.0) */}
+      <section className="archon-workspace-chassis">
+        {/* OPERATIONAL SUBHEADER (Unified Grid Row 1) */}
         {renderSubheader()}
 
         <div className="w-full">
@@ -415,10 +466,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.3.7 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.5.4.0 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.3.7.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.5.4.0.</p>
       </footer>
     </main>
   );

@@ -1135,3 +1135,13 @@ body {
     gap: 32px;
   }
 }
+
+/* ??? ARCHON WORKSPACE CHASSIS (V.5.4.0) - GRID TRACK SYSTEM */
+.archon-workspace-chassis {
+  display: grid !important;
+  grid-template-rows: auto 1fr;
+  row-gap: 64px;
+  padding: 16px 60px 80px 60px !important;
+  height: 80vh;
+  overflow-y: auto;
+}
