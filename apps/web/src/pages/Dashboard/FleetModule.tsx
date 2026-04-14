@@ -109,9 +109,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
             )}
         </div>
 
-        {/* Right: Operational KPI (Conditional v.5.5.0) */}
+        {/* Right: Operational KPI (Conditional v.5.5.5) */}
         {currentView === 'GRID' && (
-            <div className="flex items-center">
+            <div className="flex items-center ml-auto">
                 <span style={{ 
                     fontSize: '26px', 
                     fontWeight: 900, 
@@ -356,7 +356,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.5.4.3 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.5.5.5 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           

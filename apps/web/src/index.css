@@ -1024,22 +1024,23 @@ body {
 
 /* 🏛️ ARCHON FORM DESIGN SYSTEM (V.5.3.1) - SENIOR WORLD-CLASS STANDARD */
 .archon-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important; /* Tight-Bonding v.5.5.5 */
   position: relative;
   transition: transform 0.3s ease;
+  margin-bottom: 32px !important; /* Block separation v.5.5.5 */
 }
 
 .archon-label {
   font-family: 'Inter', sans-serif;
   font-size: 10px;
-  font-weight: 950;
+  font-weight: 850; /* Slightly reduced for better flow */
   color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  opacity: 0.45;
-  margin-bottom: 6px; /* Increased separation for clarity v.5.5.0 */
+  opacity: 0.7; /* Increased for better anchoring v.5.5.5 */
+  margin-bottom: 0px !important; /* Cohesion enforced */
   display: flex !important;
   align-items: center;
   gap: 8px;
