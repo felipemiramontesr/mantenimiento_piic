@@ -23,7 +23,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
   
-  // ⚡ SOVEREIGN HYDRATION LOGIC (v.7.0.0)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.0.0.1)
   const [units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -31,6 +31,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
     } catch { return []; }
   });
 
+  const [displayCount, setDisplayCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
@@ -77,6 +78,22 @@ const FleetModule: React.FC = (): React.ReactElement => {
     fetchUnits();
   }, []);
 
+  // 🚀 KINETIC UPCOUNT EFFECT
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (displayCount < units.length) {
+      timeoutId = setTimeout(() => {
+        setDisplayCount(prev => prev + 1);
+      }, 50); // Velocity calibrated for premium feel
+    } else if (displayCount > units.length) {
+      setDisplayCount(units.length);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [units.length, displayCount]);
+
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     try {
@@ -120,15 +137,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
             )}
         </div>
 
-        {/* Right: Operational KPI (Conditional v.7.0.0) */}
+        {/* Right: Operational KPI (Conditional v.7.0.0.1) */}
         {currentView === 'GRID' && (
-            <div className="flex items-center ml-auto">
+            <div className="flex flex-row items-center ml-auto whitespace-nowrap" style={{ flexWrap: 'nowrap' }}>
                 <span style={{ 
                     fontSize: '26px', 
                     fontWeight: 900, 
                     color: '#0f2a44',
                     fontFamily: 'Inter, sans-serif',
-                    letterSpacing: '-0.02em'
+                    letterSpacing: '-0.02em',
+                    lineHeight: '1'
                 }}>
                     Total de Unidades:
                 </span>
@@ -140,9 +158,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     marginLeft: '12px',
                     display: 'flex',
                     alignItems: 'center',
-                    minWidth: '40px'
+                    minWidth: '40px',
+                    lineHeight: '1'
                 }}>
-                    {loading && units.length === 0 ? <span className="archon-shimmer" /> : units.length}
+                    {loading && units.length === 0 ? <span className="archon-shimmer" /> : displayCount}
                 </span>
             </div>
         )}
@@ -366,7 +385,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.0.0 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.0.0.1 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           
@@ -464,7 +483,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.0.0) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.0.0.1) */}
       <section className="archon-workspace-chassis">
         {/* OPERATIONAL SUBHEADER (Unified Grid Row 1) */}
         {renderSubheader()}
@@ -474,10 +493,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.7.0.0 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.7.0.0.1 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.0.0.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.0.0.1.</p>
       </footer>
     </main>
   );
