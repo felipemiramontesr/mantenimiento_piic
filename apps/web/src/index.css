@@ -1196,8 +1196,8 @@ body {
 
 .archon-grid-3 {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
 }
 
 @media (max-width: 768px) {
