@@ -34,7 +34,7 @@ import {
 import ArchonDatePicker from '../../components/ArchonDatePicker';
 
 // ============================================================================
-// 📦 SOVEREIGN ASSET CATALOGS (v.7.2.2)
+// 📦 SOVEREIGN ASSET CATALOGS (v.7.2.3)
 // ============================================================================
 const MARCAS_VEHICULO: Record<string, string[]> = {
   Toyota: ['Hilux', 'Land Cruiser', 'Fortuner', 'RAV4', 'Hiace', 'Tacoma'],
@@ -121,13 +121,13 @@ const getInitialForm = (): {
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.7.2.2)
+// 🚀 FLEET MODULE (v.7.2.3)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.2.2)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.2.3)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -412,16 +412,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
   );
 
   // ============================================================================
-  // 📝 CREATE VIEW — Intelligence Form v.7.2.2
+  // 📝 CREATE VIEW — Intelligence Form v.7.2.3
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-64">
-      <form onSubmit={handleSubmit} className="space-y-48">
+      <form onSubmit={handleSubmit} className="space-y-12">
         {/* ── ROW 1: Clasificación + Identidad ─────────────────────────────── */}
         <div className="archon-grid-2">
           {/* CARD: Clasificación del Activo */}
           <div
-            className="glass-card-pro card-hover-yellow bg-white p-64 space-y-40"
+            className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8"
             style={{ borderTop: '4px solid #f2b705' }}
           >
             <div className="archon-card-header-pro">
@@ -515,7 +515,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
           {/* CARD: Identidad del Activo */}
           <div
-            className="glass-card-pro card-hover-navy bg-white p-64 space-y-40"
+            className="glass-card-pro card-hover-navy bg-white p-10 space-y-8"
             style={{ borderTop: '4px solid #0f2a44' }}
           >
             <div className="archon-card-header-pro">
@@ -594,7 +594,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         <div className="archon-grid-2" style={{ marginTop: '48px' }}>
           {/* CARD: Configuración Mecánica */}
           <div
-            className="glass-card-pro card-hover-yellow bg-white p-64 space-y-40"
+            className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8"
             style={{ borderTop: '4px solid #f2b705' }}
           >
             <div className="archon-card-header-pro">
@@ -698,7 +698,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
           {/* CARD: Organización & Cumplimiento */}
           <div
-            className="glass-card-pro card-hover-navy bg-white p-64 space-y-40"
+            className="glass-card-pro card-hover-navy bg-white p-10 space-y-8"
             style={{ borderTop: '4px solid #0f2a44' }}
           >
             <div className="archon-card-header-pro">
@@ -817,7 +817,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               {currentView === 'GRID'
                 ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
-                : 'Protocolo de Incorporación de Activo v.7.2.2'}
+                : 'Protocolo de Incorporación de Activo v.7.2.3'}
             </p>
           </div>
 
@@ -918,7 +918,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.2.2) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.2.3) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -929,7 +929,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.2</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.3</p>
       </footer>
     </main>
   );
