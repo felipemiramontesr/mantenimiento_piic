@@ -18,6 +18,9 @@ import {
   MapPin,
   Wrench,
   Calendar,
+  PlusCircle,
+  Database,
+  Users,
 } from 'lucide-react';
 import api from '../../api/client';
 import {
@@ -151,6 +154,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       if (response.data.success) {
         const freshData = response.data.data;
         setUnits(freshData);
+        // ⚡ FORCED CACHE: Synchronize with central dashboard stats
         localStorage.setItem('archon_fleet_cache', JSON.stringify(freshData));
       }
     } catch {
@@ -255,14 +259,32 @@ const FleetModule: React.FC = (): React.ReactElement => {
             Incorporación de Activos
           </span>
         </div>
-        <div className="mb-24" style={{ width: '100%' }}>
-          <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Registrar Unidad</h3>
-          <p
-            className="text-[11px] tracking-wide font-bold"
-            style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}
+        <div className="flex-1 flex flex-col items-center justify-center gap-16">
+          <div
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(242, 183, 5, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed rgba(242, 183, 5, 0.3)',
+            }}
           >
-            Vehículos y Maquinaria
-          </p>
+            <PlusCircle size={40} style={{ color: '#f2b705' }} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <h3
+              className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
+              style={{ fontSize: '14px' }}
+            >
+              Registrar Unidad
+            </h3>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-4">
+              Vehículos y Maquinaria
+            </p>
+          </div>
         </div>
         <div
           style={{
@@ -306,14 +328,32 @@ const FleetModule: React.FC = (): React.ReactElement => {
             Exploración de Datos
           </span>
         </div>
-        <div className="mb-24" style={{ width: '100%' }}>
-          <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Inventario General</h3>
-          <p
-            className="text-[11px] tracking-wide font-bold"
-            style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}
+        <div className="flex-1 flex flex-col items-center justify-center gap-16">
+          <div
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed rgba(139, 92, 246, 0.3)',
+            }}
           >
-            Visualización técnica y estados
-          </p>
+            <Database size={40} style={{ color: '#8b5cf6' }} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <h3
+              className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
+              style={{ fontSize: '14px' }}
+            >
+              Inventario General
+            </h3>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-4">
+              Visualización y Estados
+            </p>
+          </div>
         </div>
         <div
           style={{
@@ -359,14 +399,32 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <User size={20} style={{ color: '#10b981' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
         </div>
-        <div className="mb-24" style={{ width: '100%' }}>
-          <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Gestión Operadores</h3>
-          <p
-            className="text-[11px] tracking-wide font-bold"
-            style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}
+        <div className="flex-1 flex flex-col items-center justify-center gap-16">
+          <div
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px dashed rgba(16, 185, 129, 0.3)',
+            }}
           >
-            Asignación de personal operativo
-          </p>
+            <Users size={40} style={{ color: '#10b981' }} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <h3
+              className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
+              style={{ fontSize: '14px' }}
+            >
+              Gestión Operadores
+            </h3>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-4">
+              Directorio de Control
+            </p>
+          </div>
         </div>
         <div
           style={{

@@ -1220,19 +1220,18 @@ body {
 }
 
 .archon-shimmer {
-  display: inline-block;
-  height: 24px;
-  width: 40px;
+  display: block;
+  height: 100%;
+  width: 100%;
   background: linear-gradient(
     90deg,
-    rgba(242, 183, 5, 0.1) 25%,
-    rgba(242, 183, 5, 0.2) 37%,
-    rgba(242, 183, 5, 0.1) 63%
+    rgba(15, 42, 68, 0.03) 25%,
+    rgba(15, 42, 68, 0.08) 37%,
+    rgba(15, 42, 68, 0.03) 63%
   );
   background-size: 200% 100%;
-  animation: archonShimmer 1.4s ease-in-out infinite;
+  animation: archonShimmer 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   border-radius: 4px;
-  vertical-align: middle;
 }
 
 /* 🏆 SOVEREIGN COMPONENT DEFINITIONS (V.6.0.0) */
