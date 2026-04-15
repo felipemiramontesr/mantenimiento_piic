@@ -112,20 +112,22 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
       </div>
 
-      <div className="archon-tile-payload space-y-6">
+      <div className="archon-tile-payload flex flex-col items-center justify-center">
         {loading ? (
           <div className="archon-shimmer h-40 w-full rounded" />
         ) : (
-          <div className="flex items-baseline justify-center">
-            <h2 className="text-[#0f2a44] font-black text-[64px] leading-none">{value}</h2>
-            {label.includes('Índice') && !loading && (
-              <span className="text-2xl font-bold ml-2 opacity-30 text-[#0f2a44]">%</span>
-            )}
+          <div className="flex flex-col items-center mb-8">
+            <div className="flex items-baseline justify-center">
+              <h2 className="text-[#0f2a44] font-black text-[64px] leading-none">{value}</h2>
+              {label.includes('Índice') && !loading && (
+                <span className="text-2xl font-bold ml-2 opacity-30 text-[#0f2a44]">%</span>
+              )}
+            </div>
+            <p className="text-[11px] tracking-[0.2em] font-bold uppercase opacity-60 text-[#0f2a44] mt-2">
+              {description}
+            </p>
           </div>
         )}
-        <p className="text-[11px] tracking-[0.2em] font-bold uppercase opacity-60 text-[#0f2a44]">
-          {description}
-        </p>
       </div>
 
       <div className="archon-tile-action">
@@ -273,7 +275,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.2.0) */}
+      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.2.1) */}
       <section className="archon-workspace-chassis">
         <div
           style={{
@@ -336,7 +338,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.1</p>
       </footer>
     </main>
   );
