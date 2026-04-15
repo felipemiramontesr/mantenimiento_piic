@@ -112,7 +112,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
       </div>
 
-      <div className="archon-tile-payload flex flex-col items-center justify-center">
+      <div className="archon-tile-payload flex flex-col items-center justify-center pb-16">
         {loading ? (
           <div className="archon-shimmer h-40 w-full rounded" />
         ) : (
@@ -275,7 +275,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.2.1) */}
+      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.2.2) */}
       <section className="archon-workspace-chassis">
         <div
           style={{
@@ -338,7 +338,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.1</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.2</p>
       </footer>
     </main>
   );
