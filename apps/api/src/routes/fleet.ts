@@ -5,7 +5,7 @@ import { z } from 'zod';
 import db from '../services/db';
 
 // ============================================================================
-// ZOD SCHEMA: CREATE (v.7.2.3)
+// ZOD SCHEMA: CREATE (v.8.0.0)
 // ============================================================================
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
@@ -29,6 +29,9 @@ const createFleetSchema = z.object({
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).default(0),
   sede: z.string().max(150).optional(),
+  maintenanceFrequency: z
+    .enum(['Diaria', 'Semanal', 'Mensual', 'Bimestral', 'Semestral', 'Anual'])
+    .default('Mensual'),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
   vigenciaSeguro: z.string().optional().nullable(), // ISO date string
   vencimientoVerificacion: z.string().optional().nullable(), // ISO date string
@@ -63,6 +66,9 @@ const updateFleetSchema = z.object({
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).optional(),
   sede: z.string().max(150).optional(),
+  maintenanceFrequency: z
+    .enum(['Diaria', 'Semanal', 'Mensual', 'Bimestral', 'Semestral', 'Anual'])
+    .optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).optional(),
   vigenciaSeguro: z.string().optional().nullable(),
   vencimientoVerificacion: z.string().optional().nullable(),
@@ -92,6 +98,7 @@ interface FleetUnit extends RowDataPacket {
   capacidad_carga: string | null;
   odometer: number;
   sede: string | null;
+  maintenance_frequency: string;
   centro_mantenimiento: string;
   vigencia_seguro: string | null;
   vencimiento_verificacion: string | null;
@@ -156,6 +163,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       capacidadCarga,
       odometer,
       sede,
+      maintenanceFrequency,
       centroMantenimiento,
       vigenciaSeguro,
       vencimientoVerificacion,
@@ -204,7 +212,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         `INSERT INTO fleet_units (
           id, uuid, asset_type, tag, numero_serie, marca, modelo, year, motor,
           traccion, transmision, fuel_type, tire_spec, tire_brand,
-          capacidad_carga, odometer, sede, centro_mantenimiento,
+          capacidad_carga, odometer, sede, maintenance_frequency, centro_mantenimiento,
           vigencia_seguro, vencimiento_verificacion, tarjeta_circulacion,
           status, assigned_operator_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -226,6 +234,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           capacidadCarga || null,
           odometer,
           sede || null,
+          maintenanceFrequency,
           centroMantenimiento,
           vigenciaSeguro || null,
           vencimientoVerificacion || null,
@@ -270,6 +279,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     if (raw.capacidadCarga !== undefined) updates.capacidad_carga = raw.capacidadCarga ?? null;
     if (raw.odometer !== undefined) updates.odometer = raw.odometer;
     if (raw.sede !== undefined) updates.sede = raw.sede ?? null;
+    if (raw.maintenanceFrequency !== undefined)
+      updates.maintenance_frequency = raw.maintenanceFrequency;
     if (raw.centroMantenimiento !== undefined)
       updates.centro_mantenimiento = raw.centroMantenimiento;
     if (raw.vigenciaSeguro !== undefined) updates.vigencia_seguro = raw.vigenciaSeguro ?? null;

@@ -1,4 +1,4 @@
-// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.7.2.3)
+// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.8.0.0)
 // Architecture: PIIC Fleet Asset Intelligence
 
 export type AssetType = 'Vehiculo' | 'Maquinaria' | 'Herramienta';
@@ -6,6 +6,13 @@ export type FleetStatus = 'Disponible' | 'En Ruta' | 'En Mantenimiento' | 'Desco
 export type Traccion = '4x2' | '4x4' | 'Doble Tracción' | 'AWD' | 'Oruga' | 'N/A';
 export type Transmision = 'Automática' | 'Estándar (Manual)' | 'CVT' | 'Hidrostática' | 'N/A';
 export type FuelType = 'Gasolina' | 'Diesel' | 'Eléctrico' | 'Híbrido' | 'N/A';
+export type MaintenanceFrequency =
+  | 'Diaria'
+  | 'Semanal'
+  | 'Mensual'
+  | 'Bimestral'
+  | 'Semestral'
+  | 'Anual';
 export type CentroMantenimiento = 'PIIC' | 'Archon Core';
 
 export interface FleetUnit {
@@ -33,6 +40,7 @@ export interface FleetUnit {
   odometer: number; // km (Vehiculo) | hrs (Maquinaria)
   // Organization
   sede: string | null;
+  maintenance_frequency: MaintenanceFrequency;
   centro_mantenimiento: CentroMantenimiento;
   // Legal & Compliance
   vigencia_seguro: string | null; // ISO date
@@ -62,6 +70,7 @@ export interface CreateFleetUnit {
   capacidad_carga?: string;
   odometer?: number;
   sede?: string;
+  maintenance_frequency: MaintenanceFrequency;
   centro_mantenimiento: CentroMantenimiento;
   vigencia_seguro?: string;
   vencimiento_verificacion?: string;
