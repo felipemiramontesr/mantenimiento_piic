@@ -80,15 +80,13 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
   // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.1.0.1)
-  const [units, setUnits] = useState<FleetUnit[]>(() => {
+  const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
       return cached ? JSON.parse(cached) : [];
     } catch { return []; }
   });
 
-  const [displayCount, setDisplayCount] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState(getInitialForm());
 
@@ -102,7 +100,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   const fetchUnits = async (): Promise<void> => {
     try {
-      setLoading(true);
       const response = await api.get('/fleet');
       if (response.data.success) {
         const freshData = response.data.data;
@@ -111,23 +108,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
       }
     } catch {
       // Noise reduction for CI
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect((): void => { fetchUnits(); }, []);
 
-  // 🚀 KINETIC UPCOUNT EFFECT
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (displayCount < units.length) {
-      timeoutId = setTimeout(() => setDisplayCount(prev => prev + 1), 50);
-    } else if (displayCount > units.length) {
-      setDisplayCount(units.length);
-    }
-    return () => { if (timeoutId) clearTimeout(timeoutId); };
-  }, [units.length, displayCount]);
+
 
   // Derived catalog based on asset type
   const availableMarcas = formData.assetType === 'Vehiculo'
@@ -177,26 +163,13 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // ============================================================================
   const renderSubheader = (): React.ReactElement => (
     <div
-      className="flex items-center justify-between w-full pb-80 animate-in fade-in duration-500"
+      className="flex items-center w-full pb-80 animate-in fade-in duration-500"
       style={{ paddingLeft: '4px', paddingRight: '4px' }}
     >
-      <div className="flex items-center min-w-[120px]">
-        {currentView === 'CREATE' && (
-          <button onClick={(): void => setCurrentView('GRID')} className="btn-sentinel-yellow">
-            <ArrowLeft size={14} /> Volver al Panel
-          </button>
-        )}
-      </div>
-
-      {currentView === 'GRID' && (
-        <div className="flex flex-row items-center ml-auto whitespace-nowrap" style={{ flexWrap: 'nowrap' }}>
-          <span style={{ fontSize: '26px', fontWeight: 900, color: '#0f2a44', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em', lineHeight: '1' }}>
-            Total de Unidades:
-          </span>
-          <span style={{ fontSize: '26px', fontWeight: 900, color: '#f2b705', fontFamily: 'Inter, sans-serif', marginLeft: '12px', display: 'flex', alignItems: 'center', minWidth: '40px', lineHeight: '1' }}>
-            {loading && units.length === 0 ? <span className="archon-shimmer" /> : displayCount}
-          </span>
-        </div>
+      {currentView === 'CREATE' && (
+        <button onClick={(): void => setCurrentView('GRID')} className="btn-sentinel-yellow">
+          <ArrowLeft size={14} /> Volver al Panel
+        </button>
       )}
     </div>
   );
