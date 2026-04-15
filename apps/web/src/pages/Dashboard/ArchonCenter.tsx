@@ -93,13 +93,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     mode: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red'
   ): React.ReactElement => (
     <div
-      className={`glass-card-pro card-hover-${mode}`}
+      className={`glass-card-pro archon-instrument-tile card-hover-${mode}`}
       style={{
         borderTop: `4px solid ${color}`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
       }}
     >
       <div
@@ -116,27 +112,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
       </div>
 
-      <div
-        className="mb-24"
-        style={{
-          width: '100%',
-          minHeight: '80px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {loading && units.length === 0 ? (
-          <div
-            className="archon-shimmer"
-            style={{ height: '48px', width: '80px', margin: '0 auto' }}
-          ></div>
+      <div className="archon-tile-payload">
+        {loading ? (
+          <div className="archon-shimmer h-40 w-full rounded" />
         ) : (
-          <h3 className="text-kpi-black text-[#0f2a44]">
-            {value}
-            {label.includes('Índice') && <span className="text-xl ml-4 opacity-20">%</span>}
-          </h3>
+          <h2 className="text-[#0f2a44] font-black text-4xl mb-8">{value}</h2>
         )}
         <p
           className="text-[11px] tracking-wide font-bold"
@@ -305,7 +285,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.1.3) */}
+      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.1.4) */}
       <section className="archon-workspace-chassis">
         <div
           style={{
@@ -368,7 +348,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.3</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.4</p>
       </footer>
     </main>
   );

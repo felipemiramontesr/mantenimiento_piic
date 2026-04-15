@@ -1188,6 +1188,7 @@ body {
 .archon-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 1fr; /* Elastic vertical stretch parity */
   gap: 20px;
 }
 
@@ -1397,4 +1398,31 @@ body {
 .archon-datepicker-day--today {
   border: 2px solid #0f2a44 !important;
   font-weight: 700;
+}
+/* 🏛️ SOVEREIGN TILE SYSTEM (v.7.1.4) */
+.archon-instrument-tile {
+  height: 32vh !important;
+  min-height: 280px !important;
+  max-height: 400px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 40px !important;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+}
+
+.archon-tile-payload {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.archon-tile-action {
+  margin-top: auto !important;
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
 }

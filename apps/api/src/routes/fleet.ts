@@ -5,7 +5,7 @@ import { z } from 'zod';
 import db from '../services/db';
 
 // ============================================================================
-// ZOD SCHEMA: CREATE (v.7.1.3)
+// ZOD SCHEMA: CREATE (v.7.1.4)
 // ============================================================================
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
@@ -40,7 +40,7 @@ const createFleetSchema = z.object({
 });
 
 // ============================================================================
-// ZOD SCHEMA: UPDATE (v.7.1.3)
+// ZOD SCHEMA: UPDATE (v.7.1.4)
 // ============================================================================
 const updateFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']).optional(),
@@ -72,7 +72,7 @@ const updateFleetSchema = z.object({
 });
 
 // ============================================================================
-// DB INTERFACE (v.7.1.3)
+// DB INTERFACE (v.7.1.4)
 // ============================================================================
 interface FleetUnit extends RowDataPacket {
   id: string;
@@ -103,7 +103,7 @@ interface FleetUnit extends RowDataPacket {
 }
 
 // ============================================================================
-// ROUTES (v.7.1.3)
+// ROUTES (v.7.1.4)
 // ============================================================================
 export default async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   // Global Security middleware
