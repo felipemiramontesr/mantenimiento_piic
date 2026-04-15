@@ -1,101 +1,137 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Truck, Plus, Search, ArrowRight, User, ArrowLeft, Save,
-  ShieldCheck, Zap, Gauge, Tag, Settings, LogOut,
-  FileText, MapPin, Wrench, Calendar
+  Truck,
+  Plus,
+  Search,
+  ArrowRight,
+  User,
+  ArrowLeft,
+  Save,
+  ShieldCheck,
+  Zap,
+  Gauge,
+  Tag,
+  Settings,
+  LogOut,
+  FileText,
+  MapPin,
+  Wrench,
+  Calendar,
 } from 'lucide-react';
 import api from '../../api/client';
-import { FleetUnit, AssetType, CentroMantenimiento, FuelType, Traccion, Transmision } from '../../types/fleet';
+import {
+  FleetUnit,
+  AssetType,
+  CentroMantenimiento,
+  FuelType,
+  Traccion,
+  Transmision,
+} from '../../types/fleet';
 import ArchonDatePicker from '../../components/ArchonDatePicker';
 
 // ============================================================================
-// 📦 SOVEREIGN ASSET CATALOGS (v.7.1.0.1)
+// 📦 SOVEREIGN ASSET CATALOGS (v.7.1.1.2)
 // ============================================================================
 const MARCAS_VEHICULO: Record<string, string[]> = {
-  'Toyota':     ['Hilux', 'Land Cruiser', 'Fortuner', 'RAV4', 'Hiace', 'Tacoma'],
-  'Ford':       ['Ranger', 'F-150', 'F-250', 'Transit', 'Bronco', 'Explorer'],
-  'Chevrolet':  ['Silverado', 'Colorado', 'Tahoe', 'Suburban', 'Express', 'Traverse'],
-  'Nissan':     ['NP300 Frontier', 'Navara', 'Titan', 'Patrol', 'Urvan'],
-  'RAM':        ['1500', '2500', '3500', 'ProMaster'],
-  'Volkswagen': ['Amarok', 'Crafter', 'Transporter'],
-  'Dodge':      ['Ram 1500', 'Ram 2500', 'Durango'],
-  'Mitsubishi': ['L200', 'Montero Sport', 'Outlander'],
-  'Isuzu':      ['D-Max', 'N-Series', 'F-Series'],
+  Toyota: ['Hilux', 'Land Cruiser', 'Fortuner', 'RAV4', 'Hiace', 'Tacoma'],
+  Ford: ['Ranger', 'F-150', 'F-250', 'Transit', 'Bronco', 'Explorer'],
+  Chevrolet: ['Silverado', 'Colorado', 'Tahoe', 'Suburban', 'Express', 'Traverse'],
+  Nissan: ['NP300 Frontier', 'Navara', 'Titan', 'Patrol', 'Urvan'],
+  RAM: ['1500', '2500', '3500', 'ProMaster'],
+  Volkswagen: ['Amarok', 'Crafter', 'Transporter'],
+  Dodge: ['Ram 1500', 'Ram 2500', 'Durango'],
+  Mitsubishi: ['L200', 'Montero Sport', 'Outlander'],
+  Isuzu: ['D-Max', 'N-Series', 'F-Series'],
   'Mercedes-Benz': ['Sprinter', 'Vito', 'Actros'],
 };
 
 const MARCAS_MAQUINARIA: Record<string, string[]> = {
-  'Caterpillar': ['320', '330', '340', 'D6T', 'D8T', '950', '966', '140M', '16M', '426', '432'],
-  'Komatsu':     ['PC200', 'PC300', 'PC400', 'D65', 'D85', 'WA380', 'WA470', 'GD655'],
-  'John Deere':  ['310L', '410L', '710L', '644K', '824K', '772G', '672G'],
-  'Volvo CE':    ['EC210', 'EC300', 'EC480', 'L90', 'L110', 'G930', 'G946'],
-  'JCB':         ['3CX', '4CX', '531-70', 'JS220', 'JS360', '430ZX'],
-  'Case':        ['580N', '695ST', '621G', '721G', '821G', '921G'],
-  'Hitachi':     ['ZX200', 'ZX300', 'ZX490', 'EX1200', 'EH3500'],
-  'Manitou':     ['MLT735', 'MLT840', 'MT1440', 'MRT2150'],
-  'Liebherr':    ['L550', 'L566', 'LTM1050', 'LTM1220'],
-  'Manitowoc':   ['Grove RT760E', 'Grove GMK4100L'],
+  Caterpillar: ['320', '330', '340', 'D6T', 'D8T', '950', '966', '140M', '16M', '426', '432'],
+  Komatsu: ['PC200', 'PC300', 'PC400', 'D65', 'D85', 'WA380', 'WA470', 'GD655'],
+  'John Deere': ['310L', '410L', '710L', '644K', '824K', '772G', '672G'],
+  'Volvo CE': ['EC210', 'EC300', 'EC480', 'L90', 'L110', 'G930', 'G946'],
+  JCB: ['3CX', '4CX', '531-70', 'JS220', 'JS360', '430ZX'],
+  Case: ['580N', '695ST', '621G', '721G', '821G', '921G'],
+  Hitachi: ['ZX200', 'ZX300', 'ZX490', 'EX1200', 'EH3500'],
+  Manitou: ['MLT735', 'MLT840', 'MT1440', 'MRT2150'],
+  Liebherr: ['L550', 'L566', 'LTM1050', 'LTM1220'],
+  Manitowoc: ['Grove RT760E', 'Grove GMK4100L'],
 };
 
 const MARCAS_HERRAMIENTA: Record<string, string[]> = {
-  'Milwaukee': ['M18 FUEL', 'M12 FUEL', 'MX FUEL'],
-  'DeWalt':    ['20V MAX', '60V MAX FLEXVOLT'],
-  'Makita':    ['LXT 18V', 'XGT 40V'],
-  'Hilti':     ['TE-series', 'Nuron'],
-  'Bosch':     ['PROFACTOR', 'CORE18V'],
-  'Stihl':     ['MS Series', 'TS Series'],
-  'Husqvarna': ['K770', 'K970', '500 Series'],
-  'Honda':     ['EU Series', 'GX Series'],
+  Milwaukee: ['M18 FUEL', 'M12 FUEL', 'MX FUEL'],
+  DeWalt: ['20V MAX', '60V MAX FLEXVOLT'],
+  Makita: ['LXT 18V', 'XGT 40V'],
+  Hilti: ['TE-series', 'Nuron'],
+  Bosch: ['PROFACTOR', 'CORE18V'],
+  Stihl: ['MS Series', 'TS Series'],
+  Husqvarna: ['K770', 'K970', '500 Series'],
+  Honda: ['EU Series', 'GX Series'],
 };
 
 type FleetView = 'GRID' | 'CREATE';
 
 // Initial form state factory
 const getInitialForm = (): {
-  assetType: AssetType; tag: string; numeroSerie: string; marca: string;
-  modelo: string; year: number; motor: string; traccion: Traccion;
-  transmision: Transmision; fuelType: FuelType; tireSpec: string;
-  tireBrand: string; capacidadCarga: string; odometer: number; sede: string;
-  centroMantenimiento: CentroMantenimiento; vigenciaSeguro: string;
-  vencimientoVerificacion: string; tarjetaCirculacion: string;
+  assetType: AssetType;
+  tag: string;
+  numeroSerie: string;
+  marca: string;
+  modelo: string;
+  year: number;
+  motor: string;
+  traccion: Traccion;
+  transmision: Transmision;
+  fuelType: FuelType;
+  tireSpec: string;
+  tireBrand: string;
+  capacidadCarga: string;
+  odometer: number;
+  sede: string;
+  centroMantenimiento: CentroMantenimiento;
+  vigenciaSeguro: string;
+  vencimientoVerificacion: string;
+  tarjetaCirculacion: string;
   status: 'Disponible';
 } => ({
-  assetType:               'Vehiculo' as AssetType,
-  tag:                     '',
-  numeroSerie:             '',
-  marca:                   '',
-  modelo:                  '',
-  year:                    new Date().getFullYear(),
-  motor:                   '',
-  traccion:                'N/A' as Traccion,
-  transmision:             'N/A' as Transmision,
-  fuelType:                'Diesel' as FuelType,
-  tireSpec:                '',
-  tireBrand:               '',
-  capacidadCarga:          '',
-  odometer:                0,
-  sede:                    '',
-  centroMantenimiento:     'PIIC' as CentroMantenimiento,
-  vigenciaSeguro:          '',
+  assetType: 'Vehiculo' as AssetType,
+  tag: '',
+  numeroSerie: '',
+  marca: '',
+  modelo: '',
+  year: new Date().getFullYear(),
+  motor: '',
+  traccion: 'N/A' as Traccion,
+  transmision: 'N/A' as Transmision,
+  fuelType: 'Diesel' as FuelType,
+  tireSpec: '',
+  tireBrand: '',
+  capacidadCarga: '',
+  odometer: 0,
+  sede: '',
+  centroMantenimiento: 'PIIC' as CentroMantenimiento,
+  vigenciaSeguro: '',
   vencimientoVerificacion: '',
-  tarjetaCirculacion:      '',
-  status:                  'Disponible' as const,
+  tarjetaCirculacion: '',
+  status: 'Disponible' as const,
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.7.1.0.1)
+// 🚀 FLEET MODULE (v.7.1.1.2)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.1.0.1)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.1.1.2)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
       return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   });
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -122,15 +158,15 @@ const FleetModule: React.FC = (): React.ReactElement => {
     }
   };
 
-  useEffect((): void => { fetchUnits(); }, []);
-
-
+  useEffect((): void => {
+    fetchUnits();
+  }, []);
 
   // Derived catalogs based on asset type (Mapping for zero-noise architecture)
   const assetCatalogs: Record<AssetType, Record<string, string[]>> = {
-    'Vehiculo': MARCAS_VEHICULO,
-    'Maquinaria': MARCAS_MAQUINARIA,
-    'Herramienta': MARCAS_HERRAMIENTA
+    Vehiculo: MARCAS_VEHICULO,
+    Maquinaria: MARCAS_MAQUINARIA,
+    Herramienta: MARCAS_HERRAMIENTA,
   };
 
   const currentCatalog = assetCatalogs[formData.assetType];
@@ -150,15 +186,15 @@ const FleetModule: React.FC = (): React.ReactElement => {
     try {
       const payload = {
         ...formData,
-        vigenciaSeguro:          formData.vigenciaSeguro          || null,
+        vigenciaSeguro: formData.vigenciaSeguro || null,
         vencimientoVerificacion: formData.vencimientoVerificacion || null,
-        numeroSerie:             formData.numeroSerie             || undefined,
-        motor:                   formData.motor                   || undefined,
-        tireSpec:                formData.tireSpec                || undefined,
-        tireBrand:               formData.tireBrand               || undefined,
-        capacidadCarga:          formData.capacidadCarga          || undefined,
-        sede:                    formData.sede                    || undefined,
-        tarjetaCirculacion:      formData.tarjetaCirculacion      || undefined,
+        numeroSerie: formData.numeroSerie || undefined,
+        motor: formData.motor || undefined,
+        tireSpec: formData.tireSpec || undefined,
+        tireBrand: formData.tireBrand || undefined,
+        capacidadCarga: formData.capacidadCarga || undefined,
+        sede: formData.sede || undefined,
+        tarjetaCirculacion: formData.tarjetaCirculacion || undefined,
       };
       const response = await api.post('/fleet', payload);
       if (response.data.success) {
@@ -193,18 +229,50 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const renderGridView = (): React.ReactElement => (
     <div className="archon-grid-3 h-full">
       {/* Card 1: Registrar Nueva Unidad */}
-      <div className="glass-card-pro card-hover-yellow" style={{ borderTop: '4px solid #f2b705', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', height: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+      <div
+        className="glass-card-pro card-hover-yellow"
+        style={{
+          borderTop: '4px solid #f2b705',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          height: '100%',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
           <Plus size={20} style={{ color: '#f2b705' }} />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80">Incorporación de Activos</span>
+          <span className="text-instrument-header text-[#0f2a44] opacity-80">
+            Incorporación de Activos
+          </span>
         </div>
         <div className="mb-24" style={{ width: '100%' }}>
           <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Registrar Unidad</h3>
-          <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
+          <p
+            className="text-[11px] tracking-wide font-bold"
+            style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}
+          >
             Vehículos y Maquinaria
           </p>
         </div>
-        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', width: '100%', paddingTop: '12px' }}>
+        <div
+          style={{
+            marginTop: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+            width: '100%',
+            paddingTop: '12px',
+          }}
+        >
           <button onClick={(): void => setCurrentView('CREATE')} className="btn-sentinel-yellow">
             Iniciar Registro <ArrowRight size={10} className="text-[#0f2a44]" />
           </button>
@@ -212,34 +280,108 @@ const FleetModule: React.FC = (): React.ReactElement => {
       </div>
 
       {/* Card 2: Inventario */}
-      <div className="glass-card-pro card-hover-violet" style={{ borderTop: '4px solid #8b5cf6', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', height: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+      <div
+        className="glass-card-pro card-hover-violet"
+        style={{
+          borderTop: '4px solid #8b5cf6',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          height: '100%',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
           <Search size={20} style={{ color: '#8b5cf6' }} />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80">Exploración de Datos</span>
+          <span className="text-instrument-header text-[#0f2a44] opacity-80">
+            Exploración de Datos
+          </span>
         </div>
         <div className="mb-24" style={{ width: '100%' }}>
           <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Inventario General</h3>
-          <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>Visualización técnica y estados</p>
+          <p
+            className="text-[11px] tracking-wide font-bold"
+            style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}
+          >
+            Visualización técnica y estados
+          </p>
         </div>
-        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', width: '100%', paddingTop: '12px' }}>
-          <button disabled className="btn-sentinel-yellow opacity-40 cursor-not-allowed" style={{ backgroundColor: '#8b5cf6', color: 'white' }}>
+        <div
+          style={{
+            marginTop: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+            width: '100%',
+            paddingTop: '12px',
+          }}
+        >
+          <button
+            disabled
+            className="btn-sentinel-yellow opacity-40 cursor-not-allowed"
+            style={{ backgroundColor: '#8b5cf6', color: 'white' }}
+          >
             Próximamente <ArrowRight size={10} className="text-white" />
           </button>
         </div>
       </div>
 
       {/* Card 3: Operadores */}
-      <div className="glass-card-pro card-hover-emerald" style={{ borderTop: '4px solid #10b981', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', height: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
+      <div
+        className="glass-card-pro card-hover-emerald"
+        style={{
+          borderTop: '4px solid #10b981',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          height: '100%',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
           <User size={20} style={{ color: '#10b981' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
         </div>
         <div className="mb-24" style={{ width: '100%' }}>
           <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Gestión Operadores</h3>
-          <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>Asignación de personal operativo</p>
+          <p
+            className="text-[11px] tracking-wide font-bold"
+            style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}
+          >
+            Asignación de personal operativo
+          </p>
         </div>
-        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', width: '100%', paddingTop: '12px' }}>
-          <button disabled className="btn-sentinel-yellow opacity-40 cursor-not-allowed" style={{ backgroundColor: '#10b981', color: 'white' }}>
+        <div
+          style={{
+            marginTop: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+            width: '100%',
+            paddingTop: '12px',
+          }}
+        >
+          <button
+            disabled
+            className="btn-sentinel-yellow opacity-40 cursor-not-allowed"
+            style={{ backgroundColor: '#10b981', color: 'white' }}
+          >
             Próximamente <ArrowRight size={10} className="text-white" />
           </button>
         </div>
@@ -253,17 +395,18 @@ const FleetModule: React.FC = (): React.ReactElement => {
   );
 
   // ============================================================================
-  // 📝 CREATE VIEW — Intelligence Form v.7.1.0.1
+  // 📝 CREATE VIEW — Intelligence Form v.7.1.1.2
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-64">
       <form onSubmit={handleSubmit} className="space-y-48">
-
         {/* ── ROW 1: Clasificación + Identidad ─────────────────────────────── */}
         <div className="archon-grid-2">
-
           {/* CARD: Clasificación del Activo */}
-          <div className="glass-card-pro card-hover-yellow bg-white p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
+          <div
+            className="glass-card-pro card-hover-yellow bg-white p-64 space-y-40"
+            style={{ borderTop: '4px solid #f2b705' }}
+          >
             <div className="archon-card-header-pro">
               <ShieldCheck size={22} />
               <h3>Clasificación del Activo</h3>
@@ -271,7 +414,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Tipo de Unidad */}
             <div className="archon-form-group">
-              <label className="archon-label"><Truck size={12} /> Tipo de Unidad</label>
+              <label className="archon-label">
+                <Truck size={12} /> Tipo de Unidad
+              </label>
               <select
                 className="archon-select"
                 value={formData.assetType}
@@ -287,7 +432,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Marca — filtrada por Tipo */}
             <div className="archon-form-group">
-              <label className="archon-label"><Tag size={12} /> Marca</label>
+              <label className="archon-label">
+                <Tag size={12} /> Marca
+              </label>
               <select
                 required
                 className="archon-select"
@@ -297,15 +444,21 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 }
               >
                 <option value="">— Selecciona marca —</option>
-                {availableMarcas.map((m: string): React.ReactElement => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
+                {availableMarcas.map(
+                  (m: string): React.ReactElement => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
             {/* Modelo — filtrado por Marca */}
             <div className="archon-form-group">
-              <label className="archon-label"><Tag size={12} /> Modelo</label>
+              <label className="archon-label">
+                <Tag size={12} /> Modelo
+              </label>
               <select
                 required
                 className="archon-select"
@@ -316,15 +469,21 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 }
               >
                 <option value="">— Selecciona modelo —</option>
-                {availableModelos.map((m: string): React.ReactElement => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
+                {availableModelos.map(
+                  (m: string): React.ReactElement => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
             {/* Año */}
             <div className="archon-form-group">
-              <label className="archon-label"><Calendar size={12} /> Año Modelo</label>
+              <label className="archon-label">
+                <Calendar size={12} /> Año Modelo
+              </label>
               <input
                 required
                 type="number"
@@ -338,7 +497,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </div>
 
           {/* CARD: Identidad del Activo */}
-          <div className="glass-card-pro card-hover-navy bg-white p-64 space-y-40" style={{ borderTop: '4px solid #0f2a44' }}>
+          <div
+            className="glass-card-pro card-hover-navy bg-white p-64 space-y-40"
+            style={{ borderTop: '4px solid #0f2a44' }}
+          >
             <div className="archon-card-header-pro">
               <FileText size={22} />
               <h3>Identidad del Activo</h3>
@@ -346,7 +508,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Número Económico */}
             <div className="archon-form-group">
-              <label className="archon-label"><Tag size={12} /> Número Económico</label>
+              <label className="archon-label">
+                <Tag size={12} /> Número Económico
+              </label>
               <input
                 required
                 type="text"
@@ -361,7 +525,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Número de Serie */}
             <div className="archon-form-group">
-              <label className="archon-label"><Tag size={12} /> Número de Serie</label>
+              <label className="archon-label">
+                <Tag size={12} /> Número de Serie
+              </label>
               <input
                 type="text"
                 placeholder="Alfanumérico"
@@ -375,7 +541,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Motor */}
             <div className="archon-form-group">
-              <label className="archon-label"><Wrench size={12} /> Motor</label>
+              <label className="archon-label">
+                <Wrench size={12} /> Motor
+              </label>
               <input
                 type="text"
                 placeholder="Ej. 2.8L Diesel TDI"
@@ -389,7 +557,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Tarjeta de Circulación */}
             <div className="archon-form-group">
-              <label className="archon-label"><FileText size={12} /> Tarjeta de Circulación</label>
+              <label className="archon-label">
+                <FileText size={12} /> Tarjeta de Circulación
+              </label>
               <input
                 type="text"
                 placeholder="Folio o referencia"
@@ -405,9 +575,11 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
         {/* ── ROW 2: Configuración Mecánica + Organización ────────────────────── */}
         <div className="archon-grid-2" style={{ marginTop: '48px' }}>
-
           {/* CARD: Configuración Mecánica */}
-          <div className="glass-card-pro card-hover-yellow bg-white p-64 space-y-40" style={{ borderTop: '4px solid #f2b705' }}>
+          <div
+            className="glass-card-pro card-hover-yellow bg-white p-64 space-y-40"
+            style={{ borderTop: '4px solid #f2b705' }}
+          >
             <div className="archon-card-header-pro">
               <Zap size={22} />
               <h3>Configuración Mecánica</h3>
@@ -415,7 +587,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Tracción */}
             <div className="archon-form-group">
-              <label className="archon-label"><Truck size={12} /> Tracción</label>
+              <label className="archon-label">
+                <Truck size={12} /> Tracción
+              </label>
               <select
                 className="archon-select"
                 value={formData.traccion}
@@ -434,7 +608,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Transmisión */}
             <div className="archon-form-group">
-              <label className="archon-label"><Settings size={12} /> Transmisión</label>
+              <label className="archon-label">
+                <Settings size={12} /> Transmisión
+              </label>
               <select
                 className="archon-select"
                 value={formData.transmision}
@@ -452,7 +628,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Combustible */}
             <div className="archon-form-group">
-              <label className="archon-label"><Zap size={12} /> Combustible</label>
+              <label className="archon-label">
+                <Zap size={12} /> Combustible
+              </label>
               <select
                 className="archon-select"
                 value={formData.fuelType}
@@ -471,7 +649,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
             {/* Odómetro / Horómetro */}
             <div className="archon-form-group">
               <label className="archon-label">
-                <Gauge size={12} /> {formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
+                <Gauge size={12} />{' '}
+                {formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
               </label>
               <input
                 type="number"
@@ -485,7 +664,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Capacidad de Carga */}
             <div className="archon-form-group">
-              <label className="archon-label"><Truck size={12} /> Capacidad de Carga</label>
+              <label className="archon-label">
+                <Truck size={12} /> Capacidad de Carga
+              </label>
               <input
                 type="text"
                 placeholder="Ej. 3.5 Ton"
@@ -499,7 +680,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </div>
 
           {/* CARD: Organización & Cumplimiento */}
-          <div className="glass-card-pro card-hover-navy bg-white p-64 space-y-40" style={{ borderTop: '4px solid #0f2a44' }}>
+          <div
+            className="glass-card-pro card-hover-navy bg-white p-64 space-y-40"
+            style={{ borderTop: '4px solid #0f2a44' }}
+          >
             <div className="archon-card-header-pro">
               <MapPin size={22} />
               <h3>Organización &amp; Cumplimiento</h3>
@@ -507,7 +691,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Vigencia del Seguro */}
             <div className="archon-form-group">
-              <label className="archon-label"><Calendar size={12} /> Vigencia del Seguro</label>
+              <label className="archon-label">
+                <Calendar size={12} /> Vigencia del Seguro
+              </label>
               <ArchonDatePicker
                 value={formData.vigenciaSeguro}
                 onChange={(v: string): void => setFormData({ ...formData, vigenciaSeguro: v })}
@@ -517,17 +703,23 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Vencimiento de Verificación */}
             <div className="archon-form-group">
-              <label className="archon-label"><Calendar size={12} /> Vencimiento de Verificación</label>
+              <label className="archon-label">
+                <Calendar size={12} /> Vencimiento de Verificación
+              </label>
               <ArchonDatePicker
                 value={formData.vencimientoVerificacion}
-                onChange={(v: string): void => setFormData({ ...formData, vencimientoVerificacion: v })}
+                onChange={(v: string): void =>
+                  setFormData({ ...formData, vencimientoVerificacion: v })
+                }
                 placeholder="Selecciona fecha"
               />
             </div>
 
             {/* Sede */}
             <div className="archon-form-group">
-              <label className="archon-label"><MapPin size={12} /> Sede</label>
+              <label className="archon-label">
+                <MapPin size={12} /> Sede
+              </label>
               <input
                 type="text"
                 placeholder="Base de operaciones"
@@ -541,12 +733,17 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Centro de Mantenimiento */}
             <div className="archon-form-group">
-              <label className="archon-label"><Wrench size={12} /> Centro de Mantenimiento</label>
+              <label className="archon-label">
+                <Wrench size={12} /> Centro de Mantenimiento
+              </label>
               <select
                 className="archon-select"
                 value={formData.centroMantenimiento}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, centroMantenimiento: e.target.value as CentroMantenimiento })
+                  setFormData({
+                    ...formData,
+                    centroMantenimiento: e.target.value as CentroMantenimiento,
+                  })
                 }
               >
                 <option value="PIIC">PIIC</option>
@@ -561,7 +758,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </div>
           </div>
         </div>
-
       </form>
     </div>
   );
@@ -573,24 +769,53 @@ const FleetModule: React.FC = (): React.ReactElement => {
     <main className="workspace-container-pro animate-in fade-in duration-700">
       {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.1.0.2 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+          }}
+        >
           {/* Section Left */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '8px',
+              }}
+            >
               <Truck size={28} style={{ color: '#f2b705' }} />
-              <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl" style={{ margin: 0, padding: 0, lineHeight: 1 }}>
+              <h2
+                className="text-[#0f2a44] tracking-tighter font-black text-2xl"
+                style={{ margin: 0, padding: 0, lineHeight: 1 }}
+              >
                 {currentView === 'GRID' ? 'Administrar Flota' : 'Registro de Unidad'}
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              {currentView === 'GRID' ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade' : 'Protocolo de Incorporación de Activo v.7.1.0.2'}
+              {currentView === 'GRID'
+                ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
+                : 'Protocolo de Incorporación de Activo v.7.1.1.2'}
             </p>
           </div>
 
           {/* Section Right: User Identity */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-            <h1 style={{ fontSize: '26px', fontWeight: 900, margin: 0, letterSpacing: '-0.03em', fontFamily: 'Inter, system-ui, sans-serif', color: '#0f2a44' }}>
+            <h1
+              style={{
+                fontSize: '26px',
+                fontWeight: 900,
+                margin: 0,
+                letterSpacing: '-0.03em',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                color: '#0f2a44',
+              }}
+            >
               Archon
             </h1>
 
@@ -598,29 +823,85 @@ const FleetModule: React.FC = (): React.ReactElement => {
               onClick={toggleMenu}
               aria-label="User Menu"
               className="avatar-trigger-pro"
-              style={{ width: '44px', height: '44px', borderRadius: '4px', border: '2px solid #f2b705', backgroundColor: '#0f2a44', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'transform 0.2s ease, box-shadow 0.2s ease', boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none', transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)', padding: 0 }}
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '4px',
+                border: '2px solid #f2b705',
+                backgroundColor: '#0f2a44',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
+                transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
+                padding: 0,
+              }}
             >
               <svg width="24" height="24" viewBox="0 0 100 100">
-                <path d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z" stroke="#f2b705" strokeWidth="16" fill="none" />
+                <path
+                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+                  stroke="#f2b705"
+                  strokeWidth="16"
+                  fill="none"
+                />
               </svg>
             </button>
 
             {isMenuOpen && (
-              <div style={{ position: 'absolute', top: '60px', right: '0', width: '180px', backgroundColor: '#ffffff', borderRadius: '4px', boxShadow: '0 10px 30px rgba(15, 42, 68, 0.15)', border: '1px solid rgba(15, 42, 68, 0.08)', zIndex: 100, padding: '4px 0', animation: 'fade-in 0.2s ease-out' }}>
-                <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}>
-                  <span style={{ fontSize: '9px', fontWeight: 900, color: '#f2b705', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sovereign Access</span>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '60px',
+                  right: '0',
+                  width: '180px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '4px',
+                  boxShadow: '0 10px 30px rgba(15, 42, 68, 0.15)',
+                  border: '1px solid rgba(15, 42, 68, 0.08)',
+                  zIndex: 100,
+                  padding: '4px 0',
+                  animation: 'fade-in 0.2s ease-out',
+                }}
+              >
+                <div
+                  style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}
+                >
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontWeight: 900,
+                      color: '#f2b705',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                    }}
+                  >
+                    Sovereign Access
+                  </span>
                 </div>
-                <button className="dropdown-item-mock" onClick={closeMenu}><User size={14} /> Perfil</button>
-                <button className="dropdown-item-mock" onClick={closeMenu}><Settings size={14} /> Ajustes</button>
-                <div style={{ height: '1px', background: 'rgba(15, 42, 68, 0.05)', margin: '4px 0' }} />
-                <button className="dropdown-item-mock dropdown-item-mock-danger" onClick={handleLogout}><LogOut size={14} /> Cerrar Sesión</button>
+                <button className="dropdown-item-mock" onClick={closeMenu}>
+                  <User size={14} /> Perfil
+                </button>
+                <button className="dropdown-item-mock" onClick={closeMenu}>
+                  <Settings size={14} /> Ajustes
+                </button>
+                <div
+                  style={{ height: '1px', background: 'rgba(15, 42, 68, 0.05)', margin: '4px 0' }}
+                />
+                <button
+                  className="dropdown-item-mock dropdown-item-mock-danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={14} /> Cerrar Sesión
+                </button>
               </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.0.2) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.1.2) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -631,7 +912,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.0.2 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.0.2.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.1.2.</p>
       </footer>
     </main>
   );

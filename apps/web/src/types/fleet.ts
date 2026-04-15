@@ -1,4 +1,4 @@
-// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.7.1.0.0)
+// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.7.1.1.2)
 // Architecture: PIIC Fleet Asset Intelligence
 
 export type AssetType = 'Vehiculo' | 'Maquinaria' | 'Herramienta';
@@ -9,12 +9,12 @@ export type FuelType = 'Gasolina' | 'Diesel' | 'Eléctrico' | 'Híbrido' | 'N/A'
 export type CentroMantenimiento = 'PIIC' | 'Archon Core';
 
 export interface FleetUnit {
-  id: string;           // FLXXX format
+  id: string; // FLXXX format
   uuid: string;
   // Level 1: Root classifier
   asset_type: AssetType;
   // Primary identifiers
-  tag: string;          // Número Económico
+  tag: string; // Número Económico
   numero_serie: string | null;
   // Level 2 & 3: Cascade
   marca: string;
@@ -30,13 +30,13 @@ export interface FleetUnit {
   tire_brand: string | null;
   // Operational
   capacidad_carga: string | null;
-  odometer: number;     // km (Vehiculo) | hrs (Maquinaria)
+  odometer: number; // km (Vehiculo) | hrs (Maquinaria)
   // Organization
   sede: string | null;
   centro_mantenimiento: CentroMantenimiento;
   // Legal & Compliance
-  vigencia_seguro: string | null;           // ISO date
-  vencimiento_verificacion: string | null;  // ISO date
+  vigencia_seguro: string | null; // ISO date
+  vencimiento_verificacion: string | null; // ISO date
   tarjeta_circulacion: string | null;
   // Status
   status: FleetStatus;

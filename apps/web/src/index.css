@@ -2,13 +2,13 @@
 
 :root {
   --color-primary: #0f2a44; /* Deep Space Blue (Sidebar) */
-  --color-accent: #f2b705;  /* Teck Yellow (Action) */
-  --color-white: #ffffff;   /* Pure Workspace White */
-  --color-navy: #0f2a44;    /* Text over white */
+  --color-accent: #f2b705; /* Teck Yellow (Action) */
+  --color-white: #ffffff; /* Pure Workspace White */
+  --color-navy: #0f2a44; /* Text over white */
   --color-grey-pro: #64748b; /* Secondary text */
-  --bg-sidebar: #0f2a44;    /* Solid Blue */
-  --bg-workspace: #ffffff;  /* Solid White */
-  --card-border: #e2e8f0;   /* Clean light gray border */
+  --bg-sidebar: #0f2a44; /* Solid Blue */
+  --bg-workspace: #ffffff; /* Solid White */
+  --card-border: #e2e8f0; /* Clean light gray border */
 }
 
 * {
@@ -742,8 +742,6 @@ body {
   }
 }
 
-
-
 /* 🏗️ SILICON VALLEY PRO SYSTEM (V2.4.0) */
 .sidebar-solid-pro {
   background-color: var(--bg-sidebar);
@@ -776,9 +774,7 @@ body {
   border-radius: 4px;
   padding: 40px; /* Golden Padding V.4.4.0 */
   /* Triple Layer Depth */
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.04),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.9),
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.04), inset 1px 1px 0 rgba(255, 255, 255, 0.9),
     inset -1px -1px 0 rgba(0, 0, 0, 0.03);
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
@@ -794,49 +790,37 @@ body {
 /* 🟡 Yellow-accent card hover */
 .glass-card-pro.card-hover-yellow:hover {
   border-color: rgba(242, 183, 5, 0.55);
-  box-shadow:
-    0 12px 40px rgba(242, 183, 5, 0.12),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 40px rgba(242, 183, 5, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* 🔵 Navy-accent card hover */
 .glass-card-pro.card-hover-navy:hover {
-  border-color: rgba(15, 42, 68, 0.30);
-  box-shadow:
-    0 12px 40px rgba(15, 42, 68, 0.10),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(15, 42, 68, 0.3);
+  box-shadow: 0 12px 40px rgba(15, 42, 68, 0.1), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* 🟣 Violet-accent card hover */
 .glass-card-pro.card-hover-violet:hover {
-  border-color: rgba(139, 92, 246, 0.50);
-  box-shadow:
-    0 12px 40px rgba(139, 92, 246, 0.12),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 12px 40px rgba(139, 92, 246, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* 🟢 Emerald-accent card hover */
 .glass-card-pro.card-hover-emerald:hover {
-  border-color: rgba(16, 185, 129, 0.50);
-  box-shadow:
-    0 12px 40px rgba(16, 185, 129, 0.12),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* 🔷 Sky-accent card hover */
 .glass-card-pro.card-hover-sky:hover {
-  border-color: rgba(14, 165, 233, 0.50);
-  box-shadow:
-    0 12px 40px rgba(14, 165, 233, 0.12),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(14, 165, 233, 0.5);
+  box-shadow: 0 12px 40px rgba(14, 165, 233, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* 🔴 Red-accent card hover */
 .glass-card-pro.card-hover-red:hover {
-  border-color: rgba(239, 68, 68, 0.50);
-  box-shadow:
-    0 12px 40px rgba(239, 68, 68, 0.10),
-    inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.1), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 /* 🏛️ SOVEREIGN WORKSPACE CHASSIS (V4.5.0) - 10/80/10 ENGINE */
@@ -884,9 +868,15 @@ body {
 }
 
 /* 🖋️ SOVEREIGN TYPOGRAPHY (NAVY HIERARCHY) */
-.text-navy-main { color: var(--color-primary); }
-.text-navy-muted { color: rgba(15, 42, 68, 0.6); }
-.text-navy-dim { color: rgba(15, 42, 68, 0.3); }
+.text-navy-main {
+  color: var(--color-primary);
+}
+.text-navy-muted {
+  color: rgba(15, 42, 68, 0.6);
+}
+.text-navy-dim {
+  color: rgba(15, 42, 68, 0.3);
+}
 
 .text-kpi-black {
   font-size: 48px;
@@ -1013,8 +1003,6 @@ body {
   border-left-color: var(--color-accent);
 }
 
-
-
 /* ?? DROPDOWN MENU TACTICAL SYSTEM */
 .dropdown-item-mock {
   width: 100%;
@@ -1096,7 +1084,8 @@ body {
   color: var(--color-accent);
 }
 
-.archon-input, .archon-select {
+.archon-input,
+.archon-select {
   width: 100%;
   background: rgba(15, 42, 68, 0.03);
   border: none;
@@ -1115,7 +1104,8 @@ body {
   font-weight: 500;
 }
 
-.archon-input:focus, .archon-select:focus {
+.archon-input:focus,
+.archon-select:focus {
   background: transparent;
   border-bottom-color: var(--color-accent);
   padding-left: 12px; /* Unfurl transition */
@@ -1201,7 +1191,8 @@ body {
 }
 
 @media (max-width: 768px) {
-  .archon-grid-2, .archon-grid-3 {
+  .archon-grid-2,
+  .archon-grid-3 {
     grid-template-columns: 1fr;
     gap: 32px;
   }
@@ -1219,8 +1210,12 @@ body {
 
 /* ✨ KINETIC SHIMMER SYSTEM (V.7.0.0) */
 @keyframes archonShimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .archon-shimmer {
@@ -1270,33 +1265,49 @@ body {
 }
 
 /* 🛠️ GLOBAL UTILITIES (V.7.1.0.1) */
-.w-full { width: 100% !important; }
-.flex { display: flex !important; }
-.flex-row { flex-direction: row !important; }
-.items-center { align-items: center !important; }
-.ml-auto { margin-left: auto !important; }
-.whitespace-nowrap { white-space: nowrap !important; }
+.w-full {
+  width: 100% !important;
+}
+.flex {
+  display: flex !important;
+}
+.flex-row {
+  flex-direction: row !important;
+}
+.items-center {
+  align-items: center !important;
+}
+.ml-auto {
+  margin-left: auto !important;
+}
+.whitespace-nowrap {
+  white-space: nowrap !important;
+}
 
-/* 📅 ARCHON DATE PICKER (v.7.1.0.1) */
+/* 📅 ARCHON DATE PICKER (v.7.1.1.2) */
 .archon-datepicker-popup {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   z-index: 300;
   background: #ffffff;
-  border: 1px solid rgba(15, 42, 68, 0.10);
+  border: 1px solid rgba(15, 42, 68, 0.1);
   border-radius: 10px;
-  box-shadow:
-    0 4px 6px -1px rgba(15, 42, 68, 0.05),
-    0 20px 50px -10px rgba(15, 42, 68, 0.18);
+  box-shadow: 0 4px 6px -1px rgba(15, 42, 68, 0.05), 0 20px 50px -10px rgba(15, 42, 68, 0.18);
   padding: 16px;
   min-width: 272px;
   animation: adp-appear 0.15s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes adp-appear {
-  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .archon-datepicker-header {

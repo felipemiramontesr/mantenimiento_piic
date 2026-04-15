@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ============================================================================
-// 📅 ARCHON DATE PICKER (v.7.1.0.1)
+// 📅 ARCHON DATE PICKER (v.7.1.1.2)
 // Sovereign calendar component — Navy/Yellow design system
 // ============================================================================
 
@@ -14,8 +14,18 @@ interface ArchonDatePickerProps {
 }
 
 const MONTHS_ES: string[] = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 const DAYS_ES: string[] = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
@@ -65,21 +75,34 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
       }
     };
     document.addEventListener('mousedown', handleOut);
-    return (): void => { document.removeEventListener('mousedown', handleOut); };
+    return (): void => {
+      document.removeEventListener('mousedown', handleOut);
+    };
   }, []);
 
   const handlePrevMonth = (): void => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else { setViewMonth(m => m - 1); }
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear((y) => y - 1);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
   };
 
   const handleNextMonth = (): void => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else { setViewMonth(m => m + 1); }
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear((y) => y + 1);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
   };
 
   const handleSelectDay = (day: number): void => {
-    const iso = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const iso = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(
+      2,
+      '0'
+    )}`;
     onChange(iso);
     setIsOpen(false);
   };
@@ -90,9 +113,7 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
   };
 
   const isTodayDay = (day: number): boolean =>
-    today.getFullYear() === viewYear &&
-    today.getMonth() === viewMonth &&
-    today.getDate() === day;
+    today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === day;
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstOffset = getFirstDayOffset(viewYear, viewMonth);
@@ -103,16 +124,19 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
 
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
-
       {/* ── Trigger Input ─────────────────────────────────────────────── */}
       <button
         type="button"
         id={id}
-        onClick={(): void => setIsOpen(prev => !prev)}
+        onClick={(): void => setIsOpen((prev) => !prev)}
         className="archon-input"
         style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          cursor: 'pointer', textAlign: 'left', width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          textAlign: 'left',
+          width: '100%',
           color: value ? '#0f2a44' : '#94a3b8',
         }}
       >
@@ -125,7 +149,6 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
       {/* ── Calendar Popup ────────────────────────────────────────────── */}
       {isOpen && (
         <div className="archon-datepicker-popup">
-
           {/* Header: Month Navigation */}
           <div className="archon-datepicker-header">
             <button type="button" onClick={handlePrevMonth} className="archon-datepicker-nav">
@@ -141,41 +164,71 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
 
           {/* Day Names */}
           <div className="archon-datepicker-grid">
-            {DAYS_ES.map((d: string): React.ReactElement => (
-              <div key={d} className="archon-datepicker-dayname">{d}</div>
-            ))}
+            {DAYS_ES.map(
+              (d: string): React.ReactElement => (
+                <div key={d} className="archon-datepicker-dayname">
+                  {d}
+                </div>
+              )
+            )}
           </div>
 
           {/* Day Cells */}
           <div className="archon-datepicker-grid">
-            {cells.map((day: number | null, i: number): React.ReactElement => (
-              <div key={i}>
-                {day !== null ? (
-                  <button
-                    type="button"
-                    onClick={(): void => handleSelectDay(day)}
-                    className={[
-                      'archon-datepicker-day',
-                      isSelectedDay(day) ? 'archon-datepicker-day--selected' : '',
-                      isTodayDay(day) && !isSelectedDay(day) ? 'archon-datepicker-day--today' : '',
-                    ].filter(Boolean).join(' ')}
-                  >
-                    {day}
-                  </button>
-                ) : (
-                  <div />
-                )}
-              </div>
-            ))}
+            {cells.map(
+              (day: number | null, i: number): React.ReactElement => (
+                <div key={i}>
+                  {day !== null ? (
+                    <button
+                      type="button"
+                      onClick={(): void => handleSelectDay(day)}
+                      className={[
+                        'archon-datepicker-day',
+                        isSelectedDay(day) ? 'archon-datepicker-day--selected' : '',
+                        isTodayDay(day) && !isSelectedDay(day)
+                          ? 'archon-datepicker-day--today'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      {day}
+                    </button>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+              )
+            )}
           </div>
 
           {/* Clear link */}
           {value && (
-            <div style={{ textAlign: 'center', marginTop: '8px', borderTop: '1px solid rgba(15,42,68,0.07)', paddingTop: '8px' }}>
+            <div
+              style={{
+                textAlign: 'center',
+                marginTop: '8px',
+                borderTop: '1px solid rgba(15,42,68,0.07)',
+                paddingTop: '8px',
+              }}
+            >
               <button
                 type="button"
-                onClick={(): void => { onChange(''); setIsOpen(false); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#94a3b8', fontFamily: 'Inter, sans-serif', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                onClick={(): void => {
+                  onChange('');
+                  setIsOpen(false);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: '#94a3b8',
+                  fontFamily: 'Inter, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                }}
               >
                 Limpiar fecha
               </button>
