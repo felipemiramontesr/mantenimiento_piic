@@ -152,7 +152,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       <section className="archon-workspace-chassis">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
           <div
-            className="glass-card-pro"
+            className="glass-card-pro card-hover-navy"
             style={{
               borderTop: '4px solid #0f2a44',
               display: 'flex',
@@ -189,7 +189,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           <div
-            className="glass-card-pro"
+            className="glass-card-pro card-hover-violet"
             style={{
               borderTop: '4px solid #8b5cf6',
               display: 'flex',
@@ -224,7 +224,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           <div
-            className="glass-card-pro"
+            className="glass-card-pro card-hover-emerald"
             style={{
               borderTop: '4px solid #10b981',
               display: 'flex',
@@ -259,7 +259,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           <div
-            className="glass-card-pro"
+            className="glass-card-pro card-hover-sky"
             style={{
               borderTop: '4px solid #0ea5e9',
               display: 'flex',
@@ -294,7 +294,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           <div
-            className="glass-card-pro"
+            className="glass-card-pro card-hover-yellow"
             style={{
               borderTop: '4px solid #f2b705',
               display: 'flex',
@@ -328,7 +328,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           <div
-            className="glass-card-pro"
+            className="glass-card-pro card-hover-red"
             style={{
               borderTop: '4px solid #ef4444',
               display: 'flex',
