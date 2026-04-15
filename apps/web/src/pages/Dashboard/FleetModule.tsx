@@ -34,7 +34,7 @@ import {
 import ArchonDatePicker from '../../components/ArchonDatePicker';
 
 // ============================================================================
-// 📦 SOVEREIGN ASSET CATALOGS (v.7.1.2)
+// 📦 SOVEREIGN ASSET CATALOGS (v.7.1.3)
 // ============================================================================
 const MARCAS_VEHICULO: Record<string, string[]> = {
   Toyota: ['Hilux', 'Land Cruiser', 'Fortuner', 'RAV4', 'Hiace', 'Tacoma'],
@@ -121,13 +121,13 @@ const getInitialForm = (): {
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.7.1.2)
+// 🚀 FLEET MODULE (v.7.1.3)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.1.2)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.1.3)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -259,7 +259,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             Incorporación de Activos
           </span>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center gap-16">
+        <div className="flex-1 w-full flex flex-col items-center justify-center py-20">
           <div
             style={{
               width: '80px',
@@ -270,6 +270,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px dashed rgba(242, 183, 5, 0.3)',
+              marginBottom: '20px',
             }}
           >
             <PlusCircle size={40} style={{ color: '#f2b705' }} />
@@ -328,7 +329,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             Exploración de Datos
           </span>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center gap-16">
+        <div className="flex-1 w-full flex flex-col items-center justify-center py-20">
           <div
             style={{
               width: '80px',
@@ -339,6 +340,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px dashed rgba(139, 92, 246, 0.3)',
+              marginBottom: '20px',
             }}
           >
             <Database size={40} style={{ color: '#8b5cf6' }} />
@@ -399,7 +401,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <User size={20} style={{ color: '#10b981' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center gap-16">
+        <div className="flex-1 w-full flex flex-col items-center justify-center py-20">
           <div
             style={{
               width: '80px',
@@ -410,6 +412,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px dashed rgba(16, 185, 129, 0.3)',
+              marginBottom: '20px',
             }}
           >
             <Users size={40} style={{ color: '#10b981' }} />
@@ -453,7 +456,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   );
 
   // ============================================================================
-  // 📝 CREATE VIEW — Intelligence Form v.7.1.2
+  // 📝 CREATE VIEW — Intelligence Form v.7.1.3
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-64">
@@ -858,7 +861,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               {currentView === 'GRID'
                 ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
-                : 'Protocolo de Incorporación de Activo v.7.1.2'}
+                : 'Protocolo de Incorporación de Activo v.7.1.3'}
             </p>
           </div>
 

@@ -305,7 +305,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.1.2) */}
+      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.1.3) */}
       <section className="archon-workspace-chassis">
         <div
           style={{
@@ -368,7 +368,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.2</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.3</p>
       </footer>
     </main>
   );

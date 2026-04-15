@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ============================================================================
-// 📅 ARCHON DATE PICKER (v.7.1.2)
+// 📅 ARCHON DATE PICKER (v.7.1.3)
 // Sovereign calendar component — Navy/Yellow design system
 // ============================================================================
 
