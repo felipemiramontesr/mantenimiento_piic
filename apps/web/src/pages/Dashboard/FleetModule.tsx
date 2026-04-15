@@ -163,7 +163,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // ============================================================================
   const renderSubheader = (): React.ReactElement => (
     <div
-      className="flex items-center w-full pb-80 animate-in fade-in duration-500"
+      className="flex items-center w-full pb-32 animate-in fade-in duration-500"
       style={{ paddingLeft: '4px', paddingRight: '4px' }}
     >
       {currentView === 'CREATE' && (
@@ -608,7 +608,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.0.2) */}
       <section className="archon-workspace-chassis">
-        {renderSubheader()}
+        {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full">
           {currentView === 'GRID' ? renderGridView() : renderCreateView()}
         </div>
