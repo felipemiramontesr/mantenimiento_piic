@@ -9,6 +9,7 @@
   --bg-sidebar: #0f2a44; /* Solid Blue */
   --bg-workspace: #ffffff; /* Solid White */
   --card-border: #e2e8f0; /* Clean light gray border */
+  --color-subtitle: #ffffff;
 }
 
 * {
@@ -253,7 +254,7 @@ body {
 .hero-subtitle {
   font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 400;
-  color: var(--color-subtitle);
+  color: var(--color-white);
   margin-top: 16px;
   line-height: 1.6;
   text-align: center;
@@ -1284,7 +1285,7 @@ body {
   white-space: nowrap !important;
 }
 
-/* 📅 ARCHON DATE PICKER (v.7.1.1.2) */
+/* 📅 ARCHON DATE PICKER (v.7.1.2) */
 .archon-datepicker-popup {
   position: absolute;
   top: calc(100% + 6px);

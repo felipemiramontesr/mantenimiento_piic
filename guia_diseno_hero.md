@@ -18,7 +18,7 @@ El proyecto utiliza **Inter** para todo el sistema. Asegúrate de incluirla en t
 | Elemento        | Desktop | Mobile | Peso (Weight) | Color     |
 | :-------------- | :------ | :----- | :------------ | :-------- |
 | **Título (H1)** | 48px    | 34px   | 700           | `#ffffff` |
-| **Subtítulo**   | 20px    | 16px   | 400           | `#E5E7EB` |
+| **Subtítulo**   | 20px    | 16px   | 400           | `#ffffff` |
 | **Botones**     | 15px    | 15px   | 500           | Variable  |
 
 ---
@@ -32,7 +32,7 @@ Define estas variables en tu archivo de estilos global (`:root`):
   --color-primary: #0f2a44; /* Azul Corporativo */
   --color-accent: #f2b705; /* Amarillo PIIC */
   --color-white: #ffffff;
-  --color-subtitle: #e5e7eb;
+  --color-subtitle: #ffffff;
 }
 ```
 
