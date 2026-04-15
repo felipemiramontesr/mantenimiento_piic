@@ -178,9 +178,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // 🏛️ GRID VIEW
   // ============================================================================
   const renderGridView = (): React.ReactElement => (
-    <div className="archon-grid-3">
+    <div className="archon-grid-3 h-full">
       {/* Card 1: Registrar Nueva Unidad */}
-      <div className="glass-card-pro card-hover-yellow" style={{ borderTop: '4px solid #f2b705', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <div className="glass-card-pro card-hover-yellow" style={{ borderTop: '4px solid #f2b705', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', height: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
           <Plus size={20} style={{ color: '#f2b705' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Incorporación de Activos</span>
@@ -199,7 +199,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       </div>
 
       {/* Card 2: Inventario */}
-      <div className="glass-card-pro card-hover-violet" style={{ borderTop: '4px solid #8b5cf6', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <div className="glass-card-pro card-hover-violet" style={{ borderTop: '4px solid #8b5cf6', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', height: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
           <Search size={20} style={{ color: '#8b5cf6' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Exploración de Datos</span>
@@ -216,7 +216,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       </div>
 
       {/* Card 3: Operadores */}
-      <div className="glass-card-pro card-hover-emerald" style={{ borderTop: '4px solid #10b981', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <div className="glass-card-pro card-hover-emerald" style={{ borderTop: '4px solid #10b981', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', height: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', width: '100%' }}>
           <User size={20} style={{ color: '#10b981' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
@@ -609,7 +609,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.0.2) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
-        <div className="w-full">
+        <div className="w-full h-full">
           {currentView === 'GRID' ? renderGridView() : renderCreateView()}
         </div>
       </section>
