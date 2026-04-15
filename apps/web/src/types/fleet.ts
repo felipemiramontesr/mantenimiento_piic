@@ -1,7 +1,7 @@
 // ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.7.1.0.0)
 // Architecture: PIIC Fleet Asset Intelligence
 
-export type AssetType = 'Vehiculo' | 'Maquinaria';
+export type AssetType = 'Vehiculo' | 'Maquinaria' | 'Herramienta';
 export type FleetStatus = 'Disponible' | 'En Ruta' | 'En Mantenimiento' | 'Descontinuada';
 export type Traccion = '4x2' | '4x4' | 'Doble Tracción' | 'AWD' | 'Oruga' | 'N/A';
 export type Transmision = 'Automática' | 'Estándar (Manual)' | 'CVT' | 'Hidrostática' | 'N/A';

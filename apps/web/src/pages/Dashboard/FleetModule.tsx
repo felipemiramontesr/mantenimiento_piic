@@ -38,6 +38,17 @@ const MARCAS_MAQUINARIA: Record<string, string[]> = {
   'Manitowoc':   ['Grove RT760E', 'Grove GMK4100L'],
 };
 
+const MARCAS_HERRAMIENTA: Record<string, string[]> = {
+  'Milwaukee': ['M18 FUEL', 'M12 FUEL', 'MX FUEL'],
+  'DeWalt':    ['20V MAX', '60V MAX FLEXVOLT'],
+  'Makita':    ['LXT 18V', 'XGT 40V'],
+  'Hilti':     ['TE-series', 'Nuron'],
+  'Bosch':     ['PROFACTOR', 'CORE18V'],
+  'Stihl':     ['MS Series', 'TS Series'],
+  'Husqvarna': ['K770', 'K970', '500 Series'],
+  'Honda':     ['EU Series', 'GX Series'],
+};
+
 type FleetView = 'GRID' | 'CREATE';
 
 // Initial form state factory
@@ -115,14 +126,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
 
 
-  // Derived catalog based on asset type
-  const availableMarcas = formData.assetType === 'Vehiculo'
-    ? Object.keys(MARCAS_VEHICULO)
-    : Object.keys(MARCAS_MAQUINARIA);
+  // Derived catalogs based on asset type (Mapping for zero-noise architecture)
+  const assetCatalogs: Record<AssetType, Record<string, string[]>> = {
+    'Vehiculo': MARCAS_VEHICULO,
+    'Maquinaria': MARCAS_MAQUINARIA,
+    'Herramienta': MARCAS_HERRAMIENTA
+  };
 
-  const availableModelos = formData.assetType === 'Vehiculo'
-    ? (MARCAS_VEHICULO[formData.marca] ?? [])
-    : (MARCAS_MAQUINARIA[formData.marca] ?? []);
+  const currentCatalog = assetCatalogs[formData.assetType];
+  const availableMarcas = Object.keys(currentCatalog);
+  const availableModelos = currentCatalog[formData.marca] ?? [];
 
   const handleAssetTypeChange = (type: AssetType): void => {
     setFormData({ ...formData, assetType: type, marca: '', modelo: '' });
@@ -268,6 +281,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               >
                 <option value="Vehiculo">Vehículo</option>
                 <option value="Maquinaria">Maquinaria</option>
+                <option value="Herramienta">Herramienta</option>
               </select>
             </div>
 
