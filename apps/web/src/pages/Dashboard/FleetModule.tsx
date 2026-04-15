@@ -259,7 +259,17 @@ const FleetModule: React.FC = (): React.ReactElement => {
             Incorporación de Activos
           </span>
         </div>
-        <div className="flex-1 w-full flex flex-col items-center justify-center py-20">
+        <div
+          style={{
+            flex: 1,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px 0',
+          }}
+        >
           <div
             style={{
               width: '80px',
@@ -269,7 +279,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px dashed rgba(242, 183, 5, 0.3)',
+              border: '2px solid rgba(242, 183, 5, 0.4)',
               marginBottom: '20px',
             }}
           >
@@ -278,11 +288,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <div style={{ textAlign: 'center' }}>
             <h3
               className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
-              style={{ fontSize: '14px' }}
+              style={{ fontSize: '14px', margin: 0 }}
             >
               Registrar Unidad
             </h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-4">
+            <p
+              className="text-[10px] font-bold opacity-60 uppercase tracking-widest"
+              style={{ marginTop: '4px', margin: '4px 0 0 0' }}
+            >
               Vehículos y Maquinaria
             </p>
           </div>
@@ -329,7 +342,17 @@ const FleetModule: React.FC = (): React.ReactElement => {
             Exploración de Datos
           </span>
         </div>
-        <div className="flex-1 w-full flex flex-col items-center justify-center py-20">
+        <div
+          style={{
+            flex: 1,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px 0',
+          }}
+        >
           <div
             style={{
               width: '80px',
@@ -339,7 +362,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px dashed rgba(139, 92, 246, 0.3)',
+              border: '2px solid rgba(139, 92, 246, 0.4)',
               marginBottom: '20px',
             }}
           >
@@ -348,11 +371,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <div style={{ textAlign: 'center' }}>
             <h3
               className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
-              style={{ fontSize: '14px' }}
+              style={{ fontSize: '14px', margin: 0 }}
             >
               Inventario General
             </h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-4">
+            <p
+              className="text-[10px] font-bold opacity-60 uppercase tracking-widest"
+              style={{ marginTop: '4px', margin: '4px 0 0 0' }}
+            >
               Visualización y Estados
             </p>
           </div>
@@ -401,7 +427,17 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <User size={20} style={{ color: '#10b981' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
         </div>
-        <div className="flex-1 w-full flex flex-col items-center justify-center py-20">
+        <div
+          style={{
+            flex: 1,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px 0',
+          }}
+        >
           <div
             style={{
               width: '80px',
@@ -411,7 +447,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px dashed rgba(16, 185, 129, 0.3)',
+              border: '2px solid rgba(16, 185, 129, 0.4)',
               marginBottom: '20px',
             }}
           >
@@ -420,11 +456,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <div style={{ textAlign: 'center' }}>
             <h3
               className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
-              style={{ fontSize: '14px' }}
+              style={{ fontSize: '14px', margin: 0 }}
             >
               Gestión Operadores
             </h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-4">
+            <p
+              className="text-[10px] font-bold opacity-60 uppercase tracking-widest"
+              style={{ marginTop: '4px', margin: '4px 0 0 0' }}
+            >
               Directorio de Control
             </p>
           </div>
@@ -828,7 +867,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // ============================================================================
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.1.0.2 */}
+      {/* 🚀 HEADER DINÁMICO SOBERANO - V.7.1.3 */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div
           style={{
@@ -962,7 +1001,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.2) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.3) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -970,10 +1009,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </section>
 
-      {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.0.2 */}
+      {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.2.</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.3</p>
       </footer>
     </main>
   );
