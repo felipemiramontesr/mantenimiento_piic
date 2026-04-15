@@ -177,7 +177,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </p>
             </div>
 
-            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', width: '100%', paddingTop: '12px' }}>
               <button 
                 onClick={(): void => navigate('/dashboard/fleet')}
                 className="btn-sentinel-yellow" 

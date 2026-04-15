@@ -186,12 +186,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Incorporación de Activos</span>
         </div>
         <div className="mb-24" style={{ width: '100%' }}>
-          <h3 className="text-kpi-black text-[#0f2a44] text-xl" style={{ fontSize: '1.5rem' }}>Registrar Unidad</h3>
+          <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Registrar Unidad</h3>
           <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>
             Vehículos y Maquinaria
           </p>
         </div>
-        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', width: '100%', paddingTop: '12px' }}>
           <button onClick={(): void => setCurrentView('CREATE')} className="btn-sentinel-yellow">
             Iniciar Registro <ArrowRight size={10} className="text-[#0f2a44]" />
           </button>
@@ -205,10 +205,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Exploración de Datos</span>
         </div>
         <div className="mb-24" style={{ width: '100%' }}>
-          <h3 className="text-kpi-black text-[#0f2a44] text-xl" style={{ fontSize: '1.5rem' }}>Inventario General</h3>
+          <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Inventario General</h3>
           <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>Visualización técnica y estados</p>
         </div>
-        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', width: '100%', paddingTop: '12px' }}>
           <button disabled className="btn-sentinel-yellow opacity-40 cursor-not-allowed" style={{ backgroundColor: '#8b5cf6', color: 'white' }}>
             Próximamente <ArrowRight size={10} className="text-white" />
           </button>
@@ -222,10 +222,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
         </div>
         <div className="mb-24" style={{ width: '100%' }}>
-          <h3 className="text-kpi-black text-[#0f2a44] text-xl" style={{ fontSize: '1.5rem' }}>Gestión Operadores</h3>
+          <h3 className="text-kpi-black text-[#0f2a44] text-3xl">Gestión Operadores</h3>
           <p className="text-[11px] tracking-wide font-bold" style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}>Asignación de personal operativo</p>
         </div>
-        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'center', width: '100%', paddingTop: '12px' }}>
           <button disabled className="btn-sentinel-yellow opacity-40 cursor-not-allowed" style={{ backgroundColor: '#10b981', color: 'white' }}>
             Próximamente <ArrowRight size={10} className="text-white" />
           </button>
