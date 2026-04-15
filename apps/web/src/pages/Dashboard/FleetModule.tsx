@@ -258,6 +258,11 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </button>
         </div>
       </div>
+
+      {/* ── ROW 2: Transparent placeholders (3×2 grid structure) ── */}
+      <div aria-hidden="true" />
+      <div aria-hidden="true" />
+      <div aria-hidden="true" />
     </div>
   );
 
