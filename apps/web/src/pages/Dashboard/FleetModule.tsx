@@ -34,7 +34,7 @@ import {
 import ArchonDatePicker from '../../components/ArchonDatePicker';
 
 // ============================================================================
-// 📦 SOVEREIGN ASSET CATALOGS (v.7.1.4)
+// 📦 SOVEREIGN ASSET CATALOGS (v.7.2.0)
 // ============================================================================
 const MARCAS_VEHICULO: Record<string, string[]> = {
   Toyota: ['Hilux', 'Land Cruiser', 'Fortuner', 'RAV4', 'Hiace', 'Tacoma'],
@@ -121,13 +121,13 @@ const getInitialForm = (): {
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.7.1.4)
+// 🚀 FLEET MODULE (v.7.2.0)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.1.4)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.7.2.0)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -255,7 +255,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </span>
         </div>
 
-        <div className="archon-tile-payload">
+        <div className="archon-tile-payload space-y-8">
           <div
             style={{
               width: '80px',
@@ -266,22 +266,18 @@ const FleetModule: React.FC = (): React.ReactElement => {
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid rgba(242, 183, 5, 0.4)',
-              marginBottom: '20px',
             }}
           >
             <PlusCircle size={40} style={{ color: '#f2b705' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
             <h3
-              className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
-              style={{ fontSize: '14px', margin: 0 }}
+              className="text-[#0f2a44] font-black uppercase tracking-[0.15em] mb-4"
+              style={{ fontSize: '14px' }}
             >
               Registrar Unidad
             </h3>
-            <p
-              className="text-[10px] font-bold opacity-60 uppercase tracking-widest"
-              style={{ marginTop: '4px', margin: '4px 0 0 0' }}
-            >
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
               Vehículos y Maquinaria
             </p>
           </div>
@@ -317,7 +313,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </span>
         </div>
 
-        <div className="archon-tile-payload">
+        <div className="archon-tile-payload space-y-8">
           <div
             style={{
               width: '80px',
@@ -328,22 +324,18 @@ const FleetModule: React.FC = (): React.ReactElement => {
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid rgba(139, 92, 246, 0.4)',
-              marginBottom: '20px',
             }}
           >
             <Database size={40} style={{ color: '#8b5cf6' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
             <h3
-              className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
-              style={{ fontSize: '14px', margin: 0 }}
+              className="text-[#0f2a44] font-black uppercase tracking-[0.15em] mb-4"
+              style={{ fontSize: '14px' }}
             >
               Inventario General
             </h3>
-            <p
-              className="text-[10px] font-bold opacity-60 uppercase tracking-widest"
-              style={{ marginTop: '4px', margin: '4px 0 0 0' }}
-            >
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
               Visualización y Estados
             </p>
           </div>
@@ -377,7 +369,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
           <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
         </div>
 
-        <div className="archon-tile-payload">
+        <div className="archon-tile-payload space-y-8">
           <div
             style={{
               width: '80px',
@@ -388,22 +380,18 @@ const FleetModule: React.FC = (): React.ReactElement => {
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid rgba(16, 185, 129, 0.4)',
-              marginBottom: '20px',
             }}
           >
             <Users size={40} style={{ color: '#10b981' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
             <h3
-              className="text-[#0f2a44] font-black uppercase tracking-[0.1em]"
-              style={{ fontSize: '14px', margin: 0 }}
+              className="text-[#0f2a44] font-black uppercase tracking-[0.15em] mb-4"
+              style={{ fontSize: '14px' }}
             >
               Gestión Operadores
             </h3>
-            <p
-              className="text-[10px] font-bold opacity-60 uppercase tracking-widest"
-              style={{ marginTop: '4px', margin: '4px 0 0 0' }}
-            >
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
               Directorio de Control
             </p>
           </div>
@@ -424,7 +412,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   );
 
   // ============================================================================
-  // 📝 CREATE VIEW — Intelligence Form v.7.1.4
+  // 📝 CREATE VIEW — Intelligence Form v.7.2.0
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-64">
@@ -829,7 +817,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               {currentView === 'GRID'
                 ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
-                : 'Protocolo de Incorporación de Activo v.7.1.4'}
+                : 'Protocolo de Incorporación de Activo v.7.2.0'}
             </p>
           </div>
 
@@ -930,7 +918,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.1.4) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.7.2.0) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -941,7 +929,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.4</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.0</p>
       </footer>
     </main>
   );

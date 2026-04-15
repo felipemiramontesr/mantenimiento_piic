@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
@@ -1149,24 +1153,80 @@ body {
   opacity: 0.85;
 }
 
-/* ⚡ SENTINEL ACTION COMPONENTS (V.6.0.1) */
-.btn-sentinel-yellow {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  background-color: #f2b705;
-  color: #0f2a44;
-  padding: 14px 28px;
-  border-radius: 4px;
-  font-weight: 900;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 10px 25px rgba(242, 183, 5, 0.2);
+/* ⚡ SENTINEL ACTION COMPONENTS (V.7.2.0) */
+@layer components {
+  .glass-card-pro {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(15, 42, 68, 0.08);
+    border-radius: 4px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.04), inset 1px 1px 0 rgba(255, 255, 255, 0.9),
+      inset -1px -1px 0 rgba(0, 0, 0, 0.03);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .glass-card-pro:hover {
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  /* 🏛️ SOVEREIGN TILE SYSTEM (v.7.2.0) */
+  .archon-instrument-tile {
+    height: 32vh !important;
+    min-height: 280px !important;
+    max-height: 400px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 40px !important;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-sizing: border-box !important;
+  }
+
+  .archon-tile-payload {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .archon-tile-action {
+    margin-top: auto !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  /* Modifiers */
+  .card-hover-yellow:hover {
+    border-color: rgba(242, 183, 5, 0.55);
+    box-shadow: 0 12px 40px rgba(242, 183, 5, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+  }
+
+  .btn-sentinel-yellow {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background-color: #f2b705;
+    color: #0f2a44;
+    padding: 14px 28px;
+    border-radius: 4px;
+    font-weight: 900;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(242, 183, 5, 0.2);
+  }
+  /* ... mapping other variants similarly ... */
 }
 
 .btn-sentinel-yellow:hover {

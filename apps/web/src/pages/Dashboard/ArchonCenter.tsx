@@ -112,21 +112,18 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
       </div>
 
-      <div className="archon-tile-payload">
+      <div className="archon-tile-payload space-y-6">
         {loading ? (
           <div className="archon-shimmer h-40 w-full rounded" />
         ) : (
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
-            <h2 className="text-[#0f2a44] font-black text-6xl">{value}</h2>
+          <div className="flex items-baseline justify-center">
+            <h2 className="text-[#0f2a44] font-black text-[64px] leading-none">{value}</h2>
             {label.includes('Índice') && !loading && (
               <span className="text-2xl font-bold ml-2 opacity-30 text-[#0f2a44]">%</span>
             )}
           </div>
         )}
-        <p
-          className="text-[11px] tracking-widest font-bold uppercase opacity-60"
-          style={{ color: '#0f2a44', marginTop: '16px' }}
-        >
+        <p className="text-[11px] tracking-[0.2em] font-bold uppercase opacity-60 text-[#0f2a44]">
           {description}
         </p>
       </div>
@@ -276,7 +273,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.1.4) */}
+      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.7.2.0) */}
       <section className="archon-workspace-chassis">
         <div
           style={{
@@ -339,7 +336,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.1.4</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.2.0</p>
       </footer>
     </main>
   );
