@@ -5,7 +5,7 @@ import { z } from 'zod';
 import db from '../services/db';
 
 // ============================================================================
-// ZOD SCHEMA: CREATE (v.8.0.0)
+// ZOD SCHEMA: CREATE (v.8.0.1)
 // ============================================================================
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
