@@ -1,4 +1,4 @@
-// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.8.0.1)
+// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.8.1.0)
 // Architecture: PIIC Fleet Asset Intelligence
 
 export type AssetType = 'Vehiculo' | 'Maquinaria' | 'Herramienta';
@@ -42,6 +42,7 @@ export interface FleetUnit {
   sede: string | null;
   maintenance_frequency: MaintenanceFrequency;
   centro_mantenimiento: CentroMantenimiento;
+  protocol_start_date: string | null; // ISO date
   // Legal & Compliance
   vigencia_seguro: string | null; // ISO date
   vencimiento_verificacion: string | null; // ISO date
@@ -72,6 +73,7 @@ export interface CreateFleetUnit {
   sede?: string;
   maintenanceFrequency: MaintenanceFrequency;
   centroMantenimiento: CentroMantenimiento;
+  protocolStartDate?: string;
   vigenciaSeguro?: string;
   vencimientoVerificacion?: string;
   tarjetaCirculacion?: string;

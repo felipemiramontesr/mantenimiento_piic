@@ -5,7 +5,7 @@ import { z } from 'zod';
 import db from '../services/db';
 
 // ============================================================================
-// ZOD SCHEMA: CREATE (v.8.0.1)
+// ZOD SCHEMA: CREATE (v.8.1.0)
 // ============================================================================
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
@@ -33,6 +33,7 @@ const createFleetSchema = z.object({
     .enum(['Diaria', 'Semanal', 'Mensual', 'Bimestral', 'Semestral', 'Anual'])
     .default('Mensual'),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
+  protocolStartDate: z.string().optional().nullable(), // ISO date string
   vigenciaSeguro: z.string().optional().nullable(), // ISO date string
   vencimientoVerificacion: z.string().optional().nullable(), // ISO date string
   tarjetaCirculacion: z.string().max(100).optional(),
@@ -70,6 +71,7 @@ const updateFleetSchema = z.object({
     .enum(['Diaria', 'Semanal', 'Mensual', 'Bimestral', 'Semestral', 'Anual'])
     .optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).optional(),
+  protocolStartDate: z.string().optional().nullable(), // ISO date string
   vigenciaSeguro: z.string().optional().nullable(),
   vencimientoVerificacion: z.string().optional().nullable(),
   tarjetaCirculacion: z.string().max(100).optional(),
@@ -100,6 +102,7 @@ interface FleetUnit extends RowDataPacket {
   sede: string | null;
   maintenance_frequency: string;
   centro_mantenimiento: string;
+  protocol_start_date: string | null;
   vigencia_seguro: string | null;
   vencimiento_verificacion: string | null;
   tarjeta_circulacion: string | null;
@@ -165,6 +168,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       sede,
       maintenanceFrequency,
       centroMantenimiento,
+      protocolStartDate,
       vigenciaSeguro,
       vencimientoVerificacion,
       tarjetaCirculacion,
@@ -213,7 +217,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           id, uuid, asset_type, tag, numero_serie, marca, modelo, year, motor,
           traccion, transmision, fuel_type, tire_spec, tire_brand,
           capacidad_carga, odometer, sede, maintenance_frequency, centro_mantenimiento,
-          vigencia_seguro, vencimiento_verificacion, tarjeta_circulacion,
+          protocol_start_date, vigencia_seguro, vencimiento_verificacion, tarjeta_circulacion,
           status, assigned_operator_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -236,6 +240,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           sede || null,
           maintenanceFrequency,
           centroMantenimiento,
+          protocolStartDate || null,
           vigenciaSeguro || null,
           vencimientoVerificacion || null,
           tarjetaCirculacion || null,
@@ -283,6 +288,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       updates.maintenance_frequency = raw.maintenanceFrequency;
     if (raw.centroMantenimiento !== undefined)
       updates.centro_mantenimiento = raw.centroMantenimiento;
+    if (raw.protocolStartDate !== undefined)
+      updates.protocol_start_date = raw.protocolStartDate ?? null;
     if (raw.vigenciaSeguro !== undefined) updates.vigencia_seguro = raw.vigenciaSeguro ?? null;
     if (raw.vencimientoVerificacion !== undefined)
       updates.vencimiento_verificacion = raw.vencimientoVerificacion ?? null;
