@@ -1151,12 +1151,12 @@ body {
 
 /* ⚡ SENTINEL ACTION COMPONENTS (V.6.0.1) */
 .btn-sentinel-yellow {
-  display: flex !important; /* Force predictable block behavior */
+  display: flex !important;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background-color: var(--color-accent);
-  color: var(--color-primary);
+  background-color: #f2b705;
+  color: #0f2a44;
   padding: 14px 28px;
   border-radius: 4px;
   font-weight: 900;
@@ -1171,11 +1171,127 @@ body {
 
 .btn-sentinel-yellow:hover {
   background-color: #ffd000;
-  box-shadow: 0 8px 28px rgba(242, 183, 5, 0.38);
+  box-shadow: 0 12px 30px rgba(242, 183, 5, 0.35);
 }
 
-.btn-sentinel-yellow:active {
-  opacity: 0.9;
+.btn-sentinel-violet {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #8b5cf6;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
+}
+
+.btn-sentinel-violet:hover {
+  background-color: #7c3aed;
+  box-shadow: 0 12px 30px rgba(139, 92, 246, 0.35);
+}
+
+.btn-sentinel-emerald {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #10b981;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+}
+
+.btn-sentinel-emerald:hover {
+  background-color: #059669;
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.35);
+}
+
+.btn-sentinel-sky {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #0ea5e9;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.2);
+}
+
+.btn-sentinel-sky:hover {
+  background-color: #0284c7;
+  box-shadow: 0 12px 30px rgba(14, 165, 233, 0.35);
+}
+
+.btn-sentinel-red {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #ef4444;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+}
+
+.btn-sentinel-red:hover {
+  background-color: #dc2626;
+  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.35);
+}
+
+.btn-sentinel-navy {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #0f2a44;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(15, 42, 68, 0.2);
+}
+
+.btn-sentinel-navy:hover {
+  background-color: #1a3a5a;
+  box-shadow: 0 12px 30px rgba(15, 42, 68, 0.35);
 }
 
 /* 🏢 FORM GRID SYSTEM */

@@ -116,36 +116,27 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         {loading ? (
           <div className="archon-shimmer h-40 w-full rounded" />
         ) : (
-          <h2 className="text-[#0f2a44] font-black text-4xl mb-8">{value}</h2>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+            <h2 className="text-[#0f2a44] font-black text-6xl">{value}</h2>
+            {label.includes('Índice') && !loading && (
+              <span className="text-2xl font-bold ml-2 opacity-30 text-[#0f2a44]">%</span>
+            )}
+          </div>
         )}
         <p
-          className="text-[11px] tracking-wide font-bold"
-          style={{ color: '#0f2a44', whiteSpace: 'nowrap', marginTop: '16px' }}
+          className="text-[11px] tracking-widest font-bold uppercase opacity-60"
+          style={{ color: '#0f2a44', marginTop: '16px' }}
         >
           {description}
         </p>
       </div>
 
-      <div
-        style={{
-          marginTop: 'auto',
-          display: 'flex',
-          justifyContent: 'center',
-          width: '100%',
-          paddingTop: '12px',
-        }}
-      >
+      <div className="archon-tile-action">
         <button
           onClick={(): void => navigate('/dashboard/fleet')}
-          className="btn-sentinel-yellow"
-          style={{
-            backgroundColor: color,
-            color: color === '#f2b705' ? '#0f2a44' : 'white',
-            boxShadow: `0 4px 12px ${color}4D`,
-          }}
+          className={`btn-sentinel-${mode}`}
         >
-          Ver detalles{' '}
-          <ArrowRight size={10} className={color === '#f2b705' ? 'text-[#0f2a44]' : 'text-white'} />
+          VER DETALLES <ArrowRight size={10} className="ml-2" />
         </button>
       </div>
     </div>
