@@ -22,6 +22,7 @@ import {
   Database,
   Users,
   Activity,
+  Camera,
 } from 'lucide-react';
 import api from '../../api/client';
 import {
@@ -35,6 +36,7 @@ import {
 } from '../../types/fleet';
 import ArchonDatePicker from '../../components/ArchonDatePicker';
 import ArchonField from '../../components/ArchonField';
+import ArchonImageUploader from '../../components/ArchonImageUploader';
 import {
   MARCAS_VEHICULO,
   MARCAS_MAQUINARIA,
@@ -52,6 +54,7 @@ const getInitialForm = (): {
   assetType: AssetType;
   tag: string;
   numeroSerie: string;
+  images: string[];
   marca: string;
   modelo: string;
   year: number;
@@ -75,6 +78,7 @@ const getInitialForm = (): {
   assetType: 'Vehiculo' as AssetType,
   tag: '',
   numeroSerie: '',
+  images: [] as string[],
   marca: '',
   modelo: '',
   year: new Date().getFullYear(),
@@ -97,13 +101,13 @@ const getInitialForm = (): {
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.9.0.0)
+// 🚀 FLEET MODULE (v.10.0.0)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.9.0.0)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.10.0.0)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -388,7 +392,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   );
 
   // ============================================================================
-  // 📝 CREATE VIEW — Intelligence Form v.9.0.0
+  // 📝 CREATE VIEW — Intelligence Form v.10.0.0
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-40">
@@ -511,6 +515,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                   setFormData({ ...formData, numeroSerie: e.target.value.toUpperCase() })
                 }
+              />
+            </ArchonField>
+
+            {/* Imágenes del Vehículo (Drag & Drop) */}
+            <ArchonField label="Imágenes del Vehículo" icon={Camera}>
+              <ArchonImageUploader
+                images={formData.images}
+                onChange={(imgs: string[]): void => setFormData({ ...formData, images: imgs })}
               />
             </ArchonField>
 
@@ -772,7 +784,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               {currentView === 'GRID'
                 ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
-                : 'Protocolo de Incorporación de Activo v.9.0.0'}
+                : 'Protocolo de Incorporación de Activo v.10.0.0'}
             </p>
           </div>
 
@@ -873,7 +885,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.9.0.0) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.10.0.0) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -884,7 +896,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.9.0.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.10.0.0</p>
       </footer>
     </main>
   );

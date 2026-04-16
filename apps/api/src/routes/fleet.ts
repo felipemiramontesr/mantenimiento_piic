@@ -6,12 +6,13 @@ import db from '../services/db';
 import { toSnakeCase } from '../utils/mappers';
 
 // ============================================================================
-// ZOD SCHEMA: CREATE (v.9.0.0)
+// ZOD SCHEMA: CREATE (v.10.0.0)
 // ============================================================================
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
   tag: z.string().min(2).max(50),
   numeroSerie: z.string().max(100).optional(),
+  images: z.array(z.string()).max(4).optional(),
   marca: z.string().min(1).max(100),
   modelo: z.string().min(1).max(100),
   year: z
@@ -51,6 +52,7 @@ const updateFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']).optional(),
   tag: z.string().min(2).max(50).optional(),
   numeroSerie: z.string().max(100).optional(),
+  images: z.array(z.string()).max(4).optional(),
   marca: z.string().min(1).max(100).optional(),
   modelo: z.string().min(1).max(100).optional(),
   year: z
@@ -171,11 +173,9 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           [parse.data.numeroSerie]
         );
         if (existingSerie.length > 0) {
-          return reply
-            .code(409)
-            .send({
-              error: `Número de serie '${parse.data.numeroSerie}' ya existe en el registro`,
-            });
+          return reply.code(409).send({
+            error: `Número de serie '${parse.data.numeroSerie}' ya existe en el registro`,
+          });
         }
       }
 

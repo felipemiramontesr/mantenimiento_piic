@@ -1,6 +1,6 @@
 # ARCHON SYSTEM
 
-## Blueprint & System Architecture
+## Archon System Architecture — Engineering Blueprint (v.10.0.0)
 
 This manifesto serves as the architectural foundation for the **Pinnacle Identity Standard (PIIC)** applied to the Archon Control Systems. Every core decision follows a rigorous, zero-noise, and Silicon Valley-grade methodology.
 
@@ -113,6 +113,7 @@ erDiagram
         string uuid
         string tag "Económico"
         enum asset_type
+        json images "Visual Identity (Max 4)"
         date protocol_start_date "Temporal Anchor"
         enum maintenance_frequency "Schedule Logic"
     }

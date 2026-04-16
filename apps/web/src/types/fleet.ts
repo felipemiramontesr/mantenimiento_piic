@@ -1,4 +1,4 @@
-// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.8.1.1)
+// ⚡ SOVEREIGN FLEET TYPE SYSTEM (v.10.0.0)
 // Architecture: PIIC Fleet Asset Intelligence
 
 export type AssetType = 'Vehiculo' | 'Maquinaria' | 'Herramienta';
@@ -26,6 +26,7 @@ export interface FleetUnit {
   // Level 2 & 3: Cascade
   marca: string;
   modelo: string;
+  images: string[] | null;
   year: number;
   motor: string | null;
   // Mechanical configuration
@@ -61,6 +62,7 @@ export interface CreateFleetUnit {
   numeroSerie?: string;
   marca: string;
   modelo: string;
+  images?: string[];
   year: number;
   motor?: string;
   traccion: Traccion;

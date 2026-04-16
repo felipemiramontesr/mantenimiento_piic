@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { toSnakeCase, toCamelCase } from '../utils/mappers';
 
-// ⚡ ARCHON LOGIC CERTIFICATION (v.9.0.0)
+// ⚡ ARCHON LOGIC CERTIFICATION (v.10.0.0)
 // Automated verification of mapping and data boundaries
 
 describe('Fleet Logic Ecosystem', () => {
