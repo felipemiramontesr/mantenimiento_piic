@@ -181,7 +181,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Eje de Control de unidades & Telemetría de Inteligencia
+              Eje de Control de personal, unidades & Telemetría de Inteligencia
             </p>
           </div>
 
@@ -354,7 +354,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.4.2</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.5.0</p>
       </footer>
     </main>
   );
