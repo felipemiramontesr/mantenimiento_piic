@@ -88,11 +88,10 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(screen.getByText(/Unidades en ruta/i)).toBeDefined();
     expect(screen.getByText(/Unidades en mantenimiento/i)).toBeDefined();
     expect(screen.getByText(/Unidades descontinuadas/i)).toBeDefined();
-    expect(screen.getByText(/Gestión de Personal/i)).toBeDefined();
     expect(screen.getByText(/Mando y Supervisión/i)).toBeDefined();
 
     // Verify visibility of action buttons
     const detailButtons = screen.getAllByText(/Ver detalles/i);
-    expect(detailButtons.length).toBe(8);
+    expect(detailButtons.length).toBe(7);
   });
 });
