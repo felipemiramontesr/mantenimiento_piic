@@ -233,7 +233,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send({ error: 'Invalid update data', details: parse.error.format() });
     }
 
-    const updates: any = toSnakeCase(parse.data);
+    const updates = toSnakeCase(parse.data) as Record<string, unknown>;
 
     // 🛡️ ALE (Application-Level Encryption): Secure identity during update
     if (updates.motor) updates.motor = EncryptionService.encrypt(updates.motor);
