@@ -5,12 +5,31 @@ const SettingsModule: React.FC = (): React.ReactElement => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
     {/* 🚀 HEADER SOBERANO (Zen Mode) - V.7.0.0.2 */}
     <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+        }}
+      >
         {/* Left Panel: Configuration Context */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '8px',
+            }}
+          >
             <Settings size={28} style={{ color: '#f2b705' }} />
-            <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl" style={{ margin: 0, padding: 0, lineHeight: 1 }}>
+            <h2
+              className="text-[#0f2a44] tracking-tighter font-black text-2xl"
+              style={{ margin: 0, padding: 0, lineHeight: 1 }}
+            >
               Configuración de Sistema
             </h2>
           </div>
@@ -21,30 +40,37 @@ const SettingsModule: React.FC = (): React.ReactElement => (
 
         {/* Right Panel: Identity (Sync with ArchonCenter) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-          <h1 style={{ 
-            fontSize: '26px', 
-            fontWeight: 900, 
-            margin: 0, 
-            letterSpacing: '-0.03em', 
-            fontFamily: 'Inter, system-ui, sans-serif', 
-            color: '#0f2a44' 
-          }}>
+          <h1
+            style={{
+              fontSize: '26px',
+              fontWeight: 900,
+              margin: 0,
+              letterSpacing: '-0.03em',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              color: '#0f2a44',
+            }}
+          >
             Archon
           </h1>
-          <div 
-            style={{ 
-              width: '44px', 
-              height: '44px', 
-              borderRadius: '4px', 
-              border: '2px solid #f2b705', 
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '4px',
+              border: '2px solid #f2b705',
               backgroundColor: '#0f2a44',
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <svg width="24" height="24" viewBox="0 0 100 100">
-              <path d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z" stroke="#f2b705" strokeWidth="16" fill="none" />
+              <path
+                d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+                stroke="#f2b705"
+                strokeWidth="16"
+                fill="none"
+              />
             </svg>
           </div>
         </div>
@@ -53,16 +79,16 @@ const SettingsModule: React.FC = (): React.ReactElement => (
 
     {/* 📊 BODY MODULAR (Zen Skeleton) */}
     <section className="workspace-body-pro">
-      <div 
-        style={{ 
-          width: '100%', 
-          height: '60vh', 
-          border: '1px dashed rgba(15, 42, 68, 0.1)', 
+      <div
+        style={{
+          width: '100%',
+          height: '60vh',
+          border: '1px dashed rgba(15, 42, 68, 0.1)',
           borderRadius: '8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'rgba(15, 42, 68, 0.02)'
+          backgroundColor: 'rgba(15, 42, 68, 0.02)',
         }}
       >
         <div className="text-center">
@@ -77,7 +103,7 @@ const SettingsModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.7.0.0.3 */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.7.0.0.3.</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.16.2.0</p>
     </footer>
   </main>
 );
