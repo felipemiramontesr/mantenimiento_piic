@@ -102,7 +102,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
 
         <div className="text-center">
           <p className="text-[#0f2a44] font-bold text-sm">
-            {isDragging ? '¡Suelta para capturar!' : 'Arrastra imágenes del vehículo'}
+            {isDragging ? '¡Suelta para capturar!' : 'Arrastra imágenes de la unidad'}
           </p>
           <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4">
             Máximo {maxImages} fotos • JPG, PNG, WEBP

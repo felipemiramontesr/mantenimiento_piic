@@ -101,13 +101,13 @@ const getInitialForm = (): {
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.10.0.0)
+// 🚀 FLEET MODULE (v.10.0.1)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.10.0.0)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.10.0.1)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -392,7 +392,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   );
 
   // ============================================================================
-  // 📝 CREATE VIEW — Intelligence Form v.10.0.0
+  // 📝 CREATE VIEW — Intelligence Form v.10.0.1
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-40">
@@ -518,8 +518,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
               />
             </ArchonField>
 
-            {/* Imágenes del Vehículo (Drag & Drop) */}
-            <ArchonField label="Imágenes del Vehículo" icon={Camera}>
+            {/* Imágenes de la Unidad (Drag & Drop) */}
+            <ArchonField label="Imágenes de la Unidad" icon={Camera}>
               <ArchonImageUploader
                 images={formData.images}
                 onChange={(imgs: string[]): void => setFormData({ ...formData, images: imgs })}
@@ -784,7 +784,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               {currentView === 'GRID'
                 ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
-                : 'Protocolo de Incorporación de Activo v.10.0.0'}
+                : 'Protocolo de Incorporación de Activo v.10.0.1'}
             </p>
           </div>
 
@@ -885,7 +885,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.10.0.0) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.10.0.1) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -896,7 +896,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.10.0.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.10.0.1</p>
       </footer>
     </main>
   );
