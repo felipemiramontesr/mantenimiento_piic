@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Save,
   ShieldCheck,
+  Wrench,
   Zap,
   Gauge,
   Tag,
@@ -15,7 +16,6 @@ import {
   LogOut,
   FileText,
   MapPin,
-  Wrench,
   Calendar,
   PlusCircle,
   Activity,
@@ -268,7 +268,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </div>
 
-      {/* Card 2: Mantenimiento Preventivo (AMARILLO) */}
+      {/* Card 2: Mantenimiento Correctivo (AMARILLO) */}
       <div
         className={`glass-card-pro archon-instrument-tile card-hover-yellow`}
         style={{
@@ -285,9 +285,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
             width: '100%',
           }}
         >
-          <ShieldCheck size={20} style={{ color: '#f2b705' }} />
+          <Wrench size={20} style={{ color: '#f2b705' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">
-            Mantenimiento Preventivo
+            Mantenimiento Correctivo
           </span>
         </div>
 
@@ -311,17 +311,17 @@ const FleetModule: React.FC = (): React.ReactElement => {
               className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
               style={{ fontSize: '14px' }}
             >
-              Control de funcionamiento
+              Agregar Mantenimiento Correctivo
             </h3>
             <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-              Protocolos Activos
+              Reparación y Ajustes
             </p>
           </div>
         </div>
 
         <div className="archon-tile-action">
           <button className="btn-sentinel-yellow">
-            Ver Programación <ArrowRight size={10} className="text-[#0f2a44] ml-2" />
+            Iniciar Mantenimiento <ArrowRight size={10} className="text-[#0f2a44] ml-2" />
           </button>
         </div>
       </div>
@@ -891,7 +891,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.7.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.0</p>
       </footer>
     </main>
   );

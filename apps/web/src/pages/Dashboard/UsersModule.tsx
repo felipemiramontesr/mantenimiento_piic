@@ -184,7 +184,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
                 className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
                 style={{ fontSize: '14px' }}
               >
-                Agregar Usuario
+                Agregar Personal
               </h3>
               <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
                 Acceso al Sistema
@@ -208,7 +208,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.7.0</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.0</p>
     </footer>
   </main>
 );
