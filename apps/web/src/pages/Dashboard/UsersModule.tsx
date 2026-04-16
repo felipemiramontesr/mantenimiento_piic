@@ -1,12 +1,12 @@
 import React from 'react';
-import { Users, User, ArrowRight, Search, Database, Activity } from 'lucide-react';
+import { Users, User, UserPlus, ArrowRight } from 'lucide-react';
 
 // ============================================================================
-// 🚀 USERS MODULE (v.12.0.0)
+// 🚀 USERS MODULE (v.12.1.0)
 // ============================================================================
 const UsersModule: React.FC = (): React.ReactElement => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
-    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.12.0.0 */}
+    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.12.1.0 */}
     <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
       <div
         style={{
@@ -83,7 +83,65 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis) */}
     <section className="archon-workspace-chassis">
       <div className="archon-grid-3 h-full">
-        {/* Card 1: Logística Humana (RELOCALIZADO) */}
+        {/* Card 1: Agregar Usuario (NUEVO) */}
+        <div
+          className={`glass-card-pro archon-instrument-tile card-hover-blue`}
+          style={{
+            borderTop: '4px solid #2563eb',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              marginBottom: '16px',
+              width: '100%',
+            }}
+          >
+            <UserPlus size={20} style={{ color: '#2563eb' }} />
+            <span className="text-instrument-header text-[#0f2a44] opacity-80">
+              Incorporación de Personal
+            </span>
+          </div>
+
+          <div className="archon-tile-payload space-y-8 pb-16">
+            <div
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid rgba(37, 99, 235, 0.4)',
+              }}
+            >
+              <User size={40} style={{ color: '#2563eb' }} />
+            </div>
+            <div className="flex flex-col items-center space-y-1 mb-12">
+              <h3
+                className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
+                style={{ fontSize: '14px' }}
+              >
+                Agregar Usuario
+              </h3>
+              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+                Acceso al Sistema
+              </p>
+            </div>
+          </div>
+
+          <div className="archon-tile-action">
+            <button className="btn-sentinel-blue">
+              Iniciar Registro <ArrowRight size={10} className="text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: Logística Humana (RELOCALIZADO) */}
         <div
           className={`glass-card-pro archon-instrument-tile card-hover-emerald`}
           style={{
@@ -141,76 +199,15 @@ const UsersModule: React.FC = (): React.ReactElement => (
           </div>
         </div>
 
-        {/* Card 2: Slot de Expansión (Placeholder) */}
-        <div
-          className={`glass-card-pro archon-instrument-tile opacity-40`}
-          style={{
-            borderTop: '4px solid rgba(15, 42, 68, 0.1)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '16px',
-              width: '100%',
-            }}
-          >
-            <Search size={20} className="text-[#0f2a44] opacity-20" />
-            <span className="text-instrument-header text-[#0f2a44] opacity-40">Próximamente</span>
-          </div>
-
-          <div className="archon-tile-payload flex items-center justify-center h-40">
-            <Database size={40} className="text-[#0f2a44] opacity-10" />
-          </div>
-
-          <div className="archon-tile-action">
-            <button disabled className="btn-sentinel-disabled">
-              Bloqueado <ArrowRight size={10} />
-            </button>
-          </div>
-        </div>
-
-        {/* Card 3: Slot de Expansión (Placeholder) */}
-        <div
-          className={`glass-card-pro archon-instrument-tile opacity-40`}
-          style={{
-            borderTop: '4px solid rgba(15, 42, 68, 0.1)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '16px',
-              width: '100%',
-            }}
-          >
-            <Activity size={20} className="text-[#0f2a44] opacity-20" />
-            <span className="text-instrument-header text-[#0f2a44] opacity-40">Próximamente</span>
-          </div>
-
-          <div className="archon-tile-payload flex items-center justify-center h-40">
-            <Database size={40} className="text-[#0f2a44] opacity-10" />
-          </div>
-
-          <div className="archon-tile-action">
-            <button disabled className="btn-sentinel-disabled">
-              Bloqueado <ArrowRight size={10} />
-            </button>
-          </div>
-        </div>
+        {/* Slots de espaciado Zen */}
+        <div aria-hidden="true" />
       </div>
     </section>
 
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.0.0</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.1.0</p>
     </footer>
   </main>
 );

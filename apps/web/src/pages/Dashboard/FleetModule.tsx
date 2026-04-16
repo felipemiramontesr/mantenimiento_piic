@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Truck,
   Plus,
-  Search,
   ArrowRight,
   User,
   ArrowLeft,
@@ -19,7 +18,6 @@ import {
   Wrench,
   Calendar,
   PlusCircle,
-  Database,
   Activity,
   Camera,
 } from 'lucide-react';
@@ -326,43 +324,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </button>
         </div>
       </div>
-
-      {/* Card 3: Slot de Expansión */}
-      <div
-        className={`glass-card-pro archon-instrument-tile opacity-40`}
-        style={{
-          borderTop: '4px solid rgba(15, 42, 68, 0.1)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            marginBottom: '16px',
-            width: '100%',
-          }}
-        >
-          <Search size={20} className="text-[#0f2a44] opacity-20" />
-          <span className="text-instrument-header text-[#0f2a44] opacity-40">Próximamente</span>
-        </div>
-
-        <div className="archon-tile-payload flex items-center justify-center h-40">
-          <Database size={40} className="text-[#0f2a44] opacity-10" />
-        </div>
-
-        <div className="archon-tile-action">
-          <button disabled className="btn-sentinel-disabled">
-            Bloqueado <ArrowRight size={10} />
-          </button>
-        </div>
-      </div>
-
-      {/* ── ROW 2: Transparent placeholders (3×2 grid structure) ── */}
-      <div aria-hidden="true" />
-      <div aria-hidden="true" />
-      <div aria-hidden="true" />
     </div>
   );
 
