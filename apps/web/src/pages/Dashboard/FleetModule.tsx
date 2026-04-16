@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Truck,
@@ -23,8 +23,8 @@ import {
   Camera,
 } from 'lucide-react';
 import api from '../../api/client';
+import { useFleet } from '../../context/FleetContext';
 import {
-  FleetUnit,
   AssetType,
   CentroMantenimiento,
   FuelType,
@@ -103,18 +103,10 @@ const getInitialForm = (): {
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
+  const { refreshUnits } = useFleet();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
   // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC
-  const [_units, setUnits] = useState<FleetUnit[]>(() => {
-    try {
-      const cached = localStorage.getItem('archon_fleet_cache');
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
-  });
-
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState(getInitialForm());
 
@@ -125,24 +117,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
     localStorage.removeItem('archon_token');
     navigate('/login');
   };
-
-  const fetchUnits = async (): Promise<void> => {
-    try {
-      const response = await api.get('/fleet');
-      if (response.data.success) {
-        const freshData = response.data.data;
-        setUnits(freshData);
-        // ⚡ FORCED CACHE: Synchronize with central dashboard stats
-        localStorage.setItem('archon_fleet_cache', JSON.stringify(freshData));
-      }
-    } catch {
-      // Noise reduction for CI
-    }
-  };
-
-  useEffect((): void => {
-    fetchUnits();
-  }, []);
 
   // Derived catalogs based on asset type (Mapping for zero-noise architecture)
   const assetCatalogs: Record<AssetType, Record<string, string[]>> = {
@@ -180,9 +154,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
       };
       const response = await api.post('/fleet', payload);
       if (response.data.success) {
-        setFormData(getInitialForm());
-        fetchUnits();
+        // 🛡️ REFRESH GLOBAL TACTICAL STATE
+        await refreshUnits();
+
         setCurrentView('GRID');
+        setFormData(getInitialForm());
+        alert('Vehículo registrado con éxito');
       }
     } catch {
       // Noise reduced for CI compliance
@@ -891,7 +868,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.3</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.9.0</p>
       </footer>
     </main>
   );

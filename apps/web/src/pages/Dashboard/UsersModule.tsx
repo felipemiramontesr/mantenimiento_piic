@@ -2,11 +2,11 @@ import React from 'react';
 import { Users, User, UserPlus, ArrowRight } from 'lucide-react';
 
 // ============================================================================
-// 🚀 USERS MODULE (v.12.1.2)
+// 🚀 USERS MODULE (v.15.9.0)
 // ============================================================================
 const UsersModule: React.FC = (): React.ReactElement => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
-    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.12.1.0 */}
+    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.15.9.0 */}
     <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
       <div
         style={{
@@ -208,7 +208,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.3</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.9.0</p>
     </footer>
   </main>
 );

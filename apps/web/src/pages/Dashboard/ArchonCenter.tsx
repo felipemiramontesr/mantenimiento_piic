@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, NavigateFunction } from 'react-router-dom';
 import {
   ArrowRight,
@@ -13,22 +13,12 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react';
-import api from '../../api/client';
-import { FleetUnit } from '../../types/fleet';
+import { useFleet } from '../../context/FleetContext';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const navigate: NavigateFunction = useNavigate();
+  const { stats, loading } = useFleet();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  const [units, setUnits] = useState<FleetUnit[]>(() => {
-    try {
-      const cached = localStorage.getItem('archon_fleet_cache');
-      // ⚡ AGGRESSIVE HYDRATION: Return cached data immediately
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [loading, setLoading] = useState<boolean>(true);
 
   const toggleMenu = (): void => {
     setIsMenuOpen(!isMenuOpen);
@@ -42,42 +32,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     navigate('/login');
-  };
-
-  /**
-   * High-Performance Hydration Engine
-   * Fetches fresh tactical data and persists it for instant future loads.
-   */
-  const fetchStats = async (): Promise<void> => {
-    try {
-      // If we have cached units, we don't 'flash' the loading state
-      const hasCache = units.length > 0;
-      if (!hasCache) setLoading(true);
-
-      const response = await api.get('/fleet');
-      if (response.data.success) {
-        const freshData = response.data.data;
-        setUnits(freshData);
-        // 🛡️ SYMMETRY ENFORCEMENT: Update central cache
-        localStorage.setItem('archon_fleet_cache', JSON.stringify(freshData));
-      }
-    } catch (error) {
-      // Noise reduction for Sovereign operations
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect((): void => {
-    fetchStats();
-  }, []);
-
-  const stats = {
-    total: units.length,
-    available: units.filter((u: FleetUnit): boolean => u.status === 'Disponible').length,
-    inRoute: units.filter((u: FleetUnit): boolean => u.status === 'En Ruta').length,
-    maintenance: units.filter((u: FleetUnit): boolean => u.status === 'En Mantenimiento').length,
-    discontinued: units.filter((u: FleetUnit): boolean => u.status === 'Descontinuada').length,
   };
 
   /**
@@ -293,7 +247,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         >
           {renderKPI(
             'Índice de Mantenimiento',
-            0,
+            stats.maintenanceIndex,
             Gauge,
             '#0f2a44',
             'Salud global de activos',
@@ -344,7 +298,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.3</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.9.0</p>
       </footer>
     </main>
   );
