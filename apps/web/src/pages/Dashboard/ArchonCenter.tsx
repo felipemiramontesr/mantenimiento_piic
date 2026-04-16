@@ -133,7 +133,13 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <div className="archon-tile-action">
         <button
-          onClick={(): void => navigate('/dashboard/fleet')}
+          onClick={(): void => {
+            if (label === 'Gestión de Personal') {
+              navigate('/dashboard/users');
+            } else {
+              navigate('/dashboard/fleet');
+            }
+          }}
           className={`btn-sentinel-${mode}`}
         >
           VER DETALLES <ArrowRight size={10} className="ml-2" />
@@ -334,74 +340,13 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Aparatos inactivos o mermas',
             'red'
           )}
-
-          {/* 🚀 INSTRUMENTO OPERATIVO: Directorio Operadores (RELOCALIZADO) */}
-          <div
-            className={`glass-card-pro archon-instrument-tile card-hover-sky`}
-            style={{
-              borderTop: '4px solid #0ea5e9',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                marginBottom: '16px',
-                width: '100%',
-              }}
-            >
-              <User size={20} style={{ color: '#0ea5e9' }} />
-              <span className="text-instrument-header text-[#0f2a44] opacity-80">
-                Gestión de Personal
-              </span>
-            </div>
-
-            <div className="archon-tile-payload space-y-8 pb-16">
-              <div
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid rgba(14, 165, 233, 0.4)',
-                  margin: '0 auto',
-                }}
-              >
-                <Users size={40} style={{ color: '#0ea5e9' }} />
-              </div>
-              <div className="flex flex-col items-center space-y-1 mb-12">
-                <h3
-                  className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-                  style={{ fontSize: '14px' }}
-                >
-                  Directorio Operadores
-                </h3>
-                <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                  Control de Capital Humano
-                </p>
-              </div>
-            </div>
-
-            <div className="archon-tile-action">
-              <button
-                onClick={(): void => navigate('/dashboard/users')}
-                className="btn-sentinel-sky w-full"
-              >
-                Ver Directorio <ArrowRight size={10} className="ml-2 text-white" />
-              </button>
-            </div>
-          </div>
+          {renderKPI('Gestión de Personal', 0, Users, '#0ea5e9', 'Directorio de Operadores', 'sky')}
         </div>
       </section>
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.14.0.1</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.14.0.2</p>
       </footer>
     </main>
   );
