@@ -211,9 +211,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
     <div className="archon-grid-3 h-full">
       {/* Card 1: Registrar Nueva Unidad */}
       <div
-        className={`glass-card-pro archon-instrument-tile card-hover-yellow`}
+        className={`glass-card-pro archon-instrument-tile card-hover-sky`}
         style={{
-          borderTop: '4px solid #f2b705',
+          borderTop: '4px solid #0ea5e9',
         }}
       >
         <div
@@ -226,7 +226,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             width: '100%',
           }}
         >
-          <Plus size={20} style={{ color: '#f2b705' }} />
+          <Plus size={20} style={{ color: '#0ea5e9' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">
             Incorporación de Activos
           </span>
@@ -238,14 +238,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(242, 183, 5, 0.1)',
+              backgroundColor: 'rgba(14, 165, 233, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px solid rgba(242, 183, 5, 0.4)',
+              border: '2px solid rgba(14, 165, 233, 0.4)',
             }}
           >
-            <PlusCircle size={40} style={{ color: '#f2b705' }} />
+            <PlusCircle size={40} style={{ color: '#0ea5e9' }} />
           </div>
           <div className="flex flex-col items-center space-y-1 mb-12">
             <h3
@@ -255,14 +255,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
               Registrar Unidad
             </h3>
             <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-              Vehículos y Maquinaria
+              Vehículos, Maquinaria y Herramientas
             </p>
           </div>
         </div>
 
         <div className="archon-tile-action">
-          <button onClick={(): void => setCurrentView('CREATE')} className="btn-sentinel-yellow">
-            Iniciar Registro <ArrowRight size={10} className="text-[#0f2a44]" />
+          <button onClick={(): void => setCurrentView('CREATE')} className="btn-sentinel-sky">
+            Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
           </button>
         </div>
       </div>
@@ -832,7 +832,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.0.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.1.3</p>
       </footer>
     </main>
   );
