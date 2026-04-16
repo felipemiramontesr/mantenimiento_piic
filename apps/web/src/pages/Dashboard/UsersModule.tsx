@@ -141,66 +141,8 @@ const UsersModule: React.FC = (): React.ReactElement => (
           </div>
         </div>
 
-        {/* Card 2: Gestión de Operadores (AZUL) */}
-        <div
-          className={`glass-card-pro archon-instrument-tile card-hover-sky`}
-          style={{
-            borderTop: '4px solid #0ea5e9',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '16px',
-              width: '100%',
-            }}
-          >
-            <User size={20} style={{ color: '#0ea5e9' }} />
-            <span className="text-instrument-header text-[#0f2a44] opacity-80">
-              Gestión de Personal
-            </span>
-          </div>
-
-          <div className="archon-tile-payload space-y-8 pb-16">
-            <div
-              style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px solid rgba(14, 165, 233, 0.4)',
-              }}
-            >
-              <Users size={40} style={{ color: '#0ea5e9' }} />
-            </div>
-            <div className="flex flex-col items-center space-y-1 mb-12">
-              <h3
-                className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-                style={{ fontSize: '14px' }}
-              >
-                Directorio Operadores
-              </h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                Directorio de Control
-              </p>
-            </div>
-          </div>
-
-          <div className="archon-tile-action">
-            <button className="btn-sentinel-sky">
-              Ver Directorio <ArrowRight size={10} className="ml-2 text-white" />
-            </button>
-          </div>
-        </div>
-
         {/* Slots de espaciado Zen */}
+        <div aria-hidden="true" />
         <div aria-hidden="true" />
       </div>
     </section>
@@ -208,7 +150,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.13.0.2</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.14.0.1</p>
     </footer>
   </main>
 );
