@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, User, UserPlus, ArrowRight } from 'lucide-react';
 
 // ============================================================================
-// 🚀 USERS MODULE (v.12.1.0)
+// 🚀 USERS MODULE (v.12.1.2)
 // ============================================================================
 const UsersModule: React.FC = (): React.ReactElement => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -85,9 +85,9 @@ const UsersModule: React.FC = (): React.ReactElement => (
       <div className="archon-grid-3 h-full">
         {/* Card 1: Agregar Usuario (NUEVO) */}
         <div
-          className={`glass-card-pro archon-instrument-tile card-hover-blue`}
+          className={`glass-card-pro archon-instrument-tile card-hover-sky`}
           style={{
-            borderTop: '4px solid #2563eb',
+            borderTop: '4px solid #0ea5e9',
           }}
         >
           <div
@@ -100,7 +100,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
               width: '100%',
             }}
           >
-            <UserPlus size={20} style={{ color: '#2563eb' }} />
+            <UserPlus size={20} style={{ color: '#0ea5e9' }} />
             <span className="text-instrument-header text-[#0f2a44] opacity-80">
               Incorporación de Personal
             </span>
@@ -112,14 +112,14 @@ const UsersModule: React.FC = (): React.ReactElement => (
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                backgroundColor: 'rgba(14, 165, 233, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid rgba(37, 99, 235, 0.4)',
+                border: '2px solid rgba(14, 165, 233, 0.4)',
               }}
             >
-              <User size={40} style={{ color: '#2563eb' }} />
+              <User size={40} style={{ color: '#0ea5e9' }} />
             </div>
             <div className="flex flex-col items-center space-y-1 mb-12">
               <h3
@@ -135,8 +135,8 @@ const UsersModule: React.FC = (): React.ReactElement => (
           </div>
 
           <div className="archon-tile-action">
-            <button className="btn-sentinel-blue">
-              Iniciar Registro <ArrowRight size={10} className="text-white" />
+            <button className="btn-sentinel-sky">
+              Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
             </button>
           </div>
         </div>
@@ -207,7 +207,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.1.0</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.1.2</p>
     </footer>
   </main>
 );
