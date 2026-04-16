@@ -156,12 +156,10 @@ const UsersModule: React.FC = (): React.ReactElement => (
               gap: '12px',
               marginBottom: '16px',
               width: '100%',
+              minHeight: '20px', // Maintain vertical alignment symmetry
             }}
           >
             <User size={20} style={{ color: '#0ea5e9' }} />
-            <span className="text-instrument-header text-[#0f2a44] opacity-80">
-              Logística Humana
-            </span>
           </div>
 
           <div className="archon-tile-payload space-y-8 pb-16">
@@ -207,7 +205,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.13.0.0</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.13.0.1</p>
     </footer>
   </main>
 );
