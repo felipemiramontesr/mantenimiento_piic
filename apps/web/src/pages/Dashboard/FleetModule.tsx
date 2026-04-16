@@ -326,7 +326,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </div>
 
-      {/* Card 3: Generar Nueva Ruta (AZUL) */}
+      {/* Card 3: Asignar Unidad (AZUL) */}
       <div
         className={`glass-card-pro archon-instrument-tile card-hover-sky`}
         style={{
@@ -369,7 +369,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
               style={{ fontSize: '14px' }}
             >
-              Generar Nueva Ruta
+              Asignar Unidad
             </h3>
             <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
               Despliegue de Unidad
@@ -379,7 +379,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
         <div className="archon-tile-action">
           <button className="btn-sentinel-sky">
-            Iniciar Ruta <ArrowRight size={10} className="text-white ml-2" />
+            Iniciar Asignación <ArrowRight size={10} className="text-white ml-2" />
           </button>
         </div>
       </div>
