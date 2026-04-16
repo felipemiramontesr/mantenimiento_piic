@@ -31,7 +31,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
 
     expect(screen.getByText('Archon')).toBeDefined();
     expect(screen.getByText('Centro de Comando')).toBeDefined();
-    expect(screen.getByText(/Eje de Control de Flota/i)).toBeDefined();
+    expect(screen.getByText(/Eje de Control de unidades/i)).toBeDefined();
   });
 
   it('toggles the user menu when clicking the avatar', () => {
