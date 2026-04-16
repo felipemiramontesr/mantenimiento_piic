@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldAlert } from 'lucide-react';
+import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
 
 const LogsModule: React.FC = (): React.ReactElement => (
   <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -103,7 +104,9 @@ const LogsModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) - FORMATO ORACIÓN v.7.0.0.3 */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.16.2.0</p>
+      <p className="text-[#0f2a44]">
+        {BRANDING_NAME} {SYSTEM_VERSION}
+      </p>
     </footer>
   </main>
 );

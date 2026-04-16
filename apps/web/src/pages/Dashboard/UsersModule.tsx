@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, User, UserPlus, ArrowRight } from 'lucide-react';
+import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
 
 // ============================================================================
 // 🚀 USERS MODULE (v.15.9.0)
@@ -208,7 +209,9 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.16.2.0</p>
+      <p className="text-[#0f2a44]">
+        {BRANDING_NAME} {SYSTEM_VERSION}
+      </p>
     </footer>
   </main>
 );
