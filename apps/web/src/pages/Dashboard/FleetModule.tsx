@@ -46,6 +46,8 @@ import {
   DEPARTAMENTOS,
   USO_OPTIONS,
   TIPO_TERRENO_OPTIONS,
+  SEDES,
+  MARCAS_NEUMATICOS,
 } from '../../constants/fleetConstants';
 
 type FleetView = 'GRID' | 'CREATE';
@@ -484,7 +486,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               <input
                 required
                 type="text"
-                placeholder="Ej. PIIC-001"
+                placeholder="Ej. ASM-001"
                 className="archon-input"
                 value={formData.tag}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
@@ -618,6 +620,37 @@ const FleetModule: React.FC = (): React.ReactElement => {
               </select>
             </ArchonField>
 
+            {/* Marca de Neumáticos */}
+            <ArchonField label="Marca de Neumáticos" icon={Settings}>
+              <select
+                className="archon-select"
+                value={formData.tireBrand}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
+                  setFormData({ ...formData, tireBrand: e.target.value })
+                }
+              >
+                <option value="">— Seleccionar marca —</option>
+                {MARCAS_NEUMATICOS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </ArchonField>
+
+            {/* Medida de Neumático (tire_spec) */}
+            <ArchonField label="Medida de Neumático" icon={Truck}>
+              <input
+                type="text"
+                placeholder="Ej. 265/70R17 o 12.00R24"
+                className="archon-input"
+                value={formData.tireSpec}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, tireSpec: e.target.value })
+                }
+              />
+            </ArchonField>
+
             {/* Odómetro / Horómetro */}
             <ArchonField
               label={formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
@@ -735,15 +768,19 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Sede */}
             <ArchonField label="Sede" icon={MapPin}>
-              <input
-                type="text"
-                placeholder="Base de operaciones"
-                className="archon-input"
+              <select
+                className="archon-select"
                 value={formData.sede}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
                   setFormData({ ...formData, sede: e.target.value })
                 }
-              />
+              >
+                {SEDES.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </ArchonField>
 
             {/* Mantenimiento Técnico */}
