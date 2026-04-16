@@ -383,6 +383,64 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </button>
         </div>
       </div>
+
+      {/* Card 4: Asignar Herramienta (AZUL) */}
+      <div
+        className={`glass-card-pro archon-instrument-tile card-hover-sky`}
+        style={{
+          borderTop: '4px solid #0ea5e9',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
+          <Wrench size={20} style={{ color: '#0ea5e9' }} />
+          <span className="text-instrument-header text-[#0f2a44] opacity-80">
+            Control de Activos
+          </span>
+        </div>
+
+        <div className="archon-tile-payload space-y-8 pb-16">
+          <div
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(14, 165, 233, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid rgba(14, 165, 233, 0.4)',
+            }}
+          >
+            <PlusCircle size={40} style={{ color: '#0ea5e9' }} />
+          </div>
+          <div className="flex flex-col items-center space-y-1 mb-12">
+            <h3
+              className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
+              style={{ fontSize: '14px' }}
+            >
+              Asignar Herramienta
+            </h3>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+              Dotación de Personal
+            </p>
+          </div>
+        </div>
+
+        <div className="archon-tile-action">
+          <button className="btn-sentinel-sky">
+            Asignar Equipo <ArrowRight size={10} className="text-white ml-2" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 
@@ -891,7 +949,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.14.0.1</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.0.0</p>
       </footer>
     </main>
   );
