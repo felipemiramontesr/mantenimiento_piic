@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Truck, 
-  ShieldAlert, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Truck,
+  ShieldAlert,
+  Settings,
   Users,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ArchonLogo from '../Logo/ArchonLogo';
@@ -41,28 +41,27 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
         gap: isCollapsed ? '0' : '16px',
         transition: 'all 0.2s ease',
         borderLeft: active ? '3px solid #f2b705' : '3px solid transparent',
-        backgroundColor: active ? 'rgba(242, 183, 5, 0.05)' : 'transparent'
+        backgroundColor: active ? 'rgba(242, 183, 5, 0.05)' : 'transparent',
       }}
       className="nav-item-pro cursor-pointer group"
       title={isCollapsed ? label : ''}
     >
-      <div style={{ color: active ? '#f2b705' : 'rgba(255,255,255,0.4)' }}>
-        {icon}
-      </div>
+      <div style={{ color: active ? '#f2b705' : 'rgba(255,255,255,0.4)' }}>{icon}</div>
       {!isCollapsed && (
-        <span style={{ 
-          fontSize: '13px', 
-          fontWeight: 500, 
-          color: active ? '#ffffff' : 'rgba(255,255,255,0.7)',
-          letterSpacing: '-0.01em'
-        }}>
+        <span
+          style={{
+            fontSize: '13px',
+            fontWeight: 500,
+            color: active ? '#ffffff' : 'rgba(255,255,255,0.7)',
+            letterSpacing: '-0.01em',
+          }}
+        >
           {label}
         </span>
       )}
     </div>
   );
 };
-
 
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
@@ -72,21 +71,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   };
 
   return (
-    <aside 
-      style={{ 
-        backgroundColor: '#0f2a44', 
-        width: '100%', 
-        height: '100%', 
-        display: 'flex', 
-        flexDirection: 'column', 
+    <aside
+      style={{
+        backgroundColor: '#0f2a44',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         position: 'relative',
-        boxShadow: '4px 0 20px rgba(0,0,0,0.2)'
+        boxShadow: '4px 0 20px rgba(0,0,0,0.2)',
       }}
       className="sidebar-solid-pro shrink-0 transition-all duration-300 ease-in-out"
     >
       <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5" />
 
-      <button 
+      <button
         onClick={onToggle}
         style={{
           position: 'absolute',
@@ -104,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           border: 'none',
           boxShadow: '4px 0 10px rgba(0,0,0,0.3)',
           zIndex: 100,
-          cursor: 'pointer'
+          cursor: 'pointer',
         }}
         className="hover:translate-x-1 transition-transform"
       >
@@ -112,65 +111,70 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       </button>
 
       {/* Header (10%) */}
-      <div style={{
-        height: '10%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        padding: isCollapsed ? '0' : '0 24px'
-      }}>
+      <div
+        style={{
+          height: '10%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          padding: isCollapsed ? '0' : '0 24px',
+        }}
+      >
         <ArchonLogo isCollapsed={isCollapsed} size={isCollapsed ? 28 : 32} />
       </div>
 
       {/* Body (80%) */}
-      <div style={{
-        height: '80%',
-        padding: '24px 12px',
-        overflowY: 'auto'
-      }}>
+      <div
+        style={{
+          height: '80%',
+          padding: '24px 12px',
+          overflowY: 'auto',
+        }}
+      >
         <nav style={{ display: 'flex', flexDirection: 'column' }}>
-          <NavItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Centro de Comando" 
-            path="/dashboard" 
+          <NavItem
+            icon={<LayoutDashboard size={20} />}
+            label="Centro de Comando"
+            path="/dashboard"
             active={location.pathname === '/dashboard'}
             isCollapsed={isCollapsed}
           />
-          <NavItem 
-            icon={<Truck size={20} />} 
-            label="Administrar Flota" 
-            path="/dashboard/fleet" 
+          <NavItem
+            icon={<Truck size={20} />}
+            label="Administrar Unidades"
+            path="/dashboard/fleet"
             active={location.pathname === '/dashboard/fleet'}
             isCollapsed={isCollapsed}
           />
-          <NavItem 
-            icon={<Users size={20} />} 
-            label="Administrar Usuarios" 
-            path="/dashboard/users" 
+          <NavItem
+            icon={<Users size={20} />}
+            label="Administrar Usuarios"
+            path="/dashboard/users"
             active={location.pathname === '/dashboard/users'}
             isCollapsed={isCollapsed}
           />
-          <NavItem 
-            icon={<ShieldAlert size={20} />} 
-            label="Logs de Seguridad" 
-            path="/dashboard/logs" 
+          <NavItem
+            icon={<ShieldAlert size={20} />}
+            label="Logs de Seguridad"
+            path="/dashboard/logs"
             active={location.pathname === '/dashboard/logs'}
             isCollapsed={isCollapsed}
           />
-
         </nav>
       </div>
 
       {/* Footer (10%) */}
-      <div style={{
-        height: '10%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 24px',
-        borderTop: '1px solid rgba(255,255,255,0.05)'
-      }}>
+      <div
+        style={{
+          height: '10%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 24px',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
         <button
           onClick={goToSettings}
           style={{
@@ -189,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             gap: '8px',
             border: 'none',
             cursor: 'pointer',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
           }}
           title="Configuración de Sistema"
         >
@@ -200,6 +204,5 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     </aside>
   );
 };
-
 
 export default Sidebar;
