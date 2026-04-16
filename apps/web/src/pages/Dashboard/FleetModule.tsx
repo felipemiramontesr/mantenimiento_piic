@@ -819,8 +819,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
               </select>
             </ArchonField>
 
-            {/* Inicio de Protocolo de Mantenimiento */}
-            <ArchonField label="Inicio de Protocolo" icon={Calendar}>
+            {/* Inicio de Protocolo de Mantenimientos */}
+            <ArchonField label="Inicio de Protocolo de Mantenimientos" icon={Calendar}>
               <ArchonDatePicker
                 value={formData.protocolStartDate}
                 onChange={(v: string): void => setFormData({ ...formData, protocolStartDate: v })}
