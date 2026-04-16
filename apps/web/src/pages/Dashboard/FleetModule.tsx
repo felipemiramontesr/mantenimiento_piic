@@ -773,7 +773,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 className="text-[#0f2a44] tracking-tighter font-black text-2xl"
                 style={{ margin: 0, padding: 0, lineHeight: 1 }}
               >
-                {currentView === 'GRID' ? 'Administrar Flota' : 'Registro de Unidad'}
+                {currentView === 'GRID' ? 'Administrar Unidades' : 'Registro de Unidad'}
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
