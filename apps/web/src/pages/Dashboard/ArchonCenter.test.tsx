@@ -17,7 +17,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (useNavigate as unknown as ReturnType<typeof vi.fn>).mockReturnValue(navigateMock);
-    
+
     // Mock LocalStorage
     Storage.prototype.removeItem = vi.fn();
   });
@@ -42,7 +42,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     );
 
     const avatarBtn = screen.getByLabelText('User Menu');
-    
+
     // Menu should be hidden initially
     expect(screen.queryByText('Perfil')).toBeNull();
 
@@ -65,7 +65,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
 
     // Open menu
     fireEvent.click(screen.getByLabelText('User Menu'));
-    
+
     // Click Logout
     const logoutBtn = screen.getByText(/Cerrar Sesión/i);
     fireEvent.click(logoutBtn);
@@ -88,9 +88,10 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(screen.getByText(/Flotilla en ruta/i)).toBeDefined();
     expect(screen.getByText(/Flotilla en mantenimiento/i)).toBeDefined();
     expect(screen.getByText(/Flotilla descontinuada/i)).toBeDefined();
-    
-    // Verify "Táctica" is NOT present in buttons
+    expect(screen.getByText(/Gestión de Personal/i)).toBeDefined();
+
+    // Verify visibility of action buttons
     const detailButtons = screen.getAllByText(/Ver detalles/i);
-    expect(detailButtons.length).toBe(6);
+    expect(detailButtons.length).toBe(7);
   });
 });
