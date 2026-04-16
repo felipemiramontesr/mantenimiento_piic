@@ -1,4 +1,5 @@
 # ARCHON SYSTEM
+
 ## Blueprint & System Architecture
 
 This manifesto serves as the architectural foundation for the **Pinnacle Identity Standard (PIIC)** applied to the Archon Control Systems. Every core decision follows a rigorous, zero-noise, and Silicon Valley-grade methodology.
@@ -76,3 +77,43 @@ sequenceDiagram
 
 - **Husky & Lint-Staged:** Blocks commits lacking correct style compliance (Prettier).
 - **Vitest Thresholds:** Enforces `lines: 100`, `branches: 100`, `functions: 100`, `statements: 100` on Core Services and UI Logic. If a developer attempts a regression or unchecked fallback, the PR is automatically flagged and blocked.
+
+---
+
+### V. Fleet Asset Lifecycle Orchestration (v.9.0.0)
+
+The following diagram illustrates the flow from asset incorporation to temporal maintenance baseline registry.
+
+```mermaid
+sequenceDiagram
+    participant U as UI (FleetModule)
+    participant C as Constants (Centralized)
+    participant A as API (Fastify)
+    participant M as Mapper (toSnakeCase)
+    participant D as Database (MySQL)
+
+    U->>C: Pull Catalog (Brands/Models)
+    U->>U: Collect Form Data (camelCase)
+    U->>A: POST /v1/fleet (JSON Payload)
+    A->>A: Zod Validation (Schema v.9.0.0)
+    A->>M: toSnakeCase(payload)
+    M-->>A: DB-Ready Object
+    A->>D: INSERT INTO fleet_units
+    D-->>A: Success (FLXXX)
+    A-->>U: HTTP 201 Created
+```
+
+### VI. Data Entity Relationships
+
+```mermaid
+erDiagram
+    fleet_units ||--o{ technical_logs : maintains
+    fleet_units {
+        string id PK "FLXXX"
+        string uuid
+        string tag "Económico"
+        enum asset_type
+        date protocol_start_date "Temporal Anchor"
+        enum maintenance_frequency "Schedule Logic"
+    }
+```

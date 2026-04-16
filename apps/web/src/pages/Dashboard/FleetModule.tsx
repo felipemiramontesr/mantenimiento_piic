@@ -34,46 +34,16 @@ import {
   MaintenanceFrequency,
 } from '../../types/fleet';
 import ArchonDatePicker from '../../components/ArchonDatePicker';
-
-// ============================================================================
-// 📦 SOVEREIGN ASSET CATALOGS (v.8.1.1)
-// ============================================================================
-const MARCAS_VEHICULO: Record<string, string[]> = {
-  Toyota: ['Hilux', 'Land Cruiser', 'Fortuner', 'RAV4', 'Hiace', 'Tacoma'],
-  Ford: ['Ranger', 'F-150', 'F-250', 'Transit', 'Bronco', 'Explorer'],
-  Chevrolet: ['Silverado', 'Colorado', 'Tahoe', 'Suburban', 'Express', 'Traverse'],
-  Nissan: ['NP300 Frontier', 'Navara', 'Titan', 'Patrol', 'Urvan'],
-  RAM: ['1500', '2500', '3500', 'ProMaster'],
-  Volkswagen: ['Amarok', 'Crafter', 'Transporter'],
-  Dodge: ['Ram 1500', 'Ram 2500', 'Durango'],
-  Mitsubishi: ['L200', 'Montero Sport', 'Outlander'],
-  Isuzu: ['D-Max', 'N-Series', 'F-Series'],
-  'Mercedes-Benz': ['Sprinter', 'Vito', 'Actros'],
-};
-
-const MARCAS_MAQUINARIA: Record<string, string[]> = {
-  Caterpillar: ['320', '330', '340', 'D6T', 'D8T', '950', '966', '140M', '16M', '426', '432'],
-  Komatsu: ['PC200', 'PC300', 'PC400', 'D65', 'D85', 'WA380', 'WA470', 'GD655'],
-  'John Deere': ['310L', '410L', '710L', '644K', '824K', '772G', '672G'],
-  'Volvo CE': ['EC210', 'EC300', 'EC480', 'L90', 'L110', 'G930', 'G946'],
-  JCB: ['3CX', '4CX', '531-70', 'JS220', 'JS360', '430ZX'],
-  Case: ['580N', '695ST', '621G', '721G', '821G', '921G'],
-  Hitachi: ['ZX200', 'ZX300', 'ZX490', 'EX1200', 'EH3500'],
-  Manitou: ['MLT735', 'MLT840', 'MT1440', 'MRT2150'],
-  Liebherr: ['L550', 'L566', 'LTM1050', 'LTM1220'],
-  Manitowoc: ['Grove RT760E', 'Grove GMK4100L'],
-};
-
-const MARCAS_HERRAMIENTA: Record<string, string[]> = {
-  Milwaukee: ['M18 FUEL', 'M12 FUEL', 'MX FUEL'],
-  DeWalt: ['20V MAX', '60V MAX FLEXVOLT'],
-  Makita: ['LXT 18V', 'XGT 40V'],
-  Hilti: ['TE-series', 'Nuron'],
-  Bosch: ['PROFACTOR', 'CORE18V'],
-  Stihl: ['MS Series', 'TS Series'],
-  Husqvarna: ['K770', 'K970', '500 Series'],
-  Honda: ['EU Series', 'GX Series'],
-};
+import ArchonField from '../../components/ArchonField';
+import {
+  MARCAS_VEHICULO,
+  MARCAS_MAQUINARIA,
+  MARCAS_HERRAMIENTA,
+  MAINTENANCE_FREQUENCIES,
+  FUEL_TYPES,
+  TRACCION_OPTIONS,
+  TRANSMISION_OPTIONS,
+} from '../../constants/fleetConstants';
 
 type FleetView = 'GRID' | 'CREATE';
 
@@ -127,13 +97,13 @@ const getInitialForm = (): {
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.8.1.1)
+// 🚀 FLEET MODULE (v.9.0.0)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.8.1.1)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.9.0.0)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -418,7 +388,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   );
 
   // ============================================================================
-  // 📝 CREATE VIEW — Intelligence Form v.8.1.1
+  // 📝 CREATE VIEW — Intelligence Form v.9.0.0
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-40">
@@ -436,10 +406,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </div>
 
             {/* Tipo de Unidad */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Truck size={12} /> Tipo de Unidad
-              </label>
+            <ArchonField label="Tipo de Unidad" icon={Truck}>
               <select
                 className="archon-select"
                 value={formData.assetType}
@@ -451,13 +418,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 <option value="Maquinaria">Maquinaria</option>
                 <option value="Herramienta">Herramienta</option>
               </select>
-            </div>
+            </ArchonField>
 
             {/* Marca — filtrada por Tipo */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Tag size={12} /> Marca
-              </label>
+            <ArchonField label="Marca" icon={Tag} required>
               <select
                 required
                 className="archon-select"
@@ -475,13 +439,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   )
                 )}
               </select>
-            </div>
+            </ArchonField>
 
             {/* Modelo — filtrado por Marca */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Tag size={12} /> Modelo
-              </label>
+            <ArchonField label="Modelo" icon={Tag} required>
               <select
                 required
                 className="archon-select"
@@ -500,13 +461,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   )
                 )}
               </select>
-            </div>
+            </ArchonField>
 
             {/* Año */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Calendar size={12} /> Año Modelo
-              </label>
+            <ArchonField label="Año Modelo" icon={Calendar} required>
               <input
                 required
                 type="number"
@@ -516,7 +474,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, year: parseInt(e.target.value, 10) })
                 }
               />
-            </div>
+            </ArchonField>
           </div>
 
           {/* CARD: Identidad del Activo */}
@@ -530,10 +488,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </div>
 
             {/* Número Económico */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Tag size={12} /> Número Económico
-              </label>
+            <ArchonField label="Número Económico" icon={Tag} required>
               <input
                 required
                 type="text"
@@ -544,13 +499,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, tag: e.target.value.toUpperCase() })
                 }
               />
-            </div>
+            </ArchonField>
 
             {/* Número de Serie */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Tag size={12} /> Número de Serie
-              </label>
+            <ArchonField label="Número de Serie" icon={Tag}>
               <input
                 type="text"
                 placeholder="Alfanumérico"
@@ -560,13 +512,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, numeroSerie: e.target.value.toUpperCase() })
                 }
               />
-            </div>
+            </ArchonField>
 
             {/* Motor */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Wrench size={12} /> Motor
-              </label>
+            <ArchonField label="Motor" icon={Wrench}>
               <input
                 type="text"
                 placeholder="Ej. 2.8L Diesel TDI"
@@ -576,13 +525,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, motor: e.target.value })
                 }
               />
-            </div>
+            </ArchonField>
 
             {/* Tarjeta de Circulación */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <FileText size={12} /> Tarjeta de Circulación
-              </label>
+            <ArchonField label="Tarjeta de Circulación" icon={FileText}>
               <input
                 type="text"
                 placeholder="Folio o referencia"
@@ -592,7 +538,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, tarjetaCirculacion: e.target.value })
                 }
               />
-            </div>
+            </ArchonField>
           </div>
         </div>
 
@@ -609,10 +555,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </div>
 
             {/* Tracción */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Truck size={12} /> Tracción
-              </label>
+            <ArchonField label="Tracción" icon={Truck}>
               <select
                 className="archon-select"
                 value={formData.traccion}
@@ -620,20 +563,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, traccion: e.target.value as Traccion })
                 }
               >
-                <option value="4x2">4x2</option>
-                <option value="4x4">4x4</option>
-                <option value="Doble Tracción">Doble Tracción</option>
-                <option value="AWD">AWD</option>
-                <option value="Oruga">Oruga</option>
-                <option value="N/A">N/A</option>
+                {TRACCION_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
-            </div>
+            </ArchonField>
 
             {/* Transmisión */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Settings size={12} /> Transmisión
-              </label>
+            <ArchonField label="Transmisión" icon={Settings}>
               <select
                 className="archon-select"
                 value={formData.transmision}
@@ -641,19 +580,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, transmision: e.target.value as Transmision })
                 }
               >
-                <option value="Automática">Automática</option>
-                <option value="Estándar (Manual)">Estándar (Manual)</option>
-                <option value="CVT">CVT</option>
-                <option value="Hidrostática">Hidrostática</option>
-                <option value="N/A">N/A</option>
+                {TRANSMISION_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
-            </div>
+            </ArchonField>
 
             {/* Combustible */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Zap size={12} /> Combustible
-              </label>
+            <ArchonField label="Combustible" icon={Zap}>
               <select
                 className="archon-select"
                 value={formData.fuelType}
@@ -661,20 +597,19 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, fuelType: e.target.value as FuelType })
                 }
               >
-                <option value="Gasolina">Gasolina</option>
-                <option value="Diesel">Diesel</option>
-                <option value="Eléctrico">Eléctrico</option>
-                <option value="Híbrido">Híbrido</option>
-                <option value="N/A">N/A</option>
+                {FUEL_TYPES.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
-            </div>
+            </ArchonField>
 
             {/* Odómetro / Horómetro */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Gauge size={12} />{' '}
-                {formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
-              </label>
+            <ArchonField
+              label={formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
+              icon={Gauge}
+            >
               <input
                 type="number"
                 className="archon-input"
@@ -683,13 +618,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, odometer: parseFloat(e.target.value) })
                 }
               />
-            </div>
+            </ArchonField>
 
             {/* Capacidad de Carga */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Truck size={12} /> Capacidad de Carga
-              </label>
+            <ArchonField label="Capacidad de Carga" icon={Truck}>
               <input
                 type="text"
                 placeholder="Ej. 3.5 Ton"
@@ -699,7 +631,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, capacidadCarga: e.target.value })
                 }
               />
-            </div>
+            </ArchonField>
           </div>
 
           {/* CARD: Organización & Cumplimiento */}
@@ -713,22 +645,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </div>
 
             {/* Vigencia del Seguro */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Calendar size={12} /> Vigencia del Seguro
-              </label>
+            <ArchonField label="Vigencia del Seguro" icon={Calendar}>
               <ArchonDatePicker
                 value={formData.vigenciaSeguro}
                 onChange={(v: string): void => setFormData({ ...formData, vigenciaSeguro: v })}
                 placeholder="Selecciona fecha"
               />
-            </div>
+            </ArchonField>
 
             {/* Vencimiento de Verificación */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Calendar size={12} /> Vencimiento de Verificación
-              </label>
+            <ArchonField label="Vencimiento de Verificación" icon={Calendar}>
               <ArchonDatePicker
                 value={formData.vencimientoVerificacion}
                 onChange={(v: string): void =>
@@ -736,13 +662,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 }
                 placeholder="Selecciona fecha"
               />
-            </div>
+            </ArchonField>
 
             {/* Sede */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <MapPin size={12} /> Sede
-              </label>
+            <ArchonField label="Sede" icon={MapPin}>
               <input
                 type="text"
                 placeholder="Base de operaciones"
@@ -752,13 +675,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   setFormData({ ...formData, sede: e.target.value })
                 }
               />
-            </div>
+            </ArchonField>
 
             {/* Mantenimiento Técnico */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Activity size={12} /> Mantenimiento Técnico
-              </label>
+            <ArchonField label="Mantenimiento Técnico" icon={Activity}>
               <select
                 className="archon-select"
                 value={formData.maintenanceFrequency}
@@ -769,20 +689,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   })
                 }
               >
-                <option value="Diaria">Diaria</option>
-                <option value="Semanal">Semanal</option>
-                <option value="Mensual">Mensual</option>
-                <option value="Bimestral">Bimestral</option>
-                <option value="Semestral">Semestral</option>
-                <option value="Anual">Anual</option>
+                {MAINTENANCE_FREQUENCIES.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
-            </div>
+            </ArchonField>
 
             {/* Centro de Mantenimiento */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Wrench size={12} /> Centro de Mantenimiento
-              </label>
+            <ArchonField label="Centro de Mantenimiento" icon={Wrench}>
               <select
                 className="archon-select"
                 value={formData.centroMantenimiento}
@@ -795,19 +711,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
               >
                 <option value="PIIC">PIIC</option>
               </select>
-            </div>
+            </ArchonField>
 
             {/* Inicio de Protocolo de Mantenimiento */}
-            <div className="archon-form-group">
-              <label className="archon-label">
-                <Calendar size={12} /> Inicio de Protocolo
-              </label>
+            <ArchonField label="Inicio de Protocolo" icon={Calendar}>
               <ArchonDatePicker
                 value={formData.protocolStartDate}
                 onChange={(v: string): void => setFormData({ ...formData, protocolStartDate: v })}
                 placeholder="Selecciona fecha de inicio"
               />
-            </div>
+            </ArchonField>
 
             {/* Submit */}
             <div className="pt-24">
@@ -859,7 +772,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               {currentView === 'GRID'
                 ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
-                : 'Protocolo de Incorporación de Activo v.8.1.1'}
+                : 'Protocolo de Incorporación de Activo v.9.0.0'}
             </p>
           </div>
 
@@ -960,7 +873,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.8.1.1) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.9.0.0) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -971,7 +884,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.8.1.1</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.9.0.0</p>
       </footer>
     </main>
   );

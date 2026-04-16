@@ -3,9 +3,10 @@ import { RowDataPacket } from 'mysql2/promise';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import db from '../services/db';
+import { toSnakeCase } from '../utils/mappers';
 
 // ============================================================================
-// ZOD SCHEMA: CREATE (v.8.1.1)
+// ZOD SCHEMA: CREATE (v.9.0.0)
 // ============================================================================
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
@@ -150,55 +151,31 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send({ error: 'Invalid data format', details: parse.error.format() });
     }
 
-    const {
-      assetType,
-      tag,
-      numeroSerie,
-      marca,
-      modelo,
-      year,
-      motor,
-      traccion,
-      transmision,
-      fuelType,
-      tireSpec,
-      tireBrand,
-      capacidadCarga,
-      odometer,
-      sede,
-      maintenanceFrequency,
-      centroMantenimiento,
-      protocolStartDate,
-      vigenciaSeguro,
-      vencimientoVerificacion,
-      tarjetaCirculacion,
-      status,
-      assignedOperatorId,
-    } = parse.data;
-
     const uuid = randomUUID();
 
     try {
       // Check for duplicate tag
       const [existing] = await db.execute<FleetUnit[]>('SELECT id FROM fleet_units WHERE tag = ?', [
-        tag,
+        parse.data.tag,
       ]);
       if (existing.length > 0) {
         return reply
           .code(409)
-          .send({ error: `Número Económico '${tag}' ya existe en el registro` });
+          .send({ error: `Número Económico '${parse.data.tag}' ya existe en el registro` });
       }
 
       // Check for duplicate numero_serie
-      if (numeroSerie) {
+      if (parse.data.numeroSerie) {
         const [existingSerie] = await db.execute<FleetUnit[]>(
           'SELECT id FROM fleet_units WHERE numero_serie = ?',
-          [numeroSerie]
+          [parse.data.numeroSerie]
         );
         if (existingSerie.length > 0) {
           return reply
             .code(409)
-            .send({ error: `Número de serie '${numeroSerie}' ya existe en el registro` });
+            .send({
+              error: `Número de serie '${parse.data.numeroSerie}' ya existe en el registro`,
+            });
         }
       }
 
@@ -212,41 +189,14 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         nextId = `FL${String(lastNum + 1).padStart(3, '0')}`;
       }
 
+      const dbData = toSnakeCase({ ...parse.data, id: nextId, uuid });
+      const fields = Object.keys(dbData);
+      const placeholders = fields.map(() => '?').join(', ');
+      const values = Object.values(dbData).map((v) => (v === undefined ? null : v));
+
       await db.execute(
-        `INSERT INTO fleet_units (
-          id, uuid, asset_type, tag, numero_serie, marca, modelo, year, motor,
-          traccion, transmision, fuel_type, tire_spec, tire_brand,
-          capacidad_carga, odometer, sede, maintenance_frequency, centro_mantenimiento,
-          protocol_start_date, vigencia_seguro, vencimiento_verificacion, tarjeta_circulacion,
-          status, assigned_operator_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          nextId,
-          uuid,
-          assetType,
-          tag,
-          numeroSerie || null,
-          marca,
-          modelo,
-          year,
-          motor || null,
-          traccion,
-          transmision,
-          fuelType,
-          tireSpec || null,
-          tireBrand || null,
-          capacidadCarga || null,
-          odometer,
-          sede || null,
-          maintenanceFrequency,
-          centroMantenimiento,
-          protocolStartDate || null,
-          vigenciaSeguro || null,
-          vencimientoVerificacion || null,
-          tarjetaCirculacion || null,
-          status,
-          assignedOperatorId || null,
-        ]
+        `INSERT INTO fleet_units (${fields.join(', ')}) VALUES (${placeholders})`,
+        values
       );
 
       return reply.code(201).send({ success: true, id: nextId, uuid });
@@ -266,39 +216,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send({ error: 'Invalid update data', details: parse.error.format() });
     }
 
-    const raw = parse.data;
-    const updates: Record<string, string | number | boolean | null> = {};
-
-    if (raw.assetType !== undefined) updates.asset_type = raw.assetType;
-    if (raw.tag !== undefined) updates.tag = raw.tag;
-    if (raw.numeroSerie !== undefined) updates.numero_serie = raw.numeroSerie ?? null;
-    if (raw.marca !== undefined) updates.marca = raw.marca;
-    if (raw.modelo !== undefined) updates.modelo = raw.modelo;
-    if (raw.year !== undefined) updates.year = raw.year;
-    if (raw.motor !== undefined) updates.motor = raw.motor ?? null;
-    if (raw.traccion !== undefined) updates.traccion = raw.traccion;
-    if (raw.transmision !== undefined) updates.transmision = raw.transmision;
-    if (raw.fuelType !== undefined) updates.fuel_type = raw.fuelType;
-    if (raw.tireSpec !== undefined) updates.tire_spec = raw.tireSpec ?? null;
-    if (raw.tireBrand !== undefined) updates.tire_brand = raw.tireBrand ?? null;
-    if (raw.capacidadCarga !== undefined) updates.capacidad_carga = raw.capacidadCarga ?? null;
-    if (raw.odometer !== undefined) updates.odometer = raw.odometer;
-    if (raw.sede !== undefined) updates.sede = raw.sede ?? null;
-    if (raw.maintenanceFrequency !== undefined)
-      updates.maintenance_frequency = raw.maintenanceFrequency;
-    if (raw.centroMantenimiento !== undefined)
-      updates.centro_mantenimiento = raw.centroMantenimiento;
-    if (raw.protocolStartDate !== undefined)
-      updates.protocol_start_date = raw.protocolStartDate ?? null;
-    if (raw.vigenciaSeguro !== undefined) updates.vigencia_seguro = raw.vigenciaSeguro ?? null;
-    if (raw.vencimientoVerificacion !== undefined)
-      updates.vencimiento_verificacion = raw.vencimientoVerificacion ?? null;
-    if (raw.tarjetaCirculacion !== undefined)
-      updates.tarjeta_circulacion = raw.tarjetaCirculacion ?? null;
-    if (raw.status !== undefined) updates.status = raw.status;
-    if (raw.assignedOperatorId !== undefined)
-      updates.assigned_operator_id = raw.assignedOperatorId ?? null;
-
+    const updates = toSnakeCase(parse.data);
     const fields = Object.keys(updates);
     if (fields.length === 0) {
       return reply.code(400).send({ error: 'No update parameters provided' });
