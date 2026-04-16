@@ -25,11 +25,13 @@ const createFleetSchema = z.object({
   departamento: z.string().max(150).optional().nullable(),
   uso: z.string().max(100).optional().nullable(),
   motor: z.string().max(150).optional(),
-  traccion: z.enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'N/A']).default('N/A'),
+  traccion: z
+    .enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'No Aplica'])
+    .default('No Aplica'),
   transmision: z
-    .enum(['Automática', 'Estándar (Manual)', 'CVT', 'Hidrostática', 'N/A'])
-    .default('N/A'),
-  fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'N/A']).default('Diesel'),
+    .enum(['Automática', 'Estándar (Manual)', 'CVT', 'Hidrostática', 'No Aplica'])
+    .default('No Aplica'),
+  fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'No Aplica']).default('Diesel'),
   tireSpec: z.string().max(50).optional(),
   tireBrand: z.string().max(100).optional(),
   tipoTerreno: z.string().max(100).optional().nullable(),
@@ -70,9 +72,11 @@ const updateFleetSchema = z.object({
   departamento: z.string().max(150).optional().nullable(),
   uso: z.string().max(100).optional().nullable(),
   motor: z.string().max(150).optional(),
-  traccion: z.enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'N/A']).optional(),
-  transmision: z.enum(['Automática', 'Estándar (Manual)', 'CVT', 'Hidrostática', 'N/A']).optional(),
-  fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'N/A']).optional(),
+  traccion: z.enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'No Aplica']).optional(),
+  transmision: z
+    .enum(['Automática', 'Estándar (Manual)', 'CVT', 'Hidrostática', 'No Aplica'])
+    .optional(),
+  fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'No Aplica']).optional(),
   tireSpec: z.string().max(50).optional(),
   tireBrand: z.string().max(100).optional(),
   tipoTerreno: z.string().max(100).optional().nullable(),

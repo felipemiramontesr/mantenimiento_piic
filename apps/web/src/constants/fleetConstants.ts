@@ -43,14 +43,21 @@ export const MAINTENANCE_FREQUENCIES = [
 ] as const;
 
 export const ASSET_TYPES = ['Vehiculo', 'Maquinaria', 'Herramienta'] as const;
-export const FUEL_TYPES = ['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'N/A'] as const;
-export const TRACCION_OPTIONS = ['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'N/A'] as const;
+export const FUEL_TYPES = ['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'No Aplica'] as const;
+export const TRACCION_OPTIONS = [
+  '4x2',
+  '4x4',
+  'Doble Tracción',
+  'AWD',
+  'Oruga',
+  'No Aplica',
+] as const;
 export const TRANSMISION_OPTIONS = [
   'Automática',
   'Estándar (Manual)',
-  'CVT',
+  'Transmisión Continuamente Variable (CVT)',
   'Hidrostática',
-  'N/A',
+  'No Aplica',
 ] as const;
 
 export const DEPARTAMENTOS = [
@@ -64,8 +71,8 @@ export const DEPARTAMENTOS = [
   'Operación Mina',
   'Operación Planta',
   'Planeación',
-  'Rel. Comunitarias',
-  'Seg. Patrimonial',
+  'Relaciones Comunitarias',
+  'Seguridad Patrimonial',
   'Seguridad Industrial',
 ] as const;
 
@@ -77,20 +84,20 @@ export const USO_OPTIONS = [
   'Mina',
   'Pesado',
   'Planta',
-  'Rel. Comunitarias',
+  'Relaciones Comunitarias',
   'Reparto',
   'Terracería',
 ] as const;
 
 export const TIPO_TERRENO_OPTIONS = [
-  'All-Terrain (A/T)',
-  'Carga (LT)',
-  'Carga (Rango E)',
-  'Carga (Tipo C)',
+  'All-Terrain',
   'Carga Ligera',
-  'High Terrain (H/T)',
-  'Mixta (H/T)',
-  'Mud-Terrain (M/T)',
+  'Carga Pesada (Rango E)',
+  'Carga Especializada (Tipo C)',
+  'Carga Ligera',
+  'High Terrain',
+  'Mixta / High Terrain',
+  'Mud-Terrain',
   'Passenger',
   'SUV/Carretera',
 ] as const;
