@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Image as ImageIcon, X, UploadCloud } from 'lucide-react';
 
-// ⚡ ARCHON IMAGE PROTOCOL: DRAG & DROP UPLOADER (v.10.0.0)
+// ⚡ ARCHON IMAGE PROTOCOL: DRAG & DROP UPLOADER
 // High-fidelity industrial visual identity component with 4-slot limit
 
 interface ArchonImageUploaderProps {

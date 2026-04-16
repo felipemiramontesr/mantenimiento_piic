@@ -81,7 +81,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   };
 
   /**
-   * KPI Presentation Engine (V.7.1.2)
+   * KPI Presentation Engine
    * Renders data-dense instruments with skeleton support.
    */
   const renderKPI = (
@@ -143,7 +143,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO (Dual Panel) - V.7.1.2 */}
+      {/* 🚀 HEADER SOBERANO (Dual Panel) */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div
           style={{
@@ -275,7 +275,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (80vh) - GRID 3x3 SYSTEM (Chasis v.8.1.1) */}
+      {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
         <div
           style={{
@@ -338,7 +338,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.10.0.3</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.10.0.4</p>
       </footer>
     </main>
   );

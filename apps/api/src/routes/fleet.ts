@@ -6,7 +6,7 @@ import db from '../services/db';
 import { toSnakeCase } from '../utils/mappers';
 
 // ============================================================================
-// ZOD SCHEMA: CREATE (v.10.0.0)
+// ZOD SCHEMA: CREATE
 // ============================================================================
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
@@ -46,7 +46,7 @@ const createFleetSchema = z.object({
 });
 
 // ============================================================================
-// ZOD SCHEMA: UPDATE (v.7.2.3)
+// ZOD SCHEMA: UPDATE
 // ============================================================================
 const updateFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']).optional(),
