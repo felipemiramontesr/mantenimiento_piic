@@ -52,3 +52,45 @@ export const TRANSMISION_OPTIONS = [
   'Hidrostática',
   'N/A',
 ] as const;
+
+export const DEPARTAMENTOS = [
+  'Administración',
+  'Exploración',
+  'Geología',
+  'Laboratorio',
+  'Mantenimiento Eléctrico',
+  'Mantenimiento Planta',
+  'Medio Ambiente',
+  'Operación Mina',
+  'Operación Planta',
+  'Planeación',
+  'Rel. Comunitarias',
+  'Seg. Patrimonial',
+  'Seguridad Industrial',
+] as const;
+
+export const USO_OPTIONS = [
+  'Campo',
+  'Carretera',
+  'Ciudad',
+  'Extremo',
+  'Mina',
+  'Pesado',
+  'Planta',
+  'Rel. Comunitarias',
+  'Reparto',
+  'Terracería',
+] as const;
+
+export const TIPO_TERRENO_OPTIONS = [
+  'All-Terrain (A/T)',
+  'Carga (LT)',
+  'Carga (Rango E)',
+  'Carga (Tipo C)',
+  'Carga Ligera',
+  'High Terrain (H/T)',
+  'Mixta (H/T)',
+  'Mud-Terrain (M/T)',
+  'Passenger',
+  'SUV/Carretera',
+] as const;

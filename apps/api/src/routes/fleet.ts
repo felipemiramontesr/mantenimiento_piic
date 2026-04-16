@@ -12,6 +12,7 @@ import { toSnakeCase } from '../utils/mappers';
 const createFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']),
   tag: z.string().min(2).max(50),
+  placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
   images: z.array(z.string()).max(4).optional(),
   marca: z.string().min(1).max(100),
@@ -21,6 +22,8 @@ const createFleetSchema = z.object({
     .int()
     .min(1900)
     .max(new Date().getFullYear() + 1),
+  departamento: z.string().max(150).optional().nullable(),
+  uso: z.string().max(100).optional().nullable(),
   motor: z.string().max(150).optional(),
   traccion: z.enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'N/A']).default('N/A'),
   transmision: z
@@ -29,6 +32,7 @@ const createFleetSchema = z.object({
   fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'N/A']).default('Diesel'),
   tireSpec: z.string().max(50).optional(),
   tireBrand: z.string().max(100).optional(),
+  tipoTerreno: z.string().max(100).optional().nullable(),
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).default(0),
   sede: z.string().max(150).optional(),
@@ -52,6 +56,7 @@ const createFleetSchema = z.object({
 const updateFleetSchema = z.object({
   assetType: z.enum(['Vehiculo', 'Maquinaria']).optional(),
   tag: z.string().min(2).max(50).optional(),
+  placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
   images: z.array(z.string()).max(4).optional(),
   marca: z.string().min(1).max(100).optional(),
@@ -62,12 +67,15 @@ const updateFleetSchema = z.object({
     .min(1900)
     .max(new Date().getFullYear() + 1)
     .optional(),
+  departamento: z.string().max(150).optional().nullable(),
+  uso: z.string().max(100).optional().nullable(),
   motor: z.string().max(150).optional(),
   traccion: z.enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'N/A']).optional(),
   transmision: z.enum(['Automática', 'Estándar (Manual)', 'CVT', 'Hidrostática', 'N/A']).optional(),
   fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'N/A']).optional(),
   tireSpec: z.string().max(50).optional(),
   tireBrand: z.string().max(100).optional(),
+  tipoTerreno: z.string().max(100).optional().nullable(),
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).optional(),
   sede: z.string().max(150).optional(),
@@ -91,17 +99,21 @@ interface FleetUnit extends RowDataPacket {
   uuid: string;
   asset_type: string;
   tag: string;
+  placas: string | null;
   numero_serie: string | null;
   numero_serie_hash: string | null;
   marca: string;
   modelo: string;
   year: number;
+  departamento: string | null;
+  uso: string | null;
   motor: string | null;
   traccion: string;
   transmision: string;
   fuel_type: string;
   tire_spec: string | null;
   tire_brand: string | null;
+  tipo_terreno: string | null;
   capacidad_carga: string | null;
   odometer: number;
   sede: string | null;

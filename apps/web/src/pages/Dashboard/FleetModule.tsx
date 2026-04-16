@@ -43,6 +43,9 @@ import {
   FUEL_TYPES,
   TRACCION_OPTIONS,
   TRANSMISION_OPTIONS,
+  DEPARTAMENTOS,
+  USO_OPTIONS,
+  TIPO_TERRENO_OPTIONS,
 } from '../../constants/fleetConstants';
 
 type FleetView = 'GRID' | 'CREATE';
@@ -51,17 +54,21 @@ type FleetView = 'GRID' | 'CREATE';
 const getInitialForm = (): {
   assetType: AssetType;
   tag: string;
+  placas: string;
   numeroSerie: string;
   images: string[];
   marca: string;
   modelo: string;
   year: number;
+  departamento: string;
+  uso: string;
   motor: string;
   traccion: Traccion;
   transmision: Transmision;
   fuelType: FuelType;
   tireSpec: string;
   tireBrand: string;
+  tipoTerreno: string;
   capacidadCarga: string;
   odometer: number;
   sede: string;
@@ -75,17 +82,21 @@ const getInitialForm = (): {
 } => ({
   assetType: 'Vehiculo' as AssetType,
   tag: '',
+  placas: '',
   numeroSerie: '',
   images: [] as string[],
   marca: '',
   modelo: '',
   year: new Date().getFullYear(),
+  departamento: '',
+  uso: '',
   motor: '',
   traccion: 'N/A' as Traccion,
   transmision: 'N/A' as Transmision,
   fuelType: 'Diesel' as FuelType,
   tireSpec: '',
   tireBrand: '',
+  tipoTerreno: '',
   capacidadCarga: '',
   odometer: 0,
   sede: '',
@@ -144,10 +155,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
         ...formData,
         vigenciaSeguro: formData.vigenciaSeguro || null,
         vencimientoVerificacion: formData.vencimientoVerificacion || null,
+        placas: formData.placas || undefined,
         numeroSerie: formData.numeroSerie || undefined,
+        departamento: formData.departamento || undefined,
+        uso: formData.uso || undefined,
         motor: formData.motor || undefined,
         tireSpec: formData.tireSpec || undefined,
         tireBrand: formData.tireBrand || undefined,
+        tipoTerreno: formData.tipoTerreno || undefined,
         capacidadCarga: formData.capacidadCarga || undefined,
         sede: formData.sede || undefined,
         tarjetaCirculacion: formData.tarjetaCirculacion || undefined,
@@ -478,6 +493,19 @@ const FleetModule: React.FC = (): React.ReactElement => {
               />
             </ArchonField>
 
+            {/* Placas */}
+            <ArchonField label="Placas" icon={Tag}>
+              <input
+                type="text"
+                placeholder="Ej. ZH-0000-X"
+                className="archon-input"
+                value={formData.placas}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, placas: e.target.value.toUpperCase() })
+                }
+              />
+            </ArchonField>
+
             {/* Número de Serie */}
             <ArchonField label="Número de Serie" icon={Tag}>
               <input
@@ -600,9 +628,27 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 className="archon-input"
                 value={formData.odometer}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, odometer: parseFloat(e.target.value) })
+                  setFormData({ ...formData, odometer: parseFloat(e.target.value) || 0 })
                 }
               />
+            </ArchonField>
+
+            {/* Tipo Terreno */}
+            <ArchonField label="Clasificación Terreno" icon={MapPin}>
+              <select
+                className="archon-select"
+                value={formData.tipoTerreno}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
+                  setFormData({ ...formData, tipoTerreno: e.target.value })
+                }
+              >
+                <option value="">— Selecciona tipo —</option>
+                {TIPO_TERRENO_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </ArchonField>
 
             {/* Capacidad de Carga */}
@@ -628,6 +674,44 @@ const FleetModule: React.FC = (): React.ReactElement => {
               <MapPin size={22} />
               <h3>Organización &amp; Cumplimiento</h3>
             </div>
+
+            {/* Departamento */}
+            <ArchonField label="Departamento" icon={User} required>
+              <select
+                required
+                className="archon-select"
+                value={formData.departamento}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
+                  setFormData({ ...formData, departamento: e.target.value })
+                }
+              >
+                <option value="">— Seleccionar departamento —</option>
+                {DEPARTAMENTOS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </ArchonField>
+
+            {/* Uso Operativo */}
+            <ArchonField label="Uso Operativo" icon={Activity} required>
+              <select
+                required
+                className="archon-select"
+                value={formData.uso}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
+                  setFormData({ ...formData, uso: e.target.value })
+                }
+              >
+                <option value="">— Seleccionar uso —</option>
+                {USO_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </ArchonField>
 
             {/* Vigencia del Seguro */}
             <ArchonField label="Vigencia del Seguro" icon={Calendar}>

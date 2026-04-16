@@ -22,12 +22,15 @@ export interface FleetUnit {
   asset_type: AssetType;
   // Primary identifiers
   tag: string; // Número Económico
+  placas: string | null;
   numero_serie: string | null;
   // Level 2 & 3: Cascade
   marca: string;
   modelo: string;
   images: string[] | null;
   year: number;
+  departamento: string | null;
+  uso: string | null;
   motor: string | null;
   // Mechanical configuration
   traccion: Traccion;
@@ -36,6 +39,7 @@ export interface FleetUnit {
   // Tires
   tire_spec: string | null;
   tire_brand: string | null;
+  tipo_terreno: string | null;
   // Operational
   capacidad_carga: string | null;
   odometer: number; // km (Vehiculo) | hrs (Maquinaria)
@@ -59,17 +63,21 @@ export interface FleetUnit {
 export interface CreateFleetUnit {
   assetType: AssetType;
   tag: string;
+  placas?: string;
   numeroSerie?: string;
   marca: string;
   modelo: string;
   images?: string[];
   year: number;
+  departamento?: string;
+  uso?: string;
   motor?: string;
   traccion: Traccion;
   transmision: Transmision;
   fuelType: FuelType;
   tireSpec?: string;
   tireBrand?: string;
+  tipoTerreno?: string;
   capacidadCarga?: string;
   odometer?: number;
   sede?: string;
