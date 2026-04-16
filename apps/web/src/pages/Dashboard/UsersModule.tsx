@@ -208,7 +208,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.2</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.3</p>
     </footer>
   </main>
 );

@@ -11,7 +11,6 @@ import {
   Wrench,
   Zap,
   Gauge,
-  Hammer,
   Tag,
   Settings,
   LogOut,
@@ -305,7 +304,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               border: '2px solid rgba(242, 183, 5, 0.4)',
             }}
           >
-            <Hammer size={40} style={{ color: '#f2b705' }} />
+            <Wrench size={40} style={{ color: '#f2b705' }} />
           </div>
           <div className="flex flex-col items-center space-y-1 mb-12">
             <h3
@@ -892,7 +891,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.2</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.8.3</p>
       </footer>
     </main>
   );
