@@ -5,8 +5,8 @@ import crypto from 'crypto';
  * Implements AES-256-GCM for Application-Level Encryption (ALE).
  *
  * @remarks
- * This service ensures that critical zero-trust data never touches the database layer 
- * in plain text. It leverages Galois/Counter Mode (GCM) which inherently provides 
+ * This service ensures that critical zero-trust data never touches the database layer
+ * in plain text. It leverages Galois/Counter Mode (GCM) which inherently provides
  * authenticated encryption (both confidentiality and data integrity).
  */
 class EncryptionService {
@@ -62,6 +62,14 @@ class EncryptionService {
     decrypted += decipher.final('utf8');
 
     return decrypted;
+  }
+
+  /**
+   * Generates a deterministic one-way hash (Blind Index)
+   * used for secure search/lookup of encrypted fields.
+   */
+  public static generateBlindIndex(text: string): string {
+    return crypto.createHmac('sha256', this.getKey()).update(text).digest('hex');
   }
 }
 

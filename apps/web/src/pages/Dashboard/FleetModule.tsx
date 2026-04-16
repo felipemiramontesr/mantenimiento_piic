@@ -20,7 +20,6 @@ import {
   Calendar,
   PlusCircle,
   Database,
-  Users,
   Activity,
   Camera,
 } from 'lucide-react';
@@ -270,65 +269,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </div>
 
-      {/* Card 2: Inventario */}
-      <div
-        className={`glass-card-pro archon-instrument-tile card-hover-violet`}
-        style={{
-          borderTop: '4px solid #8b5cf6',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            marginBottom: '16px',
-            width: '100%',
-          }}
-        >
-          <Search size={20} style={{ color: '#8b5cf6' }} />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80">
-            Exploración de Datos
-          </span>
-        </div>
-
-        <div className="archon-tile-payload space-y-8 pb-16">
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(139, 92, 246, 0.4)',
-            }}
-          >
-            <Database size={40} style={{ color: '#8b5cf6' }} />
-          </div>
-          <div className="flex flex-col items-center space-y-1 mb-12">
-            <h3
-              className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-              style={{ fontSize: '14px' }}
-            >
-              Inventario General
-            </h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-              Visualización y Estados
-            </p>
-          </div>
-        </div>
-
-        <div className="archon-tile-action">
-          <button className="btn-sentinel-violet">
-            Próximamente <ArrowRight size={10} className="text-white" />
-          </button>
-        </div>
-      </div>
-
-      {/* Card 3: Operadores */}
+      {/* Card 2: Mantenimiento Preventivo (NUEVO) */}
       <div
         className={`glass-card-pro archon-instrument-tile card-hover-emerald`}
         style={{
@@ -345,8 +286,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
             width: '100%',
           }}
         >
-          <User size={20} style={{ color: '#10b981' }} />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80">Logística Humana</span>
+          <ShieldCheck size={20} style={{ color: '#10b981' }} />
+          <span className="text-instrument-header text-[#0f2a44] opacity-80">
+            Mantenimiento Preventivo
+          </span>
         </div>
 
         <div className="archon-tile-payload space-y-8 pb-16">
@@ -362,24 +305,56 @@ const FleetModule: React.FC = (): React.ReactElement => {
               border: '2px solid rgba(16, 185, 129, 0.4)',
             }}
           >
-            <Users size={40} style={{ color: '#10b981' }} />
+            <Activity size={40} style={{ color: '#10b981' }} />
           </div>
           <div className="flex flex-col items-center space-y-1 mb-12">
             <h3
               className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
               style={{ fontSize: '14px' }}
             >
-              Gestión Operadores
+              Control de Salud
             </h3>
             <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-              Directorio de Control
+              Protocolos Activos
             </p>
           </div>
         </div>
 
         <div className="archon-tile-action">
           <button className="btn-sentinel-emerald">
-            Próximamente <ArrowRight size={10} className="text-white" />
+            Ver Programación <ArrowRight size={10} className="text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Card 3: Slot de Expansión */}
+      <div
+        className={`glass-card-pro archon-instrument-tile opacity-40`}
+        style={{
+          borderTop: '4px solid rgba(15, 42, 68, 0.1)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
+          <Search size={20} className="text-[#0f2a44] opacity-20" />
+          <span className="text-instrument-header text-[#0f2a44] opacity-40">Próximamente</span>
+        </div>
+
+        <div className="archon-tile-payload flex items-center justify-center h-40">
+          <Database size={40} className="text-[#0f2a44] opacity-10" />
+        </div>
+
+        <div className="archon-tile-action">
+          <button disabled className="btn-sentinel-disabled">
+            Bloqueado <ArrowRight size={10} />
           </button>
         </div>
       </div>
@@ -896,7 +871,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.11.0.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.0.0</p>
       </footer>
     </main>
   );

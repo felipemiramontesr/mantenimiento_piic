@@ -1,6 +1,6 @@
 # ARCHON SYSTEM
 
-## Archon System Architecture — ArchonCore Sovereign v.11.0.0
+## Archon System Architecture — ArchonCore Sovereign v.12.0.0
 
 This manifesto serves as the architectural foundation for the **Pinnacle Identity Standard (PIIC)** applied to the Archon Control Systems. Every core decision follows a rigorous, zero-noise, and Silicon Valley-grade methodology.
 
@@ -80,7 +80,7 @@ sequenceDiagram
 
 ---
 
-### V. Fleet Asset Lifecycle Orchestration (v.11.0.0)
+### V. Fleet Asset Lifecycle Orchestration (v.12.0.0)
 
 The following diagram illustrates the flow from asset incorporation to temporal maintenance baseline registry.
 
@@ -100,9 +100,9 @@ sequenceDiagram
     U->>A: POST /v1/fleet (JSON Payload)
     A->>A: Zod Validation (Schema v.9.0.0)
     Route->>Mapper: toSnakeCase(camelData)
-    Mapper->>Encryption: ALE Layer (AES-256-GCM)
-    Encryption->>Query: Persist Encrypted Identity
-    Query->>DB: INSERT/UPDATE (iv:tag:box)
+    Mapper->>Encryption: ALE Layer (AES-256-GCM) + B.I.G (Blind Index Hash)
+    Encryption->>Query: Persist Encrypted Identity & Searchable Hash
+    Query->>DB: INSERT/UPDATE (iv:tag:cipher, sha256:hash)
     DB->>Query: RowDataPacket
     Query->>Encryption: Decrypt ALE Layer
     Encryption->>Mapper: toCamelCase(decryptedRows)

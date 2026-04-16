@@ -92,6 +92,7 @@ interface FleetUnit extends RowDataPacket {
   asset_type: string;
   tag: string;
   numero_serie: string | null;
+  numero_serie_hash: string | null;
   marca: string;
   modelo: string;
   year: number;
@@ -142,6 +143,9 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       // 🛡️ SENTINEL DECRYPTION LAYER: Transform encrypted data for UI consumption
       const decryptedRows = rows.map((unit) => ({
         ...unit,
+        numero_serie: unit.numero_serie
+          ? EncryptionService.decrypt(unit.numero_serie)
+          : unit.numero_serie,
         motor: unit.motor ? EncryptionService.decrypt(unit.motor) : unit.motor,
         tarjeta_circulacion: unit.tarjeta_circulacion
           ? EncryptionService.decrypt(unit.tarjeta_circulacion)
@@ -177,11 +181,12 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           .send({ error: `Número Económico '${parse.data.tag}' ya existe en el registro` });
       }
 
-      // Check for duplicate numero_serie
+      // Check for duplicate numero_serie via Blind Index (Searchable Encryption)
       if (parse.data.numeroSerie) {
+        const serieHash = EncryptionService.generateBlindIndex(parse.data.numeroSerie);
         const [existingSerie] = await db.execute<FleetUnit[]>(
-          'SELECT id FROM fleet_units WHERE numero_serie = ?',
-          [parse.data.numeroSerie]
+          'SELECT id FROM fleet_units WHERE numero_serie_hash = ?',
+          [serieHash]
         );
         if (existingSerie.length > 0) {
           return reply.code(409).send({
@@ -200,11 +205,16 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         nextId = `FL${String(lastNum + 1).padStart(3, '0')}`;
       }
 
-      // 🛡️ ALE (Application-Level Encryption): Secure identity before persistence
-      const payload = { ...parse.data };
+      const payload = { ...parse.data } as Record<string, unknown>;
       if (payload.motor) payload.motor = EncryptionService.encrypt(payload.motor);
       if (payload.tarjetaCirculacion)
         payload.tarjetaCirculacion = EncryptionService.encrypt(payload.tarjetaCirculacion);
+
+      // 🛡️ B.I.G (Blind Index Generation)
+      if (payload.numeroSerie) {
+        payload.numeroSerieHash = EncryptionService.generateBlindIndex(payload.numeroSerie);
+        payload.numeroSerie = EncryptionService.encrypt(payload.numeroSerie);
+      }
 
       const dbData = toSnakeCase({ ...payload, id: nextId, uuid });
       const fields = Object.keys(dbData);
@@ -239,6 +249,12 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     if (updates.motor) updates.motor = EncryptionService.encrypt(updates.motor);
     if (updates.tarjeta_circulacion)
       updates.tarjeta_circulacion = EncryptionService.encrypt(updates.tarjeta_circulacion);
+
+    // 🛡️ B.I.G (Blind Index Update)
+    if (updates.numero_serie) {
+      updates.numero_serie_hash = EncryptionService.generateBlindIndex(updates.numero_serie);
+      updates.numero_serie = EncryptionService.encrypt(updates.numero_serie);
+    }
 
     const fields = Object.keys(updates);
     if (fields.length === 0) {
