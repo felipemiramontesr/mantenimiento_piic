@@ -311,7 +311,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
               style={{ fontSize: '14px' }}
             >
-              Control de Salud
+              Control de funcionamiento
             </h3>
             <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
               Protocolos Activos
@@ -891,7 +891,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.3.2</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.4.0</p>
       </footer>
     </main>
   );
