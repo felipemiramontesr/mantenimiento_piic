@@ -10,7 +10,6 @@ import {
   Ban,
   Navigation,
   User,
-  Users,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -340,13 +339,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Unidades inactivas o mermas',
             'red'
           )}
-          {renderKPI('Mando y Supervisión', 0, Users, '#0f2a44', 'Directorio de personal', 'navy')}
         </div>
       </section>
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.6.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.7.0</p>
       </footer>
     </main>
   );

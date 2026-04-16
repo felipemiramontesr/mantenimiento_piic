@@ -33,7 +33,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
               className="text-[#0f2a44] tracking-tighter font-black text-2xl"
               style={{ margin: 0, padding: 0, lineHeight: 1 }}
             >
-              Administrar Usuarios
+              Administrar personal
             </h2>
           </div>
           <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
@@ -83,7 +83,65 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis) */}
     <section className="archon-workspace-chassis">
       <div className="archon-grid-3 h-full">
-        {/* Card 1: Agregar Usuario (VERDE) */}
+        {/* Card 1: Mando y Supervisión (NAVY) */}
+        <div
+          className={`glass-card-pro archon-instrument-tile card-hover-navy`}
+          style={{
+            borderTop: '4px solid #0f2a44',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              marginBottom: '16px',
+              width: '100%',
+            }}
+          >
+            <Users size={20} style={{ color: '#0f2a44' }} />
+            <span className="text-instrument-header text-[#0f2a44] opacity-80">
+              Mando y Supervisión
+            </span>
+          </div>
+
+          <div className="archon-tile-payload space-y-8 pb-16">
+            <div
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(15, 42, 68, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid rgba(15, 42, 68, 0.4)',
+              }}
+            >
+              <Users size={40} style={{ color: '#0f2a44' }} />
+            </div>
+            <div className="flex flex-col items-center space-y-1 mb-12">
+              <h3
+                className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
+                style={{ fontSize: '14px' }}
+              >
+                Mando y Supervisión
+              </h3>
+              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+                Directorio de personal
+              </p>
+            </div>
+          </div>
+
+          <div className="archon-tile-action">
+            <button className="btn-sentinel-navy">
+              Ver detalles <ArrowRight size={10} className="text-white ml-2" />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: Agregar Usuario (VERDE) */}
         <div
           className={`glass-card-pro archon-instrument-tile card-hover-emerald`}
           style={{
@@ -150,7 +208,7 @@ const UsersModule: React.FC = (): React.ReactElement => (
     {/* ⚓ FOOTER SENTINEL (10vh) */}
     <footer className="workspace-footer-pro">
       <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.6.0</p>
+      <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.7.0</p>
     </footer>
   </main>
 );
