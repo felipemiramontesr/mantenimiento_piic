@@ -337,7 +337,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             stats.discontinued,
             Ban,
             '#ef4444',
-            'Aparatos inactivos o mermas',
+            'Unidades inactivas o mermas',
             'red'
           )}
           {renderKPI('Gestión de Personal', 0, Users, '#0ea5e9', 'Directorio de Operadores', 'sky')}
@@ -346,7 +346,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.14.0.2</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.1.0</p>
       </footer>
     </main>
   );
