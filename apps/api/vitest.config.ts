@@ -9,14 +9,14 @@ export default defineConfig({
       JWT_SECRET: 'test-secret-pinnacle-archon-2026',
     },
     coverage: {
-      provider: 'v8',
+      provider: 'istanbul',
       all: true,
       reporter: ['text', 'json', 'html'],
       exclude: [
-        'src/index.ts', /* Bootstrap puro, inaccesible unitariamente sin lanzar puerto */
-        'src/scripts/**', /* Scripts de utilidad CLI que se prueban mediante bash */
-        'src/types/**', /* Declaraciones de tipado */
-        'src/routes/**' /* Excluidos del pase inicial de Unit Tests por complejidad de mocks HTTP, pendientes a la fase e2e */
+        'src/index.ts' /* Bootstrap puro, inaccesible unitariamente sin lanzar puerto */,
+        'src/scripts/**' /* Scripts de utilidad CLI que se prueban mediante bash */,
+        'src/types/**' /* Declaraciones de tipado */,
+        'src/routes/**' /* Excluidos del pase inicial de Unit Tests por complejidad de mocks HTTP, pendientes a la fase e2e */,
       ],
       thresholds: {
         lines: 100,
