@@ -3,6 +3,7 @@ import { RowDataPacket } from 'mysql2/promise';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import db from '../services/db';
+import EncryptionService from '../services/encryption';
 import { toSnakeCase } from '../utils/mappers';
 
 // ============================================================================
@@ -137,7 +138,17 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const [rows] = await db.execute<FleetUnit[]>(
         'SELECT * FROM fleet_units ORDER BY created_at DESC'
       );
-      return reply.send({ success: true, count: rows.length, data: rows });
+
+      // 🛡️ SENTINEL DECRYPTION LAYER: Transform encrypted data for UI consumption
+      const decryptedRows = rows.map((unit) => ({
+        ...unit,
+        motor: unit.motor ? EncryptionService.decrypt(unit.motor) : unit.motor,
+        tarjeta_circulacion: unit.tarjeta_circulacion
+          ? EncryptionService.decrypt(unit.tarjeta_circulacion)
+          : unit.tarjeta_circulacion,
+      }));
+
+      return reply.send({ success: true, count: decryptedRows.length, data: decryptedRows });
     } catch (error) {
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Internal Database Exception' });
@@ -189,7 +200,13 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         nextId = `FL${String(lastNum + 1).padStart(3, '0')}`;
       }
 
-      const dbData = toSnakeCase({ ...parse.data, id: nextId, uuid });
+      // 🛡️ ALE (Application-Level Encryption): Secure identity before persistence
+      const payload = { ...parse.data };
+      if (payload.motor) payload.motor = EncryptionService.encrypt(payload.motor);
+      if (payload.tarjetaCirculacion)
+        payload.tarjetaCirculacion = EncryptionService.encrypt(payload.tarjetaCirculacion);
+
+      const dbData = toSnakeCase({ ...payload, id: nextId, uuid });
       const fields = Object.keys(dbData);
       const placeholders = fields.map(() => '?').join(', ');
       const values = Object.values(dbData).map((v) => (v === undefined ? null : v));
@@ -216,7 +233,13 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send({ error: 'Invalid update data', details: parse.error.format() });
     }
 
-    const updates = toSnakeCase(parse.data);
+    const updates: any = toSnakeCase(parse.data);
+
+    // 🛡️ ALE (Application-Level Encryption): Secure identity during update
+    if (updates.motor) updates.motor = EncryptionService.encrypt(updates.motor);
+    if (updates.tarjeta_circulacion)
+      updates.tarjeta_circulacion = EncryptionService.encrypt(updates.tarjeta_circulacion);
+
     const fields = Object.keys(updates);
     if (fields.length === 0) {
       return reply.code(400).send({ error: 'No update parameters provided' });

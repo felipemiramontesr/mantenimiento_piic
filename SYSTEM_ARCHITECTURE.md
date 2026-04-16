@@ -1,6 +1,6 @@
 # ARCHON SYSTEM
 
-## Archon System Architecture — Engineering Blueprint (v.10.0.0)
+## Archon System Architecture — ArchonCore Sovereign v.11.0.0
 
 This manifesto serves as the architectural foundation for the **Pinnacle Identity Standard (PIIC)** applied to the Archon Control Systems. Every core decision follows a rigorous, zero-noise, and Silicon Valley-grade methodology.
 
@@ -80,7 +80,7 @@ sequenceDiagram
 
 ---
 
-### V. Fleet Asset Lifecycle Orchestration (v.9.0.0)
+### V. Fleet Asset Lifecycle Orchestration (v.11.0.0)
 
 The following diagram illustrates the flow from asset incorporation to temporal maintenance baseline registry.
 
@@ -89,18 +89,24 @@ sequenceDiagram
     participant U as UI (FleetModule)
     participant C as Constants (Centralized)
     participant A as API (Fastify)
-    participant M as Mapper (toSnakeCase)
-    participant D as Database (MySQL)
+    participant Route as Router
+    participant Mapper as Mapper (toSnakeCase)
+    participant Encryption as Encryption Service
+    participant Query as Query Builder
+    participant DB as Database (MySQL)
 
     U->>C: Pull Catalog (Brands/Models)
     U->>U: Collect Form Data (camelCase)
     U->>A: POST /v1/fleet (JSON Payload)
     A->>A: Zod Validation (Schema v.9.0.0)
-    A->>M: toSnakeCase(payload)
-    M-->>A: DB-Ready Object
-    A->>D: INSERT INTO fleet_units
-    D-->>A: Success (FLXXX)
-    A-->>U: HTTP 201 Created
+    Route->>Mapper: toSnakeCase(camelData)
+    Mapper->>Encryption: ALE Layer (AES-256-GCM)
+    Encryption->>Query: Persist Encrypted Identity
+    Query->>DB: INSERT/UPDATE (iv:tag:box)
+    DB->>Query: RowDataPacket
+    Query->>Encryption: Decrypt ALE Layer
+    Encryption->>Mapper: toCamelCase(decryptedRows)
+    Mapper->>UI: Sovereign Data View
 ```
 
 ### VI. Data Entity Relationships
