@@ -100,6 +100,7 @@ interface FleetUnit extends RowDataPacket {
   asset_type: string;
   tag: string;
   placas: string | null;
+  placas_hash: string | null;
   numero_serie: string | null;
   numero_serie_hash: string | null;
   marca: string;
@@ -155,6 +156,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       // 🛡️ SENTINEL DECRYPTION LAYER: Transform encrypted data for UI consumption
       const decryptedRows = rows.map((unit) => ({
         ...unit,
+        placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
         numero_serie: unit.numero_serie
           ? EncryptionService.decrypt(unit.numero_serie)
           : unit.numero_serie,
@@ -222,10 +224,15 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       if (payload.tarjetaCirculacion)
         payload.tarjetaCirculacion = EncryptionService.encrypt(payload.tarjetaCirculacion);
 
-      // 🛡️ B.I.G (Blind Index Generation)
+      // 🛡️ B.I.G (Blind Index Generation): Identity Fortification
       if (payload.numeroSerie) {
         payload.numeroSerieHash = EncryptionService.generateBlindIndex(payload.numeroSerie);
         payload.numeroSerie = EncryptionService.encrypt(payload.numeroSerie);
+      }
+
+      if (payload.placas) {
+        payload.placasHash = EncryptionService.generateBlindIndex(payload.placas);
+        payload.placas = EncryptionService.encrypt(payload.placas);
       }
 
       const dbData = toSnakeCase({ ...payload, id: nextId, uuid });
@@ -262,10 +269,15 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     if (updates.tarjeta_circulacion)
       updates.tarjeta_circulacion = EncryptionService.encrypt(updates.tarjeta_circulacion);
 
-    // 🛡️ B.I.G (Blind Index Update)
+    // 🛡️ B.I.G (Blind Index Update): Identity Fortification
     if (updates.numero_serie) {
       updates.numero_serie_hash = EncryptionService.generateBlindIndex(updates.numero_serie);
       updates.numero_serie = EncryptionService.encrypt(updates.numero_serie);
+    }
+
+    if (updates.placas) {
+      updates.placas_hash = EncryptionService.generateBlindIndex(updates.placas);
+      updates.placas = EncryptionService.encrypt(updates.placas);
     }
 
     const fields = Object.keys(updates);
