@@ -340,13 +340,14 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Unidades inactivas o mermas',
             'red'
           )}
+          {renderKPI('Directorio de oficiales', 0, Users, '#0f2a44', 'Mando y Supervisión', 'navy')}
           {renderKPI('Gestión de Personal', 0, Users, '#0ea5e9', 'Directorio de Operadores', 'sky')}
         </div>
       </section>
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.2.3</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.3.0</p>
       </footer>
     </main>
   );
