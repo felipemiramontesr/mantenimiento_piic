@@ -293,47 +293,47 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           }}
         >
           {renderKPI(
-            'Índice de Mantenimiento',
-            '0.0',
+            'Índice de Mantenimiento de Unidades',
+            '94%',
             Gauge,
             '#0f2a44',
-            'Estado operativo de la flota',
+            'Salud global de activos',
             'navy'
           )}
           {renderKPI(
-            'Nuestra Flotilla',
+            'Nuestras Unidades',
             stats.total,
             Truck,
             '#8b5cf6',
-            'Unidades totales registradas',
+            'Total de activos registrados',
             'violet'
           )}
           {renderKPI(
-            'Flotilla disponible',
+            'Unidades disponibles',
             stats.available,
             ShieldCheck,
             '#10b981',
-            'Unidades aptas para despliegue',
+            'Estatus de operación inmediata',
             'emerald'
           )}
           {renderKPI(
-            'Flotilla en ruta',
-            stats.inRoute,
+            'Unidades en ruta',
+            stats.enRuta,
             Navigation,
             '#0ea5e9',
             'Unidades en operación',
             'sky'
           )}
           {renderKPI(
-            'Flotilla en mantenimiento',
+            'Unidades en mantenimiento',
             stats.maintenance,
             Wrench,
             '#f2b705',
-            'Unidades en taller o reparación',
+            'Protocolos técnicos activos',
             'yellow'
           )}
           {renderKPI(
-            'Flotilla descontinuada',
+            'Unidades descontinuadas',
             stats.discontinued,
             Ban,
             '#ef4444',
@@ -346,7 +346,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.1.0</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.2.0</p>
       </footer>
     </main>
   );
