@@ -19,6 +19,7 @@ import {
   Calendar,
   PlusCircle,
   Activity,
+  Navigation,
   Camera,
 } from 'lucide-react';
 import api from '../../api/client';
@@ -209,65 +210,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // ============================================================================
   const renderGridView = (): React.ReactElement => (
     <div className="archon-grid-3 h-full">
-      {/* Card 1: Registrar Nueva Unidad */}
-      <div
-        className={`glass-card-pro archon-instrument-tile card-hover-sky`}
-        style={{
-          borderTop: '4px solid #0ea5e9',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            marginBottom: '16px',
-            width: '100%',
-          }}
-        >
-          <Plus size={20} style={{ color: '#0ea5e9' }} />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80">
-            Incorporación de Activos
-          </span>
-        </div>
-
-        <div className="archon-tile-payload space-y-8 pb-16">
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(14, 165, 233, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(14, 165, 233, 0.4)',
-            }}
-          >
-            <PlusCircle size={40} style={{ color: '#0ea5e9' }} />
-          </div>
-          <div className="flex flex-col items-center space-y-1 mb-12">
-            <h3
-              className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-              style={{ fontSize: '14px' }}
-            >
-              Registrar Unidad
-            </h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-              Vehículos, Maquinaria y Herramientas
-            </p>
-          </div>
-        </div>
-
-        <div className="archon-tile-action">
-          <button onClick={(): void => setCurrentView('CREATE')} className="btn-sentinel-sky">
-            Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
-          </button>
-        </div>
-      </div>
-
-      {/* Card 2: Mantenimiento Preventivo (NUEVO) */}
+      {/* Card 1: Incorporación de Activos (VERDE) */}
       <div
         className={`glass-card-pro archon-instrument-tile card-hover-emerald`}
         style={{
@@ -284,9 +227,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
             width: '100%',
           }}
         >
-          <ShieldCheck size={20} style={{ color: '#10b981' }} />
+          <Plus size={20} style={{ color: '#10b981' }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80">
-            Mantenimiento Preventivo
+            Incorporación de Activos
           </span>
         </div>
 
@@ -303,7 +246,65 @@ const FleetModule: React.FC = (): React.ReactElement => {
               border: '2px solid rgba(16, 185, 129, 0.4)',
             }}
           >
-            <Activity size={40} style={{ color: '#10b981' }} />
+            <PlusCircle size={40} style={{ color: '#10b981' }} />
+          </div>
+          <div className="flex flex-col items-center space-y-1 mb-12">
+            <h3
+              className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
+              style={{ fontSize: '14px' }}
+            >
+              Registrar Unidad
+            </h3>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+              Vehículos, Maquinaria y Herramientas
+            </p>
+          </div>
+        </div>
+
+        <div className="archon-tile-action">
+          <button onClick={(): void => setCurrentView('CREATE')} className="btn-sentinel-emerald">
+            Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
+          </button>
+        </div>
+      </div>
+
+      {/* Card 2: Mantenimiento Preventivo (AMARILLO) */}
+      <div
+        className={`glass-card-pro archon-instrument-tile card-hover-yellow`}
+        style={{
+          borderTop: '4px solid #f2b705',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
+          <ShieldCheck size={20} style={{ color: '#f2b705' }} />
+          <span className="text-instrument-header text-[#0f2a44] opacity-80">
+            Mantenimiento Preventivo
+          </span>
+        </div>
+
+        <div className="archon-tile-payload space-y-8 pb-16">
+          <div
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(242, 183, 5, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid rgba(242, 183, 5, 0.4)',
+            }}
+          >
+            <Activity size={40} style={{ color: '#f2b705' }} />
           </div>
           <div className="flex flex-col items-center space-y-1 mb-12">
             <h3
@@ -319,8 +320,66 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
 
         <div className="archon-tile-action">
-          <button className="btn-sentinel-emerald">
-            Ver Programación <ArrowRight size={10} className="text-white" />
+          <button className="btn-sentinel-yellow">
+            Ver Programación <ArrowRight size={10} className="text-[#0f2a44] ml-2" />
+          </button>
+        </div>
+      </div>
+
+      {/* Card 3: Generar Nueva Ruta (AZUL) */}
+      <div
+        className={`glass-card-pro archon-instrument-tile card-hover-sky`}
+        style={{
+          borderTop: '4px solid #0ea5e9',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
+          <Navigation size={20} style={{ color: '#0ea5e9' }} />
+          <span className="text-instrument-header text-[#0f2a44] opacity-80">
+            Logística Operativa
+          </span>
+        </div>
+
+        <div className="archon-tile-payload space-y-8 pb-16">
+          <div
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(14, 165, 233, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid rgba(14, 165, 233, 0.4)',
+            }}
+          >
+            <Navigation size={40} style={{ color: '#0ea5e9' }} />
+          </div>
+          <div className="flex flex-col items-center space-y-1 mb-12">
+            <h3
+              className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
+              style={{ fontSize: '14px' }}
+            >
+              Generar Nueva Ruta
+            </h3>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+              Despliegue de Unidad
+            </p>
+          </div>
+        </div>
+
+        <div className="archon-tile-action">
+          <button className="btn-sentinel-sky">
+            Iniciar Ruta <ArrowRight size={10} className="text-white ml-2" />
           </button>
         </div>
       </div>
@@ -832,7 +891,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.12.1.3</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.13.0.0</p>
       </footer>
     </main>
   );

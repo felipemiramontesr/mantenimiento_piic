@@ -1,6 +1,6 @@
 # ARCHON SYSTEM
 
-## Archon System Architecture — ArchonCore Sovereign v.12.0.0
+## Archon System Architecture — ArchonCore Sovereign v.13.0.0
 
 This manifesto serves as the architectural foundation for the **Pinnacle Identity Standard (PIIC)** applied to the Archon Control Systems. Every core decision follows a rigorous, zero-noise, and Silicon Valley-grade methodology.
 
