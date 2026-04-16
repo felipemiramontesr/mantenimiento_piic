@@ -82,7 +82,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Índice de Mantenimiento de Unidades/i)).toBeDefined();
+    expect(screen.getByText(/Índice de Mantenimiento/i)).toBeDefined();
     expect(screen.getByText(/Nuestras Unidades/i)).toBeDefined();
     expect(screen.getByText(/Unidades disponibles/i)).toBeDefined();
     expect(screen.getByText(/Unidades en ruta/i)).toBeDefined();

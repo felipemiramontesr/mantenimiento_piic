@@ -293,7 +293,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           }}
         >
           {renderKPI(
-            'Índice de Mantenimiento de Unidades',
+            'Índice de Mantenimiento',
             '94%',
             Gauge,
             '#0f2a44',
@@ -346,7 +346,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.2.1</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.15.2.2</p>
       </footer>
     </main>
   );
