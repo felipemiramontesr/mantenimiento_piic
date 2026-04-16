@@ -159,6 +159,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
         setCurrentView('GRID');
         setFormData(getInitialForm());
+        // eslint-disable-next-line no-alert
         alert('Vehículo registrado con éxito');
       }
     } catch {
