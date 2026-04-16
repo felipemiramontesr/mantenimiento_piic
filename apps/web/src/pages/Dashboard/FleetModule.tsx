@@ -101,13 +101,13 @@ const getInitialForm = (): {
 });
 
 // ============================================================================
-// 🚀 FLEET MODULE (v.10.0.1)
+// 🚀 FLEET MODULE (v.10.0.2)
 // ============================================================================
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
 
-  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.10.0.1)
+  // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC (v.10.0.2)
   const [_units, setUnits] = useState<FleetUnit[]>(() => {
     try {
       const cached = localStorage.getItem('archon_fleet_cache');
@@ -783,8 +783,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               {currentView === 'GRID'
-                ? 'Gestión de Activos Vehiculares & Maquinaria • Industrial Grade'
-                : 'Protocolo de Incorporación de Activo v.10.0.1'}
+                ? 'Gestión de Vehículos, Maquinaria y Herramientas • Industrial Grade'
+                : 'Protocolo de Incorporación de Activo v.10.0.2'}
             </p>
           </div>
 
@@ -885,7 +885,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         </div>
       </header>
 
-      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.10.0.1) */}
+      {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis v.10.0.2) */}
       <section className="archon-workspace-chassis">
         {currentView !== 'GRID' && renderSubheader()}
         <div className="w-full h-full">
@@ -896,7 +896,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       {/* ⚓ FOOTER SENTINEL (10vh) - V.7.1.3 */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">ArchonCore Sovereign v.10.0.1</p>
+        <p className="text-[#0f2a44]">ArchonCore Sovereign v.10.0.2</p>
       </footer>
     </main>
   );
