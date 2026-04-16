@@ -756,8 +756,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
               />
             </ArchonField>
 
-            {/* Vencimiento de Verificación */}
-            <ArchonField label="Vencimiento de Verificación" icon={Calendar}>
+            {/* Vencimiento de Verificación (Placas) */}
+            <ArchonField label="Vencimiento de Verificación (Placas)" icon={Calendar}>
               <ArchonDatePicker
                 value={formData.vencimientoVerificacion}
                 onChange={(v: string): void =>
