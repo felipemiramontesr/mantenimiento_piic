@@ -2,6 +2,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import ArchonCenter from './ArchonCenter';
+import { FleetProvider } from '../../context/FleetContext';
+
+vi.mock('../../api/client', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ data: { success: true, data: [] } }),
+    post: vi.fn(),
+  },
+}));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
@@ -25,7 +33,9 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
   it('renders branding name and command titles', () => {
     render(
       <BrowserRouter>
-        <ArchonCenter />
+        <FleetProvider>
+          <ArchonCenter />
+        </FleetProvider>
       </BrowserRouter>
     );
 
@@ -37,7 +47,9 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
   it('toggles the user menu when clicking the avatar', () => {
     render(
       <BrowserRouter>
-        <ArchonCenter />
+        <FleetProvider>
+          <ArchonCenter />
+        </FleetProvider>
       </BrowserRouter>
     );
 
@@ -59,7 +71,9 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
   it('handles logout correctly from the user menu', () => {
     render(
       <BrowserRouter>
-        <ArchonCenter />
+        <FleetProvider>
+          <ArchonCenter />
+        </FleetProvider>
       </BrowserRouter>
     );
 
@@ -78,7 +92,9 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
   it('renders all 6 KPI cards with correct text', () => {
     render(
       <BrowserRouter>
-        <ArchonCenter />
+        <FleetProvider>
+          <ArchonCenter />
+        </FleetProvider>
       </BrowserRouter>
     );
 
