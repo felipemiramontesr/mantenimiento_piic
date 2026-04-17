@@ -54,4 +54,14 @@ describe('EncryptionService (ARCHON CORE)', () => {
     // Restore environment
     process.env.DB_ENCRYPTION_KEY = originalKey;
   });
+
+  it('should generate deterministic blind index for same input', () => {
+    const text = 'Sovereign Identity 2026';
+    const index1 = EncryptionService.generateBlindIndex(text);
+    const index2 = EncryptionService.generateBlindIndex(text);
+
+    expect(index1).to.equal(index2);
+    expect(index1).not.to.equal(text);
+    expect(index1).to.have.lengthOf(64); // Hex SHA-256
+  });
 });
