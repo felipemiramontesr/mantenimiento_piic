@@ -457,7 +457,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </p>
           </div>
 
-          {/* 🔱 UNIFORM ACTION CLUSTER: ALL YELLOW - AD HOC V.16.6.2 */}
+          {/* 🔱 UNIFORM ACTION CLUSTER: INSTRUMENT GOLD - V.16.6.3 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl pt-8">
             <button
               type="button"
@@ -465,7 +465,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 setFormData(getInitialForm());
                 setRegistrationSuccess(false);
               }}
-              className="h-[56px] bg-slate-50 border border-slate-200 text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:shadow-md transition-all group"
+              className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em] group"
             >
               <PlusCircle size={18} className="group-hover:rotate-90 transition-transform" />
               Registrar Otra
@@ -478,7 +478,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 setCurrentView('GRID');
                 setFormData(getInitialForm());
               }}
-              className="h-[56px] bg-slate-50 border border-slate-200 text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:shadow-md transition-all"
+              className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em]"
             >
               <LayoutGrid size={18} />
               Administrar Unidades
@@ -491,7 +491,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 navigate('/dashboard');
                 setFormData(getInitialForm());
               }}
-              className="h-[56px] bg-slate-50 border border-slate-200 text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:shadow-md transition-all"
+              className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em]"
             >
               <Home size={18} />
               Centro de Comando
