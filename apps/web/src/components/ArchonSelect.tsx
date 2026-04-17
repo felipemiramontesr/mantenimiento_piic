@@ -8,6 +8,7 @@ interface ArchonSelectProps<T extends string> {
   onChange: (value: T) => void;
   placeholder?: string;
   icon?: React.ElementType;
+  disabled?: boolean;
 }
 
 export default function ArchonSelect<T extends string>({
@@ -16,6 +17,7 @@ export default function ArchonSelect<T extends string>({
   onChange,
   placeholder = 'Seleccionar...',
   icon: Icon,
+  disabled = false,
 }: ArchonSelectProps<T>): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,10 +37,12 @@ export default function ArchonSelect<T extends string>({
     <div className="relative w-full" ref={containerRef}>
       {/* Trigger Area */}
       <div
-        className={`archon-select flex items-center justify-between cursor-pointer transition-all duration-300 ${
-          isOpen ? 'border-b-[#f2b705] bg-white' : ''
-        }`}
-        onClick={(): void => setIsOpen(!isOpen)}
+        className={`archon-select flex items-center justify-between transition-all duration-300 ${
+          disabled ? 'opacity-40 cursor-not-allowed bg-[rgba(15,42,68,0.05)]' : 'cursor-pointer'
+        } ${isOpen ? 'border-b-[#f2b705] bg-white' : ''}`}
+        onClick={(): void => {
+          if (!disabled) setIsOpen(!isOpen);
+        }}
         style={{
           borderBottom: isOpen ? '2px solid #f2b705' : '2px solid rgba(15, 42, 68, 0.1)',
         }}

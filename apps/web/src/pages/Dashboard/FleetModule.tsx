@@ -401,62 +401,31 @@ const FleetModule: React.FC = (): React.ReactElement => {
               <h3>Clasificación del Activo</h3>
             </div>
 
-            {/* Tipo de Unidad */}
             <ArchonField label="Tipo de Unidad" icon={Truck}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={['Vehiculo', 'Maquinaria', 'Herramienta']}
                 value={formData.assetType}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  handleAssetTypeChange(e.target.value as AssetType)
-                }
-              >
-                <option value="Vehiculo">Vehículo</option>
-                <option value="Maquinaria">Maquinaria</option>
-                <option value="Herramienta">Herramienta</option>
-              </select>
+                onChange={(val): void => handleAssetTypeChange(val as AssetType)}
+              />
             </ArchonField>
 
-            {/* Marca — filtrada por Tipo */}
             <ArchonField label="Marca" icon={Tag} required>
-              <select
-                required
-                className="archon-select"
+              <ArchonSelect
+                options={availableMarcas}
                 value={formData.marca}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  handleMarcaChange(e.target.value)
-                }
-              >
-                <option value="">— Selecciona marca —</option>
-                {availableMarcas.map(
-                  (m: string): React.ReactElement => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  )
-                )}
-              </select>
+                onChange={(val): void => handleMarcaChange(val)}
+                placeholder="— Selecciona marca —"
+              />
             </ArchonField>
 
-            {/* Modelo — filtrado por Marca */}
             <ArchonField label="Modelo" icon={Tag} required>
-              <select
-                required
-                className="archon-select"
+              <ArchonSelect
+                options={availableModelos}
                 value={formData.modelo}
+                onChange={(val): void => setFormData({ ...formData, modelo: val })}
                 disabled={!formData.marca}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, modelo: e.target.value })
-                }
-              >
-                <option value="">— Selecciona modelo —</option>
-                {availableModelos.map(
-                  (m: string): React.ReactElement => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  )
-                )}
-              </select>
+                placeholder="— Selecciona modelo —"
+              />
             </ArchonField>
 
             {/* Año */}
