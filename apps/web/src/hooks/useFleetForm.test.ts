@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { http, HttpResponse } from 'msw';
@@ -7,7 +7,7 @@ import server from '../test/server';
 
 /**
  * 🔱 Archon Test Suite: useFleetForm
- * Implementation: 100% Core Logic Coverage (Pillar 2 - v.17.0.0)
+ * Implementation: 100% Core Logic Coverage (Pillar 2 - v.18.0.0)
  */
 describe('useFleetForm Hook', () => {
   it('should initialize with default fleet form data', (): void => {
@@ -26,19 +26,32 @@ describe('useFleetForm Hook', () => {
     expect(result.current.formData.modelo).toBe('');
   });
 
-  it('should handle marca changes and update available models', (): void => {
+  it('should handle marca changes and update available models', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
+
+    // Wait for initial brands to load
+    await waitFor(() => {
+      expect(result.current.availableMarcas).toContain('Toyota');
+    });
+
     act((): void => {
       result.current.handleMarcaChange('Toyota');
     });
+
     expect(result.current.formData.marca).toBe('Toyota');
-    expect(result.current.availableMarcas).toContain('Toyota');
+
+    // Wait for models to load
+    await waitFor(() => {
+      expect(result.current.availableModelos).toContain('Hilux');
+    });
   });
 
   it('should successfully submit form and set success state', async (): Promise<void> => {
-    const onSuccess = vi.fn(async (): Promise<void> => { /* No-op */ });
+    const onSuccess = vi.fn(async (): Promise<void> => {
+      /* No-op */
+    });
     const { result } = renderHook(() => useFleetForm());
-    
+
     await act(async (): Promise<void> => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
       await result.current.handleSubmit(e, onSuccess);
@@ -50,10 +63,10 @@ describe('useFleetForm Hook', () => {
 
   it('should throw error when submitting with missing required fields', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
-    
+
     // Clear required field
     act((): void => {
-      result.current.setFormData(prev => ({ ...prev, tag: '' }));
+      result.current.setFormData((prev) => ({ ...prev, tag: '' }));
     });
 
     await expect(async (): Promise<void> => {
@@ -65,24 +78,28 @@ describe('useFleetForm Hook', () => {
   it('should handle server errors during submission', async (): Promise<void> => {
     // Override handler for this test
     server.use(
-      http.post('*/fleet', (): Response => HttpResponse.json({ success: false, error: 'DB Connection Error' }, { status: 500 }))
+      http.post(
+        '*/fleet',
+        (): Response =>
+          HttpResponse.json({ success: false, error: 'DB Connection Error' }, { status: 500 })
+      )
     );
 
     const { result } = renderHook(() => useFleetForm());
-    
+
     await expect(async (): Promise<void> => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
       await result.current.handleSubmit(e);
     }).rejects.toThrow('DB Connection Error');
-    
+
     expect(result.current.registrationSuccess).toBe(false);
   });
 
   it('should reset form state to initial values', (): void => {
     const { result } = renderHook(() => useFleetForm());
-    
+
     act((): void => {
-      result.current.setFormData(prev => ({ ...prev, tag: 'MODIFIED' }));
+      result.current.setFormData((prev) => ({ ...prev, tag: 'MODIFIED' }));
       result.current.setRegistrationSuccess(true);
     });
 

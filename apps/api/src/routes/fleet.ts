@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { RowDataPacket } from 'mysql2/promise';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import db from '../services/db';
@@ -106,7 +106,7 @@ const updateFleetSchema = z.object({
   maintenanceTimeFreqId: z.number().int().optional().nullable(),
   maintenanceUsageFreqId: z.number().int().optional().nullable(),
   lastServiceDate: z.string().optional().nullable(),
-  lastServiceUsageReading: z.number().optional().default(0),
+  lastServiceUsageReading: z.number().optional().nullable(),
 });
 
 // ============================================================================
@@ -336,8 +336,11 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     try {
       const setClause = fields.map((f) => `${f} = ?`).join(', ');
       const values = [...Object.values(updates), id];
-      const [result] = await db.execute(`UPDATE fleet_units SET ${setClause} WHERE id = ?`, values);
-      const affected = (result as { affectedRows: number }).affectedRows;
+      const [result] = await db.execute<ResultSetHeader>(
+        `UPDATE fleet_units SET ${setClause} WHERE id = ?`,
+        values
+      );
+      const affected = result.affectedRows;
       if (affected === 0) {
         return reply.code(404).send({ error: 'Unit not found in registry' });
       }
