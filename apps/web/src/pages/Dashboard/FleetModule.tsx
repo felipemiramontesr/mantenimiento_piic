@@ -399,7 +399,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         <div className="archon-grid-2">
           {/* CARD: Clasificación del Activo */}
           <div
-            className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8"
+            className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8 flex flex-col"
             style={{ borderTop: '4px solid #f2b705' }}
           >
             <div className="archon-card-header-pro">
