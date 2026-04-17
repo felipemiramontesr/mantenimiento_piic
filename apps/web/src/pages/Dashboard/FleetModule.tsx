@@ -438,25 +438,26 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-40">
       {registrationSuccess ? (
-        /* 🏁 SUCCESS VIEW: ARCHON TRANSACTIONAL PARITY */
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-10 animate-in zoom-in-95 duration-500 bg-white glass-card-pro p-20 rounded-xl shadow-2xl border-t-8 border-emerald-500">
+        /* 🏁 SUCCESS VIEW: ARCHON TRANSACTIONAL PARITY - REFINED V.16.6.2 */
+        <div className="flex flex-col items-center justify-center py-24 text-center space-y-12 animate-in zoom-in-95 duration-500 bg-white glass-card-pro p-20 rounded-xl shadow-2xl border-t-8 border-emerald-500">
+          {/* 💎 ELEGANT SUCCESS ICON (NO GLOW) */}
           <div className="relative">
-            <div className="absolute inset-0 bg-emerald-100 rounded-full blur-3xl animate-pulse opacity-40" />
-            <div className="relative w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center shadow-xl shadow-emerald-200">
-              <CheckCircle color="white" size={64} strokeWidth={2.5} />
+            <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-200 shadow-sm">
+              <CheckCircle color="#10b981" size={48} strokeWidth={2} />
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-4xl font-black text-[#0f2a44] tracking-tight">
+            <h3 className="text-3xl font-black text-[#0f2a44] tracking-tight uppercase">
               Unidad Registrada con Éxito
             </h3>
             <p className="text-[#0f2a44] text-lg opacity-60 font-medium max-w-lg mx-auto leading-relaxed">
               El activo <span className="text-[#f2b705] font-bold">{formData.tag}</span> ha sido
-              incorporado al protocolo de mantenimiento soberano de Archon de forma exitosa.
+              incorporado al protocolo de mantenimiento soberano de Archon.
             </p>
           </div>
 
+          {/* 🔱 UNIFORM ACTION CLUSTER: ALL YELLOW - AD HOC V.16.6.2 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl pt-8">
             <button
               type="button"
@@ -464,9 +465,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 setFormData(getInitialForm());
                 setRegistrationSuccess(false);
               }}
-              className="h-[64px] bg-[#0f2a44] text-white rounded-lg flex items-center justify-center gap-4 font-bold text-base tracking-wide hover:bg-[#1a3a5a] transition-all shadow-lg shadow-[#0f2a44]/20 group"
+              className="h-[56px] bg-slate-50 border border-slate-200 text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:shadow-md transition-all group"
             >
-              <PlusCircle size={22} className="group-hover:rotate-90 transition-transform" />
+              <PlusCircle size={18} className="group-hover:rotate-90 transition-transform" />
               Registrar Otra
             </button>
 
@@ -477,9 +478,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 setCurrentView('GRID');
                 setFormData(getInitialForm());
               }}
-              className="h-[64px] border-2 border-[#0f2a44]/10 text-[#0f2a44] rounded-lg flex items-center justify-center gap-4 font-bold text-base tracking-wide hover:bg-slate-50 transition-all"
+              className="h-[56px] bg-slate-50 border border-slate-200 text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:shadow-md transition-all"
             >
-              <LayoutGrid size={22} />
+              <LayoutGrid size={18} />
               Administrar Unidades
             </button>
 
@@ -490,9 +491,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 navigate('/dashboard');
                 setFormData(getInitialForm());
               }}
-              className="h-[64px] border-2 border-transparent text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-bold text-base tracking-wide hover:underline transition-all"
+              className="h-[56px] bg-slate-50 border border-slate-200 text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:shadow-md transition-all"
             >
-              <Home size={22} />
+              <Home size={18} />
               Centro de Comando
             </button>
           </div>
