@@ -1,23 +1,11 @@
 module.exports = {
-  extends: ['@commitlint/config-conventional'],
+  /* 🔱 PIIC Sovereign Commit Standard */
+  /* Allowing: V.x.x.x_Description_Technical(In English) */
   rules: {
-    'type-enum': [
-      2,
-      'always',
-      [
-        'feat',
-        'fix',
-        'docs',
-        'style',
-        'refactor',
-        'perf',
-        'test',
-        'build',
-        'ci',
-        'chore',
-        'revert',
-      ],
-    ],
-    'subject-case': [2, 'always', 'lower-case'],
+    'type-empty': [0],
+    'subject-empty': [0],
+    'type-case': [0],
+    'subject-case': [0],
+    'header-max-length': [0],
   },
 };
