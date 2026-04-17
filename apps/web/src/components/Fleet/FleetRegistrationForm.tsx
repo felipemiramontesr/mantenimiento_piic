@@ -381,10 +381,18 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       </div>
 
       <div className="flex items-center justify-end gap-6 pt-12">
-        <button type="button" onClick={onCancel} className="btn-sentinel-red w-[340px]">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-sentinel-red w-[420px] whitespace-nowrap"
+        >
           Cancelar Registro
         </button>
-        <button type="submit" disabled={isSubmitting} className="btn-sentinel-emerald w-[340px]">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="btn-sentinel-emerald w-[420px] whitespace-nowrap"
+        >
           {isSubmitting ? 'Transmitiendo...' : 'Confirmar Registro e Incorporar'}
           <Save size={16} className="ml-2" />
         </button>
