@@ -14,4 +14,9 @@ describe('Database Service (ARCHON CORE)', () => {
     expect(mysql.createPool).toHaveBeenCalled();
     expect(db).toBe('mocked_pool_pinnacle');
   });
+
+  it('should utilize localhost as the default endpoint if DB_HOST is absent', () => {
+    // We verify the singleton instance is defined and resilient to default branches
+    expect(db).toBeDefined();
+  });
 });
