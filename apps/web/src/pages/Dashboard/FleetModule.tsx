@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Truck,
-  ArrowLeft,
-  Settings,
-  LogOut,
-  Activity,
-  Navigation,
-} from 'lucide-react';
+import { Truck, ArrowLeft, Settings, LogOut, Activity, Navigation } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
 
@@ -26,19 +19,14 @@ type FleetView = 'GRID' | 'CREATE';
  */
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
-  const { refreshUnits } = useFleet();
+  const { refreshUnits, units } = useFleet();
   const [currentView, setCurrentView] = useState<FleetView>('GRID');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
   // Shared with RegistrationForm to ensure perfect state synchronization
   const fleetController = useFleetForm();
-  const { 
-    formData, 
-    registrationSuccess, 
-    setRegistrationSuccess, 
-    resetForm 
-  } = fleetController;
+  const { formData, registrationSuccess, setRegistrationSuccess, resetForm } = fleetController;
 
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
@@ -77,7 +65,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </button>
           <div className="h-6 w-[1px] bg-[rgba(15,42,68,0.1)]" />
           <div className="relative">
-            <button 
+            <button
               onClick={toggleMenu}
               aria-label="Navigation Menu"
               className="w-10 h-10 rounded-full bg-[#f1f5f9] border border-[rgba(15,42,68,0.1)] flex items-center justify-center overflow-hidden hover:border-[#f2b705] transition-all"
@@ -92,7 +80,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                     <Settings size={16} className="text-[#0f2a44]" />
                     <span className="text-sm font-bold text-[#0f2a44]">Configuración</span>
                   </button>
-                  <button 
+                  <button
                     onClick={handleLogout}
                     className="flex items-center gap-3 w-full p-3 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
                   >
@@ -117,7 +105,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
         <div className="w-full h-full">
           {registrationSuccess ? (
-            <FleetSuccessView 
+            <FleetSuccessView
               formData={formData}
               onRegisterAnother={resetForm}
               onManageFleet={handleReturnToGrid}
@@ -126,12 +114,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
           ) : (
             <>
               {currentView === 'GRID' && (
-                <FleetGridView 
-                  onStartRegistration={(): void => setCurrentView('CREATE')}
-                />
+                <FleetGridView onRegister={(): void => setCurrentView('CREATE')} units={units} />
               )}
               {currentView === 'CREATE' && (
-                <FleetRegistrationForm 
+                <FleetRegistrationForm
                   controller={fleetController}
                   onSuccess={refreshUnits}
                   onCancel={handleReturnToGrid}

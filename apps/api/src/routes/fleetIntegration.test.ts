@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
@@ -21,9 +20,8 @@ describe('Fleet Integration Endpoints', () => {
 
   beforeAll(async () => {
     await app.ready();
-    // eslint-disable-next-line no-unused-vars
     mockToken = await (
-      app as unknown as { jwt: { sign: (p: object) => Promise<string> } }
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
     ).jwt.sign({ id: 1, email: 'admin@piic.mx' });
   });
 
@@ -54,13 +52,12 @@ describe('Fleet Integration Endpoints', () => {
     };
 
     it('should successfully register a new unit and return 201', async (): Promise<void> => {
-      // eslint-disable-next-line no-unused-vars
       (
         db.execute as unknown as {
-          mockResolvedValueOnce: (v1: unknown) => {
-            mockResolvedValueOnce: (v2: unknown) => {
-              mockResolvedValueOnce: (v3: unknown) => {
-                mockResolvedValueOnce: (v4: unknown) => void;
+          mockResolvedValueOnce: (_v1: unknown) => {
+            mockResolvedValueOnce: (_v2: unknown) => {
+              mockResolvedValueOnce: (_v3: unknown) => {
+                mockResolvedValueOnce: (_v4: unknown) => void;
               };
             };
           };

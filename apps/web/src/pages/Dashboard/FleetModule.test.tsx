@@ -15,13 +15,16 @@ vi.mock('../../context/FleetContext', async () => {
   return {
     ...actual,
     useFleet: (): Record<string, unknown> => ({
-      refreshUnits: vi.fn(async (): Promise<void> => { /* No-op */ }),
+      refreshUnits: vi.fn(async (): Promise<void> => {
+        /* No-op */
+      }),
     }),
   };
 });
 
 describe('FleetModule Orchestrator', () => {
-  const renderModule = (): RenderResult => render(
+  const renderModule = (): RenderResult =>
+    render(
       <MemoryRouter>
         <FleetProvider>
           <FleetModule />
@@ -31,27 +34,27 @@ describe('FleetModule Orchestrator', () => {
 
   it('should start in the GRID view', (): void => {
     renderModule();
-    expect(screen.getByText('Incorporación de Activos')).toBeInTheDocument();
+    expect(screen.getByText('Gestión de Flotilla')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
-    expect(screen.getByText('Clasificación del Activo')).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/Incorporar Activo/i));
+    expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
     expect(screen.getByText('Volver al Panel')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking "Volver al Panel"', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
+    fireEvent.click(screen.getByText(/Incorporar Activo/i));
     fireEvent.click(screen.getByText('Volver al Panel'));
-    expect(screen.getByText('Incorporación de Activos')).toBeInTheDocument();
+    expect(screen.getByText('Gestión de Flotilla')).toBeInTheDocument();
   });
 
   it('should show success view after successful registration', async (): Promise<void> => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
-    
+    fireEvent.click(screen.getByText(/Incorporar Activo/i));
+
     // Simulate successful submission in the child form
     fireEvent.click(screen.getByText(/Confirmar Registro e Incorporar/i));
 

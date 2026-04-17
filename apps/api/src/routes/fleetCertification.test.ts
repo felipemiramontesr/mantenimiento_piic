@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { describe, it, expect } from 'vitest';
 import { toSnakeCase } from '../utils/mappers';
 import EncryptionService from '../services/encryption';
