@@ -56,7 +56,7 @@ describe('FleetModule Orchestrator', () => {
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
 
     // Simulate successful submission in the child form
-    fireEvent.click(screen.getByText(/Confirmar Registro e Incorporar/i));
+    fireEvent.click(screen.getByText(/Confirmar Registro/i));
 
     await waitFor((): void => {
       expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();

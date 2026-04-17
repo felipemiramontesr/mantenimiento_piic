@@ -17,15 +17,21 @@ interface ConnectedFormProps {
 }
 
 // Helper component to provide the controller
-const ConnectedForm: React.FC<ConnectedFormProps> = (props: ConnectedFormProps): React.JSX.Element => {
+const ConnectedForm: React.FC<ConnectedFormProps> = (
+  props: ConnectedFormProps
+): React.JSX.Element => {
   const controller = useFleetForm();
   return <FleetRegistrationForm controller={controller} {...props} />;
 };
 
 describe('FleetRegistrationForm Component', () => {
   const mockProps = {
-    onSuccess: vi.fn(async (): Promise<void> => { /* No-op */ }),
-    onCancel: vi.fn((): void => { /* No-op */ }),
+    onSuccess: vi.fn(async (): Promise<void> => {
+      /* No-op */
+    }),
+    onCancel: vi.fn((): void => {
+      /* No-op */
+    }),
   };
 
   it('should render all form sections', (): void => {
@@ -42,23 +48,27 @@ describe('FleetRegistrationForm Component', () => {
 
   it('should show "Transmitiendo..." when submitting', async (): Promise<void> => {
     server.use(
-      http.post('*/fleet', async (): Promise<Response> => new Promise((resolve) => {
-          setTimeout(() => {
-            resolve(HttpResponse.json({ success: true }));
-          }, 100);
-        }))
+      http.post(
+        '*/fleet',
+        async (): Promise<Response> =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve(HttpResponse.json({ success: true }));
+            }, 100);
+          })
+      )
     );
 
     render(<ConnectedForm {...mockProps} />);
-    fireEvent.click(screen.getByText(/Confirmar Registro e Incorporar/i));
-    
+    fireEvent.click(screen.getByText(/Confirmar Registro/i));
+
     expect(screen.getByText(/Transmitiendo.../i)).toBeInTheDocument();
   });
 
   it('should call onSuccess and finish submission successfully', async (): Promise<void> => {
     render(<ConnectedForm {...mockProps} />);
-    
-    fireEvent.click(screen.getByText(/Confirmar Registro e Incorporar/i));
+
+    fireEvent.click(screen.getByText(/Confirmar Registro/i));
 
     await waitFor((): void => {
       expect(mockProps.onSuccess).toHaveBeenCalled();
