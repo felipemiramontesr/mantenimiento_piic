@@ -174,13 +174,13 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        <div className="flex items-center w-full pb-8 animate-in fade-in duration-500">
-          {currentView === 'CREATE' && (
+        {currentView === 'CREATE' && (
+          <div className="flex items-center w-full pb-8 animate-in fade-in duration-500">
             <button onClick={handleReturnToGrid} className="btn-sentinel-yellow">
               <ArrowLeft size={14} /> Volver al Panel
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="w-full h-full">
           {registrationSuccess ? (
