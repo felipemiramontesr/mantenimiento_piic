@@ -65,16 +65,16 @@ describe('FleetModule Orchestrator', () => {
 
   it('should toggle user menu correctly', (): void => {
     renderModule();
-    const menuButton = screen.getByRole('button', { name: /navigation/i });
+    const menuButton = screen.getByRole('button', { name: /user menu/i });
     fireEvent.click(menuButton);
-    expect(screen.getByText('Configuración')).toBeInTheDocument();
+    expect(screen.getByText('Ajustes')).toBeInTheDocument();
     expect(screen.getByText('Cerrar Sesión')).toBeInTheDocument();
   });
 
-  it('should handle logout', (): void => {
+  it('should logout correctly', (): void => {
     const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem');
     renderModule();
-    fireEvent.click(screen.getByRole('button', { name: /navigation/i }));
+    fireEvent.click(screen.getByRole('button', { name: /user menu/i }));
     fireEvent.click(screen.getByText('Cerrar Sesión'));
     expect(removeItemSpy).toHaveBeenCalledWith('archon_token');
   });

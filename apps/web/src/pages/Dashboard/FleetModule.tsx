@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, ArrowLeft, Settings, LogOut, Activity, Navigation } from 'lucide-react';
+import { Truck, ArrowLeft, Settings, LogOut } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
 
@@ -42,60 +42,139 @@ const FleetModule: React.FC = (): React.ReactElement => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] archon-dashboard-v3 font-outfit overflow-x-hidden">
-      {/* ── SOVEREIGN NAVIGATION HEADER ─────────────────────────────────── */}
-      <nav className="h-20 bg-white border-b border-[rgba(15,42,68,0.05)] px-12 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
-        <div className="flex items-center gap-6">
-          <div className="w-10 h-10 bg-[#0f2a44] rounded flex items-center justify-center">
-            <Truck className="text-[#f2b705]" size={20} />
+    <main className="workspace-container-pro animate-in fade-in duration-700">
+      {/* 🚀 HEADER SOBERANO (Dual Panel) */}
+      <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+          }}
+        >
+          {/* Left Panel: Operational Context */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '8px',
+              }}
+            >
+              <Truck size={28} style={{ color: '#f2b705' }} />
+              <h2
+                className="text-[#0f2a44] tracking-tighter font-black text-2xl"
+                style={{ margin: 0, padding: 0, lineHeight: 1 }}
+              >
+                Archon Fleet Admin
+              </h2>
+            </div>
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+              Administración de Activos, Registro Técnico & Optimización de Flota
+            </p>
           </div>
-          <div className="flex flex-col">
-            <span className="text-[14px] font-black text-[#0f2a44] tracking-[0.2em] uppercase">
-              Archon Fleet Admin
-            </span>
-            <span className="text-[10px] font-bold text-[#f2b705] tracking-[0.1em] uppercase">
-              {BRANDING_NAME} • {SYSTEM_VERSION}
-            </span>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-8">
-          <button className="archon-nav-icon">
-            <Activity size={18} />
-          </button>
-          <div className="h-6 w-[1px] bg-[rgba(15,42,68,0.1)]" />
-          <div className="relative">
+          {/* Right Panel: Identity & Access */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
+            <h1
+              style={{
+                fontSize: '26px',
+                fontWeight: 900,
+                margin: 0,
+                letterSpacing: '-0.03em',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                color: '#0f2a44',
+              }}
+            >
+              Archon
+            </h1>
+
             <button
               onClick={toggleMenu}
-              aria-label="Navigation Menu"
-              className="w-10 h-10 rounded-full bg-[#f1f5f9] border border-[rgba(15,42,68,0.1)] flex items-center justify-center overflow-hidden hover:border-[#f2b705] transition-all"
+              aria-label="User Menu"
+              className="avatar-trigger-pro"
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '4px',
+                border: '2px solid #f2b705',
+                backgroundColor: '#0f2a44',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
+                transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
+                padding: 0,
+              }}
             >
-              <Navigation size={18} className="text-[#0f2a44] opacity-60" />
+              <svg width="24" height="24" viewBox="0 0 100 100">
+                <path
+                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+                  stroke="#f2b705"
+                  strokeWidth="16"
+                  fill="none"
+                />
+              </svg>
             </button>
+
             {isMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={closeMenu} />
-                <div className="absolute right-0 mt-4 w-64 bg-white rounded-xl shadow-2xl border border-[rgba(15,42,68,0.1)] p-3 z-20 animate-in fade-in slide-in-from-top-4">
-                  <button className="flex items-center gap-3 w-full p-3 hover:bg-[#f8fafc] rounded-lg transition-colors">
-                    <Settings size={16} className="text-[#0f2a44]" />
-                    <span className="text-sm font-bold text-[#0f2a44]">Configuración</span>
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 w-full p-3 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '60px',
+                  right: '0',
+                  width: '180px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '4px',
+                  boxShadow: '0 10px 30px rgba(15, 42, 68, 0.15)',
+                  border: '1px solid rgba(15, 42, 68, 0.08)',
+                  zIndex: 100,
+                  padding: '4px 0',
+                  animation: 'fade-in 0.2s ease-out',
+                }}
+              >
+                <div
+                  style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}
+                >
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontWeight: 900,
+                      color: '#f2b705',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                    }}
                   >
-                    <LogOut size={16} />
-                    <span className="text-sm font-bold">Cerrar Sesión</span>
-                  </button>
+                    Sovereign Access
+                  </span>
                 </div>
-              </>
+                <button className="dropdown-item-mock" onClick={closeMenu}>
+                  <Settings size={14} /> Ajustes
+                </button>
+                <div
+                  style={{ height: '1px', background: 'rgba(15,42,68,0.05)', margin: '4px 0' }}
+                />
+                <button
+                  className="dropdown-item-mock dropdown-item-mock-danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={14} /> Cerrar Sesión
+                </button>
+              </div>
             )}
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="px-12 pt-16 h-full pb-40">
-        <div className="flex items-center w-full pb-32 animate-in fade-in duration-500 px-1">
+      {/* 📊 BODY MODULAR */}
+      <section className="archon-workspace-chassis">
+        <div className="flex items-center w-full pb-8 animate-in fade-in duration-500">
           {currentView === 'CREATE' && (
             <button onClick={handleReturnToGrid} className="btn-sentinel-yellow">
               <ArrowLeft size={14} /> Volver al Panel
@@ -126,8 +205,15 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </>
           )}
         </div>
-      </main>
-    </div>
+      </section>
+
+      <footer className="workspace-footer-pro">
+        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+        <p className="text-[#0f2a44]">
+          {BRANDING_NAME} {SYSTEM_VERSION}
+        </p>
+      </footer>
+    </main>
   );
 };
 

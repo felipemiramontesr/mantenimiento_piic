@@ -16,9 +16,9 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
   onRegister,
   units: _units = [],
 }: FleetGridViewProps): React.JSX.Element => (
-  <div className="space-y-12 animate-in fade-in duration-700 pt-12">
-    {/* 🚀 TRIPLE-AXIS INSTRUMENT CLUSTER */}
-    <div className="archon-grid-3 h-full gap-8">
+  <div className="animate-in fade-in duration-700">
+    {/* 🚀 TRIPLE-AXIS INSTRUMENT CLUSTER (Sovereign Grid) */}
+    <div className="archon-grid-3 gap-5">
       {/* Instrument 1: Incorporación (VERDE) */}
       <div
         className="glass-card-pro archon-instrument-tile card-hover-emerald"
