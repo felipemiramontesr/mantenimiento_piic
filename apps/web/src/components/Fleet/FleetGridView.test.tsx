@@ -17,9 +17,9 @@ describe('FleetGridView Component', () => {
 
   const renderComponent = (): RenderResult => render(<FleetGridView {...mockProps} />);
 
-  it('should call onRegister when "Iniciar Protocolo" is clicked', (): void => {
+  it('should call onRegister when "Iniciar Registro" is clicked', (): void => {
     renderComponent();
-    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
+    fireEvent.click(screen.getByText(/Iniciar Registro/i));
     expect(mockProps.onRegister).toHaveBeenCalled();
   });
 

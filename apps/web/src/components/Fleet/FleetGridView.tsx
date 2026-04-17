@@ -50,7 +50,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
             onClick={onRegister}
             className="btn-sentinel-emerald w-full flex items-center justify-center gap-2"
           >
-            Iniciar Protocolo <ArrowRight size={12} />
+            Iniciar Registro <ArrowRight size={12} />
           </button>
         </div>
       </div>

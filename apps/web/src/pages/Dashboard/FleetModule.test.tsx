@@ -39,21 +39,21 @@ describe('FleetModule Orchestrator', () => {
 
   it('should transition to CREATE view when starting registration', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
+    fireEvent.click(screen.getByText(/Iniciar Registro/i));
     expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
     expect(screen.getByText('Volver al Panel')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking "Volver al Panel"', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
+    fireEvent.click(screen.getByText(/Iniciar Registro/i));
     fireEvent.click(screen.getByText('Volver al Panel'));
     expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should show success view after successful registration', async (): Promise<void> => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
+    fireEvent.click(screen.getByText(/Iniciar Registro/i));
 
     // Simulate successful submission in the child form
     fireEvent.click(screen.getByText(/Confirmar Registro e Incorporar/i));
