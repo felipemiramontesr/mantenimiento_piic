@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, ArrowRight, PlusCircle, Wrench, Navigation, Activity } from 'lucide-react';
+import { Plus, ArrowRight, PlusCircle, Wrench, Navigation } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 
 interface FleetGridViewProps {
@@ -14,44 +14,9 @@ interface FleetGridViewProps {
  */
 export const FleetGridView: React.FC<FleetGridViewProps> = ({
   onRegister,
-  units = [],
+  units: _units = [],
 }: FleetGridViewProps): React.JSX.Element => (
-  <div className="space-y-12 animate-in fade-in duration-700">
-    {/* 📊 MASTER KPI OVERLAY (v.17.0.2) */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="glass-card-pro p-8 space-y-4 border-l-4 border-[#0f2a44]">
-        <div className="flex items-center gap-3 opacity-60">
-          <Activity size={16} />
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]">
-            Unidades en Registro
-          </span>
-        </div>
-        <div className="text-4xl font-black text-[#0f2a44] tracking-tighter">{units.length}</div>
-      </div>
-
-      <div className="glass-card-pro p-8 space-y-4 border-l-4 border-[#f2b705]">
-        <div className="flex items-center gap-3 text-[#f2b705]">
-          <Wrench size={16} />
-          <span className="text-[10px] font-black uppercase tracking-widest">
-            Garantía de Servicio
-          </span>
-        </div>
-        <div className="text-4xl font-black text-[#0f2a44] tracking-tighter">100%</div>
-      </div>
-
-      <div className="glass-card-pro p-8 space-y-4 border-l-4 border-emerald-500">
-        <div className="flex items-center gap-3 text-emerald-600">
-          <Navigation size={16} />
-          <span className="text-[10px] font-black uppercase tracking-widest">
-            Estatus Operativo
-          </span>
-        </div>
-        <div className="text-4xl font-black text-[#0f2a44] tracking-tighter uppercase text-[24px]">
-          Soberano
-        </div>
-      </div>
-    </div>
-
+  <div className="space-y-12 animate-in fade-in duration-700 pt-12">
     {/* 🚀 TRIPLE-AXIS INSTRUMENT CLUSTER */}
     <div className="archon-grid-3 h-full gap-8">
       {/* Instrument 1: Incorporación (VERDE) */}

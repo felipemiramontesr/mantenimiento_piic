@@ -17,12 +17,6 @@ describe('FleetGridView Component', () => {
 
   const renderComponent = (): RenderResult => render(<FleetGridView {...mockProps} />);
 
-  it('should render the instrument indicators', (): void => {
-    renderComponent();
-    expect(screen.getByText('Unidades en Registro')).toBeInTheDocument();
-    expect(screen.getByText('Estatus Operativo')).toBeInTheDocument();
-  });
-
   it('should call onRegister when "Iniciar Protocolo" is clicked', (): void => {
     renderComponent();
     fireEvent.click(screen.getByText(/Iniciar Protocolo/i));

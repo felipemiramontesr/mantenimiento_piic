@@ -34,7 +34,7 @@ describe('FleetModule Orchestrator', () => {
 
   it('should start in the GRID view', (): void => {
     renderModule();
-    expect(screen.getByText('Unidades en Registro')).toBeInTheDocument();
+    expect(screen.getByText('Archon Fleet Admin')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
@@ -48,7 +48,7 @@ describe('FleetModule Orchestrator', () => {
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
     fireEvent.click(screen.getByText('Volver al Panel'));
-    expect(screen.getByText('Unidades en Registro')).toBeInTheDocument();
+    expect(screen.getByText('Archon Fleet Admin')).toBeInTheDocument();
   });
 
   it('should show success view after successful registration', async (): Promise<void> => {
