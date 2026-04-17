@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import mysql from 'mysql2/promise';
-import db from './db';
+import { resolveDbHost } from './db';
 
 vi.mock('mysql2/promise', () => ({
   default: {
@@ -9,14 +9,28 @@ vi.mock('mysql2/promise', () => ({
 }));
 
 describe('Database Service (ARCHON CORE)', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   it('should initialize mysql connection pool with environment variables', () => {
-    // The db module executes on import, so we verify what it called createPool with
     expect(mysql.createPool).toHaveBeenCalled();
   });
 
   it('should utilize localhost as a fallback if DB_HOST is missing', () => {
-    // This branch is inherently exercised by the ternary assignment in db.ts
-    // We certify resilience across all Archon environmental nodes.
-    expect(db).toBeDefined();
+    delete process.env.DB_HOST;
+    expect(resolveDbHost()).toBe('localhost');
+  });
+
+  it('should utilize process.env.DB_HOST if provided', () => {
+    process.env.DB_HOST = 'db.piic.mx';
+    expect(resolveDbHost()).toBe('db.piic.mx');
   });
 });

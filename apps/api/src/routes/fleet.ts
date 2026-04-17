@@ -251,7 +251,6 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
 
       // 🛡️ DATA SANITIZATION (v.16.5.15): Automating JSON serialization for complex objects/arrays
       const values = Object.values(dbData).map((v) => {
-        if (v === undefined) return null;
         if (v !== null && (Array.isArray(v) || typeof v === 'object')) {
           return JSON.stringify(v);
         }

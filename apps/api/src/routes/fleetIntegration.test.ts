@@ -37,8 +37,19 @@ describe('Fleet Integration Endpoints', () => {
     vi.clearAllMocks();
   });
 
-  const authHeader = (): Record<string, string> => ({
-    Authorization: `Bearer ${mockToken}`,
+  const authHeader = (token = mockToken): Record<string, string> => ({
+    Authorization: `Bearer ${token}`,
+  });
+
+  describe('Global Hooks (onRequest)', () => {
+    it('should return 401 if token is invalid', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet',
+        headers: { Authorization: 'Bearer invalid_token' },
+      });
+      expect(response.statusCode).toBe(401);
+    });
   });
 
   describe('POST /v1/fleet', () => {
@@ -59,7 +70,7 @@ describe('Fleet Integration Endpoints', () => {
       protocolStartDate: '2026-04-16',
     };
 
-    it('should successfully register a new unit with all fields', async (): Promise<void> => {
+    it('should successfully register a new unit with all security fields', async (): Promise<void> => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[]]) // Tag unique
         .mockResolvedValueOnce([[]]) // Serie unique
@@ -113,18 +124,6 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(409);
     });
 
-    it('should handle unknown db errors', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce({});
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: validUnit,
-      });
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Unknown DB Exception');
-    });
-
     it('should return 409 for duplicate economic number (tag)', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]); // Tag exists
 
@@ -139,7 +138,19 @@ describe('Fleet Integration Endpoints', () => {
       expect(JSON.parse(response.body).error).toContain('Número Económico');
     });
 
-    it('should return 400 for invalid schema', async (): Promise<void> => {
+    it('should handle unknown db errors', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce({});
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: validUnit,
+      });
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toContain('Unknown DB Exception');
+    });
+
+    it('should return 400 for invalid data format in POST', async (): Promise<void> => {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/fleet',
@@ -154,8 +165,20 @@ describe('Fleet Integration Endpoints', () => {
     it('should return list with decrypted and null fields', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([
         [
-          { id: 'FL001', motor: 'enc_MOT1', tarjeta_circulacion: null },
-          { id: 'FL002', motor: null, tarjeta_circulacion: 'enc_TC2' },
+          {
+            id: 'FL001',
+            motor: 'enc_MOT1',
+            tarjeta_circulacion: null,
+            numero_serie: 'enc_SN1',
+            placas: 'enc_PL1',
+          },
+          {
+            id: 'FL002',
+            motor: null,
+            tarjeta_circulacion: 'enc_TC2',
+            numero_serie: null,
+            placas: null,
+          },
         ],
       ]);
 
@@ -168,6 +191,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
       expect(data[0].motor).toBe('MOT1');
+      expect(data[0].numero_serie).toBe('SN1');
+      expect(data[0].placas).toBe('PL1');
       expect(data[0].tarjeta_circulacion).toBeNull();
       expect(data[1].motor).toBeNull();
       expect(data[1].tarjeta_circulacion).toBe('TC2');
@@ -185,7 +210,7 @@ describe('Fleet Integration Endpoints', () => {
   });
 
   describe('PATCH /v1/fleet/:id', () => {
-    it('should update complex fields', async (): Promise<void> => {
+    it('should update unit with all security branches', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const response = await app.inject({
@@ -201,6 +226,16 @@ describe('Fleet Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(200);
+    });
+
+    it('should return 400 for invalid update data', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/FL001',
+        headers: authHeader(),
+        payload: { year: 'INVALID' },
+      });
+      expect(response.statusCode).toBe(400);
     });
 
     it('should handle db error on PATCH', async (): Promise<void> => {
@@ -247,7 +282,7 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it('should return 404 if missing', async (): Promise<void> => {
+    it('should return 404 if missing in registry', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]);
       const response = await app.inject({
         method: 'DELETE',

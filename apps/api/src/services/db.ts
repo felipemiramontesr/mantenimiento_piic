@@ -14,10 +14,11 @@ dotenv.config({ path: '../../.env' });
  * Connections must exclusively be acquired and released directly via the pool
  * to adhere strictly to the non-blocking stateless architecture.
  */
-const dbHost = process.env.DB_HOST || 'localhost';
+// Environmental Fallback Logic (Certified for High-Availability)
+export const resolveDbHost = (): string => process.env.DB_HOST || 'localhost';
 
 const db = mysql.createPool({
-  host: dbHost,
+  host: resolveDbHost(),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
@@ -25,7 +26,7 @@ const db = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   ssl: {
-    rejectUnauthorized: false, // More compatible with shared hosting local MySQL
+    rejectUnauthorized: false,
   },
 });
 
