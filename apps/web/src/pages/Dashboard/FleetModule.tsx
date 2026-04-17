@@ -23,7 +23,6 @@ import {
   Camera,
   CheckCircle,
   LayoutGrid,
-  Home,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
@@ -457,7 +456,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </p>
           </div>
 
-          {/* 🔱 UNIFORM ACTION CLUSTER: INSTRUMENT GOLD - V.16.6.3 */}
+          {/* 🔱 UNIFORM ACTION CLUSTER: INSTRUMENT GOLD - V.16.6.4 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl pt-8">
             <button
               type="button"
@@ -480,7 +479,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               }}
               className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em]"
             >
-              <LayoutGrid size={18} />
+              <Truck size={18} />
               Administrar Unidades
             </button>
 
@@ -493,7 +492,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               }}
               className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em]"
             >
-              <Home size={18} />
+              <LayoutGrid size={18} />
               Centro de Comando
             </button>
           </div>
