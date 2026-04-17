@@ -21,7 +21,7 @@ describe('Fleet Incorporation Certification', () => {
       status: 'Disponible',
     };
 
-    const snakeData = toSnakeCase(industrialPayload as any);
+    const snakeData = toSnakeCase(industrialPayload as Record<string, unknown>);
 
     expect(snakeData).toHaveProperty('asset_type', 'Vehiculo');
     expect(snakeData).toHaveProperty('color', 'Blanco Glaciar');
