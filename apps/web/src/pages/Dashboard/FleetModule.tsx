@@ -21,6 +21,9 @@ import {
   Activity,
   Navigation,
   Camera,
+  CheckCircle,
+  LayoutGrid,
+  Home,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
@@ -50,6 +53,7 @@ import {
   SEDES,
   MARCAS_NEUMATICOS,
   COLORES,
+  ASSET_TYPES,
 } from '../../constants/fleetConstants';
 import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
 
@@ -131,6 +135,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState(getInitialForm());
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
 
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
@@ -206,10 +211,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       if (response.data.success) {
         await refreshUnits();
-        setCurrentView('GRID');
-        setFormData(getInitialForm());
-        // eslint-disable-next-line no-alert
-        alert('Vehículo registrado con éxito');
+        setRegistrationSuccess(true);
       } else {
         // eslint-disable-next-line no-alert
         alert(`Error del servidor: ${response.data.error || 'Operación fallida'}`);
@@ -435,388 +437,442 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // ============================================================================
   const renderCreateView = (): React.ReactElement => (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-40">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* ── ROW 1: Clasificación + Identidad ─────────────────────────────── */}
-        <div className="archon-grid-2">
-          {/* CARD: Clasificación del Activo */}
-          <div
-            className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8 flex flex-col"
-            style={{ borderTop: '4px solid #f2b705' }}
-          >
-            <div className="archon-card-header-pro">
-              <ShieldCheck size={22} />
-              <h3>Clasificación del Activo</h3>
+      {registrationSuccess ? (
+        /* 🏁 SUCCESS VIEW: ARCHON TRANSACTIONAL PARITY */
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-10 animate-in zoom-in-95 duration-500 bg-white glass-card-pro p-20 rounded-xl shadow-2xl border-t-8 border-emerald-500">
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-100 rounded-full blur-3xl animate-pulse opacity-40" />
+            <div className="relative w-32 h-32 bg-emerald-500 rounded-full flex items-center justify-center shadow-xl shadow-emerald-200">
+              <CheckCircle color="white" size={64} strokeWidth={2.5} />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-4xl font-black text-[#0f2a44] tracking-tight">
+              Unidad Registrada con Éxito
+            </h3>
+            <p className="text-[#0f2a44] text-lg opacity-60 font-medium max-w-lg mx-auto leading-relaxed">
+              El activo <span className="text-[#f2b705] font-bold">{formData.tag}</span> ha sido
+              incorporado al protocolo de mantenimiento soberano de Archon de forma exitosa.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl pt-8">
+            <button
+              type="button"
+              onClick={(): void => {
+                setFormData(getInitialForm());
+                setRegistrationSuccess(false);
+              }}
+              className="h-[64px] bg-[#0f2a44] text-white rounded-lg flex items-center justify-center gap-4 font-bold text-base tracking-wide hover:bg-[#1a3a5a] transition-all shadow-lg shadow-[#0f2a44]/20 group"
+            >
+              <PlusCircle size={22} className="group-hover:rotate-90 transition-transform" />
+              Registrar Otra
+            </button>
+
+            <button
+              type="button"
+              onClick={(): void => {
+                setRegistrationSuccess(false);
+                setCurrentView('GRID');
+                setFormData(getInitialForm());
+              }}
+              className="h-[64px] border-2 border-[#0f2a44]/10 text-[#0f2a44] rounded-lg flex items-center justify-center gap-4 font-bold text-base tracking-wide hover:bg-slate-50 transition-all"
+            >
+              <LayoutGrid size={22} />
+              Administrar Unidades
+            </button>
+
+            <button
+              type="button"
+              onClick={(): void => {
+                setRegistrationSuccess(false);
+                navigate('/dashboard');
+                setFormData(getInitialForm());
+              }}
+              className="h-[64px] border-2 border-transparent text-[#f2b705] rounded-lg flex items-center justify-center gap-4 font-bold text-base tracking-wide hover:underline transition-all"
+            >
+              <Home size={22} />
+              Centro de Comando
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* 📝 REGISTRATION FORM */
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ── ROW 1: Clasificación + Identidad ─────────────────────────────── */}
+          <div className="archon-grid-2">
+            {/* CARD: Clasificación del Activo */}
+            <div
+              className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8 flex flex-col"
+              style={{ borderTop: '4px solid #f2b705' }}
+            >
+              <div className="archon-card-header-pro">
+                <ShieldCheck size={22} />
+                <h3>Clasificación del Activo</h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8">
+                <ArchonField label="Tipo de Activo" icon={Zap} required>
+                  <ArchonSelect
+                    options={ASSET_TYPES}
+                    value={formData.assetType}
+                    onChange={(val): void => handleAssetTypeChange(val as AssetType)}
+                  />
+                </ArchonField>
+
+                <ArchonField label="Marca" icon={Truck} required>
+                  <ArchonSelect
+                    options={availableMarcas}
+                    value={formData.marca}
+                    onChange={handleMarcaChange}
+                  />
+                </ArchonField>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8">
+                <ArchonField label="Color" icon={Activity}>
+                  <ArchonSelect
+                    options={COLORES}
+                    value={formData.color}
+                    onChange={(val): void => setFormData({ ...formData, color: val })}
+                  />
+                </ArchonField>
+
+                <ArchonField label="Modelo" icon={Settings} required>
+                  <ArchonSelect
+                    options={availableModelos}
+                    value={formData.modelo}
+                    onChange={(val): void => setFormData({ ...formData, modelo: val })}
+                  />
+                </ArchonField>
+              </div>
+
+              <ArchonField label="Año" icon={Calendar} required>
+                <input
+                  required
+                  type="number"
+                  className="archon-input"
+                  value={formData.year}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, year: parseInt(e.target.value, 10) })
+                  }
+                />
+              </ArchonField>
+
+              {/* Descripción (Fills Height) */}
+              <div className="flex-grow flex flex-col pt-4">
+                <ArchonField label="Descripción Técnia / Notas" icon={FileText}>
+                  <textarea
+                    placeholder="Especificaciones adicionales, estado general o notas de identidad..."
+                    className="archon-input"
+                    style={{
+                      height: '100%',
+                      minHeight: '140px',
+                      padding: '12px 16px',
+                      resize: 'none',
+                      lineHeight: '1.6',
+                    }}
+                    value={formData.description}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </ArchonField>
+              </div>
             </div>
 
-            <ArchonField label="Tipo de Unidad" icon={Truck}>
-              <ArchonSelect
-                options={['Vehiculo', 'Maquinaria', 'Herramienta']}
-                value={formData.assetType}
-                onChange={(val): void => handleAssetTypeChange(val as AssetType)}
-              />
-            </ArchonField>
+            {/* CARD: Identidad del Activo */}
+            <div
+              className="glass-card-pro card-hover-navy bg-white p-10 space-y-8"
+              style={{ borderTop: '4px solid #0f2a44' }}
+            >
+              <div className="archon-card-header-pro">
+                <FileText size={22} />
+                <h3>Identidad del Activo</h3>
+              </div>
 
-            <ArchonField label="Marca" icon={Tag} required>
-              <ArchonSelect
-                options={availableMarcas}
-                value={formData.marca}
-                onChange={(val): void => handleMarcaChange(val)}
-                placeholder="— Selecciona marca —"
-              />
-            </ArchonField>
-
-            <ArchonField label="Modelo" icon={Tag} required>
-              <ArchonSelect
-                options={availableModelos}
-                value={formData.modelo}
-                onChange={(val): void => setFormData({ ...formData, modelo: val })}
-                disabled={!formData.marca}
-                placeholder="— Selecciona modelo —"
-              />
-            </ArchonField>
-
-            <ArchonField label="Color" icon={Tag}>
-              <select
-                className="archon-select"
-                value={formData.color}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, color: e.target.value })
-                }
-              >
-                <option value="">— Seleccionar color —</option>
-                {COLORES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </ArchonField>
-
-            {/* Año */}
-            <ArchonField label="Año Modelo" icon={Calendar} required>
-              <input
-                required
-                type="number"
-                className="archon-input"
-                value={formData.year}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, year: parseInt(e.target.value, 10) })
-                }
-              />
-            </ArchonField>
-
-            {/* Descripción (Fills Height) */}
-            <div className="flex-grow flex flex-col pt-4">
-              <ArchonField label="Descripción Técnia / Notas" icon={FileText}>
-                <textarea
-                  placeholder="Especificaciones adicionales, estado general o notas de identidad..."
+              {/* Número Económico */}
+              <ArchonField label="Número Económico" icon={Tag} required>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej. ASM-001"
                   className="archon-input"
-                  style={{
-                    height: '100%',
-                    minHeight: '140px',
-                    padding: '12px 16px',
-                    resize: 'none',
-                    lineHeight: '1.6',
-                  }}
-                  value={formData.description}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
-                    setFormData({ ...formData, description: e.target.value })
+                  value={formData.tag}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, tag: e.target.value.toUpperCase() })
+                  }
+                />
+              </ArchonField>
+
+              {/* Placas */}
+              <ArchonField label="Placas" icon={Tag}>
+                <input
+                  type="text"
+                  placeholder="Ej. ZH-0000-X"
+                  className="archon-input"
+                  value={formData.placas}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, placas: e.target.value.toUpperCase() })
+                  }
+                />
+              </ArchonField>
+
+              {/* Número de Serie */}
+              <ArchonField label="Número de Serie" icon={Tag}>
+                <input
+                  type="text"
+                  placeholder="Alfanumérico"
+                  className="archon-input"
+                  value={formData.numeroSerie}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, numeroSerie: e.target.value.toUpperCase() })
+                  }
+                />
+              </ArchonField>
+
+              {/* Imágenes de la Unidad (Drag & Drop) */}
+              <ArchonField label="Imágenes de la Unidad" icon={Camera}>
+                <ArchonImageUploader
+                  images={formData.images}
+                  onChange={(imgs: string[]): void => setFormData({ ...formData, images: imgs })}
+                />
+              </ArchonField>
+
+              {/* Motor */}
+              <ArchonField label="Motor" icon={Wrench}>
+                <input
+                  type="text"
+                  placeholder="Ej. 2.8L Diesel TDI"
+                  className="archon-input"
+                  value={formData.motor}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, motor: e.target.value })
+                  }
+                />
+              </ArchonField>
+
+              {/* Tarjeta de Circulación */}
+              <ArchonField label="Tarjeta de Circulación" icon={FileText}>
+                <input
+                  type="text"
+                  placeholder="Folio o referencia"
+                  className="archon-input"
+                  value={formData.tarjetaCirculacion}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, tarjetaCirculacion: e.target.value })
                   }
                 />
               </ArchonField>
             </div>
           </div>
 
-          {/* CARD: Identidad del Activo */}
-          <div
-            className="glass-card-pro card-hover-navy bg-white p-10 space-y-8"
-            style={{ borderTop: '4px solid #0f2a44' }}
-          >
-            <div className="archon-card-header-pro">
-              <FileText size={22} />
-              <h3>Identidad del Activo</h3>
-            </div>
-
-            {/* Número Económico */}
-            <ArchonField label="Número Económico" icon={Tag} required>
-              <input
-                required
-                type="text"
-                placeholder="Ej. ASM-001"
-                className="archon-input"
-                value={formData.tag}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, tag: e.target.value.toUpperCase() })
-                }
-              />
-            </ArchonField>
-
-            {/* Placas */}
-            <ArchonField label="Placas" icon={Tag}>
-              <input
-                type="text"
-                placeholder="Ej. ZH-0000-X"
-                className="archon-input"
-                value={formData.placas}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, placas: e.target.value.toUpperCase() })
-                }
-              />
-            </ArchonField>
-
-            {/* Número de Serie */}
-            <ArchonField label="Número de Serie" icon={Tag}>
-              <input
-                type="text"
-                placeholder="Alfanumérico"
-                className="archon-input"
-                value={formData.numeroSerie}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, numeroSerie: e.target.value.toUpperCase() })
-                }
-              />
-            </ArchonField>
-
-            {/* Imágenes de la Unidad (Drag & Drop) */}
-            <ArchonField label="Imágenes de la Unidad" icon={Camera}>
-              <ArchonImageUploader
-                images={formData.images}
-                onChange={(imgs: string[]): void => setFormData({ ...formData, images: imgs })}
-              />
-            </ArchonField>
-
-            {/* Motor */}
-            <ArchonField label="Motor" icon={Wrench}>
-              <input
-                type="text"
-                placeholder="Ej. 2.8L Diesel TDI"
-                className="archon-input"
-                value={formData.motor}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, motor: e.target.value })
-                }
-              />
-            </ArchonField>
-
-            {/* Tarjeta de Circulación */}
-            <ArchonField label="Tarjeta de Circulación" icon={FileText}>
-              <input
-                type="text"
-                placeholder="Folio o referencia"
-                className="archon-input"
-                value={formData.tarjetaCirculacion}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, tarjetaCirculacion: e.target.value })
-                }
-              />
-            </ArchonField>
-          </div>
-        </div>
-
-        {/* ── ROW 2: Configuración Mecánica + Organización ────────────────────── */}
-        <div className="archon-grid-2" style={{ marginTop: '24px' }}>
-          {/* CARD: Configuración Mecánica */}
-          <div
-            className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8"
-            style={{ borderTop: '4px solid #f2b705' }}
-          >
-            <div className="archon-card-header-pro">
-              <Zap size={22} />
-              <h3>Configuración Mecánica</h3>
-            </div>
-
-            {/* Tracción */}
-            <ArchonField label="Tracción" icon={Truck}>
-              <ArchonSelect
-                options={TRACCION_OPTIONS}
-                value={formData.traccion}
-                onChange={(val): void => setFormData({ ...formData, traccion: val as Traccion })}
-              />
-            </ArchonField>
-
-            {/* Transmisión */}
-            <ArchonField label="Transmisión" icon={Settings}>
-              <ArchonSelect
-                options={TRANSMISION_OPTIONS}
-                value={formData.transmision}
-                onChange={(val): void =>
-                  setFormData({ ...formData, transmision: val as Transmision })
-                }
-              />
-            </ArchonField>
-
-            {/* Combustible */}
-            <ArchonField label="Combustible" icon={Zap}>
-              <ArchonSelect
-                options={FUEL_TYPES}
-                value={formData.fuelType}
-                onChange={(val): void => setFormData({ ...formData, fuelType: val as FuelType })}
-              />
-            </ArchonField>
-
-            <ArchonField label="Marca de Neumáticos" icon={Settings}>
-              <ArchonSelect
-                options={MARCAS_NEUMATICOS}
-                value={formData.tireBrand}
-                onChange={(val): void => setFormData({ ...formData, tireBrand: val })}
-              />
-            </ArchonField>
-
-            {/* Medida de Neumático (tire_spec) */}
-            <ArchonField label="Medida de Neumático" icon={Truck}>
-              <input
-                type="text"
-                placeholder="Ej. 265/70R17 o 12.00R24"
-                className="archon-input"
-                value={formData.tireSpec}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, tireSpec: e.target.value })
-                }
-              />
-            </ArchonField>
-
-            {/* Tipo Terreno */}
-            <ArchonField label="Clasificación Terreno" icon={MapPin}>
-              <ArchonSelect
-                options={TIPO_TERRENO_OPTIONS}
-                value={formData.tipoTerreno}
-                onChange={(val): void => setFormData({ ...formData, tipoTerreno: val })}
-              />
-            </ArchonField>
-
-            {/* Capacidad de Carga */}
-            <ArchonField label="Capacidad de Carga" icon={Truck}>
-              <input
-                type="text"
-                placeholder="Ej. 3.5 Ton"
-                className="archon-input"
-                value={formData.capacidadCarga}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, capacidadCarga: e.target.value })
-                }
-              />
-            </ArchonField>
-
-            {/* Odómetro / Horómetro */}
-            <ArchonField
-              label={formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
-              icon={Gauge}
+          {/* ── ROW 2: Configuración Mecánica + Organización ────────────────────── */}
+          <div className="archon-grid-2" style={{ marginTop: '24px' }}>
+            {/* CARD: Configuración Mecánica */}
+            <div
+              className="glass-card-pro card-hover-yellow bg-white p-10 space-y-8"
+              style={{ borderTop: '4px solid #f2b705' }}
             >
-              <input
-                type="number"
-                className="archon-input"
-                value={formData.odometer}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, odometer: parseFloat(e.target.value) || 0 })
-                }
-              />
-            </ArchonField>
-          </div>
+              <div className="archon-card-header-pro">
+                <Zap size={22} />
+                <h3>Configuración Mecánica</h3>
+              </div>
 
-          {/* CARD: Organización & Cumplimiento */}
-          <div
-            className="glass-card-pro card-hover-navy bg-white p-10 space-y-8"
-            style={{ borderTop: '4px solid #0f2a44' }}
-          >
-            <div className="archon-card-header-pro">
-              <MapPin size={22} />
-              <h3>Organización &amp; Cumplimiento</h3>
-            </div>
+              {/* Tracción */}
+              <ArchonField label="Tracción" icon={Truck}>
+                <ArchonSelect
+                  options={TRACCION_OPTIONS}
+                  value={formData.traccion}
+                  onChange={(val): void => setFormData({ ...formData, traccion: val as Traccion })}
+                />
+              </ArchonField>
 
-            {/* Departamento */}
-            <ArchonField label="Departamento" icon={User} required>
-              <ArchonSelect
-                options={DEPARTAMENTOS}
-                value={formData.departamento}
-                onChange={(val): void => setFormData({ ...formData, departamento: val })}
-              />
-            </ArchonField>
+              {/* Transmisión */}
+              <ArchonField label="Transmisión" icon={Settings}>
+                <ArchonSelect
+                  options={TRANSMISION_OPTIONS}
+                  value={formData.transmision}
+                  onChange={(val): void =>
+                    setFormData({ ...formData, transmision: val as Transmision })
+                  }
+                />
+              </ArchonField>
 
-            {/* Uso Operativo */}
-            <ArchonField label="Uso Operativo" icon={Activity} required>
-              <ArchonSelect
-                options={USO_OPTIONS}
-                value={formData.uso}
-                onChange={(val): void => setFormData({ ...formData, uso: val })}
-              />
-            </ArchonField>
+              {/* Combustible */}
+              <ArchonField label="Combustible" icon={Zap}>
+                <ArchonSelect
+                  options={FUEL_TYPES}
+                  value={formData.fuelType}
+                  onChange={(val): void => setFormData({ ...formData, fuelType: val as FuelType })}
+                />
+              </ArchonField>
 
-            {/* Vigencia del Seguro */}
-            <ArchonField label="Vigencia del Seguro" icon={Calendar}>
-              <ArchonDatePicker
-                value={formData.vigenciaSeguro}
-                onChange={(v: string): void => setFormData({ ...formData, vigenciaSeguro: v })}
-                placeholder="Selecciona fecha"
-              />
-            </ArchonField>
+              <ArchonField label="Marca de Neumáticos" icon={Settings}>
+                <ArchonSelect
+                  options={MARCAS_NEUMATICOS}
+                  value={formData.tireBrand}
+                  onChange={(val): void => setFormData({ ...formData, tireBrand: val })}
+                />
+              </ArchonField>
 
-            {/* Vencimiento de Verificación (Placas) */}
-            <ArchonField label="Vencimiento de Verificación (Placas)" icon={Calendar}>
-              <ArchonDatePicker
-                value={formData.vencimientoVerificacion}
-                onChange={(v: string): void =>
-                  setFormData({ ...formData, vencimientoVerificacion: v })
-                }
-                placeholder="Selecciona fecha"
-              />
-            </ArchonField>
+              {/* Medida de Neumático (tire_spec) */}
+              <ArchonField label="Medida de Neumático" icon={Truck}>
+                <input
+                  type="text"
+                  placeholder="Ej. 265/70R17 o 12.00R24"
+                  className="archon-input"
+                  value={formData.tireSpec}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, tireSpec: e.target.value })
+                  }
+                />
+              </ArchonField>
 
-            {/* Sede */}
-            <ArchonField label="Sede" icon={MapPin}>
-              <ArchonSelect
-                options={SEDES}
-                value={formData.sede}
-                onChange={(val): void => setFormData({ ...formData, sede: val })}
-              />
-            </ArchonField>
+              {/* Tipo Terreno */}
+              <ArchonField label="Clasificación Terreno" icon={MapPin}>
+                <ArchonSelect
+                  options={TIPO_TERRENO_OPTIONS}
+                  value={formData.tipoTerreno}
+                  onChange={(val): void => setFormData({ ...formData, tipoTerreno: val })}
+                />
+              </ArchonField>
 
-            {/* Mantenimiento Técnico */}
-            <ArchonField label="Mantenimiento Técnico" icon={Activity}>
-              <ArchonSelect
-                options={MAINTENANCE_FREQUENCIES}
-                value={formData.maintenanceFrequency}
-                onChange={(val): void =>
-                  setFormData({ ...formData, maintenanceFrequency: val as MaintenanceFrequency })
-                }
-              />
-            </ArchonField>
+              {/* Capacidad de Carga */}
+              <ArchonField label="Capacidad de Carga" icon={Truck}>
+                <input
+                  type="text"
+                  placeholder="Ej. 3.5 Ton"
+                  className="archon-input"
+                  value={formData.capacidadCarga}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, capacidadCarga: e.target.value })
+                  }
+                />
+              </ArchonField>
 
-            {/* Centro de Mantenimiento */}
-            <ArchonField label="Centro de Mantenimiento" icon={Wrench}>
-              <ArchonSelect
-                options={['PIIC']}
-                value={formData.centroMantenimiento}
-                onChange={(val): void =>
-                  setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
-                }
-              />
-            </ArchonField>
-
-            {/* Inicio de Protocolo de Mantenimientos */}
-            <ArchonField label="Inicio de Protocolo de Mantenimientos" icon={Calendar}>
-              <ArchonDatePicker
-                value={formData.protocolStartDate}
-                onChange={(v: string): void => setFormData({ ...formData, protocolStartDate: v })}
-                placeholder="Selecciona fecha de inicio"
-              />
-            </ArchonField>
-
-            {/* Submit */}
-            <div className="pt-24">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`btn-sentinel-yellow w-full flex items-center justify-center gap-3 transition-all duration-300 ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+              {/* Odómetro / Horómetro */}
+              <ArchonField
+                label={formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
+                icon={Gauge}
               >
-                <Save size={18} className={isSubmitting ? 'animate-pulse' : ''} />
-                {isSubmitting ? 'Incorporando Activo...' : 'Confirmar Incorporación de Activo'}
-              </button>
+                <input
+                  type="number"
+                  className="archon-input"
+                  value={formData.odometer}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, odometer: parseFloat(e.target.value) || 0 })
+                  }
+                />
+              </ArchonField>
+            </div>
+
+            {/* CARD: Organización & Cumplimiento */}
+            <div
+              className="glass-card-pro card-hover-navy bg-white p-10 space-y-8"
+              style={{ borderTop: '4px solid #0f2a44' }}
+            >
+              <div className="archon-card-header-pro">
+                <MapPin size={22} />
+                <h3>Organización &amp; Cumplimiento</h3>
+              </div>
+
+              {/* Departamento */}
+              <ArchonField label="Departamento" icon={User} required>
+                <ArchonSelect
+                  options={DEPARTAMENTOS}
+                  value={formData.departamento}
+                  onChange={(val): void => setFormData({ ...formData, departamento: val })}
+                />
+              </ArchonField>
+
+              {/* Uso Operativo */}
+              <ArchonField label="Uso Operativo" icon={Activity} required>
+                <ArchonSelect
+                  options={USO_OPTIONS}
+                  value={formData.uso}
+                  onChange={(val): void => setFormData({ ...formData, uso: val })}
+                />
+              </ArchonField>
+
+              {/* Vigencia del Seguro */}
+              <ArchonField label="Vigencia del Seguro" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.vigenciaSeguro}
+                  onChange={(v: string): void => setFormData({ ...formData, vigenciaSeguro: v })}
+                  placeholder="Selecciona fecha"
+                />
+              </ArchonField>
+
+              {/* Vencimiento de Verificación (Placas) */}
+              <ArchonField label="Vencimiento de Verificación (Placas)" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.vencimientoVerificacion}
+                  onChange={(v: string): void =>
+                    setFormData({ ...formData, vencimientoVerificacion: v })
+                  }
+                  placeholder="Selecciona fecha"
+                />
+              </ArchonField>
+
+              {/* Sede */}
+              <ArchonField label="Sede" icon={MapPin}>
+                <ArchonSelect
+                  options={SEDES}
+                  value={formData.sede}
+                  onChange={(val): void => setFormData({ ...formData, sede: val })}
+                />
+              </ArchonField>
+
+              {/* Mantenimiento Técnico */}
+              <ArchonField label="Mantenimiento Técnico" icon={Activity}>
+                <ArchonSelect
+                  options={MAINTENANCE_FREQUENCIES}
+                  value={formData.maintenanceFrequency}
+                  onChange={(val): void =>
+                    setFormData({ ...formData, maintenanceFrequency: val as MaintenanceFrequency })
+                  }
+                />
+              </ArchonField>
+
+              {/* Centro de Mantenimiento */}
+              <ArchonField label="Centro de Mantenimiento" icon={Wrench}>
+                <ArchonSelect
+                  options={['PIIC']}
+                  value={formData.centroMantenimiento}
+                  onChange={(val): void =>
+                    setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
+                  }
+                />
+              </ArchonField>
+
+              {/* Inicio de Protocolo de Mantenimientos */}
+              <ArchonField label="Inicio de Protocolo de Mantenimientos" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.protocolStartDate}
+                  onChange={(v: string): void => setFormData({ ...formData, protocolStartDate: v })}
+                  placeholder="Selecciona fecha de inicio"
+                />
+              </ArchonField>
+
+              {/* Submit */}
+              <div className="pt-24">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`btn-sentinel-yellow w-full flex items-center justify-center gap-3 transition-all duration-300 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <Save size={18} className={isSubmitting ? 'animate-pulse' : ''} />
+                  {isSubmitting ? 'Incorporando Activo...' : 'Confirmar Incorporación de Activo'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 
