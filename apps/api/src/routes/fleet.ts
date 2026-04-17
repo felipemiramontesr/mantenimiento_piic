@@ -39,7 +39,7 @@ const createFleetSchema = z.object({
   odometer: z.number().min(0).default(0),
   sede: z.string().max(150).optional(),
   maintenanceFrequency: z
-    .enum(['Diaria', 'Semanal', 'Mensual', 'Bimestral', 'Semestral', 'Anual'])
+    .enum(['Diaria', 'Semanal', 'Mensual', 'Trimestral', 'Bimestral', 'Semestral', 'Anual'])
     .default('Mensual'),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
   protocolStartDate: z.string().optional().nullable(), // ISO date string
@@ -86,7 +86,7 @@ const updateFleetSchema = z.object({
   odometer: z.number().min(0).optional(),
   sede: z.string().max(150).optional(),
   maintenanceFrequency: z
-    .enum(['Diaria', 'Semanal', 'Mensual', 'Bimestral', 'Semestral', 'Anual'])
+    .enum(['Diaria', 'Semanal', 'Mensual', 'Trimestral', 'Bimestral', 'Semestral', 'Anual'])
     .optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).optional(),
   protocolStartDate: z.string().optional().nullable(), // ISO date string

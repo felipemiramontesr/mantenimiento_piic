@@ -200,6 +200,7 @@ export const MAINTENANCE_FREQUENCIES = [
   'Diaria',
   'Semanal',
   'Mensual',
+  'Trimestral',
   'Bimestral',
   'Semestral',
   'Anual',

@@ -12,6 +12,7 @@ export type MaintenanceFrequency =
   | 'Diaria'
   | 'Semanal'
   | 'Mensual'
+  | 'Trimestral'
   | 'Bimestral'
   | 'Semestral'
   | 'Anual';
