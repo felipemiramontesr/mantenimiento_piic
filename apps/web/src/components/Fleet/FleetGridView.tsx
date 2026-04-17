@@ -10,10 +10,11 @@ import {
   ArrowRight,
   Truck,
 } from 'lucide-react';
+import { FleetUnit } from '../../types/fleet';
 
 interface FleetGridViewProps {
   onRegister: () => void;
-  units: Record<string, unknown>[];
+  units: FleetUnit[];
 }
 
 /**
@@ -127,9 +128,9 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                   </td>
                 </tr>
               ) : (
-                units.map((unit: Record<string, unknown>) => (
+                units.map((unit: FleetUnit) => (
                   <tr
-                    key={unit.id as string}
+                    key={unit.id}
                     className="border-t border-[rgba(15,42,68,0.03)] hover:bg-[#fcfdfe] transition-colors group"
                   >
                     <td className="p-6">
@@ -137,19 +138,17 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                         <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
                           <Truck size={14} />
                         </div>
-                        <span className="text-sm font-black text-[#0f2a44]">
-                          {unit.tag as string}
-                        </span>
+                        <span className="text-sm font-black text-[#0f2a44]">{unit.tag}</span>
                       </div>
                     </td>
                     <td className="p-6">
                       <span className="text-xs font-bold text-[#0f2a44] opacity-60 uppercase">
-                        {unit.asset_type as string}
+                        {unit.asset_type}
                       </span>
                     </td>
                     <td className="p-6">
                       <span className="text-sm font-bold text-[#0f2a44]">
-                        {unit.marca as string} {unit.modelo as string}
+                        {unit.marca} {unit.modelo}
                       </span>
                     </td>
                     <td className="p-6">

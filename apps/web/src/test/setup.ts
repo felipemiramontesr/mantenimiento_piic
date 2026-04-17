@@ -4,7 +4,8 @@ import server from './server';
 
 // 🔱 Polyfills for MSW/Axios (v.17.0.0 CI fix)
 if (typeof global.ProgressEvent === 'undefined') {
-  global.ProgressEvent = class ProgressEvent extends Event {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).ProgressEvent = class ProgressEvent extends Event {};
 }
 
 /**

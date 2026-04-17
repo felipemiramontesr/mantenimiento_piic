@@ -2,14 +2,18 @@ import { render, screen, fireEvent, RenderResult } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest';
 import { FleetGridView } from './FleetGridView';
 
+import { FleetUnit } from '../../types/fleet';
+
 /**
  * 🔱 Archon Test Suite: FleetGridView
  * Implementation: 100% Interaction Coverage (Pillar 2 - v.17.0.0)
  */
 describe('FleetGridView Component', () => {
   const mockProps = {
-    onRegister: vi.fn((): void => { /* No-op */ }),
-    units: [] as Record<string, unknown>[],
+    onRegister: vi.fn((): void => {
+      /* No-op */
+    }),
+    units: [] as FleetUnit[],
   };
 
   const renderComponent = (): RenderResult => render(<FleetGridView {...mockProps} />);
