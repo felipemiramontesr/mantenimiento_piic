@@ -129,6 +129,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // ⚡ SOVEREIGN HYDRATION & KINETIC LOGIC
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState(getInitialForm());
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
@@ -159,6 +160,22 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    // 🛡️ LOCAL ARCHON VALIDATION LAYER
+    if (
+      !formData.marca ||
+      !formData.modelo ||
+      !formData.tag ||
+      !formData.departamento ||
+      !formData.uso
+    ) {
+      // eslint-disable-next-line no-alert
+      alert('Por favor, completa todos los campos obligatorios (*)');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
@@ -177,18 +194,29 @@ const FleetModule: React.FC = (): React.ReactElement => {
         color: formData.color || undefined,
         description: formData.description || undefined,
       };
-      const response = await api.post('/fleet', payload);
-      if (response.data.success) {
-        // 🛡️ REFRESH GLOBAL TACTICAL STATE
-        await refreshUnits();
 
+      const response = await api.post('/fleet', payload);
+
+      if (response.data.success) {
+        await refreshUnits();
         setCurrentView('GRID');
         setFormData(getInitialForm());
         // eslint-disable-next-line no-alert
         alert('Vehículo registrado con éxito');
+      } else {
+        // eslint-disable-next-line no-alert
+        alert(`Error del servidor: ${response.data.error || 'Operación fallida'}`);
       }
-    } catch {
-      // Noise reduced for CI compliance
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : (err as { response?: { data?: { error?: string } } }).response?.data?.error ||
+            'Error de conexión con el servidor';
+      // eslint-disable-next-line no-alert
+      alert(`Error crítico de transmisión: ${errorMsg}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -762,8 +790,15 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Submit */}
             <div className="pt-24">
-              <button type="submit" className="btn-sentinel-yellow w-full">
-                <Save size={18} /> Confirmar Incorporación de Activo
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`btn-sentinel-yellow w-full flex items-center justify-center gap-3 transition-all duration-300 ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Save size={18} className={isSubmitting ? 'animate-pulse' : ''} />
+                {isSubmitting ? 'Incorporando Activo...' : 'Confirmar Incorporación de Activo'}
               </button>
             </div>
           </div>
