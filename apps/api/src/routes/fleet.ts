@@ -248,7 +248,15 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const dbData = toSnakeCase({ ...payload, id: nextId, uuid });
       const fields = Object.keys(dbData);
       const placeholders = fields.map(() => '?').join(', ');
-      const values = Object.values(dbData).map((v) => (v === undefined ? null : v));
+
+      // 🛡️ DATA SANITIZATION (v.16.5.15): Automating JSON serialization for complex objects/arrays
+      const values = Object.values(dbData).map((v) => {
+        if (v === undefined) return null;
+        if (v !== null && (Array.isArray(v) || typeof v === 'object')) {
+          return JSON.stringify(v);
+        }
+        return v;
+      });
 
       await db.execute(
         `INSERT INTO fleet_units (${fields.join(', ')}) VALUES (${placeholders})`,

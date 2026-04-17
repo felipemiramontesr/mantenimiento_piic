@@ -19,6 +19,7 @@ describe('Fleet Incorporation Certification', () => {
       maintenanceFrequency: 'Mensual',
       centroMantenimiento: 'PIIC',
       status: 'Disponible',
+      images: ['data:image/jpeg;base64,123', 'data:image/jpeg;base64,456'],
     };
 
     const snakeData = toSnakeCase(industrialPayload as Record<string, unknown>);
