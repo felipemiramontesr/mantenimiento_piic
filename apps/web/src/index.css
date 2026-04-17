@@ -1359,6 +1359,7 @@ body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 40px; /* Golden Spacing */
+  transition: all 0.3s ease-in-out;
 }
 
 .archon-grid-3 {
@@ -1366,6 +1367,7 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-auto-rows: 1fr; /* Elastic vertical stretch parity */
   gap: 20px;
+  transition: all 0.3s ease-in-out;
 }
 
 @media (max-width: 768px) {

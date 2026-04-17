@@ -82,7 +82,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   return (
     <form
       onSubmit={handleFormSubmit}
-      className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-6xl mx-auto pb-40 space-y-6"
+      className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1600px] mx-auto pb-40 space-y-6 transition-all duration-300 ease-in-out"
     >
       <div className="archon-grid-2">
         {/* ── SECTION: Clasificación del Activo ─────────────────────────────── */}
@@ -249,7 +249,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonSelect
                 options={TRACCION_OPTIONS}
                 value={formData.traccion}
-                onChange={(val: string): void => setFormData({ ...formData, traccion: val as Traccion })}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, traccion: val as Traccion })
+                }
               />
             </ArchonField>
             <ArchonField label="Transmisión" icon={Settings}>
@@ -268,7 +270,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonSelect
                 options={FUEL_TYPES}
                 value={formData.fuelType}
-                onChange={(val: string): void => setFormData({ ...formData, fuelType: val as FuelType })}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, fuelType: val as FuelType })
+                }
               />
             </ArchonField>
             <ArchonField label="Motor" icon={Activity}>
@@ -367,7 +371,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Vencimiento Verificación" icon={Calendar}>
               <ArchonDatePicker
                 value={formData.vencimientoVerificacion ?? ''}
-                onChange={(val: string): void => setFormData({ ...formData, vencimientoVerificacion: val })}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, vencimientoVerificacion: val })
+                }
               />
             </ArchonField>
           </div>
