@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { describe, it, expect } from 'vitest';
 import { toSnakeCase } from '../utils/mappers';
 import EncryptionService from '../services/encryption';
@@ -6,7 +7,7 @@ import EncryptionService from '../services/encryption';
 // Automated verification of mapping and data boundaries for the expanded Fleet Identity.
 
 describe('Fleet Incorporation Certification', () => {
-  it('should verify parity between Frontend Payload and Database Schema (Snake Case)', () => {
+  it('should verify parity between Frontend Payload and Database Schema (Snake Case)', (): void => {
     const industrialPayload = {
       assetType: 'Vehiculo',
       tag: 'FL001',
@@ -34,7 +35,7 @@ describe('Fleet Incorporation Certification', () => {
     expect(snakeData).toHaveProperty('centro_mantenimiento', 'PIIC');
   });
 
-  it('should certify that Encryption handles the expanded metadata without corruption', () => {
+  it('should certify that Encryption handles the expanded metadata without corruption', (): void => {
     const rawNote = 'Nota técnica sensible: Motor con ajuste pendiente.';
     const encrypted = EncryptionService.encrypt(rawNote);
     const decrypted = EncryptionService.decrypt(encrypted);

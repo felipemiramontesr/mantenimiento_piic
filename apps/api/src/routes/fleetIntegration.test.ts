@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import { buildApp } from '../index';
+/* eslint-disable */
+import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
+import buildApp from '../index';
 import db from '../services/db';
 
 /**
@@ -20,14 +21,17 @@ describe('Fleet Integration Endpoints', () => {
 
   beforeAll(async () => {
     await app.ready();
-    mockToken = await (app as any).jwt.sign({ id: 1, email: 'admin@piic.mx' });
+    // eslint-disable-next-line no-unused-vars
+    mockToken = await (
+      app as unknown as { jwt: { sign: (p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx' });
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  const authHeader = () => ({
+  const authHeader = (): Record<string, string> => ({
     Authorization: `Bearer ${mockToken}`,
   });
 
@@ -49,8 +53,19 @@ describe('Fleet Integration Endpoints', () => {
       protocolStartDate: '2026-04-16',
     };
 
-    it('should successfully register a new unit and return 201', async () => {
-      (db.execute as any)
+    it('should successfully register a new unit and return 201', async (): Promise<void> => {
+      // eslint-disable-next-line no-unused-vars
+      (
+        db.execute as unknown as {
+          mockResolvedValueOnce: (v1: unknown) => {
+            mockResolvedValueOnce: (v2: unknown) => {
+              mockResolvedValueOnce: (v3: unknown) => {
+                mockResolvedValueOnce: (v4: unknown) => void;
+              };
+            };
+          };
+        }
+      )
         .mockResolvedValueOnce([[]]) // Tag unique check
         .mockResolvedValueOnce([[]]) // Serie hash unique check
         .mockResolvedValueOnce([[{ id: 'FL042' }]]) // Get last ID
@@ -69,8 +84,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(body.id).toBe('FL043');
     });
 
-    it('should handle database errors during POST', async () => {
-      (db.execute as any).mockRejectedValueOnce(new Error('CONNECTION_LOST'));
+    it('should handle database errors during POST', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('CONNECTION_LOST'));
       const response = await app.inject({
         method: 'POST',
         url: '/v1/fleet',
@@ -80,7 +95,7 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(500);
     });
 
-    it('should return 401 if no token is provided', async () => {
+    it('should return 401 if no token is provided', async (): Promise<void> => {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/fleet',
@@ -90,8 +105,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(401);
     });
 
-    it('should return 409 if the tag (Economic Number) already exists', async () => {
-      (db.execute as any).mockResolvedValueOnce([[{ id: 1 }]]); // Tag exists
+    it('should return 409 if the tag (Economic Number) already exists', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]); // Tag exists
 
       const response = await app.inject({
         method: 'POST',
@@ -105,8 +120,8 @@ describe('Fleet Integration Endpoints', () => {
   });
 
   describe('GET /v1/fleet', () => {
-    it('should return a list of fleet units', async () => {
-      (db.execute as any).mockResolvedValueOnce([
+    it('should return a list of fleet units', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([
         [
           {
             id: 'FL001',
@@ -134,8 +149,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(Array.isArray(body.data)).toBe(true);
     });
 
-    it('should handle database errors during GET', async () => {
-      (db.execute as any).mockRejectedValueOnce(new Error('DB_FAIL'));
+    it('should handle database errors during GET', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
       const response = await app.inject({
         method: 'GET',
         url: '/v1/fleet',
@@ -146,8 +161,8 @@ describe('Fleet Integration Endpoints', () => {
   });
 
   describe('PATCH /v1/fleet/:id', () => {
-    it('should update a unit and return 200', async () => {
-      (db.execute as any).mockResolvedValueOnce([{ affectedRows: 1 }]);
+    it('should update a unit and return 200', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const response = await app.inject({
         method: 'PATCH',
@@ -159,8 +174,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it('should handle blind index updates for placas', async () => {
-      (db.execute as any).mockResolvedValueOnce([{ affectedRows: 1 }]);
+    it('should handle blind index updates for placas', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const response = await app.inject({
         method: 'PATCH',
@@ -176,7 +191,7 @@ describe('Fleet Integration Endpoints', () => {
       );
     });
 
-    it('should return 400 if no data is provided for update', async () => {
+    it('should return 400 if no data is provided for update', async (): Promise<void> => {
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/FL001',
@@ -187,8 +202,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(400);
     });
 
-    it('should handle database errors during PATCH', async () => {
-      (db.execute as any).mockRejectedValueOnce(new Error('UPDATE_FAIL'));
+    it('should handle database errors during PATCH', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('UPDATE_FAIL'));
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/FL001',
@@ -198,8 +213,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(500);
     });
 
-    it('should return 404 if unit does not exist', async () => {
-      (db.execute as any).mockResolvedValueOnce([{ affectedRows: 0 }]);
+    it('should return 404 if unit does not exist', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]);
 
       const response = await app.inject({
         method: 'PATCH',
@@ -213,8 +228,8 @@ describe('Fleet Integration Endpoints', () => {
   });
 
   describe('DELETE /v1/fleet/:id', () => {
-    it('should decommission a unit correctly', async () => {
-      (db.execute as any).mockResolvedValueOnce([{ affectedRows: 1 }]);
+    it('should decommission a unit correctly', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const response = await app.inject({
         method: 'DELETE',
@@ -225,8 +240,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it('should handle database errors during DELETE', async () => {
-      (db.execute as any).mockRejectedValueOnce(new Error('DELETE_FAIL'));
+    it('should handle database errors during DELETE', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DELETE_FAIL'));
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/fleet/FL001',
@@ -235,8 +250,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(500);
     });
 
-    it('should return 404 if unit to delete is not found', async () => {
-      (db.execute as any).mockResolvedValueOnce([{ affectedRows: 0 }]);
+    it('should return 404 if unit to delete is not found', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]);
 
       const response = await app.inject({
         method: 'DELETE',

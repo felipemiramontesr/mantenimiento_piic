@@ -15,7 +15,9 @@ async function generate() {
     const encryptedEmail = EncryptionService.encrypt(email);
 
     console.log('\n--- SQL COMMAND FOR PHPMYADMIN ---');
-    console.log(`INSERT INTO users (username, email, password_hash, role_id) VALUES ('${username}', '${encryptedEmail}', '${passwordHash}', 0) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);\n`);
+    console.log(
+      `INSERT INTO users (username, email, password_hash, role_id) VALUES ('${username}', '${encryptedEmail}', '${passwordHash}', 0) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);\n`
+    );
   } catch (err) {
     console.error('Error generating values:', err);
   }
