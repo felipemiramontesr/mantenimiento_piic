@@ -424,6 +424,16 @@ const FleetModule: React.FC = (): React.ReactElement => {
               />
             </ArchonField>
 
+            <ArchonField label="Modelo" icon={Tag} required>
+              <ArchonSelect
+                options={availableModelos}
+                value={formData.modelo}
+                onChange={(val): void => setFormData({ ...formData, modelo: val })}
+                disabled={!formData.marca}
+                placeholder="— Selecciona modelo —"
+              />
+            </ArchonField>
+
             <ArchonField label="Color" icon={Tag}>
               <select
                 className="archon-select"
@@ -439,16 +449,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   </option>
                 ))}
               </select>
-            </ArchonField>
-
-            <ArchonField label="Modelo" icon={Tag} required>
-              <ArchonSelect
-                options={availableModelos}
-                value={formData.modelo}
-                onChange={(val): void => setFormData({ ...formData, modelo: val })}
-                disabled={!formData.marca}
-                placeholder="— Selecciona modelo —"
-              />
             </ArchonField>
 
             {/* Año */}
