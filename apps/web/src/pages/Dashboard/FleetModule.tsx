@@ -31,14 +31,14 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
 
-  const handleLogout = (): void => {
-    localStorage.removeItem('archon_token');
-    navigate('/login');
-  };
-
   const handleReturnToGrid = (): void => {
     setCurrentView('GRID');
     setRegistrationSuccess(false);
+  };
+
+  const handleLogout = (): void => {
+    localStorage.removeItem('archon_token');
+    navigate('/login');
   };
 
   return (
@@ -70,7 +70,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 className="text-[#0f2a44] tracking-tighter font-black text-2xl"
                 style={{ margin: 0, padding: 0, lineHeight: 1 }}
               >
-                Archon Fleet Admin
+                Administrar Unidades
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
