@@ -18,7 +18,6 @@ export default defineConfig({
         'src/vite-env.d.ts' /* Tipado estandar de Vite */,
         'src/types/**' /* Declaraciones de tipado */,
         'src/App.tsx' /* Router manager (test via E2E) */,
-        'src/pages/Dashboard/**' /* Modulo WIP */,
         '*.config.js' /* Archivos de configuracion como Tailwind */,
       ],
       thresholds: {

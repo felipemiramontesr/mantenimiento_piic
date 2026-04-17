@@ -1,115 +1,81 @@
-# ARCHON SYSTEM
+# ARCHON SYSTEM: THE SOVEREIGN STANDARD
 
-## Archon System Architecture — ArchonCore Sovereign v.13.0.0
+## Archon System Architecture — ArchonCore Sovereign v.17.0.0
 
-This manifesto serves as the architectural foundation for the **Pinnacle Identity Standard (PIIC)** applied to the Archon Control Systems. Every core decision follows a rigorous, zero-noise, and Silicon Valley-grade methodology.
+This manifesto serves as the architectural foundation for the **Pinnacle Identity Standard (PIIC)** applied to the Archon Control Systems. Every core decision follows a rigorous, zero-noise, and Silicon Valley-grade methodology (v.17.0.0).
 
 ---
 
-### I. Stack Topologies
+### I. Stack Topologies & Quality Gates
 
 The monorepository utilizes bleeding-edge tooling with distinct boundaries for isolation, performance, and security.
 
-- **Frontend (Web):** React 18, Vite, Tailwind CSS, Vitest.
-- **Backend (API):** Node.js, Fastify, Argon2, MySQL2, Vitest.
-- **Monorepo Managers:** NPM Workspaces.
-- **QA Standards:** ESLint (strictest config), Prettier on `pre-commit` via Husky, 100% Core Test Coverage Threshold.
+- **Frontend (Web):** React 18 (Modular Atomic Nodes), Vite, Tailwind CSS, Vitest (100% Core Coverage).
+- **Backend (API):** Node.js, Fastify, Argon2, MySQL2, Vitest (Contract Verification).
+- **Static Analysis:** SonarJS (Cognitive Complexity), Security (Vulnerability Scanners), Unicorn (Hygiene).
+- **Automation:** Playwright (E2E Golden Paths), Husky (Git Hooks), Commitlint (Conventional Commits).
 
 ---
 
-### II. High-Level Node/React Connectivity
+### II. Modular Atomic Architecture (v.17.0.0)
 
-The interaction between the client presentation layer and the API microservices is strictly handled via an internal Axios Gateway with an automated Bearer token injection.
+The Archon Fleet module has been refactored from a monolithic "God Component" into specialized nodes synchronized via a central orchestrator.
 
 ```mermaid
 graph TD
-    subgraph Frontend [React Application - Client Site]
-        A[Login.tsx] --> B{Axios API Client}
-        B -->|Injects Bearer Token| B
-        B -->|Detects 401: Auto-Redirect| A
+    subgraph Orchestrator [FleetModule.tsx]
+        M[State Controller - useFleetForm]
     end
 
-    subgraph Backend [Fastify API - Server Node]
-        C[Router Gateway] --> D{JWT Verifier Middleware}
-        D -->|Pass| E[Service Controllers]
-        E --> F[(MySQL Production DB)]
+    subgraph AtomicNodes [Specialized Logic Nodes]
+        G[FleetGridView.tsx]
+        F[FleetRegistrationForm.tsx]
+        S[FleetSuccessView.tsx]
     end
 
-    B ==>|HTTPs/REST| C
+    M -->|Sync State| F
+    G -->|Transition| M
+    F -->|Submission| M
+    M -->|Success Trigger| S
 ```
 
 ---
 
-### III. Authentication & Zero-Trust Protocol
+### III. Identity Fortification Lifecycle
 
-The following diagram tracks the payload execution during a standard login request. Archon employs an Application-Level Encryption (ALE) mechanism, meaning sensitive data (like emails) are retrieved encrypted and decrypted purely inside the API layer.
+Archon employs an Application-Level Encryption (ALE) mechanism with Searchable Encryption (Blind Indexing).
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor User as Field Engineer
-    participant React as Frontend (React)
-    participant Auth as Auth Router (Fastify)
-    participant DB as System DB (MySQL)
+    participant UI as FleetRegistrationForm
+    participant Controller as useFleetForm
+    participant API as Fastify Router
     participant ALE as Encryption Service
+    participant DB as MySQL Sentinel
 
-    User->>React: Enters ID & Password
-    React->>Auth: POST /auth/login { username, password }
-    Auth->>DB: SELECT id, password_hash, email FROM users
-    DB-->>Auth: [Encrypted Email, Hash Payload]
-    Auth->>Auth: Verify Argon2 Hash
-    alt Password valid
-        Auth->>ALE: Decrypt AES-256-GCM (Email)
-        ALE-->>Auth: Plaintext Email
-        Auth->>Auth: Sign JWT Token
-        Auth-->>React: 200 OK + JWT + User Object
-        React->>React: LocalStorage Save
-        React->>User: Redirect to /dashboard
-    else Invalid Password
-        Auth-->>React: 401 Unauthorized
-        React->>User: Display Generic Error
-    end
+    UI->>Controller: Submit(formData)
+    Controller->>API: POST /v1/fleet (Encrypted Session)
+    API->>ALE: generateBlindIndex(EconomicNumber)
+    API->>ALE: encrypt(SensitiveData)
+    ALE-->>API: {iv:tag:cipher, sha256:hash}
+    API->>DB: INSERT INTO fleet_units
+    DB-->>API: 201 Created
+    API-->>Controller: Success Payload
+    Controller-->>UI: Success View Transition
 ```
 
 ---
 
-### IV. Continuous Integration & Quality Assurance
+### IV. Continuous Integration Ecosystem
 
-- **Husky & Lint-Staged:** Blocks commits lacking correct style compliance (Prettier).
-- **Vitest Thresholds:** Enforces `lines: 100`, `branches: 100`, `functions: 100`, `statements: 100` on Core Services and UI Logic. If a developer attempts a regression or unchecked fallback, the PR is automatically flagged and blocked.
+- **Husky & Lint-Staged:** Blocks non-compliant commits.
+- **SonarJS:** Enforces cognitive complexity < 20.
+- **Vitest Thresholds:** Global 100% threshold for core fleet logic.
+- **Playwright Gate:** Validates the Golden Path from Login to Registration.
 
 ---
 
-### V. Fleet Asset Lifecycle Orchestration (v.12.0.0)
-
-The following diagram illustrates the flow from asset incorporation to temporal maintenance baseline registry.
-
-```mermaid
-sequenceDiagram
-    participant U as UI (FleetModule)
-    participant C as Constants (Centralized)
-    participant A as API (Fastify)
-    participant Route as Router
-    participant Mapper as Mapper (toSnakeCase)
-    participant Encryption as Encryption Service
-    participant Query as Query Builder
-    participant DB as Database (MySQL)
-
-    U->>C: Pull Catalog (Brands/Models)
-    U->>U: Collect Form Data (camelCase)
-    U->>A: POST /v1/fleet (JSON Payload)
-    A->>A: Zod Validation (Schema v.9.0.0)
-    Route->>Mapper: toSnakeCase(camelData)
-    Mapper->>Encryption: ALE Layer (AES-256-GCM) + B.I.G (Blind Index Hash)
-    Encryption->>Query: Persist Encrypted Identity & Searchable Hash
-    Query->>DB: INSERT/UPDATE (iv:tag:cipher, sha256:hash)
-    DB->>Query: RowDataPacket
-    Query->>Encryption: Decrypt ALE Layer
-    Encryption->>Mapper: toCamelCase(decryptedRows)
-    Mapper->>UI: Sovereign Data View
-```
-
-### VI. Data Entity Relationships
+### V. Data Entity Relationships (v.17.0.0)
 
 ```mermaid
 erDiagram
@@ -117,10 +83,12 @@ erDiagram
     fleet_units {
         string id PK "FLXXX"
         string uuid
-        string tag "Económico"
-        enum asset_type
-        json images "Visual Identity (Max 4)"
-        date protocol_start_date "Temporal Anchor"
-        enum maintenance_frequency "Schedule Logic"
+        string tag "Económico (Sovereign ID)"
+        string numero_serie_hash "Blind Index (Searchable)"
+        blob images "Visual Identity JSON"
+        enum status "Operational State"
     }
 ```
+
+---
+*🔱 Archon System - Pinnacle Identity & Integrity Command*

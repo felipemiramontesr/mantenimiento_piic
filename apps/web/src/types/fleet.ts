@@ -1,3 +1,5 @@
+import React from 'react';
+
 // ⚡ SOVEREIGN FLEET TYPE SYSTEM
 // Architecture: PIIC Fleet Asset Intelligence
 
@@ -90,4 +92,18 @@ export interface CreateFleetUnit {
   status?: FleetStatus;
   color?: string;
   description?: string;
+}
+
+export interface UseFleetFormReturn {
+  formData: CreateFleetUnit;
+  isSubmitting: boolean;
+  registrationSuccess: boolean;
+  availableMarcas: string[];
+  availableModelos: string[];
+  setFormData: (data: CreateFleetUnit | ((prev: CreateFleetUnit) => CreateFleetUnit)) => void;
+  setRegistrationSuccess: (success: boolean) => void;
+  handleAssetTypeChange: (type: AssetType) => void;
+  handleMarcaChange: (marca: string) => void;
+  handleSubmit: (e: React.FormEvent, onSuccess?: () => Promise<void>) => Promise<void>;
+  resetForm: () => void;
 }
