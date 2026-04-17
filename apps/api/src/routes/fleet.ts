@@ -157,7 +157,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
   /**
    * GET /api/v1/fleet
    */
-  fastify.get('/fleet', async (request, reply) => {
+  fastify.get('/fleet', async (_request, reply) => {
     try {
       const [rows] = await db.execute<FleetUnit[]>(
         'SELECT * FROM fleet_units ORDER BY created_at DESC'
