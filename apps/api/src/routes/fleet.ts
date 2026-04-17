@@ -52,6 +52,11 @@ const createFleetSchema = z.object({
   assignedOperatorId: z.number().int().optional().nullable(),
   color: z.string().max(50).optional().nullable(),
   description: z.string().optional().nullable(),
+  // 🔱 Archon Intelligence (v.18.0.0)
+  maintenanceTimeFreqId: z.number().int().optional().nullable(),
+  maintenanceUsageFreqId: z.number().int().optional().nullable(),
+  lastServiceDate: z.string().optional().nullable(),
+  lastServiceUsageReading: z.number().optional().default(0),
 });
 
 // ============================================================================
@@ -97,6 +102,11 @@ const updateFleetSchema = z.object({
   assignedOperatorId: z.number().int().optional().nullable(),
   color: z.string().max(50).optional().nullable(),
   description: z.string().optional().nullable(),
+  // 🔱 Archon Intelligence (v.18.0.0)
+  maintenanceTimeFreqId: z.number().int().optional().nullable(),
+  maintenanceUsageFreqId: z.number().int().optional().nullable(),
+  lastServiceDate: z.string().optional().nullable(),
+  lastServiceUsageReading: z.number().optional().default(0),
 });
 
 // ============================================================================
@@ -138,6 +148,12 @@ interface FleetUnit extends RowDataPacket {
   description: string | null;
   created_at: string;
   updated_at: string;
+  // 🔱 Archon Intelligence (v.18.0.0)
+  maintenance_time_freq_id: number | null;
+  maintenance_usage_freq_id: number | null;
+  last_service_date: string | null;
+  last_service_usage_reading: number;
+  current_reading: number;
 }
 
 // ============================================================================
@@ -230,26 +246,37 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       }
 
       const payload = { ...parse.data } as Record<string, unknown>;
-      if (payload.motor) payload.motor = EncryptionService.encrypt(payload.motor);
+      if (payload.motor) payload.motor = EncryptionService.encrypt(payload.motor as string);
       if (payload.tarjetaCirculacion)
-        payload.tarjetaCirculacion = EncryptionService.encrypt(payload.tarjetaCirculacion);
+        payload.tarjetaCirculacion = EncryptionService.encrypt(
+          payload.tarjetaCirculacion as string
+        );
 
       // 🛡️ B.I.G (Blind Index Generation): Identity Fortification
       if (payload.numeroSerie) {
-        payload.numeroSerieHash = EncryptionService.generateBlindIndex(payload.numeroSerie);
-        payload.numeroSerie = EncryptionService.encrypt(payload.numeroSerie);
+        payload.numeroSerieHash = EncryptionService.generateBlindIndex(
+          payload.numeroSerie as string
+        );
+        payload.numeroSerie = EncryptionService.encrypt(payload.numeroSerie as string);
       }
 
       if (payload.placas) {
-        payload.placasHash = EncryptionService.generateBlindIndex(payload.placas);
-        payload.placas = EncryptionService.encrypt(payload.placas);
+        payload.placasHash = EncryptionService.generateBlindIndex(payload.placas as string);
+        payload.placas = EncryptionService.encrypt(payload.placas as string);
       }
 
-      const dbData = toSnakeCase({ ...payload, id: nextId, uuid });
+      // Map dynamic intelligence columns (v.18.0.0)
+      const intelligencePayload = {
+        ...payload,
+        id: nextId,
+        uuid,
+        currentReading: parse.data.odometer || 0,
+      };
+
+      const dbData = toSnakeCase(intelligencePayload);
       const fields = Object.keys(dbData);
       const placeholders = fields.map(() => '?').join(', ');
 
-      // 🛡️ DATA SANITIZATION (v.16.5.15): Automating JSON serialization for complex objects/arrays
       const values = Object.values(dbData).map((v) => {
         if (v !== null && (Array.isArray(v) || typeof v === 'object')) {
           return JSON.stringify(v);

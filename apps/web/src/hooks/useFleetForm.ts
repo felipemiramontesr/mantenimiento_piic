@@ -1,24 +1,19 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import {
-  CreateFleetUnit,
-  AssetType,
-  UseFleetFormReturn,
-} from '../types/fleet';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { CreateFleetUnit, AssetType, UseFleetFormReturn } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
 import api from '../api/client';
-import {
-  MARCAS_VEHICULO,
-  MARCAS_MAQUINARIA,
-  MARCAS_HERRAMIENTA,
-} from '../constants/fleetConstants';
 
 /**
- * 🔱 Archon Sovereign Hook: useFleetForm
- * Implementation: Silicon Valley Standard (SRP/DIP)
- * Purpose: Encapsulates all intelligence related to fleet asset registration.
+ * 🔱 Archon Sovereign Hook: useFleetForm (v.18.0.0)
+ * Logic: Dynamic Hierarchical Catalog Integration.
+ * Architecture: Silicon Valley Standard (SRP/DIP)
  */
 
-// interface UseFleetFormReturn removed as it is now global
+interface CatalogOption {
+  id: number;
+  label: string;
+  code: string;
+}
 
 interface AxiosErrorResponse {
   response?: {
@@ -33,25 +28,75 @@ const useFleetForm = (): UseFleetFormReturn => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
 
-  // 📐 Catalog Logic (Open/Closed compliant)
-  const assetCatalogs: Record<AssetType, Record<string, string[]>> = useMemo(
-    () => ({
-      Vehiculo: MARCAS_VEHICULO,
-      Maquinaria: MARCAS_MAQUINARIA,
-      Herramienta: MARCAS_HERRAMIENTA,
-    }),
-    [],
-  );
+  // 📐 Dynamic Catalog State
+  const [marcas, setMarcas] = useState<CatalogOption[]>([]);
+  const [modelos, setModelos] = useState<CatalogOption[]>([]);
+  const [freqTime, setFreqTime] = useState<CatalogOption[]>([]);
+  const [freqUsage, setFreqUsage] = useState<CatalogOption[]>([]);
 
-  const availableMarcas = useMemo(
-    () => Object.keys(assetCatalogs[formData.assetType]),
-    [formData.assetType, assetCatalogs],
-  );
+  // Asset Type Mapping to Database IDs (Based on 007 seed)
+  const assetTypeMap: Record<AssetType, number> = {
+    Vehiculo: 1,
+    Maquinaria: 2,
+    Herramienta: 3,
+  };
 
-  const availableModelos = useMemo(
-    () => assetCatalogs[formData.assetType][formData.marca] ?? [],
-    [formData.assetType, formData.marca, assetCatalogs],
-  );
+  // 🔄 Fetch Brands on Asset Type Change
+  useEffect(() => {
+    const fetchBrands = async (): Promise<void> => {
+      try {
+        const parentId = assetTypeMap[formData.assetType];
+        const res = await api.get(`/catalogs/BRAND?parentId=${parentId}`);
+        setMarcas(res.data);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch Brands', error);
+      }
+    };
+    fetchBrands();
+  }, [formData.assetType]);
+
+  // 🔄 Fetch Models on Brand Change
+  useEffect(() => {
+    const fetchModels = async (): Promise<void> => {
+      if (!formData.marca) {
+        setModelos([]);
+        return;
+      }
+      try {
+        const selectedBrand = marcas.find((m) => m.label === formData.marca);
+        if (selectedBrand) {
+          const res = await api.get(`/catalogs/MODEL?parentId=${selectedBrand.id}`);
+          setModelos(res.data);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch Models', error);
+      }
+    };
+    fetchModels();
+  }, [formData.marca, marcas]);
+
+  // 🔄 Fetch Frequencies only once
+  useEffect(() => {
+    const fetchFrequencies = async (): Promise<void> => {
+      try {
+        const [timeRes, usageRes] = await Promise.all([
+          api.get('/catalogs/FREQ_TIME'),
+          api.get('/catalogs/FREQ_USAGE'),
+        ]);
+        setFreqTime(timeRes.data);
+        setFreqUsage(usageRes.data);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to fetch frequencies', error);
+      }
+    };
+    fetchFrequencies();
+  }, []);
+
+  const availableMarcas = useMemo(() => marcas.map((m) => m.label), [marcas]);
+  const availableModelos = useMemo(() => modelos.map((m) => m.label), [modelos]);
 
   const handleAssetTypeChange = useCallback((type: AssetType): void => {
     setFormData((prev) => ({
@@ -80,12 +125,11 @@ const useFleetForm = (): UseFleetFormReturn => {
    */
   const handleSubmit = async (
     e: React.FormEvent,
-    onSuccess?: () => Promise<void>,
+    onSuccess?: () => Promise<void>
   ): Promise<void> => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    // Strict validation Gate
     if (
       !formData.marca ||
       !formData.modelo ||
@@ -98,10 +142,15 @@ const useFleetForm = (): UseFleetFormReturn => {
 
     setIsSubmitting(true);
     try {
+      // Resolve IDs for the Intelligence Core
+      const selectedTimeFreq = freqTime.find((f) => f.label === formData.maintenanceFrequency);
+
       const payload = {
         ...formData,
         vigenciaSeguro: formData.vigenciaSeguro || null,
         vencimientoVerificacion: formData.vencimientoVerificacion || null,
+        maintenanceTimeFreqId: selectedTimeFreq?.id || null,
+        maintenanceUsageFreqId: formData.maintenanceUsageFreqId || null,
       };
 
       const response = await api.post('/fleet', payload);
@@ -115,8 +164,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     } catch (error: unknown) {
       const serverError = (error as AxiosErrorResponse)?.response?.data?.error;
       const message =
-        serverError ||
-        (error instanceof Error ? error.message : 'Error crítico de transmisión');
+        serverError || (error instanceof Error ? error.message : 'Error crítico de transmisión');
       throw new Error(message);
     } finally {
       setIsSubmitting(false);
@@ -129,6 +177,8 @@ const useFleetForm = (): UseFleetFormReturn => {
     registrationSuccess,
     availableMarcas,
     availableModelos,
+    freqTime: freqTime.map((f) => f.label),
+    freqUsage: freqUsage.map((f) => ({ id: f.id, label: f.label })),
     setFormData,
     setRegistrationSuccess,
     handleAssetTypeChange,

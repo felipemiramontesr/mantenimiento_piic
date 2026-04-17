@@ -41,6 +41,11 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   color: 'Blanco',
   description:
     'Unidad asignada a Medio Ambiente para monitoreo en zonas de terracería. Cuenta con radio y kit de seguridad minero.',
+  // 🔱 Archon Intelligence (v.18.0.0)
+  maintenanceTimeFreqId: null,
+  maintenanceUsageFreqId: null,
+  lastServiceDate: '2024-03-01',
+  lastServiceUsageReading: 150000,
 });
 
 export default getInitialFleetForm;

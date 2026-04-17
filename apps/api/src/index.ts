@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
+import catalogRoutes from './routes/catalogs';
 
 dotenv.config({ path: '../../.env' });
 
@@ -41,6 +42,7 @@ const buildApp = (opts = {}): FastifyInstance => {
   fastify.register(authRoutes, { prefix: '/v1/auth' });
   fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
   fastify.register(fleetRoutes, { prefix: '/v1' });
+  fastify.register(catalogRoutes, { prefix: '/v1/catalogs' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get('/', async () => ({

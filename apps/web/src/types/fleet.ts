@@ -61,6 +61,12 @@ export interface FleetUnit {
   // Audit
   created_at: string;
   updated_at: string;
+  // 🔱 Archon Intelligence (v.18.0.0)
+  maintenance_time_freq_id?: number | null;
+  maintenance_usage_freq_id?: number | null;
+  last_service_date?: string | null;
+  last_service_usage_reading?: number;
+  current_reading?: number;
 }
 
 export interface CreateFleetUnit {
@@ -93,6 +99,11 @@ export interface CreateFleetUnit {
   status?: FleetStatus;
   color?: string;
   description?: string;
+  // 🔱 Archon Intelligence (v.18.0.0)
+  maintenanceTimeFreqId?: number | null;
+  maintenanceUsageFreqId?: number | null;
+  lastServiceDate?: string | null;
+  lastServiceUsageReading?: number;
 }
 
 export interface UseFleetFormReturn {
@@ -101,6 +112,8 @@ export interface UseFleetFormReturn {
   registrationSuccess: boolean;
   availableMarcas: string[];
   availableModelos: string[];
+  freqTime: string[];
+  freqUsage: { id: number; label: string }[];
   setFormData: (data: CreateFleetUnit | ((prev: CreateFleetUnit) => CreateFleetUnit)) => void;
   setRegistrationSuccess: (success: boolean) => void;
   handleAssetTypeChange: (type: AssetType) => void;

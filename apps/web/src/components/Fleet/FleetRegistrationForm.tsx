@@ -28,7 +28,6 @@ import {
   FUEL_TYPES,
   MARCAS_NEUMATICOS,
   SEDES,
-  MAINTENANCE_FREQUENCIES,
   COLORES,
 } from '../../constants/fleetConstants';
 import {
@@ -68,6 +67,8 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
     handleAssetTypeChange,
     handleMarcaChange,
     handleSubmit,
+    freqTime,
+    freqUsage,
   } = controller;
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -328,9 +329,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 onChange={(val: string): void => setFormData({ ...formData, sede: val })}
               />
             </ArchonField>
-            <ArchonField label="Frecuencia Mantenimiento" icon={Calendar}>
+            <ArchonField label="Frecuencia (Tiempo)" icon={Calendar}>
               <ArchonSelect
-                options={MAINTENANCE_FREQUENCIES}
+                options={freqTime}
                 value={formData.maintenanceFrequency}
                 onChange={(val: string): void =>
                   setFormData({ ...formData, maintenanceFrequency: val as MaintenanceFrequency })
@@ -340,6 +341,16 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-8">
+            <ArchonField label="Frecuencia (Uso/Predictivo)" icon={Activity}>
+              <ArchonSelect
+                options={freqUsage.map((u) => u.label)}
+                value={freqUsage.find((u) => u.id === formData.maintenanceUsageFreqId)?.label || ''}
+                onChange={(val: string): void => {
+                  const selected = freqUsage.find((u) => u.label === val);
+                  if (selected) setFormData({ ...formData, maintenanceUsageFreqId: selected.id });
+                }}
+              />
+            </ArchonField>
             <ArchonField label="Kilometraje / Horas Actual" icon={Gauge}>
               <input
                 type="number"
@@ -350,12 +361,46 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 }
               />
             </ArchonField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8">
             <ArchonField label="Centro de Mantenimiento" icon={Wrench}>
               <ArchonSelect
                 options={['PIIC', 'Archon Core']}
                 value={formData.centroMantenimiento}
                 onChange={(val: string): void =>
                   setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
+                }
+              />
+            </ArchonField>
+            <ArchonField label="Fecha Último Servicio" icon={Calendar}>
+              <ArchonDatePicker
+                value={formData.lastServiceDate ?? ''}
+                onChange={(val: string): void => setFormData({ ...formData, lastServiceDate: val })}
+              />
+            </ArchonField>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8">
+            <ArchonField label="Lectura Último Servicio" icon={Activity}>
+              <input
+                type="number"
+                placeholder="Km o Hrs"
+                className="archon-input"
+                value={formData.lastServiceUsageReading}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({
+                    ...formData,
+                    lastServiceUsageReading: parseInt(e.target.value, 10),
+                  })
+                }
+              />
+            </ArchonField>
+            <ArchonField label="Fecha Inicio Protocolo" icon={Calendar}>
+              <ArchonDatePicker
+                value={formData.protocolStartDate ?? ''}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, protocolStartDate: val })
                 }
               />
             </ArchonField>
