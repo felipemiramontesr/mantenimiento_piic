@@ -49,6 +49,7 @@ import {
   TIPO_TERRENO_OPTIONS,
   SEDES,
   MARCAS_NEUMATICOS,
+  COLORES,
 } from '../../constants/fleetConstants';
 import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
 
@@ -83,6 +84,8 @@ const getInitialForm = (): {
   maintenanceFrequency: MaintenanceFrequency;
   protocolStartDate: string;
   status: 'Disponible';
+  color: string;
+  description: string;
 } => ({
   assetType: 'Vehiculo' as AssetType,
   tag: '',
@@ -111,6 +114,8 @@ const getInitialForm = (): {
   maintenanceFrequency: 'Mensual',
   protocolStartDate: new Date().toISOString().split('T')[0],
   status: 'Disponible' as const,
+  color: '',
+  description: '',
 });
 
 // ============================================================================
@@ -168,8 +173,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
         tireBrand: formData.tireBrand || undefined,
         tipoTerreno: formData.tipoTerreno || undefined,
         capacidadCarga: formData.capacidadCarga || undefined,
-        sede: formData.sede || undefined,
         tarjetaCirculacion: formData.tarjetaCirculacion || undefined,
+        color: formData.color || undefined,
+        description: formData.description || undefined,
       };
       const response = await api.post('/fleet', payload);
       if (response.data.success) {
@@ -418,6 +424,23 @@ const FleetModule: React.FC = (): React.ReactElement => {
               />
             </ArchonField>
 
+            <ArchonField label="Color" icon={Tag}>
+              <select
+                className="archon-select"
+                value={formData.color}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
+                  setFormData({ ...formData, color: e.target.value })
+                }
+              >
+                <option value="">— Seleccionar color —</option>
+                {COLORES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </ArchonField>
+
             <ArchonField label="Modelo" icon={Tag} required>
               <ArchonSelect
                 options={availableModelos}
@@ -440,6 +463,27 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 }
               />
             </ArchonField>
+
+            {/* Descripción (Fills Height) */}
+            <div className="flex-grow flex flex-col pt-4">
+              <ArchonField label="Descripción Técnia / Notas" icon={FileText}>
+                <textarea
+                  placeholder="Especificaciones adicionales, estado general o notas de identidad..."
+                  className="archon-input"
+                  style={{
+                    height: '100%',
+                    minHeight: '140px',
+                    padding: '12px 0',
+                    resize: 'none',
+                    lineHeight: '1.6',
+                  }}
+                  value={formData.description}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                />
+              </ArchonField>
+            </div>
           </div>
 
           {/* CARD: Identidad del Activo */}

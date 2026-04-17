@@ -88,4 +88,6 @@ export interface CreateFleetUnit {
   vencimientoVerificacion?: string;
   tarjetaCirculacion?: string;
   status?: FleetStatus;
+  color?: string;
+  description?: string;
 }

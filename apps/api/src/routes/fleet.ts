@@ -50,6 +50,8 @@ const createFleetSchema = z.object({
     .enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'])
     .default('Disponible'),
   assignedOperatorId: z.number().int().optional().nullable(),
+  color: z.string().max(50).optional().nullable(),
+  description: z.string().optional().nullable(),
 });
 
 // ============================================================================
@@ -93,6 +95,8 @@ const updateFleetSchema = z.object({
   tarjetaCirculacion: z.string().max(100).optional(),
   status: z.enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada']).optional(),
   assignedOperatorId: z.number().int().optional().nullable(),
+  color: z.string().max(50).optional().nullable(),
+  description: z.string().optional().nullable(),
 });
 
 // ============================================================================

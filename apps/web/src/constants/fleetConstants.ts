@@ -284,3 +284,18 @@ export const MARCAS_NEUMATICOS = [
   'Yokohama',
   'N/A',
 ] as const;
+
+export const COLORES = [
+  'Blanco',
+  'Negro',
+  'Gris',
+  'Rojo',
+  'Azul',
+  'Verde',
+  'Amarillo',
+  'Naranja',
+  'Café',
+  'Beige',
+  'Plateado',
+  'Dorado',
+];
