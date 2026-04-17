@@ -590,21 +590,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
               />
             </ArchonField>
 
-            {/* Odómetro / Horómetro */}
-            <ArchonField
-              label={formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
-              icon={Gauge}
-            >
-              <input
-                type="number"
-                className="archon-input"
-                value={formData.odometer}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, odometer: parseFloat(e.target.value) || 0 })
-                }
-              />
-            </ArchonField>
-
             {/* Tipo Terreno */}
             <ArchonField label="Clasificación Terreno" icon={MapPin}>
               <ArchonSelect
@@ -623,6 +608,21 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 value={formData.capacidadCarga}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                   setFormData({ ...formData, capacidadCarga: e.target.value })
+                }
+              />
+            </ArchonField>
+
+            {/* Odómetro / Horómetro */}
+            <ArchonField
+              label={formData.assetType === 'Maquinaria' ? 'Horómetro (hrs)' : 'Odómetro (km)'}
+              icon={Gauge}
+            >
+              <input
+                type="number"
+                className="archon-input"
+                value={formData.odometer}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, odometer: parseFloat(e.target.value) || 0 })
                 }
               />
             </ArchonField>
