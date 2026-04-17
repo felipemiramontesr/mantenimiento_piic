@@ -10,7 +10,7 @@ export default defineConfig({
       JWT_SECRET: 'test-secret-pinnacle-archon-2026',
     },
     coverage: {
-      provider: 'istanbul',
+      provider: 'v8',
       all: true,
       reporter: ['text', 'json', 'html'],
       exclude: [
