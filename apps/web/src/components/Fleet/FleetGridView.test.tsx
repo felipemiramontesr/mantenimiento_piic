@@ -1,12 +1,11 @@
 import { render, screen, fireEvent, RenderResult } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { FleetGridView } from './FleetGridView';
-
 import { FleetUnit } from '../../types/fleet';
 
 /**
- * 🔱 Archon Test Suite: FleetGridView
- * Implementation: 100% Interaction Coverage (Pillar 2 - v.17.0.0)
+ * 🔱 Archon Test Suite: FleetGridView (v.17.0.2)
+ * Implementation: PIIC Instrument Layout Certification
  */
 describe('FleetGridView Component', () => {
   const mockProps = {
@@ -18,19 +17,22 @@ describe('FleetGridView Component', () => {
 
   const renderComponent = (): RenderResult => render(<FleetGridView {...mockProps} />);
 
-  it('should render the grid header', (): void => {
+  it('should render the instrument indicators', (): void => {
     renderComponent();
-    expect(screen.getByText('Gestión de Flotilla')).toBeInTheDocument();
+    expect(screen.getByText('Unidades en Registro')).toBeInTheDocument();
+    expect(screen.getByText('Estatus Operativo')).toBeInTheDocument();
   });
 
-  it('should call onRegister when "Incorporar Activo" is clicked', (): void => {
+  it('should call onRegister when "Iniciar Protocolo" is clicked', (): void => {
     renderComponent();
-    fireEvent.click(screen.getByText(/Incorporar Activo/i));
+    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
     expect(mockProps.onRegister).toHaveBeenCalled();
   });
 
-  it('should display empty state message when no units are provided', (): void => {
+  it('should display the core master labels', (): void => {
     renderComponent();
-    expect(screen.getByText('No hay registros')).toBeInTheDocument();
+    expect(screen.getByText('Registrar Unidad')).toBeInTheDocument();
+    expect(screen.getByText('Mantenimiento')).toBeInTheDocument();
+    expect(screen.getByText('Asignación')).toBeInTheDocument();
   });
 });

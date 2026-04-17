@@ -34,26 +34,26 @@ describe('FleetModule Orchestrator', () => {
 
   it('should start in the GRID view', (): void => {
     renderModule();
-    expect(screen.getByText('Gestión de Flotilla')).toBeInTheDocument();
+    expect(screen.getByText('Unidades en Registro')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Incorporar Activo/i));
+    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
     expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
     expect(screen.getByText('Volver al Panel')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking "Volver al Panel"', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Incorporar Activo/i));
+    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
     fireEvent.click(screen.getByText('Volver al Panel'));
-    expect(screen.getByText('Gestión de Flotilla')).toBeInTheDocument();
+    expect(screen.getByText('Unidades en Registro')).toBeInTheDocument();
   });
 
   it('should show success view after successful registration', async (): Promise<void> => {
     renderModule();
-    fireEvent.click(screen.getByText(/Incorporar Activo/i));
+    fireEvent.click(screen.getByText(/Iniciar Protocolo/i));
 
     // Simulate successful submission in the child form
     fireEvent.click(screen.getByText(/Confirmar Registro e Incorporar/i));
