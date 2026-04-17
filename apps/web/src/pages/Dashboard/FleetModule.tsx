@@ -473,7 +473,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   style={{
                     height: '100%',
                     minHeight: '140px',
-                    padding: '12px 0',
+                    padding: '12px 16px',
                     resize: 'none',
                     lineHeight: '1.6',
                   }}
