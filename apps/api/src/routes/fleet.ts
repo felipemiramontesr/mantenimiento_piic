@@ -134,6 +134,8 @@ interface FleetUnit extends RowDataPacket {
   tarjeta_circulacion: string | null;
   status: string;
   assigned_operator_id: number | null;
+  color: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -254,9 +256,13 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       );
 
       return reply.code(201).send({ success: true, id: nextId, uuid });
-    } catch (error) {
+    } catch (error: unknown) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Failed to commit unit to registry' });
+      const sqlError =
+        (error as { sqlMessage?: string }).sqlMessage ||
+        (error as Error).message ||
+        'Unknown DB Exception';
+      return reply.code(500).send({ error: `Database Error: ${sqlError}` });
     }
   });
 
