@@ -111,6 +111,24 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(201);
     });
 
+    it('should register unit with default odometer (branch coverage)', async (): Promise<void> => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[{ id: 'FL001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const { odometer: _, ...unitWithoutOdometer } = validUnit;
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: unitWithoutOdometer,
+      });
+
+      expect(response.statusCode).toBe(201);
+    });
+
     it('should return 409 for duplicate serial number', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([[{ id: 1 }]]);
 
