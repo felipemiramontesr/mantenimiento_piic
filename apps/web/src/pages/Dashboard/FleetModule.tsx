@@ -195,6 +195,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
         description: formData.description || undefined,
       };
 
+      // 🔍 ARCHON DEEP DEBUGGING: PAYLOAD INSPECTION
+      // eslint-disable-next-line no-console
+      console.log('🚀 [Archon] Preparing Transmission...');
+      // eslint-disable-next-line no-console
+      console.table(payload);
+
       const response = await api.post('/fleet', payload);
 
       if (response.data.success) {
@@ -208,6 +214,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
         alert(`Error del servidor: ${response.data.error || 'Operación fallida'}`);
       }
     } catch (err: unknown) {
+      // 🔍 ARCHON DEEP DEBUGGING: RESPONSE INSPECTION
+      // eslint-disable-next-line no-console
+      console.error('❌ [Archon] Transmission Critical Failure:');
+      // eslint-disable-next-line no-console
+      console.dir((err as { response?: { data?: unknown } }).response?.data || err);
+
       const errorMsg =
         err instanceof Error
           ? err.message
