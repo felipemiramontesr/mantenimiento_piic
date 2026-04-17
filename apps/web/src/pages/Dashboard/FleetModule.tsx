@@ -35,6 +35,7 @@ import {
 import ArchonDatePicker from '../../components/ArchonDatePicker';
 import ArchonField from '../../components/ArchonField';
 import ArchonImageUploader from '../../components/ArchonImageUploader';
+import ArchonSelect from '../../components/ArchonSelect';
 import {
   MARCAS_VEHICULO,
   MARCAS_MAQUINARIA,
@@ -572,71 +573,39 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Tracción */}
             <ArchonField label="Tracción" icon={Truck}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={TRACCION_OPTIONS}
                 value={formData.traccion}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, traccion: e.target.value as Traccion })
-                }
-              >
-                {TRACCION_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(val): void => setFormData({ ...formData, traccion: val as Traccion })}
+              />
             </ArchonField>
 
             {/* Transmisión */}
             <ArchonField label="Transmisión" icon={Settings}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={TRANSMISION_OPTIONS}
                 value={formData.transmision}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, transmision: e.target.value as Transmision })
+                onChange={(val): void =>
+                  setFormData({ ...formData, transmision: val as Transmision })
                 }
-              >
-                {TRANSMISION_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+              />
             </ArchonField>
 
             {/* Combustible */}
             <ArchonField label="Combustible" icon={Zap}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={FUEL_TYPES}
                 value={formData.fuelType}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, fuelType: e.target.value as FuelType })
-                }
-              >
-                {FUEL_TYPES.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(val): void => setFormData({ ...formData, fuelType: val as FuelType })}
+              />
             </ArchonField>
 
-            {/* Marca de Neumáticos */}
             <ArchonField label="Marca de Neumáticos" icon={Settings}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={MARCAS_NEUMATICOS}
                 value={formData.tireBrand}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, tireBrand: e.target.value })
-                }
-              >
-                <option value="">— Seleccionar marca —</option>
-                {MARCAS_NEUMATICOS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(val): void => setFormData({ ...formData, tireBrand: val })}
+              />
             </ArchonField>
 
             {/* Medida de Neumático (tire_spec) */}
@@ -669,20 +638,11 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Tipo Terreno */}
             <ArchonField label="Clasificación Terreno" icon={MapPin}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={TIPO_TERRENO_OPTIONS}
                 value={formData.tipoTerreno}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, tipoTerreno: e.target.value })
-                }
-              >
-                <option value="">— Selecciona tipo —</option>
-                {TIPO_TERRENO_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(val): void => setFormData({ ...formData, tipoTerreno: val })}
+              />
             </ArchonField>
 
             {/* Capacidad de Carga */}
@@ -711,40 +671,20 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Departamento */}
             <ArchonField label="Departamento" icon={User} required>
-              <select
-                required
-                className="archon-select"
+              <ArchonSelect
+                options={DEPARTAMENTOS}
                 value={formData.departamento}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, departamento: e.target.value })
-                }
-              >
-                <option value="">— Seleccionar departamento —</option>
-                {DEPARTAMENTOS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(val): void => setFormData({ ...formData, departamento: val })}
+              />
             </ArchonField>
 
             {/* Uso Operativo */}
             <ArchonField label="Uso Operativo" icon={Activity} required>
-              <select
-                required
-                className="archon-select"
+              <ArchonSelect
+                options={USO_OPTIONS}
                 value={formData.uso}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, uso: e.target.value })
-                }
-              >
-                <option value="">— Seleccionar uso —</option>
-                {USO_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(val): void => setFormData({ ...formData, uso: val })}
+              />
             </ArchonField>
 
             {/* Vigencia del Seguro */}
@@ -769,55 +709,33 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
             {/* Sede */}
             <ArchonField label="Sede" icon={MapPin}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={SEDES}
                 value={formData.sede}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({ ...formData, sede: e.target.value })
-                }
-              >
-                {SEDES.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(val): void => setFormData({ ...formData, sede: val })}
+              />
             </ArchonField>
 
             {/* Mantenimiento Técnico */}
             <ArchonField label="Mantenimiento Técnico" icon={Activity}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={MAINTENANCE_FREQUENCIES}
                 value={formData.maintenanceFrequency}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({
-                    ...formData,
-                    maintenanceFrequency: e.target.value as MaintenanceFrequency,
-                  })
+                onChange={(val): void =>
+                  setFormData({ ...formData, maintenanceFrequency: val as MaintenanceFrequency })
                 }
-              >
-                {MAINTENANCE_FREQUENCIES.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+              />
             </ArchonField>
 
             {/* Centro de Mantenimiento */}
             <ArchonField label="Centro de Mantenimiento" icon={Wrench}>
-              <select
-                className="archon-select"
+              <ArchonSelect
+                options={['PIIC']}
                 value={formData.centroMantenimiento}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>): void =>
-                  setFormData({
-                    ...formData,
-                    centroMantenimiento: e.target.value as CentroMantenimiento,
-                  })
+                onChange={(val): void =>
+                  setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
                 }
-              >
-                <option value="PIIC">PIIC</option>
-              </select>
+              />
             </ArchonField>
 
             {/* Inicio de Protocolo de Mantenimientos */}
