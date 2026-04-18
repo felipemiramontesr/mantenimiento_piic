@@ -54,7 +54,7 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
       >
         {/* Close Button */}
         <button
-          className="fixed top-8 right-8 z-[10000] p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
+          className="fixed top-12 right-12 z-[10000] p-3 rounded-[4px] bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/20"
           onClick={onClose}
         >
           <X size={24} />
