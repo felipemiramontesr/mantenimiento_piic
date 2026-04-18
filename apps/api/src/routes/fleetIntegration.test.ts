@@ -276,6 +276,49 @@ describe('Fleet Integration Endpoints', () => {
       expect(data[2].days_since_service).toBe(0);
     });
 
+    it('should parse images from JSON string and handle corrupt data variants', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          {
+            id: 'IMG_JSON',
+            images: JSON.stringify(['img1.jpg']),
+            motor: null,
+            tarjeta_circulacion: null,
+            numero_serie: null,
+            placas: null,
+          },
+          {
+            id: 'IMG_ARRAY',
+            images: ['img2.jpg'], // Native array branch
+            motor: null,
+            tarjeta_circulacion: null,
+            numero_serie: null,
+            placas: null,
+          },
+          {
+            id: 'IMG_CORRUPT',
+            images: 'invalid-json-{', // Catch branch
+            motor: null,
+            tarjeta_circulacion: null,
+            numero_serie: null,
+            placas: null,
+          },
+        ],
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const { data } = JSON.parse(response.body);
+      expect(data[0].images).toEqual(['img1.jpg']);
+      expect(data[1].images).toEqual(['img2.jpg']);
+      expect(data[2].images).toEqual([]);
+    });
+
     it('should handle db error', async (): Promise<void> => {
       (db.execute as Mock).mockRejectedValueOnce(new Error('FAIL'));
       const response = await app.inject({
