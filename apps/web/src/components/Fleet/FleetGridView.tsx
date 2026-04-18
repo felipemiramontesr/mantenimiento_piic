@@ -164,11 +164,11 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
-              <th>ID / TAG</th>
-              <th>MARCA / MODELO</th>
-              <th>IDENTIDAD</th>
-              <th>ODÓMETRO / HORAS</th>
-              <th>SALUD DEL ACTIVO</th>
+              <th className="text-center">ID / TAG</th>
+              <th className="text-center">MARCA / MODELO</th>
+              <th className="text-center">IDENTIDAD</th>
+              <th className="text-center">ODÓMETRO / HORAS</th>
+              <th className="text-center">SALUD DEL ACTIVO</th>
               <th className="text-center">ACCIONES</th>
             </tr>
           </thead>
@@ -184,7 +184,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                 <tr key={unit.uuid} className="group hover:bg-[#f9fbfc] transition-colors">
                   {/* TAG / ID */}
                   <td>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col items-center">
                       <span className="text-[11px] font-black text-[#0f2a44]">{unit.tag}</span>
                       <span className="text-[9px] font-bold opacity-30 tracking-tighter">
                         {unit.id}
@@ -194,7 +194,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
 
                   {/* MARCA / MODELO */}
                   <td>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col items-center">
                       <span className="text-[11px] font-black text-[#0f2a44] uppercase">
                         {unit.marca}
                       </span>
@@ -204,7 +204,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
 
                   {/* IDENTITY (PLATES/VIN) */}
                   <td>
-                    <div className="space-y-1">
+                    <div className="flex flex-col items-center space-y-1">
                       <div className="flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all">
                         <Tag size={10} className="text-[#0f2a44] opacity-40" />
                         <span className="text-[10px] font-bold text-[#0f2a44] opacity-70">
@@ -222,22 +222,22 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
 
                   {/* ODOMETER */}
                   <td>
-                    <div className="flex items-center gap-2">
-                      <Gauge size={14} className="text-[#0f2a44] opacity-30" />
-                      <div className="flex flex-col">
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <Gauge size={12} className="text-[#0f2a44] opacity-30" />
                         <span className="text-[11px] font-black text-[#0f2a44]">
                           {unit.current_reading?.toLocaleString() || unit.odometer.toLocaleString()}
                         </span>
-                        <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter">
-                          Kms / Horas
-                        </span>
                       </div>
+                      <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter">
+                        Kms / Horas
+                      </span>
                     </div>
                   </td>
 
                   {/* PREDICTIVE HEALTH */}
                   <td>
-                    <div className="flex flex-col gap-2 w-[180px]">
+                    <div className="flex flex-col gap-2 w-[180px] mx-auto">
                       <div className="flex items-center justify-between">
                         <span
                           className="text-[9px] font-black uppercase tracking-widest"
