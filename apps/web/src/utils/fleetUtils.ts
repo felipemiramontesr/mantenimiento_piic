@@ -12,7 +12,7 @@ import { CreateFleetUnit } from '../types/fleet';
  */
 export const getInitialFleetForm = (): CreateFleetUnit => ({
   assetType: 'Vehiculo',
-  tag: 'ASM-002',
+  id: 'ASM-002',
   placas: 'ZH-3153-B',
   numeroSerie: '1D7HW48P87S256272',
   images: [] as string[],

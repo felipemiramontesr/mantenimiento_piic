@@ -164,7 +164,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
-              <th className="text-center">ID / TAG</th>
+              <th className="text-center">NÚMERO ECONÓMICO</th>
               <th className="text-center">MARCA / MODELO</th>
               <th className="text-center">IDENTIDAD</th>
               <th className="text-center">ODÓMETRO / HORAS</th>
@@ -182,11 +182,10 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
             ) : (
               units.map((unit) => (
                 <tr key={unit.uuid} className="group hover:bg-[#f9fbfc] transition-colors">
-                  {/* TAG / ID */}
+                  {/* MASTER ID (ASM-xxx) */}
                   <td>
                     <div className="flex flex-col items-center">
-                      <span className="text-[11px] font-black text-[#0f2a44]">{unit.tag}</span>
-                      <span className="text-[9px] font-bold opacity-30 tracking-tighter">
+                      <span className="text-[11px] font-black text-[#0f2a44] uppercase">
                         {unit.id}
                       </span>
                     </div>

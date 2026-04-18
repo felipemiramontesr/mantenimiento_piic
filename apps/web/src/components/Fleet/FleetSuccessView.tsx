@@ -34,8 +34,8 @@ const FleetSuccessView: React.FC<FleetSuccessViewProps> = ({
         Unidad Registrada con Éxito
       </h3>
       <p className="text-[#0f2a44] text-lg opacity-60 font-medium max-w-lg mx-auto leading-relaxed">
-        El activo <span className="text-[#f2b705] font-bold">{formData.tag}</span> ha sido incorporado
-        al protocolo de mantenimiento soberano de Archon.
+        El activo <span className="text-[#f2b705] font-bold">{formData.id}</span> ha sido
+        incorporado al protocolo de mantenimiento soberano de Archon.
       </p>
     </div>
 

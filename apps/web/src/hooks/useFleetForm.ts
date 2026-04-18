@@ -155,7 +155,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     if (
       !formData.marca ||
       !formData.modelo ||
-      !formData.tag ||
+      !formData.id ||
       !formData.departamento ||
       !formData.uso
     ) {

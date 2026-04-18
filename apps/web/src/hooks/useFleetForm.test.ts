@@ -12,7 +12,7 @@ import server from '../test/server';
 describe('useFleetForm Hook', () => {
   it('should initialize with default fleet form data', (): void => {
     const { result } = renderHook(() => useFleetForm());
-    expect(result.current.formData.tag).toBe('ASM-002');
+    expect(result.current.formData.id).toBe('ASM-002');
     expect(result.current.formData.assetType).toBe('Vehiculo');
   });
 
@@ -66,7 +66,7 @@ describe('useFleetForm Hook', () => {
 
     // Clear required field
     act((): void => {
-      result.current.setFormData((prev) => ({ ...prev, tag: '' }));
+      result.current.setFormData((prev) => ({ ...prev, id: '' }));
     });
 
     await expect(async (): Promise<void> => {
@@ -99,7 +99,7 @@ describe('useFleetForm Hook', () => {
     const { result } = renderHook(() => useFleetForm());
 
     act((): void => {
-      result.current.setFormData((prev) => ({ ...prev, tag: 'MODIFIED' }));
+      result.current.setFormData((prev) => ({ ...prev, id: 'MODIFIED' }));
       result.current.setRegistrationSuccess(true);
     });
 
@@ -107,7 +107,7 @@ describe('useFleetForm Hook', () => {
       result.current.resetForm();
     });
 
-    expect(result.current.formData.tag).toBe('ASM-002');
+    expect(result.current.formData.id).toBe('ASM-002');
     expect(result.current.registrationSuccess).toBe(false);
   });
 });

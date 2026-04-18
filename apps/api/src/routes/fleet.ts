@@ -10,8 +10,8 @@ import { toSnakeCase } from '../utils/mappers';
 // ZOD SCHEMA: CREATE
 // ============================================================================
 const createFleetSchema = z.object({
-  assetType: z.enum(['Vehiculo', 'Maquinaria']),
-  tag: z.string().min(2).max(50),
+  assetType: z.enum(['Vehiculo', 'Maquinaria', 'Herramienta']),
+  id: z.string().min(2).max(50),
   placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
   images: z.array(z.string()).max(4).optional(),
@@ -63,8 +63,8 @@ const createFleetSchema = z.object({
 // ZOD SCHEMA: UPDATE
 // ============================================================================
 const updateFleetSchema = z.object({
-  assetType: z.enum(['Vehiculo', 'Maquinaria']).optional(),
-  tag: z.string().min(2).max(50).optional(),
+  assetType: z.enum(['Vehiculo', 'Maquinaria', 'Herramienta']).optional(),
+  id: z.string().min(2).max(50).optional(),
   placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
   images: z.array(z.string()).max(4).optional(),
@@ -116,7 +116,6 @@ interface FleetUnit extends RowDataPacket {
   id: string;
   uuid: string;
   asset_type: string;
-  tag: string;
   placas: string | null;
   placas_hash: string | null;
   numero_serie: string | null;
@@ -276,14 +275,14 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     const uuid = randomUUID();
 
     try {
-      // Check for duplicate tag
-      const [existing] = await db.execute<FleetUnit[]>('SELECT id FROM fleet_units WHERE tag = ?', [
-        parse.data.tag,
+      // Check for duplicate ID (Manual Entry ASM-xxx)
+      const [existing] = await db.execute<FleetUnit[]>('SELECT id FROM fleet_units WHERE id = ?', [
+        parse.data.id,
       ]);
       if (existing.length > 0) {
         return reply
           .code(409)
-          .send({ error: `Número Económico '${parse.data.tag}' ya existe en el registro` });
+          .send({ error: `El identificador '${parse.data.id}' ya existe en el registro master` });
       }
 
       // Check for duplicate numero_serie via Blind Index (Searchable Encryption)
@@ -300,15 +299,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         }
       }
 
-      // Auto-generate FLXXX ID
-      const [lastUnit] = await db.execute<FleetUnit[]>(
-        'SELECT id FROM fleet_units WHERE id LIKE "FL%" ORDER BY id DESC LIMIT 1'
-      );
-      let nextId = 'FL001';
-      if (lastUnit.length > 0) {
-        const lastNum = parseInt(lastUnit[0].id.replace('FL', ''), 10);
-        nextId = `FL${String(lastNum + 1).padStart(3, '0')}`;
-      }
+      const { id } = parse.data;
 
       const payload = { ...parse.data } as Record<string, unknown>;
       if (payload.motor) payload.motor = EncryptionService.encrypt(payload.motor as string);
@@ -330,10 +321,10 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         payload.placas = EncryptionService.encrypt(payload.placas as string);
       }
 
-      // Map dynamic intelligence columns (v.18.0.0)
+      // Map dynamic intelligence columns (v.18.9.0)
       const intelligencePayload = {
         ...payload,
-        id: nextId,
+        id,
         uuid,
         currentReading: parse.data.odometer || 0,
       };
@@ -354,7 +345,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         values
       );
 
-      return reply.code(201).send({ success: true, id: nextId, uuid });
+      return reply.code(201).send({ success: true, id, uuid });
     } catch (error: unknown) {
       fastify.log.error(error);
       const sqlError =

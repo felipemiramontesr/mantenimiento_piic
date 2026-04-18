@@ -9,7 +9,7 @@ import { CreateFleetUnit } from '../../types/fleet';
  */
 describe('FleetSuccessView Component', () => {
   const mockFormData: CreateFleetUnit = {
-    tag: 'ASM-TEST-001',
+    id: 'ASM-TEST-001',
     assetType: 'Vehiculo',
     marca: 'Toyota',
     modelo: 'Hilux',
@@ -23,9 +23,15 @@ describe('FleetSuccessView Component', () => {
 
   const mockProps = {
     formData: mockFormData,
-    onRegisterAnother: vi.fn((): void => { /* No-op */ }),
-    onManageFleet: vi.fn((): void => { /* No-op */ }),
-    onGoToDashboard: vi.fn((): void => { /* No-op */ }),
+    onRegisterAnother: vi.fn((): void => {
+      /* No-op */
+    }),
+    onManageFleet: vi.fn((): void => {
+      /* No-op */
+    }),
+    onGoToDashboard: vi.fn((): void => {
+      /* No-op */
+    }),
   };
 
   const renderComponent = (): RenderResult => render(<FleetSuccessView {...mockProps} />);

@@ -174,9 +174,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               type="text"
               placeholder="Ej. ASM-001"
               className="archon-input"
-              value={formData.tag}
+              value={formData.id}
               onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                setFormData({ ...formData, tag: e.target.value })
+                setFormData({ ...formData, id: e.target.value })
               }
             />
           </ArchonField>

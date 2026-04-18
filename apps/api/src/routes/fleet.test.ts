@@ -42,24 +42,6 @@ describe('Fleet Logic Ecosystem', () => {
     });
   });
 
-  describe('ID Pattern Security', () => {
-    it('should verify the FLXXX pattern logic', () => {
-      const lastId = 'FL042';
-      const lastNum = parseInt(lastId.replace('FL', ''), 10);
-      const nextId = `FL${String(lastNum + 1).padStart(3, '0')}`;
-
-      expect(nextId).toBe('FL043');
-    });
-
-    it('should handle transition from 099 to 100', () => {
-      const lastId = 'FL099';
-      const lastNum = parseInt(lastId.replace('FL', ''), 10);
-      const nextId = `FL${String(lastNum + 1).padStart(3, '0')}`;
-
-      expect(nextId).toBe('FL100');
-    });
-  });
-
   describe('Protocolo Sentinel (Security v.11.0.0)', () => {
     it('should encrypt and decrypt sensitive fields correctly', () => {
       const secret = 'MOTOR-SECRET-123';

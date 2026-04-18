@@ -19,12 +19,11 @@ export type MaintenanceFrequency =
 export type CentroMantenimiento = 'PIIC' | 'Archon Core';
 
 export interface FleetUnit {
-  id: string; // FLXXX format
+  id: string; // Master ID (e.g. ASM-002)
   uuid: string;
   // Level 1: Root classifier
   asset_type: AssetType;
   // Primary identifiers
-  tag: string; // Número Económico
   placas: string | null;
   numero_serie: string | null;
   // Level 2 & 3: Cascade
@@ -77,7 +76,7 @@ export interface FleetUnit {
 
 export interface CreateFleetUnit {
   assetType: AssetType;
-  tag: string;
+  id: string;
   placas?: string;
   numeroSerie?: string;
   marca: string;

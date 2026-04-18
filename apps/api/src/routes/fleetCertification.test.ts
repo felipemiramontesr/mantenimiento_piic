@@ -9,7 +9,7 @@ describe('Fleet Incorporation Certification', () => {
   it('should verify parity between Frontend Payload and Database Schema (Snake Case)', (): void => {
     const industrialPayload = {
       assetType: 'Vehiculo',
-      tag: 'FL001',
+      id: 'ASM001',
       marca: 'Toyota',
       modelo: 'Hilux',
       year: 2024,
