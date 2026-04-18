@@ -1,8 +1,8 @@
 -- =============================================================================
--- Migration: 009 - Archon Fleet Predictive Mock Data (FIXED)
--- Architecture: Archon Collective v.18.5.1
+-- Migration: 009 - Archon Fleet Predictive Mock Data (FIXED v3)
+-- Architecture: Archon Collective v.18.5.2
 -- Goal: High-fidelity seed for predictive maintenance testing.
--- Fix: Removed non-existent 'combustible' column.
+-- Fix: Standardized columns to 'fuel_type' and 'last_service_reading'.
 -- =============================================================================
 
 -- ── 1. HELPERS: CATALOG LOOKUP ──────────────────────────────────────────────
@@ -15,7 +15,7 @@ SET @u_15k     = (SELECT id FROM common_catalogs WHERE code = 'U_15K_KM');
 -- ── 2. SEED: 24 FLEET UNITS (Based on Field Table) ───────────────────────────
 
 INSERT IGNORE INTO fleet_units 
-(id, uuid, asset_type, tag, placas, numero_serie, marca, modelo, year, departamento, uso, fuel_type, tire_spec, tire_brand, tipo_terreno, odometer, current_reading, maintenance_time_freq_id, maintenance_usage_freq_id, last_service_date, last_service_usage_reading, status)
+(id, uuid, asset_type, tag, placas, numero_serie, marca, modelo, year, departamento, uso, fuel_type, tire_spec, tire_brand, tipo_terreno, odometer, current_reading, maintenance_time_freq_id, maintenance_usage_freq_id, last_service_date, last_service_reading, status)
 VALUES
 -- Unit 1: HEALTHY (Green)
 ('FL002', UUID(), 'Vehiculo', 'ASM-002', 'ZH-3153-B', '1D7HW48P87S256272', 'Toyota', 'Hilux', 2007, 'Medio Ambiente', 'Terracería', 'Diesel', '255/70 R17', 'BF GOODRICH', 'All-Terrain (A/T)', 245000, 245100, @t_mensual, @u_5k, '2024-04-10', 245000, 'Disponible'),
@@ -90,5 +90,5 @@ VALUES
 ('PROV', UUID(), 'Vehiculo', 'ASM-PROV', 'UYM-047-C', 'S/N-PENDIENTE', 'Nissan', 'Versa', 2017, 'Admin', 'Provisional', 'Gasolina', '215/55 R17', 'BF GOODRICH', 'SUV/Carretera', 85000, 88000, @t_semest, @u_15k, '2024-01-20', 85000, 'Disponible');
 
 -- =============================================================================
--- MIGRATION COMPLETE: 24 UNITS DEPLOYED v.18.5.1
+-- MIGRATION COMPLETE: 24 UNITS DEPLOYED v.18.5.2
 -- =============================================================================
