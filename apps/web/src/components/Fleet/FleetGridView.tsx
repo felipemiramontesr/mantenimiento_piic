@@ -165,7 +165,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
-              <th className="text-center w-[80px]">ACTIVO</th>
+              <th className="text-center w-[120px]">ACTIVO</th>
               <th className="text-center">NÚMERO ECONÓMICO</th>
               <th className="text-center">MARCA / MODELO</th>
               <th className="text-center">IDENTIDAD</th>
@@ -185,17 +185,18 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
               units.map((unit) => (
                 <tr key={unit.uuid} className="group hover:bg-[#f9fbfc] transition-colors">
                   {/* 🖼️ ASSET THUMBNAIL */}
-                  <td className="w-[80px]">
-                    <div className="flex justify-center items-center">
+                  <td className="w-[120px]">
+                    <div className="flex justify-center items-center py-4">
                       {unit.images && unit.images.length > 0 ? (
                         <img
                           src={unit.images[0]}
-                          className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm ring-1 ring-black/5"
+                          loading="lazy"
+                          className="w-20 h-20 rounded-xl object-cover aspect-square border-2 border-white shadow-md ring-1 ring-black/5 hover:scale-105 transition-transform duration-300"
                           alt={unit.id}
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
-                          <ImageIcon size={20} />
+                        <div className="w-20 h-20 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 aspect-square">
+                          <ImageIcon size={28} />
                         </div>
                       )}
                     </div>
