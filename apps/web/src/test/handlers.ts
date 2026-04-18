@@ -17,7 +17,7 @@ const handlers = [
 
     return HttpResponse.json({
       success: true,
-      data: { id: 'FL-MOCK-001', ...data },
+      data: { ...data },
     });
   }),
 
