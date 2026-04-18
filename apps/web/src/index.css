@@ -1652,14 +1652,14 @@ body {
 }
 
 .archon-registry-table tr:hover td {
-  background: #fdfdfd;
-  border-color: rgba(242, 183, 5, 0.4);
+  background: rgba(15, 42, 68, 0.05);
+  border-color: #0f2a44;
 }
 
 .archon-registry-table tr:hover td:first-child {
-  border-left-color: #f2b705;
+  border-left-color: #0f2a44;
 }
 
 .archon-registry-table tr:hover td:last-child {
-  border-right-color: #f2b705;
+  border-right-color: #0f2a44;
 }

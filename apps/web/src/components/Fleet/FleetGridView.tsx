@@ -197,7 +197,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                 </tr>
               ) : (
                 units.map((unit) => (
-                  <tr key={unit.uuid} className="hover:bg-[#f2b705]/5 transition-colors">
+                  <tr key={unit.uuid} className="hover:bg-[#0f2a44]/5 transition-colors">
                     {/* 🖼️ ASSET THUMBNAIL */}
                     <td className="w-[120px]">
                       <div className="flex justify-center items-center py-4">
@@ -205,7 +205,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                           <img
                             src={unit.images[0]}
                             loading="lazy"
-                            className="w-20 h-20 rounded-[4px] object-cover aspect-square border border-[#0f2a44]/10 cursor-pointer hover:border-[#f2b705] transition-colors"
+                            className="w-20 h-20 rounded-[4px] object-cover aspect-square border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44] transition-colors"
                             alt={unit.id}
                             onClick={(): void => setSelectedGalleryUnit(unit)}
                           />
