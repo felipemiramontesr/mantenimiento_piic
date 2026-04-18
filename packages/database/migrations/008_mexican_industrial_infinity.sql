@@ -1,7 +1,7 @@
 -- =============================================================================
--- Migration: 008 - Mexican Industrial Infinity Catalog (Final Edition)
--- Architecture: Archon Collective v.18.2.0
--- Goal: Absolute metadata density for the Mexican Industrial & Logistic Market.
+-- Migration: 008 - Sovereign Industrial Metadata Core (Full Deployment)
+-- Architecture: Archon Collective v.18.3.0
+-- Goal: Absolute market coverage for Mexico (Vehicles, Trucks, Machinery, Tools).
 -- =============================================================================
 
 -- ── 1. HELPERS: ROOT ASSET TYPE IDs ──────────────────────────────────────────
@@ -9,200 +9,251 @@ SET @at_veh = (SELECT id FROM common_catalogs WHERE code = 'AT_VEH');
 SET @at_maq = (SELECT id FROM common_catalogs WHERE code = 'AT_MAQ');
 SET @at_her = (SELECT id FROM common_catalogs WHERE code = 'AT_HER');
 
--- ── 2. VEHICLE BRANDS (AT_VEH) ───────────────────────────────────────────────
+-- ── 2. BRANDS: VEHICLES & TRUCKS (AT_VEH) ────────────────────────────────────
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('BRAND', @at_veh, 'B_NISSAN',     'Nissan'),
-('BRAND', @at_veh, 'B_TOYOTA',     'Toyota'),
-('BRAND', @at_veh, 'B_FORD',       'Ford'),
-('BRAND', @at_veh, 'B_CHEVROLET',  'Chevrolet'),
-('BRAND', @at_veh, 'B_VW',         'Volkswagen'),
-('BRAND', @at_veh, 'B_RAM',        'RAM'),
-('BRAND', @at_veh, 'B_MITSUBISHI', 'Mitsubishi'),
-('BRAND', @at_veh, 'B_HYUNDAI',    'Hyundai'),
+('BRAND', @at_veh, 'B_NISSAN',      'Nissan'),
+('BRAND', @at_veh, 'B_TOYOTA',      'Toyota'),
+('BRAND', @at_veh, 'B_FORD',        'Ford'),
+('BRAND', @at_veh, 'B_CHEVROLET',   'Chevrolet'),
+('BRAND', @at_veh, 'B_RAM',         'RAM'),
+('BRAND', @at_veh, 'B_VW',          'Volkswagen'),
+('BRAND', @at_veh, 'B_MITSUBISHI',  'Mitsubishi'),
+('BRAND', @at_veh, 'B_HYUNDAI',     'Hyundai'),
 ('BRAND', @at_veh, 'B_KIA',         'KIA'),
 ('BRAND', @at_veh, 'B_MAZDA',       'Mazda'),
-('BRAND', @at_veh, 'B_ISUZU',      'Isuzu'),
-('BRAND', @at_veh, 'B_HINO',       'Hino'),
-('BRAND', @at_veh, 'B_KW',         'Kenworth'),
-('BRAND', @at_veh, 'B_FRTL',       'Freightliner'),
-('BRAND', @at_veh, 'B_INTL',       'International'),
-('BRAND', @at_veh, 'B_MACK',       'Mack'),
-('BRAND', @at_veh, 'B_WESTERN',     'Western Star'),
+('BRAND', @at_veh, 'B_MG',          'MG'),
+('BRAND', @at_veh, 'B_BYD',         'BYD'),
+('BRAND', @at_veh, 'B_JAC',         'JAC'),
+('BRAND', @at_veh, 'B_GWM',         'GWM'),
+('BRAND', @at_veh, 'B_OMODA',       'Omoda'),
+('BRAND', @at_veh, 'B_CHANGAN',     'Changan'),
+('BRAND', @at_veh, 'B_KW',          'Kenworth'),
+('BRAND', @at_veh, 'B_FRTL',        'Freightliner'),
+('BRAND', @at_veh, 'B_INTL',        'International'),
+('BRAND', @at_veh, 'B_ISUZU',       'Isuzu'),
+('BRAND', @at_veh, 'B_HINO',        'Hino'),
+('BRAND', @at_veh, 'B_MERCEDES_T',  'Mercedes-Benz Trucks'),
 ('BRAND', @at_veh, 'B_SCANIA',      'Scania'),
-('BRAND', @at_veh, 'B_VOLVOT',      'Volvo Trucks'),
-('BRAND', @at_veh, 'B_MERCEDES',   'Mercedes-Benz'),
-('BRAND', @at_veh, 'B_JAC',        'JAC'),
-('BRAND', @at_veh, 'B_MG',         'MG'),
-('BRAND', @at_veh, 'B_HONDA',      'Honda'),
-('BRAND', @at_veh, 'B_FOTON',      'Foton'),
-('BRAND', @at_veh, 'B_GMC',        'GMC'),
-('BRAND', @at_veh, 'B_JEEP',       'Jeep');
+('BRAND', @at_veh, 'B_VOLVO_T',     'Volvo Trucks');
 
--- ── 3. VEHICLE MODELS (MX FOCUS) ──────────────────────────────────────────────
+-- ── 3. MODELS: PASSENGER & LIGHT COMMERCIAL (AT_VEH) ─────────────────────────
 
 -- NISSAN
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_NISSAN');
+SET @b_nissan = (SELECT id FROM common_catalogs WHERE code = 'B_NISSAN');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_NP300_CH',  'NP300 Chasis'),
-('MODEL', @brand_id, 'M_NP300_EST', 'NP300 Estaquitas'),
-('MODEL', @brand_id, 'M_FRONTIER',  'Frontier Pro-4X'),
-('MODEL', @brand_id, 'M_URVAN_PAN', 'Urvan Panel'),
-('MODEL', @brand_id, 'M_URVAN_PAS', 'Urvan Pasajeros'),
-('MODEL', @brand_id, 'M_MARCH',     'March (Staff)'),
-('MODEL', @brand_id, 'M_VERSA',     'Versa (Admin)'),
-('MODEL', @brand_id, 'M_SENTRA',    'Sentra'),
-('MODEL', @brand_id, 'M_NV3500',    'NV3500 Carga');
+('MODEL', @b_nissan, 'M_NP300_CH',  'NP300 Chasis'),
+('MODEL', @b_nissan, 'M_NP300_ES',  'NP300 Estaquitas'),
+('MODEL', @b_nissan, 'M_NP300_PU',  'NP300 Pick Up'),
+('MODEL', @b_nissan, 'M_FRONT_S',   'Frontier S'),
+('MODEL', @b_nissan, 'M_FRONT_XE',  'Frontier XE'),
+('MODEL', @b_nissan, 'M_FRONT_LE',  'Frontier LE'),
+('MODEL', @b_nissan, 'M_FRONT_PRO', 'Frontier Pro-4X'),
+('MODEL', @b_nissan, 'M_URVAN_CG',  'Urvan Carga'),
+('MODEL', @b_nissan, 'M_URVAN_PS',  'Urvan Pasajeros'),
+('MODEL', @b_nissan, 'M_URVAN_PN',  'Urvan Panel'),
+('MODEL', @b_nissan, 'M_MARCH_SN',  'March Sense'),
+('MODEL', @b_nissan, 'M_MARCH_AD',  'March Advance'),
+('MODEL', @b_nissan, 'M_MARCH_EX',  'March Exclusive'),
+('MODEL', @b_nissan, 'M_VERSA',     'Versa'),
+('MODEL', @b_nissan, 'M_SENTRA',    'Sentra'),
+('MODEL', @b_nissan, 'M_KICKS',     'Kicks'),
+('MODEL', @b_nissan, 'M_XTRAIL',    'X-Trail'),
+('MODEL', @b_nissan, 'M_PATH',      'Pathfinder'),
+('MODEL', @b_nissan, 'M_ARMADA',    'Armada'),
+('MODEL', @b_nissan, 'M_NV3500',    'NV3500');
 
 -- TOYOTA
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA');
+SET @b_toyota = (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_HILUX_G',   'Hilux Gasolina'),
-('MODEL', @brand_id, 'M_HILUX_D',   'Hilux Diésel'),
-('MODEL', @brand_id, 'M_TACOMA',    'Tacoma V6'),
-('MODEL', @brand_id, 'M_HIACE_PAN', 'Hiace Panel'),
-('MODEL', @brand_id, 'M_HIACE_PAS', 'Hiace Pasajeros'),
-('MODEL', @brand_id, 'M_AVANZA',    'Avanza'),
-('MODEL', @brand_id, 'M_RAV4',      'RAV4'),
-('MODEL', @brand_id, 'M_TUNDRA',    'Tundra');
+('MODEL', @b_toyota, 'M_HILUX_G',   'Hilux Gasolina'),
+('MODEL', @b_toyota, 'M_HILUX_D',   'Hilux Diésel'),
+('MODEL', @b_toyota, 'M_TACOMA',    'Tacoma'),
+('MODEL', @b_toyota, 'M_HIACE_PN',  'Hiace Panel'),
+('MODEL', @b_toyota, 'M_HIACE_VN',  'Hiace Ventanas'),
+('MODEL', @b_toyota, 'M_AVANZA',    'Avanza'),
+('MODEL', @b_toyota, 'M_RAV4',      'RAV4'),
+('MODEL', @b_toyota, 'M_COROLLA',   'Corolla'),
+('MODEL', @b_toyota, 'M_COR_CROSS', 'Corolla Cross'),
+('MODEL', @b_toyota, 'M_TUNDRA',    'Tundra'),
+('MODEL', @b_toyota, 'M_SEQUOIA',   'Sequoia'),
+('MODEL', @b_toyota, 'M_SIENNA',    'Sienna'),
+('MODEL', @b_toyota, 'M_CAMRY',     'Camry'),
+('MODEL', @b_toyota, 'M_YARIS_S',   'Yaris Sedán'),
+('MODEL', @b_toyota, 'M_YARIS_H',   'Yaris Hatchback'),
+('MODEL', @b_toyota, 'M_RAIZE',     'Raize');
 
 -- FORD
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_FORD');
+SET @b_ford = (SELECT id FROM common_catalogs WHERE code = 'B_FORD');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_F150',      'F-150 / Lobo'),
-('MODEL', @brand_id, 'M_F250',      'F-250 Super Duty'),
-('MODEL', @brand_id, 'M_F350',      'F-350 Chasis'),
-('MODEL', @brand_id, 'M_F450',      'F-450 Pesado'),
-('MODEL', @brand_id, 'M_RANGER',    'Ranger'),
-('MODEL', @brand_id, 'M_TRANSIT_V', 'Transit Van'),
-('MODEL', @brand_id, 'M_TRANSIT_C', 'Transit Custom'),
-('MODEL', @brand_id, 'M_MAVERICK',  'Maverick');
+('MODEL', @b_ford, 'M_F150_V6',   'F-150 / Lobo V6'),
+('MODEL', @b_ford, 'M_F150_V8',   'F-150 / Lobo V8'),
+('MODEL', @b_ford, 'M_F150_RAP',  'F-150 / Lobo Raptor'),
+('MODEL', @b_ford, 'M_F150_PB',   'F-150 PowerBoost'),
+('MODEL', @b_ford, 'M_RANG_LAR',  'Ranger Lariat'),
+('MODEL', @b_ford, 'M_RANG_XLT',  'Ranger XLT'),
+('MODEL', @b_ford, 'M_TRANS_CG',  'Transit Carga'),
+('MODEL', @b_ford, 'M_TRANS_PS',  'Transit Pasajeros'),
+('MODEL', @b_ford, 'M_TRANS_CR',  'Transit Courier'),
+('MODEL', @b_ford, 'M_F250_SD',   'F-250 Super Duty'),
+('MODEL', @b_ford, 'M_F350_SD',   'F-350 Super Duty'),
+('MODEL', @b_ford, 'M_F450_SD',   'F-450 Super Duty'),
+('MODEL', @b_ford, 'M_F550_SD',   'F-550 Super Duty'),
+('MODEL', @b_ford, 'M_MAVERICK',  'Maverick'),
+('MODEL', @b_ford, 'M_EXPLORER',  'Explorer'),
+('MODEL', @b_ford, 'M_EXPED',    'Expedition'),
+('MODEL', @b_ford, 'M_MACH_E',    'Mustang Mach-E');
 
 -- CHEVROLET
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_CHEVROLET');
+SET @b_chevy = (SELECT id FROM common_catalogs WHERE code = 'B_CHEVROLET');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_S10_MAX',   'S10 Max Chasis'),
-('MODEL', @brand_id, 'M_SILVERADO', 'Silverado 1500'),
-('MODEL', @brand_id, 'M_CHEYENNE',  'Cheyenne V8'),
-('MODEL', @brand_id, 'M_COLORADO',  'Colorado'),
-('MODEL', @brand_id, 'M_TORNADO',   'Tornado Van'),
-('MODEL', @brand_id, 'M_AVEO',      'Aveo (Staff)'),
-('MODEL', @brand_id, 'M_TAHOE',     'Tahoe (Exec)'),
-('MODEL', @brand_id, 'M_SUBURBAN',  'Suburban');
+('MODEL', @b_chevy, 'M_S10_CH',    'S10 Max Chasis'),
+('MODEL', @b_chevy, 'M_S10_DC',    'S10 Max Doble Cabina'),
+('MODEL', @b_chevy, 'M_SILVERADO', 'Silverado / Cheyenne'),
+('MODEL', @b_chevy, 'M_COLORADO',  'Colorado'),
+('MODEL', @b_chevy, 'M_TORNADO',   'Tornado Van'),
+('MODEL', @b_chevy, 'M_AVEO',      'Aveo (Staff)'),
+('MODEL', @b_chevy, 'M_CAPTIVA',   'Captiva'),
+('MODEL', @b_chevy, 'M_GROOVE',    'Groove'),
+('MODEL', @b_chevy, 'M_TAHOE',     'Tahoe'),
+('MODEL', @b_chevy, 'M_SUBURBAN',  'Suburban'),
+('MODEL', @b_chevy, 'M_TRAVERSE',  'Traverse'),
+('MODEL', @b_chevy, 'M_EXPRESS',   'Express');
 
 -- RAM
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_RAM');
+SET @b_ram = (SELECT id FROM common_catalogs WHERE code = 'B_RAM');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_RAM_700',   'Ram 700 SLT'),
-('MODEL', @brand_id, 'M_RAM_1500',  'Ram 1500'),
-('MODEL', @brand_id, 'M_RAM_2500',  'Ram 2500 HD'),
-('MODEL', @brand_id, 'M_RAM_4000',  'Ram 4000 Chasis'),
-('MODEL', @brand_id, 'M_PROMASTER', 'Promaster 2500'),
-('MODEL', @brand_id, 'M_PRO_RAPID', 'Promaster Rapid');
+('MODEL', @b_ram, 'M_RAM_700_SL',  'Ram 700 SLT'),
+('MODEL', @b_ram, 'M_RAM_700_LA',  'Ram 700 Laramie'),
+('MODEL', @b_ram, 'M_RAM_700_BH',  'Ram 700 Bighorn'),
+('MODEL', @b_ram, 'M_RAM_1200',    'Ram 1200'),
+('MODEL', @b_ram, 'M_RAM_1500_M',  'Ram 1500 Mild Hybrid'),
+('MODEL', @b_ram, 'M_RAM_1500_T',  'Ram 1500 TRX'),
+('MODEL', @b_ram, 'M_RAM_2500',    'Ram 2500 HD'),
+('MODEL', @b_ram, 'M_RAM_4000',    'Ram 4000 Chasis'),
+('MODEL', @b_ram, 'M_PRO_2500',    'Promaster 2500'),
+('MODEL', @b_ram, 'M_PRO_RAPID',   'Promaster Rapid');
 
--- ISUZU / HINO (MX LOGISTICS)
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_ISUZU');
+-- VW
+SET @b_vw = (SELECT id FROM common_catalogs WHERE code = 'B_VW');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_ELF_100', 'ELF 100'),
-('MODEL', @brand_id, 'M_ELF_200', 'ELF 200'),
-('MODEL', @brand_id, 'M_ELF_300', 'ELF 300'),
-('MODEL', @brand_id, 'M_ELF_400', 'ELF 400'),
-('MODEL', @brand_id, 'M_ELF_500', 'ELF 500'),
-('MODEL', @brand_id, 'M_ELF_600', 'ELF 600'),
-('MODEL', @brand_id, 'M_FOR_800', 'Forward 800');
+('MODEL', @b_vw, 'M_AMAROK_V6',  'Amarok V6'),
+('MODEL', @b_vw, 'M_SAVEIRO',    'Saveiro'),
+('MODEL', @b_vw, 'M_TRANS_T6',   'Transporter T6'),
+('MODEL', @b_vw, 'M_CRAFT_CG',   'Crafter Carga'),
+('MODEL', @b_vw, 'M_CRAFT_PS',   'Crafter Pasajeros'),
+('MODEL', @b_vw, 'M_JETTA',      'Jetta'),
+('MODEL', @b_vw, 'M_TIGUAN',     'Tiguan'),
+('MODEL', @b_vw, 'M_TAOS',       'Taos'),
+('MODEL', @b_vw, 'M_NIVUS',      'Nivus'),
+('MODEL', @b_vw, 'M_TERAMONT',   'Teramont');
 
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_HINO');
+-- ── 4. MODELS: HEAVY DUTY & LOGISTICS (AT_VEH) ───────────────────────────────
+
+-- KENWORTH
+SET @b_kw = (SELECT id FROM common_catalogs WHERE code = 'B_KW');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_H300_514', 'Serie 300 - 514'),
-('MODEL', @brand_id, 'M_H300_614', 'Serie 300 - 614'),
-('MODEL', @brand_id, 'M_H300_716', 'Serie 300 - 716'),
-('MODEL', @brand_id, 'M_H300_816', 'Serie 300 - 816'),
-('MODEL', @brand_id, 'M_H500_1018', 'Serie 500 - 1018');
+('MODEL', @b_kw, 'M_T680_NG',  'T680 Next Gen'),
+('MODEL', @b_kw, 'M_T880_VOC',  'T880 Vocacional'),
+('MODEL', @b_kw, 'M_T370_REP',  'T370 Reparto'),
+('MODEL', @b_kw, 'M_T470',      'T470'),
+('MODEL', @b_kw, 'M_KW55',      'KW55'),
+('MODEL', @b_kw, 'M_W900',      'W900'),
+('MODEL', @b_kw, 'M_T2000',     'T2000');
 
--- KENWORTH / FREIGHTLINER
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_KW');
+-- FREIGHTLINER
+SET @b_frtl = (SELECT id FROM common_catalogs WHERE code = 'B_FRTL');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_T680', 'Kenworth T680'),
-('MODEL', @brand_id, 'M_T880', 'Kenworth T880'),
-('MODEL', @brand_id, 'M_T370', 'Kenworth T370'),
-('MODEL', @brand_id, 'M_KW55', 'Kenworth KW55');
+('MODEL', @b_frtl, 'M_CASC_CL',  'Cascadia Classic'),
+('MODEL', @b_frtl, 'M_CASC_NW',  'New Cascadia'),
+('MODEL', @b_frtl, 'M_M2_106',   'M2 Business Class 106'),
+('MODEL', @b_frtl, 'M_M2_112',   'M2 Business Class 112'),
+('MODEL', @b_frtl, 'M_CORONADO', 'Coronado'),
+('MODEL', @b_frtl, 'M_SD122',    'SD122');
 
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_FRTL');
+-- ISUZU / HINO
+SET @b_isuzu = (SELECT id FROM common_catalogs WHERE code = 'B_ISUZU');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_CASCADIA', 'Cascadia'),
-('MODEL', @brand_id, 'M_M2_106',   'M2 106'),
-('MODEL', @brand_id, 'M_M2_112',   'M2 112');
+('MODEL', @b_isuzu, 'M_ELF_100', 'ELF 100'),
+('MODEL', @b_isuzu, 'M_ELF_200', 'ELF 200'),
+('MODEL', @b_isuzu, 'M_ELF_300', 'ELF 300'),
+('MODEL', @b_isuzu, 'M_ELF_400', 'ELF 400'),
+('MODEL', @b_isuzu, 'M_ELF_500', 'ELF 500'),
+('MODEL', @b_isuzu, 'M_ELF_600', 'ELF 600'),
+('MODEL', @b_isuzu, 'M_FOR_800', 'Forward 800'),
+('MODEL', @b_isuzu, 'M_FOR_1100','Forward 1100'),
+('MODEL', @b_isuzu, 'M_FOR_1400','Forward 1400');
 
--- ── 4. MACHINERY BRANDS (AT_MAQ) ──────────────────────────────────────────────
+SET @b_hino = (SELECT id FROM common_catalogs WHERE code = 'B_HINO');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('BRAND', @at_maq, 'B_CAT',       'Caterpillar'),
-('BRAND', @at_maq, 'B_JD',        'John Deere'),
-('BRAND', @at_maq, 'B_KOM',       'Komatsu'),
-('BRAND', @at_maq, 'B_CASE',      'Case'),
-('BRAND', @at_maq, 'B_VOLVO_CE',  'Volvo CE'),
-('BRAND', @at_maq, 'B_SANY',      'Sany'),
-('BRAND', @at_maq, 'B_XCMG',      'XCMG'),
-('BRAND', @at_maq, 'B_BOBCAT',    'Bobcat'),
-('BRAND', @at_maq, 'B_JCB',       'JCB'),
-('BRAND', @at_maq, 'B_HYSTER',    'Hyster'),
-('BRAND', @at_maq, 'B_YALE',      'Yale'),
-('BRAND', @at_maq, 'B_TOYOTA_MH', 'Toyota MH'),
-('BRAND', @at_maq, 'B_CROWN',     'Crown'),
-('BRAND', @at_maq, 'B_GENIE',     'Genie'),
-('BRAND', @at_maq, 'B_JLG',       'JLG');
+('MODEL', @b_hino, 'M_H300_514',  'Serie 300 - 514'),
+('MODEL', @b_hino, 'M_H300_614',  'Serie 300 - 614'),
+('MODEL', @b_hino, 'M_H300_716',  'Serie 300 - 716'),
+('MODEL', @b_hino, 'M_H300_816',  'Serie 300 - 816'),
+('MODEL', @b_hino, 'M_H500_1018', 'Serie 500 - 1018'),
+('MODEL', @b_hino, 'M_H500_1724', 'Serie 500 - 1724'),
+('MODEL', @b_hino, 'M_H700_2628', 'Serie 700 - 2628');
 
--- ── 5. MACHINERY MODELS ──────────────────────────────────────────────────────
+-- ── 5. MODELS: HEAVY MACHINERY & YELLOW IRON (AT_MAQ) ────────────────────────
 
 -- CATERPILLAR
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_CAT');
+SET @b_cat = (SELECT id FROM common_catalogs WHERE code = 'B_CAT');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_CAT_320',  'Excavadora 320'),
-('MODEL', @brand_id, 'M_CAT_336',  'Excavadora 336'),
-('MODEL', @brand_id, 'M_CAT_416',  'Retroexcavadora 416'),
-('MODEL', @brand_id, 'M_CAT_420',  'Retroexcavadora 420'),
-('MODEL', @brand_id, 'M_CAT_D6',   'Tractor D6'),
-('MODEL', @brand_id, 'M_CAT_D8',   'Tractor D8'),
-('MODEL', @brand_id, 'M_CAT_120',  'Motoniveladora 120'),
-('MODEL', @brand_id, 'M_CAT_140',  'Motoniveladora 140'),
-('MODEL', @brand_id, 'M_CAT_950',  'Cargador 950'),
-('MODEL', @brand_id, 'M_CAT_966',  'Cargador 966');
+('MODEL', @b_cat, 'M_CAT_320',  'Excavadora 320'),
+('MODEL', @b_cat, 'M_CAT_336',  'Excavadora 336'),
+('MODEL', @b_cat, 'M_CAT_349',  'Excavadora 349'),
+('MODEL', @b_cat, 'M_CAT_395',  'Excavadora 395'),
+('MODEL', @b_cat, 'M_CAT_305',  'Mini Excavadora 305'),
+('MODEL', @b_cat, 'M_CAT_416',  'Retroexcavadora 416'),
+('MODEL', @b_cat, 'M_CAT_420',  'Retroexcavadora 420'),
+('MODEL', @b_cat, 'M_CAT_430',  'Retroexcavadora 430'),
+('MODEL', @b_cat, 'M_CAT_450',  'Retroexcavadora 450'),
+('MODEL', @b_cat, 'M_CAT_D5',   'Tractor D5'),
+('MODEL', @b_cat, 'M_CAT_D6',   'Tractor D6'),
+('MODEL', @b_cat, 'M_CAT_D8',   'Tractor D8'),
+('MODEL', @b_cat, 'M_CAT_D11',  'Tractor D11'),
+('MODEL', @b_cat, 'M_CAT_120',  'Motoniveladora 120'),
+('MODEL', @b_cat, 'M_CAT_140',  'Motoniveladora 140'),
+('MODEL', @b_cat, 'M_CAT_160',  'Motoniveladora 160'),
+('MODEL', @b_cat, 'M_CAT_950',  'Cargador Frontal 950'),
+('MODEL', @b_cat, 'M_CAT_966',  'Cargador Frontal 966'),
+('MODEL', @b_cat, 'M_CAT_988',  'Cargador Frontal 988');
 
--- JOHN DEERE
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_JD');
+-- JOHN DEERE / KOMATSU
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_JD_310L', 'Retroexcavadora 310L'),
-('MODEL', @brand_id, 'M_JD_210G', 'Excavadora 210G'),
-('MODEL', @brand_id, 'M_JD_6115J', 'Tractor 6115J'),
-('MODEL', @brand_id, 'M_JD_670G', 'Motoniveladora 670G');
+('MODEL', (SELECT id FROM common_catalogs WHERE code = 'B_JD'), 'M_JD_310L', 'Retro 310L'),
+('MODEL', (SELECT id FROM common_catalogs WHERE code = 'B_JD'), 'M_JD_410L', 'Retro 410L'),
+('MODEL', (SELECT id FROM common_catalogs WHERE code = 'B_JD'), 'M_JD_6115J','Tractor 6115J (Agro)'),
+('MODEL', (SELECT id FROM common_catalogs WHERE code = 'B_KOM'), 'M_KOM_PC200','PC200'),
+('MODEL', (SELECT id FROM common_catalogs WHERE code = 'B_KOM'), 'M_KOM_PC450','PC450'),
+('MODEL', (SELECT id FROM common_catalogs WHERE code = 'B_KOM'), 'M_KOM_D65', 'D65'),
+('MODEL', (SELECT id FROM common_catalogs WHERE code = 'B_KOM'), 'M_KOM_GD555','GD555');
 
--- MATERIAL HANDLING (FORKLIFTS)
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_HYSTER');
-INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_HYS_H50',  'Hyster H50FT (2.5T)'),
-('MODEL', @brand_id, 'M_HYS_H155', 'Hyster H155FT (7T)');
+-- ── 6. MODELS: TOOLS & INDUSTRIAL (AT_HER) ───────────────────────────────────
 
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA_MH');
+-- MILWAUKEE
+SET @b_milw = (SELECT id FROM common_catalogs WHERE code = 'B_MILWAUKEE');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_TOY_8FGU', 'Toyota 8FGU25'),
-('MODEL', @brand_id, 'M_TOY_7FBE', 'Toyota Eléctrico 7FBE');
+('MODEL', @b_milw, 'M_M18_IMP12', 'M18 Fuel Impact 1/2'),
+('MODEL', @b_milw, 'M_M18_IMP34', 'M18 Fuel Impact 3/4'),
+('MODEL', @b_milw, 'M_M18_IMP1',  'M18 Fuel Impact 1'),
+('MODEL', @b_milw, 'M_M12_DIAG',  'M12 Diagnostic'),
+('MODEL', @b_milw, 'M_ROCK_LIT',  'Torres Lighting Rocket');
 
--- ── 6. TOOL BRANDS & MODELS (AT_HER) ──────────────────────────────────────────
+-- HILTI
+SET @b_hilti = (SELECT id FROM common_catalogs WHERE code = 'B_HILTI');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('BRAND', @at_her, 'B_MILWAUKEE', 'Milwaukee'),
-('BRAND', @at_her, 'B_HILTI',     'Hilti'),
-('BRAND', @at_her, 'B_DEWALT',    'DeWalt'),
-('BRAND', @at_her, 'B_MAKITA',    'Makita'),
-('BRAND', @at_her, 'B_FLUKE',     'Fluke');
+('MODEL', @b_hilti, 'M_TE_70',    'Rotomartillo TE 70'),
+('MODEL', @b_hilti, 'M_TE_80',    'Rotomartillo TE 80'),
+('MODEL', @b_hilti, 'M_TE_3000',  'Demoledor TE 3000'),
+('MODEL', @b_hilti, 'M_DD_150',   'Core Drill DD 150'),
+('MODEL', @b_hilti, 'M_PS_1000',  'Scanner PS 1000');
 
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_MILWAUKEE');
+-- FLUKE
+SET @b_fluke = (SELECT id FROM common_catalogs WHERE code = 'B_FLUKE');
 INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_M18_IMP', 'Impacto M18 FUEL 1/2'),
-('MODEL', @brand_id, 'M_M18_DRL', 'Hammer Drill M18 FUEL');
-
-SET @brand_id = (SELECT id FROM common_catalogs WHERE code = 'B_HILTI');
-INSERT IGNORE INTO common_catalogs (category, parent_id, code, label) VALUES 
-('MODEL', @brand_id, 'M_TE_70',   'Rotomartillo TE 70'),
-('MODEL', @brand_id, 'M_PS_1000', 'Scanner Concreto PS 1000');
+('MODEL', @b_fluke, 'M_87V',      'Multímetro 87V'),
+('MODEL', @b_fluke, 'M_TI480',    'Cámara Térmica Ti480');
 
 -- =============================================================================
--- MIGRATION COMPLETE: INFINITY DATA SEED v.18.2.0
+-- MIGRATION COMPLETE: SOVEREIGN METADATA CORE v.18.3.0
 -- =============================================================================
