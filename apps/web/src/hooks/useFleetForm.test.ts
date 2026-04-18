@@ -74,7 +74,9 @@ describe('useFleetForm Hook', () => {
       await result.current.handleSubmit(e);
     }).rejects.toThrow('Por favor, completa todos los campos obligatorios (*)');
 
-    expect(result.current.error).toBe('Por favor, completa todos los campos obligatorios (*)');
+    await waitFor(() => {
+      expect(result.current.error).toBe('Por favor, completa todos los campos obligatorios (*)');
+    });
   });
 
   it('should handle server errors during submission', async (): Promise<void> => {
@@ -94,7 +96,9 @@ describe('useFleetForm Hook', () => {
       await result.current.handleSubmit(e);
     }).rejects.toThrow('DB Connection Error');
 
-    expect(result.current.error).toBe('DB Connection Error');
+    await waitFor(() => {
+      expect(result.current.error).toBe('DB Connection Error');
+    });
     expect(result.current.registrationSuccess).toBe(false);
   });
 
