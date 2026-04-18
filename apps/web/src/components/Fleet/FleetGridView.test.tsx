@@ -25,8 +25,8 @@ describe('FleetGridView Component', () => {
 
   it('should display the core master labels', (): void => {
     renderComponent();
+    expect(screen.getByText('Administración de Activos')).toBeInTheDocument();
     expect(screen.getByText('Registrar Unidad')).toBeInTheDocument();
     expect(screen.getByText('Mantenimiento')).toBeInTheDocument();
-    expect(screen.getByText('Asignación')).toBeInTheDocument();
   });
 });

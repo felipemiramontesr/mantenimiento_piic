@@ -41,16 +41,28 @@ const useFleetForm = (): UseFleetFormReturn => {
     Herramienta: 3,
   };
 
+  const isMountedRef = React.useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return (): void => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // 🔄 Fetch Brands on Asset Type Change
   useEffect(() => {
     const fetchBrands = async (): Promise<void> => {
       try {
         const parentId = assetTypeMap[formData.assetType];
         const res = await api.get(`/catalogs/BRAND?parentId=${parentId}`);
-        setMarcas(res.data);
+        if (isMountedRef.current) {
+          setMarcas(res.data);
+        }
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to fetch Brands', error);
+        if (isMountedRef.current) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to fetch Brands', error);
+        }
       }
     };
     fetchBrands();
@@ -60,18 +72,24 @@ const useFleetForm = (): UseFleetFormReturn => {
   useEffect(() => {
     const fetchModels = async (): Promise<void> => {
       if (!formData.marca) {
-        setModelos([]);
+        if (isMountedRef.current) {
+          setModelos([]);
+        }
         return;
       }
       try {
         const selectedBrand = marcas.find((m) => m.label === formData.marca);
         if (selectedBrand) {
           const res = await api.get(`/catalogs/MODEL?parentId=${selectedBrand.id}`);
-          setModelos(res.data);
+          if (isMountedRef.current) {
+            setModelos(res.data);
+          }
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to fetch Models', error);
+        if (isMountedRef.current) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to fetch Models', error);
+        }
       }
     };
     fetchModels();
@@ -85,11 +103,15 @@ const useFleetForm = (): UseFleetFormReturn => {
           api.get('/catalogs/FREQ_TIME'),
           api.get('/catalogs/FREQ_USAGE'),
         ]);
-        setFreqTime(timeRes.data);
-        setFreqUsage(usageRes.data);
+        if (isMountedRef.current) {
+          setFreqTime(timeRes.data);
+          setFreqUsage(usageRes.data);
+        }
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to fetch frequencies', error);
+        if (isMountedRef.current) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to fetch frequencies', error);
+        }
       }
     };
     fetchFrequencies();

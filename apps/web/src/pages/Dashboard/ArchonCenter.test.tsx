@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import ArchonCenter from './ArchonCenter';
@@ -30,28 +30,32 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     Storage.prototype.removeItem = vi.fn();
   });
 
-  it('renders branding name and command titles', () => {
-    render(
-      <BrowserRouter>
-        <FleetProvider>
-          <ArchonCenter />
-        </FleetProvider>
-      </BrowserRouter>
-    );
+  it('renders branding name and command titles', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <FleetProvider>
+            <ArchonCenter />
+          </FleetProvider>
+        </BrowserRouter>
+      );
+    });
 
     expect(screen.getByText('Archon')).toBeDefined();
     expect(screen.getByText('Centro de Comando')).toBeDefined();
     expect(screen.getByText(/Eje de Control de personal, unidades/i)).toBeDefined();
   });
 
-  it('toggles the user menu when clicking the avatar', () => {
-    render(
-      <BrowserRouter>
-        <FleetProvider>
-          <ArchonCenter />
-        </FleetProvider>
-      </BrowserRouter>
-    );
+  it('toggles the user menu when clicking the avatar', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <FleetProvider>
+            <ArchonCenter />
+          </FleetProvider>
+        </BrowserRouter>
+      );
+    });
 
     const avatarBtn = screen.getByLabelText('User Menu');
 
@@ -68,14 +72,16 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(screen.queryByText('Perfil')).toBeNull();
   });
 
-  it('handles logout correctly from the user menu', () => {
-    render(
-      <BrowserRouter>
-        <FleetProvider>
-          <ArchonCenter />
-        </FleetProvider>
-      </BrowserRouter>
-    );
+  it('handles logout correctly from the user menu', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <FleetProvider>
+            <ArchonCenter />
+          </FleetProvider>
+        </BrowserRouter>
+      );
+    });
 
     // Open menu
     fireEvent.click(screen.getByLabelText('User Menu'));
@@ -89,14 +95,16 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(navigateMock).toHaveBeenCalledWith('/login');
   });
 
-  it('renders all 6 KPI cards with correct text', () => {
-    render(
-      <BrowserRouter>
-        <FleetProvider>
-          <ArchonCenter />
-        </FleetProvider>
-      </BrowserRouter>
-    );
+  it('renders all 6 KPI cards with correct text', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <FleetProvider>
+            <ArchonCenter />
+          </FleetProvider>
+        </BrowserRouter>
+      );
+    });
 
     expect(screen.getByText(/Índice de Mantenimiento/i)).toBeDefined();
     expect(screen.getByText(/Nuestras Unidades/i)).toBeDefined();

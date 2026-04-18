@@ -37,10 +37,18 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return !cached;
   });
 
+  const isMountedRef = React.useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return (): void => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const refreshUnits = async (): Promise<void> => {
     try {
       const response = await api.get('/fleet');
-      if (response.data.success) {
+      if (isMountedRef.current && response.data.success) {
         const freshData = response.data.data;
         setUnits(freshData);
         localStorage.setItem('archon_fleet_cache', JSON.stringify(freshData));
@@ -48,7 +56,9 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (error) {
       // Noise reduction for Sovereign operations
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
