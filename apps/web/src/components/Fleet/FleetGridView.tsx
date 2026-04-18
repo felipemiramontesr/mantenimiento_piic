@@ -205,7 +205,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                           <img
                             src={unit.images[0]}
                             loading="lazy"
-                            className="w-20 h-20 rounded-[4px] object-cover aspect-square border border-[#0f2a44]/10 cursor-pointer"
+                            className="w-20 h-20 rounded-[4px] object-cover aspect-square border border-[#0f2a44]/10 cursor-pointer hover:border-[#f2b705] transition-colors"
                             alt={unit.id}
                             onClick={(): void => setSelectedGalleryUnit(unit)}
                           />

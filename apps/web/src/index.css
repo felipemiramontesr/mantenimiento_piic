@@ -1648,17 +1648,18 @@ body {
 }
 
 .archon-registry-table tr {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-}
-
-.archon-registry-table tr:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  z-index: 10;
-  position: relative;
+  transition: all 0.2s ease;
 }
 
 .archon-registry-table tr:hover td {
   background: #fdfdfd;
-  border-color: rgba(15, 42, 68, 0.08);
+  border-color: rgba(242, 183, 5, 0.4);
+}
+
+.archon-registry-table tr:hover td:first-child {
+  border-left-color: #f2b705;
+}
+
+.archon-registry-table tr:hover td:last-child {
+  border-right-color: #f2b705;
 }
