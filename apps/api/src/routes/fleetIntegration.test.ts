@@ -216,6 +216,73 @@ describe('Fleet Integration Endpoints', () => {
       expect(data[1].tarjeta_circulacion).toBe('TC2');
     });
 
+    it('should calculate complex health states for predictive maintenance', async (): Promise<void> => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 40); // 40 days ago
+
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          {
+            id: 'OVERDUE_01',
+            current_reading: 6000,
+            last_service_reading: 0,
+            usage_limit_units: 5000,
+            last_service_date: pastDate.toISOString(),
+            time_limit_days: 30,
+            motor: null,
+            tarjeta_circulacion: null,
+            numero_serie: null,
+            placas: null,
+          },
+          {
+            id: 'CAUTION_01',
+            current_reading: 4000,
+            last_service_reading: 0,
+            usage_limit_units: 5000,
+            last_service_date: null,
+            time_limit_days: null,
+            motor: null,
+            tarjeta_circulacion: null,
+            numero_serie: null,
+            placas: null,
+          },
+          {
+            id: 'HEALTHY_01',
+            current_reading: 1000,
+            last_service_reading: 0,
+            usage_limit_units: 5000,
+            last_service_date: new Date().toISOString(),
+            time_limit_days: 30,
+            motor: null,
+            tarjeta_circulacion: null,
+            numero_serie: null,
+            placas: null,
+          },
+        ],
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const { data } = JSON.parse(response.body);
+
+      // Overdue Case (Line 241)
+      expect(data[0].health_status).toBe('Overdue');
+      expect(data[0].health_color).toBe('#ef4444');
+
+      // Caution Case (Line 244)
+      expect(data[1].health_status).toBe('Caution');
+      expect(data[1].health_color).toBe('#f2b705');
+
+      // Healthy Case (covers Line 254 with positive date)
+      expect(data[2].health_status).toBe('Healthy');
+      expect(data[2].days_since_service).toBe(0);
+    });
+
     it('should handle db error', async (): Promise<void> => {
       (db.execute as Mock).mockRejectedValueOnce(new Error('FAIL'));
       const response = await app.inject({
