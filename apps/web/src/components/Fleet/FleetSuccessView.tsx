@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, PlusCircle, Truck, LayoutGrid } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { CreateFleetUnit } from '../../types/fleet';
 
 /**
@@ -10,16 +10,10 @@ import { CreateFleetUnit } from '../../types/fleet';
 
 interface FleetSuccessViewProps {
   formData: CreateFleetUnit;
-  onRegisterAnother: () => void;
-  onManageFleet: () => void;
-  onGoToDashboard: () => void;
 }
 
 const FleetSuccessView: React.FC<FleetSuccessViewProps> = ({
   formData,
-  onRegisterAnother,
-  onManageFleet,
-  onGoToDashboard,
 }: FleetSuccessViewProps): React.JSX.Element => (
   <div className="flex flex-col items-center justify-center py-24 text-center space-y-12 animate-in zoom-in-95 duration-500 bg-white glass-card-pro p-20 rounded-xl shadow-2xl border-t-8 border-emerald-500">
     {/* 💎 ELEGANT SUCCESS ICON */}
@@ -37,36 +31,6 @@ const FleetSuccessView: React.FC<FleetSuccessViewProps> = ({
         El activo <span className="text-[#f2b705] font-bold">{formData.id}</span> ha sido
         incorporado al protocolo de mantenimiento soberano de Archon.
       </p>
-    </div>
-
-    {/* 🔱 UNIFORM ACTION CLUSTER: INSTRUMENT GOLD */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl pt-8">
-      <button
-        type="button"
-        onClick={onRegisterAnother}
-        className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em] group"
-      >
-        <PlusCircle size={18} className="group-hover:rotate-90 transition-transform" />
-        Registrar Otra
-      </button>
-
-      <button
-        type="button"
-        onClick={onManageFleet}
-        className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em]"
-      >
-        <Truck size={18} />
-        Administrar Unidades
-      </button>
-
-      <button
-        type="button"
-        onClick={onGoToDashboard}
-        className="btn-sentinel-yellow h-[56px] w-full !text-[10px] !font-black !tracking-[0.2em]"
-      >
-        <LayoutGrid size={18} />
-        Centro de Comando
-      </button>
     </div>
   </div>
 );

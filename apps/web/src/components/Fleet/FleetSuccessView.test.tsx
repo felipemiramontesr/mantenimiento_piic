@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, RenderResult } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, RenderResult } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 import FleetSuccessView from './FleetSuccessView';
 import { CreateFleetUnit } from '../../types/fleet';
 
@@ -23,15 +23,6 @@ describe('FleetSuccessView Component', () => {
 
   const mockProps = {
     formData: mockFormData,
-    onRegisterAnother: vi.fn((): void => {
-      /* No-op */
-    }),
-    onManageFleet: vi.fn((): void => {
-      /* No-op */
-    }),
-    onGoToDashboard: vi.fn((): void => {
-      /* No-op */
-    }),
   };
 
   const renderComponent = (): RenderResult => render(<FleetSuccessView {...mockProps} />);
@@ -40,23 +31,5 @@ describe('FleetSuccessView Component', () => {
     renderComponent();
     expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();
     expect(screen.getByText('ASM-TEST-001')).toBeInTheDocument();
-  });
-
-  it('should call onRegisterAnother when "Registrar Otra" is clicked', (): void => {
-    renderComponent();
-    fireEvent.click(screen.getByText('Registrar Otra'));
-    expect(mockProps.onRegisterAnother).toHaveBeenCalled();
-  });
-
-  it('should call onManageFleet when "Administrar Unidades" is clicked', (): void => {
-    renderComponent();
-    fireEvent.click(screen.getByText('Administrar Unidades'));
-    expect(mockProps.onManageFleet).toHaveBeenCalled();
-  });
-
-  it('should call onGoToDashboard when "Centro de Comando" is clicked', (): void => {
-    renderComponent();
-    fireEvent.click(screen.getByText('Centro de Comando'));
-    expect(mockProps.onGoToDashboard).toHaveBeenCalled();
   });
 });

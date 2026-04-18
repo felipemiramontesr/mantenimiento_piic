@@ -26,7 +26,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
   // Shared with RegistrationForm to ensure perfect state synchronization
   const fleetController = useFleetForm();
-  const { formData, registrationSuccess, setRegistrationSuccess, resetForm } = fleetController;
+  const { formData, registrationSuccess, setRegistrationSuccess } = fleetController;
 
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
@@ -184,12 +184,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
         <div className="w-full h-full">
           {registrationSuccess ? (
-            <FleetSuccessView
-              formData={formData}
-              onRegisterAnother={resetForm}
-              onManageFleet={handleReturnToGrid}
-              onGoToDashboard={(): void => navigate('/dashboard')}
-            />
+            <FleetSuccessView formData={formData} />
           ) : (
             <>
               {currentView === 'GRID' && (
