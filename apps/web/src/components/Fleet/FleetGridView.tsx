@@ -4,11 +4,11 @@ import {
   ArrowRight,
   PlusCircle,
   Wrench,
-  Navigation,
   Activity,
   Tag,
   Gauge,
   Info,
+  LayoutDashboard,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 
@@ -19,8 +19,8 @@ interface FleetGridViewProps {
 
 /**
  * 🔱 Archon Component: FleetGridView
- * Implementation: PIIC Sovereign Instrument Dashboard (v.18.6.0.0)
- * Aesthetic: Triple-Axis Master Registry + Predictive Intelligence Table
+ * Implementation: PIIC Sovereign Instrument Dashboard (v.18.7.0.0)
+ * Aesthetic: Triple-Axis Master Registry + Primary Asset Administration
  */
 export const FleetGridView: React.FC<FleetGridViewProps> = ({
   onRegister,
@@ -29,7 +29,40 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
   <div className="animate-in fade-in duration-700 space-y-12">
     {/* 🚀 TRIPLE-AXIS INSTRUMENT CLUSTER (Sovereign Grid) */}
     <div className="archon-grid-3 gap-5">
-      {/* Instrument 1: Incorporación (VERDE) */}
+      {/* Instrument 1: Administración de Activos (NAVY) */}
+      <div
+        className="glass-card-pro archon-instrument-tile card-hover-navy"
+        style={{ borderTop: '4px solid #0f2a44' }}
+      >
+        <div className="flex items-center justify-center gap-3 mb-6 w-full">
+          <LayoutDashboard size={18} className="text-[#0f2a44]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+            Gobierno de Inventario
+          </span>
+        </div>
+
+        <div className="archon-tile-payload space-y-8 pb-12">
+          <div className="w-20 h-20 bg-[#0f2a44]/5 rounded-full flex items-center justify-center border-2 border-[#0f2a44]/10 shadow-inner">
+            <LayoutDashboard size={32} className="text-[#0f2a44]" />
+          </div>
+          <div className="flex flex-col items-center space-y-2">
+            <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
+              Administración de Activos
+            </h3>
+            <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
+              Control Maestro de Flota & Registro
+            </p>
+          </div>
+        </div>
+
+        <div className="archon-tile-action">
+          <button className="btn-sentinel-navy w-full flex items-center justify-center gap-2">
+            Gestionar Activos <ArrowRight size={12} />
+          </button>
+        </div>
+      </div>
+
+      {/* Instrument 2: Incorporación (VERDE) */}
       <div
         className="glass-card-pro archon-instrument-tile card-hover-emerald"
         style={{ borderTop: '4px solid #10b981' }}
@@ -65,7 +98,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         </div>
       </div>
 
-      {/* Instrument 2: Mantenimiento (AMARILLO) */}
+      {/* Instrument 3: Mantenimiento (AMARILLO) */}
       <div
         className="glass-card-pro archon-instrument-tile card-hover-yellow"
         style={{ borderTop: '4px solid #f2b705' }}
@@ -94,39 +127,6 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         <div className="archon-tile-action">
           <button className="btn-sentinel-yellow w-full flex items-center justify-center gap-2">
             Gestión Técnica <ArrowRight size={12} />
-          </button>
-        </div>
-      </div>
-
-      {/* Instrument 3: Logística (AZUL) */}
-      <div
-        className="glass-card-pro archon-instrument-tile card-hover-sky"
-        style={{ borderTop: '4px solid #0ea5e9' }}
-      >
-        <div className="flex items-center justify-center gap-3 mb-6 w-full">
-          <Navigation size={18} className="text-sky-500" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-            Despliegue Operativo
-          </span>
-        </div>
-
-        <div className="archon-tile-payload space-y-8 pb-12">
-          <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center border-2 border-sky-100 shadow-inner">
-            <Navigation size={32} className="text-sky-500" />
-          </div>
-          <div className="flex flex-col items-center space-y-2">
-            <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
-              Asignación
-            </h3>
-            <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
-              Administración de Operadores
-            </p>
-          </div>
-        </div>
-
-        <div className="archon-tile-action">
-          <button className="btn-sentinel-sky w-full flex items-center justify-center gap-2">
-            Iniciar Logística <ArrowRight size={12} />
           </button>
         </div>
       </div>
