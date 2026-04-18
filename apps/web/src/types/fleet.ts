@@ -113,6 +113,8 @@ export interface CreateFleetUnit {
 
 export interface UseFleetFormReturn {
   formData: CreateFleetUnit;
+  error: string | null;
+  resetError: () => void;
   isSubmitting: boolean;
   registrationSuccess: boolean;
   availableMarcas: string[];
@@ -120,6 +122,7 @@ export interface UseFleetFormReturn {
   freqTime: string[];
   freqUsage: { id: number; label: string }[];
   setFormData: (data: CreateFleetUnit | ((prev: CreateFleetUnit) => CreateFleetUnit)) => void;
+  setError: (error: string | null) => void;
   setRegistrationSuccess: (success: boolean) => void;
   handleAssetTypeChange: (type: AssetType) => void;
   handleMarcaChange: (marca: string) => void;

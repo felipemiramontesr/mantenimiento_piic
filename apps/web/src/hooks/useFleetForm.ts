@@ -25,8 +25,11 @@ interface AxiosErrorResponse {
 
 const useFleetForm = (): UseFleetFormReturn => {
   const [formData, setFormData] = useState<CreateFleetUnit>(getInitialFleetForm());
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
+
+  const resetError = useCallback(() => setError(null), []);
 
   // 📐 Dynamic Catalog State
   const [marcas, setMarcas] = useState<CatalogOption[]>([]);
@@ -58,10 +61,10 @@ const useFleetForm = (): UseFleetFormReturn => {
         if (isMountedRef.current) {
           setMarcas(res.data);
         }
-      } catch (error) {
+      } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
-          console.error('Failed to fetch Brands', error);
+          console.error('Failed to fetch Brands', err);
         }
       }
     };
@@ -85,10 +88,10 @@ const useFleetForm = (): UseFleetFormReturn => {
             setModelos(res.data);
           }
         }
-      } catch (error) {
+      } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
-          console.error('Failed to fetch Models', error);
+          console.error('Failed to fetch Models', err);
         }
       }
     };
@@ -107,10 +110,10 @@ const useFleetForm = (): UseFleetFormReturn => {
           setFreqTime(timeRes.data);
           setFreqUsage(usageRes.data);
         }
-      } catch (error) {
+      } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
-          console.error('Failed to fetch frequencies', error);
+          console.error('Failed to fetch frequencies', err);
         }
       }
     };
@@ -140,6 +143,7 @@ const useFleetForm = (): UseFleetFormReturn => {
   const resetForm = useCallback((): void => {
     setFormData(getInitialFleetForm());
     setRegistrationSuccess(false);
+    setError(null);
   }, []);
 
   /**
@@ -150,6 +154,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     onSuccess?: () => Promise<void>
   ): Promise<void> => {
     e.preventDefault();
+    setError(null);
     if (isSubmitting) return;
 
     if (
@@ -159,7 +164,9 @@ const useFleetForm = (): UseFleetFormReturn => {
       !formData.departamento ||
       !formData.uso
     ) {
-      throw new Error('Por favor, completa todos los campos obligatorios (*)');
+      const msg = 'Por favor, completa todos los campos obligatorios (*)';
+      setError(msg);
+      throw new Error(msg);
     }
 
     setIsSubmitting(true);
@@ -183,10 +190,11 @@ const useFleetForm = (): UseFleetFormReturn => {
       } else {
         throw new Error(response.data.error || 'Operación fallida en el servidor');
       }
-    } catch (error: unknown) {
-      const serverError = (error as AxiosErrorResponse)?.response?.data?.error;
+    } catch (err: unknown) {
+      const serverError = (err as AxiosErrorResponse)?.response?.data?.error;
       const message =
-        serverError || (error instanceof Error ? error.message : 'Error crítico de transmisión');
+        serverError || (err instanceof Error ? err.message : 'Error crítico de transmisión');
+      setError(message);
       throw new Error(message);
     } finally {
       setIsSubmitting(false);
@@ -195,6 +203,8 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   return {
     formData,
+    error,
+    resetError,
     isSubmitting,
     registrationSuccess,
     availableMarcas,
@@ -202,6 +212,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     freqTime: freqTime.map((f) => f.label),
     freqUsage: freqUsage.map((f) => ({ id: f.id, label: f.label })),
     setFormData,
+    setError,
     setRegistrationSuccess,
     handleAssetTypeChange,
     handleMarcaChange,

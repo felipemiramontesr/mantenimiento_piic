@@ -19,6 +19,7 @@ import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
 import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
+import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
 import {
   ASSET_TYPES,
   USO_OPTIONS,
@@ -60,6 +61,8 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 }: FleetRegistrationFormProps): React.JSX.Element => {
   const {
     formData,
+    error,
+    resetError,
     setFormData,
     isSubmitting,
     availableMarcas,
@@ -74,9 +77,8 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     try {
       await handleSubmit(e, onSuccess);
-    } catch (error: unknown) {
-      // eslint-disable-next-line no-alert
-      alert(error instanceof Error ? error.message : 'Error al registrar unidad');
+    } catch (err: unknown) {
+      // Error is now handled by the hook state and displayed via ArchonFeedbackBanner
     }
   };
 
@@ -85,6 +87,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       onSubmit={handleFormSubmit}
       className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1600px] mx-auto pb-40 space-y-6 transition-all duration-300 ease-in-out"
     >
+      <ArchonFeedbackBanner message={error || ''} type="error" onClear={resetError} />
       <div className="archon-grid-2">
         {/* ── SECTION: Clasificación del Activo ─────────────────────────────── */}
         <div

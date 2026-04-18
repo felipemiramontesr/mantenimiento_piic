@@ -56,7 +56,7 @@ const createFleetSchema = z.object({
   maintenanceTimeFreqId: z.number().int().optional().nullable(),
   maintenanceUsageFreqId: z.number().int().optional().nullable(),
   lastServiceDate: z.string().optional().nullable(),
-  lastServiceUsageReading: z.number().optional().default(0),
+  lastServiceReading: z.number().optional().default(0),
 });
 
 // ============================================================================
@@ -106,7 +106,7 @@ const updateFleetSchema = z.object({
   maintenanceTimeFreqId: z.number().int().optional().nullable(),
   maintenanceUsageFreqId: z.number().int().optional().nullable(),
   lastServiceDate: z.string().optional().nullable(),
-  lastServiceUsageReading: z.number().optional().nullable(),
+  lastServiceReading: z.number().optional().nullable(),
 });
 
 // ============================================================================

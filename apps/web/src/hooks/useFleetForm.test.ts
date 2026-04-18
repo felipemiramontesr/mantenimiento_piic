@@ -73,6 +73,8 @@ describe('useFleetForm Hook', () => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
       await result.current.handleSubmit(e);
     }).rejects.toThrow('Por favor, completa todos los campos obligatorios (*)');
+
+    expect(result.current.error).toBe('Por favor, completa todos los campos obligatorios (*)');
   });
 
   it('should handle server errors during submission', async (): Promise<void> => {
@@ -92,6 +94,7 @@ describe('useFleetForm Hook', () => {
       await result.current.handleSubmit(e);
     }).rejects.toThrow('DB Connection Error');
 
+    expect(result.current.error).toBe('DB Connection Error');
     expect(result.current.registrationSuccess).toBe(false);
   });
 
