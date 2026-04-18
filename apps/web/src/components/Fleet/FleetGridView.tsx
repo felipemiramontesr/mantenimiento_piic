@@ -98,21 +98,21 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         </div>
       </div>
 
-      {/* Instrument 3: Mantenimiento (AMARILLO) */}
+      {/* Instrument 3: Mantenimiento (AZUL) */}
       <div
-        className="glass-card-pro archon-instrument-tile card-hover-yellow"
-        style={{ borderTop: '4px solid #f2b705' }}
+        className="glass-card-pro archon-instrument-tile card-hover-sky"
+        style={{ borderTop: '4px solid #0ea5e9' }}
       >
         <div className="flex items-center justify-center gap-3 mb-6 w-full">
-          <Wrench size={18} className="text-[#f2b705]" />
+          <Wrench size={18} className="text-[#0ea5e9]" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
             Control Transaccional
           </span>
         </div>
 
         <div className="archon-tile-payload space-y-8 pb-12">
-          <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center border-2 border-yellow-100 shadow-inner">
-            <Wrench size={32} className="text-[#f2b705]" />
+          <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center border-2 border-sky-100 shadow-inner">
+            <Wrench size={32} className="text-[#0ea5e9]" />
           </div>
           <div className="flex flex-col items-center space-y-2">
             <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
@@ -125,7 +125,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         </div>
 
         <div className="archon-tile-action">
-          <button className="btn-sentinel-yellow w-full flex items-center justify-center gap-2">
+          <button className="btn-sentinel-sky w-full flex items-center justify-center gap-2">
             Gestión Técnica <ArrowRight size={12} />
           </button>
         </div>
