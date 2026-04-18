@@ -1652,7 +1652,6 @@ body {
 }
 
 .archon-registry-table tr:hover td {
-  background: rgba(15, 42, 68, 0.05);
   border-color: #0f2a44;
 }
 

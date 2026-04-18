@@ -197,7 +197,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                 </tr>
               ) : (
                 units.map((unit) => (
-                  <tr key={unit.uuid} className="hover:bg-[#0f2a44]/5 transition-colors">
+                  <tr key={unit.uuid} className="transition-all duration-300">
                     {/* 🖼️ ASSET THUMBNAIL */}
                     <td className="w-[120px]">
                       <div className="flex justify-center items-center py-4">
