@@ -9,6 +9,7 @@ import {
   Gauge,
   Info,
   LayoutDashboard,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 
@@ -164,6 +165,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
+              <th className="text-center w-[80px]">ACTIVO</th>
               <th className="text-center">NÚMERO ECONÓMICO</th>
               <th className="text-center">MARCA / MODELO</th>
               <th className="text-center">IDENTIDAD</th>
@@ -175,13 +177,30 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
           <tbody>
             {units.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-20 text-center opacity-40">
+                <td colSpan={7} className="py-20 text-center opacity-40">
                   No hay unidades registradas en el núcleo central.
                 </td>
               </tr>
             ) : (
               units.map((unit) => (
                 <tr key={unit.uuid} className="group hover:bg-[#f9fbfc] transition-colors">
+                  {/* 🖼️ ASSET THUMBNAIL */}
+                  <td className="w-[80px]">
+                    <div className="flex justify-center items-center">
+                      {unit.images && unit.images.length > 0 ? (
+                        <img
+                          src={unit.images[0]}
+                          className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm ring-1 ring-black/5"
+                          alt={unit.id}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
+                          <ImageIcon size={20} />
+                        </div>
+                      )}
+                    </div>
+                  </td>
+
                   {/* MASTER ID (ASM-xxx) */}
                   <td>
                     <div className="flex flex-col items-center">
