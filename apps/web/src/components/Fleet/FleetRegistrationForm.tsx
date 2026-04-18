@@ -387,11 +387,11 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 type="number"
                 placeholder="Km o Hrs"
                 className="archon-input"
-                value={formData.lastServiceUsageReading}
+                value={formData.lastServiceReading}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                   setFormData({
                     ...formData,
-                    lastServiceUsageReading: parseInt(e.target.value, 10),
+                    lastServiceReading: parseInt(e.target.value, 10),
                   })
                 }
               />

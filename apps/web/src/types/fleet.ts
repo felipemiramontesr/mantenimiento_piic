@@ -65,8 +65,14 @@ export interface FleetUnit {
   maintenance_time_freq_id?: number | null;
   maintenance_usage_freq_id?: number | null;
   last_service_date?: string | null;
-  last_service_usage_reading?: number;
+  last_service_reading?: number;
   current_reading?: number;
+  // 🔱 Computed Health Data
+  health_score?: number;
+  health_status?: string;
+  health_color?: string;
+  days_since_service?: number | null;
+  units_since_service?: number;
 }
 
 export interface CreateFleetUnit {
@@ -103,7 +109,7 @@ export interface CreateFleetUnit {
   maintenanceTimeFreqId?: number | null;
   maintenanceUsageFreqId?: number | null;
   lastServiceDate?: string | null;
-  lastServiceUsageReading?: number;
+  lastServiceReading?: number;
 }
 
 export interface UseFleetFormReturn {
