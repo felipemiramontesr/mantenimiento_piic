@@ -187,7 +187,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                   {/* 🖼️ ASSET THUMBNAIL */}
                   <td className="w-[120px]">
                     <div className="flex justify-center items-center py-4">
-                      {unit.images && unit.images.length > 0 ? (
+                      {Array.isArray(unit.images) && unit.images.length > 0 ? (
                         <img
                           src={unit.images[0]}
                           loading="lazy"

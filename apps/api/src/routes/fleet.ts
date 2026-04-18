@@ -122,6 +122,7 @@ interface FleetUnit extends RowDataPacket {
   numero_serie_hash: string | null;
   marca: string;
   modelo: string;
+  images: string | null;
   year: number;
   departamento: string | null;
   uso: string | null;
@@ -194,7 +195,6 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
 
       // 🛡️ SENTINEL INTELLIGENCE LAYER: Decryption + Predictive Computation
       const processedRows = rows.map((unit) => {
-        // 1. Decryption (ALE Layer)
         const decrypted = {
           ...unit,
           placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
@@ -206,6 +206,20 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
             ? EncryptionService.decrypt(unit.tarjeta_circulacion)
             : unit.tarjeta_circulacion,
         };
+
+        // 2. Parse Images (JSON Persistence Layer)
+        let parsedImages: string[] = [];
+        try {
+          if (unit.images) {
+            parsedImages =
+              typeof unit.images === 'string'
+                ? JSON.parse(unit.images)
+                : (unit.images as unknown as string[]);
+          }
+        } catch (e) {
+          fastify.log.warn(`Failed to parse images for unit ${unit.id}: ${e}`);
+          parsedImages = [];
+        }
 
         // 2. Predictive Maintenance Logic (v.18.6.0)
         const today = new Date();
@@ -246,6 +260,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
 
         return {
           ...decrypted,
+          images: parsedImages,
           health_score: Math.round(healthScore),
           health_status: healthStatus,
           health_color: healthColor,
