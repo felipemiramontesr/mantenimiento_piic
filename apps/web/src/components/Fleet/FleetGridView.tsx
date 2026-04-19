@@ -82,13 +82,13 @@ const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Ele
 
       {/* Primary Compliance Tags (Increased Size) */}
       <div className="flex flex-col items-center space-y-1.5 mb-4">
-        <div className="flex items-center gap-2 opacity-60 bg-gray-50 px-2.5 py-1 rounded border border-gray-100 shadow-sm">
-          <Tag size={10} className="text-[#0f2a44]" />
-          <span className="text-[10px] font-black uppercase tracking-tighter text-[#0f2a44]">
+        <div className="flex items-center gap-2 opacity-80 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100 shadow-sm">
+          <Tag size={10} className="text-emerald-800" />
+          <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-800">
             {unit.placas || 'SIN PLACAS'}
           </span>
         </div>
-        <div className="flex items-center gap-2 opacity-70 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100 shadow-sm">
+        <div className="flex items-center gap-2 opacity-80 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100 shadow-sm">
           <CreditCard size={10} />
           <span className="text-[10px] font-black uppercase tracking-tighter text-center">
             {unit.tarjeta_circulacion || 'SIN TARJETA'}
@@ -130,9 +130,9 @@ const StrategyCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Ele
 /** 🔱 Archon Atom: TechnicalStatusCluster */
 const TechnicalStatusCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
   <div className="flex flex-col items-center space-y-2">
-    <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-0.5 rounded-full border border-[#0f2a44]/10">
-      <Gauge size={11} className="text-[#0f2a44]" />
-      <span className="text-[11px] font-black text-[#0f2a44]">
+    <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+      <Gauge size={12} className="text-[#0f2a44]" />
+      <span className="text-[12px] font-black text-[#0f2a44]">
         {Number(unit.odometer || 0).toLocaleString()}
       </span>
     </div>
