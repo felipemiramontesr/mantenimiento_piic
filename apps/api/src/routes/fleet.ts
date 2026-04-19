@@ -10,7 +10,7 @@ import { toSnakeCase } from '../utils/mappers';
 // ZOD SCHEMA: CREATE
 // ============================================================================
 const createFleetSchema = z.object({
-  assetType: z.enum(['Vehiculo', 'Maquinaria', 'Herramienta']),
+  assetTypeId: z.number().int(),
   id: z.string().min(2).max(50),
   placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
@@ -25,13 +25,9 @@ const createFleetSchema = z.object({
   departamento: z.string().max(150).optional().nullable(),
   uso: z.string().max(100).optional().nullable(),
   motor: z.string().max(150).optional(),
-  traccion: z
-    .enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'No Aplica'])
-    .default('No Aplica'),
-  transmision: z
-    .enum(['Automática', 'Estándar (Manual)', 'CVT', 'Hidrostática', 'No Aplica'])
-    .default('No Aplica'),
-  fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'No Aplica']).default('Diesel'),
+  traccionId: z.number().int().optional().nullable(),
+  transmisionId: z.number().int().optional().nullable(),
+  fuelTypeId: z.number().int().optional().nullable(),
   tireSpec: z.string().max(50).optional(),
   tireBrand: z.string().max(100).optional(),
   tipoTerreno: z.string().max(100).optional().nullable(),
@@ -42,9 +38,9 @@ const createFleetSchema = z.object({
     .enum(['Diaria', 'Semanal', 'Mensual', 'Trimestral', 'Bimestral', 'Semestral', 'Anual'])
     .default('Mensual'),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
-  protocolStartDate: z.string().optional().nullable(), // ISO date string
-  vigenciaSeguro: z.string().optional().nullable(), // ISO date string
-  vencimientoVerificacion: z.string().optional().nullable(), // ISO date string
+  protocolStartDate: z.string().optional().nullable(),
+  vigenciaSeguro: z.string().optional().nullable(),
+  vencimientoVerificacion: z.string().optional().nullable(),
   tarjetaCirculacion: z.string().max(100).optional(),
   status: z
     .enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'])
@@ -63,7 +59,7 @@ const createFleetSchema = z.object({
 // ZOD SCHEMA: UPDATE
 // ============================================================================
 const updateFleetSchema = z.object({
-  assetType: z.enum(['Vehiculo', 'Maquinaria', 'Herramienta']).optional(),
+  assetTypeId: z.number().int().optional(),
   id: z.string().min(2).max(50).optional(),
   placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
@@ -79,10 +75,9 @@ const updateFleetSchema = z.object({
   departamento: z.string().max(150).optional().nullable(),
   uso: z.string().max(100).optional().nullable(),
   motor: z.string().max(150).optional(),
-  traccionId: z.number().int().optional(),
-  transmisionId: z.number().int().optional(),
-  fuelTypeId: z.number().int().optional(),
-  assetTypeId: z.number().int().optional(),
+  traccionId: z.number().int().optional().nullable(),
+  transmisionId: z.number().int().optional().nullable(),
+  fuelTypeId: z.number().int().optional().nullable(),
   tireSpec: z.string().max(50).optional(),
   tireBrand: z.string().max(100).optional(),
   tipoTerreno: z.string().max(100).optional().nullable(),
@@ -93,7 +88,7 @@ const updateFleetSchema = z.object({
     .enum(['Diaria', 'Semanal', 'Mensual', 'Trimestral', 'Bimestral', 'Semestral', 'Anual'])
     .optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).optional(),
-  protocolStartDate: z.string().optional().nullable(), // ISO date string
+  protocolStartDate: z.string().optional().nullable(),
   vigenciaSeguro: z.string().optional().nullable(),
   vencimientoVerificacion: z.string().optional().nullable(),
   tarjetaCirculacion: z.string().max(100).optional(),
