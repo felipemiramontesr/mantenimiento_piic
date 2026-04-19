@@ -31,6 +31,13 @@ interface FleetGridViewProps {
   units: FleetUnit[];
 }
 
+/** 🔱 Archon Helper: Clean Technical Suffixes from Model */
+const cleanModelName = (modelStr: string): string =>
+  (modelStr || '')
+    .replace(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN)$/i, '')
+    .trim()
+    .toUpperCase();
+
 /** 🔱 Archon Helper: Resolve Full Location Names */
 const resolveSedeFull = (sede: string | null | undefined): string => {
   const mapping: Record<string, string> = {
@@ -43,26 +50,30 @@ const resolveSedeFull = (sede: string | null | undefined): string => {
     MAN: 'MANTENIMIENTO',
   };
   const upper = (sede || '').toUpperCase();
-  return mapping[upper] || upper || 'SIN SEDE';
+  return mapping[upper] || upper || 'ÁREA GENERAL';
 };
 
 /** 🔱 Archon Atom: IdentityCluster */
 const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
-  <div className="flex flex-col items-center space-y-2">
-    <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter shadow-sm">
+  <div className="flex flex-col items-center">
+    <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-4 tracking-tighter shadow-sm">
       {unit.id}
     </span>
-    <div className="flex flex-col items-center leading-snug">
-      <span className="text-[10px] font-black text-[#0f2a44] uppercase">{unit.marca}</span>
-      <span className="text-[9px] font-bold text-[#0f2a44] opacity-60 uppercase">
-        {unit.modelo}
+    {/* 🔱 Triple Stack: Marca, Modelo, Sede (Clean Logic) */}
+    <div className="flex flex-col items-center space-y-0.5 mb-4">
+      <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-tight">
+        {unit.marca}
       </span>
-      <span className="text-[8.5px] font-black uppercase tracking-widest text-[#f2b705] bg-[#0f2a44] px-1.5 py-0.5 rounded-sm mt-1 shadow-sm">
+      <span className="text-[10px] font-bold text-[#0f2a44] opacity-60 uppercase tracking-tight">
+        {cleanModelName(unit.modelo)}
+      </span>
+      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">
         {resolveSedeFull(unit.sede)}
       </span>
     </div>
-    <div className="flex flex-col items-center space-y-1 mt-2">
-      <div className="flex items-center gap-1.5 opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+    {/* Secondary Tags */}
+    <div className="flex flex-col items-center space-y-1">
+      <div className="flex items-center gap-1.5 opacity-40 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
         <Tag size={8} />
         <span className="text-[8px] font-black uppercase tracking-tighter">
           {unit.placas || 'SIN PLACAS'}
@@ -70,8 +81,8 @@ const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Ele
       </div>
       <div className="flex items-center gap-1.5 opacity-60 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
         <CreditCard size={8} />
-        <span className="text-[8px] font-black uppercase tracking-tighter">
-          T: {unit.tarjeta_circulacion || 'PENDIENTE'}
+        <span className="text-[8px] font-black uppercase tracking-tighter text-center">
+          {unit.tarjeta_circulacion || 'SIN TARJETA'}
         </span>
       </div>
     </div>
@@ -300,16 +311,16 @@ const FleetRegistryRow: React.FC<{
           )}
         </div>
       </td>
-      <td className="text-center">
+      <td className="text-center px-4">
         <IdentityCluster unit={unit} />
       </td>
-      <td className="text-center">
+      <td className="text-center px-4">
         <StrategyCluster unit={unit} />
       </td>
-      <td className="text-center">
+      <td className="text-center px-4">
         <TechnicalStatusCluster unit={unit} />
       </td>
-      <td className="text-center">
+      <td className="text-center px-4">
         <div className="flex flex-col items-center space-y-1">
           <div className="flex items-center gap-1.5">
             <Zap
@@ -335,12 +346,12 @@ const FleetRegistryRow: React.FC<{
           </div>
         </div>
       </td>
-      <td className="text-center">
+      <td className="text-center px-4">
         <div className="flex justify-center">
           <ForecastCluster forecast={forecast} isOverdue={isOverdue} />
         </div>
       </td>
-      <td className="text-center">
+      <td className="text-center px-4">
         <div className="flex justify-center">
           <FleetKpiMatrix
             availability={unit.availability_index ?? 100}
@@ -350,7 +361,7 @@ const FleetRegistryRow: React.FC<{
           />
         </div>
       </td>
-      <td className="text-center">
+      <td className="text-center px-4">
         <div className="flex items-center justify-center">
           <button
             title="Ver Bitácora"
