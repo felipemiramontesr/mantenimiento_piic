@@ -130,10 +130,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     const data = stats.categories[categoryKey];
     return (
       <div
-        className="glass-card-pro flex flex-col p-20"
+        className="glass-card-pro archon-instrument-tile flex flex-col p-20"
         style={{
           borderTop: '4px solid #0f2a44',
-          border: '1px solid #0f2a44',
           height: '240px', // Standardized height for instrument parity
         }}
       >
