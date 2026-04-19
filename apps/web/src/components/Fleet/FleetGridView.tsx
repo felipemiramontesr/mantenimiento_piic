@@ -7,31 +7,265 @@ import {
   Activity,
   LayoutDashboard,
   Image as ImageIcon,
+  RefreshCcw,
+  CalendarDays,
+  Gauge,
+  History,
+  Zap,
+  ShieldAlert,
+  TrendingUp,
+  Tag,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
 import FleetKpiMatrix from './FleetKpiMatrix';
-import { calculateMaintForecast, formatDate } from '../../utils/fleetPredictiveEngine';
+import {
+  calculateMaintForecast,
+  formatDate,
+  MaintenanceForecast,
+} from '../../utils/fleetPredictiveEngine';
 
 interface FleetGridViewProps {
   onRegister: () => void;
   units: FleetUnit[];
 }
 
-/**
- * 🔱 Archon Component: FleetGridView
- * Implementation: PIIC Sovereign Instrument Dashboard (v.18.7.0.0)
- * Aesthetic: Triple-Axis Master Registry + Primary Asset Administration
- */
+/** 🔱 Archon Atom: StrategyCluster */
+const StrategyCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
+  <div className="flex flex-col items-center space-y-1.5">
+    <div className="flex items-center gap-1.5 opacity-60">
+      <RefreshCcw size={10} className="text-[#0f2a44]" />
+      <span className="text-[9px] font-black text-[#0f2a44]">
+        {(unit.maint_interval_km || 10000).toLocaleString()} KM
+      </span>
+    </div>
+    <div className="flex items-center gap-1.5 opacity-40">
+      <CalendarDays size={10} />
+      <span className="text-[8px] font-bold">{unit.maint_interval_days || 180} DÍAS</span>
+    </div>
+    <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
+      <Activity size={9} className="text-sky-600" />
+      <span className="text-[8px] font-black text-sky-700">{unit.avg_daily_km || 0} KM/D</span>
+    </div>
+  </div>
+);
+
+/** 🔱 Archon Atom: TechnicalStatusCluster */
+const TechnicalStatusCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
+  <div className="flex flex-col items-center space-y-2">
+    <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-0.5 rounded-full border border-[#0f2a44]/10">
+      <Gauge size={11} className="text-[#0f2a44]" />
+      <span className="text-[11px] font-black text-[#0f2a44]">
+        {unit.odometer.toLocaleString()}
+      </span>
+    </div>
+    <div className="flex flex-col items-center opacity-40">
+      <div className="flex items-center gap-1">
+        <History size={9} />
+        <span className="text-[8px] font-bold">
+          {(unit.last_service_reading || 0).toLocaleString()} KM
+        </span>
+      </div>
+      <span className="text-[7px] font-black uppercase text-center">
+        {unit.last_service_date ? formatDate(new Date(unit.last_service_date)) : '---'}
+      </span>
+    </div>
+  </div>
+);
+
+/** 🔱 Archon Atom: ForecastCluster */
+const ForecastCluster: React.FC<{ forecast: MaintenanceForecast | null; isOverdue: boolean }> = ({
+  forecast,
+  isOverdue,
+}): React.JSX.Element => (
+  <div
+    className={`flex flex-col items-center p-2 rounded border transition-all duration-500 ${
+      isOverdue
+        ? 'bg-red-500 border-red-600 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+        : 'bg-[#0f2a44]/5 border-[#0f2a44]/10'
+    }`}
+  >
+    <div className="flex items-center gap-1.5 mb-0.5">
+      {isOverdue ? (
+        <ShieldAlert size={12} className="text-white" />
+      ) : (
+        <TrendingUp size={10} className="text-[#0f2a44] opacity-30" />
+      )}
+      <span
+        className={`text-[7px] font-black uppercase tracking-widest ${
+          isOverdue ? 'text-white' : 'text-[#0f2a44] opacity-40'
+        }`}
+      >
+        {isOverdue ? 'VENCIDO' : 'PRONÓSTICO'}
+      </span>
+    </div>
+    <span
+      className={`text-[13px] font-black tracking-tighter ${
+        isOverdue ? 'text-white' : 'text-[#0f2a44]'
+      }`}
+    >
+      {forecast ? formatDate(forecast.forecastDate) : '---'}
+    </span>
+  </div>
+);
+
+/** 🔱 Archon Atom: IncorporationTile */
+const IncorporationTile: React.FC<{ onRegister: () => void }> = ({
+  onRegister,
+}): React.JSX.Element => (
+  <div
+    className="glass-card-pro archon-instrument-tile card-hover-emerald"
+    style={{ borderTop: '4px solid #10b981' }}
+  >
+    <div className="flex items-center justify-center gap-3 mb-6 w-full">
+      <Plus size={18} className="text-emerald-500" />
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+        Incorporación
+      </span>
+    </div>
+    <div className="archon-tile-payload space-y-8 pb-12">
+      <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100 shadow-inner">
+        <PlusCircle size={32} className="text-emerald-500" />
+      </div>
+      <div className="flex flex-col items-center space-y-2">
+        <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
+          Registrar Unidad
+        </h3>
+      </div>
+    </div>
+    <div className="archon-tile-action">
+      <button
+        onClick={onRegister}
+        className="btn-sentinel-emerald w-full flex items-center justify-center gap-2"
+      >
+        Iniciar <ArrowRight size={12} />
+      </button>
+    </div>
+  </div>
+);
+
+/** 🔱 Archon Sub-Component: FleetRegistryRow */
+const FleetRegistryRow: React.FC<{
+  unit: FleetUnit;
+  onSelectImage: (unit: FleetUnit) => void;
+}> = ({ unit, onSelectImage }): React.JSX.Element => {
+  const forecast = calculateMaintForecast(
+    unit.maint_interval_days || 180,
+    unit.maint_interval_km || 10000,
+    unit.avg_daily_km || 50,
+    unit.odometer,
+    unit.last_service_reading || 0,
+    unit.last_service_date || null
+  );
+
+  const isOverdue = !!forecast?.isOverdue;
+
+  return (
+    <tr
+      className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.02] ${
+        isOverdue ? 'bg-red-50/30' : ''
+      }`}
+    >
+      <td className="py-6 text-center">
+        <div className="flex justify-center items-center">
+          {Array.isArray(unit.images) && unit.images.length > 0 ? (
+            <img
+              src={unit.images[0]}
+              loading="lazy"
+              className="w-16 h-16 rounded-[4px] object-cover border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44] transition-colors"
+              alt={unit.id}
+              onClick={(): void => onSelectImage(unit)}
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
+              <ImageIcon size={24} />
+            </div>
+          )}
+        </div>
+      </td>
+      <td>
+        <div className="flex flex-col items-center">
+          <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter shadow-sm">
+            {unit.id}
+          </span>
+          <span className="text-[10px] font-black text-[#0f2a44] uppercase leading-tight">
+            {unit.marca}
+          </span>
+          <span className="text-[9px] font-bold opacity-40 uppercase leading-tight">
+            {unit.modelo}
+          </span>
+          <div className="flex items-center gap-1.5 mt-2 opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+            <Tag size={8} />
+            <span className="text-[8px] font-black uppercase tracking-tighter">
+              {unit.placas || 'SIN PLACAS'}
+            </span>
+          </div>
+        </div>
+      </td>
+      <td>
+        <StrategyCluster unit={unit} />
+      </td>
+      <td>
+        <TechnicalStatusCluster unit={unit} />
+      </td>
+      <td>
+        <div className="flex flex-col items-center space-y-1">
+          <div className="flex items-center gap-1.5">
+            <Zap
+              size={10}
+              className={
+                forecast && forecast.kmParaServicio < 1000
+                  ? 'text-red-500 animate-pulse'
+                  : 'text-emerald-500'
+              }
+            />
+            <span
+              className={`text-[10px] font-black ${
+                forecast && forecast.kmParaServicio < 1000 ? 'text-red-600' : 'text-emerald-700'
+              }`}
+            >
+              {forecast ? forecast.kmParaServicio.toLocaleString() : '---'} KM
+            </span>
+          </div>
+          <div className="flex items-center opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+            <span className="text-[7px] font-black uppercase tracking-tighter">
+              EST: {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
+            </span>
+          </div>
+        </div>
+      </td>
+      <td>
+        <ForecastCluster forecast={forecast} isOverdue={isOverdue} />
+      </td>
+      <td>
+        <div className="flex justify-center">
+          <FleetKpiMatrix
+            availability={unit.availability_index ?? 100}
+            mtbf={unit.mtbf_hours ?? 0}
+            mttr={unit.mttr_hours ?? 0}
+            backlog={unit.backlog_count ?? 0}
+          />
+        </div>
+      </td>
+      <td>
+        <div className="flex items-center justify-center gap-2">
+          <button className="w-8 h-8 rounded bg-[#0f2a44] flex items-center justify-center text-white hover:bg-[#1a4a7a] transition-colors">
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
+
 export const FleetGridView: React.FC<FleetGridViewProps> = ({
   onRegister,
   units = [],
-}: FleetGridViewProps): React.JSX.Element => {
+}): React.JSX.Element => {
   const [selectedGalleryUnit, setSelectedGalleryUnit] = React.useState<FleetUnit | null>(null);
 
   return (
-    <div className="animate-in fade-in duration-700 space-y-12">
-      {/* 🔱 ARCHON GALLERY OVERLAY (Injected on demand) */}
+    <div className="animate-in fade-in duration-700 space-y-12 pb-20 text-[#0f2a44]">
       {selectedGalleryUnit && (
         <ArchonGalleryOverlay
           images={selectedGalleryUnit.images || []}
@@ -39,323 +273,119 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-
-      {/* 🚀 TRIPLE-AXIS INSTRUMENT CLUSTER (Sovereign Grid) */}
       <div className="archon-grid-3 gap-5">
-        {/* ... (Keep Instruments 1-3 as is) ... */}
-        {/* Instrument 1: Administración de Activos (NAVY) */}
         <div
           className="glass-card-pro archon-instrument-tile card-hover-navy"
           style={{ borderTop: '4px solid #0f2a44' }}
         >
           <div className="flex items-center justify-center gap-3 mb-6 w-full">
-            <LayoutDashboard size={18} className="text-[#0f2a44]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-              Gobierno de Inventario
+            <LayoutDashboard size={18} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50">
+              Control de Activos
             </span>
           </div>
-
           <div className="archon-tile-payload space-y-8 pb-12">
-            <div className="w-20 h-20 bg-[#0f2a44]/5 rounded-full flex items-center justify-center border-2 border-[#0f2a44]/10 shadow-inner">
-              <LayoutDashboard size={32} className="text-[#0f2a44]" />
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-              <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
-                Administración de Activos
-              </h3>
-              <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
-                Control Maestro de Flota & Registro
-              </p>
-            </div>
+            <LayoutDashboard size={32} />
           </div>
-
           <div className="archon-tile-action">
-            <button className="btn-sentinel-navy w-full flex items-center justify-center gap-2">
-              Gestionar Activos <ArrowRight size={12} />
+            <button className="btn-sentinel-navy w-full flex items-center justify-center gap-2 text-xs font-black uppercase">
+              Gestionar <ArrowRight size={12} />
             </button>
           </div>
         </div>
-
-        {/* Instrument 2: Incorporación (VERDE) */}
-        <div
-          className="glass-card-pro archon-instrument-tile card-hover-emerald"
-          style={{ borderTop: '4px solid #10b981' }}
-        >
-          <div className="flex items-center justify-center gap-3 mb-6 w-full">
-            <Plus size={18} className="text-emerald-500" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-              Incorporación de Activos
-            </span>
-          </div>
-
-          <div className="archon-tile-payload space-y-8 pb-12">
-            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center border-2 border-emerald-100 shadow-inner">
-              <PlusCircle size={32} className="text-emerald-500" />
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-              <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
-                Registrar Unidad
-              </h3>
-              <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
-                Expansión de Flota e Inventario
-              </p>
-            </div>
-          </div>
-
-          <div className="archon-tile-action">
-            <button
-              onClick={onRegister}
-              className="btn-sentinel-emerald w-full flex items-center justify-center gap-2"
-            >
-              Iniciar Registro <ArrowRight size={12} />
-            </button>
-          </div>
-        </div>
-
-        {/* Instrument 3: Mantenimiento (AZUL) */}
+        <IncorporationTile onRegister={onRegister} />
         <div
           className="glass-card-pro archon-instrument-tile card-hover-sky"
           style={{ borderTop: '4px solid #0ea5e9' }}
         >
           <div className="flex items-center justify-center gap-3 mb-6 w-full">
-            <Wrench size={18} className="text-[#0ea5e9]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-              Control Transaccional
+            <Wrench size={18} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50">
+              Transaccional
             </span>
           </div>
-
           <div className="archon-tile-payload space-y-8 pb-12">
-            <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center border-2 border-sky-100 shadow-inner">
-              <Wrench size={32} className="text-[#0ea5e9]" />
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-              <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
-                Mantenimiento
-              </h3>
-              <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
-                Correctivos y Preventivos
-              </p>
-            </div>
+            <Wrench size={32} />
           </div>
-
           <div className="archon-tile-action">
-            <button className="btn-sentinel-sky w-full flex items-center justify-center gap-2">
-              Gestión Técnica <ArrowRight size={12} />
+            <button className="btn-sentinel-sky w-full flex items-center justify-center gap-2 text-xs font-black uppercase">
+              Mantenimiento <ArrowRight size={12} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* 📊 MASTER REGISTRY TABLE (The Core Node) */}
       <div
-        className="glass-card-pro bg-white animate-in slide-in-from-bottom-12 duration-1000"
+        className="glass-card-pro bg-white"
         style={{ borderTop: '4px solid #0f2a44', padding: '40px' }}
       >
         <div className="flex items-center justify-between mb-10">
           <div className="flex flex-col">
             <div className="flex items-center gap-3 mb-2">
-              <Activity size={20} className="text-[#0f2a44]" />
-              <h3 className="text-lg font-black text-[#0f2a44] uppercase tracking-widest">
-                Inventario Maestro de Activos
+              <Activity size={20} />
+              <h3 className="text-lg font-black uppercase tracking-widest text-[#0f2a44]">
+                Inventario Maestro
               </h3>
             </div>
             <p className="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em]">
-              Visualización Integrada & Inteligencia Predictiva de Flota
+              Sovereign Predictive Matrix (v.28.2.5)
             </p>
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded border border-emerald-100">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tighter">
-                {units.length} UNIDADES ACTIVAS
-              </span>
-            </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded border border-emerald-100">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-700 uppercase">
+              {units.length} EQUIPOS
+            </span>
           </div>
         </div>
-
-        <div className="overflow-x-auto">
+        <div className="overflow-hidden">
           <table className="archon-registry-table w-full">
             <thead>
-              {/* 🔱 Grouped Headers: Parity with Spreadsheet Image */}
               <tr className="bg-[#0f2a44]/5 border-b border-[#0f2a44]/10">
-                <th colSpan={2} className="border-r border-[#0f2a44]/10">
-                  UNIDAD
+                <th className="text-center py-4 w-[120px] text-[10px] font-black uppercase opacity-40">
+                  ACTIVO
                 </th>
-                <th colSpan={4} className="border-r border-[#0f2a44]/10">
-                  INTERVALOS DE MANTENIMIENTO
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
+                  IDENTIDAD
                 </th>
-                <th colSpan={2} className="border-r border-[#0f2a44]/10">
-                  ÚLTIMO SERVICIO
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
+                  ESTRATEGIA
                 </th>
-                <th colSpan={5} className="border-r border-[#0f2a44]/10">
-                  PROGRAMACIÓN
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
+                  TÉCNICO
                 </th>
-                <th rowSpan={2} className="text-center">
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
+                  PROG.
+                </th>
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
+                  PRONÓSTICO
+                </th>
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
                   SALUD
                 </th>
-                <th rowSpan={2} className="text-center">
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
                   ACCIONES
                 </th>
               </tr>
-              <tr>
-                <th className="text-center w-[100px]">ACTIVO</th>
-                <th className="text-center border-r border-[#0f2a44]/10">IDENTIDAD</th>
-
-                {/* Intervalos */}
-                <th className="text-center text-[9px]">INT (D)</th>
-                <th className="text-center text-[9px]">INT (KM)</th>
-                <th className="text-center text-[9px]">KM/DÍA</th>
-                <th className="text-center text-[9px] border-r border-[#0f2a44]/10">KM ACT</th>
-
-                {/* Último */}
-                <th className="text-center text-[9px]">KM ULT</th>
-                <th className="text-center text-[9px] border-r border-[#0f2a44]/10">FECHA ULT</th>
-
-                {/* Programación */}
-                <th className="text-center text-[9px]">KM PROX</th>
-                <th className="text-center text-[9px]">SERV KM</th>
-                <th className="text-center text-[9px]">KM FALTAN</th>
-                <th className="text-center text-[9px]">SERV (T)</th>
-                <th className="text-center text-[9px] border-r border-[#0f2a44]/10">PRONÓSTICO</th>
-              </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {units.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="py-20 text-center opacity-40">
-                    No hay unidades registradas en el núcleo central.
+                  <td
+                    colSpan={8}
+                    className="py-20 text-center opacity-40 text-xs font-black uppercase"
+                  >
+                    Sin Assets
                   </td>
                 </tr>
               ) : (
-                units.map((unit) => {
-                  const forecast = calculateMaintForecast(
-                    unit.maint_interval_days || 180,
-                    unit.maint_interval_km || 10000,
-                    unit.avg_daily_km || 50,
-                    unit.odometer,
-                    unit.last_service_reading || 0,
-                    unit.last_service_date || null
-                  );
-
-                  const isOverdue = forecast?.isOverdue;
-
-                  return (
-                    <tr
-                      key={unit.uuid}
-                      className={`transition-all duration-300 ${isOverdue ? 'bg-red-50/30' : ''}`}
-                    >
-                      {/* 🖼️ ASSET THUMBNAIL */}
-                      <td className="w-[120px]">
-                        <div className="flex justify-center items-center py-4">
-                          {Array.isArray(unit.images) && unit.images.length > 0 ? (
-                            <img
-                              src={unit.images[0]}
-                              loading="lazy"
-                              className="w-20 h-20 rounded-[4px] object-cover aspect-square border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44] transition-colors"
-                              alt={unit.id}
-                              onClick={(): void => setSelectedGalleryUnit(unit)}
-                            />
-                          ) : (
-                            <div className="w-20 h-20 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 aspect-square">
-                              <ImageIcon size={28} />
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* IDENTIDAD (ID, Marca, Modelo, Año) */}
-                      <td className="border-r border-[#0f2a44]/5">
-                        <div className="flex flex-col items-center">
-                          <span className="text-[12px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter">
-                            {unit.id}
-                          </span>
-                          <span className="text-[11px] font-black text-[#0f2a44] uppercase leading-tight">
-                            {unit.marca}
-                          </span>
-                          <span className="text-[10px] font-bold opacity-60 uppercase leading-tight">
-                            {unit.modelo}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* INTERVALOS */}
-                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
-                        {unit.maint_interval_days || 180}
-                      </td>
-                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
-                        {(unit.maint_interval_km || 10000).toLocaleString()}
-                      </td>
-                      <td className="text-center font-bold text-sky-600 text-[10px]">
-                        {unit.avg_daily_km || 0}
-                      </td>
-                      <td className="text-center font-black text-[#0f2a44] text-[11px] border-r border-[#0f2a44]/5">
-                        {unit.odometer.toLocaleString()}
-                      </td>
-
-                      {/* ÚLTIMO SERVICIO */}
-                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
-                        {(unit.last_service_reading || 0).toLocaleString()}
-                      </td>
-                      <td className="text-center font-bold text-[#0f2a44] text-[10px] border-r border-[#0f2a44]/5">
-                        {unit.last_service_date
-                          ? formatDate(new Date(unit.last_service_date))
-                          : '---'}
-                      </td>
-
-                      {/* PROGRAMACIÓN */}
-                      <td className="text-center font-black text-[#0f2a44] text-[11px]">
-                        {forecast ? forecast.nextServiceKm.toLocaleString() : '---'}
-                      </td>
-                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
-                        {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
-                      </td>
-                      <td
-                        className={`text-center font-black text-[11px] ${
-                          forecast && forecast.kmParaServicio < 1000
-                            ? 'text-red-600'
-                            : 'text-emerald-600'
-                        }`}
-                      >
-                        {forecast ? forecast.kmParaServicio.toLocaleString() : '---'}
-                      </td>
-                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
-                        {forecast ? formatDate(forecast.serviceByTimeDate) : '---'}
-                      </td>
-                      <td
-                        className={`text-center font-black text-[11px] border-r border-[#0f2a44]/5 ${
-                          isOverdue ? 'bg-red-500 text-white animate-pulse px-2' : 'text-[#0f2a44]'
-                        }`}
-                      >
-                        {forecast ? formatDate(forecast.forecastDate) : '---'}
-                      </td>
-
-                      {/* SALUD (KPI Matrix) */}
-                      <td>
-                        <div className="flex justify-center">
-                          <FleetKpiMatrix
-                            availability={unit.availability_index ?? 100}
-                            mtbf={unit.mtbf_hours ?? 0}
-                            mttr={unit.mttr_hours ?? 0}
-                            backlog={unit.backlog_count ?? 0}
-                          />
-                        </div>
-                      </td>
-
-                      {/* ACTIONS */}
-                      <td>
-                        <div className="flex items-center justify-center gap-3">
-                          <button
-                            title="Ver Detalles"
-                            className="w-8 h-8 rounded bg-[#0f2a44] flex items-center justify-center text-white hover:bg-[#1a4a7a] transition-colors"
-                          >
-                            <ArrowRight size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                units.map((unit) => (
+                  <FleetRegistryRow
+                    key={unit.uuid}
+                    unit={unit}
+                    onSelectImage={(u): void => setSelectedGalleryUnit(u)}
+                  />
+                ))
               )}
             </tbody>
           </table>
