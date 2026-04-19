@@ -388,7 +388,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                   TÉCNICO
                 </th>
                 <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
-                  PROG.
+                  PROGRAMACIÓN
                 </th>
                 <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
                   PRONÓSTICO
