@@ -138,11 +138,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
 
         <div
-          className="grid grid-cols-2 grid-rows-2 border border-[#0f2a44]/20 rounded-lg overflow-hidden bg-white/50 shadow-sm border-l-4"
+          className="grid grid-cols-2 grid-rows-2 border border-[#0f2a44] rounded-lg overflow-hidden bg-white/50 shadow-sm border-l-4"
           style={{ borderColor: `${accentColor}40` }}
         >
           {/* Q1: DISP */}
-          <div className="flex flex-col items-center justify-center p-12 border-b border-r border-[#0f2a44]/20">
+          <div className="flex flex-col items-center justify-center p-12 border-b border-r border-[#0f2a44]">
             <div className="flex items-center gap-2 opacity-50 mb-2">
               <ShieldCheck size={16} className="text-emerald-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">DISP</span>
@@ -156,7 +156,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q2: MTBF */}
-          <div className="flex flex-col items-center justify-center p-12 border-b border-[#0f2a44]/20">
+          <div className="flex flex-col items-center justify-center p-12 border-b border-[#0f2a44]">
             <div className="flex items-center gap-2 opacity-50 mb-2">
               <Zap size={16} className="text-yellow-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">MTBF</span>
@@ -167,7 +167,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q3: MTTR */}
-          <div className="flex flex-col items-center justify-center p-12 border-r border-[#0f2a44]/20">
+          <div className="flex flex-col items-center justify-center p-12 border-r border-[#0f2a44]">
             <div className="flex items-center gap-2 opacity-50 mb-2">
               <History size={16} className="text-violet-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">MTTR</span>
