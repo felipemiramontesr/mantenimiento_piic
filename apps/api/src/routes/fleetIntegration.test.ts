@@ -192,6 +192,18 @@ describe('Fleet Integration Endpoints', () => {
       expect(JSON.parse(response.body).error).toContain('Database Error: SQL_SYNTAX_ERR');
     });
 
+    it('should handle object-based db errors (Standard Error)', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('STD_ERR_MSG'));
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: validUnit,
+      });
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toContain('Database Error: STD_ERR_MSG');
+    });
+
     it('should return 400 for invalid data format in POST', async (): Promise<void> => {
       const response = await app.inject({
         method: 'POST',
@@ -373,6 +385,7 @@ describe('Fleet Integration Endpoints', () => {
           motor: 'NEW-MOT',
           numeroSerie: 'NEW-SN',
           placas: 'NEW-PL',
+          tarjetaCirculacion: 'NEW-TC',
           assetTypeId: 2, // Maquinaria
           year: 2025,
         },
