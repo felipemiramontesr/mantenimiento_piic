@@ -84,6 +84,10 @@ export interface FleetUnit {
   mtbf_hours?: number;
   mttr_hours?: number;
   backlog_count?: number;
+  // 🔱 Predictive Strategy (v.28.0.0)
+  maint_interval_km?: number;
+  maint_interval_days?: number;
+  avg_daily_km?: number;
 }
 
 export interface CreateFleetUnit {
@@ -121,6 +125,9 @@ export interface CreateFleetUnit {
   maintenanceUsageFreqId?: number | null;
   lastServiceDate?: string | null;
   lastServiceReading?: number;
+  maintIntervalKm?: number;
+  maintIntervalDays?: number;
+  avgDailyKm?: number;
 }
 
 export interface UseFleetFormReturn {

@@ -5,20 +5,13 @@ import {
   PlusCircle,
   Wrench,
   Activity,
-  Tag,
-  Gauge,
-  Info,
   LayoutDashboard,
   Image as ImageIcon,
-  Fuel,
-  Settings2,
-  Users,
-  HardDrive,
-  ShieldCheck,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
 import FleetKpiMatrix from './FleetKpiMatrix';
+import { calculateMaintForecast, formatDate } from '../../utils/fleetPredictiveEngine';
 
 interface FleetGridViewProps {
   onRegister: () => void;
@@ -184,166 +177,185 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         <div className="overflow-x-auto">
           <table className="archon-registry-table w-full">
             <thead>
+              {/* 🔱 Grouped Headers: Parity with Spreadsheet Image */}
+              <tr className="bg-[#0f2a44]/5 border-b border-[#0f2a44]/10">
+                <th colSpan={2} className="border-r border-[#0f2a44]/10">
+                  UNIDAD
+                </th>
+                <th colSpan={4} className="border-r border-[#0f2a44]/10">
+                  INTERVALOS DE MANTENIMIENTO
+                </th>
+                <th colSpan={2} className="border-r border-[#0f2a44]/10">
+                  ÚLTIMO SERVICIO
+                </th>
+                <th colSpan={5} className="border-r border-[#0f2a44]/10">
+                  PROGRAMACIÓN
+                </th>
+                <th rowSpan={2} className="text-center">
+                  SALUD
+                </th>
+                <th rowSpan={2} className="text-center">
+                  ACCIONES
+                </th>
+              </tr>
               <tr>
                 <th className="text-center w-[100px]">ACTIVO</th>
-                <th className="text-center">IDENTIDAD</th>
-                <th className="text-center">LEGALES</th>
-                <th className="text-center">CONFIGURACIÓN</th>
-                <th className="text-center">OPERACIÓN</th>
-                <th className="text-center">SALUD (DISP/MTTR...)</th>
-                <th className="text-center">ACCIONES</th>
+                <th className="text-center border-r border-[#0f2a44]/10">IDENTIDAD</th>
+
+                {/* Intervalos */}
+                <th className="text-center text-[9px]">INT (D)</th>
+                <th className="text-center text-[9px]">INT (KM)</th>
+                <th className="text-center text-[9px]">KM/DÍA</th>
+                <th className="text-center text-[9px] border-r border-[#0f2a44]/10">KM ACT</th>
+
+                {/* Último */}
+                <th className="text-center text-[9px]">KM ULT</th>
+                <th className="text-center text-[9px] border-r border-[#0f2a44]/10">FECHA ULT</th>
+
+                {/* Programación */}
+                <th className="text-center text-[9px]">KM PROX</th>
+                <th className="text-center text-[9px]">SERV KM</th>
+                <th className="text-center text-[9px]">KM FALTAN</th>
+                <th className="text-center text-[9px]">SERV (T)</th>
+                <th className="text-center text-[9px] border-r border-[#0f2a44]/10">PRONÓSTICO</th>
               </tr>
             </thead>
             <tbody>
               {units.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-20 text-center opacity-40">
+                  <td colSpan={16} className="py-20 text-center opacity-40">
                     No hay unidades registradas en el núcleo central.
                   </td>
                 </tr>
               ) : (
-                units.map((unit) => (
-                  <tr key={unit.uuid} className="transition-all duration-300">
-                    {/* 🖼️ ASSET THUMBNAIL */}
-                    <td className="w-[120px]">
-                      <div className="flex justify-center items-center py-4">
-                        {Array.isArray(unit.images) && unit.images.length > 0 ? (
-                          <img
-                            src={unit.images[0]}
-                            loading="lazy"
-                            className="w-20 h-20 rounded-[4px] object-cover aspect-square border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44] transition-colors"
-                            alt={unit.id}
-                            onClick={(): void => setSelectedGalleryUnit(unit)}
-                          />
-                        ) : (
-                          <div className="w-20 h-20 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 aspect-square">
-                            <ImageIcon size={28} />
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                units.map((unit) => {
+                  const forecast = calculateMaintForecast(
+                    unit.maint_interval_days || 180,
+                    unit.maint_interval_km || 10000,
+                    unit.avg_daily_km || 50,
+                    unit.odometer,
+                    unit.last_service_reading || 0,
+                    unit.last_service_date || null
+                  );
 
-                    {/* IDENTIDAD (ID, Marca, Modelo, Año) */}
-                    <td>
-                      <div className="flex flex-col items-center">
-                        <span className="text-[12px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter">
-                          {unit.id}
-                        </span>
-                        <span className="text-[11px] font-black text-[#0f2a44] uppercase leading-tight">
-                          {unit.marca}
-                        </span>
-                        <span className="text-[10px] font-bold opacity-60 uppercase leading-tight">
-                          {unit.modelo}
-                        </span>
-                        <div className="flex items-center gap-1 mt-1 opacity-40">
-                          <span className="text-[8px] font-bold uppercase tracking-tighter">
-                            MODELO {unit.year}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+                  const isOverdue = forecast?.isOverdue;
 
-                    {/* LEGALES (Placas, Tarjeta Circulación, Serie) */}
-                    <td>
-                      <div className="flex flex-col items-center space-y-1.5">
-                        <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100 w-full justify-center">
-                          <Tag size={10} className="text-[#0f2a44] opacity-40" />
-                          <span className="text-[10px] font-black text-[#0f2a44]">
-                            {unit.placas || 'S/P'}
-                          </span>
+                  return (
+                    <tr
+                      key={unit.uuid}
+                      className={`transition-all duration-300 ${isOverdue ? 'bg-red-50/30' : ''}`}
+                    >
+                      {/* 🖼️ ASSET THUMBNAIL */}
+                      <td className="w-[120px]">
+                        <div className="flex justify-center items-center py-4">
+                          {Array.isArray(unit.images) && unit.images.length > 0 ? (
+                            <img
+                              src={unit.images[0]}
+                              loading="lazy"
+                              className="w-20 h-20 rounded-[4px] object-cover aspect-square border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44] transition-colors"
+                              alt={unit.id}
+                              onClick={(): void => setSelectedGalleryUnit(unit)}
+                            />
+                          ) : (
+                            <div className="w-20 h-20 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 aspect-square">
+                              <ImageIcon size={28} />
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1.5 opacity-60">
-                          <ShieldCheck size={10} className="text-[#0f2a44]" />
-                          <span className="text-[9px] font-bold tracking-tight">
-                            {unit.tarjeta_circulacion || 'S/TC'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 opacity-20">
-                          <Info size={9} />
-                          <span className="text-[8px] font-medium truncate max-w-[80px]">
-                            {unit.numero_serie}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* CONFIGURACIÓN (Combo: Fuel, Drive, Trans) */}
-                    <td>
-                      <div className="flex flex-col items-center space-y-1.5">
-                        <div className="flex items-center gap-4">
-                          <div className="flex flex-col items-center">
-                            <Fuel size={10} className="text-[#0f2a44] opacity-30 mb-0.5" />
-                            <span className="text-[8px] font-black uppercase text-[#0f2a44]">
-                              {unit.fuel_type || 'N/A'}
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <Settings2 size={10} className="text-[#0f2a44] opacity-30 mb-0.5" />
-                            <span className="text-[8px] font-black uppercase text-[#0f2a44]">
-                              {unit.traccion || 'N/A'}
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <HardDrive size={10} className="text-[#0f2a44] opacity-30 mb-0.5" />
-                            <span className="text-[8px] font-black uppercase text-[#0f2a44]">
-                              {unit.transmision?.substring(0, 3) || 'N/A'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* OPERACIÓN (Odómetro, Status, Depto, Uso) */}
-                    <td>
-                      <div className="flex flex-col items-center space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Gauge size={11} className="text-[#0f2a44] opacity-30" />
-                          <span className="text-[11px] font-black text-[#0f2a44]">
-                            {unit.odometer.toLocaleString()}
-                          </span>
-                          <span className="text-[8px] font-bold opacity-30">KM</span>
-                        </div>
+                      {/* IDENTIDAD (ID, Marca, Modelo, Año) */}
+                      <td className="border-r border-[#0f2a44]/5">
                         <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-1 opacity-50 mb-0.5">
-                            <Users size={9} />
-                            <span className="text-[8px] font-black uppercase tracking-tighter">
-                              {unit.departamento || 'OPERACIONES'}
-                            </span>
-                          </div>
-                          <div className="px-3 py-0.5 bg-[#f2b705]/10 border border-[#f2b705]/20 rounded-full">
-                            <span className="text-[8px] font-bold text-[#0f2a44] uppercase tracking-tighter">
-                              {unit.uso || 'USO GENERAL'}
-                            </span>
-                          </div>
+                          <span className="text-[12px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter">
+                            {unit.id}
+                          </span>
+                          <span className="text-[11px] font-black text-[#0f2a44] uppercase leading-tight">
+                            {unit.marca}
+                          </span>
+                          <span className="text-[10px] font-bold opacity-60 uppercase leading-tight">
+                            {unit.modelo}
+                          </span>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 📊 ANALYTICAL HEALTH (KPI Matrix) */}
-                    <td>
-                      <div className="flex justify-center">
-                        <FleetKpiMatrix
-                          availability={unit.availability_index ?? 100}
-                          mtbf={unit.mtbf_hours ?? 0}
-                          mttr={unit.mttr_hours ?? 0}
-                          backlog={unit.backlog_count ?? 0}
-                        />
-                      </div>
-                    </td>
+                      {/* INTERVALOS */}
+                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
+                        {unit.maint_interval_days || 180}
+                      </td>
+                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
+                        {(unit.maint_interval_km || 10000).toLocaleString()}
+                      </td>
+                      <td className="text-center font-bold text-sky-600 text-[10px]">
+                        {unit.avg_daily_km || 0}
+                      </td>
+                      <td className="text-center font-black text-[#0f2a44] text-[11px] border-r border-[#0f2a44]/5">
+                        {unit.odometer.toLocaleString()}
+                      </td>
 
-                    {/* ACTIONS */}
-                    <td>
-                      <div className="flex items-center justify-center gap-3">
-                        <button
-                          title="Ver Detalles"
-                          className="w-8 h-8 rounded bg-[#0f2a44] flex items-center justify-center text-white hover:bg-[#1a4a7a] transition-colors"
-                        >
-                          <ArrowRight size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      {/* ÚLTIMO SERVICIO */}
+                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
+                        {(unit.last_service_reading || 0).toLocaleString()}
+                      </td>
+                      <td className="text-center font-bold text-[#0f2a44] text-[10px] border-r border-[#0f2a44]/5">
+                        {unit.last_service_date
+                          ? formatDate(new Date(unit.last_service_date))
+                          : '---'}
+                      </td>
+
+                      {/* PROGRAMACIÓN */}
+                      <td className="text-center font-black text-[#0f2a44] text-[11px]">
+                        {forecast ? forecast.nextServiceKm.toLocaleString() : '---'}
+                      </td>
+                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
+                        {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
+                      </td>
+                      <td
+                        className={`text-center font-black text-[11px] ${
+                          forecast && forecast.kmParaServicio < 1000
+                            ? 'text-red-600'
+                            : 'text-emerald-600'
+                        }`}
+                      >
+                        {forecast ? forecast.kmParaServicio.toLocaleString() : '---'}
+                      </td>
+                      <td className="text-center font-bold text-[#0f2a44] text-[10px]">
+                        {forecast ? formatDate(forecast.serviceByTimeDate) : '---'}
+                      </td>
+                      <td
+                        className={`text-center font-black text-[11px] border-r border-[#0f2a44]/5 ${
+                          isOverdue ? 'bg-red-500 text-white animate-pulse px-2' : 'text-[#0f2a44]'
+                        }`}
+                      >
+                        {forecast ? formatDate(forecast.forecastDate) : '---'}
+                      </td>
+
+                      {/* SALUD (KPI Matrix) */}
+                      <td>
+                        <div className="flex justify-center">
+                          <FleetKpiMatrix
+                            availability={unit.availability_index ?? 100}
+                            mtbf={unit.mtbf_hours ?? 0}
+                            mttr={unit.mttr_hours ?? 0}
+                            backlog={unit.backlog_count ?? 0}
+                          />
+                        </div>
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td>
+                        <div className="flex items-center justify-center gap-3">
+                          <button
+                            title="Ver Detalles"
+                            className="w-8 h-8 rounded bg-[#0f2a44] flex items-center justify-center text-white hover:bg-[#1a4a7a] transition-colors"
+                          >
+                            <ArrowRight size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
