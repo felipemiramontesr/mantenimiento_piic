@@ -13,15 +13,15 @@ describe('useFleetForm Hook', () => {
   it('should initialize with default fleet form data', (): void => {
     const { result } = renderHook(() => useFleetForm());
     expect(result.current.formData.id).toBe('ASM-002');
-    expect(result.current.formData.assetType).toBe('Vehiculo');
+    expect(result.current.formData.assetTypeId).toBe(1);
   });
 
   it('should handle asset type changes correctly', (): void => {
     const { result } = renderHook(() => useFleetForm());
     act((): void => {
-      result.current.handleAssetTypeChange('Maquinaria');
+      result.current.handleAssetTypeChange(2);
     });
-    expect(result.current.formData.assetType).toBe('Maquinaria');
+    expect(result.current.formData.assetTypeId).toBe(2);
     expect(result.current.formData.marca).toBe('');
     expect(result.current.formData.modelo).toBe('');
   });
