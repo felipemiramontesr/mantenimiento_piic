@@ -429,10 +429,15 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(201).send({ success: true, id, uuid });
     } catch (error: unknown) {
       fastify.log.error(error);
-      const sqlError =
-        (error as { sqlMessage?: string }).sqlMessage ||
-        (error as Error).message ||
-        'Unknown DB Exception';
+      let sqlError = 'Unknown DB Exception';
+
+      if (error && typeof error === 'object') {
+        sqlError =
+          (error as { sqlMessage?: string }).sqlMessage || (error as Error).message || sqlError;
+      } else if (typeof error === 'string') {
+        sqlError = error;
+      }
+
       return reply.code(500).send({ error: `Database Error: ${sqlError}` });
     }
   });
