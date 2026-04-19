@@ -128,11 +128,18 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     accentColor: string
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
+    // Map category to sovereign hover modes
+    const hoverModes: Record<string, string> = {
+      vehiculo: 'violet',
+      maquinaria: 'yellow',
+      herramienta: 'emerald',
+    };
+
     return (
       <div
-        className="glass-card-pro archon-instrument-tile flex flex-col p-20"
+        className={`glass-card-pro archon-instrument-tile flex flex-col p-20 card-hover-${hoverModes[categoryKey]}`}
         style={{
-          borderTop: '4px solid #0f2a44',
+          borderTop: `4px solid ${accentColor}`,
           height: '240px', // Standardized height for instrument parity
         }}
       >
