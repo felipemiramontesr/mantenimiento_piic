@@ -15,6 +15,8 @@ import {
   ShieldAlert,
   TrendingUp,
   Tag,
+  CreditCard,
+  MapPin,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -30,6 +32,54 @@ interface FleetGridViewProps {
   units: FleetUnit[];
 }
 
+/** 🔱 Archon Helper: Resolve Full Location Names */
+const resolveSedeFull = (sede: string | undefined): string => {
+  const mapping: Record<string, string> = {
+    MA: 'MEDIO AMBIENTE',
+    LAB: 'LABORATORIO',
+    ADM: 'ADMINISTRACIÓN',
+    SEG: 'SEGURIDAD',
+    GEO: 'GEOLOGÍA',
+    OPS: 'OPERACIONES',
+    MAN: 'MANTENIMIENTO',
+  };
+  const upper = (sede || '').toUpperCase();
+  return mapping[upper] || upper || 'SIN SEDE';
+};
+
+/** 🔱 Archon Atom: IdentityCluster */
+const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
+  <div className="flex flex-col items-center space-y-2">
+    <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter shadow-sm">
+      {unit.id}
+    </span>
+    <div className="flex flex-col items-center leading-tight">
+      <span className="text-[10px] font-black text-[#0f2a44] uppercase">{unit.marca}</span>
+      <span className="text-[9px] font-bold opacity-40 uppercase">{unit.modelo}</span>
+    </div>
+    <div className="flex flex-col items-center space-y-1 mt-2">
+      <div className="flex items-center gap-1.5 opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+        <Tag size={8} />
+        <span className="text-[8px] font-black uppercase tracking-tighter">
+          {unit.placas || 'SIN PLACAS'}
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5 opacity-60 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+        <CreditCard size={8} />
+        <span className="text-[8px] font-black uppercase tracking-tighter">
+          T: {unit.tarjeta_circulacion || 'PENDIENTE'}
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5 opacity-50">
+        <MapPin size={8} />
+        <span className="text-[7.5px] font-black uppercase tracking-widest text-[#0f2a44]">
+          {resolveSedeFull(unit.sede)}
+        </span>
+      </div>
+    </div>
+  </div>
+);
+
 /** 🔱 Archon Atom: StrategyCluster */
 const StrategyCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
   <div className="flex flex-col items-center space-y-1.5">
@@ -41,11 +91,11 @@ const StrategyCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Ele
     </div>
     <div className="flex items-center gap-1.5 opacity-40">
       <CalendarDays size={10} />
-      <span className="text-[8px] font-bold">{unit.maint_interval_days || 180} DÍAS</span>
+      <span className="text-[9px] font-bold">{unit.maint_interval_days || 180} DÍAS</span>
     </div>
     <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
       <Activity size={9} className="text-sky-600" />
-      <span className="text-[8px] font-black text-sky-700">{unit.avg_daily_km || 0} KM/D</span>
+      <span className="text-[9px] font-black text-sky-700">{unit.avg_daily_km || 0} KM/D</span>
     </div>
   </div>
 );
@@ -56,17 +106,17 @@ const TechnicalStatusCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.
     <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-0.5 rounded-full border border-[#0f2a44]/10">
       <Gauge size={11} className="text-[#0f2a44]" />
       <span className="text-[11px] font-black text-[#0f2a44]">
-        {unit.odometer.toLocaleString()}
+        {Number(unit.odometer || 0).toLocaleString()}
       </span>
     </div>
     <div className="flex flex-col items-center opacity-40">
       <div className="flex items-center gap-1">
         <History size={9} />
-        <span className="text-[8px] font-bold">
-          {(unit.last_service_reading || 0).toLocaleString()} KM
+        <span className="text-[9px] font-bold">
+          {Number(unit.last_service_reading || 0).toLocaleString()} KM
         </span>
       </div>
-      <span className="text-[7px] font-black uppercase text-center">
+      <span className="text-[10px] font-black uppercase text-center">
         {unit.last_service_date ? formatDate(new Date(unit.last_service_date)) : '---'}
       </span>
     </div>
@@ -79,21 +129,21 @@ const ForecastCluster: React.FC<{
   isOverdue: boolean;
 }> = ({ forecast, isOverdue }): React.JSX.Element => (
   <div
-    className={`flex flex-col items-center p-2 rounded border transition-all duration-500 ${
+    className={`flex flex-col items-center p-2.5 rounded border transition-all duration-500 min-w-[90px] ${
       isOverdue
         ? 'bg-red-500 border-red-600 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]'
-        : 'bg-[#0f2a44]/5 border-[#0f2a44]/10'
+        : 'bg-emerald-50/50 border-emerald-100/50 shadow-sm'
     }`}
   >
-    <div className="flex items-center gap-1.5 mb-0.5">
+    <div className="flex items-center gap-1.5 mb-1">
       {isOverdue ? (
         <ShieldAlert size={12} className="text-white" />
       ) : (
-        <TrendingUp size={10} className="text-[#0f2a44] opacity-30" />
+        <TrendingUp size={11} className="text-emerald-600" />
       )}
       <span
-        className={`text-[7px] font-black uppercase tracking-widest ${
-          isOverdue ? 'text-white' : 'text-[#0f2a44] opacity-40'
+        className={`text-[8px] font-black uppercase tracking-widest ${
+          isOverdue ? 'text-white' : 'text-emerald-700 opacity-60'
         }`}
       >
         {isOverdue ? 'VENCIDO' : 'PRONÓSTICO'}
@@ -221,7 +271,7 @@ const FleetRegistryRow: React.FC<{
   const forecast = calculateMaintForecast(
     unit.maint_interval_days || 180,
     unit.maint_interval_km || 10000,
-    unit.avg_daily_km || 50,
+    unit.avg_daily_km || 30,
     unit.odometer,
     unit.last_service_reading || 0,
     unit.last_service_date || null
@@ -231,7 +281,7 @@ const FleetRegistryRow: React.FC<{
 
   return (
     <tr
-      className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.02] ${
+      className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.02] border-b border-gray-50 ${
         isOverdue ? 'bg-red-50/30' : ''
       }`}
     >
@@ -252,32 +302,16 @@ const FleetRegistryRow: React.FC<{
           )}
         </div>
       </td>
-      <td>
-        <div className="flex flex-col items-center">
-          <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter shadow-sm">
-            {unit.id}
-          </span>
-          <span className="text-[10px] font-black text-[#0f2a44] uppercase leading-tight">
-            {unit.marca}
-          </span>
-          <span className="text-[9px] font-bold opacity-40 uppercase leading-tight">
-            {unit.modelo}
-          </span>
-          <div className="flex items-center gap-1.5 mt-2 opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-            <Tag size={8} />
-            <span className="text-[8px] font-black uppercase tracking-tighter">
-              {unit.placas || 'SIN PLACAS'}
-            </span>
-          </div>
-        </div>
+      <td className="text-center">
+        <IdentityCluster unit={unit} />
       </td>
-      <td>
+      <td className="text-center">
         <StrategyCluster unit={unit} />
       </td>
-      <td>
+      <td className="text-center">
         <TechnicalStatusCluster unit={unit} />
       </td>
-      <td>
+      <td className="text-center">
         <div className="flex flex-col items-center space-y-1">
           <div className="flex items-center gap-1.5">
             <Zap
@@ -297,16 +331,18 @@ const FleetRegistryRow: React.FC<{
             </span>
           </div>
           <div className="flex items-center opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-            <span className="text-[7px] font-black uppercase tracking-tighter">
+            <span className="text-[10px] font-black uppercase tracking-tighter">
               EST: {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
             </span>
           </div>
         </div>
       </td>
-      <td>
-        <ForecastCluster forecast={forecast} isOverdue={isOverdue} />
+      <td className="text-center">
+        <div className="flex justify-center">
+          <ForecastCluster forecast={forecast} isOverdue={isOverdue} />
+        </div>
       </td>
-      <td>
+      <td className="text-center">
         <div className="flex justify-center">
           <FleetKpiMatrix
             availability={unit.availability_index ?? 100}
@@ -316,10 +352,13 @@ const FleetRegistryRow: React.FC<{
           />
         </div>
       </td>
-      <td>
-        <div className="flex items-center justify-center gap-2">
-          <button className="w-8 h-8 rounded bg-[#0f2a44] flex items-center justify-center text-white hover:bg-[#1a4a7a] transition-colors">
-            <ArrowRight size={14} />
+      <td className="text-center">
+        <div className="flex items-center justify-center">
+          <button
+            title="Ver Bitácora"
+            className="w-10 h-10 rounded-full bg-[#0f2a44]/5 flex items-center justify-center text-[#0f2a44] hover:bg-[#0f2a44] hover:text-white transition-all shadow-sm border border-[#0f2a44]/10"
+          >
+            <History size={16} />
           </button>
         </div>
       </td>
