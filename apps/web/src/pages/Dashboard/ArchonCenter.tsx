@@ -130,24 +130,29 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     const data = stats.categories[categoryKey];
     return (
       <div
-        className="glass-card-pro p-24 flex flex-col gap-16"
-        style={{ borderTop: '4px solid #0f2a44', border: '1px solid #0f2a44' }}
+        className="glass-card-pro flex flex-col overflow-hidden"
+        style={{
+          borderTop: '4px solid #0f2a44',
+          border: '1px solid #0f2a44',
+          height: '100%',
+        }}
       >
-        <div className="flex items-center gap-10 border-b border-navy/5 pb-10">
-          <Truck size={20} style={{ color: accentColor }} />
-          <h3 className="font-black text-[#0f2a44] text-[14px] uppercase tracking-[0.15em]">
-            {title}
-          </h3>
+        {/* Header Section */}
+        <div className="p-20 border-b border-navy/5 bg-gray-50/10">
+          <div className="flex items-center gap-10">
+            <Truck size={20} style={{ color: accentColor }} />
+            <h3 className="font-black text-[#0f2a44] text-[14px] uppercase tracking-[0.15em]">
+              {title}
+            </h3>
+          </div>
         </div>
 
-        <div
-          className="grid grid-cols-2 grid-rows-2 border border-[#0f2a44] rounded-lg overflow-hidden bg-white/50 shadow-sm border-l-4"
-          style={{ borderColor: `${accentColor}40` }}
-        >
+        {/* Quadrants Section */}
+        <div className="grid grid-cols-2 grid-rows-2 flex-1">
           {/* Q1: DISP */}
-          <div className="flex flex-col items-center justify-center p-10 border-b border-r border-[#0f2a44]">
-            <div className="flex items-center gap-2 opacity-50 mb-2">
-              <ShieldCheck size={16} className="text-emerald-500" />
+          <div className="flex flex-col items-center justify-center p-24 border-b border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
+              <ShieldCheck size={14} className="text-emerald-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">DISP</span>
             </div>
             <div className="flex items-baseline gap-1">
@@ -159,9 +164,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q2: MTBF */}
-          <div className="flex flex-col items-center justify-center p-10 border-b border-[#0f2a44]">
-            <div className="flex items-center gap-2 opacity-50 mb-2">
-              <Zap size={16} className="text-yellow-500" />
+          <div className="flex flex-col items-center justify-center p-24 border-b border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
+              <Zap size={14} className="text-yellow-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">MTBF</span>
             </div>
             <span className="font-black text-[#0f2a44] text-3xl">
@@ -170,9 +175,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q3: MTTR */}
-          <div className="flex flex-col items-center justify-center p-10 border-r border-[#0f2a44]">
-            <div className="flex items-center gap-2 opacity-50 mb-2">
-              <History size={16} className="text-violet-500" />
+          <div className="flex flex-col items-center justify-center p-24 border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
+              <History size={14} className="text-violet-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">MTTR</span>
             </div>
             <span className="font-black text-[#0f2a44] text-3xl">
@@ -181,9 +186,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q4: BCK */}
-          <div className="flex flex-col items-center justify-center p-10">
-            <div className="flex items-center gap-2 opacity-50 mb-2">
-              <Layers size={16} className="text-gray-400" />
+          <div className="flex flex-col items-center justify-center p-24 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
+              <Layers size={14} className="text-gray-400" />
               <span className="text-[10px] font-black uppercase tracking-tighter">BCK</span>
             </div>
             <span className="font-black text-[#0f2a44] text-3xl">
