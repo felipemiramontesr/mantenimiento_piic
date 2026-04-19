@@ -57,9 +57,12 @@ export interface FleetUnit {
   // Status
   status: FleetStatus;
   assigned_operator_id: number | null;
-  // Audit
-  created_at: string;
   updated_at: string;
+  // 🔱 Relational ID Fields (v.21.0.0)
+  asset_type_id: number;
+  fuel_type_id: number;
+  traccion_id: number;
+  transmision_id: number;
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenance_time_freq_id?: number | null;
   maintenance_usage_freq_id?: number | null;
@@ -80,7 +83,7 @@ export interface FleetUnit {
 }
 
 export interface CreateFleetUnit {
-  assetType: AssetType;
+  assetTypeId: number | null;
   id: string;
   placas?: string;
   numeroSerie?: string;
@@ -91,9 +94,9 @@ export interface CreateFleetUnit {
   departamento?: string;
   uso?: string;
   motor?: string;
-  traccion: Traccion;
-  transmision: Transmision;
-  fuelType: FuelType;
+  traccionId: number | null;
+  transmisionId: number | null;
+  fuelTypeId: number | null;
   tireSpec?: string;
   tireBrand?: string;
   tipoTerreno?: string;

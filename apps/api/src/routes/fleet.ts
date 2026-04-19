@@ -79,11 +79,10 @@ const updateFleetSchema = z.object({
   departamento: z.string().max(150).optional().nullable(),
   uso: z.string().max(100).optional().nullable(),
   motor: z.string().max(150).optional(),
-  traccion: z.enum(['4x2', '4x4', 'Doble Tracción', 'AWD', 'Oruga', 'No Aplica']).optional(),
-  transmision: z
-    .enum(['Automática', 'Estándar (Manual)', 'CVT', 'Hidrostática', 'No Aplica'])
-    .optional(),
-  fuelType: z.enum(['Gasolina', 'Diesel', 'Eléctrico', 'Híbrido', 'No Aplica']).optional(),
+  traccionId: z.number().int().optional(),
+  transmisionId: z.number().int().optional(),
+  fuelTypeId: z.number().int().optional(),
+  assetTypeId: z.number().int().optional(),
   tireSpec: z.string().max(50).optional(),
   tireBrand: z.string().max(100).optional(),
   tipoTerreno: z.string().max(100).optional().nullable(),
@@ -163,6 +162,11 @@ interface FleetUnit extends RowDataPacket {
   mtbf_hours: number;
   mttr_hours: number;
   backlog_count: number;
+  // 🔱 Relational ID Fields (v.21.0.0)
+  asset_type_id: number;
+  fuel_type_id: number;
+  traccion_id: number;
+  transmision_id: number;
 }
 
 // ============================================================================
@@ -187,10 +191,18 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const query = `
         SELECT 
           f.*,
+          c_at.label AS asset_type,
+          c_ft.label AS fuel_type,
+          c_tr.label AS traccion,
+          c_ts.label AS transmision,
           ct.numeric_value AS time_limit_days,
           cu.numeric_value AS usage_limit_units,
           cu.unit AS usage_unit_name
         FROM fleet_units f
+        LEFT JOIN common_catalogs c_at ON f.asset_type_id = c_at.id
+        LEFT JOIN common_catalogs c_ft ON f.fuel_type_id = c_ft.id
+        LEFT JOIN common_catalogs c_tr ON f.traccion_id = c_tr.id
+        LEFT JOIN common_catalogs c_ts ON f.transmision_id = c_ts.id
         LEFT JOIN common_catalogs ct ON f.maintenance_time_freq_id = ct.id
         LEFT JOIN common_catalogs cu ON f.maintenance_usage_freq_id = cu.id
         ORDER BY f.created_at DESC

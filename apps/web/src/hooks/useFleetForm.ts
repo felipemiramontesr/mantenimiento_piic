@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { CreateFleetUnit, AssetType, UseFleetFormReturn } from '../types/fleet';
+import { CreateFleetUnit, UseFleetFormReturn } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
 import api from '../api/client';
 
@@ -31,18 +31,14 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   const resetError = useCallback(() => setError(null), []);
 
-  // 📐 Dynamic Catalog State
+  const [assetTypes, setAssetTypes] = useState<CatalogOption[]>([]);
+  const [fuelTypes, setFuelTypes] = useState<CatalogOption[]>([]);
+  const [driveTypes, setDriveTypes] = useState<CatalogOption[]>([]);
+  const [transmissionTypes, setTransmissionTypes] = useState<CatalogOption[]>([]);
   const [marcas, setMarcas] = useState<CatalogOption[]>([]);
   const [modelos, setModelos] = useState<CatalogOption[]>([]);
   const [freqTime, setFreqTime] = useState<CatalogOption[]>([]);
   const [freqUsage, setFreqUsage] = useState<CatalogOption[]>([]);
-
-  // Asset Type Mapping to Database IDs (Based on 007 seed)
-  const assetTypeMap: Record<AssetType, number> = {
-    Vehiculo: 1,
-    Maquinaria: 2,
-    Herramienta: 3,
-  };
 
   const isMountedRef = React.useRef(true);
   useEffect(() => {
@@ -55,9 +51,9 @@ const useFleetForm = (): UseFleetFormReturn => {
   // 🔄 Fetch Brands on Asset Type Change
   useEffect(() => {
     const fetchBrands = async (): Promise<void> => {
+      if (!formData.assetTypeId) return;
       try {
-        const parentId = assetTypeMap[formData.assetType];
-        const res = await api.get(`/catalogs/BRAND?parentId=${parentId}`);
+        const res = await api.get(`/catalogs/BRAND?parentId=${formData.assetTypeId}`);
         if (isMountedRef.current) {
           setMarcas(res.data);
         }
@@ -69,7 +65,7 @@ const useFleetForm = (): UseFleetFormReturn => {
       }
     };
     fetchBrands();
-  }, [formData.assetType]);
+  }, [formData.assetTypeId]);
 
   // 🔄 Fetch Models on Brand Change
   useEffect(() => {
@@ -98,35 +94,43 @@ const useFleetForm = (): UseFleetFormReturn => {
     fetchModels();
   }, [formData.marca, marcas]);
 
-  // 🔄 Fetch Frequencies only once
+  // 🔄 Fetch All Root Catalogs on Mount
   useEffect(() => {
-    const fetchFrequencies = async (): Promise<void> => {
+    const fetchRootCatalogs = async (): Promise<void> => {
       try {
-        const [timeRes, usageRes] = await Promise.all([
+        const [timeRes, usageRes, fuelRes, driveRes, transRes, assetRes] = await Promise.all([
           api.get('/catalogs/FREQ_TIME'),
           api.get('/catalogs/FREQ_USAGE'),
+          api.get('/catalogs/FUEL'),
+          api.get('/catalogs/DRIVE_TYPE'),
+          api.get('/catalogs/TRANSMISSION'),
+          api.get('/catalogs/ASSET_TYPE'),
         ]);
         if (isMountedRef.current) {
           setFreqTime(timeRes.data);
           setFreqUsage(usageRes.data);
+          setFuelTypes(fuelRes.data);
+          setDriveTypes(driveRes.data);
+          setTransmissionTypes(transRes.data);
+          setAssetTypes(assetRes.data);
         }
       } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
-          console.error('Failed to fetch frequencies', err);
+          console.error('Failed to fetch root catalogs', err);
         }
       }
     };
-    fetchFrequencies();
+    fetchRootCatalogs();
   }, []);
 
   const availableMarcas = useMemo(() => marcas.map((m) => m.label), [marcas]);
   const availableModelos = useMemo(() => modelos.map((m) => m.label), [modelos]);
 
-  const handleAssetTypeChange = useCallback((type: AssetType): void => {
+  const handleAssetTypeChange = useCallback((id: number): void => {
     setFormData((prev) => ({
       ...prev,
-      assetType: type,
+      assetTypeId: id,
       marca: '',
       modelo: '',
     }));
@@ -209,6 +213,10 @@ const useFleetForm = (): UseFleetFormReturn => {
     registrationSuccess,
     availableMarcas,
     availableModelos,
+    assetTypes,
+    fuelTypes,
+    driveTypes,
+    transmissionTypes,
     freqTime: freqTime.map((f) => f.label),
     freqUsage: freqUsage.map((f) => ({ id: f.id, label: f.label })),
     setFormData,

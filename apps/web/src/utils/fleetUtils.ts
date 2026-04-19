@@ -11,7 +11,7 @@ import { CreateFleetUnit } from '../types/fleet';
  * @returns {CreateFleetUnit} A fully hydrated fleet registration payload.
  */
 export const getInitialFleetForm = (): CreateFleetUnit => ({
-  assetType: 'Vehiculo',
+  assetTypeId: 1, // Vehiculo
   id: 'ASM-002',
   placas: 'ZH-3153-B',
   numeroSerie: '1D7HW48P87S256272',
@@ -22,9 +22,9 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   departamento: 'Medio Ambiente',
   uso: 'Terracería',
   motor: '2KD-FTV 2.5L Turbo Diesel',
-  traccion: '4x4',
-  transmision: 'Estándar (Manual)',
-  fuelType: 'Diesel',
+  traccionId: null,
+  transmisionId: null,
+  fuelTypeId: null,
   tireSpec: '255/70 R17',
   tireBrand: 'BFGoodrich',
   tipoTerreno: 'All-Terrain',
