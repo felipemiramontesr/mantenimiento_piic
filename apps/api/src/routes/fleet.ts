@@ -158,6 +158,11 @@ interface FleetUnit extends RowDataPacket {
   time_limit_days: number | null;
   usage_limit_units: number | null;
   usage_unit_name: string | null;
+  // 🔱 Archon Analytical Engine (v.20.0.0)
+  availability_index: number;
+  mtbf_hours: number;
+  mttr_hours: number;
+  backlog_count: number;
 }
 
 // ============================================================================
@@ -268,6 +273,11 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
             ? Math.floor((today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24))
             : null,
           units_since_service: currentReading - lastReading,
+          // 🔱 Analytical Engine Integration
+          availability_index: unit.availability_index,
+          mtbf_hours: unit.mtbf_hours,
+          mttr_hours: unit.mttr_hours,
+          backlog_count: unit.backlog_count,
         };
       });
 

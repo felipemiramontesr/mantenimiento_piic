@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
+import FleetKpiMatrix from './FleetKpiMatrix';
 
 interface FleetGridViewProps {
   onRegister: () => void;
@@ -270,29 +271,15 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                       </div>
                     </td>
 
-                    {/* PREDICTIVE HEALTH */}
+                    {/* 📊 ANALYTICAL HEALTH (KPI Matrix) */}
                     <td>
-                      <div className="flex flex-col gap-2 w-[180px] mx-auto">
-                        <div className="flex items-center justify-between">
-                          <span
-                            className="text-[9px] font-black uppercase tracking-widest"
-                            style={{ color: unit.health_color || '#10b981' }}
-                          >
-                            {unit.health_status || 'HEALTHY'}
-                          </span>
-                          <span className="text-[10px] font-bold text-[#0f2a44] opacity-40">
-                            {unit.health_score ?? 100}%
-                          </span>
-                        </div>
-                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full transition-all duration-1000 ease-out"
-                            style={{
-                              width: `${unit.health_score ?? 100}%`,
-                              backgroundColor: unit.health_color || '#10b981',
-                            }}
-                          />
-                        </div>
+                      <div className="flex justify-center">
+                        <FleetKpiMatrix
+                          availability={unit.availability_index ?? 100}
+                          mtbf={unit.mtbf_hours ?? 0}
+                          mttr={unit.mttr_hours ?? 0}
+                          backlog={unit.backlog_count ?? 0}
+                        />
                       </div>
                     </td>
 

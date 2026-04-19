@@ -72,6 +72,11 @@ export interface FleetUnit {
   health_color?: string;
   days_since_service?: number | null;
   units_since_service?: number;
+  // 🔱 Archon Analytical Engine (v.20.0.0)
+  availability_index?: number;
+  mtbf_hours?: number;
+  mttr_hours?: number;
+  backlog_count?: number;
 }
 
 export interface CreateFleetUnit {
