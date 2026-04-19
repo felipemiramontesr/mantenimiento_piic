@@ -35,12 +35,19 @@ export const calculateMaintForecast = (
   lastServiceKm: number | null | undefined,
   lastServiceDateStr: string | null | Date | undefined
 ): MaintenanceForecast | null => {
+  // 🔱 Strict Type Casting (Database Parity)
+  const castIntervalDays = Number(intervalDays);
+  const castIntervalKm = Number(intervalKm);
+  const castAvgDailyKm = Number(avgDailyKm);
+  const castCurrentKm = Number(currentKm);
+  const castLastServiceKm = Number(lastServiceKm);
+
   // 🔱 Fallback Constants (Standard Parity)
-  const defaultIntervalDays = intervalDays || 180;
-  const defaultIntervalKm = intervalKm || 10000;
-  const defaultAvgDailyKm = avgDailyKm || 30;
-  const safeCurrentKm = currentKm || 0;
-  const safeLastServiceKm = lastServiceKm || 0;
+  const defaultIntervalDays = castIntervalDays || 180;
+  const defaultIntervalKm = castIntervalKm || 10000;
+  const defaultAvgDailyKm = castAvgDailyKm || 30;
+  const safeCurrentKm = castCurrentKm || 0;
+  const safeLastServiceKm = castLastServiceKm || 0;
 
   // 🔱 Fallback Date Logic
   // If no date is provided, we assume the unit is due based on today - standard interval
@@ -76,6 +83,10 @@ export const calculateMaintForecast = (
     overdueIntensity = Math.min(1, daysOverdue / 45 + kmOverdue / 2000);
   }
 
+  // 🔱 Zero-NaN Guarantee
+  const finalKmParaServicio = Number.isNaN(kmParaServicio) ? 0 : kmParaServicio;
+  const finalNextServiceKm = Number.isNaN(nextServiceKm) ? 0 : nextServiceKm;
+
   return {
     intervalDays: defaultIntervalDays,
     intervalKm: defaultIntervalKm,
@@ -83,9 +94,9 @@ export const calculateMaintForecast = (
     currentKm: safeCurrentKm,
     lastServiceKm: safeLastServiceKm,
     lastServiceDate: lastDate,
-    nextServiceKm,
+    nextServiceKm: finalNextServiceKm,
     serviceByKmDate,
-    kmParaServicio,
+    kmParaServicio: finalKmParaServicio,
     serviceByTimeDate,
     forecastDate,
     isOverdue,
