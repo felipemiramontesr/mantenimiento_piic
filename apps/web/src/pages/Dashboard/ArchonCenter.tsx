@@ -130,57 +130,60 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     const data = stats.categories[categoryKey];
     return (
       <div className="flex flex-col gap-12 w-full">
-        <div className="flex items-center gap-10 border-b border-navy/5 pb-8">
-          <Truck size={16} style={{ color: accentColor }} />
-          <h3 className="font-black text-[#0f2a44] text-[12px] uppercase tracking-[0.1em]">
+        <div className="flex items-center gap-10 border-b border-navy/5 pb-10">
+          <Truck size={20} style={{ color: accentColor }} />
+          <h3 className="font-black text-[#0f2a44] text-[14px] uppercase tracking-[0.15em]">
             {title}
           </h3>
         </div>
 
-        <div className="grid grid-cols-2 grid-rows-2 border border-gray-100 rounded-lg overflow-hidden bg-gray-50/30">
+        <div
+          className="grid grid-cols-2 grid-rows-2 border border-[#0f2a44]/20 rounded-lg overflow-hidden bg-white/50 shadow-sm border-l-4"
+          style={{ borderColor: `${accentColor}40` }}
+        >
           {/* Q1: DISP */}
-          <div className="flex flex-col items-center justify-center p-6 border-b border-r border-gray-100">
-            <div className="flex items-center gap-1.5 opacity-40 mb-1">
-              <ShieldCheck size={10} className="text-emerald-500" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">DISP</span>
+          <div className="flex flex-col items-center justify-center p-12 border-b border-r border-[#0f2a44]/20">
+            <div className="flex items-center gap-2 opacity-50 mb-2">
+              <ShieldCheck size={16} className="text-emerald-500" />
+              <span className="text-[10px] font-black uppercase tracking-tighter">DISP</span>
             </div>
-            <div className="flex items-baseline gap-0.5">
-              <span className="font-black text-[#0f2a44] text-sm">
+            <div className="flex items-baseline gap-1">
+              <span className="font-black text-[#0f2a44] text-3xl">
                 {loading ? '--' : data.availability}
               </span>
-              <span className="text-[8px] font-bold opacity-30">%</span>
+              <span className="text-[12px] font-bold opacity-30 text-[#0f2a44]">%</span>
             </div>
           </div>
 
           {/* Q2: MTBF */}
-          <div className="flex flex-col items-center justify-center p-6 border-b border-gray-100">
-            <div className="flex items-center gap-1.5 opacity-40 mb-1">
-              <Zap size={10} className="text-yellow-500" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">MTBF</span>
+          <div className="flex flex-col items-center justify-center p-12 border-b border-[#0f2a44]/20">
+            <div className="flex items-center gap-2 opacity-50 mb-2">
+              <Zap size={16} className="text-yellow-500" />
+              <span className="text-[10px] font-black uppercase tracking-tighter">MTBF</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-sm">
+            <span className="font-black text-[#0f2a44] text-3xl">
               {loading ? '--' : formatTimeMetric(data.mtbf)}
             </span>
           </div>
 
           {/* Q3: MTTR */}
-          <div className="flex flex-col items-center justify-center p-6 border-r border-gray-100">
-            <div className="flex items-center gap-1.5 opacity-40 mb-1">
-              <History size={10} className="text-violet-500" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">MTTR</span>
+          <div className="flex flex-col items-center justify-center p-12 border-r border-[#0f2a44]/20">
+            <div className="flex items-center gap-2 opacity-50 mb-2">
+              <History size={16} className="text-violet-500" />
+              <span className="text-[10px] font-black uppercase tracking-tighter">MTTR</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-sm">
+            <span className="font-black text-[#0f2a44] text-3xl">
               {loading ? '--' : formatTimeMetric(data.mttr)}
             </span>
           </div>
 
           {/* Q4: BCK */}
-          <div className="flex flex-col items-center justify-center p-6">
-            <div className="flex items-center gap-1.5 opacity-40 mb-1">
-              <Layers size={10} className="text-gray-400" />
-              <span className="text-[8px] font-black uppercase tracking-tighter">BCK</span>
+          <div className="flex flex-col items-center justify-center p-12">
+            <div className="flex items-center gap-2 opacity-50 mb-2">
+              <Layers size={16} className="text-gray-400" />
+              <span className="text-[10px] font-black uppercase tracking-tighter">BCK</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-sm">
+            <span className="font-black text-[#0f2a44] text-3xl">
               {loading ? '--' : data.backlog}
             </span>
           </div>
