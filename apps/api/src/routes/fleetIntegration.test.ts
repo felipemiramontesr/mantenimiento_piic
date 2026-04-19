@@ -156,7 +156,7 @@ describe('Fleet Integration Endpoints', () => {
       expect(JSON.parse(response.body).error).toContain('ya existe');
     });
 
-    it('should handle unknown db errors', async (): Promise<void> => {
+    it('should handle unknown db errors (null rejection)', async (): Promise<void> => {
       (db.execute as Mock).mockRejectedValueOnce(null);
       const response = await app.inject({
         method: 'POST',
@@ -165,7 +165,31 @@ describe('Fleet Integration Endpoints', () => {
         payload: validUnit,
       });
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Database Error');
+      expect(JSON.parse(response.body).error).toContain('Database Error: Unknown DB Exception');
+    });
+
+    it('should handle string-based db errors', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce('CRITICAL_STR_FAIL');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: validUnit,
+      });
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toContain('Database Error: CRITICAL_STR_FAIL');
+    });
+
+    it('should handle object-based db errors (sqlMessage)', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce({ sqlMessage: 'SQL_SYNTAX_ERR' });
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: validUnit,
+      });
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toContain('Database Error: SQL_SYNTAX_ERR');
     });
 
     it('should return 400 for invalid data format in POST', async (): Promise<void> => {
