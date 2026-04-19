@@ -120,67 +120,67 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   };
 
   /**
-   * 📊 CATEGORY ANALYTICAL PANEL
+   * 📊 CATEGORY ANALYTICAL COLUMN (2x2 Quadrant Design)
    */
-  const renderCategoryAnalyticalPanel = (
+  const renderCategoryAnalyticalColumn = (
     title: string,
     categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta',
     accentColor: string
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
     return (
-      <div className="glass-card-pro p-24" style={{ height: 'auto' }}>
-        <div className="flex items-center gap-12 mb-20 border-b border-navy/5 pb-12">
-          <Truck size={18} style={{ color: accentColor }} />
-          <h3 className="font-black text-[#0f2a44] text-[14px] uppercase tracking-[0.1em]">
+      <div className="flex flex-col gap-12 w-full">
+        <div className="flex items-center gap-10 border-b border-navy/5 pb-8">
+          <Truck size={16} style={{ color: accentColor }} />
+          <h3 className="font-black text-[#0f2a44] text-[12px] uppercase tracking-[0.1em]">
             {title}
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 gap-16">
-          {/* DISP - Disponibilidad */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <ShieldCheck size={14} className="text-emerald-500" />
-              <span className="text-[11px] font-bold opacity-60 uppercase">DISP</span>
+        <div className="grid grid-cols-2 grid-rows-2 border border-gray-100 rounded-lg overflow-hidden bg-gray-50/30">
+          {/* Q1: DISP */}
+          <div className="flex flex-col items-center justify-center p-6 border-b border-r border-gray-100">
+            <div className="flex items-center gap-1.5 opacity-40 mb-1">
+              <ShieldCheck size={10} className="text-emerald-500" />
+              <span className="text-[8px] font-black uppercase tracking-tighter">DISP</span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-black text-[#0f2a44] text-lg">
+            <div className="flex items-baseline gap-0.5">
+              <span className="font-black text-[#0f2a44] text-sm">
                 {loading ? '--' : data.availability}
               </span>
-              <span className="text-[10px] font-bold opacity-30">%</span>
+              <span className="text-[8px] font-bold opacity-30">%</span>
             </div>
           </div>
 
-          {/* MTBF - Fiabilidad */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Zap size={14} className="text-yellow-500" />
-              <span className="text-[11px] font-bold opacity-60 uppercase">MTBF</span>
+          {/* Q2: MTBF */}
+          <div className="flex flex-col items-center justify-center p-6 border-b border-gray-100">
+            <div className="flex items-center gap-1.5 opacity-40 mb-1">
+              <Zap size={10} className="text-yellow-500" />
+              <span className="text-[8px] font-black uppercase tracking-tighter">MTBF</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-lg">
+            <span className="font-black text-[#0f2a44] text-sm">
               {loading ? '--' : formatTimeMetric(data.mtbf)}
             </span>
           </div>
 
-          {/* MTTR - Velocidad */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <History size={14} className="text-violet-500" />
-              <span className="text-[11px] font-bold opacity-60 uppercase">MTTR</span>
+          {/* Q3: MTTR */}
+          <div className="flex flex-col items-center justify-center p-6 border-r border-gray-100">
+            <div className="flex items-center gap-1.5 opacity-40 mb-1">
+              <History size={10} className="text-violet-500" />
+              <span className="text-[8px] font-black uppercase tracking-tighter">MTTR</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-lg">
+            <span className="font-black text-[#0f2a44] text-sm">
               {loading ? '--' : formatTimeMetric(data.mttr)}
             </span>
           </div>
 
-          {/* BCK - Pendientes */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Layers size={14} className="text-gray-400" />
-              <span className="text-[11px] font-bold opacity-60 uppercase">BCK</span>
+          {/* Q4: BCK */}
+          <div className="flex flex-col items-center justify-center p-6">
+            <div className="flex items-center gap-1.5 opacity-40 mb-1">
+              <Layers size={10} className="text-gray-400" />
+              <span className="text-[8px] font-black uppercase tracking-tighter">BCK</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-lg">
+            <span className="font-black text-[#0f2a44] text-sm">
               {loading ? '--' : data.backlog}
             </span>
           </div>
@@ -324,7 +324,24 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </header>
 
       {/* 📊 BODY MODULAR */}
-      <section className="archon-workspace-chassis">
+      <section className="archon-workspace-chassis space-y-24">
+        {/* 🛡️ INTEGRATED ANALYTICAL MASTER PANEL (Consolidated Categories) */}
+        <div className="glass-card-pro p-24 animate-in slide-in-from-top-12 duration-1000">
+          <div className="flex items-center gap-12 mb-20 border-b border-navy/5 pb-12">
+            <Activity size={20} style={{ color: '#0f2a44' }} />
+            <h2 className="text-[#0f2a44] font-black tracking-tighter text-xl uppercase">
+              Inteligencia Operativa por Categoría
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-3 gap-32">
+            {renderCategoryAnalyticalColumn('Vehículos', 'vehiculo', '#8b5cf6')}
+            {renderCategoryAnalyticalColumn('Maquinaria', 'maquinaria', '#f59e0b')}
+            {renderCategoryAnalyticalColumn('Herramientas', 'herramienta', '#10b981')}
+          </div>
+        </div>
+
+        {/* 🚀 GLOBAL STATUS INSTRUMENTS */}
         <div
           style={{
             display: 'grid',
@@ -381,29 +398,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Unidades inactivas o mermas',
             'red'
           )}
-        </div>
-      </section>
-
-      {/* 🛡️ ANALYTICAL TIER: Performance by Category */}
-      <section className="archon-workspace-chassis" style={{ marginTop: '20px' }}>
-        <div className="flex items-center gap-12 mb-20">
-          <Activity size={20} style={{ color: '#0f2a44' }} />
-          <h2 className="text-[#0f2a44] font-black tracking-tighter text-xl">
-            Rendimiento Técnico por Categoría
-          </h2>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '20px',
-            width: '100%',
-          }}
-        >
-          {renderCategoryAnalyticalPanel('Vehículos', 'vehiculo', '#8b5cf6')}
-          {renderCategoryAnalyticalPanel('Maquinaria', 'maquinaria', '#f59e0b')}
-          {renderCategoryAnalyticalPanel('Herramientas', 'herramienta', '#10b981')}
         </div>
       </section>
 
