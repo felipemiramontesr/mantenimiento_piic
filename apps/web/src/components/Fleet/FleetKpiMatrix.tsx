@@ -49,31 +49,31 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
 
   return (
     <div className="grid grid-cols-2 gap-1.5 w-[160px] p-2 bg-gray-50/50 rounded-lg border border-gray-100 group-hover:border-[#0f2a44]/20 transition-all duration-300">
-      {/* 🚀 AVA - Disponibilidad */}
+      {/* 🚀 DISP - Disponibilidad */}
       <div className="flex flex-col items-start gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <Activity size={10} />
-          <span className="text-[8px] font-black uppercase tracking-tighter">AVA</span>
+          <span className="text-[8px] font-black uppercase tracking-tighter">DISP</span>
         </div>
         <span className={`text-[10px] font-bold ${getAvaColor(availability)}`}>
           {availability.toFixed(1)}%
         </span>
       </div>
 
-      {/* 🛡️ REL - Fiabilidad (MTBF) */}
+      {/* 🛡️ MTBF - Fiabilidad */}
       <div className="flex flex-col items-start gap-0.5 p-1 border-l border-gray-100">
         <div className="flex items-center gap-1 opacity-40">
           <ShieldCheck size={10} />
-          <span className="text-[8px] font-black uppercase tracking-tighter">REL</span>
+          <span className="text-[8px] font-black uppercase tracking-tighter">MTBF</span>
         </div>
         <span className={`text-[10px] font-bold ${getRelColor(mtbf)}`}>{mtbf}h</span>
       </div>
 
-      {/* ⚡ SPD - Velocidad (MTTR) */}
+      {/* ⚡ MTTR - Velocidad de Respuesta */}
       <div className="flex flex-col items-start gap-0.5 p-1 border-t border-gray-100">
         <div className="flex items-center gap-1 opacity-40">
           <Zap size={10} />
-          <span className="text-[8px] font-black uppercase tracking-tighter">SPD</span>
+          <span className="text-[8px] font-black uppercase tracking-tighter">MTTR</span>
         </div>
         <span className={`text-[10px] font-bold ${getSpdColor(mttr)}`}>{mttr}h</span>
       </div>

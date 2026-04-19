@@ -12,6 +12,10 @@ import {
   User,
   Settings,
   LogOut,
+  Zap,
+  History,
+  Activity,
+  Layers,
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
@@ -101,6 +105,89 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </div>
     </div>
   );
+
+  /**
+   * 🕒 ANALYTICAL FORMATTER
+   * Converts hours to days if magnitude is sufficient for high-level insight.
+   */
+  const formatTimeMetric = (hours: number): string => {
+    if (hours === 0) return '0h';
+    if (hours >= 48) {
+      const days = Number((hours / 24).toFixed(1));
+      return `${days}d`;
+    }
+    return `${hours}h`;
+  };
+
+  /**
+   * 📊 CATEGORY ANALYTICAL PANEL
+   */
+  const renderCategoryAnalyticalPanel = (
+    title: string,
+    categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta',
+    accentColor: string
+  ): React.ReactElement => {
+    const data = stats.categories[categoryKey];
+    return (
+      <div className="glass-card-pro p-24" style={{ height: 'auto' }}>
+        <div className="flex items-center gap-12 mb-20 border-b border-navy/5 pb-12">
+          <Truck size={18} style={{ color: accentColor }} />
+          <h3 className="font-black text-[#0f2a44] text-[14px] uppercase tracking-[0.1em]">
+            {title}
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 gap-16">
+          {/* DISP - Disponibilidad */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <ShieldCheck size={14} className="text-emerald-500" />
+              <span className="text-[11px] font-bold opacity-60 uppercase">DISP</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-black text-[#0f2a44] text-lg">
+                {loading ? '--' : data.availability}
+              </span>
+              <span className="text-[10px] font-bold opacity-30">%</span>
+            </div>
+          </div>
+
+          {/* MTBF - Fiabilidad */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <Zap size={14} className="text-yellow-500" />
+              <span className="text-[11px] font-bold opacity-60 uppercase">MTBF</span>
+            </div>
+            <span className="font-black text-[#0f2a44] text-lg">
+              {loading ? '--' : formatTimeMetric(data.mtbf)}
+            </span>
+          </div>
+
+          {/* MTTR - Velocidad */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <History size={14} className="text-violet-500" />
+              <span className="text-[11px] font-bold opacity-60 uppercase">MTTR</span>
+            </div>
+            <span className="font-black text-[#0f2a44] text-lg">
+              {loading ? '--' : formatTimeMetric(data.mttr)}
+            </span>
+          </div>
+
+          {/* BCK - Pendientes */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <Layers size={14} className="text-gray-400" />
+              <span className="text-[11px] font-bold opacity-60 uppercase">BCK</span>
+            </div>
+            <span className="font-black text-[#0f2a44] text-lg">
+              {loading ? '--' : data.backlog}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -294,6 +381,29 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Unidades inactivas o mermas',
             'red'
           )}
+        </div>
+      </section>
+
+      {/* 🛡️ ANALYTICAL TIER: Performance by Category */}
+      <section className="archon-workspace-chassis" style={{ marginTop: '20px' }}>
+        <div className="flex items-center gap-12 mb-20">
+          <Activity size={20} style={{ color: '#0f2a44' }} />
+          <h2 className="text-[#0f2a44] font-black tracking-tighter text-xl">
+            Rendimiento Técnico por Categoría
+          </h2>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '20px',
+            width: '100%',
+          }}
+        >
+          {renderCategoryAnalyticalPanel('Vehículos', 'vehiculo', '#8b5cf6')}
+          {renderCategoryAnalyticalPanel('Maquinaria', 'maquinaria', '#f59e0b')}
+          {renderCategoryAnalyticalPanel('Herramientas', 'herramienta', '#10b981')}
         </div>
       </section>
 
