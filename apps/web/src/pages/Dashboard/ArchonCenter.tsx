@@ -130,68 +130,75 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     const data = stats.categories[categoryKey];
     return (
       <div
-        className="glass-card-pro flex flex-col overflow-hidden"
+        className="glass-card-pro flex flex-col p-20"
         style={{
           borderTop: '4px solid #0f2a44',
           border: '1px solid #0f2a44',
-          height: '100%',
+          height: '240px', // Standardized height for instrument parity
         }}
       >
-        {/* Header Section */}
-        <div className="p-20 border-b border-navy/5 bg-gray-50/10">
-          <div className="flex items-center gap-10">
-            <Truck size={20} style={{ color: accentColor }} />
-            <h3 className="font-black text-[#0f2a44] text-[14px] uppercase tracking-[0.15em]">
-              {title}
-            </h3>
-          </div>
+        {/* Header Section: Parity with renderKPI */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+            width: '100%',
+          }}
+        >
+          <Truck size={18} style={{ color: accentColor }} />
+          <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-[0.1em] text-[12px] font-black">
+            {title}
+          </span>
         </div>
 
-        {/* Quadrants Section */}
-        <div className="grid grid-cols-2 grid-rows-2 flex-1">
+        {/* Quadrants Section: Compact & High Density */}
+        <div className="grid grid-cols-2 grid-rows-2 flex-1 border border-[#0f2a44]/10 rounded-md overflow-hidden bg-gray-50/5">
           {/* Q1: DISP */}
-          <div className="flex flex-col items-center justify-center p-24 border-b border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
-              <ShieldCheck size={14} className="text-emerald-500" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">DISP</span>
+          <div className="flex flex-col items-center justify-center p-8 border-b border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
+              <ShieldCheck size={12} className="text-emerald-500" />
+              <span className="text-[9px] font-black uppercase tracking-tighter">DISP</span>
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-black text-[#0f2a44] text-3xl">
+            <div className="flex items-baseline gap-0.5">
+              <span className="font-black text-[#0f2a44] text-xl">
                 {loading ? '--' : data.availability}
               </span>
-              <span className="text-[12px] font-bold opacity-30 text-[#0f2a44]">%</span>
+              <span className="text-[10px] font-bold opacity-30 text-[#0f2a44]">%</span>
             </div>
           </div>
 
           {/* Q2: MTBF */}
-          <div className="flex flex-col items-center justify-center p-24 border-b border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
-              <Zap size={14} className="text-yellow-500" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">MTBF</span>
+          <div className="flex flex-col items-center justify-center p-8 border-b border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
+              <Zap size={12} className="text-yellow-500" />
+              <span className="text-[9px] font-black uppercase tracking-tighter">MTBF</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-3xl">
+            <span className="font-black text-[#0f2a44] text-xl">
               {loading ? '--' : formatTimeMetric(data.mtbf)}
             </span>
           </div>
 
           {/* Q3: MTTR */}
-          <div className="flex flex-col items-center justify-center p-24 border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
-              <History size={14} className="text-violet-500" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">MTTR</span>
+          <div className="flex flex-col items-center justify-center p-8 border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
+              <History size={12} className="text-violet-500" />
+              <span className="text-[9px] font-black uppercase tracking-tighter">MTTR</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-3xl">
+            <span className="font-black text-[#0f2a44] text-xl">
               {loading ? '--' : formatTimeMetric(data.mttr)}
             </span>
           </div>
 
           {/* Q4: BCK */}
-          <div className="flex flex-col items-center justify-center p-24 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-2 opacity-50 mb-2 text-[#0f2a44]">
-              <Layers size={14} className="text-gray-400" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">BCK</span>
+          <div className="flex flex-col items-center justify-center p-8 hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
+              <Layers size={12} className="text-gray-400" />
+              <span className="text-[9px] font-black uppercase tracking-tighter">BCK</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-3xl">
+            <span className="font-black text-[#0f2a44] text-xl">
               {loading ? '--' : data.backlog}
             </span>
           </div>
