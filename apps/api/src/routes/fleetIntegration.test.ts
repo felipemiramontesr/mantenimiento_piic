@@ -339,7 +339,6 @@ describe('Fleet Integration Endpoints', () => {
 
   describe('PATCH /v1/fleet/:id', () => {
     it('should update unit with all security branches', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[{ id: 'ASM-001' }]]); // Exists
       (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]); // Update
 
       const response = await app.inject({
@@ -367,7 +366,6 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should handle db error on PATCH', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[{ id: 'ASM-001' }]]); // Exists
       (db.execute as Mock).mockRejectedValueOnce(new Error('FAIL'));
       const response = await app.inject({
         method: 'PATCH',
@@ -379,7 +377,7 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should return 404 if not found', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[]]); // Not found check
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]); // Not found
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/NON-EXISTENT',
