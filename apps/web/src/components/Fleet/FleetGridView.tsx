@@ -33,7 +33,7 @@ interface FleetGridViewProps {
 }
 
 /** 🔱 Archon Helper: Resolve Full Location Names */
-const resolveSedeFull = (sede: string | undefined): string => {
+const resolveSedeFull = (sede: string | null | undefined): string => {
   const mapping: Record<string, string> = {
     MA: 'MEDIO AMBIENTE',
     LAB: 'LABORATORIO',
