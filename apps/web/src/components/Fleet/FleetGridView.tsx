@@ -74,10 +74,10 @@ const TechnicalStatusCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.
 );
 
 /** 🔱 Archon Atom: ForecastCluster */
-const ForecastCluster: React.FC<{ forecast: MaintenanceForecast | null; isOverdue: boolean }> = ({
-  forecast,
-  isOverdue,
-}): React.JSX.Element => (
+const ForecastCluster: React.FC<{
+  forecast: MaintenanceForecast | null;
+  isOverdue: boolean;
+}> = ({ forecast, isOverdue }): React.JSX.Element => (
   <div
     className={`flex flex-col items-center p-2 rounded border transition-all duration-500 ${
       isOverdue
@@ -109,6 +109,39 @@ const ForecastCluster: React.FC<{ forecast: MaintenanceForecast | null; isOverdu
   </div>
 );
 
+/** 🔱 Archon Atom: AdminTile */
+const AdminTile: React.FC = (): React.JSX.Element => (
+  <div
+    className="glass-card-pro archon-instrument-tile card-hover-navy"
+    style={{ borderTop: '4px solid #0f2a44' }}
+  >
+    <div className="flex items-center justify-center gap-3 mb-6 w-full">
+      <LayoutDashboard size={18} className="text-[#0f2a44]" />
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+        Gobierno de Inventario
+      </span>
+    </div>
+    <div className="archon-tile-payload space-y-8 pb-12">
+      <div className="w-20 h-20 bg-[#0f2a44]/5 rounded-full flex items-center justify-center border-2 border-[#0f2a44]/10 shadow-inner">
+        <LayoutDashboard size={32} className="text-[#0f2a44]" />
+      </div>
+      <div className="flex flex-col items-center space-y-2">
+        <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
+          Administración de Activos
+        </h3>
+        <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
+          Control Maestro de Flota & Registro
+        </p>
+      </div>
+    </div>
+    <div className="archon-tile-action">
+      <button className="btn-sentinel-navy w-full flex items-center justify-center gap-2">
+        Gestionar Activos <ArrowRight size={12} />
+      </button>
+    </div>
+  </div>
+);
+
 /** 🔱 Archon Atom: IncorporationTile */
 const IncorporationTile: React.FC<{ onRegister: () => void }> = ({
   onRegister,
@@ -120,7 +153,7 @@ const IncorporationTile: React.FC<{ onRegister: () => void }> = ({
     <div className="flex items-center justify-center gap-3 mb-6 w-full">
       <Plus size={18} className="text-emerald-500" />
       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-        Incorporación
+        Incorporación de Activos
       </span>
     </div>
     <div className="archon-tile-payload space-y-8 pb-12">
@@ -131,6 +164,9 @@ const IncorporationTile: React.FC<{ onRegister: () => void }> = ({
         <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
           Registrar Unidad
         </h3>
+        <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
+          Expansión de Flota e Inventario
+        </p>
       </div>
     </div>
     <div className="archon-tile-action">
@@ -138,7 +174,40 @@ const IncorporationTile: React.FC<{ onRegister: () => void }> = ({
         onClick={onRegister}
         className="btn-sentinel-emerald w-full flex items-center justify-center gap-2"
       >
-        Iniciar <ArrowRight size={12} />
+        Iniciar Registro <ArrowRight size={12} />
+      </button>
+    </div>
+  </div>
+);
+
+/** 🔱 Archon Atom: MaintenanceTile */
+const MaintenanceTile: React.FC = (): React.JSX.Element => (
+  <div
+    className="glass-card-pro archon-instrument-tile card-hover-sky"
+    style={{ borderTop: '4px solid #0ea5e9' }}
+  >
+    <div className="flex items-center justify-center gap-3 mb-6 w-full">
+      <Wrench size={18} />
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50">
+        Control Transaccional
+      </span>
+    </div>
+    <div className="archon-tile-payload space-y-8 pb-12">
+      <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center border-2 border-sky-100 shadow-inner">
+        <Wrench size={32} className="text-[#0ea5e9]" />
+      </div>
+      <div className="flex flex-col items-center space-y-2">
+        <h3 className="text-sm font-black text-[#0f2a44] uppercase tracking-widest">
+          Mantenimiento
+        </h3>
+        <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest text-center px-4">
+          Correctivos y Preventivos
+        </p>
+      </div>
+    </div>
+    <div className="archon-tile-action">
+      <button className="btn-sentinel-sky w-full flex items-center justify-center gap-2 text-xs font-black uppercase">
+        Gestión Técnica <ArrowRight size={12} />
       </button>
     </div>
   </div>
@@ -274,45 +343,9 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
         />
       )}
       <div className="archon-grid-3 gap-5">
-        <div
-          className="glass-card-pro archon-instrument-tile card-hover-navy"
-          style={{ borderTop: '4px solid #0f2a44' }}
-        >
-          <div className="flex items-center justify-center gap-3 mb-6 w-full">
-            <LayoutDashboard size={18} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50">
-              Control de Activos
-            </span>
-          </div>
-          <div className="archon-tile-payload space-y-8 pb-12">
-            <LayoutDashboard size={32} />
-          </div>
-          <div className="archon-tile-action">
-            <button className="btn-sentinel-navy w-full flex items-center justify-center gap-2 text-xs font-black uppercase">
-              Gestionar <ArrowRight size={12} />
-            </button>
-          </div>
-        </div>
+        <AdminTile />
         <IncorporationTile onRegister={onRegister} />
-        <div
-          className="glass-card-pro archon-instrument-tile card-hover-sky"
-          style={{ borderTop: '4px solid #0ea5e9' }}
-        >
-          <div className="flex items-center justify-center gap-3 mb-6 w-full">
-            <Wrench size={18} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50">
-              Transaccional
-            </span>
-          </div>
-          <div className="archon-tile-payload space-y-8 pb-12">
-            <Wrench size={32} />
-          </div>
-          <div className="archon-tile-action">
-            <button className="btn-sentinel-sky w-full flex items-center justify-center gap-2 text-xs font-black uppercase">
-              Mantenimiento <ArrowRight size={12} />
-            </button>
-          </div>
-        </div>
+        <MaintenanceTile />
       </div>
 
       <div
@@ -324,17 +357,17 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
             <div className="flex items-center gap-3 mb-2">
               <Activity size={20} />
               <h3 className="text-lg font-black uppercase tracking-widest text-[#0f2a44]">
-                Inventario Maestro
+                Inventario Maestro de Activos
               </h3>
             </div>
             <p className="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em]">
-              Sovereign Predictive Matrix (v.28.2.5)
+              Visualización Integrada & Inteligencia Predictiva (Zero-Scroll Mode)
             </p>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded border border-emerald-100">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black text-emerald-700 uppercase">
-              {units.length} EQUIPOS
+            <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tighter">
+              {units.length} UNIDADES ACTIVAS
             </span>
           </div>
         </div>
