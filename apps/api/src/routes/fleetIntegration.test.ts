@@ -204,6 +204,18 @@ describe('Fleet Integration Endpoints', () => {
       expect(JSON.parse(response.body).error).toContain('Database Error: STD_ERR_MSG');
     });
 
+    it('should handle object-based db errors (Empty object fallback)', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce({});
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: validUnit,
+      });
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toContain('Database Error: Unknown DB Exception');
+    });
+
     it('should return 400 for invalid data format in POST', async (): Promise<void> => {
       const response = await app.inject({
         method: 'POST',
