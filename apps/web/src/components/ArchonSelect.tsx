@@ -2,25 +2,44 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
-interface ArchonSelectProps<T extends string> {
-  options: readonly T[] | T[];
-  value: T;
-  onChange: (value: T) => void;
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface ArchonSelectProps {
+  options: readonly (string | SelectOption)[] | (string | SelectOption)[];
+  value: string;
+  onChange: (value: string) => void;
   placeholder?: string;
   icon?: React.ElementType;
   disabled?: boolean;
 }
 
-export default function ArchonSelect<T extends string>({
+/**
+ * 🔱 Archon UI Component: Polymorphic Select
+ * Evolution: v.21.2.0 - Supports both primitive strings and complex objects (Value/Label).
+ */
+export default function ArchonSelect({
   options,
   value,
   onChange,
   placeholder = 'Seleccionar...',
   icon: Icon,
   disabled = false,
-}: ArchonSelectProps<T>): React.ReactElement {
+}: ArchonSelectProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Helper: Extract label for current value
+  const currentLabel = (): string => {
+    if (!value) return placeholder;
+    const selected = options.find((opt) =>
+      typeof opt === 'string' ? opt === value : opt.value === value
+    );
+    if (!selected) return value || placeholder;
+    return typeof selected === 'string' ? selected : selected.label;
+  };
 
   // Close on outside click
   useEffect((): (() => void) => {
@@ -52,7 +71,7 @@ export default function ArchonSelect<T extends string>({
             <Icon size={16} className={isOpen ? 'text-[#f2b705]' : 'text-[#0f2a44] opacity-40'} />
           )}
           <span className={!value ? 'text-[#0f2a44] opacity-20 font-medium' : 'text-[#0f2a44]'}>
-            {value || placeholder}
+            {currentLabel()}
           </span>
         </div>
         <motion.div
@@ -66,7 +85,7 @@ export default function ArchonSelect<T extends string>({
         </motion.div>
       </div>
 
-      {/* Dropdown Menu - GUARANTEED DOWNWARD EXPANSION */}
+      {/* Dropdown Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -80,22 +99,27 @@ export default function ArchonSelect<T extends string>({
               overflowY: 'auto',
             }}
           >
-            {options.map((option) => (
-              <div
-                key={option}
-                onClick={(): void => {
-                  onChange(option);
-                  setIsOpen(false);
-                }}
-                className={`px-5 py-3.5 text-[13px] font-bold cursor-pointer transition-all duration-200 border-l-[3px] ${
-                  value === option
-                    ? 'border-[#f2b705] bg-[rgba(242,183,5,0.05)] text-[#f2b705]'
-                    : 'border-transparent text-[#0f2a44] hover:bg-[rgba(15,42,68,0.02)] hover:border-[rgba(15,42,68,0.2)]'
-                }`}
-              >
-                {option}
-              </div>
-            ))}
+            {options.map((option, idx) => {
+              const optValue = typeof option === 'string' ? option : option.value;
+              const optLabel = typeof option === 'string' ? option : option.label;
+
+              return (
+                <div
+                  key={`${optValue}-${idx}`}
+                  onClick={(): void => {
+                    onChange(optValue);
+                    setIsOpen(false);
+                  }}
+                  className={`px-5 py-3.5 text-[13px] font-bold cursor-pointer transition-all duration-200 border-l-[3px] ${
+                    value === optValue
+                      ? 'border-[#f2b705] bg-[rgba(242,183,5,0.05)] text-[#f2b705]'
+                      : 'border-transparent text-[#0f2a44] hover:bg-[rgba(15,42,68,0.02)] hover:border-[rgba(15,42,68,0.2)]'
+                  }`}
+                >
+                  {optLabel}
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
