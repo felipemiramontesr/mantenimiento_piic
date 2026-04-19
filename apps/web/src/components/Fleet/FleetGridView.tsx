@@ -51,61 +51,59 @@ const resolveAreaFull = (code: string | undefined): string => {
 const processTechnicalIdentity = (modelStr: string): { cleanModel: string; areaFull: string } => {
   const match = modelStr.match(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN|GER)$/i);
   const areaCode = match ? match[1] : '';
-  const { cleanModel } = {
-    cleanModel: modelStr.replace(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN|GER)$/i, '').trim(),
-  };
+  const cleanModel = modelStr.replace(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN|GER)$/i, '').trim();
   return { cleanModel: cleanModel.toUpperCase(), areaFull: resolveAreaFull(areaCode) };
 };
 
-/** 🔱 Archon Atom: IdentityCluster */
-const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => {
+/** 🔱 Archon Atom: AssetUnitCluster (Col 2) */
+const AssetUnitCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => {
   const { cleanModel, areaFull } = processTechnicalIdentity(unit.modelo);
 
   return (
-    <div className="flex flex-col items-center">
-      <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-4 tracking-tighter shadow-sm">
+    <div className="flex flex-col items-center gap-1.5">
+      <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm tracking-tighter shadow-sm">
         {unit.id}
       </span>
-
-      {/* 🔱 Triple Stack: Marca, Modelo, Área */}
-      <div className="flex flex-col items-center space-y-0.5 mb-4 leading-tight">
+      <div className="flex flex-col items-center -space-y-0.5">
         <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-tight">
           {unit.marca}
         </span>
         <span className="text-[10px] font-bold text-[#0f2a44] opacity-50 uppercase tracking-tight">
           {cleanModel}
         </span>
-        <span className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest mt-1">
-          ÁREA: {areaFull}
-        </span>
       </div>
-
-      {/* Primary Compliance Tags (Increased Size) */}
-      <div className="flex flex-col items-center space-y-1.5 mb-4">
-        <div className="flex items-center gap-2 opacity-80 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100 shadow-sm">
-          <Tag size={10} className="text-emerald-800" />
-          <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-800">
-            {unit.placas || 'SIN PLACAS'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 opacity-80 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100 shadow-sm">
-          <CreditCard size={10} />
-          <span className="text-[10px] font-black uppercase tracking-tighter text-center">
-            {unit.tarjeta_circulacion || 'SIN TARJETA'}
-          </span>
-        </div>
-      </div>
-
-      {/* 🔱 Sede Badge (Final Row - KM/D Style) */}
-      <div className="flex items-center gap-1.5 bg-sky-50 px-3 py-1 rounded border border-sky-100 shadow-sm">
-        <MapPin size={10} className="text-sky-600" />
-        <span className="text-[8.5px] font-black text-sky-800 uppercase tracking-tight">
-          {unit.sede || 'SEDE GENERAL'}
-        </span>
-      </div>
+      <span className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest opacity-80">
+        {areaFull}
+      </span>
     </div>
   );
 };
+
+/** 🔱 Archon Atom: AssetIdentityCluster (Col 3) */
+const AssetIdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
+  <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex items-center gap-1.5 opacity-80 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+        <Tag size={9} className="text-emerald-800" />
+        <span className="text-[9px] font-black uppercase tracking-tighter text-emerald-800">
+          {unit.placas || 'SIN PLACAS'}
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5 opacity-80 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+        <CreditCard size={9} />
+        <span className="text-[9px] font-black uppercase tracking-tighter">
+          {unit.tarjeta_circulacion || 'SIN TARJETA'}
+        </span>
+      </div>
+    </div>
+    <div className="flex items-center gap-1.5 bg-sky-50 px-2 py-0.5 rounded border border-sky-100 shadow-sm">
+      <MapPin size={9} className="text-sky-600" />
+      <span className="text-[8.5px] font-black text-sky-800 uppercase tracking-tight leading-none">
+        {unit.sede || 'SEDE GENERAL'}
+      </span>
+    </div>
+  </div>
+);
 
 /** 🔱 Archon Atom: StrategyCluster */
 const StrategyCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
@@ -130,9 +128,10 @@ const StrategyCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Ele
 /** 🔱 Archon Atom: TechnicalStatusCluster */
 const TechnicalStatusCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
   <div className="flex flex-col items-center space-y-2">
-    <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-      <Gauge size={12} className="text-[#0f2a44]" />
-      <span className="text-[12px] font-black text-[#0f2a44]">
+    {/* 🔱 Odometer updated to Sky/Blue format (v.28.4.11) */}
+    <div className="flex items-center gap-2 bg-sky-50 px-3 py-0.5 rounded border border-sky-200 shadow-sm">
+      <Gauge size={12} className="text-sky-600" />
+      <span className="text-[12px] font-black text-sky-800">
         {Number(unit.odometer || 0).toLocaleString()}
       </span>
     </div>
@@ -329,8 +328,12 @@ const FleetRegistryRow: React.FC<{
           )}
         </div>
       </td>
-      <td className="text-center px-4">
-        <IdentityCluster unit={unit} />
+      {/* 🔱 New Column Dist: Unidad (Col 2) & Identidad (Col 3) */}
+      <td className="text-center px-3">
+        <AssetUnitCluster unit={unit} />
+      </td>
+      <td className="text-center px-3">
+        <AssetIdentityCluster unit={unit} />
       </td>
       <td className="text-center px-4">
         <StrategyCluster unit={unit} />
@@ -416,9 +419,9 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
 
       <div
         className="glass-card-pro bg-white"
-        style={{ borderTop: '4px solid #0f2a44', padding: '40px' }}
+        style={{ borderTop: '4px solid #0f2a44', padding: '30px' }}
       >
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex flex-col">
             <div className="flex items-center gap-3 mb-2">
               <Activity size={20} />
@@ -443,6 +446,9 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
               <tr className="bg-[#0f2a44]/5 border-b border-[#0f2a44]/10">
                 <th className="text-center py-4 w-[120px] text-[10px] font-black uppercase opacity-40">
                   ACTIVO
+                </th>
+                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
+                  UNIDAD
                 </th>
                 <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
                   IDENTIDAD
@@ -471,7 +477,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
               {units.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="py-20 text-center opacity-40 text-xs font-black uppercase"
                   >
                     Sin Assets
