@@ -129,7 +129,10 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
     return (
-      <div className="flex flex-col gap-12 w-full">
+      <div
+        className="glass-card-pro p-24 flex flex-col gap-16"
+        style={{ borderTop: '4px solid #0f2a44', border: '1px solid #0f2a44' }}
+      >
         <div className="flex items-center gap-10 border-b border-navy/5 pb-10">
           <Truck size={20} style={{ color: accentColor }} />
           <h3 className="font-black text-[#0f2a44] text-[14px] uppercase tracking-[0.15em]">
@@ -142,7 +145,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           style={{ borderColor: `${accentColor}40` }}
         >
           {/* Q1: DISP */}
-          <div className="flex flex-col items-center justify-center p-12 border-b border-r border-[#0f2a44]">
+          <div className="flex flex-col items-center justify-center p-10 border-b border-r border-[#0f2a44]">
             <div className="flex items-center gap-2 opacity-50 mb-2">
               <ShieldCheck size={16} className="text-emerald-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">DISP</span>
@@ -156,7 +159,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q2: MTBF */}
-          <div className="flex flex-col items-center justify-center p-12 border-b border-[#0f2a44]">
+          <div className="flex flex-col items-center justify-center p-10 border-b border-[#0f2a44]">
             <div className="flex items-center gap-2 opacity-50 mb-2">
               <Zap size={16} className="text-yellow-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">MTBF</span>
@@ -167,7 +170,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q3: MTTR */}
-          <div className="flex flex-col items-center justify-center p-12 border-r border-[#0f2a44]">
+          <div className="flex flex-col items-center justify-center p-10 border-r border-[#0f2a44]">
             <div className="flex items-center gap-2 opacity-50 mb-2">
               <History size={16} className="text-violet-500" />
               <span className="text-[10px] font-black uppercase tracking-tighter">MTTR</span>
@@ -178,7 +181,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
 
           {/* Q4: BCK */}
-          <div className="flex flex-col items-center justify-center p-12">
+          <div className="flex flex-col items-center justify-center p-10">
             <div className="flex items-center gap-2 opacity-50 mb-2">
               <Layers size={16} className="text-gray-400" />
               <span className="text-[10px] font-black uppercase tracking-tighter">BCK</span>
@@ -328,19 +331,16 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis space-y-24">
-        {/* 🛡️ INTEGRATED ANALYTICAL MASTER PANEL (Consolidated Categories) */}
-        <div
-          className="glass-card-pro p-24 animate-in slide-in-from-top-12 duration-1000"
-          style={{ borderTop: '4px solid #0f2a44' }}
-        >
-          <div className="flex items-center gap-12 mb-20 border-b border-navy/5 pb-12">
+        {/* 🛡️ INDEPENDENT ANALYTICAL INSTRUMENTS (Consolidated Logic, Independent Display) */}
+        <div className="animate-in slide-in-from-top-12 duration-1000">
+          <div className="flex items-center gap-12 mb-20 px-8">
             <Activity size={20} style={{ color: '#0f2a44' }} />
             <h2 className="text-[#0f2a44] font-black tracking-tighter text-xl uppercase">
               Inteligencia Operativa
             </h2>
           </div>
 
-          <div className="grid grid-cols-3 gap-32">
+          <div className="grid grid-cols-3 gap-24">
             {renderCategoryAnalyticalColumn('Vehículos', 'vehiculo', '#8b5cf6')}
             {renderCategoryAnalyticalColumn('Maquinaria', 'maquinaria', '#f59e0b')}
             {renderCategoryAnalyticalColumn('Herramientas', 'herramienta', '#10b981')}
