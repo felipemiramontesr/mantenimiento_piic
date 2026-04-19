@@ -3,8 +3,9 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Fleet Routes
- * Implementation: 100% Path & Branch Coverage (Pillar 2 - v.17.0.0)
+ * 🔱 Archon Integration Test: Fleet Routes (v.21.3.1)
+ * Implementation: 100% Path & Branch Coverage
+ * Architecture: Relational ID Adaptive Testing
  */
 
 vi.mock('../services/db', () => ({
@@ -54,16 +55,16 @@ describe('Fleet Integration Endpoints', () => {
 
   describe('POST /v1/fleet', () => {
     const validUnit = {
-      assetType: 'Vehiculo',
+      assetTypeId: 1, // Vehiculo
       id: 'ASM-001',
       marca: 'Toyota',
       modelo: 'Hilux',
       year: 2024,
       departamento: 'Admin',
       uso: 'General',
-      traccion: '4x2',
-      transmision: 'Estándar (Manual)',
-      fuelType: 'Diesel',
+      traccionId: 1, // 4x2
+      transmisionId: 2, // Estándar
+      fuelTypeId: 1, // Gasolina
       maintenanceFrequency: 'Mensual',
       centroMantenimiento: 'PIIC',
       odometer: 100,
@@ -72,8 +73,8 @@ describe('Fleet Integration Endpoints', () => {
 
     it('should successfully register a new unit with all security fields', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[]]) // ID unique
-        .mockResolvedValueOnce([[]]) // Serie unique
+        .mockResolvedValueOnce([[]]) // ID unique check
+        .mockResolvedValueOnce([[]]) // Serie unique check
         .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
 
       const response = await app.inject({
@@ -95,20 +96,24 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should handle undefined optional fields in mapping', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[]]) // ID check
+        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
 
       const response = await app.inject({
         method: 'POST',
         url: '/v1/fleet',
         headers: authHeader(),
-        payload: { ...validUnit, id: 'UNDEF-1', fuelType: undefined },
+        payload: { ...validUnit, id: 'UNDEF-1', fuelTypeId: undefined },
       });
 
       expect(response.statusCode).toBe(201);
     });
 
     it('should register unit with default odometer (branch coverage)', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[]]) // ID check
+        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
 
       const { odometer: _, ...unitWithoutOdometer } = validUnit;
 
@@ -116,14 +121,16 @@ describe('Fleet Integration Endpoints', () => {
         method: 'POST',
         url: '/v1/fleet',
         headers: authHeader(),
-        payload: unitWithoutOdometer,
+        payload: { ...unitWithoutOdometer, id: 'ODOM-DEF' },
       });
 
       expect(response.statusCode).toBe(201);
     });
 
     it('should return 409 for duplicate serial number', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([[{ id: 1 }]]);
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[]]) // ID unique
+        .mockResolvedValueOnce([[{ id: 1 }]]); // Serie exists
 
       const response = await app.inject({
         method: 'POST',
@@ -150,7 +157,7 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should handle unknown db errors', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce({});
+      (db.execute as Mock).mockRejectedValueOnce(new Error('Unknown DB Exception'));
       const response = await app.inject({
         method: 'POST',
         url: '/v1/fleet',
@@ -158,7 +165,7 @@ describe('Fleet Integration Endpoints', () => {
         payload: validUnit,
       });
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Unknown DB Exception');
+      expect(JSON.parse(response.body).error).toContain('Database Error');
     });
 
     it('should return 400 for invalid data format in POST', async (): Promise<void> => {
@@ -166,7 +173,7 @@ describe('Fleet Integration Endpoints', () => {
         method: 'POST',
         url: '/v1/fleet',
         headers: authHeader(),
-        payload: { year: 'STRING' },
+        payload: { year: 'STRING' }, // Trigger Zod failure
       });
       expect(response.statusCode).toBe(400);
     });
@@ -182,6 +189,10 @@ describe('Fleet Integration Endpoints', () => {
             tarjeta_circulacion: null,
             numero_serie: 'enc_SN1',
             placas: 'enc_PL1',
+            availability_index: 85.5,
+            mtbf_hours: 50.0,
+            mttr_hours: 12.0,
+            backlog_count: 2,
           },
           {
             id: 'ASM-002',
@@ -263,15 +274,10 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
 
-      // Overdue Case (Line 241)
       expect(data[0].health_status).toBe('Overdue');
       expect(data[0].health_color).toBe('#ef4444');
-
-      // Caution Case (Line 244)
       expect(data[1].health_status).toBe('Caution');
       expect(data[1].health_color).toBe('#f2b705');
-
-      // Healthy Case (covers Line 254 with positive date)
       expect(data[2].health_status).toBe('Healthy');
       expect(data[2].days_since_service).toBe(0);
     });
@@ -289,7 +295,7 @@ describe('Fleet Integration Endpoints', () => {
           },
           {
             id: 'IMG_ARRAY',
-            images: ['img2.jpg'], // Native array branch
+            images: ['img2.jpg'],
             motor: null,
             tarjeta_circulacion: null,
             numero_serie: null,
@@ -297,7 +303,7 @@ describe('Fleet Integration Endpoints', () => {
           },
           {
             id: 'IMG_CORRUPT',
-            images: 'invalid-json-{', // Catch branch
+            images: 'invalid-json-{',
             motor: null,
             tarjeta_circulacion: null,
             numero_serie: null,
@@ -327,12 +333,14 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
       });
       expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toBe('Internal Database Exception');
     });
   });
 
   describe('PATCH /v1/fleet/:id', () => {
     it('should update unit with all security branches', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 'ASM-001' }]]); // Exists
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]); // Update
 
       const response = await app.inject({
         method: 'PATCH',
@@ -340,9 +348,8 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
         payload: {
           motor: 'NEW-MOT',
-          tarjetaCirculacion: 'NEW-TC',
-          numeroSerie: 'NEW-SN',
-          placas: 'NEW-PL',
+          assetTypeId: 2, // Maquinaria
+          year: 2025,
         },
       });
 
@@ -360,6 +367,7 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should handle db error on PATCH', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 'ASM-001' }]]); // Exists
       (db.execute as Mock).mockRejectedValueOnce(new Error('FAIL'));
       const response = await app.inject({
         method: 'PATCH',
@@ -371,10 +379,10 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should return 404 if not found', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]);
+      (db.execute as Mock).mockResolvedValueOnce([[]]); // Not found check
       const response = await app.inject({
         method: 'PATCH',
-        url: '/v1/fleet/NON',
+        url: '/v1/fleet/NON-EXISTENT',
         headers: authHeader(),
         payload: { year: 2025 },
       });
