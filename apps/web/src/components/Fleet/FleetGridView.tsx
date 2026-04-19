@@ -10,6 +10,11 @@ import {
   Info,
   LayoutDashboard,
   Image as ImageIcon,
+  Fuel,
+  Settings2,
+  Users,
+  HardDrive,
+  ShieldCheck,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -180,12 +185,12 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
           <table className="archon-registry-table w-full">
             <thead>
               <tr>
-                <th className="text-center w-[120px]">ACTIVO</th>
-                <th className="text-center">NÚMERO ECONÓMICO</th>
-                <th className="text-center">MARCA / MODELO</th>
+                <th className="text-center w-[100px]">ACTIVO</th>
                 <th className="text-center">IDENTIDAD</th>
-                <th className="text-center">ODÓMETRO / HORAS</th>
-                <th className="text-center">SALUD DEL ACTIVO</th>
+                <th className="text-center">LEGALES</th>
+                <th className="text-center">CONFIGURACIÓN</th>
+                <th className="text-center">OPERACIÓN</th>
+                <th className="text-center">SALUD (DISP/MTTR...)</th>
                 <th className="text-center">ACCIONES</th>
               </tr>
             </thead>
@@ -218,56 +223,99 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                       </div>
                     </td>
 
-                    {/* MASTER ID (ASM-xxx) */}
+                    {/* IDENTIDAD (ID, Marca, Modelo, Año) */}
                     <td>
                       <div className="flex flex-col items-center">
-                        <span className="text-[11px] font-black text-[#0f2a44] uppercase">
+                        <span className="text-[12px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter">
                           {unit.id}
                         </span>
-                      </div>
-                    </td>
-
-                    {/* MARCA / MODELO */}
-                    <td>
-                      <div className="flex flex-col items-center">
-                        <span className="text-[11px] font-black text-[#0f2a44] uppercase">
+                        <span className="text-[11px] font-black text-[#0f2a44] uppercase leading-tight">
                           {unit.marca}
                         </span>
-                        <span className="text-[10px] font-medium opacity-60">{unit.modelo}</span>
+                        <span className="text-[10px] font-bold opacity-60 uppercase leading-tight">
+                          {unit.modelo}
+                        </span>
+                        <div className="flex items-center gap-1 mt-1 opacity-40">
+                          <span className="text-[8px] font-bold uppercase tracking-tighter">
+                            MODELO {unit.year}
+                          </span>
+                        </div>
                       </div>
                     </td>
 
-                    {/* IDENTITY (PLATES/VIN) */}
+                    {/* LEGALES (Placas, Tarjeta Circulación, Serie) */}
                     <td>
-                      <div className="flex flex-col items-center space-y-1">
-                        <div className="flex items-center gap-1.5 grayscale transition-all">
+                      <div className="flex flex-col items-center space-y-1.5">
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100 w-full justify-center">
                           <Tag size={10} className="text-[#0f2a44] opacity-40" />
-                          <span className="text-[10px] font-bold text-[#0f2a44] opacity-70">
-                            {unit.placas || 'SIN PLACAS'}
+                          <span className="text-[10px] font-black text-[#0f2a44]">
+                            {unit.placas || 'S/P'}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 opacity-30 transition-all">
-                          <Info size={10} />
-                          <span className="text-[9px] font-medium tracking-tight truncate max-w-[120px]">
+                        <div className="flex items-center gap-1.5 opacity-60">
+                          <ShieldCheck size={10} className="text-[#0f2a44]" />
+                          <span className="text-[9px] font-bold tracking-tight">
+                            {unit.tarjeta_circulacion || 'S/TC'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 opacity-20">
+                          <Info size={9} />
+                          <span className="text-[8px] font-medium truncate max-w-[80px]">
                             {unit.numero_serie}
                           </span>
                         </div>
                       </div>
                     </td>
 
-                    {/* ODOMETER */}
+                    {/* CONFIGURACIÓN (Combo: Fuel, Drive, Trans) */}
                     <td>
-                      <div className="flex flex-col items-center justify-center gap-1">
-                        <div className="flex items-center gap-1.5">
-                          <Gauge size={12} className="text-[#0f2a44] opacity-30" />
-                          <span className="text-[11px] font-black text-[#0f2a44]">
-                            {unit.current_reading?.toLocaleString() ||
-                              unit.odometer.toLocaleString()}
-                          </span>
+                      <div className="flex flex-col items-center space-y-1.5">
+                        <div className="flex items-center gap-4">
+                          <div className="flex flex-col items-center">
+                            <Fuel size={10} className="text-[#0f2a44] opacity-30 mb-0.5" />
+                            <span className="text-[8px] font-black uppercase text-[#0f2a44]">
+                              {unit.fuel_type || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <Settings2 size={10} className="text-[#0f2a44] opacity-30 mb-0.5" />
+                            <span className="text-[8px] font-black uppercase text-[#0f2a44]">
+                              {unit.traccion || 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <HardDrive size={10} className="text-[#0f2a44] opacity-30 mb-0.5" />
+                            <span className="text-[8px] font-black uppercase text-[#0f2a44]">
+                              {unit.transmision?.substring(0, 3) || 'N/A'}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-[9px] font-bold opacity-30 uppercase tracking-tighter">
-                          Kms / Horas
-                        </span>
+                      </div>
+                    </td>
+
+                    {/* OPERACIÓN (Odómetro, Status, Depto, Uso) */}
+                    <td>
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Gauge size={11} className="text-[#0f2a44] opacity-30" />
+                          <span className="text-[11px] font-black text-[#0f2a44]">
+                            {unit.odometer.toLocaleString()}
+                          </span>
+                          <span className="text-[8px] font-bold opacity-30">KM</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <div className="flex items-center gap-1 opacity-50 mb-0.5">
+                            <Users size={9} />
+                            <span className="text-[8px] font-black uppercase tracking-tighter">
+                              {unit.departamento || 'OPERACIONES'}
+                            </span>
+                          </div>
+                          <div className="px-3 py-0.5 bg-[#f2b705]/10 border border-[#f2b705]/20 rounded-full">
+                            <span className="text-[8px] font-bold text-[#0f2a44] uppercase tracking-tighter">
+                              {unit.uso || 'USO GENERAL'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </td>
 
