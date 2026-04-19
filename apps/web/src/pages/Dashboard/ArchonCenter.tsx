@@ -329,11 +329,14 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis space-y-24">
         {/* 🛡️ INTEGRATED ANALYTICAL MASTER PANEL (Consolidated Categories) */}
-        <div className="glass-card-pro p-24 animate-in slide-in-from-top-12 duration-1000">
+        <div
+          className="glass-card-pro p-24 animate-in slide-in-from-top-12 duration-1000"
+          style={{ borderTop: '4px solid #0f2a44' }}
+        >
           <div className="flex items-center gap-12 mb-20 border-b border-navy/5 pb-12">
             <Activity size={20} style={{ color: '#0f2a44' }} />
             <h2 className="text-[#0f2a44] font-black tracking-tighter text-xl uppercase">
-              Inteligencia Operativa por Categoría
+              Inteligencia Operativa
             </h2>
           </div>
 
