@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { CreateFleetUnit, UseFleetFormReturn } from '../types/fleet';
+import { CreateFleetUnit, UseFleetFormReturn, CatalogOption } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
 import api from '../api/client';
 
@@ -8,12 +8,6 @@ import api from '../api/client';
  * Logic: Dynamic Hierarchical Catalog Integration.
  * Architecture: Silicon Valley Standard (SRP/DIP)
  */
-
-interface CatalogOption {
-  id: number;
-  label: string;
-  code: string;
-}
 
 interface AxiosErrorResponse {
   response?: {

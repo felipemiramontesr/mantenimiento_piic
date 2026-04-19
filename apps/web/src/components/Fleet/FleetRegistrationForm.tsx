@@ -27,7 +27,12 @@ import {
   SEDES,
   COLORES,
 } from '../../constants/fleetConstants';
-import { CentroMantenimiento, MaintenanceFrequency, UseFleetFormReturn } from '../../types/fleet';
+import {
+  CentroMantenimiento,
+  MaintenanceFrequency,
+  UseFleetFormReturn,
+  CatalogOption,
+} from '../../types/fleet';
 
 /**
  * 🔱 Archon Component: FleetRegistrationForm
@@ -53,6 +58,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
     resetError,
     setFormData,
     isSubmitting,
+    assetTypes,
+    fuelTypes,
+    driveTypes,
+    transmissionTypes,
     availableMarcas,
     availableModelos,
     handleAssetTypeChange,
@@ -90,7 +99,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           <div className="grid grid-cols-2 gap-8">
             <ArchonField label="Tipo de Activo" icon={Zap} required>
               <ArchonSelect
-                options={controller.assetTypes.map((t) => ({
+                options={assetTypes.map((t: CatalogOption) => ({
                   value: t.id.toString(),
                   label: t.label,
                 }))}
@@ -242,7 +251,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           <div className="grid grid-cols-2 gap-8">
             <ArchonField label="Tracción" icon={Activity}>
               <ArchonSelect
-                options={controller.driveTypes.map((t) => ({
+                options={driveTypes.map((t: CatalogOption) => ({
                   value: t.id.toString(),
                   label: t.label,
                 }))}
@@ -254,7 +263,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             </ArchonField>
             <ArchonField label="Transmisión" icon={Settings}>
               <ArchonSelect
-                options={controller.transmissionTypes.map((t) => ({
+                options={transmissionTypes.map((t: CatalogOption) => ({
                   value: t.id.toString(),
                   label: t.label,
                 }))}
@@ -269,7 +278,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           <div className="grid grid-cols-2 gap-8">
             <ArchonField label="Tipo de Combustible" icon={Zap}>
               <ArchonSelect
-                options={controller.fuelTypes.map((t) => ({
+                options={fuelTypes.map((t: CatalogOption) => ({
                   value: t.id.toString(),
                   label: t.label,
                 }))}

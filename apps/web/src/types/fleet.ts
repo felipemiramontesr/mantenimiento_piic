@@ -18,11 +18,14 @@ export type MaintenanceFrequency =
   | 'Anual';
 export type CentroMantenimiento = 'PIIC' | 'Archon Core';
 
+export interface CatalogOption {
+  id: number;
+  label: string;
+}
+
 export interface FleetUnit {
   id: string; // Master ID (e.g. ASM-002)
   uuid: string;
-  // Level 1: Root classifier
-  asset_type: AssetType;
   // Primary identifiers
   placas: string | null;
   numero_serie: string | null;
@@ -34,10 +37,6 @@ export interface FleetUnit {
   departamento: string | null;
   uso: string | null;
   motor: string | null;
-  // Mechanical configuration
-  traccion: Traccion;
-  transmision: Transmision;
-  fuel_type: FuelType;
   // Tires
   tire_spec: string | null;
   tire_brand: string | null;
@@ -63,6 +62,11 @@ export interface FleetUnit {
   fuel_type_id: number;
   traccion_id: number;
   transmision_id: number;
+  // Joined Labels (UI)
+  asset_type?: string;
+  fuel_type?: string;
+  traccion?: string;
+  transmision?: string;
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenance_time_freq_id?: number | null;
   maintenance_usage_freq_id?: number | null;
@@ -125,14 +129,19 @@ export interface UseFleetFormReturn {
   resetError: () => void;
   isSubmitting: boolean;
   registrationSuccess: boolean;
+  // Dynamic Catalogs (v.21.0.0)
+  assetTypes: CatalogOption[];
+  fuelTypes: CatalogOption[];
+  driveTypes: CatalogOption[];
+  transmissionTypes: CatalogOption[];
   availableMarcas: string[];
   availableModelos: string[];
   freqTime: string[];
-  freqUsage: { id: number; label: string }[];
-  setFormData: (data: CreateFleetUnit | ((prev: CreateFleetUnit) => CreateFleetUnit)) => void;
-  setError: (error: string | null) => void;
-  setRegistrationSuccess: (success: boolean) => void;
-  handleAssetTypeChange: (type: AssetType) => void;
+  freqUsage: CatalogOption[];
+  setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;
+  handleAssetTypeChange: (typeId: number) => void;
   handleMarcaChange: (marca: string) => void;
   handleSubmit: (e: React.FormEvent, onSuccess?: () => Promise<void>) => Promise<void>;
   resetForm: () => void;
