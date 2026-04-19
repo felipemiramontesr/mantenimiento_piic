@@ -16,7 +16,6 @@ import {
   TrendingUp,
   Tag,
   CreditCard,
-  MapPin,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -53,9 +52,14 @@ const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Ele
     <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-1 tracking-tighter shadow-sm">
       {unit.id}
     </span>
-    <div className="flex flex-col items-center leading-tight">
+    <div className="flex flex-col items-center leading-snug">
       <span className="text-[10px] font-black text-[#0f2a44] uppercase">{unit.marca}</span>
-      <span className="text-[9px] font-bold opacity-40 uppercase">{unit.modelo}</span>
+      <span className="text-[9px] font-bold text-[#0f2a44] opacity-60 uppercase">
+        {unit.modelo}
+      </span>
+      <span className="text-[8.5px] font-black uppercase tracking-widest text-[#f2b705] bg-[#0f2a44] px-1.5 py-0.5 rounded-sm mt-1 shadow-sm">
+        {resolveSedeFull(unit.sede)}
+      </span>
     </div>
     <div className="flex flex-col items-center space-y-1 mt-2">
       <div className="flex items-center gap-1.5 opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
@@ -68,12 +72,6 @@ const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Ele
         <CreditCard size={8} />
         <span className="text-[8px] font-black uppercase tracking-tighter">
           T: {unit.tarjeta_circulacion || 'PENDIENTE'}
-        </span>
-      </div>
-      <div className="flex items-center gap-1.5 opacity-50">
-        <MapPin size={8} />
-        <span className="text-[7.5px] font-black uppercase tracking-widest text-[#0f2a44]">
-          {resolveSedeFull(unit.sede)}
         </span>
       </div>
     </div>
