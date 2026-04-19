@@ -13,12 +13,15 @@ interface FleetKPIMatrixProps {
  * Implementation: High-Density Analytical Cluster (v.20.0.0)
  * Aesthetic: 4-Axis Sovereign Metrics
  */
-const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = ({
-  availability = 100,
-  mtbf = 0,
-  mttr = 0,
-  backlog = 0,
-}: FleetKPIMatrixProps): React.JSX.Element => {
+const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
+  props: FleetKPIMatrixProps
+): React.JSX.Element => {
+  // 🛡️ Reactive Normalization (v.21.0.1)
+  const availability = Number(props.availability ?? 100);
+  const mtbf = Number(props.mtbf ?? 0);
+  const mttr = Number(props.mttr ?? 0);
+  const backlog = Number(props.backlog ?? 0);
+
   // 🎨 COLOR ENGINE (Sovereign Thresholds)
   const getAvaColor = (val: number): string => {
     if (val >= 95) return 'text-emerald-500';

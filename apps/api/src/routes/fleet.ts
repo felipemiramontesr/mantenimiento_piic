@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyBaseLogger } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -169,6 +169,135 @@ interface FleetUnit extends RowDataPacket {
   transmision_id: number;
 }
 
+interface UnitHealth {
+  healthScore: number;
+  healthStatus: string;
+  healthColor: string;
+  lastServiceDate: Date | null;
+  currentReading: number;
+  lastReading: number;
+  today: Date;
+}
+
+/**
+ * 🛡️ SENTINEL INTELLIGENCE HELPER
+ * Purpose: Decrypt, Parse, and Compute Health Metrics for a single Fleet Unit.
+ * Logic: Extracted to satisfy Cognitive Complexity limits (v.21.0.1)
+ */
+/**
+ * 🛡️ SENTINEL INTELLIGENCE HELPER: Image Parser
+ */
+function parseUnitImages(
+  rawImages: string | null,
+  unitId: string,
+  logger: FastifyBaseLogger
+): string[] {
+  if (!rawImages) return [];
+  try {
+    return typeof rawImages === 'string'
+      ? JSON.parse(rawImages)
+      : (rawImages as unknown as string[]);
+  } catch (e) {
+    logger.warn(`Failed to parse images for unit ${unitId}: ${e}`);
+    return [];
+  }
+}
+
+/**
+ * 🛡️ SENTINEL INTELLIGENCE HELPER: Health Computer
+ */
+function computeUnitHealth(unit: FleetUnit): UnitHealth {
+  const today = new Date();
+  const lastServiceDate = unit.last_service_date ? new Date(unit.last_service_date) : null;
+  const lastReading = Number(unit.last_service_reading || 0);
+  const currentReading = Number(unit.current_reading || 0);
+
+  // Trigger A: Time Based
+  let timeProgress = 0;
+  if (lastServiceDate && unit.time_limit_days) {
+    const diffMs = today.getTime() - lastServiceDate.getTime();
+    const diffDays = diffMs / (1000 * 3600 * 24);
+    timeProgress = Math.max(0, diffDays / Number(unit.time_limit_days));
+  }
+
+  // Trigger B: Usage Based (KM/HRS)
+  let usageProgress = 0;
+  if (unit.usage_limit_units) {
+    const diffUnits = currentReading - lastReading;
+    usageProgress = Math.max(0, diffUnits / Number(unit.usage_limit_units));
+  }
+
+  const maxProgress = Math.max(timeProgress, usageProgress);
+  const healthScore = Math.round(Math.max(0, Math.min(100, (1 - maxProgress) * 100)));
+
+  let healthStatus = 'Healthy';
+  let healthColor = '#10b981';
+
+  if (maxProgress >= 1.0) {
+    healthStatus = 'Overdue';
+    healthColor = '#ef4444';
+  } else if (maxProgress >= 0.7) {
+    healthStatus = 'Caution';
+    healthColor = '#f2b705';
+  }
+
+  return {
+    healthScore,
+    healthStatus,
+    healthColor,
+    lastServiceDate,
+    currentReading,
+    lastReading,
+    today,
+  };
+}
+
+/**
+ * 🛡️ SENTINEL INTELLIGENCE HELPER: Main Processor
+ */
+function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<string, unknown> {
+  const decrypted = {
+    ...unit,
+    placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
+    numero_serie: unit.numero_serie
+      ? EncryptionService.decrypt(unit.numero_serie)
+      : unit.numero_serie,
+    motor: unit.motor ? EncryptionService.decrypt(unit.motor) : unit.motor,
+    tarjeta_circulacion: unit.tarjeta_circulacion
+      ? EncryptionService.decrypt(unit.tarjeta_circulacion)
+      : unit.tarjeta_circulacion,
+    // 🔱 Numeric Normalization (v.21.0.2)
+    availability_index: Number(unit.availability_index || 0),
+    mtbf_hours: Number(unit.mtbf_hours || 0),
+    mttr_hours: Number(unit.mttr_hours || 0),
+    backlog_count: Number(unit.backlog_count || 0),
+    time_limit_days: unit.time_limit_days ? Number(unit.time_limit_days) : null,
+    usage_limit_units: unit.usage_limit_units ? Number(unit.usage_limit_units) : null,
+  };
+
+  const {
+    healthScore,
+    healthStatus,
+    healthColor,
+    lastServiceDate,
+    currentReading,
+    lastReading,
+    today,
+  } = computeUnitHealth(unit);
+
+  return {
+    ...decrypted,
+    images: parseUnitImages(unit.images, unit.id, logger),
+    health_score: healthScore,
+    health_status: healthStatus,
+    health_color: healthColor,
+    days_since_service: lastServiceDate
+      ? Math.floor((today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24))
+      : null,
+    units_since_service: currentReading - lastReading,
+  };
+}
+
 // ============================================================================
 // ROUTES (v.7.2.3)
 // ============================================================================
@@ -211,87 +340,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const [rows] = await db.execute<FleetUnit[]>(query);
 
       // 🛡️ SENTINEL INTELLIGENCE LAYER: Decryption + Predictive Computation
-      const processedRows = rows.map((unit) => {
-        const decrypted = {
-          ...unit,
-          placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
-          numero_serie: unit.numero_serie
-            ? EncryptionService.decrypt(unit.numero_serie)
-            : unit.numero_serie,
-          motor: unit.motor ? EncryptionService.decrypt(unit.motor) : unit.motor,
-          tarjeta_circulacion: unit.tarjeta_circulacion
-            ? EncryptionService.decrypt(unit.tarjeta_circulacion)
-            : unit.tarjeta_circulacion,
-        };
-
-        // 2. Parse Images (JSON Persistence Layer)
-        let parsedImages: string[] = [];
-        try {
-          if (unit.images) {
-            parsedImages =
-              typeof unit.images === 'string'
-                ? JSON.parse(unit.images)
-                : (unit.images as unknown as string[]);
-          }
-        } catch (e) {
-          fastify.log.warn(`Failed to parse images for unit ${unit.id}: ${e}`);
-          parsedImages = [];
-        }
-
-        // 2. Predictive Maintenance Logic (v.18.6.0)
-        const today = new Date();
-        const lastServiceDate = unit.last_service_date ? new Date(unit.last_service_date) : null;
-        const lastReading = unit.last_service_reading || 0;
-        const currentReading = unit.current_reading || 0;
-
-        // Trigger A: Time Based
-        let timeProgress = 0;
-        if (lastServiceDate && unit.time_limit_days) {
-          const diffMs = today.getTime() - lastServiceDate.getTime();
-          const diffDays = diffMs / (1000 * 3600 * 24);
-          timeProgress = Math.max(0, diffDays / unit.time_limit_days);
-        }
-
-        // Trigger B: Usage Based (KM/HRS)
-        let usageProgress = 0;
-        if (unit.usage_limit_units) {
-          const diffUnits = currentReading - lastReading;
-          usageProgress = Math.max(0, diffUnits / unit.usage_limit_units);
-        }
-
-        // Aggregate Health Score (The most critical trigger wins)
-        const maxProgress = Math.max(timeProgress, usageProgress);
-        const healthScore = Math.max(0, Math.min(100, (1 - maxProgress) * 100));
-
-        // State Classification
-        let healthStatus = 'Healthy';
-        let healthColor = '#10b981'; // Green
-
-        if (maxProgress >= 1.0) {
-          healthStatus = 'Overdue';
-          healthColor = '#ef4444'; // Red
-        } else if (maxProgress >= 0.7) {
-          healthStatus = 'Caution';
-          healthColor = '#f2b705'; // Yellow
-        }
-
-        return {
-          ...decrypted,
-          images: parsedImages,
-          health_score: Math.round(healthScore),
-          health_status: healthStatus,
-          health_color: healthColor,
-          days_since_service: lastServiceDate
-            ? Math.floor((today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24))
-            : null,
-          units_since_service: currentReading - lastReading,
-          // 🔱 Analytical Engine Integration
-          availability_index: unit.availability_index,
-          mtbf_hours: unit.mtbf_hours,
-          mttr_hours: unit.mttr_hours,
-          backlog_count: unit.backlog_count,
-        };
-      });
+      const processedRows = rows.map((unit) => processFleetUnit(unit, fastify.log));
 
       return reply.send({ success: true, count: processedRows.length, data: processedRows });
     } catch (error) {
