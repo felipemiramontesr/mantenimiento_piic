@@ -157,7 +157,7 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should handle unknown db errors', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(new Error('Unknown DB Exception'));
+      (db.execute as Mock).mockRejectedValueOnce(null);
       const response = await app.inject({
         method: 'POST',
         url: '/v1/fleet',
@@ -347,6 +347,8 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
         payload: {
           motor: 'NEW-MOT',
+          numeroSerie: 'NEW-SN',
+          placas: 'NEW-PL',
           assetTypeId: 2, // Maquinaria
           year: 2025,
         },
