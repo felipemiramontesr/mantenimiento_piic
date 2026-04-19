@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Tag,
   CreditCard,
+  MapPin,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -31,15 +32,8 @@ interface FleetGridViewProps {
   units: FleetUnit[];
 }
 
-/** 🔱 Archon Helper: Clean Technical Suffixes from Model */
-const cleanModelName = (modelStr: string): string =>
-  (modelStr || '')
-    .replace(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN)$/i, '')
-    .trim()
-    .toUpperCase();
-
-/** 🔱 Archon Helper: Resolve Full Location Names */
-const resolveSedeFull = (sede: string | null | undefined): string => {
+/** 🔱 Archon Helper: Resolve Area Names */
+const resolveAreaFull = (code: string | undefined): string => {
   const mapping: Record<string, string> = {
     MA: 'MEDIO AMBIENTE',
     LAB: 'LABORATORIO',
@@ -49,45 +43,66 @@ const resolveSedeFull = (sede: string | null | undefined): string => {
     OPS: 'OPERACIONES',
     MAN: 'MANTENIMIENTO',
   };
-  const upper = (sede || '').toUpperCase();
-  return mapping[upper] || upper || 'ÁREA GENERAL';
+  return mapping[(code || '').toUpperCase()] || 'GENERAL';
+};
+
+/** 🔱 Archon Helper: Extract Area and Clean Model */
+const processTechnicalIdentity = (modelStr: string): { cleanModel: string; areaFull: string } => {
+  const match = modelStr.match(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN)$/i);
+  const areaCode = match ? match[1] : '';
+  const cleanModel = modelStr.replace(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN)$/i, '').trim();
+  return { cleanModel: cleanModel.toUpperCase(), areaFull: resolveAreaFull(areaCode) };
 };
 
 /** 🔱 Archon Atom: IdentityCluster */
-const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
-  <div className="flex flex-col items-center">
-    <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-4 tracking-tighter shadow-sm">
-      {unit.id}
-    </span>
-    {/* 🔱 Triple Stack: Marca, Modelo, Sede (Clean Logic) */}
-    <div className="flex flex-col items-center space-y-0.5 mb-4">
-      <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-tight">
-        {unit.marca}
+const IdentityCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => {
+  const { cleanModel, areaFull } = processTechnicalIdentity(unit.modelo);
+
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm mb-4 tracking-tighter shadow-sm">
+        {unit.id}
       </span>
-      <span className="text-[10px] font-bold text-[#0f2a44] opacity-60 uppercase tracking-tight">
-        {cleanModelName(unit.modelo)}
-      </span>
-      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">
-        {resolveSedeFull(unit.sede)}
-      </span>
-    </div>
-    {/* Secondary Tags */}
-    <div className="flex flex-col items-center space-y-1">
-      <div className="flex items-center gap-1.5 opacity-40 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-        <Tag size={8} />
-        <span className="text-[8px] font-black uppercase tracking-tighter">
-          {unit.placas || 'SIN PLACAS'}
+
+      {/* 🔱 3-Line Vertical Stack: Marca, Modelo, Área */}
+      <div className="flex flex-col items-center space-y-0.5 mb-2">
+        <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-tight">
+          {unit.marca}
+        </span>
+        <span className="text-[10px] font-bold text-[#0f2a44] opacity-50 uppercase tracking-tight">
+          {cleanModel}
+        </span>
+        <span className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest mt-1">
+          ÁREA {areaFull}
         </span>
       </div>
-      <div className="flex items-center gap-1.5 opacity-60 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-        <CreditCard size={8} />
-        <span className="text-[8px] font-black uppercase tracking-tighter text-center">
-          {unit.tarjeta_circulacion || 'SIN TARJETA'}
+
+      {/* 🔱 Sede Badge (KM/D Style Parity) */}
+      <div className="flex items-center gap-1.5 bg-sky-50 px-2.5 py-1 rounded border border-sky-100 mb-4 shadow-sm">
+        <MapPin size={10} className="text-sky-600" />
+        <span className="text-[8.5px] font-black text-sky-800 uppercase tracking-tight">
+          {unit.sede || 'SEDE GENERAL'}
         </span>
       </div>
+
+      {/* Secondary Compliance Tags */}
+      <div className="flex flex-col items-center space-y-1">
+        <div className="flex items-center gap-1.5 opacity-40 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+          <Tag size={8} />
+          <span className="text-[8px] font-black uppercase tracking-tighter">
+            {unit.placas || 'SIN PLACAS'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 opacity-50 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+          <CreditCard size={8} />
+          <span className="text-[8px] font-black uppercase tracking-tighter text-center">
+            {unit.tarjeta_circulacion || 'SIN TARJETA'}
+          </span>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /** 🔱 Archon Atom: StrategyCluster */
 const StrategyCluster: React.FC<{ unit: FleetUnit }> = ({ unit }): React.JSX.Element => (
