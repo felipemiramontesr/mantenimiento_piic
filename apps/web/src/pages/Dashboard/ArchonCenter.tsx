@@ -15,7 +15,7 @@ import { useFleet } from '../../context/FleetContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.10.0';
+const SYSTEM_VERSION = 'V28.11.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const { stats, loading } = useFleet();
@@ -235,7 +235,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <div className="archon-grid-3">
           {renderKPI(
             'Salud de Flota',
-            stats.maintenanceIndex,
+            `${stats.maintenanceIndex}%`,
             Gauge,
             '#0f2a44',
             'Índice global de operatividad',

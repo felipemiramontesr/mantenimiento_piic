@@ -96,7 +96,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const maintenance = units.filter((u) => u.status === 'En Mantenimiento').length;
     const discontinued = units.filter((u) => u.status === 'Descontinuada').length;
 
-    const maintenanceIndex = total > 0 ? Math.round((available / total) * 100) : 0;
+    const maintenanceIndex = total > 0 ? Math.round(((available + inRoute) / total) * 100) : 0;
 
     // 🛡️ ANALYTICAL AGGREGATION ENGINE (v.22.1.2)
     const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
