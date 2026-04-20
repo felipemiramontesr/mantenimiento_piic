@@ -1649,3 +1649,124 @@ body {
 .archon-registry-table tr:hover td:last-child {
   border-right-color: #0f2a44;
 }
+
+/* 🏛️ ARCHON COMMAND CENTER SOVEREIGN LAYOUT (v.18.6.0.5) */
+.archon-center-viewport {
+  padding: 40px !important;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-height: 100vh;
+}
+
+.strategy-viewfinder {
+  border-radius: 12px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.strategy-title {
+  font-family: 'Inter', sans-serif;
+  color: #0f2a44;
+}
+
+.kpi-micro-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+}
+
+.analytics-grid-pro {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  width: 100%;
+}
+
+@media (max-width: 1280px) {
+  .analytics-grid-pro {
+    grid-template-columns: 1fr;
+  }
+}
+
+.global-instrument-cluster {
+  background: rgba(15, 42, 68, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(15, 42, 68, 0.05);
+}
+
+/* 📊 ANALYTICAL VANGUARD SYSTEM (v.18.6.0.8) */
+.analytics-card-column {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 32px;
+  border: 1px solid rgba(15, 42, 68, 0.06);
+  box-shadow: 0 10px 30px -10px rgba(15, 42, 68, 0.05);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.analytics-card-column:hover {
+  transform: translateY(-4px);
+  border-color: rgba(15, 42, 68, 0.15);
+  box-shadow: 0 20px 40px -15px rgba(15, 42, 68, 0.1);
+}
+
+.analytics-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.accent-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white !important;
+}
+
+.text-tag {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: #0f2a44;
+}
+
+.text-title-focus {
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f2a44;
+  letter-spacing: -0.02em;
+}
+
+.text-value-major {
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f2a44;
+}
+
+.text-value-minor {
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f2a44;
+}
+
+.analytics-grid-quadrant {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border-top: 1px solid rgba(15, 42, 68, 0.04);
+}
+
+.quadrant-item {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  border-color: rgba(15, 42, 68, 0.04);
+}

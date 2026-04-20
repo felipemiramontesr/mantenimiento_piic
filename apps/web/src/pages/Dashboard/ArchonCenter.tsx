@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate, NavigateFunction } from 'react-router-dom';
 import {
   ArrowRight,
   Gauge,
@@ -8,9 +7,6 @@ import {
   Wrench,
   ShieldAlert,
   Navigation,
-  User,
-  LogOut,
-  Zap,
   History,
   Activity,
   Layers,
@@ -20,24 +16,8 @@ import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants'
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
-  const navigate: NavigateFunction = useNavigate();
   const { stats, loading } = useFleet();
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isAccessControlOpen, setIsAccessControlOpen] = useState<boolean>(false);
-
-  const toggleMenu = (): void => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const closeMenu = (): void => {
-    setIsMenuOpen(false);
-  };
-
-  const handleLogout = (): void => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    navigate('/login');
-  };
 
   /**
    * KPI Presentation Engine
@@ -107,7 +87,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   const renderCategoryAnalyticalColumn = (
     title: string,
     categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta',
-    accentColor: string
+    accentColor: string,
+    variant: 'violet' | 'yellow' | 'sky'
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
 
@@ -120,226 +101,198 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     const Icon = categoryIcons[categoryKey];
 
     return (
-      <div className="analytics-card-column animate-in fade-in duration-500">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div
-              className="w-12 h-12 rounded flex items-center justify-center text-white shadow-lg"
-              style={{ backgroundColor: accentColor }}
-            >
-              <Icon size={24} />
-            </div>
-            <div className="flex flex-col">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">
-                Segmento Operativo
-              </h4>
-              <h3 className="text-xl font-black text-[#0f2a44] tracking-tight">{title}</h3>
-            </div>
+      <div
+        className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-700`}
+        style={{ borderTop: `4px solid ${accentColor}`, height: 'auto', minHeight: '440px' }}
+      >
+        <div className="flex items-center gap-4 mb-8">
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              backgroundColor: `${accentColor}15`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: `2px solid ${accentColor}40`,
+            }}
+          >
+            <Icon size={22} style={{ color: accentColor }} />
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-2xl font-black text-[#0f2a44]">{data.count}</span>
-            <span className="text-[8px] font-black uppercase tracking-widest opacity-30">
-              Activos Totales
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44]">
+              Segmento Operativo
             </span>
+            <h3 className="text-lg font-black text-[#0f2a44] tracking-tight">{title}</h3>
+          </div>
+          <div className="ml-auto flex flex-col items-end">
+            <span className="text-2xl font-black text-[#0f2a44]">{data.count}</span>
+            <span className="text-[8px] font-black uppercase opacity-30">Activos</span>
           </div>
         </div>
 
-        <div className="analytics-grid-quadrant">
-          <div className="quadrant-item border-r border-b border-gray-100 p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+        <div
+          className="analytics-grid-quadrant"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            borderTop: '1px solid rgba(15, 42, 68, 0.05)',
+            marginBottom: '24px',
+          }}
+        >
+          <div
+            className="quadrant-item border-r border-b"
+            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
+          >
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
               Disponibilidad
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
+              <span className="text-xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           </div>
-          <div className="quadrant-item border-b border-gray-100 p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+          <div
+            className="quadrant-item border-b"
+            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
+          >
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
               Estado Crítico
             </span>
-            <span className="text-2xl font-black text-[#ef4444]">{data.maintenanceCount}</span>
+            <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
           </div>
-          <div className="quadrant-item border-r border-gray-100 p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+          <div
+            className="quadrant-item border-r"
+            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
+          >
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
               MTBF Promedio
             </span>
-            <div className="flex items-center gap-2">
-              <Activity size={12} className="text-sky-500" />
-              <span className="text-lg font-black text-[#0f2a44]">
+            <div className="flex items-center gap-1">
+              <Activity size={10} className="text-sky-500" />
+              <span className="text-base font-black text-[#0f2a44]">
                 {formatTimeMetric(data.avgMtbf)}
               </span>
             </div>
           </div>
-          <div className="quadrant-item p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+          <div
+            className="quadrant-item"
+            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
+          >
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
               MTTR Táctico
             </span>
-            <div className="flex items-center gap-2">
-              <History size={12} className="text-amber-500" />
-              <span className="text-lg font-black text-[#0f2a44]">
+            <div className="flex items-center gap-1">
+              <History size={10} className="text-amber-500" />
+              <span className="text-base font-black text-[#0f2a44]">
                 {formatTimeMetric(data.avgMttr)}
               </span>
             </div>
           </div>
+        </div>
+
+        <div className="mt-auto">
+          <button className={`btn-sentinel-${variant} w-full`}>
+            GESTIONAR SEGMENTO <ArrowRight size={10} className="text-white ml-2" />
+          </button>
         </div>
       </div>
     );
   };
 
   return (
-    <main className="archon-center-viewport">
-      <nav className="archon-sentinel-nav shadow-2xl">
-        <div className="workspace-identity">
-          <div className="archon-logo-mark">
-            <Layers size={24} className="text-[#f2b705]" />
-          </div>
-          <div className="flex flex-col">
-            <h1 className="archon-title uppercase">Sentinel Command</h1>
-            <p className="archon-subtitle uppercase tracking-widest">Digital Fortress Management</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-8">
-          <div className="nav-actions-pro">
-            <div className="search-pill-mock">
-              <Activity size={14} className="text-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black tracking-widest uppercase">
-                System Online
-              </span>
+    <main className="workspace-container-pro animate-in fade-in duration-700">
+      <header className="workspace-header-pro">
+        <div className="flex flex-row items-center justify-between w-full">
+          <div className="flex flex-col items-start">
+            <div className="flex flex-row items-center gap-3 mb-2">
+              <Layers size={28} className="text-[#f2b705]" />
+              <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-none">
+                Centro de Comando
+              </h2>
             </div>
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={toggleMenu}
-              aria-label="User Menu"
-              className={`user-avatar-pro transition-all ${
-                isMenuOpen ? 'ring-4 ring-[#0f2a44]/10 scale-110' : ''
-              }`}
-            >
-              <User size={20} className="text-[#0f2a44]" />
-            </button>
-
-            {isMenuOpen && (
-              <div
-                className="archon-dropdown-pro animate-in zoom-in-95 duration-200"
-                style={{ top: '100%', right: 0, marginTop: '16px' }}
-              >
-                <div className="dropdown-header-pro">
-                  <span className="text-[10px] uppercase font-black tracking-widest opacity-40">
-                    Sovereign Access
-                  </span>
-                </div>
-                <button
-                  className="dropdown-item-mock"
-                  onClick={(): void => {
-                    setIsAccessControlOpen(true);
-                    closeMenu();
-                  }}
-                >
-                  <ShieldCheck size={14} /> Control de Acceso
-                </button>
-                <div className="border-t border-gray-100 my-2" />
-                <button
-                  className="dropdown-item-mock text-red-600 hover:bg-red-50"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={14} /> Desconexión
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      <section className="strategy-viewfinder bg-white rounded-xl shadow-inner border border-gray-100 p-12 mb-12">
-        <div className="flex items-end justify-between mb-16 border-l-4 border-[#0f2a44] pl-8">
-          <div>
-            <h2 className="strategy-title uppercase">Métricas Decisivas</h2>
-            <p className="strategy-subtitle uppercase opacity-40 tracking-widest">
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
               Análisis Predictivo de Segmentos Operativos
             </p>
           </div>
-          <div className="flex gap-4">
-            <div className="kpi-micro-pill">
-              <Zap size={12} className="text-yellow-500" />
-              <span>Real-Time Engine</span>
+
+          <div className="flex items-center gap-6 relative">
+            <h1 className="text-[26px] font-black tracking-tighter m-0 text-[#0f2a44] font-['Inter']">
+              Archon
+            </h1>
+            <div className="w-[44px] h-[44px] rounded-[4px] border-2 border-[#f2b705] bg-[#0f2a44] flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 100 100">
+                <path
+                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+                  stroke="#f2b705"
+                  strokeWidth="16"
+                  fill="none"
+                />
+              </svg>
             </div>
           </div>
         </div>
+      </header>
 
-        <div className="analytics-grid-pro max-w-5xl mx-auto">
-          {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
-          {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
-          {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
+      <section className="archon-workspace-chassis">
+        <div className="archon-grid-3 mb-8">
+          {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6', 'violet')}
+          {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705', 'yellow')}
+          {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9', 'sky')}
         </div>
-      </section>
 
-      <section className="global-instrument-cluster p-12">
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '20px',
-            width: '100%',
-          }}
-        >
+        <div className="archon-grid-3">
           {renderKPI(
-            'Índice de Mantenimiento',
+            'Salud de Flota',
             stats.maintenanceIndex,
             Gauge,
             '#0f2a44',
-            'Salud global de activos',
+            'Índice global de operatividad',
             'navy'
           )}
           {renderKPI(
-            'Nuestras Unidades',
+            'Activos Totales',
             stats.total,
             Truck,
             '#8b5cf6',
-            'Total de activos registrados',
+            'Unidades totales en inventario',
             'violet'
           )}
           {renderKPI(
-            'Unidades disponibles',
+            'Diponibilidad Inmediata',
             stats.available,
             ShieldCheck,
             '#10b981',
-            'Estatus de operación inmediata',
+            'Unidades listas para operación',
             'emerald'
           )}
           {renderKPI(
-            'Unidades en ruta',
+            'Despliegue en Ruta',
             stats.inRoute,
             Navigation,
             '#0ea5e9',
-            'Unidades en operación',
+            'Unidades en tránsito operativo',
             'sky'
           )}
           {renderKPI(
-            'Unidades en mantenimiento',
+            'Protocolos de Mejora',
             stats.maintenance,
             Wrench,
             '#f2b705',
-            'Protocolos técnicos activos',
+            'Unidades en mantenimiento activo',
             'yellow'
           )}
           {renderKPI(
-            'Mermas de Flota',
+            'Mermas Operativas',
             stats.totalInactive,
             ShieldAlert,
             '#ef4444',
-            'Unidades inactivas o mermas',
+            'Unidades fuera de servicio',
             'red'
           )}
         </div>
       </section>
-
-      <AccessControlSlideOver
-        isOpen={isAccessControlOpen}
-        onClose={(): void => setIsAccessControlOpen(false)}
-      />
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
@@ -347,6 +300,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           {BRANDING_NAME} {SYSTEM_VERSION}
         </p>
       </footer>
+
+      <AccessControlSlideOver
+        isOpen={isAccessControlOpen}
+        onClose={(): void => setIsAccessControlOpen(false)}
+      />
     </main>
   );
 };
