@@ -283,12 +283,12 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
                   <span className="text-[10px] font-black uppercase">Briefing de Misión</span>
                 </div>
                 <p className="text-sm font-bold text-amber-900 leading-relaxed italic">
-                  &quot;{unit.route_description || 'Sin descripción de misión proporcionada.'}&quot;
+                  &quot;{unit.routeDescription || 'Sin descripción de misión proporcionada.'}&quot;
                 </p>
                 <div className="pt-2 flex items-center gap-2 opacity-60">
                   <MapPin size={12} />
                   <span className="text-[10px] font-black uppercase">
-                    Destino: {unit.route_destination || '---'}
+                    Destino: {unit.routeDestination || '---'}
                   </span>
                 </div>
               </div>

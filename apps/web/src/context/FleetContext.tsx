@@ -3,9 +3,11 @@ import api from '../api/client';
 import { FleetUnit } from '../types/fleet';
 
 interface CategorizedMetrics {
-  availability: number;
-  mtbf: number;
-  mttr: number;
+  count: number;
+  availablePercent: number;
+  maintenanceCount: number;
+  avgMtbf: number;
+  avgMttr: number;
   backlog: number;
 }
 
@@ -15,6 +17,7 @@ interface FleetStats {
   inRoute: number;
   maintenance: number;
   discontinued: number;
+  totalInactive: number;
   maintenanceIndex: number;
   // 🔱 Analytical Tier (v.22.1.2)
   globalMTBF: number;
@@ -97,45 +100,39 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // 🛡️ ANALYTICAL AGGREGATION ENGINE (v.22.1.2)
     const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
-      const validMTBF = subset.filter((u) => (u.mtbf_hours || 0) > 0);
-      const validMTTR = subset.filter((u) => (u.mttr_hours || 0) > 0);
-      const validAvail = subset.filter((u) => (u.availability_index || 0) > 0);
+      const count = subset.length;
+      const maintenanceCount = subset.filter((u) => u.status === 'En Mantenimiento').length;
+      const availableCount = subset.filter((u) => u.status === 'Disponible').length;
+      const availablePercent = count > 0 ? Math.round((availableCount / count) * 100) : 0;
 
-      const mtbf =
+      const validMTBF = subset.filter((u) => (u.mtbfHours || 0) > 0);
+      const validMTTR = subset.filter((u) => (u.mttrHours || 0) > 0);
+
+      const avgMtbf =
         validMTBF.length > 0
-          ? Math.round(
-              validMTBF.reduce((acc, u) => acc + (u.mtbf_hours || 0), 0) / validMTBF.length
-            )
+          ? Math.round(validMTBF.reduce((acc, u) => acc + (u.mtbfHours || 0), 0) / validMTBF.length)
           : 0;
 
-      const mttr =
+      const avgMttr =
         validMTTR.length > 0
           ? Number(
               (
-                validMTTR.reduce((acc, u) => acc + (u.mttr_hours || 0), 0) / validMTTR.length
+                validMTTR.reduce((acc, u) => acc + (u.mttrHours || 0), 0) / validMTTR.length
               ).toFixed(1)
             )
           : 0;
 
-      const availability =
-        validAvail.length > 0
-          ? Math.round(
-              validAvail.reduce((acc, u) => acc + (u.availability_index || 0), 0) /
-                validAvail.length
-            )
-          : 0;
+      const backlog = subset.reduce((acc, u) => acc + (u.backlogCount || 0), 0);
 
-      const backlog = subset.reduce((acc, u) => acc + (u.backlog_count || 0), 0);
-
-      return { mtbf, mttr, availability, backlog };
+      return { count, availablePercent, maintenanceCount, avgMtbf, avgMttr, backlog };
     };
 
     const globalMetrics = computeAverages(units);
 
     // Grouping by Asset Type (v.21.3.1 Relational Architecture)
-    const vehiculos = units.filter((u) => u.asset_type === 'Vehiculo');
-    const maquinaria = units.filter((u) => u.asset_type === 'Maquinaria');
-    const herramienta = units.filter((u) => u.asset_type === 'Herramienta');
+    const vehiculos = units.filter((u) => u.assetType === 'Vehiculo');
+    const maquinaria = units.filter((u) => u.assetType === 'Maquinaria');
+    const herramienta = units.filter((u) => u.assetType === 'Herramienta');
 
     return {
       total,
@@ -143,10 +140,11 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       inRoute,
       maintenance,
       discontinued,
+      totalInactive: discontinued,
       maintenanceIndex,
-      globalMTBF: globalMetrics.mtbf,
-      globalMTTR: globalMetrics.mttr,
-      globalAvailability: globalMetrics.availability,
+      globalMTBF: globalMetrics.avgMtbf,
+      globalMTTR: globalMetrics.avgMttr,
+      globalAvailability: globalMetrics.availablePercent,
       categories: {
         vehiculo: computeAverages(vehiculos),
         maquinaria: computeAverages(maquinaria),

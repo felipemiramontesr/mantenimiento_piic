@@ -4,7 +4,12 @@ import React from 'react';
 // Architecture: PIIC Fleet Asset Intelligence
 
 export type AssetType = 'Vehiculo' | 'Maquinaria' | 'Herramienta';
-export type FleetStatus = 'Disponible' | 'En Ruta' | 'En Mantenimiento' | 'Descontinuada';
+export type FleetStatus =
+  | 'Disponible'
+  | 'En Ruta'
+  | 'Asignada'
+  | 'En Mantenimiento'
+  | 'Descontinuada';
 export type Traccion = '4x2' | '4x4' | 'Doble Tracción' | 'AWD' | 'Oruga' | 'No Aplica';
 export type Transmision = 'Automática' | 'Estándar (Manual)' | 'CVT' | 'Hidrostática' | 'No Aplica';
 export type FuelType = 'Gasolina' | 'Diesel' | 'Eléctrico' | 'Híbrido' | 'No Aplica';
@@ -28,7 +33,7 @@ export interface FleetUnit {
   uuid: string;
   // Primary identifiers
   placas: string | null;
-  numero_serie: string | null;
+  numeroSerie: string | null;
   // Level 2 & 3: Cascade
   marca: string;
   modelo: string;
@@ -38,56 +43,59 @@ export interface FleetUnit {
   uso: string | null;
   motor: string | null;
   // Tires
-  tire_spec: string | null;
-  tire_brand: string | null;
-  tipo_terreno: string | null;
+  tireSpec: string | null;
+  tireBrand: string | null;
+  tipoTerreno: string | null;
   // Operational
-  capacidad_carga: string | null;
+  capacidadCarga: string | null;
   odometer: number; // km (Vehiculo) | hrs (Maquinaria)
   // Organization
   sede: string | null;
-  maintenance_frequency: MaintenanceFrequency;
-  centro_mantenimiento: CentroMantenimiento;
-  protocol_start_date: string | null; // ISO date
+  maintenanceFrequency: MaintenanceFrequency;
+  centroMantenimiento: CentroMantenimiento;
+  protocolStartDate: string | null; // ISO date
   // Legal & Compliance
-  vigencia_seguro: string | null; // ISO date
-  vencimiento_verificacion: string | null; // ISO date
-  tarjeta_circulacion: string | null;
+  vigenciaSeguro: string | null; // ISO date
+  vencimientoVerificacion: string | null; // ISO date
+  tarjetaCirculacion: string | null;
   // Status
   status: FleetStatus;
-  assigned_operator_id: number | null;
-  updated_at: string;
+  assignedOperatorId: number | null;
+  updatedAt: string;
+  // 🔱 Dispatch & Routes (v.28.1.0)
+  routeDescription?: string;
+  routeDestination?: string;
   // 🔱 Relational ID Fields (v.21.0.0)
-  asset_type_id: number;
-  fuel_type_id: number;
-  traccion_id: number;
-  transmision_id: number;
+  assetTypeId: number;
+  fuelTypeId: number;
+  traccionId: number;
+  transmisionId: number;
   // Joined Labels (UI)
-  asset_type?: string;
-  fuel_type?: string;
+  assetType?: string;
+  fuelType?: string;
   traccion?: string;
   transmision?: string;
   // 🔱 Archon Intelligence (v.18.0.0)
-  maintenance_time_freq_id?: number | null;
-  maintenance_usage_freq_id?: number | null;
-  last_service_date?: string | null;
-  last_service_reading?: number;
-  current_reading?: number;
+  maintenanceTimeFreqId?: number | null;
+  maintenanceUsageFreqId?: number | null;
+  lastServiceDate?: string | null;
+  lastServiceReading?: number;
+  currentReading?: number;
   // 🔱 Computed Health Data
-  health_score?: number;
-  health_status?: string;
-  health_color?: string;
-  days_since_service?: number | null;
-  units_since_service?: number;
+  healthScore?: number;
+  healthStatus?: string;
+  healthColor?: string;
+  daysSinceService?: number | null;
+  unitsSinceService?: number;
   // 🔱 Archon Analytical Engine (v.20.0.0)
-  availability_index?: number;
-  mtbf_hours?: number;
-  mttr_hours?: number;
-  backlog_count?: number;
+  availabilityIndex?: number;
+  mtbfHours?: number;
+  mttrHours?: number;
+  backlogCount?: number;
   // 🔱 Predictive Strategy (v.28.0.0)
-  maint_interval_km?: number;
-  maint_interval_days?: number;
-  avg_daily_km?: number;
+  maintIntervalKm?: number;
+  maintIntervalDays?: number;
+  avgDailyKm?: number;
 }
 
 export interface CreateFleetUnit {

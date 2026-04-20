@@ -80,7 +80,7 @@ const AssetUnitCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
 
 const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const plates = unit.placas || 'SIN PLACAS';
-  const card = unit.tarjeta_circulacion || 'SIN TARJETA';
+  const card = unit.tarjetaCirculacion || 'SIN TARJETA';
   const location = unit.sede || 'SEDE GENERAL';
   return (
     <div className="flex flex-col items-center gap-2">
@@ -107,9 +107,9 @@ const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element 
 };
 
 const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
-  const intervalKm = unit.maint_interval_km || 10000;
-  const intervalDays = unit.maint_interval_days || 180;
-  const avgDaily = unit.avg_daily_km || 0;
+  const intervalKm = unit.maintIntervalKm || 10000;
+  const intervalDays = unit.maintIntervalDays || 180;
+  const avgDaily = unit.avgDailyKm || 0;
   return (
     <div className="flex flex-col items-center space-y-1.5">
       <div className="flex items-center gap-1.5 opacity-60">
@@ -132,10 +132,10 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
 
 const TechnicalStatusCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const odometer = unit.odometer || 0;
-  const lastReading = unit.last_service_reading || 0;
+  const lastReading = unit.lastServiceReading || 0;
   let serviceDateStr = '---';
-  if (unit.last_service_date) {
-    serviceDateStr = formatDate(new Date(unit.last_service_date));
+  if (unit.lastServiceDate) {
+    serviceDateStr = formatDate(new Date(unit.lastServiceDate));
   }
   return (
     <div className="flex flex-col items-center space-y-2">
@@ -205,12 +205,12 @@ const FleetRegistryRow = ({
   onManageRoute: (u: FleetUnit) => void;
 }): React.JSX.Element => {
   const forecast = calculateMaintForecast(
-    unit.maint_interval_days || 180,
-    unit.maint_interval_km || 10000,
-    unit.avg_daily_km || 30,
+    unit.maintIntervalDays || 180,
+    unit.maintIntervalKm || 10000,
+    unit.avgDailyKm || 30,
     unit.odometer,
-    unit.last_service_reading || 0,
-    unit.last_service_date || null
+    unit.lastServiceReading || 0,
+    unit.lastServiceDate || null
   );
   const isOverdue = !!forecast?.isOverdue;
   let rowClass = 'transition-all duration-300 hover:bg-[#0f2a44]/[0.02] border-b border-gray-50';
@@ -291,10 +291,10 @@ const FleetRegistryRow = ({
       <td className="text-center px-4">
         <div className="flex justify-center">
           <FleetKpiMatrix
-            availability={unit.availability_index ?? 100}
-            mtbf={unit.mtbf_hours ?? 0}
-            mttr={unit.mttr_hours ?? 0}
-            backlog={unit.backlog_count ?? 0}
+            availability={unit.availabilityIndex ?? 100}
+            mtbf={unit.mtbfHours ?? 0}
+            mttr={unit.mttrHours ?? 0}
+            backlog={unit.backlogCount ?? 0}
           />
         </div>
       </td>
@@ -342,12 +342,12 @@ export const FleetGridView = ({
     const unitsMap = units.map((u) => ({
       unit: u,
       forecast: calculateMaintForecast(
-        u.maint_interval_days || 180,
-        u.maint_interval_km || 10000,
-        u.avg_daily_km || 30,
+        u.maintIntervalDays || 180,
+        u.maintIntervalKm || 10000,
+        u.avgDailyKm || 30,
         u.odometer,
-        u.last_service_reading || 0,
-        u.last_service_date || null
+        u.lastServiceReading || 0,
+        u.lastServiceDate || null
       ),
     }));
     return [...unitsMap]

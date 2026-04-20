@@ -150,7 +150,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               Disponibilidad
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#0f2a44]">{data.available_percent}%</span>
+              <span className="text-2xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           </div>
@@ -158,7 +158,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
               Estado Crítico
             </span>
-            <span className="text-2xl font-black text-[#ef4444]">{data.maintenance_count}</span>
+            <span className="text-2xl font-black text-[#ef4444]">{data.maintenanceCount}</span>
           </div>
           <div className="quadrant-item border-r border-gray-100 p-6">
             <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
@@ -167,7 +167,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             <div className="flex items-center gap-2">
               <Activity size={12} className="text-sky-500" />
               <span className="text-lg font-black text-[#0f2a44]">
-                {formatTimeMetric(data.avg_mtbf)}
+                {formatTimeMetric(data.avgMtbf)}
               </span>
             </div>
           </div>
@@ -178,7 +178,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             <div className="flex items-center gap-2">
               <History size={12} className="text-amber-500" />
               <span className="text-lg font-black text-[#0f2a44]">
-                {formatTimeMetric(data.avg_mttr)}
+                {formatTimeMetric(data.avgMttr)}
               </span>
             </div>
           </div>
@@ -327,7 +327,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           )}
           {renderKPI(
             'Mermas de Flota',
-            stats.total_inactive,
+            stats.totalInactive,
             ShieldAlert,
             '#ef4444',
             'Unidades inactivas o mermas',
