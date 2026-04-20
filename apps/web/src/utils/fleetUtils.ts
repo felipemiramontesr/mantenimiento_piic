@@ -22,9 +22,9 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   departamento: 'Medio Ambiente',
   uso: 'Terracería',
   motor: '2KD-FTV 2.5L Turbo Diesel',
-  traccionId: null,
-  transmisionId: null,
-  fuelTypeId: null,
+  traccionId: 20, // 4x4 (Total)
+  transmisionId: 31, // Manual (5 vel)
+  fuelTypeId: 11, // Diesel
   tireSpec: '255/70 R17',
   tireBrand: 'BFGoodrich',
   tipoTerreno: 'All-Terrain',
@@ -42,8 +42,8 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   description:
     'Unidad asignada a Medio Ambiente para monitoreo en zonas de terracería. Cuenta con radio y kit de seguridad minero.',
   // 🔱 Archon Intelligence (v.18.0.0)
-  maintenanceTimeFreqId: null,
-  maintenanceUsageFreqId: null,
+  maintenanceTimeFreqId: 41, // Mensual
+  maintenanceUsageFreqId: 51, // Kilometraje (Motor)
   lastServiceDate: '2024-03-01',
   lastServiceReading: 150000,
 });
