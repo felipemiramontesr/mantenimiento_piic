@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
+import NotificationService, { NotificationType, NotificationPriority } from '../services/notification.service';
 import { toSnakeCase } from '../utils/mappers';
 
 // ============================================================================

@@ -73,4 +73,84 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       return reply.code(500).send({ error: 'Internal Server Error' });
     }
   });
+
+  /**
+   * 🔱 POST /v1/auth/register
+   * Restricted: Admin/Archon (Conceptually)
+   * Purpose: Securely enroll new personnel into the Archon Grid.
+   */
+  fastify.post('/register', async (request, reply) => {
+    const registerSchema = z.object({
+      username: z.string().min(3).max(50),
+      email: z.string().email(),
+      password: z.string().min(8),
+      role_id: z.number().int().default(2), // Default to Operator
+    });
+
+    const body = registerSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.code(400).send({ error: 'Invalid registration data', details: body.error.format() });
+    }
+
+    const { username, email, password, role_id } = body.data;
+
+    try {
+      // 1. Check for duplicate identity
+      const [existing] = await db.execute('SELECT id FROM users WHERE username = ?', [username]);
+      if ((existing as any[]).length > 0) {
+        return reply.code(409).send({ error: `El usuario '${username}' ya está registrado.` });
+      }
+
+      // 2. Hash Password (Sovereign Security)
+      const passwordHash = await argon2.hash(password);
+
+      // 3. Encrypt Email (AES-256)
+      const encryptedEmail = EncryptionService.encrypt(email);
+
+      // 4. Persist to Sovereign Vault
+      await db.execute(
+        'INSERT INTO users (username, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
+        [username, encryptedEmail, passwordHash, role_id]
+      );
+
+      return reply.code(201).send({ success: true, message: 'Usuario registrado exitosamente' });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Falla crítica durante el registro de identidad' });
+    }
+  });
+
+  /**
+   * 🔱 GET /v1/auth/users
+   * Purpose: Retrieve active personnel for dispatch and maintenance assignments.
+   */
+  fastify.get('/users', async (request, reply) => {
+    const { role } = request.query as { role?: string };
+    
+    try {
+      let query = `
+        SELECT u.id, u.username, u.email, u.role_id, r.name as role_name 
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE u.is_active = TRUE
+      `;
+      const params: any[] = [];
+
+      if (role) {
+        query += ' AND u.role_id = ?';
+        params.push(Number(role));
+      }
+
+      const [rows] = await db.execute(query, params);
+      const users = (rows as any[]).map(u => ({
+        ...u,
+        email: EncryptionService.decrypt(u.email)
+      }));
+
+      return reply.send({ success: true, count: users.length, data: users });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Falla al listar el personal activo' });
+    }
+  });
 }
