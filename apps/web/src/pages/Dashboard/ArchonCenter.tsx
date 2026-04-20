@@ -28,10 +28,13 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     Icon: React.ElementType,
     color: string,
     description: string,
-    variant: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red'
+    variant: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red',
+    isCompact = false
   ): React.ReactElement => (
     <div
-      className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-500`}
+      className={`glass-card-pro archon-instrument-tile ${
+        isCompact ? 'archon-tile-tactical-compact' : ''
+      } card-hover-${variant} animate-in fade-in duration-500`}
       style={{ borderTop: `4px solid ${color}` }}
     >
       <div
@@ -39,22 +42,30 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '12px',
-          marginBottom: '8px',
+          gap: '8px',
+          marginBottom: isCompact ? '4px' : '8px',
           width: '100%',
         }}
       >
-        <Icon size={18} style={{ color }} />
+        <Icon size={14} style={{ color }} />
         <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
       </div>
 
-      <div className="archon-tile-payload flex flex-col items-center justify-center pb-6">
+      <div
+        className={`archon-tile-payload flex flex-col items-center justify-center ${
+          isCompact ? 'pb-2' : 'pb-6'
+        }`}
+      >
         {loading ? (
-          <div className="archon-shimmer h-24 w-full rounded" />
+          <div className="archon-shimmer h-16 w-full rounded" />
         ) : (
-          <div className="flex flex-col items-center space-y-2">
+          <div className="flex flex-col items-center space-y-1">
             <h3 className="text-kpi-black text-[#0f2a44]">{value}</h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center">
+            <p
+              className={`text-[9px] font-bold opacity-60 uppercase tracking-[0.1em] text-[#0f2a44] text-center ${
+                isCompact ? 'max-w-[120px]' : ''
+              }`}
+            >
               {description}
             </p>
           </div>
@@ -62,8 +73,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </div>
 
       <div className="archon-tile-action">
-        <button className={`btn-sentinel-${variant} w-full`}>
-          VER REPORTE <ArrowRight size={10} className="text-white ml-2" />
+        <button className={`btn-sentinel-${variant} w-full ${isCompact ? 'text-[9px] py-2' : ''}`}>
+          VER REPORTE <ArrowRight size={isCompact ? 8 : 10} className="text-white ml-2" />
         </button>
       </div>
     </div>
@@ -231,14 +242,15 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9', 'sky')}
         </div>
 
-        <div className="archon-grid-3">
+        <div className="archon-grid-6">
           {renderKPI(
             'Salud de Flota',
             stats.maintenanceIndex,
             Gauge,
             '#0f2a44',
             'Índice global de operatividad',
-            'navy'
+            'navy',
+            true
           )}
           {renderKPI(
             'Activos Totales',
@@ -246,7 +258,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             Truck,
             '#8b5cf6',
             'Unidades totales en inventario',
-            'violet'
+            'violet',
+            true
           )}
           {renderKPI(
             'Disponibilidad Inmediata',
@@ -254,7 +267,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             ShieldCheck,
             '#10b981',
             'Unidades listas para operación',
-            'emerald'
+            'emerald',
+            true
           )}
           {renderKPI(
             'Despliegue en Ruta',
@@ -262,7 +276,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             Navigation,
             '#0ea5e9',
             'Unidades en tránsito operativo',
-            'sky'
+            'sky',
+            true
           )}
           {renderKPI(
             'Protocolos de Mejora',
@@ -270,7 +285,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             Wrench,
             '#f2b705',
             'Unidades en mantenimiento activo',
-            'yellow'
+            'yellow',
+            true
           )}
           {renderKPI(
             'Mermas Operativas',
@@ -278,7 +294,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             ShieldAlert,
             '#ef4444',
             'Unidades fuera de servicio',
-            'red'
+            'red',
+            true
           )}
         </div>
       </section>
