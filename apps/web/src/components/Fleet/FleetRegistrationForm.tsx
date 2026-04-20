@@ -355,12 +355,14 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           <div className="grid grid-cols-2 gap-8">
             <ArchonField label="Frecuencia (Uso/Predictivo)" icon={Activity}>
               <ArchonSelect
-                options={freqUsage.map((u) => u.label)}
-                value={freqUsage.find((u) => u.id === formData.maintenanceUsageFreqId)?.label || ''}
-                onChange={(val: string): void => {
-                  const selected = freqUsage.find((u) => u.label === val);
-                  if (selected) setFormData({ ...formData, maintenanceUsageFreqId: selected.id });
-                }}
+                options={freqUsage.map((u) => ({
+                  value: u.id.toString(),
+                  label: u.label,
+                }))}
+                value={formData.maintenanceUsageFreqId?.toString() || ''}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, maintenanceUsageFreqId: parseInt(val, 10) })
+                }
               />
             </ArchonField>
             <ArchonField label="Kilometraje / Horas Actual" icon={Gauge}>
