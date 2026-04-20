@@ -317,13 +317,13 @@ const FleetRegistryRow: React.FC<{
             <img
               src={unit.images[0]}
               loading="lazy"
-              className="w-16 h-16 rounded-[4px] object-cover border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44] transition-colors"
+              className="w-24 h-24 rounded-[4px] object-cover border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44] transition-colors"
               alt={unit.id}
               onClick={(): void => onSelectImage(unit)}
             />
           ) : (
-            <div className="w-16 h-16 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
-              <ImageIcon size={24} />
+            <div className="w-24 h-24 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
+              <ImageIcon size={32} />
             </div>
           )}
         </div>
