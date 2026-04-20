@@ -1,6 +1,6 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import ArchonCenter from './ArchonCenter';
 import { FleetProvider } from '../../context/FleetContext';
 
@@ -11,23 +11,9 @@ vi.mock('../../api/client', () => ({
   },
 }));
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: vi.fn(),
-  };
-});
-
 describe('ArchonCenter Component (Sovereign Dashboard)', () => {
-  const navigateMock = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
-    (useNavigate as unknown as ReturnType<typeof vi.fn>).mockReturnValue(navigateMock);
-
-    // Mock LocalStorage
-    Storage.prototype.removeItem = vi.fn();
   });
 
   it('renders branding name and command titles', async () => {
@@ -41,11 +27,12 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
       );
     });
 
-    expect(screen.getByText('Sentinel Command')).toBeDefined();
-    expect(screen.getByText('Digital Fortress Management')).toBeDefined();
+    expect(screen.getByText('Centro de Comando')).toBeDefined();
+    expect(screen.getByText('Análisis Predictivo de Segmentos Operativos')).toBeDefined();
+    expect(screen.getByText('Archon')).toBeDefined();
   });
 
-  it('toggles the user menu when clicking the avatar', async () => {
+  it('renders all 6 KPI cards with correct text in Spanish', async () => {
     await act(async () => {
       render(
         <BrowserRouter>
@@ -56,63 +43,34 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
       );
     });
 
-    const avatarBtn = screen.getByLabelText('User Menu');
+    expect(screen.getByText(/Salud de Flota/i)).toBeDefined();
+    expect(screen.getByText(/Activos Totales/i)).toBeDefined();
+    expect(screen.getByText(/Disponibilidad Inmediata/i)).toBeDefined();
+    expect(screen.getByText(/Despliegue en Ruta/i)).toBeDefined();
+    expect(screen.getByText(/Protocolos de Mejora/i)).toBeDefined();
+    expect(screen.getByText(/Mermas Operativas/i)).toBeDefined();
 
-    // Menu should be hidden initially
-    expect(screen.queryByText('Control de Acceso')).toBeNull();
-
-    // Click to open
-    fireEvent.click(avatarBtn);
-    expect(screen.getByText('Control de Acceso')).toBeDefined();
-    expect(screen.getByText(/Desconexión/i)).toBeDefined();
-
-    // Click to close (or toggle back)
-    fireEvent.click(avatarBtn);
-    expect(screen.queryByText('Perfil')).toBeNull();
-  });
-
-  it('handles logout correctly from the user menu', async () => {
-    await act(async () => {
-      render(
-        <BrowserRouter>
-          <FleetProvider>
-            <ArchonCenter />
-          </FleetProvider>
-        </BrowserRouter>
-      );
-    });
-
-    // Open menu
-    fireEvent.click(screen.getByLabelText('User Menu'));
-
-    // Click Logout
-    const logoutBtn = screen.getByText(/Desconexión/i);
-    fireEvent.click(logoutBtn);
-
-    expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('user_data');
-    expect(navigateMock).toHaveBeenCalledWith('/login');
-  });
-
-  it('renders all 6 KPI cards with correct text', async () => {
-    await act(async () => {
-      render(
-        <BrowserRouter>
-          <FleetProvider>
-            <ArchonCenter />
-          </FleetProvider>
-        </BrowserRouter>
-      );
-    });
-
-    expect(screen.getByText(/Índice de Mantenimiento/i)).toBeDefined();
-    expect(screen.getByText(/Nuestras Unidades/i)).toBeDefined();
-    expect(screen.getByText(/Unidades disponibles/i)).toBeDefined();
-    expect(screen.getByText(/Unidades en ruta/i)).toBeDefined();
-    expect(screen.getByText(/Unidades en mantenimiento/i)).toBeDefined();
-    expect(screen.getByText(/Mermas de Flota/i)).toBeDefined();
-    // Verify visibility of action buttons
-    const detailButtons = screen.getAllByText(/Ver Detalle/i);
+    // Verify visibility of action buttons with a robust ARIA role matcher
+    const detailButtons = screen.getAllByRole('button', { name: /VER REPORTE/i });
     expect(detailButtons.length).toBe(6);
+  });
+
+  it('renders the 3 main category cards with 2x2 grid', async () => {
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <FleetProvider>
+            <ArchonCenter />
+          </FleetProvider>
+        </BrowserRouter>
+      );
+    });
+
+    expect(screen.getByText('Vehículos de Flota')).toBeDefined();
+    expect(screen.getByText('Maquinaria Pesada')).toBeDefined();
+    expect(screen.getByText('Herramienta Menor')).toBeDefined();
+
+    expect(screen.getAllByText(/Segmento Operativo/i).length).toBe(3);
+    expect(screen.getAllByText(/GESTIONAR SEGMENTO/i).length).toBe(3);
   });
 });

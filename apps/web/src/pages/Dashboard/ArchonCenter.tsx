@@ -24,56 +24,66 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
    */
   const renderKPI = (
     label: string,
-    value: number | string,
+    value: string | number,
     Icon: React.ElementType,
     color: string,
     description: string,
-    mode: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red'
-  ): React.ReactElement => {
-    const isMaintenanceIndex = label.includes('Índice');
-
-    return (
+    variant: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red'
+  ): React.ReactElement => (
+    <div
+      className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-500`}
+      style={{ borderTop: `4px solid ${color}` }}
+    >
       <div
-        className={`glass-card-pro archon-instrument-tile card-hover-${mode}`}
-        style={{ borderTop: `4px solid ${color}` }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          marginBottom: '16px',
+          width: '100%',
+        }}
       >
-        <div className="flex items-center justify-center gap-3 mb-4 w-full">
-          <Icon size={20} style={{ color }} />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
-        </div>
+        <Icon size={18} style={{ color }} />
+        <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
+      </div>
 
-        <div className="archon-tile-payload flex flex-col items-center justify-center pb-16">
-          {loading ? (
-            <div className="archon-shimmer h-40 w-full rounded" />
-          ) : (
-            <div className="flex flex-col items-center mb-8">
-              <div className="flex items-baseline justify-center">
-                <h2 className="text-[#0f2a44] font-black text-[64px] leading-none">{value}</h2>
-                {isMaintenanceIndex && (
-                  <span className="text-2xl font-bold ml-2 opacity-30 text-[#0f2a44]">%</span>
-                )}
-              </div>
-              <p className="text-[11px] tracking-[0.2em] font-bold uppercase opacity-60 text-[#0f2a44] mt-2">
+      <div className="archon-tile-payload flex flex-col items-center justify-center pb-12">
+        {loading ? (
+          <div className="archon-shimmer h-24 w-full rounded" />
+        ) : (
+          <div className="flex flex-col items-center space-y-6">
+            <div
+              style={{
+                width: '72px',
+                height: '72px',
+                borderRadius: '50%',
+                backgroundColor: `${color}15`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: `2px solid ${color}40`,
+              }}
+            >
+              <Icon size={32} style={{ color }} />
+            </div>
+            <div className="flex flex-col items-center space-y-1">
+              <h3 className="text-kpi-black text-[#0f2a44]">{value}</h3>
+              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center">
                 {description}
               </p>
             </div>
-          )}
-        </div>
-
-        <div className="archon-tile-action">
-          <button
-            className="btn-sentinel-pro w-full flex items-center justify-center gap-2"
-            style={{ backgroundColor: color }}
-            onClick={(): void => {
-              /* Navigation detail: Future extension */
-            }}
-          >
-            Ver Detalle <ArrowRight size={12} />
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-    );
-  };
+
+      <div className="archon-tile-action">
+        <button className={`btn-sentinel-${variant} w-full`}>
+          VER REPORTE <ArrowRight size={10} className="text-white ml-2" />
+        </button>
+      </div>
+    </div>
+  );
 
   const formatTimeMetric = (hours: number): string => {
     if (hours === 0) return '0h';
@@ -260,7 +270,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'violet'
           )}
           {renderKPI(
-            'Diponibilidad Inmediata',
+            'Disponibilidad Inmediata',
             stats.available,
             ShieldCheck,
             '#10b981',
