@@ -16,6 +16,7 @@ import {
   History,
   Activity,
   Layers,
+  Construction,
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
@@ -128,6 +129,15 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     accentColor: string
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
+
+    // 🔱 Icon Mapping Strategy (v.28.4.17)
+    const categoryIcons = {
+      vehiculo: Truck,
+      maquinaria: Construction,
+      herramienta: Wrench,
+    };
+    const CategoryIcon = categoryIcons[categoryKey];
+
     return (
       <div
         className="glass-card-pro archon-instrument-tile flex flex-col p-20 card-hover-navy"
@@ -147,7 +157,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             width: '100%',
           }}
         >
-          <Truck size={18} style={{ color: accentColor }} />
+          <CategoryIcon size={18} style={{ color: accentColor }} />
           <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-[0.18em] font-black">
             {title}
           </span>
