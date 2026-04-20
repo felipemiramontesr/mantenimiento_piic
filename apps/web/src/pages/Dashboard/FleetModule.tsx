@@ -36,9 +36,12 @@ const FleetModule: React.FC = (): React.ReactElement => {
     setRegistrationSuccess(false);
 
     // 🚀 AXIAL SCROLL (Subtle & Smooth)
-    setTimeout(() => {
-      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    // Feature detection for professional-grade resilience in all environments
+    if (panelRef.current?.scrollIntoView) {
+      setTimeout(() => {
+        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   const handleReturnToGrid = (): void => {

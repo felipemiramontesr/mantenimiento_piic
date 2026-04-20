@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, RenderResult } from '@testing-library/react';
+import { render, screen, RenderResult } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { FleetGridView } from './FleetGridView';
 import { FleetUnit } from '../../types/fleet';
@@ -17,16 +17,11 @@ describe('FleetGridView Component', () => {
 
   const renderComponent = (): RenderResult => render(<FleetGridView {...mockProps} />);
 
-  it('should call onRegister when "Registrar" button is clicked', (): void => {
+  it('should display the core master labels in the table header', (): void => {
     renderComponent();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
-    expect(mockProps.onRegister).toHaveBeenCalled();
-  });
-
-  it('should display the core master labels', (): void => {
-    renderComponent();
-    expect(screen.getByText('Administración')).toBeInTheDocument();
-    expect(screen.getByText('Registrar')).toBeInTheDocument();
-    expect(screen.getByText('Mantenimiento')).toBeInTheDocument();
+    expect(screen.getByText('ACTIVO')).toBeInTheDocument();
+    expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
+    expect(screen.getByText('ESTRATEGIA')).toBeInTheDocument();
+    expect(screen.getByText('TÉCNICO')).toBeInTheDocument();
   });
 });

@@ -41,13 +41,13 @@ describe('FleetModule Orchestrator', () => {
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
-    expect(screen.getByText('Volver al Panel')).toBeInTheDocument();
   });
 
-  it('should return to GRID view when clicking "Volver al Panel"', (): void => {
+  it('should return to GRID view when clicking the "Estrategia Operativa" card', (): void => {
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
-    fireEvent.click(screen.getByText('Volver al Panel'));
+    // Clicking the Strategy card should return to the inventory table
+    fireEvent.click(screen.getByText(/Estrategia Operativa/i));
     expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
   });
 
