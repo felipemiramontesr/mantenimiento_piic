@@ -1806,8 +1806,9 @@ body {
 }
 
 .text-instrument-header {
-  font-size: 11px !important;
+  font-size: 9px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.15em !important;
+  white-space: nowrap !important;
 }

@@ -262,7 +262,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             true
           )}
           {renderKPI(
-            'Disponibilidad Inmediata',
+            'Disponibilidad',
             stats.available,
             ShieldCheck,
             '#10b981',
@@ -280,7 +280,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             true
           )}
           {renderKPI(
-            'Protocolos de Mejora',
+            'Mantenimiento',
             stats.maintenance,
             Wrench,
             '#f2b705',
