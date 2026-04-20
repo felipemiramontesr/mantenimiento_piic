@@ -71,6 +71,5 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(screen.getByText('Herramienta Menor')).toBeDefined();
 
     expect(screen.getAllByText(/Segmento Operativo/i).length).toBe(3);
-    expect(screen.getAllByText(/GESTIONAR SEGMENTO/i).length).toBe(3);
   });
 });

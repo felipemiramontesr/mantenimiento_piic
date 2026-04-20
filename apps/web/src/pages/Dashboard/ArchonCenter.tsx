@@ -113,7 +113,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     return (
       <div
         className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-700`}
-        style={{ borderTop: `4px solid ${accentColor}` }}
+        style={{ borderTop: '4px solid #0f2a44' }}
       >
         <div className="flex items-center gap-4 mb-8">
           <div
@@ -201,12 +201,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </span>
             </div>
           </div>
-        </div>
-
-        <div className="archon-tile-action">
-          <button className={`btn-sentinel-${variant} w-full`}>
-            GESTIONAR SEGMENTO <ArrowRight size={10} className="text-white ml-2" />
-          </button>
         </div>
       </div>
     );
