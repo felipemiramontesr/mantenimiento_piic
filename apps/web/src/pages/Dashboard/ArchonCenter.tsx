@@ -15,7 +15,7 @@ import { useFleet } from '../../context/FleetContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.12.0';
+const SYSTEM_VERSION = 'V28.13.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const { stats, loading } = useFleet();
@@ -54,9 +54,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         {loading ? (
           <div className="archon-shimmer h-24 w-full rounded" />
         ) : (
-          <div className="flex flex-col items-center space-y-2">
-            <h3 className="text-kpi-black text-[#0f2a44]">{value}</h3>
-            <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center">
+          <div className="flex flex-col items-center justify-center text-center w-full space-y-2">
+            <h3 className="text-kpi-black text-[#0f2a44] text-center w-full">{value}</h3>
+            <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center w-full">
               {description}
             </p>
           </div>
@@ -138,34 +138,34 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           }}
         >
           <div
-            className="quadrant-item border-r border-b"
+            className="quadrant-item border-r border-b flex flex-col items-center justify-center text-center"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
               Disponibilidad
             </span>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-center justify-center gap-2 w-full">
               <span className="text-2xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           </div>
           <div
-            className="quadrant-item border-b"
+            className="quadrant-item border-b flex flex-col items-center justify-center text-center"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
               Estado Crítico
             </span>
-            <span className="text-2xl font-black text-red-500">{data.maintenanceCount}</span>
+            <span className="text-2xl font-black text-red-500 w-full">{data.maintenanceCount}</span>
           </div>
           <div
-            className="quadrant-item border-r"
+            className="quadrant-item border-r flex flex-col items-center justify-center text-center"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
               MTBF Promedio
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center justify-center gap-1 w-full">
               <Activity size={12} className="text-sky-500" />
               <span className="text-lg font-black text-[#0f2a44]">
                 {formatTimeMetric(data.avgMtbf)}
@@ -173,13 +173,13 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </div>
           </div>
           <div
-            className="quadrant-item"
+            className="quadrant-item flex flex-col items-center justify-center text-center"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
               MTTR Táctico
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center justify-center gap-1 w-full">
               <History size={12} className="text-amber-500" />
               <span className="text-lg font-black text-[#0f2a44]">
                 {formatTimeMetric(data.avgMttr)}
