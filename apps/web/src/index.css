@@ -1205,7 +1205,7 @@ body {
   /* Modifiers */
   .card-hover-yellow:hover {
     border-color: rgba(242, 183, 5, 0.55);
-    box-shadow: 0 12px 40px rgba(242, 183, 5, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.95);
   }
 
   .btn-sentinel-yellow {
@@ -1224,14 +1224,12 @@ body {
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     border: none;
     cursor: pointer;
-    box-shadow: 0 10px 25px rgba(242, 183, 5, 0.2);
   }
   /* ... mapping other variants similarly ... */
 }
 
 .btn-sentinel-yellow:hover {
   background-color: #ffd000;
-  box-shadow: 0 12px 30px rgba(242, 183, 5, 0.35);
 }
 
 .btn-sentinel-violet {
@@ -1250,12 +1248,10 @@ body {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
 }
 
 .btn-sentinel-violet:hover {
   background-color: #7c3aed;
-  box-shadow: 0 12px 30px rgba(139, 92, 246, 0.35);
 }
 
 .btn-sentinel-emerald {
@@ -1274,12 +1270,10 @@ body {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
 }
 
 .btn-sentinel-emerald:hover {
   background-color: #059669;
-  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.35);
 }
 
 .btn-sentinel-sky {
@@ -1298,12 +1292,10 @@ body {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.2);
 }
 
 .btn-sentinel-sky:hover {
   background-color: #0284c7;
-  box-shadow: 0 12px 30px rgba(14, 165, 233, 0.35);
 }
 
 .btn-sentinel-red {
@@ -1322,12 +1314,10 @@ body {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
 }
 
 .btn-sentinel-red:hover {
   background-color: #dc2626;
-  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.35);
 }
 
 .btn-sentinel-navy {
@@ -1346,12 +1336,10 @@ body {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(15, 42, 68, 0.2);
 }
 
 .btn-sentinel-navy:hover {
   background-color: #1a3a5a;
-  box-shadow: 0 12px 30px rgba(15, 42, 68, 0.35);
 }
 
 /* 🏢 FORM GRID SYSTEM */

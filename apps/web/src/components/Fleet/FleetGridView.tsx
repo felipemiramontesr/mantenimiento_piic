@@ -403,7 +403,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
   const [selectedGalleryUnit, setSelectedGalleryUnit] = React.useState<FleetUnit | null>(null);
 
   return (
-    <div className="animate-in fade-in duration-700 space-y-12 pb-20 text-[#0f2a44]">
+    <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
       {selectedGalleryUnit && (
         <ArchonGalleryOverlay
           images={selectedGalleryUnit.images || []}
