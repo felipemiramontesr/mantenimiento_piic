@@ -18,6 +18,7 @@ vi.mock('../services/db', () => ({
 vi.mock('argon2', () => ({
   default: {
     verify: vi.fn(),
+    hash: vi.fn(),
   },
 }));
 
@@ -25,7 +26,7 @@ describe('Auth Integration Endpoints', () => {
   const app = buildApp();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('POST /v1/login', () => {
@@ -155,6 +156,7 @@ describe('Auth Integration Endpoints', () => {
     };
 
     it('should successfully register a new user', async (): Promise<void> => {
+      (argon2.hash as Mock).mockResolvedValueOnce('hashed_password');
       (db.execute as Mock)
         .mockResolvedValueOnce([[]]) // 1. Identity check (not exists)
         .mockResolvedValueOnce([{ insertId: 2 }]); // 2. Persistence
