@@ -13,7 +13,7 @@ import useFleetForm from '../../hooks/useFleetForm';
 type FleetView = 'GRID' | 'CREATE';
 
 /**
- * 🚀 ARCHON FLEET MODULE (v.17.0.0)
+ * 🚀 ARCHON FLEET MODULE (v.28.14.0)
  * Architecture: Sovereign Instrumental Node
  * Principles: SOLID, DRY, DIP
  */
