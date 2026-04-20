@@ -145,4 +145,121 @@ describe('Auth Integration Endpoints', () => {
       expect(response.statusCode).toBe(401);
     });
   });
+
+  describe('POST /v1/auth/register', () => {
+    const newUser = {
+      username: 'new_operator',
+      email: 'operator@piic.mx',
+      password: 'secure_password123',
+      roleId: 2,
+    };
+
+    it('should successfully register a new user', async (): Promise<void> => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[]]) // 1. Identity check (not exists)
+        .mockResolvedValueOnce([{ insertId: 2 }]); // 2. Persistence
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: newUser,
+      });
+
+      expect(response.statusCode).toBe(201);
+      expect(JSON.parse(response.body).message).toContain('exitosamente');
+    });
+
+    it('should return 409 if username is already taken', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]); // Identity check (exists)
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: newUser,
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect(JSON.parse(response.body).error).toContain('ya está registrado');
+    });
+
+    it('should return 400 for password too short', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: { ...newUser, password: 'short' },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should handle critical failure during registration', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('QUERY_FAIL'));
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/register',
+        payload: newUser,
+      });
+
+      expect(response.statusCode).toBe(500);
+    });
+  });
+
+  describe('GET /v1/auth/users', () => {
+    it('should return a list of active personnel', async (): Promise<void> => {
+      const mockUsers = [
+        {
+          id: 1,
+          username: 'admin',
+          email: EncryptionService.encrypt('a@piic.mx'),
+          roleId: 1,
+          roleName: 'ADMIN',
+        },
+        {
+          id: 2,
+          username: 'tech',
+          email: EncryptionService.encrypt('t@piic.mx'),
+          roleId: 3,
+          roleName: 'TÉCNICO',
+        },
+      ];
+      (db.execute as Mock).mockResolvedValueOnce([mockUsers]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/auth/users',
+      });
+
+      expect(response.statusCode).toBe(200);
+      const data = JSON.parse(response.body);
+      expect(data.success).toBe(true);
+      expect(data.count).toBe(2);
+      expect(data.data[0].email).toBe('a@piic.mx');
+    });
+
+    it('should filter personnel by roleId', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/auth/users',
+        query: { role: '3' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      // Verify query includes the filter (implied by execution)
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('u.role_id = ?'), [3]);
+    });
+
+    it('should handle failure when listing personnel', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_DOWN'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/auth/users',
+      });
+
+      expect(response.statusCode).toBe(500);
+    });
+  });
 });
