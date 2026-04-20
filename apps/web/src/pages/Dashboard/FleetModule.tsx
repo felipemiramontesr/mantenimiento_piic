@@ -1,38 +1,48 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, ArrowLeft, Settings, LogOut } from 'lucide-react';
+import { Truck, Settings, LogOut } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
-import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
+import { BRANDING_NAME } from '../../constants/versionConstants';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
+import FleetManagementCards, { ManagementPanel } from '../../components/Fleet/FleetManagementCards';
 import FleetGridView from '../../components/Fleet/FleetGridView';
 import FleetRegistrationForm from '../../components/Fleet/FleetRegistrationForm';
 import FleetSuccessView from '../../components/Fleet/FleetSuccessView';
 import useFleetForm from '../../hooks/useFleetForm';
 
-type FleetView = 'GRID' | 'CREATE';
-
 /**
- * 🚀 ARCHON FLEET MODULE (v.28.14.0)
+ * 🚀 ARCHON FLEET MODULE (v.28.19.0)
  * Architecture: Sovereign Instrumental Node
  * Principles: SOLID, DRY, DIP
+ * Refinement: Dynamic Panel Orchestration with Axial Scroll
  */
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const { refreshUnits, units } = useFleet();
-  const [currentView, setCurrentView] = useState<FleetView>('GRID');
+  const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const panelRef = React.useRef<HTMLDivElement>(null);
 
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
-  // Shared with RegistrationForm to ensure perfect state synchronization
   const fleetController = useFleetForm();
   const { formData, registrationSuccess, setRegistrationSuccess } = fleetController;
 
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
 
+  const handlePanelChange = (panel: ManagementPanel): void => {
+    setActivePanel(panel);
+    setRegistrationSuccess(false);
+
+    // 🚀 AXIAL SCROLL (Subtle & Smooth)
+    setTimeout(() => {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   const handleReturnToGrid = (): void => {
-    setCurrentView('GRID');
+    setActivePanel('STRATEGY');
     setRegistrationSuccess(false);
   };
 
@@ -174,39 +184,43 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        {currentView === 'CREATE' && (
-          <div className="flex items-center w-full pb-8 animate-in fade-in duration-500">
-            <button onClick={handleReturnToGrid} className="btn-sentinel-yellow">
-              <ArrowLeft size={14} /> Volver al Panel
-            </button>
-          </div>
-        )}
+        {/* 🔱 PERSISTENT MANAGEMENT CARDS (v.28.19.0) */}
+        <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
 
-        <div className="w-full h-full">
+        <div ref={panelRef} className="w-full h-full pt-4">
           {registrationSuccess ? (
             <FleetSuccessView formData={formData} />
           ) : (
-            <>
-              {currentView === 'GRID' && (
-                <FleetGridView onRegister={(): void => setCurrentView('CREATE')} units={units} />
-              )}
-              {currentView === 'CREATE' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              {activePanel === 'STRATEGY' && <FleetGridView units={units} />}
+              {activePanel === 'EXPANSION' && (
                 <FleetRegistrationForm
                   controller={fleetController}
                   onSuccess={refreshUnits}
                   onCancel={handleReturnToGrid}
                 />
               )}
-            </>
+              {activePanel === 'MAINTENANCE' && (
+                <div className="glass-card-pro bg-white p-12 flex flex-col items-center justify-center border-t-4 border-sky-500">
+                  <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
+                    <Settings className="text-sky-600 animate-spin-slow" size={32} />
+                  </div>
+                  <h3 className="text-[#0f2a44] font-black uppercase tracking-widest">
+                    Protocolos de Mantenimiento
+                  </h3>
+                  <p className="text-[11px] font-bold opacity-50 uppercase tracking-[0.2em] mt-2">
+                    Módulo en Fase de Calibración
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </section>
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">
-          {BRANDING_NAME} {SYSTEM_VERSION}
-        </p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} V28.19.0</p>
       </footer>
     </main>
   );
