@@ -17,6 +17,8 @@ import {
   Tag,
   CreditCard,
   MapPin,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -401,6 +403,54 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
   units = [],
 }): React.JSX.Element => {
   const [selectedGalleryUnit, setSelectedGalleryUnit] = React.useState<FleetUnit | null>(null);
+  const [sortConfig, setSortConfig] = React.useState<{
+    field: 'programacion' | 'pronostico' | null;
+    direction: 'asc' | 'desc';
+  }>({ field: null, direction: 'asc' });
+
+  /** 🔱 Predictive Sort Memoizer */
+  const sortedUnits = React.useMemo(() => {
+    if (!sortConfig.field) return units;
+
+    // Pre-calculate forecasts for efficient comparison
+    const unitsMap = units.map((u) => ({
+      unit: u,
+      forecast: calculateMaintForecast(u),
+    }));
+
+    return [...unitsMap]
+      .sort((a, b) => {
+        let valA;
+        let valB;
+        if (sortConfig.field === 'programacion') {
+          valA = a.forecast ? a.forecast.kmParaServicio : Infinity;
+          valB = b.forecast ? b.forecast.kmParaServicio : Infinity;
+        } else {
+          valA = a.forecast ? a.forecast.forecastDate.getTime() : Infinity;
+          valB = b.forecast ? b.forecast.forecastDate.getTime() : Infinity;
+        }
+
+        if (sortConfig.direction === 'asc') return valA - valB;
+        return valB - valA;
+      })
+      .map((item) => item.unit);
+  }, [units, sortConfig]);
+
+  const handleSort = (field: 'programacion' | 'pronostico'): void => {
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const renderSortIcon = (field: 'programacion' | 'pronostico'): React.ReactNode => {
+    if (sortConfig.field !== field) return null;
+    return sortConfig.direction === 'asc' ? (
+      <ChevronUp size={10} className="ml-1 text-[#f2b705]" />
+    ) : (
+      <ChevronDown size={10} className="ml-1 text-[#f2b705]" />
+    );
+  };
 
   return (
     <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
@@ -459,11 +509,31 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                 <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
                   TÉCNICO
                 </th>
-                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
-                  PROGRAMACIÓN
+                <th
+                  onClick={(): void => handleSort('programacion')}
+                  className="text-center py-4 text-[11px] font-black uppercase text-[#0f2a44] cursor-pointer hover:bg-[#0f2a44]/5 transition-colors"
+                >
+                  <div className="flex items-center justify-center">
+                    <span
+                      className={sortConfig.field === 'programacion' ? 'opacity-100' : 'opacity-40'}
+                    >
+                      PROGRAMACIÓN
+                    </span>
+                    {renderSortIcon('programacion')}
+                  </div>
                 </th>
-                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
-                  PRONÓSTICO
+                <th
+                  onClick={(): void => handleSort('pronostico')}
+                  className="text-center py-4 text-[11px] font-black uppercase text-[#0f2a44] cursor-pointer hover:bg-[#0f2a44]/5 transition-colors"
+                >
+                  <div className="flex items-center justify-center">
+                    <span
+                      className={sortConfig.field === 'pronostico' ? 'opacity-100' : 'opacity-40'}
+                    >
+                      PRONÓSTICO
+                    </span>
+                    {renderSortIcon('pronostico')}
+                  </div>
                 </th>
                 <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
                   SALUD
@@ -474,7 +544,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {units.length === 0 ? (
+              {sortedUnits.length === 0 ? (
                 <tr>
                   <td
                     colSpan={9}
@@ -484,7 +554,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                   </td>
                 </tr>
               ) : (
-                units.map((unit) => (
+                sortedUnits.map((unit) => (
                   <FleetRegistryRow
                     key={unit.uuid}
                     unit={unit}
