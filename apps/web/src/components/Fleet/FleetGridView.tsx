@@ -404,7 +404,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
 }): React.JSX.Element => {
   const [selectedGalleryUnit, setSelectedGalleryUnit] = React.useState<FleetUnit | null>(null);
   const [sortConfig, setSortConfig] = React.useState<{
-    field: 'programacion' | 'pronostico' | null;
+    field: 'unidad' | 'programacion' | 'pronostico' | null;
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
@@ -429,7 +429,10 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
       .sort((a, b) => {
         let valA;
         let valB;
-        if (sortConfig.field === 'programacion') {
+        if (sortConfig.field === 'unidad') {
+          valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
+          valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
+        } else if (sortConfig.field === 'programacion') {
           valA = a.forecast ? a.forecast.kmParaServicio : Infinity;
           valB = b.forecast ? b.forecast.kmParaServicio : Infinity;
         } else {
@@ -443,14 +446,14 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
       .map((item) => item.unit);
   }, [units, sortConfig]);
 
-  const handleSort = (field: 'programacion' | 'pronostico'): void => {
+  const handleSort = (field: 'unidad' | 'programacion' | 'pronostico'): void => {
     setSortConfig((prev) => ({
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
     }));
   };
 
-  const renderSortIcon = (field: 'programacion' | 'pronostico'): React.ReactNode => {
+  const renderSortIcon = (field: 'unidad' | 'programacion' | 'pronostico'): React.ReactNode => {
     if (sortConfig.field !== field) return null;
     return sortConfig.direction === 'asc' ? (
       <ChevronUp size={10} className="ml-1 text-[#f2b705]" />
@@ -504,8 +507,16 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
                 <th className="text-center py-4 w-[120px] text-[10px] font-black uppercase opacity-40">
                   ACTIVO
                 </th>
-                <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
-                  UNIDAD
+                <th
+                  onClick={(): void => handleSort('unidad')}
+                  className="text-center py-4 text-[11px] font-black uppercase text-[#0f2a44] cursor-pointer hover:bg-[#0f2a44]/5 transition-colors"
+                >
+                  <div className="flex items-center justify-center">
+                    <span className={sortConfig.field === 'unidad' ? 'opacity-100' : 'opacity-40'}>
+                      UNIDAD
+                    </span>
+                    {renderSortIcon('unidad')}
+                  </div>
                 </th>
                 <th className="text-center py-4 text-[10px] font-black uppercase opacity-40">
                   IDENTIDAD
