@@ -91,7 +91,9 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const stats = useMemo(() => {
     const total = units.length;
-    const available = units.filter((u) => u.status === 'Disponible').length;
+    const available = units.filter(
+      (u) => u.status === 'Disponible' || u.status === 'Asignada'
+    ).length;
     const inRoute = units.filter((u) => u.status === 'En Ruta').length;
     const maintenance = units.filter((u) => u.status === 'En Mantenimiento').length;
     const discontinued = units.filter((u) => u.status === 'Descontinuada').length;
@@ -102,7 +104,9 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
       const count = subset.length;
       const maintenanceCount = subset.filter((u) => u.status === 'En Mantenimiento').length;
-      const availableCount = subset.filter((u) => u.status === 'Disponible').length;
+      const availableCount = subset.filter(
+        (u) => u.status === 'Disponible' || u.status === 'Asignada'
+      ).length;
       const availablePercent = count > 0 ? Math.round((availableCount / count) * 100) : 0;
 
       const validMTBF = subset.filter((u) => (u.mtbfHours || 0) > 0);
