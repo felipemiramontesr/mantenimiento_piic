@@ -430,7 +430,7 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
               </h3>
             </div>
             <p className="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em]">
-              Visualización Integrada & Inteligencia Predictiva (Zero-Scroll Mode)
+              Visualización Integrada & Inteligencia Predictiva
             </p>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded border border-emerald-100">
