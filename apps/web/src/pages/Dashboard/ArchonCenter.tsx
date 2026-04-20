@@ -167,9 +167,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <div className="grid grid-cols-2 grid-rows-2 flex-1 border border-[#0f2a44]/10 rounded-md overflow-hidden bg-gray-50/5">
           {/* Q1: DISP */}
           <div className="flex flex-col items-center justify-center p-8 border-b border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
-              <ShieldCheck size={12} className="text-emerald-500" />
-              <span className="text-[9px] font-black uppercase tracking-tighter">DISP</span>
+            <div className="flex items-center gap-2.5 opacity-40 mb-1.5 text-[#0f2a44]">
+              <ShieldCheck size={20} className="text-emerald-500" />
+              <span className="text-[14px] font-black uppercase tracking-[0.1em]">DISP</span>
             </div>
             <div className="flex items-baseline gap-0.5">
               <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
@@ -181,9 +181,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
           {/* Q2: MTBF */}
           <div className="flex flex-col items-center justify-center p-8 border-b border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
-              <Zap size={12} className="text-yellow-500" />
-              <span className="text-[9px] font-black uppercase tracking-tighter">MTBF</span>
+            <div className="flex items-center gap-2.5 opacity-40 mb-1.5 text-[#0f2a44]">
+              <Zap size={20} className="text-yellow-500" />
+              <span className="text-[14px] font-black uppercase tracking-[0.1em]">MTBF</span>
             </div>
             <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
               {loading ? '--' : formatTimeMetric(data.mtbf)}
@@ -192,9 +192,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
           {/* Q3: MTTR */}
           <div className="flex flex-col items-center justify-center p-8 border-r border-[#0f2a44]/10 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
-              <History size={12} className="text-violet-500" />
-              <span className="text-[9px] font-black uppercase tracking-tighter">MTTR</span>
+            <div className="flex items-center gap-2.5 opacity-40 mb-1.5 text-[#0f2a44]">
+              <History size={20} className="text-violet-500" />
+              <span className="text-[14px] font-black uppercase tracking-[0.1em]">MTTR</span>
             </div>
             <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
               {loading ? '--' : formatTimeMetric(data.mttr)}
@@ -203,9 +203,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
           {/* Q4: BCK */}
           <div className="flex flex-col items-center justify-center p-8 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-1.5 opacity-40 mb-0.5 text-[#0f2a44]">
-              <Layers size={12} className="text-gray-400" />
-              <span className="text-[9px] font-black uppercase tracking-tighter">BCK</span>
+            <div className="flex items-center gap-2.5 opacity-40 mb-1.5 text-[#0f2a44]">
+              <Layers size={20} className="text-gray-400" />
+              <span className="text-[14px] font-black uppercase tracking-[0.1em]">BCK</span>
             </div>
             <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
               {loading ? '--' : data.backlog}
