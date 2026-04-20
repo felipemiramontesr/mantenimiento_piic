@@ -1369,7 +1369,7 @@ body {
   display: grid !important;
   grid-template-rows: auto 1fr;
   row-gap: 16px;
-  padding: 16px 40px 60px 40px !important;
+  padding: 16px 40px 8px 40px !important;
   height: calc(100vh - 120px);
   overflow-y: auto;
 }
