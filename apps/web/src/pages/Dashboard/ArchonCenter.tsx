@@ -354,7 +354,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       <section className="archon-workspace-chassis">
         {/* 🛡️ INDEPENDENT ANALYTICAL INSTRUMENTS (Consolidated Logic, Independent Display) */}
         <div className="animate-in slide-in-from-top-12 duration-1000">
-          <div className="flex items-center gap-12 mb-10 px-8">
+          <div className="flex items-center gap-12 py-6 px-8">
             <Activity size={20} style={{ color: '#0f2a44' }} />
             <h2 className="text-[#0f2a44] font-black tracking-tighter text-xl uppercase">
               Inteligencia Operativa
