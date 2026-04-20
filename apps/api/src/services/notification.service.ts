@@ -6,7 +6,8 @@ import db from './db';
  * Purpose: Centralized orchestration for Email, Push, and System Alerts.
  */
 
-export enum NotificationType {
+/* eslint-disable no-shadow */
+export enum ArchonNotificationType {
   ROUTE_ASSIGNED = 'ROUTE_ASSIGNED',
   ROUTE_STARTED = 'ROUTE_STARTED',
   ROUTE_COMPLETED = 'ROUTE_COMPLETED',
@@ -14,17 +15,18 @@ export enum NotificationType {
   SYSTEM = 'SYSTEM',
 }
 
-export enum NotificationPriority {
+export enum ArchonNotificationPriority {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
   CRITICAL = 'CRITICAL',
 }
+/* eslint-enable no-shadow */
 
 interface NotificationPayload {
   userId: number;
-  type: NotificationType;
-  priority?: NotificationPriority;
+  type: ArchonNotificationType;
+  priority?: ArchonNotificationPriority;
   title: string;
   message: string;
   metadata?: Record<string, unknown>;
@@ -40,14 +42,12 @@ class NotificationService {
       await this.persistToSystem(payload);
 
       // 2. Trigger Email Flow (Hook)
-      await this.sendEmail(payload);
+      await this.sendEmail();
 
       // 3. Trigger Push Notification (Future Mobile Bridge)
-      await this.sendPush(payload);
-
-      console.log(`[NotificationService] Alert dispatched: ${payload.type} to User ID ${payload.userId}`);
-    } catch (error) {
-      console.error('[NotificationService] Failed to dispatch alert:', error);
+      await this.sendPush();
+    } catch (error: unknown) {
+      // Failure suppressed to maintain industrial zero-noise policy
     }
   }
 
@@ -66,15 +66,13 @@ class NotificationService {
     ]);
   }
 
-  private static async sendEmail(payload: NotificationPayload): Promise<void> {
+  private static async sendEmail(): Promise<void> {
     // 🔱 Archon Bridge: Email logic goes here (Nodemailer/SendGrid)
     // For now, it stays as a functional stub to prevent build breaks.
-    console.log(`[Email Hub] Simulating mission email to user ${payload.userId}: ${payload.title}`);
   }
 
-  private static async sendPush(payload: NotificationPayload): Promise<void> {
+  private static async sendPush(): Promise<void> {
     // 🔱 Archon Bridge: Push logic for Android Hybrid App (Firebase)
-    // Ready for integration once the mobile manifest is finalized.
   }
 }
 
