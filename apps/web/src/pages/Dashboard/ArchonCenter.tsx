@@ -15,7 +15,7 @@ import { useFleet } from '../../context/FleetContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.13.0';
+const SYSTEM_VERSION = 'V28.15.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const { stats, loading } = useFleet();
@@ -84,7 +84,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     title: string,
     categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta',
     accentColor: string,
-    variant: 'violet' | 'yellow' | 'sky'
+    variant: 'violet' | 'yellow' | 'sky' | 'navy'
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
 
@@ -227,9 +227,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <section className="archon-workspace-chassis">
         <div className="archon-grid-3 mb-8">
-          {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6', 'violet')}
-          {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705', 'yellow')}
-          {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9', 'sky')}
+          {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6', 'navy')}
+          {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705', 'navy')}
+          {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9', 'navy')}
         </div>
 
         <div className="archon-grid-3">
