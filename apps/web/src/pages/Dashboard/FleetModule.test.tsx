@@ -39,21 +39,21 @@ describe('FleetModule Orchestrator', () => {
 
   it('should transition to CREATE view when starting registration', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
+    fireEvent.click(screen.getByText(/Registrar/i));
     expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
     expect(screen.getByText('Volver al Panel')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking "Volver al Panel"', (): void => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
+    fireEvent.click(screen.getByText(/Registrar/i));
     fireEvent.click(screen.getByText('Volver al Panel'));
     expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should show success view after successful registration', async (): Promise<void> => {
     renderModule();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
+    fireEvent.click(screen.getByText(/Registrar/i));
 
     // Simulate successful submission in the child form
     fireEvent.click(screen.getByText(/Confirmar Registro/i));
@@ -68,14 +68,14 @@ describe('FleetModule Orchestrator', () => {
     const menuButton = screen.getByRole('button', { name: /user menu/i });
     fireEvent.click(menuButton);
     expect(screen.getByText('Ajustes')).toBeInTheDocument();
-    expect(screen.getByText('Cerrar Sesión')).toBeInTheDocument();
+    expect(screen.getByText('Desconexión')).toBeInTheDocument();
   });
 
   it('should logout correctly', (): void => {
     const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem');
     renderModule();
     fireEvent.click(screen.getByRole('button', { name: /user menu/i }));
-    fireEvent.click(screen.getByText('Cerrar Sesión'));
+    fireEvent.click(screen.getByText('Desconexión'));
     expect(removeItemSpy).toHaveBeenCalledWith('archon_token');
   });
 });

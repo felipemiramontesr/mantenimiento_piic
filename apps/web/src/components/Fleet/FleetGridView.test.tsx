@@ -17,16 +17,16 @@ describe('FleetGridView Component', () => {
 
   const renderComponent = (): RenderResult => render(<FleetGridView {...mockProps} />);
 
-  it('should call onRegister when "Iniciar Registro" is clicked', (): void => {
+  it('should call onRegister when "Registrar" is clicked', (): void => {
     renderComponent();
-    fireEvent.click(screen.getByText(/Iniciar Registro/i));
+    fireEvent.click(screen.getByText(/Registrar/i));
     expect(mockProps.onRegister).toHaveBeenCalled();
   });
 
   it('should display the core master labels', (): void => {
     renderComponent();
-    expect(screen.getByText('Administración de Activos')).toBeInTheDocument();
-    expect(screen.getByText('Registrar Unidad')).toBeInTheDocument();
+    expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
+    expect(screen.getByText('Registrar')).toBeInTheDocument();
     expect(screen.getByText('Mantenimiento')).toBeInTheDocument();
   });
 });

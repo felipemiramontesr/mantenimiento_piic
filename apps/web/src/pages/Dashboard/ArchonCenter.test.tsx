@@ -41,9 +41,8 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
       );
     });
 
-    expect(screen.getByText('Archon')).toBeDefined();
-    expect(screen.getByText('Centro de Comando')).toBeDefined();
-    expect(screen.getByText(/Eje de Control de personal, unidades/i)).toBeDefined();
+    expect(screen.getByText('Sentinel Command')).toBeDefined();
+    expect(screen.getByText('Digital Fortress Management')).toBeDefined();
   });
 
   it('toggles the user menu when clicking the avatar', async () => {
@@ -60,12 +59,12 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     const avatarBtn = screen.getByLabelText('User Menu');
 
     // Menu should be hidden initially
-    expect(screen.queryByText('Perfil')).toBeNull();
+    expect(screen.queryByText('Control de Acceso')).toBeNull();
 
     // Click to open
     fireEvent.click(avatarBtn);
-    expect(screen.getByText('Perfil')).toBeDefined();
-    expect(screen.getByText(/Cerrar Sesión/i)).toBeDefined();
+    expect(screen.getByText('Control de Acceso')).toBeDefined();
+    expect(screen.getByText(/Desconexión/i)).toBeDefined();
 
     // Click to close (or toggle back)
     fireEvent.click(avatarBtn);
@@ -87,7 +86,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     fireEvent.click(screen.getByLabelText('User Menu'));
 
     // Click Logout
-    const logoutBtn = screen.getByText(/Cerrar Sesión/i);
+    const logoutBtn = screen.getByText(/Desconexión/i);
     fireEvent.click(logoutBtn);
 
     expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
@@ -111,9 +110,9 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(screen.getByText(/Unidades disponibles/i)).toBeDefined();
     expect(screen.getByText(/Unidades en ruta/i)).toBeDefined();
     expect(screen.getByText(/Unidades en mantenimiento/i)).toBeDefined();
-    expect(screen.getByText(/Unidades descontinuadas/i)).toBeDefined();
+    expect(screen.getByText(/Mermas de Flota/i)).toBeDefined();
     // Verify visibility of action buttons
-    const detailButtons = screen.getAllByText(/Ver detalles/i);
+    const detailButtons = screen.getAllByText(/Ver Detalle/i);
     expect(detailButtons.length).toBe(6);
   });
 });

@@ -164,7 +164,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   className="dropdown-item-mock dropdown-item-mock-danger"
                   onClick={handleLogout}
                 >
-                  <LogOut size={14} /> Cerrar Sesión
+                  <LogOut size={14} /> Desconexión
                 </button>
               </div>
             )}

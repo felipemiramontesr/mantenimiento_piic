@@ -51,7 +51,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     mode: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red'
   ): React.ReactElement => {
     const isMaintenanceIndex = label.includes('Índice');
-    
+
     return (
       <div
         className={`glass-card-pro archon-instrument-tile card-hover-${mode}`}
@@ -84,7 +84,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           <button
             className="btn-sentinel-pro w-full flex items-center justify-center gap-2"
             style={{ backgroundColor: color }}
-            onClick={(): void => { /* Navigation detail: Future extension */ }}
+            onClick={(): void => {
+              /* Navigation detail: Future extension */
+            }}
           >
             Ver Detalle <ArrowRight size={12} />
           </button>
@@ -108,7 +110,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     accentColor: string
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
-    
+
     const categoryIcons: Record<string, React.ElementType> = {
       vehiculo: Truck,
       maquinaria: Layers,
@@ -128,40 +130,56 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               <Icon size={24} />
             </div>
             <div className="flex flex-col">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">Segmento Operativo</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-40">
+                Segmento Operativo
+              </h4>
               <h3 className="text-xl font-black text-[#0f2a44] tracking-tight">{title}</h3>
             </div>
           </div>
           <div className="flex flex-col items-end">
             <span className="text-2xl font-black text-[#0f2a44]">{data.count}</span>
-            <span className="text-[8px] font-black uppercase tracking-widest opacity-30">Activos Totales</span>
+            <span className="text-[8px] font-black uppercase tracking-widest opacity-30">
+              Activos Totales
+            </span>
           </div>
         </div>
 
         <div className="analytics-grid-quadrant">
           <div className="quadrant-item border-r border-b border-gray-100 p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">Disponibilidad</span>
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+              Disponibilidad
+            </span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-[#0f2a44]">{data.available_percent}%</span>
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           </div>
           <div className="quadrant-item border-b border-gray-100 p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">Estado Crítico</span>
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+              Estado Crítico
+            </span>
             <span className="text-2xl font-black text-[#ef4444]">{data.maintenance_count}</span>
           </div>
           <div className="quadrant-item border-r border-gray-100 p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">MTBF Promedio</span>
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+              MTBF Promedio
+            </span>
             <div className="flex items-center gap-2">
               <Activity size={12} className="text-sky-500" />
-              <span className="text-lg font-black text-[#0f2a44]">{formatTimeMetric(data.avg_mtbf)}</span>
+              <span className="text-lg font-black text-[#0f2a44]">
+                {formatTimeMetric(data.avg_mtbf)}
+              </span>
             </div>
           </div>
           <div className="quadrant-item p-6">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">MTTR Táctico</span>
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-30 block mb-2">
+              MTTR Táctico
+            </span>
             <div className="flex items-center gap-2">
               <History size={12} className="text-amber-500" />
-              <span className="text-lg font-black text-[#0f2a44]">{formatTimeMetric(data.avg_mttr)}</span>
+              <span className="text-lg font-black text-[#0f2a44]">
+                {formatTimeMetric(data.avg_mttr)}
+              </span>
             </div>
           </div>
         </div>
@@ -186,28 +204,47 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           <div className="nav-actions-pro">
             <div className="search-pill-mock">
               <Activity size={14} className="text-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black tracking-widest uppercase">System Online</span>
+              <span className="text-[10px] font-black tracking-widest uppercase">
+                System Online
+              </span>
             </div>
           </div>
 
           <div className="relative">
             <button
               onClick={toggleMenu}
-              className={`user-avatar-pro transition-all ${isMenuOpen ? 'ring-4 ring-[#0f2a44]/10 scale-110' : ''}`}
+              aria-label="User Menu"
+              className={`user-avatar-pro transition-all ${
+                isMenuOpen ? 'ring-4 ring-[#0f2a44]/10 scale-110' : ''
+              }`}
             >
               <User size={20} className="text-[#0f2a44]" />
             </button>
 
             {isMenuOpen && (
-              <div className="archon-dropdown-pro animate-in zoom-in-95 duration-200" style={{ top: '100%', right: 0, marginTop: '16px' }}>
+              <div
+                className="archon-dropdown-pro animate-in zoom-in-95 duration-200"
+                style={{ top: '100%', right: 0, marginTop: '16px' }}
+              >
                 <div className="dropdown-header-pro">
-                  <span className="text-[10px] uppercase font-black tracking-widest opacity-40">Sovereign Access</span>
+                  <span className="text-[10px] uppercase font-black tracking-widest opacity-40">
+                    Sovereign Access
+                  </span>
                 </div>
-                <button className="dropdown-item-mock" onClick={(): void => { setIsAccessControlOpen(true); closeMenu(); }}>
+                <button
+                  className="dropdown-item-mock"
+                  onClick={(): void => {
+                    setIsAccessControlOpen(true);
+                    closeMenu();
+                  }}
+                >
                   <ShieldCheck size={14} /> Control de Acceso
                 </button>
                 <div className="border-t border-gray-100 my-2" />
-                <button className="dropdown-item-mock text-red-600 hover:bg-red-50" onClick={handleLogout}>
+                <button
+                  className="dropdown-item-mock text-red-600 hover:bg-red-50"
+                  onClick={handleLogout}
+                >
                   <LogOut size={14} /> Desconexión
                 </button>
               </div>
@@ -220,7 +257,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <div className="flex items-end justify-between mb-16 border-l-4 border-[#0f2a44] pl-8">
           <div>
             <h2 className="strategy-title uppercase">Métricas Decisivas</h2>
-            <p className="strategy-subtitle uppercase opacity-40 tracking-widest">Análisis Predictivo de Segmentos Operativos</p>
+            <p className="strategy-subtitle uppercase opacity-40 tracking-widest">
+              Análisis Predictivo de Segmentos Operativos
+            </p>
           </div>
           <div className="flex gap-4">
             <div className="kpi-micro-pill">
@@ -238,21 +277,75 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </section>
 
       <section className="global-instrument-cluster p-12">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '20px', width: '100%' }}>
-          {renderKPI('Índice de Mantenimiento', stats.maintenanceIndex, Gauge, '#0f2a44', 'Salud global de activos', 'navy')}
-          {renderKPI('Nuestras Unidades', stats.total, Truck, '#8b5cf6', 'Total de activos registrados', 'violet')}
-          {renderKPI('Unidades disponibles', stats.available, ShieldCheck, '#10b981', 'Estatus de operación inmediata', 'emerald')}
-          {renderKPI('Unidades en ruta', stats.inRoute, Navigation, '#0ea5e9', 'Unidades en operación', 'sky')}
-          {renderKPI('Unidades en mantenimiento', stats.maintenance, Wrench, '#f2b705', 'Protocolos técnicos activos', 'yellow')}
-          {renderKPI('Mermas de Flota', stats.total_inactive, ShieldAlert, '#ef4444', 'Unidades inactivas o mermas', 'red')}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '20px',
+            width: '100%',
+          }}
+        >
+          {renderKPI(
+            'Índice de Mantenimiento',
+            stats.maintenanceIndex,
+            Gauge,
+            '#0f2a44',
+            'Salud global de activos',
+            'navy'
+          )}
+          {renderKPI(
+            'Nuestras Unidades',
+            stats.total,
+            Truck,
+            '#8b5cf6',
+            'Total de activos registrados',
+            'violet'
+          )}
+          {renderKPI(
+            'Unidades disponibles',
+            stats.available,
+            ShieldCheck,
+            '#10b981',
+            'Estatus de operación inmediata',
+            'emerald'
+          )}
+          {renderKPI(
+            'Unidades en ruta',
+            stats.inRoute,
+            Navigation,
+            '#0ea5e9',
+            'Unidades en operación',
+            'sky'
+          )}
+          {renderKPI(
+            'Unidades en mantenimiento',
+            stats.maintenance,
+            Wrench,
+            '#f2b705',
+            'Protocolos técnicos activos',
+            'yellow'
+          )}
+          {renderKPI(
+            'Mermas de Flota',
+            stats.total_inactive,
+            ShieldAlert,
+            '#ef4444',
+            'Unidades inactivas o mermas',
+            'red'
+          )}
         </div>
       </section>
 
-      <AccessControlSlideOver isOpen={isAccessControlOpen} onClose={(): void => setIsAccessControlOpen(false)} />
+      <AccessControlSlideOver
+        isOpen={isAccessControlOpen}
+        onClose={(): void => setIsAccessControlOpen(false)}
+      />
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} {SYSTEM_VERSION}</p>
+        <p className="text-[#0f2a44]">
+          {BRANDING_NAME} {SYSTEM_VERSION}
+        </p>
       </footer>
     </main>
   );

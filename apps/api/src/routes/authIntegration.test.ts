@@ -42,8 +42,8 @@ describe('Auth Integration Endpoints', () => {
             id: 1,
             username: 'admin',
             email: EncryptionService.encrypt('admin@piic.mx'),
-            password_hash: 'hashed_password',
-            role_id: 1,
+            passwordHash: 'hashed_password',
+            roleId: 1,
           },
         ],
       ]);
@@ -83,8 +83,8 @@ describe('Auth Integration Endpoints', () => {
             id: 1,
             username: 'admin',
             email: 'encrypted',
-            password_hash: 'hashed',
-            role_id: 1,
+            passwordHash: 'hashed',
+            roleId: 1,
           },
         ],
       ]);
@@ -116,8 +116,8 @@ describe('Auth Integration Endpoints', () => {
             id: 1,
             username: 'admin',
             email: 'encrypted',
-            password_hash: 'hashed',
-            role_id: 1,
+            passwordHash: 'hashed',
+            roleId: 1,
           },
         ],
       ]);
