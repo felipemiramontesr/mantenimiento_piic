@@ -27,7 +27,7 @@ body {
   color: var(--color-navy);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  overflow-y: auto !important;
   min-height: 100vh;
 }
 
@@ -1566,8 +1566,9 @@ body {
 }
 /* 🏛️ SOVEREIGN TILE SYSTEM (v.7.1.4) */
 .archon-instrument-tile {
-  height: auto !important;
-  min-height: 440px !important;
+  height: 380px !important;
+  min-height: 380px !important;
+  max-height: 380px !important;
   display: flex !important;
   flex-direction: column !important;
   padding: 40px !important;
@@ -1768,4 +1769,11 @@ body {
   display: flex;
   flex-direction: column;
   border-color: rgba(15, 42, 68, 0.04);
+}
+
+.archon-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  width: 100%;
 }
