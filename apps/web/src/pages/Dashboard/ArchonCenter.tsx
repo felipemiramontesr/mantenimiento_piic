@@ -15,7 +15,7 @@ import { useFleet } from '../../context/FleetContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.9.0';
+const SYSTEM_VERSION = 'V28.10.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const { stats, loading } = useFleet();
@@ -42,21 +42,21 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           alignItems: 'center',
           justifyContent: 'center',
           gap: '12px',
-          marginBottom: '16px',
+          marginBottom: '20px',
           width: '100%',
         }}
       >
-        <Icon size={18} style={{ color }} />
-        <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
+        <Icon size={24} style={{ color }} />
+        <span className="text-instrument-header text-[#0f2a44] opacity-90">{label}</span>
       </div>
 
-      <div className="archon-tile-payload flex flex-col items-center justify-center pb-10">
+      <div className="archon-tile-payload flex flex-col items-center justify-center pb-6">
         {loading ? (
           <div className="archon-shimmer h-24 w-full rounded" />
         ) : (
           <div className="flex flex-col items-center space-y-2">
             <h3 className="text-kpi-black text-[#0f2a44]">{value}</h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center">
+            <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center">
               {description}
             </p>
           </div>
@@ -64,8 +64,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </div>
 
       <div className="archon-tile-action">
-        <button className={`btn-sentinel-${variant} w-full`}>
-          VER REPORTE <ArrowRight size={10} className="text-white ml-2" />
+        <button className={`btn-sentinel-${variant} w-full text-[11px] font-black py-3`}>
+          VER REPORTE <ArrowRight size={12} className="text-white ml-2" />
         </button>
       </div>
     </div>
@@ -104,8 +104,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <div className="flex items-center gap-4 mb-4">
           <div
             style={{
-              width: '48px',
-              height: '48px',
+              width: '56px',
+              height: '56px',
               borderRadius: '50%',
               backgroundColor: `${accentColor}15`,
               display: 'flex',
@@ -114,17 +114,17 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               border: `2px solid ${accentColor}40`,
             }}
           >
-            <Icon size={22} style={{ color: accentColor }} />
+            <Icon size={26} style={{ color: accentColor }} />
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44]">
               Segmento Operativo
             </span>
-            <h3 className="text-lg font-black text-[#0f2a44] tracking-tight">{title}</h3>
+            <h3 className="text-xl font-black text-[#0f2a44] tracking-tight">{title}</h3>
           </div>
           <div className="ml-auto flex flex-col items-end">
-            <span className="text-2xl font-black text-[#0f2a44]">{data.count}</span>
-            <span className="text-[8px] font-black uppercase opacity-30">Activos</span>
+            <span className="text-3xl font-black text-[#0f2a44]">{data.count}</span>
+            <span className="text-[9px] font-black uppercase opacity-30">Activos</span>
           </div>
         </div>
 
@@ -141,11 +141,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             className="quadrant-item border-r border-b"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
               Disponibilidad
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
+              <span className="text-2xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           </div>
@@ -153,21 +153,21 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             className="quadrant-item border-b"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
               Estado Crítico
             </span>
-            <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
+            <span className="text-2xl font-black text-red-500">{data.maintenanceCount}</span>
           </div>
           <div
             className="quadrant-item border-r"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
               MTBF Promedio
             </span>
             <div className="flex items-center gap-1">
-              <Activity size={10} className="text-sky-500" />
-              <span className="text-base font-black text-[#0f2a44]">
+              <Activity size={12} className="text-sky-500" />
+              <span className="text-lg font-black text-[#0f2a44]">
                 {formatTimeMetric(data.avgMtbf)}
               </span>
             </div>
@@ -176,12 +176,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             className="quadrant-item"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
           >
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 block mb-1">
+            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-1">
               MTTR Táctico
             </span>
             <div className="flex items-center gap-1">
-              <History size={10} className="text-amber-500" />
-              <span className="text-base font-black text-[#0f2a44]">
+              <History size={12} className="text-amber-500" />
+              <span className="text-lg font-black text-[#0f2a44]">
                 {formatTimeMetric(data.avgMttr)}
               </span>
             </div>

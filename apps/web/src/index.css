@@ -1778,14 +1778,16 @@ body {
 }
 
 .text-kpi-black {
-  font-size: 34px !important;
+  font-size: 52px !important;
   font-weight: 900 !important;
+  color: #0f2a44 !important;
+  letter-spacing: -0.04em !important;
   line-height: 1 !important;
-  letter-spacing: -0.02em !important;
+  margin: 0 !important;
 }
 
 .text-instrument-header {
-  font-size: 9px !important;
+  font-size: 12px !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.15em !important;
