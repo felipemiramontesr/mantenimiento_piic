@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { RowDataPacket } from 'mysql2';
 import argon2 from 'argon2';
 import { z } from 'zod';
 import db from '../services/db';
@@ -13,8 +14,8 @@ const userDbSchema = z.object({
   id: z.number(),
   username: z.string(),
   email: z.string(),
-  password_hash: z.string(),
-  role_id: z.number(),
+  passwordHash: z.string(),
+  roleId: z.number(),
 });
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -30,7 +31,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     try {
       // 1. Fetch user from DB
       const query =
-        'SELECT id, username, email, password_hash, role_id FROM users WHERE username = ?';
+        'SELECT id, username, email, password_hash as passwordHash, role_id as roleId FROM users WHERE username = ?';
       const [rows] = await db.execute(query, [username]);
 
       const result = z.array(userDbSchema).safeParse(rows);
@@ -42,7 +43,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
 
       // 2. Verify Password
-      const validPassword = await argon2.verify(user.password_hash, password);
+      const validPassword = await argon2.verify(user.passwordHash, password);
       if (!validPassword) {
         fastify.log.warn(`Invalid password for user: ${username}`);
         return reply.code(401).send({ error: 'Unauthorized credentials' });
@@ -55,7 +56,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       const token = fastify.jwt.sign({
         id: user.id,
         username: user.username,
-        role_id: user.role_id,
+        roleId: user.roleId,
       });
 
       return reply.send({
@@ -65,7 +66,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           id: user.id,
           username: user.username,
           email: decryptedEmail,
-          role_id: user.role_id,
+          roleId: user.roleId,
         },
       });
     } catch (err: unknown) {
@@ -84,20 +85,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       username: z.string().min(3).max(50),
       email: z.string().email(),
       password: z.string().min(8),
-      role_id: z.number().int().default(2), // Default to Operator
+      roleId: z.number().int().default(2), // Default to Operator
     });
 
     const body = registerSchema.safeParse(request.body);
     if (!body.success) {
-      return reply.code(400).send({ error: 'Invalid registration data', details: body.error.format() });
+      return reply
+        .code(400)
+        .send({ error: 'Invalid registration data', details: body.error.format() });
     }
 
-    const { username, email, password, role_id } = body.data;
+    const { username, email, password, roleId } = body.data;
 
     try {
       // 1. Check for duplicate identity
       const [existing] = await db.execute('SELECT id FROM users WHERE username = ?', [username]);
-      if ((existing as any[]).length > 0) {
+      if ((existing as RowDataPacket[]).length > 0) {
         return reply.code(409).send({ error: `El usuario '${username}' ya está registrado.` });
       }
 
@@ -110,11 +113,11 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // 4. Persist to Sovereign Vault
       await db.execute(
         'INSERT INTO users (username, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
-        [username, encryptedEmail, passwordHash, role_id]
+        [username, encryptedEmail, passwordHash, roleId]
       );
 
       return reply.code(201).send({ success: true, message: 'Usuario registrado exitosamente' });
-    } catch (err) {
+    } catch (err: unknown) {
       fastify.log.error(err);
       return reply.code(500).send({ error: 'Falla crítica durante el registro de identidad' });
     }
@@ -126,15 +129,15 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.get('/users', async (request, reply) => {
     const { role } = request.query as { role?: string };
-    
+
     try {
       let query = `
-        SELECT u.id, u.username, u.email, u.role_id, r.name as role_name 
+        SELECT u.id, u.username, u.email, u.role_id as roleId, r.name as roleName 
         FROM users u
         JOIN roles r ON u.role_id = r.id
         WHERE u.is_active = TRUE
       `;
-      const params: any[] = [];
+      const params: (string | number)[] = [];
 
       if (role) {
         query += ' AND u.role_id = ?';
@@ -142,13 +145,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
 
       const [rows] = await db.execute(query, params);
-      const users = (rows as any[]).map(u => ({
+      const users = (rows as RowDataPacket[]).map((u) => ({
         ...u,
-        email: EncryptionService.decrypt(u.email)
+        email: EncryptionService.decrypt(u.email),
       }));
 
       return reply.send({ success: true, count: users.length, data: users });
-    } catch (err) {
+    } catch (err: unknown) {
       fastify.log.error(err);
       return reply.code(500).send({ error: 'Falla al listar el personal activo' });
     }
