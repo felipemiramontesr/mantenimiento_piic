@@ -341,7 +341,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </header>
 
       {/* 📊 BODY MODULAR */}
-      <section className="archon-workspace-chassis space-y-[20px]">
+      <section className="archon-workspace-chassis">
         {/* 🛡️ INDEPENDENT ANALYTICAL INSTRUMENTS (Consolidated Logic, Independent Display) */}
         <div className="animate-in slide-in-from-top-12 duration-1000">
           <div className="flex items-center gap-12 mb-10 px-8">
