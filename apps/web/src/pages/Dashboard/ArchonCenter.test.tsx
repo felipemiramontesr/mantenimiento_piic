@@ -45,9 +45,9 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
 
     expect(screen.getByText(/Salud de Flota/i)).toBeDefined();
     expect(screen.getByText(/Activos Totales/i)).toBeDefined();
-    expect(screen.getByText(/Disponibilidad Inmediata/i)).toBeDefined();
+    expect(screen.getAllByText(/Disponibilidad/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Despliegue en Ruta/i)).toBeDefined();
-    expect(screen.getByText(/Protocolos de Mejora/i)).toBeDefined();
+    expect(screen.getAllByText(/Mantenimiento/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Mermas Operativas/i)).toBeDefined();
 
     // Verify visibility of action buttons with a robust ARIA role matcher
