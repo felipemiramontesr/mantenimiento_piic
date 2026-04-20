@@ -148,7 +148,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           }}
         >
           <Truck size={18} style={{ color: accentColor }} />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-[0.1em] text-[12px] font-black">
+          <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-[0.18em] font-black">
             {title}
           </span>
         </div>
@@ -162,7 +162,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               <span className="text-[9px] font-black uppercase tracking-tighter">DISP</span>
             </div>
             <div className="flex items-baseline gap-0.5">
-              <span className="font-black text-[#0f2a44] text-xl">
+              <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
                 {loading ? '--' : data.availability}
               </span>
               <span className="text-[10px] font-bold opacity-30 text-[#0f2a44]">%</span>
@@ -175,7 +175,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               <Zap size={12} className="text-yellow-500" />
               <span className="text-[9px] font-black uppercase tracking-tighter">MTBF</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-xl">
+            <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
               {loading ? '--' : formatTimeMetric(data.mtbf)}
             </span>
           </div>
@@ -186,7 +186,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               <History size={12} className="text-violet-500" />
               <span className="text-[9px] font-black uppercase tracking-tighter">MTTR</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-xl">
+            <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
               {loading ? '--' : formatTimeMetric(data.mttr)}
             </span>
           </div>
@@ -197,7 +197,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               <Layers size={12} className="text-gray-400" />
               <span className="text-[9px] font-black uppercase tracking-tighter">BCK</span>
             </div>
-            <span className="font-black text-[#0f2a44] text-xl">
+            <span className="font-black text-[#0f2a44] text-3xl tracking-tighter">
               {loading ? '--' : data.backlog}
             </span>
           </div>
