@@ -91,22 +91,26 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const stats = useMemo(() => {
     const total = units.length;
-    const available = units.filter(
-      (u) => u.status.trim() === 'Disponible' || u.status.trim() === 'Asignada'
-    ).length;
-    const inRoute = units.filter((u) => u.status.trim() === 'En Ruta').length;
-    const maintenance = units.filter((u) => u.status.trim() === 'En Mantenimiento').length;
-    const discontinued = units.filter((u) => u.status.trim() === 'Descontinuada').length;
+    const available = units.filter((u) => {
+      const s = (u.status || '').trim();
+      return s === 'Disponible' || s === 'Asignada' || s === '';
+    }).length;
+    const inRoute = units.filter((u) => (u.status || '').trim() === 'En Ruta').length;
+    const maintenance = units.filter((u) => (u.status || '').trim() === 'En Mantenimiento').length;
+    const discontinued = units.filter((u) => (u.status || '').trim() === 'Descontinuada').length;
 
     const maintenanceIndex = total > 0 ? Math.round(((available + inRoute) / total) * 100) : 0;
 
     // 🛡️ ANALYTICAL AGGREGATION ENGINE (v.22.1.2)
     const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
       const count = subset.length;
-      const maintenanceCount = subset.filter((u) => u.status.trim() === 'En Mantenimiento').length;
-      const availableCount = subset.filter(
-        (u) => u.status.trim() === 'Disponible' || u.status.trim() === 'Asignada'
+      const maintenanceCount = subset.filter(
+        (u) => (u.status || '').trim() === 'En Mantenimiento'
       ).length;
+      const availableCount = subset.filter((u) => {
+        const s = (u.status || '').trim();
+        return s === 'Disponible' || s === 'Asignada' || s === '';
+      }).length;
       const availablePercent = count > 0 ? Math.round((availableCount / count) * 100) : 0;
 
       const validMTBF = subset.filter((u) => (u.mtbfHours || 0) > 0);

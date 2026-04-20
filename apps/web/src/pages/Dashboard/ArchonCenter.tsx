@@ -15,7 +15,7 @@ import { useFleet } from '../../context/FleetContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.17.0';
+const SYSTEM_VERSION = 'V28.18.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const { stats, loading } = useFleet();
