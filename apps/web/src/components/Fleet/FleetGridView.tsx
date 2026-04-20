@@ -415,7 +415,14 @@ export const FleetGridView: React.FC<FleetGridViewProps> = ({
     // Pre-calculate forecasts for efficient comparison
     const unitsMap = units.map((u) => ({
       unit: u,
-      forecast: calculateMaintForecast(u),
+      forecast: calculateMaintForecast(
+        u.maint_interval_days,
+        u.maint_interval_km,
+        u.avg_daily_km,
+        u.odometer,
+        u.last_service_reading,
+        u.last_service_date
+      ),
     }));
 
     return [...unitsMap]
