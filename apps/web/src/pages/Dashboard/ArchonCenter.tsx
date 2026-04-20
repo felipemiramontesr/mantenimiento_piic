@@ -40,7 +40,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           alignItems: 'center',
           justifyContent: 'center',
           gap: '12px',
-          marginBottom: '16px',
+          marginBottom: '8px',
           width: '100%',
         }}
       >
@@ -48,7 +48,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <span className="text-instrument-header text-[#0f2a44] opacity-80">{label}</span>
       </div>
 
-      <div className="archon-tile-payload flex flex-col items-center justify-center pb-12">
+      <div className="archon-tile-payload flex flex-col items-center justify-center pb-6">
         {loading ? (
           <div className="archon-shimmer h-24 w-full rounded" />
         ) : (
@@ -99,7 +99,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-700`}
         style={{ borderTop: '4px solid #0f2a44' }}
       >
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-4">
           <div
             style={{
               width: '48px',
@@ -132,7 +132,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
             borderTop: '1px solid rgba(15, 42, 68, 0.05)',
-            marginBottom: '24px',
+            marginBottom: '16px',
           }}
         >
           {/* ... quadrant items ... */}
