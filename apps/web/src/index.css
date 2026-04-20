@@ -1566,9 +1566,8 @@ body {
 }
 /* 🏛️ SOVEREIGN TILE SYSTEM (v.7.1.4) */
 .archon-instrument-tile {
-  height: 32vh !important;
-  min-height: 280px !important;
-  max-height: 400px !important;
+  height: auto !important;
+  min-height: 440px !important;
   display: flex !important;
   flex-direction: column !important;
   padding: 40px !important;

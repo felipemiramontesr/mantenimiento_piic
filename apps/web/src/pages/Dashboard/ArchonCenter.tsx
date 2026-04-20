@@ -113,7 +113,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     return (
       <div
         className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-700`}
-        style={{ borderTop: `4px solid ${accentColor}`, height: 'auto', minHeight: '440px' }}
+        style={{ borderTop: `4px solid ${accentColor}` }}
       >
         <div className="flex items-center gap-4 mb-8">
           <div
@@ -151,6 +151,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             marginBottom: '24px',
           }}
         >
+          {/* ... quadrant items ... */}
           <div
             className="quadrant-item border-r border-b"
             style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
@@ -202,7 +203,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
         </div>
 
-        <div className="mt-auto">
+        <div className="archon-tile-action">
           <button className={`btn-sentinel-${variant} w-full`}>
             GESTIONAR SEGMENTO <ArrowRight size={10} className="text-white ml-2" />
           </button>
