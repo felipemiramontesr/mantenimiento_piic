@@ -52,27 +52,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         {loading ? (
           <div className="archon-shimmer h-24 w-full rounded" />
         ) : (
-          <div className="flex flex-col items-center space-y-6">
-            <div
-              style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '50%',
-                backgroundColor: `${color}15`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: `2px solid ${color}40`,
-              }}
-            >
-              <Icon size={32} style={{ color }} />
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              <h3 className="text-kpi-black text-[#0f2a44]">{value}</h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center">
-                {description}
-              </p>
-            </div>
+          <div className="flex flex-col items-center space-y-2">
+            <h3 className="text-kpi-black text-[#0f2a44]">{value}</h3>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center">
+              {description}
+            </p>
           </div>
         )}
       </div>
