@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserIndustrial, UserPanel } from '../types/user';
-import { supabase } from '../lib/supabase';
+import api from '../api/client';
 
 /**
  * 🔱 Archon Context: UserContext
- * Implementation: Sentinel Operational Standard
- * v.28.23.0 - Identity Orchestration
+ * Implementation: Sentinel Operational Standard (Axios-based)
+ * v.28.23.1 - Identity Orchestration (Sovereign API Sync)
  */
 
 interface UserContextType {
@@ -29,19 +29,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchUsers = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
-      // Fetch users with their role identity
-      const { data, error } = await supabase
-        .from('users')
-        .select(
-          `
-          *,
-          role:roles(*)
-        `
-        )
-        .order('created_at', { ascending: false });
+      // Fetch users via the official Archon API Gateway
+      const response = await api.get('/users');
 
-      if (error) throw error;
-      setUsers(data || []);
+      if (response.data.success) {
+        setUsers(response.data.data || []);
+      }
     } catch (err: unknown) {
       // Silently handle error as per Zero-Noise policy
     } finally {
@@ -51,13 +44,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_active: !currentStatus })
-        .eq('id', id);
+      // Use the standard PATCH protocol for state modification
+      const response = await api.patch(`/users/${id}`, { is_active: !currentStatus });
 
-      if (error) throw error;
-      await fetchUsers();
+      if (response.data.success) {
+        await fetchUsers();
+      }
     } catch (err: unknown) {
       // Silently handle error
     }
