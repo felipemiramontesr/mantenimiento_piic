@@ -5,6 +5,7 @@ import {
   Truck,
   ShieldCheck,
   Wrench,
+  Navigation,
   ShieldAlert,
   History,
   Activity,
@@ -255,6 +256,14 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             '#10b981',
             'Unidades listas para operación',
             'emerald'
+          )}
+          {renderKPI(
+            'Despliegue en Ruta',
+            stats.inRoute,
+            Navigation,
+            '#0ea5e9',
+            'Unidades en tránsito operativo',
+            'sky'
           )}
           {renderKPI(
             'Mantenimiento',
