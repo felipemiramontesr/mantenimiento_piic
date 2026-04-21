@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, User, UserPlus, ArrowRight, Navigation } from 'lucide-react';
+import { Users, User, UserPlus, ArrowRight } from 'lucide-react';
 import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
 
 // ============================================================================
@@ -200,65 +200,6 @@ const UsersModule: React.FC = (): React.ReactElement => (
           </div>
         </div>
 
-        {/* Card 3: Despliegue Operativo (SKY) */}
-        <div
-          className={`glass-card-pro archon-instrument-tile card-hover-sky`}
-          style={{
-            borderTop: '4px solid #0ea5e9',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '16px',
-              width: '100%',
-            }}
-          >
-            <Navigation size={20} style={{ color: '#0ea5e9' }} />
-            <span className="text-instrument-header text-[#0f2a44] opacity-80">
-              Despliegue Operativo
-            </span>
-          </div>
-
-          <div className="archon-tile-payload space-y-8 pb-16">
-            <div
-              style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px solid rgba(14, 165, 233, 0.4)',
-              }}
-            >
-              <Navigation size={40} style={{ color: '#0ea5e9' }} />
-            </div>
-            <div className="flex flex-col items-center space-y-1 mb-12">
-              <h3
-                className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-                style={{ fontSize: '14px' }}
-              >
-                Asignación
-              </h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                Logística de personal en ruta
-              </p>
-            </div>
-          </div>
-
-          <div className="archon-tile-action">
-            <button className="btn-sentinel-sky">
-              Iniciar Logística <ArrowRight size={10} className="text-white ml-2" />
-            </button>
-          </div>
-        </div>
-
-        {/* Slots de espaciado Zen */}
         <div aria-hidden="true" />
       </div>
     </section>
