@@ -1,217 +1,81 @@
 import React from 'react';
-import { Users, User, UserPlus, ArrowRight } from 'lucide-react';
-import { SYSTEM_VERSION, BRANDING_NAME } from '../../constants/versionConstants';
+import { Users, ChevronRight, ShieldCheck, Search } from 'lucide-react';
+import { UserProvider, useUsers } from '../../context/UserContext';
+import { UserManagementCards } from '../../components/Users/UserManagementCards';
+import { UsersGridView } from '../../components/Users/UsersGridView';
+import { UserRegistrationForm } from '../../components/Users/UserRegistrationForm';
 
-// ============================================================================
-// 🚀 USERS MODULE (v.15.9.0)
-// ============================================================================
-const UsersModule: React.FC = (): React.ReactElement => (
-  <main className="workspace-container-pro animate-in fade-in duration-700">
-    {/* 🚀 HEADER SOBERANO (Zen Mode) - V.15.9.0 */}
-    <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-        }}
-      >
-        {/* Left Panel: Administrative Context */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '8px',
-            }}
-          >
-            <Users size={28} style={{ color: '#f2b705' }} />
-            <h2
-              className="text-[#0f2a44] tracking-tighter font-black text-2xl"
-              style={{ margin: 0, padding: 0, lineHeight: 1 }}
-            >
-              Administrar personal
-            </h2>
+/**
+ * 🔱 Archon Component: UsersModuleContent
+ * Inner orchestrator that consumes the UserContext
+ */
+const UsersModuleContent: React.FC = (): React.JSX.Element => {
+  const { activePanel } = useUsers();
+
+  return (
+    <div className="space-y-[40px] animate-in fade-in duration-700">
+      {/* ── HEADER: Postura Operativa ─────────────────────────────────────── */}
+      <header className="flex flex-col space-y-6">
+        <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-[#f2b705]/10 rounded-lg">
+                <Users className="text-[#f2b705]" size={24} />
+              </div>
+              <h1 className="text-3xl font-black text-[#0f2a44] tracking-tighter uppercase">
+                Administración de Personal
+              </h1>
+            </div>
+            <nav className="flex items-center gap-2 text-[10px] font-bold text-[#0f2a44]/40 uppercase tracking-widest">
+              <span>Archon Central</span>
+              <ChevronRight size={12} />
+              <span className="text-[#0f2a44]/80">Gestión de Identidades</span>
+            </nav>
           </div>
-          <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-            Gestión de Operadores y Personal del Sistema
-          </p>
-        </div>
 
-        {/* Right Panel: Identity (Sync with ArchonCenter) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-          <h1
-            style={{
-              fontSize: '26px',
-              fontWeight: 900,
-              margin: 0,
-              letterSpacing: '-0.03em',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              color: '#0f2a44',
-            }}
-          >
-            Archon
-          </h1>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '4px',
-              border: '2px solid #f2b705',
-              backgroundColor: '#0f2a44',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 100 100">
-              <path
-                d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
-                stroke="#f2b705"
-                strokeWidth="16"
-                fill="none"
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 group-focus-within:text-[#f2b705] transition-colors"
+                size={16}
               />
-            </svg>
+              <input
+                type="text"
+                placeholder="BUSCAR PERSONAL..."
+                className="bg-white border border-[#0f2a44]/10 rounded-full py-3 pl-12 pr-6 text-[11px] font-black tracking-widest text-[#0f2a44] w-[300px] focus:outline-none focus:ring-2 focus:ring-[#f2b705] transition-all shadow-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-100">
+              <ShieldCheck size={14} className="text-emerald-600" />
+              <span className="text-[10px] font-black text-emerald-700 uppercase">
+                Soberanía Activa
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis) */}
-    <section className="archon-workspace-chassis">
+      {/* ── INSTRUMENTS: Panel Selector ──────────────────────────────────── */}
       <div className="archon-central-axis">
-        <div className="archon-grid-2 gap-8 h-full">
-          {/* Card 1: Mando y Supervisión (NAVY) */}
-          <div
-            className={`glass-card-pro archon-instrument-tile card-hover-navy`}
-            style={{
-              borderTop: '4px solid #0f2a44',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                marginBottom: '16px',
-                width: '100%',
-              }}
-            >
-              <Users size={20} style={{ color: '#0f2a44' }} />
-              <span className="text-instrument-header text-[#0f2a44] opacity-80">
-                Mando y Supervisión
-              </span>
-            </div>
-
-            <div className="archon-tile-payload space-y-8 pb-16">
-              <div
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(15, 42, 68, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid rgba(15, 42, 68, 0.4)',
-                }}
-              >
-                <Users size={40} style={{ color: '#0f2a44' }} />
-              </div>
-              <div className="flex flex-col items-center space-y-1 mb-12">
-                <h3
-                  className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-                  style={{ fontSize: '14px' }}
-                >
-                  Mando y Supervisión
-                </h3>
-                <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                  Directorio de personal
-                </p>
-              </div>
-            </div>
-
-            <div className="archon-tile-action">
-              <button className="btn-sentinel-navy">
-                Ver detalles <ArrowRight size={10} className="text-white ml-2" />
-              </button>
-            </div>
-          </div>
-
-          {/* Card 2: Agregar Usuario (VERDE) */}
-          <div
-            className={`glass-card-pro archon-instrument-tile card-hover-emerald`}
-            style={{
-              borderTop: '4px solid #10b981',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                marginBottom: '16px',
-                width: '100%',
-              }}
-            >
-              <UserPlus size={20} style={{ color: '#10b981' }} />
-              <span className="text-instrument-header text-[#0f2a44] opacity-80">
-                Incorporación de Personal
-              </span>
-            </div>
-
-            <div className="archon-tile-payload space-y-8 pb-16">
-              <div
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid rgba(16, 185, 129, 0.4)',
-                }}
-              >
-                <User size={40} style={{ color: '#10b981' }} />
-              </div>
-              <div className="flex flex-col items-center space-y-1 mb-12">
-                <h3
-                  className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-                  style={{ fontSize: '14px' }}
-                >
-                  Agregar Personal
-                </h3>
-                <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                  Acceso al Sistema
-                </p>
-              </div>
-            </div>
-
-            <div className="archon-tile-action">
-              <button className="btn-sentinel-emerald">
-                Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <UserManagementCards />
       </div>
-    </section>
 
-    {/* ⚓ FOOTER SENTINEL (10vh) */}
-    <footer className="workspace-footer-pro">
-      <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">
-        {BRANDING_NAME} {SYSTEM_VERSION}
-      </p>
-    </footer>
-  </main>
+      {/* ── DYNAMIC VIEWPORT: Table vs Form ──────────────────────────────── */}
+      <div className="archon-central-axis mt-12 pb-20">
+        {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * 🔱 Archon Page: UsersModule
+ * Sovereign Personnel Administration v.28.23.0
+ */
+const UsersModule: React.FC = (): React.JSX.Element => (
+  <UserProvider>
+    <UsersModuleContent />
+  </UserProvider>
 );
 
 export default UsersModule;
