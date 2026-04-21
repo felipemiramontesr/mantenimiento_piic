@@ -5,7 +5,7 @@ import api from '../api/client';
 /**
  * 🔱 Archon Context: UserContext
  * Implementation: Sentinel Operational Standard (Axios-based)
- * v.28.23.1 - Identity Orchestration (Sovereign API Sync)
+ * v.28.23.6 - Identity Orchestration (Sovereign API Sync & CamelCase Mapping)
  */
 
 interface UserContextType {
@@ -29,11 +29,29 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchUsers = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
-      // Fetch users via the official Archon API Gateway
-      const response = await api.get('/users');
+      // Fetch users via the official Archon Auth Gateway
+      const response = await api.get('/auth/users');
 
       if (response.data.success) {
-        setUsers(response.data.data || []);
+        // Map backend schema (underscores) to Frontend Industrial Schema (camelCase)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mappedUsers = response.data.data.map(
+          (u: any): UserIndustrial => ({
+            id: String(u.id),
+            username: u.username,
+            fullName: u.full_name || u.fullName,
+            email: u.email,
+            roleId: u.roleId,
+            department: u.department,
+            employeeNumber: u.employee_number || u.employeeNumber,
+            is_active: Boolean(u.is_active),
+            role: {
+              id: u.roleId,
+              name: u.roleName,
+            },
+          })
+        );
+        setUsers(mappedUsers);
       }
     } catch (err: unknown) {
       // Silently handle error as per Zero-Noise policy
@@ -45,7 +63,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
     try {
       // Use the standard PATCH protocol for state modification
-      const response = await api.patch(`/users/${id}`, { is_active: !currentStatus });
+      const response = await api.patch(`/auth/users/${id}`, { is_active: !currentStatus });
 
       if (response.data.success) {
         await fetchUsers();

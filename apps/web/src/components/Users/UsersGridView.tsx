@@ -6,7 +6,7 @@ import { UserIndustrial } from '../../types/user';
 /**
  * 🔱 Archon Component: UsersGridView
  * Implementation: High-Density Industrial Registry
- * v.28.23.0 - Identity Oversight
+ * v.28.23.6 - Identity Oversight (CamelCase Standard)
  */
 
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
@@ -30,12 +30,12 @@ const UserIdentityCluster = ({ user }: { user: UserIndustrial }): React.JSX.Elem
     <div className="flex items-center gap-1.5 opacity-60">
       <Hash size={10} className="text-[#0f2a44]" />
       <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter">
-        {user.employee_number || 'SIN NÚMERO'}
+        {user.employeeNumber || 'SIN NÚMERO'}
       </span>
     </div>
     <div className="flex flex-col items-center">
       <span className="text-[12px] font-black text-[#0f2a44] uppercase tracking-tight leading-tight text-center">
-        {user.full_name || user.username}
+        {user.fullName || user.username}
       </span>
       <div className="flex items-center gap-1 opacity-40">
         <User size={9} />

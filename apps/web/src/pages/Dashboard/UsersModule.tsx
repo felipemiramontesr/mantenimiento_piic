@@ -8,14 +8,15 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 /**
  * 🔱 Archon Component: UsersModuleContent
  * Inner orchestrator that consumes the UserContext
+ * v.28.23.5 - Homogenized Layout
  */
 const UsersModuleContent: React.FC = (): React.JSX.Element => {
   const { activePanel } = useUsers();
 
   return (
-    <div className="space-y-[40px] animate-in fade-in duration-700">
-      {/* ── HEADER: Postura Operativa ─────────────────────────────────────── */}
-      <header className="flex flex-col space-y-6">
+    <main className="workspace-container-pro animate-in fade-in duration-700">
+      {/* ── HEADER SOBERANO (Homologado con Flota) ────────────────────────── */}
+      <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div className="flex flex-row items-center justify-between">
           <div className="flex flex-col">
             <div className="flex items-center gap-3 mb-2">
@@ -56,7 +57,7 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
       </header>
 
       {/* ── INSTRUMENTS: Panel Selector ──────────────────────────────────── */}
-      <div className="archon-central-axis">
+      <div className="archon-central-axis mt-8">
         <UserManagementCards />
       </div>
 
@@ -64,13 +65,13 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
       <div className="archon-central-axis mt-12 pb-20">
         {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
       </div>
-    </div>
+    </main>
   );
 };
 
 /**
  * 🔱 Archon Page: UsersModule
- * Sovereign Personnel Administration v.28.23.0
+ * Sovereign Personnel Administration v.28.23.5
  */
 const UsersModule: React.FC = (): React.JSX.Element => (
   <UserProvider>

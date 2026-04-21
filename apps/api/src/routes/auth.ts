@@ -85,7 +85,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       username: z.string().min(3).max(50),
       email: z.string().email(),
       password: z.string().min(8),
-      roleId: z.number().int().default(2), // Default to Operator
+      roleId: z.number().int().default(2),
+      fullName: z.string().optional(),
+      department: z.string().optional(),
+      employeeNumber: z.string().optional(),
     });
 
     const body = registerSchema.safeParse(request.body);
@@ -95,7 +98,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         .send({ error: 'Invalid registration data', details: body.error.format() });
     }
 
-    const { username, email, password, roleId } = body.data;
+    const { username, email, password, roleId, fullName, department, employeeNumber } = body.data;
 
     try {
       // 1. Check for duplicate identity
@@ -112,8 +115,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
       // 4. Persist to Sovereign Vault
       await db.execute(
-        'INSERT INTO users (username, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
-        [username, encryptedEmail, passwordHash, roleId]
+        'INSERT INTO users (username, email, password_hash, role_id, full_name, department, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [username, encryptedEmail, passwordHash, roleId, fullName, department, employeeNumber]
       );
 
       return reply.code(201).send({ success: true, message: 'Usuario registrado exitosamente' });
@@ -132,10 +135,11 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
     try {
       let query = `
-        SELECT u.id, u.username, u.email, u.role_id as roleId, r.name as roleName 
+        SELECT u.id, u.username, u.email, u.role_id as roleId, r.name as roleName,
+               u.full_name, u.department, u.employee_number, u.is_active
         FROM users u
         JOIN roles r ON u.role_id = r.id
-        WHERE u.is_active = TRUE
+        WHERE 1=1
       `;
       const params: (string | number)[] = [];
 

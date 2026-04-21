@@ -18,7 +18,7 @@ import api from '../../api/client';
 /**
  * 🔱 Archon Component: UserRegistrationForm
  * Implementation: Sovereign Identity Enrollment (Axios-based)
- * v.28.23.1 - Security First
+ * v.28.23.6 - Security First & Auth Integration & CamelCase Standard
  */
 
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
@@ -28,11 +28,11 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   const [formData, setFormData] = useState({
     username: '',
-    full_name: '',
+    fullName: '',
     email: '',
-    role_id: '2', // Default: Operador
+    roleId: '2', // Default: Operador
     department: '',
-    employee_number: '',
+    employeeNumber: '',
   });
 
   const generateTempPassword = (length = 12): string => {
@@ -51,14 +51,14 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     try {
       const tempPass = generateTempPassword();
 
-      // Transmit the identity payload via the official Archon API Gateway
-      const response = await api.post('/users', {
+      // Transmit the identity payload via the official Archon Auth Gateway (/register node)
+      const response = await api.post('/auth/register', {
         username: formData.username.toLowerCase(),
-        full_name: formData.full_name,
+        fullName: formData.fullName,
         email: formData.email.toLowerCase(),
-        role_id: parseInt(formData.role_id, 10),
+        roleId: parseInt(formData.roleId, 10),
         department: formData.department,
-        employee_number: formData.employee_number,
+        employeeNumber: formData.employeeNumber,
         password: tempPass,
       });
 
@@ -134,9 +134,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               type="text"
               placeholder="Ej. Ana Karen Flores Baca"
               className="archon-input"
-              value={formData.full_name}
+              value={formData.fullName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                setFormData({ ...formData, full_name: e.target.value })
+                setFormData({ ...formData, fullName: e.target.value })
               }
             />
           </ArchonField>
@@ -159,9 +159,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 type="text"
                 placeholder="EMP-XXX"
                 className="archon-input"
-                value={formData.employee_number}
+                value={formData.employeeNumber}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, employee_number: e.target.value })
+                  setFormData({ ...formData, employeeNumber: e.target.value })
                 }
               />
             </ArchonField>
@@ -198,8 +198,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   { value: '2', label: 'Operador' },
                   { value: '3', label: 'Técnico' },
                 ]}
-                value={formData.role_id}
-                onChange={(val: string): void => setFormData({ ...formData, role_id: val })}
+                value={formData.roleId}
+                onChange={(val: string): void => setFormData({ ...formData, roleId: val })}
               />
             </ArchonField>
             <ArchonField label="Departamento" icon={Briefcase}>
