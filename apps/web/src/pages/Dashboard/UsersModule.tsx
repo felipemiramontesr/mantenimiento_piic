@@ -1,9 +1,9 @@
 import React from 'react';
 import { Users, ChevronRight, ShieldCheck, Search } from 'lucide-react';
 import { UserProvider, useUsers } from '../../context/UserContext';
-import { UserManagementCards } from '../../components/Users/UserManagementCards';
-import { UsersGridView } from '../../components/Users/UsersGridView';
-import { UserRegistrationForm } from '../../components/Users/UserRegistrationForm';
+import UserManagementCards from '../../components/Users/UserManagementCards';
+import UsersGridView from '../../components/Users/UsersGridView';
+import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 
 /**
  * 🔱 Archon Component: UsersModuleContent
