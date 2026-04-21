@@ -5,8 +5,22 @@ import api from '../api/client';
 /**
  * 🔱 Archon Context: UserContext
  * Implementation: Sentinel Operational Standard (Axios-based)
- * v.28.23.6 - Identity Orchestration (Sovereign API Sync & CamelCase Mapping)
+ * v.28.23.7 - Identity Orchestration (Strict Typing & API Sync)
  */
+
+interface RawUserResponse {
+  id: number;
+  username: string;
+  full_name?: string;
+  fullName?: string;
+  email: string;
+  roleId: number;
+  roleName: string;
+  department: string;
+  employee_number?: string;
+  employeeNumber?: string;
+  is_active: number | boolean;
+}
 
 interface UserContextType {
   users: UserIndustrial[];
@@ -33,17 +47,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       const response = await api.get('/auth/users');
 
       if (response.data.success) {
-        // Map backend schema (underscores) to Frontend Industrial Schema (camelCase)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mappedUsers = response.data.data.map(
-          (u: any): UserIndustrial => ({
+        // Map backend schema to Frontend Industrial Schema with Strict Typing
+        const mappedUsers = (response.data.data as RawUserResponse[]).map(
+          (u): UserIndustrial => ({
             id: String(u.id),
             username: u.username,
-            fullName: u.full_name || u.fullName,
+            fullName: u.full_name || u.fullName || '',
             email: u.email,
             roleId: u.roleId,
             department: u.department,
-            employeeNumber: u.employee_number || u.employeeNumber,
+            employeeNumber: u.employee_number || u.employeeNumber || '',
             is_active: Boolean(u.is_active),
             role: {
               id: u.roleId,
