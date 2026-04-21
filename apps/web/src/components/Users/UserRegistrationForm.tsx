@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { User, Mail, Shield, IdCard, Briefcase, Save, Copy, CheckCircle, Hash } from 'lucide-react';
+import {
+  User,
+  Mail,
+  Shield,
+  Contact,
+  Briefcase,
+  Save,
+  Copy,
+  CheckCircle,
+  Hash,
+} from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
@@ -114,7 +124,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           style={{ borderTop: '4px solid #f2b705' }}
         >
           <div className="archon-card-header-pro">
-            <IdCard size={22} className="text-[#f2b705]" />
+            <Contact size={22} className="text-[#f2b705]" />
             <h3>Identidad de Personal</h3>
           </div>
 
