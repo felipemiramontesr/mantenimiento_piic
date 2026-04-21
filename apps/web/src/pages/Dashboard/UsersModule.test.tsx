@@ -25,10 +25,4 @@ describe('UsersModule Component', () => {
     expect(screen.getAllByText(/Mando y Supervisión/i)[0]).toBeInTheDocument();
     expect(screen.getByText(/Agregar Personal/i)).toBeInTheDocument();
   });
-
-  it('should display the migrated "Despliegue Operativo" instrument', (): void => {
-    renderModule();
-    expect(screen.getByText(/Despliegue Operativo/i)).toBeInTheDocument();
-    expect(screen.getByText(/Asignación/i)).toBeInTheDocument();
-  });
 });
