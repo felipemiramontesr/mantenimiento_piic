@@ -1777,6 +1777,18 @@ body {
   width: 100%;
 }
 
+.archon-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  width: 100%;
+}
+
+.archon-central-axis {
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
 .text-kpi-black {
   font-size: 52px !important;
   font-weight: 900 !important;

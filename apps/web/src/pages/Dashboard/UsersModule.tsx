@@ -83,124 +83,124 @@ const UsersModule: React.FC = (): React.ReactElement => (
 
     {/* 📊 ÁREA DE TRABAJO DINÁMICA (Chasis) */}
     <section className="archon-workspace-chassis">
-      <div className="archon-grid-3 h-full">
-        {/* Card 1: Mando y Supervisión (NAVY) */}
-        <div
-          className={`glass-card-pro archon-instrument-tile card-hover-navy`}
-          style={{
-            borderTop: '4px solid #0f2a44',
-          }}
-        >
+      <div className="archon-central-axis">
+        <div className="archon-grid-2 gap-8 h-full">
+          {/* Card 1: Mando y Supervisión (NAVY) */}
           <div
+            className={`glass-card-pro archon-instrument-tile card-hover-navy`}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '16px',
-              width: '100%',
+              borderTop: '4px solid #0f2a44',
             }}
           >
-            <Users size={20} style={{ color: '#0f2a44' }} />
-            <span className="text-instrument-header text-[#0f2a44] opacity-80">
-              Mando y Supervisión
-            </span>
-          </div>
-
-          <div className="archon-tile-payload space-y-8 pb-16">
             <div
               style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(15, 42, 68, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid rgba(15, 42, 68, 0.4)',
+                gap: '12px',
+                marginBottom: '16px',
+                width: '100%',
               }}
             >
-              <Users size={40} style={{ color: '#0f2a44' }} />
-            </div>
-            <div className="flex flex-col items-center space-y-1 mb-12">
-              <h3
-                className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-                style={{ fontSize: '14px' }}
-              >
+              <Users size={20} style={{ color: '#0f2a44' }} />
+              <span className="text-instrument-header text-[#0f2a44] opacity-80">
                 Mando y Supervisión
-              </h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                Directorio de personal
-              </p>
+              </span>
+            </div>
+
+            <div className="archon-tile-payload space-y-8 pb-16">
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(15, 42, 68, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid rgba(15, 42, 68, 0.4)',
+                }}
+              >
+                <Users size={40} style={{ color: '#0f2a44' }} />
+              </div>
+              <div className="flex flex-col items-center space-y-1 mb-12">
+                <h3
+                  className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
+                  style={{ fontSize: '14px' }}
+                >
+                  Mando y Supervisión
+                </h3>
+                <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+                  Directorio de personal
+                </p>
+              </div>
+            </div>
+
+            <div className="archon-tile-action">
+              <button className="btn-sentinel-navy">
+                Ver detalles <ArrowRight size={10} className="text-white ml-2" />
+              </button>
             </div>
           </div>
 
-          <div className="archon-tile-action">
-            <button className="btn-sentinel-navy">
-              Ver detalles <ArrowRight size={10} className="text-white ml-2" />
-            </button>
-          </div>
-        </div>
-
-        {/* Card 2: Agregar Usuario (VERDE) */}
-        <div
-          className={`glass-card-pro archon-instrument-tile card-hover-emerald`}
-          style={{
-            borderTop: '4px solid #10b981',
-          }}
-        >
+          {/* Card 2: Agregar Usuario (VERDE) */}
           <div
+            className={`glass-card-pro archon-instrument-tile card-hover-emerald`}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '16px',
-              width: '100%',
+              borderTop: '4px solid #10b981',
             }}
           >
-            <UserPlus size={20} style={{ color: '#10b981' }} />
-            <span className="text-instrument-header text-[#0f2a44] opacity-80">
-              Incorporación de Personal
-            </span>
-          </div>
-
-          <div className="archon-tile-payload space-y-8 pb-16">
             <div
               style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid rgba(16, 185, 129, 0.4)',
+                gap: '12px',
+                marginBottom: '16px',
+                width: '100%',
               }}
             >
-              <User size={40} style={{ color: '#10b981' }} />
+              <UserPlus size={20} style={{ color: '#10b981' }} />
+              <span className="text-instrument-header text-[#0f2a44] opacity-80">
+                Incorporación de Personal
+              </span>
             </div>
-            <div className="flex flex-col items-center space-y-1 mb-12">
-              <h3
-                className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
-                style={{ fontSize: '14px' }}
-              >
-                Agregar Personal
-              </h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                Acceso al Sistema
-              </p>
-            </div>
-          </div>
 
-          <div className="archon-tile-action">
-            <button className="btn-sentinel-emerald">
-              Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
-            </button>
+            <div className="archon-tile-payload space-y-8 pb-16">
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid rgba(16, 185, 129, 0.4)',
+                }}
+              >
+                <User size={40} style={{ color: '#10b981' }} />
+              </div>
+              <div className="flex flex-col items-center space-y-1 mb-12">
+                <h3
+                  className="text-[#0f2a44] font-black uppercase tracking-[0.15em]"
+                  style={{ fontSize: '14px' }}
+                >
+                  Agregar Personal
+                </h3>
+                <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+                  Acceso al Sistema
+                </p>
+              </div>
+            </div>
+
+            <div className="archon-tile-action">
+              <button className="btn-sentinel-emerald">
+                Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
+              </button>
+            </div>
           </div>
         </div>
-
-        <div aria-hidden="true" />
       </div>
     </section>
 

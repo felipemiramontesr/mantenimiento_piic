@@ -203,19 +203,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
                   onCancel={handleReturnToGrid}
                 />
               )}
-              {activePanel === 'MAINTENANCE' && (
-                <div className="glass-card-pro bg-white p-12 flex flex-col items-center justify-center border-t-4 border-sky-500">
-                  <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mb-6">
-                    <Settings className="text-sky-600 animate-spin-slow" size={32} />
-                  </div>
-                  <h3 className="text-[#0f2a44] font-black uppercase tracking-widest">
-                    Protocolos de Mantenimiento
-                  </h3>
-                  <p className="text-[11px] font-bold opacity-50 uppercase tracking-[0.2em] mt-2">
-                    Módulo en Fase de Calibración
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </div>
