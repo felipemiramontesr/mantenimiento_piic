@@ -120,9 +120,9 @@ const UserRegistryRow = ({
         <div className="flex justify-center gap-2">
           <button
             onClick={(): void => onEdit(user)}
-            className="flex items-center justify-center w-8 h-8 text-[#059669] bg-emerald-50/30 hover:bg-emerald-100/50 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+            className="flex items-center justify-center w-10 h-10 text-[#059669] bg-emerald-50/30 hover:bg-emerald-100/50 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
           >
-            <Pencil size={14} className="transition-transform duration-300 group-hover:rotate-12" />
+            <Pencil size={18} className="transition-transform duration-300 group-hover:rotate-12" />
           </button>
         </div>
       </td>
