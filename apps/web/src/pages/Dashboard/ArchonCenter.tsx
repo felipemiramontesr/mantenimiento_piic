@@ -10,16 +10,22 @@ import {
   History,
   Activity,
   Layers,
+  Users,
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
+import { useUsers } from '../../context/UserContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.18.0';
+const SYSTEM_VERSION = 'V28.26.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const { stats, loading } = useFleet();
+  const { users } = useUsers();
   const [isAccessControlOpen, setIsAccessControlOpen] = useState<boolean>(false);
+
+  // Identity Orchestration: Calculate active personnel (Excluding Archon)
+  const activePersonnelCount = users.filter((u) => u.is_active && u.username !== 'Archon').length;
 
   /**
    * KPI Presentation Engine
@@ -233,6 +239,14 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
 
         <div className="archon-grid-3">
+          {renderKPI(
+            'Fuerza Operativa',
+            activePersonnelCount,
+            Users,
+            '#0f2a44',
+            'Personal habilitado en sitio',
+            'navy'
+          )}
           {renderKPI(
             'Salud de Flota',
             `${stats.maintenanceIndex}%`,

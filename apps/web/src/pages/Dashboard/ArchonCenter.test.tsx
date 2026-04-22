@@ -50,6 +50,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     });
 
     expect(screen.getByText(/Salud de Flota/i)).toBeDefined();
+    expect(screen.getByText(/Fuerza Operativa/i)).toBeDefined();
     expect(screen.getByText(/Activos Totales/i)).toBeDefined();
     expect(screen.getAllByText(/Disponibilidad/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Despliegue en Ruta/i)).toBeDefined();
@@ -58,7 +59,7 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
 
     // Verify visibility of action buttons with a robust ARIA role matcher
     const detailButtons = screen.getAllByRole('button', { name: /VER REPORTE/i });
-    expect(detailButtons.length).toBe(6);
+    expect(detailButtons.length).toBe(7);
   });
 
   it('renders the 3 main category cards with 2x2 grid', async () => {
