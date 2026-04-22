@@ -845,7 +845,7 @@ body {
   justify-content: center;
   align-items: flex-start;
   border-bottom: 1px solid rgba(15, 42, 68, 0.05);
-  padding: 40px 60px 20px 60px; /* Golden Padding Top aplicado V.4.7.1 */
+  padding: 40px 60px 0px 60px; /* Vertical Compression v.28.27.1 */
 }
 
 .workspace-body-pro {
@@ -1368,7 +1368,8 @@ body {
 .archon-workspace-chassis {
   flex: 1 !important;
   display: block !important;
-  padding: 40px !important;
+  padding: 12px 40px 40px 40px !important; /* Vertical Compression v.28.27.1 */
+
   overflow-y: auto;
   min-height: 0;
 }
