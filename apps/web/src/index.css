@@ -1371,9 +1371,9 @@ body {
   flex-direction: column !important;
   gap: 12px;
   row-gap: 12px;
-  padding: 24px 40px 40px 40px !important;
+  padding: 24px 40px 10vh 40px !important; /* Symmetry: Bottom padding = Header Space (10vh) v.28.26.1 */
   overflow-y: auto;
-  min-height: 0; /* Critical for flex-scroll parity */
+  min-height: 0;
 }
 
 /* ✨ KINETIC SHIMMER SYSTEM (V.7.0.0) */
