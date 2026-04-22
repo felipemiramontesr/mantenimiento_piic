@@ -17,7 +17,7 @@ import { useUsers } from '../../context/UserContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.26.0';
+const SYSTEM_VERSION = 'V28.27.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const { stats, loading } = useFleet();
@@ -232,13 +232,10 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </header>
 
       <section className="archon-workspace-chassis">
-        <div className="archon-grid-3 mb-4">
+        <div className="archon-grid-3">
           {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6', 'navy')}
           {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705', 'navy')}
           {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9', 'navy')}
-        </div>
-
-        <div className="archon-grid-3">
           {renderKPI(
             'Fuerza Operativa',
             activePersonnelCount,
