@@ -19,9 +19,10 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
           onClick={(): void => setActivePanel('DIRECTORY')}
           className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
             activePanel === 'DIRECTORY'
-              ? 'bg-[#0f2a44]/[0.02] shadow-lg transform scale-[1.02]'
+              ? 'ring-2 ring-[#0f2a44] shadow-lg transform scale-[1.02]'
               : 'card-hover-navy opacity-80 hover:opacity-100'
           }`}
+          style={{ borderTop: '4px solid #0f2a44' }}
         >
           <div className="flex items-center justify-center gap-3 mb-4 w-full">
             <ClipboardList size={20} className="text-[#0f2a44]" />
@@ -72,9 +73,10 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
           }}
           className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
             activePanel === 'SIGNUP'
-              ? 'bg-[#10b981]/[0.02] shadow-lg transform scale-[1.02]'
+              ? 'ring-2 ring-[#10b981] shadow-lg transform scale-[1.02]'
               : 'card-hover-emerald opacity-80 hover:opacity-100'
           }`}
+          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-center justify-center gap-3 mb-4 w-full">
             <UserPlus size={20} className="text-[#10b981]" />
