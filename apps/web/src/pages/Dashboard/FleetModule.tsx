@@ -187,24 +187,26 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        {/* 🔱 PERSISTENT MANAGEMENT CARDS (v.28.19.0) */}
-        <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+        {/* 🔱 PERSISTENT MANAGEMENT CARDS (Axial Sync v.28.36.1) */}
+        <div className="archon-axial-container">
+          <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
 
-        <div ref={panelRef} className="w-full h-full pt-12">
-          {registrationSuccess ? (
-            <FleetSuccessView formData={formData} />
-          ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              {activePanel === 'STRATEGY' && <FleetGridView units={units} />}
-              {activePanel === 'EXPANSION' && (
-                <FleetRegistrationForm
-                  controller={fleetController}
-                  onSuccess={refreshUnits}
-                  onCancel={handleReturnToGrid}
-                />
-              )}
-            </div>
-          )}
+          <div ref={panelRef} className="w-full h-full pt-12">
+            {registrationSuccess ? (
+              <FleetSuccessView formData={formData} />
+            ) : (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                {activePanel === 'STRATEGY' && <FleetGridView units={units} />}
+                {activePanel === 'EXPANSION' && (
+                  <FleetRegistrationForm
+                    controller={fleetController}
+                    onSuccess={refreshUnits}
+                    onCancel={handleReturnToGrid}
+                  />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
