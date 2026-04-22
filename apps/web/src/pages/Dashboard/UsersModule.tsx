@@ -20,6 +20,16 @@ const UsersModule: React.FC = (): React.JSX.Element => {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
+  // 🚀 AXIAL SCROLL SYNC (v.28.28.1)
+  // Ensures parity with the Fleet module by escorting the user to the form upon activation.
+  React.useEffect(() => {
+    if (activePanel === 'SIGNUP' && panelRef.current) {
+      setTimeout(() => {
+        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [activePanel]);
+
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
 
@@ -172,7 +182,7 @@ const UsersModule: React.FC = (): React.JSX.Element => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.25.0</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.28.1</p>
       </footer>
     </main>
   );
