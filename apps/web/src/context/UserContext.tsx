@@ -20,6 +20,7 @@ interface RawUserResponse {
   employee_number?: string;
   employeeNumber?: string;
   is_active: number | boolean;
+  image_url?: string;
 }
 
 interface UserContextType {
@@ -58,6 +59,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             department: u.department,
             employeeNumber: u.employee_number || u.employeeNumber || '',
             is_active: Boolean(u.is_active),
+            imageUrl: u.image_url || '',
             role: {
               id: u.roleId,
               name: u.roleName,

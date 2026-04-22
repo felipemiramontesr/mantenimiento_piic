@@ -21,6 +21,7 @@ export interface UserIndustrial {
   department: string;
   employeeNumber: string;
   is_active: boolean;
+  imageUrl?: string;
   role?: Role;
   created_at?: string;
   updated_at?: string;

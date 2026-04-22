@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Mail, Activity, Settings, Hash, Briefcase } from 'lucide-react';
+import { User, Mail, Activity, Settings, Hash, Briefcase, Image as ImageIcon } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
 
@@ -50,7 +50,22 @@ const UserRegistryRow = ({ user }: { user: UserIndustrial }): React.JSX.Element 
 
   return (
     <tr className="transition-all duration-300 hover:bg-[#0f2a44]/[0.02] border-b border-gray-50">
-      <td className="py-6 text-center px-4">
+      <td className="py-6 text-center">
+        <div className="flex justify-center items-center">
+          {user.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              className="w-48 h-48 rounded-[4px] object-cover border border-[#0f2a44]/10 shadow-sm"
+              alt={user.username}
+            />
+          ) : (
+            <div className="w-48 h-48 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 shadow-inner">
+              <ImageIcon size={48} className="opacity-40" />
+            </div>
+          )}
+        </div>
+      </td>
+      <td className="text-center px-4">
         <UserIdentityCluster user={user} />
       </td>
       <td className="text-center px-4">
@@ -119,7 +134,8 @@ const UsersGridView = (): React.JSX.Element => {
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
-              <th className="py-4 opacity-40">IDENTIDAD / EMPLEADO</th>
+              <th className="py-4 opacity-40">ACTIVO</th>
+              <th className="opacity-40">IDENTIDAD / EMPLEADO</th>
               <th className="opacity-40">CANAL DE CONTACTO</th>
               <th className="opacity-40">ROL Y DEPARTAMENTO</th>
               <th className="opacity-40">ESTATUS OPERATIVO</th>
