@@ -114,7 +114,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   }
 
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-8 max-w-[1200px] mx-auto pb-20">
+    <form onSubmit={handleFormSubmit} className="space-y-8 archon-central-axis pb-20">
       <div className="archon-grid-2">
         <div
           className="glass-card-pro bg-white p-10 space-y-8"
