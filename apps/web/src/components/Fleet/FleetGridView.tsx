@@ -325,7 +325,7 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
   const [selectedGalleryUnit, setSelectedGalleryUnit] = React.useState<FleetUnit | null>(null);
   const [selectedRouteUnit, setSelectedRouteUnit] = React.useState<FleetUnit | null>(null);
   const [sortConfig, setSortConfig] = React.useState<{
-    field: 'unidad' | 'programacion' | 'pronostico' | null;
+    field: 'unidad' | 'programacion' | 'pronostico' | 'acciones' | null;
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
@@ -355,18 +355,42 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
         } else if (sortConfig.field === 'pronostico') {
           valA = a.forecast ? a.forecast.forecastDate.getTime() : Infinity;
           valB = b.forecast ? b.forecast.forecastDate.getTime() : Infinity;
+        } else if (sortConfig.field === 'acciones') {
+          const actionWeight: Record<string, number> = {
+            Disponible: 1, // Despachar
+            Asignada: 2, // Iniciar
+            'En Ruta': 3, // Concluir
+          };
+          valA = actionWeight[a.unit.status] || 4;
+          valB = actionWeight[b.unit.status] || 4;
         }
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
       })
       .map((item) => item.unit);
   }, [units, sortConfig]);
 
-  const handleSort = (field: 'unidad' | 'programacion' | 'pronostico'): void => {
+  const handleSort = (field: 'unidad' | 'programacion' | 'pronostico' | 'acciones'): void => {
     setSortConfig((prev) => ({
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
     }));
   };
+
+  const SortIndicator = ({
+    active,
+    direction,
+  }: {
+    active: boolean;
+    direction: 'asc' | 'desc';
+  }): React.JSX.Element => (
+    <span
+      className={`inline-flex ml-1 transition-all duration-300 ${
+        active ? 'opacity-100 text-[#f2b705]' : 'opacity-20 text-[#0f2a44]'
+      }`}
+    >
+      {active && direction === 'desc' ? <ChevronDown size={10} /> : <ChevronUp size={10} />}
+    </span>
+  );
 
   return (
     <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
@@ -396,38 +420,58 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
           <thead>
             <tr>
               <th className="py-4 opacity-40">ACTIVO</th>
-              <th onClick={(): void => handleSort('unidad')} className="cursor-pointer">
-                UNIDAD{' '}
-                {sortConfig.field === 'unidad' &&
-                  (sortConfig.direction === 'asc' ? (
-                    <ChevronUp size={10} />
-                  ) : (
-                    <ChevronDown size={10} />
-                  ))}
+              <th
+                onClick={(): void => handleSort('unidad')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  UNIDAD
+                  <SortIndicator
+                    active={sortConfig.field === 'unidad'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
               </th>
               <th className="opacity-40">IDENTIDAD</th>
               <th className="opacity-40">ESTRATEGIA</th>
               <th className="opacity-40">TÉCNICO</th>
-              <th onClick={(): void => handleSort('programacion')} className="cursor-pointer">
-                PROGRAMACIÓN{' '}
-                {sortConfig.field === 'programacion' &&
-                  (sortConfig.direction === 'asc' ? (
-                    <ChevronUp size={10} />
-                  ) : (
-                    <ChevronDown size={10} />
-                  ))}
+              <th
+                onClick={(): void => handleSort('programacion')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  PROGRAMACIÓN
+                  <SortIndicator
+                    active={sortConfig.field === 'programacion'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
               </th>
-              <th onClick={(): void => handleSort('pronostico')} className="cursor-pointer">
-                PRONÓSTICO{' '}
-                {sortConfig.field === 'pronostico' &&
-                  (sortConfig.direction === 'asc' ? (
-                    <ChevronUp size={10} />
-                  ) : (
-                    <ChevronDown size={10} />
-                  ))}
+              <th
+                onClick={(): void => handleSort('pronostico')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  PRONÓSTICO
+                  <SortIndicator
+                    active={sortConfig.field === 'pronostico'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
               </th>
               <th className="opacity-40">SALUD</th>
-              <th className="opacity-40">ACCIONES</th>
+              <th
+                onClick={(): void => handleSort('acciones')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  ACCIONES
+                  <SortIndicator
+                    active={sortConfig.field === 'acciones'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
