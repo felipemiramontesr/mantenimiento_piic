@@ -1366,12 +1366,14 @@ body {
 
 /* 🏛️ ARCHON WORKSPACE CHASSIS (V.6.0.0) - GRID TRACK SYSTEM */
 .archon-workspace-chassis {
-  display: grid !important;
-  grid-template-rows: auto 1fr;
-  row-gap: 12px; /* Tightened for 3-row layout v.28.25.5 */
-  padding: 24px 40px 60px 40px !important;
-  height: calc(100vh - 120px);
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px;
+  row-gap: 12px;
+  padding: 24px 40px 40px 40px !important;
   overflow-y: auto;
+  min-height: 0; /* Critical for flex-scroll parity */
 }
 
 /* ✨ KINETIC SHIMMER SYSTEM (V.7.0.0) */
