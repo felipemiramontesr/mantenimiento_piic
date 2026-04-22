@@ -30,6 +30,9 @@ interface UserContextType {
   setActivePanel: (panel: UserPanel) => void;
   fetchUsers: () => Promise<void>;
   toggleUserStatus: (id: string, currentStatus: boolean) => Promise<void>;
+  updateUser: (id: string, data: Partial<UserIndustrial>) => Promise<boolean>;
+  editingUser: UserIndustrial | null;
+  setEditingUser: (user: UserIndustrial | null) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -40,6 +43,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [users, setUsers] = useState<UserIndustrial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activePanel, setActivePanel] = useState<UserPanel>('DIRECTORY');
+  const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);
 
   const fetchUsers = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -88,6 +92,30 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const updateUser = async (id: string, data: Partial<UserIndustrial>): Promise<boolean> => {
+    try {
+      // Map frontend update to backend schema
+      const backendData = {
+        fullName: data.fullName,
+        email: data.email,
+        roleId: data.roleId,
+        department: data.department,
+        employee_number: data.employeeNumber,
+        image_url: data.imageUrl,
+      };
+
+      const response = await api.patch(`/auth/users/${id}`, backendData);
+
+      if (response.data.success) {
+        await fetchUsers();
+        return true;
+      }
+      return false;
+    } catch (err: unknown) {
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
@@ -101,6 +129,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         setActivePanel,
         fetchUsers,
         toggleUserStatus,
+        updateUser,
+        editingUser,
+        setEditingUser,
       }}
     >
       {children}

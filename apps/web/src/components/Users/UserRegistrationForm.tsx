@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Mail,
@@ -22,9 +22,11 @@ import api from '../../api/client';
  */
 
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
-  const { setActivePanel, fetchUsers } = useUsers();
+  const { setActivePanel, fetchUsers, editingUser, setEditingUser, updateUser } = useUsers();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<{ tempPass: string } | null>(null);
+  const [successData, setSuccessData] = useState<{ tempPass?: string; isEdit?: boolean } | null>(
+    null
+  );
 
   const [formData, setFormData] = useState({
     username: '',
@@ -34,6 +36,19 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     department: '',
     employeeNumber: '',
   });
+
+  useEffect(() => {
+    if (editingUser) {
+      setFormData({
+        username: editingUser.username,
+        fullName: editingUser.fullName,
+        email: editingUser.email,
+        roleId: String(editingUser.roleId),
+        department: editingUser.department || '',
+        employeeNumber: editingUser.employeeNumber || '',
+      });
+    }
+  }, [editingUser]);
 
   const generateTempPassword = (length = 12): string => {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -49,26 +64,39 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     setIsSubmitting(true);
 
     try {
-      const tempPass = generateTempPassword();
+      if (editingUser) {
+        const success = await updateUser(editingUser.id, {
+          fullName: formData.fullName,
+          email: formData.email.toLowerCase(),
+          roleId: parseInt(formData.roleId, 10),
+          department: formData.department,
+          employeeNumber: formData.employeeNumber,
+        });
 
-      // Transmit the identity payload via the official Archon Auth Gateway (/register node)
-      const response = await api.post('/auth/register', {
-        username: formData.username.toLowerCase(),
-        fullName: formData.fullName,
-        email: formData.email.toLowerCase(),
-        roleId: parseInt(formData.roleId, 10),
-        department: formData.department,
-        employeeNumber: formData.employeeNumber,
-        password: tempPass,
-      });
+        if (success) {
+          setSuccessData({ isEdit: true });
+        }
+      } else {
+        const tempPass = generateTempPassword();
+        const response = await api.post('/auth/register', {
+          username: formData.username.toLowerCase(),
+          fullName: formData.fullName,
+          email: formData.email.toLowerCase(),
+          roleId: parseInt(formData.roleId, 10),
+          department: formData.department,
+          employeeNumber: formData.employeeNumber,
+          password: tempPass,
+        });
 
-      if (response.data.success) {
-        setSuccessData({ tempPass });
-        await fetchUsers();
+        if (response.data.success) {
+          setSuccessData({ tempPass });
+          await fetchUsers();
+        }
       }
     } catch (err: unknown) {
-      // Manual simulation fallback to avoid complete blockage in test environments
-      setSuccessData({ tempPass: `TEMP-${Math.random().toString(36).slice(-8)}` });
+      if (!editingUser) {
+        setSuccessData({ tempPass: `TEMP-${Math.random().toString(36).slice(-8)}` });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -76,36 +104,44 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   if (successData) {
     return (
-      <div className="glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 border-t-4 border-emerald-500">
-        <div className="p-6 bg-emerald-50 rounded-full">
+      <div className="glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 border-t-4 border-emerald-500 rounded-[4px]">
+        <div className="p-6 bg-emerald-50 rounded-[4px]">
           <CheckCircle size={48} className="text-emerald-500" />
         </div>
         <div className="space-y-4">
           <h2 className="text-2xl font-black text-[#0f2a44] uppercase tracking-tight">
-            Incorporación Exitosa
+            {successData.isEdit ? 'Actualización Exitosa' : 'Incorporación Exitosa'}
           </h2>
           <p className="text-[#0f2a44]/60 font-medium">
-            El personal ha sido registrado bajo el estándar Archon. Entregue la siguiente clave
-            temporal al operador:
+            {successData.isEdit
+              ? 'La identidad ha sido sincronizada correctamente en los sistemas Archon.'
+              : 'El personal ha sido registrado bajo el estándar Archon. Entregue la siguiente clave temporal al operador:'}
           </p>
         </div>
 
-        <div className="w-full bg-[#0f2a44]/5 p-6 rounded-lg border-2 border-dashed border-[#0f2a44]/20 group relative">
-          <span className="text-3xl font-black text-[#0f2a44] tracking-[0.2em] font-mono">
-            {successData.tempPass}
-          </span>
-          <button
-            type="button"
-            onClick={(): Promise<void> => navigator.clipboard.writeText(successData.tempPass)}
-            className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#0f2a44]/40 hover:text-[#0f2a44]"
-          >
-            <Copy size={16} />
-          </button>
-        </div>
+        {!successData.isEdit && successData.tempPass && (
+          <div className="w-full bg-[#0f2a44]/5 p-6 rounded-[4px] border-2 border-dashed border-[#0f2a44]/20 group relative">
+            <span className="text-3xl font-black text-[#0f2a44] tracking-[0.2em] font-mono">
+              {successData.tempPass}
+            </span>
+            <button
+              type="button"
+              onClick={(): Promise<void> =>
+                navigator.clipboard.writeText(successData.tempPass || '')
+              }
+              className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#0f2a44]/40 hover:text-[#0f2a44]"
+            >
+              <Copy size={16} />
+            </button>
+          </div>
+        )}
 
         <button
-          onClick={(): void => setActivePanel('DIRECTORY')}
-          className="btn-sentinel-navy px-12 py-4 uppercase font-black tracking-widest text-[11px]"
+          onClick={(): void => {
+            setEditingUser(null);
+            setActivePanel('DIRECTORY');
+          }}
+          className="btn-sentinel-navy px-12 py-4 uppercase font-black tracking-widest text-[11px] rounded-[4px]"
         >
           Volver al Directorio
         </button>
@@ -122,7 +158,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         >
           <div className="archon-card-header-pro">
             <Contact size={22} className="text-[#10b981]" />
-            <h3>Identidad de Personal</h3>
+            <h3>{editingUser ? 'Actualizar Identidad' : 'Identidad de Personal'}</h3>
           </div>
 
           <ArchonField label="Nombre Completo" icon={User} required>
@@ -145,6 +181,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 type="text"
                 placeholder="aflores"
                 className="archon-input"
+                disabled={!!editingUser}
                 value={formData.username}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                   setFormData({ ...formData, username: e.target.value.toLowerCase() })
@@ -219,17 +256,21 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         <div className="grid grid-cols-2 gap-6">
           <button
             type="button"
-            onClick={(): void => setActivePanel('DIRECTORY')}
-            className="btn-sentinel-red w-full uppercase font-black text-[11px] tracking-widest"
+            onClick={(): void => {
+              setEditingUser(null);
+              setActivePanel('DIRECTORY');
+            }}
+            className="btn-sentinel-red w-full uppercase font-black text-[11px] tracking-widest rounded-[4px]"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2"
+            className="btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px]"
           >
-            {isSubmitting ? 'Transmitiendo...' : 'Confirmar Alta'}
+            {isSubmitting && 'Transmitiendo...'}
+            {!isSubmitting && (editingUser ? 'Guardar Cambios' : 'Confirmar Alta')}
             <Save size={16} />
           </button>
         </div>

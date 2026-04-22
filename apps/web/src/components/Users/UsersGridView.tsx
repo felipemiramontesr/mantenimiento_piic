@@ -1,5 +1,15 @@
 import React from 'react';
-import { User, Mail, Activity, Settings, Hash, Briefcase, Image as ImageIcon } from 'lucide-react';
+import {
+  User,
+  Mail,
+  Activity,
+  Pencil,
+  Hash,
+  Briefcase,
+  Image as ImageIcon,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
 
@@ -18,7 +28,7 @@ const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
 
   return (
     <span
-      className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${styles}`}
+      className={`px-2.5 py-1 rounded-[4px] text-[9px] font-black uppercase tracking-widest ${styles}`}
     >
       {roleName}
     </span>
@@ -45,7 +55,13 @@ const UserIdentityCluster = ({ user }: { user: UserIndustrial }): React.JSX.Elem
   </div>
 );
 
-const UserRegistryRow = ({ user }: { user: UserIndustrial }): React.JSX.Element => {
+const UserRegistryRow = ({
+  user,
+  onEdit,
+}: {
+  user: UserIndustrial;
+  onEdit: (u: UserIndustrial) => void;
+}): React.JSX.Element => {
   const { toggleUserStatus } = useUsers();
 
   return (
@@ -55,11 +71,11 @@ const UserRegistryRow = ({ user }: { user: UserIndustrial }): React.JSX.Element 
           {user.imageUrl ? (
             <img
               src={user.imageUrl}
-              className="w-48 h-48 rounded-[4px] object-cover border border-[#0f2a44]/10 shadow-sm"
+              className="w-48 h-48 rounded-[4px] object-cover border border-[#0f2a44]/10"
               alt={user.username}
             />
           ) : (
-            <div className="w-48 h-48 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300 shadow-inner">
+            <div className="w-48 h-48 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
               <ImageIcon size={48} className="opacity-40" />
             </div>
           )}
@@ -70,7 +86,7 @@ const UserRegistryRow = ({ user }: { user: UserIndustrial }): React.JSX.Element 
       </td>
       <td className="text-center px-4">
         <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded border border-sky-100">
+          <div className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-[4px] border border-sky-100">
             <Mail size={11} />
             <span className="text-[10px] font-black">{user.email}</span>
           </div>
@@ -89,7 +105,7 @@ const UserRegistryRow = ({ user }: { user: UserIndustrial }): React.JSX.Element 
         <div className="flex flex-col items-center">
           <button
             onClick={(): Promise<void> => toggleUserStatus(user.id, user.is_active)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded border font-black text-[9px] uppercase transition-all shadow-sm ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-[4px] border font-black text-[9px] uppercase transition-all ${
               user.is_active
                 ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
                 : 'bg-red-50 border-red-100 text-red-700'
@@ -102,8 +118,11 @@ const UserRegistryRow = ({ user }: { user: UserIndustrial }): React.JSX.Element 
       </td>
       <td className="text-center px-4">
         <div className="flex justify-center gap-2">
-          <button className="p-2 text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors">
-            <Settings size={14} />
+          <button
+            onClick={(): void => onEdit(user)}
+            className="p-2 text-[#059669] hover:bg-emerald-50 transition-all rounded-[4px]"
+          >
+            <Pencil size={18} />
           </button>
         </div>
       </td>
@@ -112,18 +131,64 @@ const UserRegistryRow = ({ user }: { user: UserIndustrial }): React.JSX.Element 
 };
 
 const UsersGridView = (): React.JSX.Element => {
-  const { users, isLoading } = useUsers();
+  const { users, isLoading, setEditingUser, setActivePanel } = useUsers();
+  const [sortConfig, setSortConfig] = React.useState<{
+    field: 'identity' | 'role' | 'status' | null;
+    direction: 'asc' | 'desc';
+  }>({ field: null, direction: 'asc' });
 
   if (isLoading) {
     return (
       <div className="glass-card-pro bg-white p-12 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-[#0f2a44]/10 border-t-[#0f2a44] rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-[#0f2a44]/10 border-t-[#0f2a44] rounded-[4px] animate-spin" />
         <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-widest animate-pulse">
           Sincronizando Identidades...
         </span>
       </div>
     );
   }
+
+  const handleSort = (field: 'identity' | 'role' | 'status'): void => {
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const SortIndicator = ({
+    active,
+    direction,
+  }: {
+    active: boolean;
+    direction: 'asc' | 'desc';
+  }): React.JSX.Element => (
+    <span
+      className={`inline-flex ml-1 transition-all duration-300 ${
+        active ? 'opacity-100 text-[#059669]' : 'opacity-80 text-[#10b981]'
+      }`}
+    >
+      {active && direction === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+    </span>
+  );
+
+  const sortedUsers = [...users].sort((a, b) => {
+    if (!sortConfig.field) return 0;
+    let valA = '';
+    let valB = '';
+
+    if (sortConfig.field === 'identity') {
+      valA = a.fullName || a.username;
+      valB = b.fullName || b.username;
+    } else if (sortConfig.field === 'role') {
+      valA = a.role?.name || '';
+      valB = b.role?.name || '';
+    } else if (sortConfig.field === 'status') {
+      valA = a.is_active ? '1' : '0';
+      valB = b.is_active ? '1' : '0';
+    }
+
+    return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+  });
 
   return (
     <div className="space-y-[20px] text-[#0f2a44]">
@@ -135,17 +200,57 @@ const UsersGridView = (): React.JSX.Element => {
           <thead>
             <tr>
               <th className="py-4 opacity-40">ACTIVO</th>
-              <th className="opacity-40">IDENTIDAD / EMPLEADO</th>
+              <th
+                onClick={(): void => handleSort('identity')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  IDENTIDAD / EMPLEADO
+                  <SortIndicator
+                    active={sortConfig.field === 'identity'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
+              </th>
               <th className="opacity-40">CANAL DE CONTACTO</th>
-              <th className="opacity-40">ROL Y DEPARTAMENTO</th>
-              <th className="opacity-40">ESTATUS OPERATIVO</th>
+              <th
+                onClick={(): void => handleSort('role')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  ROL Y DEPARTAMENTO
+                  <SortIndicator
+                    active={sortConfig.field === 'role'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
+              </th>
+              <th
+                onClick={(): void => handleSort('status')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  ESTATUS OPERATIVO
+                  <SortIndicator
+                    active={sortConfig.field === 'status'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
+              </th>
               <th className="opacity-40">AJUSTES</th>
             </tr>
           </thead>
           <tbody>
-            {users.map(
+            {sortedUsers.map(
               (item: UserIndustrial): React.JSX.Element => (
-                <UserRegistryRow key={item.id} user={item} />
+                <UserRegistryRow
+                  key={item.id}
+                  user={item}
+                  onEdit={(u): void => {
+                    setEditingUser(u);
+                    setActivePanel('SIGNUP');
+                  }}
+                />
               )
             )}
           </tbody>

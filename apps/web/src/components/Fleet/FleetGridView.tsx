@@ -56,7 +56,7 @@ const AssetUnitCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const identity = processTechnicalIdentity(unit.modelo);
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-sm tracking-tighter shadow-sm">
+      <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-[4px] tracking-tighter">
         {unit.id}
       </span>
       <div className="flex flex-col items-center -space-y-0.5">
@@ -81,18 +81,18 @@ const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element 
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center gap-1.5 opacity-80 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+        <div className="flex items-center gap-1.5 opacity-80 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-100">
           <Tag size={9} className="text-emerald-800" />
           <span className="text-[9px] font-black uppercase tracking-tighter text-emerald-800">
             {plates}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 opacity-80 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+        <div className="flex items-center gap-1.5 opacity-80 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-100">
           <CreditCard size={9} />
           <span className="text-[9px] font-black uppercase tracking-tighter">{card}</span>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 bg-sky-50 px-2 py-0.5 rounded border border-sky-100 shadow-sm">
+      <div className="flex items-center gap-1.5 bg-sky-50 px-2 py-0.5 rounded-[4px] border border-sky-100">
         <MapPin size={9} className="text-sky-600" />
         <span className="text-[8.5px] font-black text-sky-800 uppercase tracking-tight leading-none">
           {location}
@@ -118,7 +118,7 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         <CalendarDays size={10} />
         <span className="text-[9px] font-bold">{intervalDays} DÍAS</span>
       </div>
-      <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
+      <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded-[4px] border border-sky-100">
         <Activity size={9} className="text-sky-600" />
         <span className="text-[9px] font-black text-sky-700">{avgDaily} KM/D</span>
       </div>
@@ -135,7 +135,7 @@ const TechnicalStatusCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Elemen
   }
   return (
     <div className="flex flex-col items-center space-y-2">
-      <div className="flex items-center gap-2 bg-sky-50 px-3 py-0.5 rounded border border-sky-200 shadow-sm">
+      <div className="flex items-center gap-2 bg-sky-50 px-3 py-0.5 rounded-[4px] border border-sky-200">
         <Gauge size={12} className="text-sky-600" />
         <span className="text-[12px] font-black text-sky-800">{odometer.toLocaleString()}</span>
       </div>
@@ -157,12 +157,12 @@ const ForecastCluster = ({
   forecast: MaintenanceForecast | null;
   isOverdue: boolean;
 }): React.JSX.Element => {
-  let containerClass = 'bg-emerald-50/50 border-emerald-100/50 shadow-sm';
+  let containerClass = 'bg-emerald-50/50 border-emerald-100/50';
   let textClass = 'text-emerald-700 opacity-60';
   let valClass = 'text-[#0f2a44]';
   let labelText = 'PRONÓSTICO';
   if (isOverdue) {
-    containerClass = 'bg-red-500 border-red-600 shadow-sm';
+    containerClass = 'bg-red-500 border-red-600';
     textClass = 'text-white';
     valClass = 'text-white';
     labelText = 'VENCIDO';
@@ -173,7 +173,7 @@ const ForecastCluster = ({
   }
   return (
     <div
-      className={`flex flex-col items-center p-2.5 rounded border transition-all duration-500 min-w-[90px] ${containerClass}`}
+      className={`flex flex-col items-center p-2.5 rounded-[4px] border transition-all duration-500 min-w-[90px] ${containerClass}`}
     >
       <div className="flex items-center gap-1.5 mb-1">
         {isOverdue ? (
@@ -216,7 +216,7 @@ const FleetRegistryRow = ({
   let zapClass = 'text-emerald-500';
   let kmTextClass = 'text-emerald-700';
   if (forecast && forecast.kmParaServicio < 1000) {
-    zapClass = 'text-red-500 animate-pulse';
+    zapClass = 'text-red-500';
     kmTextClass = 'text-red-600';
   }
 
@@ -225,7 +225,7 @@ const FleetRegistryRow = ({
     statusStyles = 'bg-white border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white';
   }
   if (unit.status === 'Asignada') {
-    statusStyles = 'bg-amber-500 border-amber-600 text-white hover:bg-amber-700 animate-pulse';
+    statusStyles = 'bg-amber-500 border-amber-600 text-white hover:bg-amber-700';
   }
   if (unit.status === 'En Ruta') {
     statusStyles = 'bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-800';
@@ -271,7 +271,7 @@ const FleetRegistryRow = ({
               {forecast ? forecast.kmParaServicio.toLocaleString() : '---'} KM
             </span>
           </div>
-          <div className="flex items-center opacity-50 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+          <div className="flex items-center opacity-50 bg-gray-50 px-2 py-0.5 rounded-[4px] border border-gray-100">
             <span className="text-[10px] font-black uppercase tracking-tighter">
               EST: {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
             </span>
@@ -297,7 +297,7 @@ const FleetRegistryRow = ({
         <div className="flex items-center justify-center gap-2">
           <button
             onClick={(): void => onManageRoute(unit)}
-            className={`flex items-center justify-center gap-2 px-3 py-2 rounded border font-black text-[10px] uppercase transition-all shadow-sm ${statusStyles}`}
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-[4px] border font-black text-[10px] uppercase transition-all ${statusStyles}`}
           >
             {unit.status === 'Disponible' && (
               <>
@@ -385,10 +385,10 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
   }): React.JSX.Element => (
     <span
       className={`inline-flex ml-1 transition-all duration-300 ${
-        active ? 'opacity-100 text-[#059669]' : 'opacity-60 text-[#10b981]'
+        active ? 'opacity-100 text-[#059669]' : 'opacity-80 text-[#10b981]'
       }`}
     >
-      {active && direction === 'desc' ? <ChevronDown size={10} /> : <ChevronUp size={10} />}
+      {active && direction === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
     </span>
   );
 
