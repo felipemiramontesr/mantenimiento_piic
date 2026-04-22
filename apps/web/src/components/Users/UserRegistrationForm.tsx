@@ -18,7 +18,7 @@ import api from '../../api/client';
 /**
  * 🔱 Archon Component: UserRegistrationForm
  * Implementation: Sovereign Identity Enrollment (Axios-based)
- * v.28.23.6 - Security First & Auth Integration & CamelCase Standard
+ * v.28.24.2 - Security First & Static Entry
  */
 
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
@@ -76,7 +76,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   if (successData) {
     return (
-      <div className="animate-in fade-in duration-500 glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 border-t-4 border-emerald-500">
+      <div className="glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 border-t-4 border-emerald-500">
         <div className="p-6 bg-emerald-50 rounded-full">
           <CheckCircle size={48} className="text-emerald-500" />
         </div>
@@ -114,17 +114,14 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   }
 
   return (
-    <form
-      onSubmit={handleFormSubmit}
-      className="animate-in fade-in duration-500 space-y-8 max-w-[1200px] mx-auto pb-20"
-    >
+    <form onSubmit={handleFormSubmit} className="space-y-8 max-w-[1200px] mx-auto pb-20">
       <div className="archon-grid-2">
         <div
           className="glass-card-pro bg-white p-10 space-y-8"
-          style={{ borderTop: '4px solid #f2b705' }}
+          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="archon-card-header-pro">
-            <Contact size={22} className="text-[#f2b705]" />
+            <Contact size={22} className="text-[#10b981]" />
             <h3>Identidad de Personal</h3>
           </div>
 

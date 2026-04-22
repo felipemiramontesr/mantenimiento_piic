@@ -5,14 +5,14 @@ import { useUsers } from '../../context/UserContext';
 /**
  * 🔱 Archon Component: UserManagementCards
  * Implementation: Dual-Axis Symmetry Selector (Fleet-Standard)
- * v.28.24.1 - Animation Purification (Static Entry)
+ * v.28.24.2 - Emerald Restoration & Static Entry
  */
 
 const UserManagementCards: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel } = useUsers();
 
   return (
-    <div className="archon-central-axis animate-in fade-in duration-500">
+    <div className="archon-central-axis">
       <div className="archon-grid-2 gap-8 mb-8">
         {/* ── CARD 01: Mando y Supervisión (NAVY) ────────────────────────── */}
         <div
@@ -67,18 +67,18 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
           </div>
         </div>
 
-        {/* ── CARD 02: Incorporación de Personal (GOLD) ──────────────────── */}
+        {/* ── CARD 02: Alta de Personal (EMERALD) ────────────────────────── */}
         <div
           onClick={(): void => setActivePanel('SIGNUP')}
           className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
             activePanel === 'SIGNUP'
-              ? 'ring-2 ring-[#f2b705] shadow-lg transform scale-[1.02]'
-              : 'card-hover-navy opacity-80 hover:opacity-100'
+              ? 'ring-2 ring-[#10b981] shadow-lg transform scale-[1.02]'
+              : 'card-hover-emerald opacity-80 hover:opacity-100'
           }`}
-          style={{ borderTop: '4px solid #f2b705' }}
+          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-center justify-center gap-3 mb-4 w-full">
-            <UserPlus size={20} className="text-[#f2b705]" />
+            <UserPlus size={20} className="text-[#10b981]" />
             <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-widest">
               Alta de Personal
             </span>
@@ -90,14 +90,14 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(242, 183, 5, 0.1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid rgba(242, 183, 5, 0.4)',
+                border: '2px solid rgba(16, 185, 129, 0.4)',
               }}
             >
-              <Users size={40} className="text-[#f2b705]" />
+              <Users size={40} className="text-[#10b981]" />
             </div>
             <div className="flex flex-col items-center space-y-1 mb-12">
               <h3 className="text-[#0f2a44] font-black uppercase tracking-[0.15em] text-[14px]">
@@ -111,8 +111,8 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
 
           <div className="archon-tile-action">
             <button
-              className={`btn-sentinel-navy w-full ${
-                activePanel === 'SIGNUP' ? 'bg-[#f2b705] text-white border-[#f2b705]' : ''
+              className={`btn-sentinel-emerald w-full ${
+                activePanel === 'SIGNUP' ? 'bg-[#10b981] text-white border-[#10b981]' : ''
               }`}
             >
               Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />

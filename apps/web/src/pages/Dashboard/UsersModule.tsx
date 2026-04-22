@@ -12,7 +12,7 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 /**
  * 🔱 Archon Component: UsersModuleContent
  * Inner orchestrator that consumes the UserContext
- * v.28.24.1 - Animation Purification (Transition Fix)
+ * v.28.24.2 - Total Visual Recovery (Static Entry)
  */
 const UsersModuleContent: React.FC = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
   };
 
   return (
-    <main className="workspace-container-pro animate-in fade-in duration-700">
+    <main className="workspace-container-pro">
       {/* 🚀 HEADER SOBERANO (Espejo de Flota) */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div
@@ -123,7 +123,6 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
                   border: '1px solid rgba(15, 42, 68, 0.08)',
                   zIndex: 100,
                   padding: '4px 0',
-                  animation: 'fade-in 0.2s ease-out',
                 }}
               >
                 <div
@@ -165,8 +164,7 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
         <UserManagementCards />
 
         <div ref={panelRef} className="w-full h-full pt-4">
-          {/* ⚡ PURIFIED TRANSITION: Pure Fade-in (Static Geometry) */}
-          <div className="animate-in fade-in duration-500">
+          <div className="w-full h-full">
             {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
           </div>
         </div>
@@ -174,7 +172,7 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.24.1</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.24.2</p>
       </footer>
     </main>
   );
@@ -182,7 +180,7 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
 
 /**
  * 🔱 Archon Page: UsersModule
- * Sovereign Personnel Administration v.28.24.1
+ * Sovereign Personnel Administration v.28.24.2
  */
 const UsersModule: React.FC = (): React.JSX.Element => (
   <UserProvider>
