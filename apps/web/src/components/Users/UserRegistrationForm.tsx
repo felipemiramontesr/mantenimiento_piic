@@ -43,6 +43,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     employeeNumber: '',
     imageUrl: '',
     password: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -56,6 +57,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         employeeNumber: editingUser.employeeNumber || '',
         imageUrl: editingUser.imageUrl || '',
         password: '', // Always start empty for security
+        confirmPassword: '',
       });
     }
   }, [editingUser]);
@@ -114,6 +116,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       setIsSubmitting(false);
     }
   };
+
+  const passwordsMatch = formData.password === formData.confirmPassword;
+  const canSubmit = !formData.password || passwordsMatch;
 
   if (successData) {
     return (
@@ -293,13 +298,47 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 <button
                   type="button"
                   onClick={(): void => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 hover:text-[#0f2a44] transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-transparent border-none appearance-none focus:outline-none text-[#0f2a44]/20 hover:text-[#0f2a44] transition-colors flex items-center justify-center leading-none"
+                  style={{ background: 'none', border: 'none', boxShadow: 'none' }}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </ArchonField>
           </div>
+
+          {formData.password && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <ArchonField label="Confirmar Contraseña" icon={CheckCircle} required>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Repita la clave para validar"
+                    className={`archon-input transition-all duration-300 ${
+                      formData.confirmPassword && !passwordsMatch
+                        ? 'border-red-200 bg-red-50/10'
+                        : ''
+                    }`}
+                    value={formData.confirmPassword}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                      setFormData({ ...formData, confirmPassword: e.target.value })
+                    }
+                  />
+                  {formData.confirmPassword && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      {passwordsMatch ? (
+                        <CheckCircle size={16} className="text-emerald-500 animate-in zoom-in" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">
+                          No coincide
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </ArchonField>
+            </div>
+          )}
         </div>
       </div>
 
@@ -318,8 +357,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px]"
+            disabled={isSubmitting || !canSubmit}
+            className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
+              !canSubmit ? 'opacity-50 grayscale cursor-not-allowed' : ''
+            }`}
           >
             {isSubmitting && 'Transmitiendo...'}
             {!isSubmitting && (editingUser ? 'Guardar Cambios' : 'Confirmar Alta')}
