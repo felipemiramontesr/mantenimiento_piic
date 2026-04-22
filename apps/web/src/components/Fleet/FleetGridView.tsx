@@ -81,18 +81,18 @@ const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element 
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center gap-1.5 opacity-80 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-100">
+        <div className="flex items-center gap-1.5 opacity-80 bg-emerald-50 px-2 py-0.5 rounded-[4px]">
           <Tag size={9} className="text-emerald-800" />
           <span className="text-[9px] font-black uppercase tracking-tighter text-emerald-800">
             {plates}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 opacity-80 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-100">
+        <div className="flex items-center gap-1.5 opacity-80 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-[4px]">
           <CreditCard size={9} />
           <span className="text-[9px] font-black uppercase tracking-tighter">{card}</span>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 bg-sky-50 px-2 py-0.5 rounded-[4px] border border-sky-100">
+      <div className="flex items-center gap-1.5 bg-sky-50 px-2 py-0.5 rounded-[4px]">
         <MapPin size={9} className="text-sky-600" />
         <span className="text-[8.5px] font-black text-sky-800 uppercase tracking-tight leading-none">
           {location}
@@ -118,7 +118,7 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         <CalendarDays size={10} />
         <span className="text-[9px] font-bold">{intervalDays} DÍAS</span>
       </div>
-      <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded-[4px] border border-sky-100">
+      <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded-[4px]">
         <Activity size={9} className="text-sky-600" />
         <span className="text-[9px] font-black text-sky-700">{avgDaily} KM/D</span>
       </div>
@@ -135,7 +135,7 @@ const TechnicalStatusCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Elemen
   }
   return (
     <div className="flex flex-col items-center space-y-2">
-      <div className="flex items-center gap-2 bg-sky-50 px-3 py-0.5 rounded-[4px] border border-sky-200">
+      <div className="flex items-center gap-2 bg-sky-50 px-3 py-0.5 rounded-[4px]">
         <Gauge size={12} className="text-sky-600" />
         <span className="text-[12px] font-black text-sky-800">{odometer.toLocaleString()}</span>
       </div>
@@ -157,12 +157,12 @@ const ForecastCluster = ({
   forecast: MaintenanceForecast | null;
   isOverdue: boolean;
 }): React.JSX.Element => {
-  let containerClass = 'bg-emerald-50/50 border-emerald-100/50';
+  let containerClass = 'bg-emerald-50/50';
   let textClass = 'text-emerald-700 opacity-60';
   let valClass = 'text-[#0f2a44]';
   let labelText = 'PRONÓSTICO';
   if (isOverdue) {
-    containerClass = 'bg-red-500 border-red-600';
+    containerClass = 'bg-red-500';
     textClass = 'text-white';
     valClass = 'text-white';
     labelText = 'VENCIDO';
@@ -173,7 +173,7 @@ const ForecastCluster = ({
   }
   return (
     <div
-      className={`flex flex-col items-center p-2.5 rounded-[4px] border transition-all duration-500 min-w-[90px] ${containerClass}`}
+      className={`flex flex-col items-center p-2.5 rounded-[4px] transition-all duration-500 min-w-[90px] ${containerClass}`}
     >
       <div className="flex items-center gap-1.5 mb-1">
         {isOverdue ? (
@@ -222,13 +222,13 @@ const FleetRegistryRow = ({
 
   let statusStyles = 'bg-gray-100 text-gray-400 opacity-50 cursor-not-allowed';
   if (unit.status === 'Disponible') {
-    statusStyles = 'bg-white border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white';
+    statusStyles = 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white';
   }
   if (unit.status === 'Asignada') {
-    statusStyles = 'bg-amber-500 border-amber-600 text-white hover:bg-amber-700';
+    statusStyles = 'bg-amber-500 text-white hover:bg-amber-700';
   }
   if (unit.status === 'En Ruta') {
-    statusStyles = 'bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-800';
+    statusStyles = 'bg-emerald-600 text-white hover:bg-emerald-800';
   }
 
   const hasImages = Array.isArray(unit.images) && unit.images.length > 0;
@@ -271,7 +271,7 @@ const FleetRegistryRow = ({
               {forecast ? forecast.kmParaServicio.toLocaleString() : '---'} KM
             </span>
           </div>
-          <div className="flex items-center opacity-50 bg-gray-50 px-2 py-0.5 rounded-[4px] border border-gray-100">
+          <div className="flex items-center opacity-50 bg-gray-50 px-2 py-0.5 rounded-[4px]">
             <span className="text-[10px] font-black uppercase tracking-tighter">
               EST: {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
             </span>
@@ -297,7 +297,7 @@ const FleetRegistryRow = ({
         <div className="flex items-center justify-center gap-2">
           <button
             onClick={(): void => onManageRoute(unit)}
-            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-[4px] border font-black text-[10px] uppercase transition-all ${statusStyles}`}
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-[4px] font-black text-[10px] uppercase transition-all ${statusStyles}`}
           >
             {unit.status === 'Disponible' && (
               <>
@@ -412,10 +412,7 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
         />
       )}
 
-      <div
-        className="glass-card-pro bg-white"
-        style={{ borderTop: '4px solid #0f2a44', padding: '30px' }}
-      >
+      <div className="glass-card-pro bg-white" style={{ padding: '30px' }}>
         <table className="archon-registry-table w-full">
           <thead>
             <tr>

@@ -104,7 +104,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   if (successData) {
     return (
-      <div className="glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 border-t-4 border-emerald-500 rounded-[4px]">
+      <div className="glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 rounded-[4px]">
         <div className="p-6 bg-emerald-50 rounded-[4px]">
           <CheckCircle size={48} className="text-emerald-500" />
         </div>
@@ -152,10 +152,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   return (
     <form onSubmit={handleFormSubmit} className="space-y-8 archon-central-axis pb-20">
       <div className="archon-grid-2">
-        <div
-          className="glass-card-pro bg-white p-10 space-y-8"
-          style={{ borderTop: '4px solid #10b981' }}
-        >
+        <div className="glass-card-pro bg-white p-10 space-y-8">
           <div className="archon-card-header-pro">
             <Contact size={22} className="text-[#10b981]" />
             <h3>{editingUser ? 'Actualizar Identidad' : 'Identidad de Personal'}</h3>
@@ -202,10 +199,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           </div>
         </div>
 
-        <div
-          className="glass-card-pro bg-white p-10 space-y-8"
-          style={{ borderTop: '4px solid #0f2a44' }}
-        >
+        <div className="glass-card-pro bg-white p-10 space-y-8">
           <div className="archon-card-header-pro">
             <Briefcase size={22} className="text-[#0f2a44]" />
             <h3>Perfil Industrial</h3>

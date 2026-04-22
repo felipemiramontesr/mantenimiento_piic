@@ -21,7 +21,7 @@ import { UserIndustrial } from '../../types/user';
 
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
   let styles = 'bg-gray-100 text-gray-600';
-  if (roleName === 'Archon') styles = 'bg-[#0f2a44] text-white ring-2 ring-[#f2b705]';
+  if (roleName === 'Archon') styles = 'bg-[#0f2a44] text-white';
   if (roleName === 'Administrador') styles = 'bg-blue-100 text-blue-700';
   if (roleName === 'Técnico') styles = 'bg-cyan-100 text-cyan-700';
   if (roleName === 'Operador') styles = 'bg-emerald-100 text-emerald-700';
@@ -86,7 +86,7 @@ const UserRegistryRow = ({
       </td>
       <td className="text-center px-4">
         <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-[4px] border border-sky-100">
+          <div className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-[4px]">
             <Mail size={11} />
             <span className="text-[10px] font-black">{user.email}</span>
           </div>
@@ -105,10 +105,10 @@ const UserRegistryRow = ({
         <div className="flex flex-col items-center">
           <button
             onClick={(): Promise<void> => toggleUserStatus(user.id, user.is_active)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-[4px] border font-black text-[9px] uppercase transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-[4px] font-black text-[9px] uppercase transition-all ${
               user.is_active
-                ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                : 'bg-red-50 border-red-100 text-red-700'
+                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-red-50 text-red-700 hover:bg-red-100'
             }`}
           >
             <Activity size={10} />
@@ -192,10 +192,7 @@ const UsersGridView = (): React.JSX.Element => {
 
   return (
     <div className="space-y-[20px] text-[#0f2a44]">
-      <div
-        className="glass-card-pro bg-white"
-        style={{ borderTop: '4px solid #0f2a44', padding: '30px' }}
-      >
+      <div className="glass-card-pro bg-white" style={{ padding: '30px' }}>
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
