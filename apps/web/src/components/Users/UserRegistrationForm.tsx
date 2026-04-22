@@ -203,6 +203,21 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               />
             </ArchonField>
           </div>
+
+          <div className="pt-8 mt-4 border-t border-[#0f2a44]/5">
+            <ArchonField label="Fotografía de Identidad" icon={ImageIcon}>
+              <ArchonImageUploader
+                images={formData.imageUrl ? [formData.imageUrl] : []}
+                onChange={(imgs: string[]): void =>
+                  setFormData({ ...formData, imageUrl: imgs[0] || '' })
+                }
+                maxImages={1}
+              />
+            </ArchonField>
+            <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4 text-center">
+              Estándar Archon: Formato cuadrado recomendado
+            </p>
+          </div>
         </div>
 
         <div className="glass-card-pro bg-white p-10 space-y-8">
@@ -248,26 +263,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               />
             </ArchonField>
           </div>
-        </div>
-      </div>
-
-      {/* ── SECTION: Imagen de Identidad (v.28.32.1) ────────────────────── */}
-      <div className="glass-card-pro bg-white p-10 space-y-8 archon-central-axis">
-        <div className="archon-card-header-pro">
-          <ImageIcon size={22} className="text-[#f2b705]" />
-          <h3>Fotografía de Identidad</h3>
-        </div>
-        <div className="max-w-2xl mx-auto w-full">
-          <ArchonImageUploader
-            images={formData.imageUrl ? [formData.imageUrl] : []}
-            onChange={(imgs: string[]): void =>
-              setFormData({ ...formData, imageUrl: imgs[0] || '' })
-            }
-            maxImages={1}
-          />
-          <p className="text-[10px] uppercase tracking-widest opacity-40 mt-6 text-center">
-            Estándar Archon: Formato cuadrado recomendado • JPG, PNG • Máx 2MB
-          </p>
         </div>
       </div>
 
