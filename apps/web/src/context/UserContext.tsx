@@ -102,6 +102,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         department: data.department,
         employee_number: data.employeeNumber,
         image_url: data.imageUrl,
+        password: data.password,
       };
 
       const response = await api.patch(`/auth/users/${id}`, backendData);

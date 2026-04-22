@@ -10,6 +10,9 @@ import {
   CheckCircle,
   Hash,
   Image as ImageIcon,
+  Key,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
@@ -26,6 +29,7 @@ import api from '../../api/client';
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const { setActivePanel, fetchUsers, editingUser, setEditingUser, updateUser } = useUsers();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [successData, setSuccessData] = useState<{ tempPass?: string; isEdit?: boolean } | null>(
     null
   );
@@ -38,6 +42,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     department: '',
     employeeNumber: '',
     imageUrl: '',
+    password: '',
   });
 
   useEffect(() => {
@@ -50,6 +55,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         department: editingUser.department || '',
         employeeNumber: editingUser.employeeNumber || '',
         imageUrl: editingUser.imageUrl || '',
+        password: '', // Always start empty for security
       });
     }
   }, [editingUser]);
@@ -76,6 +82,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           department: formData.department,
           employeeNumber: formData.employeeNumber,
           imageUrl: formData.imageUrl,
+          password: formData.password || undefined,
         });
 
         if (success) {
@@ -90,7 +97,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           roleId: parseInt(formData.roleId, 10),
           department: formData.department,
           employeeNumber: formData.employeeNumber,
-          password: tempPass,
+          password: formData.password || generateTempPassword(),
           image_url: formData.imageUrl,
         });
 
@@ -261,6 +268,36 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   setFormData({ ...formData, department: e.target.value })
                 }
               />
+            </ArchonField>
+          </div>
+
+          <div className="relative">
+            <ArchonField
+              label={editingUser ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'}
+              icon={Key}
+            >
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={
+                    editingUser
+                      ? 'Dejar vacío para no cambiar'
+                      : 'Opcional (Auto-generada si vacío)'
+                  }
+                  className="archon-input pr-12"
+                  value={formData.password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={(): void => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 hover:text-[#0f2a44] transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </ArchonField>
           </div>
         </div>
