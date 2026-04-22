@@ -16,9 +16,17 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
  */
 const UsersModule: React.FC = (): React.JSX.Element => {
   const navigate = useNavigate();
-  const { activePanel } = useUsers();
+  const { activePanel, setActivePanel, setEditingUser } = useUsers();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
+
+  // 🔱 IDENTITY ANCHOR (v.28.31.1)
+  // Ensures the Master Table (DIRECTORY) is always the entry point upon module mounting.
+  // Eradicates "stuck" states from previous sessions or failed registrations.
+  React.useEffect(() => {
+    setActivePanel('DIRECTORY');
+    setEditingUser(null);
+  }, [setActivePanel, setEditingUser]);
 
   // 🚀 AXIAL SCROLL SYNC (v.28.28.1)
   // Ensures parity with the Fleet module by escorting the user to the form upon activation.

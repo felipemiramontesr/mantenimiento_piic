@@ -9,7 +9,7 @@ import { useUsers } from '../../context/UserContext';
  */
 
 const UserManagementCards: React.FC = (): React.JSX.Element => {
-  const { activePanel, setActivePanel } = useUsers();
+  const { activePanel, setActivePanel, setEditingUser } = useUsers();
 
   return (
     <div className="archon-central-axis">
@@ -65,9 +65,11 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
           </div>
         </div>
 
-        {/* ── CARD 02: Alta de Personal (EMERALD) ────────────────────────── */}
         <div
-          onClick={(): void => setActivePanel('SIGNUP')}
+          onClick={(): void => {
+            setEditingUser(null);
+            setActivePanel('SIGNUP');
+          }}
           className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
             activePanel === 'SIGNUP'
               ? 'bg-[#10b981]/[0.02] shadow-lg transform scale-[1.02]'
