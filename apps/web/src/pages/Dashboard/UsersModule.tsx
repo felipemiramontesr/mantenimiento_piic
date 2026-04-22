@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Settings, LogOut } from 'lucide-react';
-import { UserProvider, useUsers } from '../../context/UserContext';
+import { useUsers } from '../../context/UserContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
@@ -10,11 +10,11 @@ import UsersGridView from '../../components/Users/UsersGridView';
 import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 
 /**
- * 🔱 Archon Component: UsersModuleContent
- * Inner orchestrator that consumes the UserContext
- * v.28.24.2 - Total Visual Recovery (Static Entry)
+ * 🔱 Archon Component: UsersModule
+ * Implementation: Sovereign Personnel Administration
+ * v.28.25.0 - Identity Sync (Now consumes global UserProvider)
  */
-const UsersModuleContent: React.FC = (): React.JSX.Element => {
+const UsersModule: React.FC = (): React.JSX.Element => {
   const navigate = useNavigate();
   const { activePanel } = useUsers();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -172,20 +172,10 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.24.2</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.25.0</p>
       </footer>
     </main>
   );
 };
-
-/**
- * 🔱 Archon Page: UsersModule
- * Sovereign Personnel Administration v.28.24.2
- */
-const UsersModule: React.FC = (): React.JSX.Element => (
-  <UserProvider>
-    <UsersModuleContent />
-  </UserProvider>
-);
 
 export default UsersModule;

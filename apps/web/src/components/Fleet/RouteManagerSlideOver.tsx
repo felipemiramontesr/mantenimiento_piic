@@ -12,70 +12,50 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
+import { useUsers } from '../../context/UserContext';
 
-interface Operator {
-  id: number;
-  username: string;
-  email: string;
-  role_id: number;
-  role_name?: string;
-}
-
-interface RouteManagerSlideOverProps {
+/**
+ * 🔱 Archon Intelligence: RouteManagerSlideOver
+ * Version: 1.2.6 - Identity Integration (v.28.25.0)
+ * Purpose: Central command for Route Dispatch with Real-Time Personnel Sync.
+ */
+const RouteManagerSlideOver: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   unit: FleetUnit;
   onActionComplete: () => void;
-}
-
-/**
- * 🔱 Archon Intelligence: RouteManagerSlideOver
- * Version: 1.2.5
- * Purpose: Central command for Route Dispatch, Start, and End with Mirror Validation.
- */
-const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
-  isOpen,
-  onClose,
-  unit,
-  onActionComplete,
-}) => {
+}> = ({ isOpen, onClose, unit, onActionComplete }) => {
+  const { users } = useUsers();
   const [step, setStep] = React.useState<'dispatch' | 'start' | 'end'>('dispatch');
   const [destination, setDestination] = React.useState<string>('Zacatecas');
   const [otherDestination, setOtherDestination] = React.useState<string>('');
   const [description, setDescription] = React.useState<string>('');
   const [odometer1, setOdometer1] = React.useState<string>('');
   const [odometer2, setOdometer2] = React.useState<string>('');
-  const [operatorId, setOperatorId] = React.useState<number | ''>('');
-  const [operators, setOperators] = React.useState<Operator[]>([]);
+  const [operatorId, setOperatorId] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // 🔱 Identity Filter: Hide Archon & Inactive Personnel
+  const validOperators = React.useMemo(
+    () =>
+      users.filter(
+        (u) =>
+          u.username.toLowerCase() !== 'archon' &&
+          u.role.name.toLowerCase() !== 'archon' &&
+          u.is_active
+      ),
+    [users]
+  );
 
   // 🔱 Mirror Logic: Match verification
   const isOdometerValid: boolean = odometer1 !== '' && odometer1 === odometer2;
 
   React.useEffect((): void => {
-    if (isOpen) {
-      if (unit) {
-        if (unit.status === 'Disponible') setStep('dispatch');
-        else if (unit.status === 'Asignada') setStep('start');
-        else if (unit.status === 'En Ruta') setStep('end');
-      }
-
-      const fetchOperators = async (): Promise<void> => {
-        try {
-          const response = await fetch(
-            `${process.env.VITE_API_URL || 'http://localhost:3001'}/v1/auth/users?role=2`,
-            {
-              headers: { Authorization: `Bearer ${localStorage.getItem('archon_token')}` },
-            }
-          );
-          const data = await response.json();
-          if (data.success) setOperators(data.data);
-        } catch (err: unknown) {
-          // Failure suppressed - Zero Noise Policy
-        }
-      };
-      fetchOperators();
+    if (isOpen && unit) {
+      if (unit.status === 'Disponible') setStep('dispatch');
+      else if (unit.status === 'Asignada') setStep('start');
+      else if (unit.status === 'En Ruta') setStep('end');
     }
   }, [unit, isOpen]);
 
@@ -151,7 +131,6 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
       />
 
       <div className="relative w-full max-w-lg bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
-        {/* Header Sovereign */}
         <div className="p-6 bg-[#0f2a44] text-white flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded bg-[#f2b705] flex items-center justify-center text-[#0f2a44] shadow-lg">
@@ -174,7 +153,6 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
           </button>
         </div>
 
-        {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
           {error && (
             <div className="p-4 bg-red-50 border-l-4 border-red-500 flex items-center gap-3 text-red-700">
@@ -183,7 +161,6 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
             </div>
           )}
 
-          {/* 🔱 Step Indicator */}
           <div className="flex items-center gap-4 py-4 border-b border-gray-100">
             <div
               className={`text-[10px] font-black px-3 py-1 rounded-full ${
@@ -210,7 +187,6 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
             </div>
           </div>
 
-          {/* 🔱 PHASE 1: DISPATCH */}
           {step === 'dispatch' && (
             <div className="space-y-6">
               <div className="space-y-4">
@@ -219,16 +195,14 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
                 </label>
                 <select
                   value={operatorId}
-                  onChange={(e): void =>
-                    setOperatorId(e.target.value === '' ? '' : Number(e.target.value))
-                  }
+                  onChange={(e): void => setOperatorId(e.target.value)}
                   className="w-full p-4 bg-gray-50 border border-gray-200 rounded text-sm font-bold focus:border-[#0f2a44] outline-none"
                 >
                   <option value="">-- Seleccionar Operador --</option>
-                  {operators.map(
+                  {validOperators.map(
                     (op): React.ReactElement => (
                       <option key={op.id} value={op.id}>
-                        {op.username.toUpperCase()}
+                        {op.fullName ? op.fullName.toUpperCase() : op.username.toUpperCase()}
                       </option>
                     )
                   )}
@@ -273,10 +247,8 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
             </div>
           )}
 
-          {/* 🔱 PHASE 2 & 3: OPERATOR ODOMETER VALIDATION */}
           {(step === 'start' || step === 'end') && (
             <div className="space-y-8">
-              {/* Mission Brief Card */}
               <div className="p-6 bg-amber-50 rounded border border-amber-100 space-y-3">
                 <div className="flex items-center gap-2 text-amber-800">
                   <ClipboardList size={14} />
@@ -297,7 +269,6 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
                 <h3 className="text-xs font-black uppercase text-[#0f2a44] border-l-4 border-[#0f2a44] pl-3">
                   {step === 'start' ? 'Validación de Salida' : 'Validación de Retorno'}
                 </h3>
-
                 <div className="space-y-4">
                   <label className="text-[11px] font-black uppercase opacity-40">
                     Lectura de Odómetro
@@ -316,7 +287,6 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
                     />
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <label className="text-[11px] font-black uppercase opacity-40 italic">
                     Confirmar Lectura (Double-Check)
@@ -350,7 +320,6 @@ const RouteManagerSlideOver: React.FC<RouteManagerSlideOverProps> = ({
           )}
         </div>
 
-        {/* Footer Sovereign Action */}
         <div className="p-8 border-t border-gray-100">
           <button
             disabled={

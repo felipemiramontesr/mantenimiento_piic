@@ -7,7 +7,14 @@ import FleetModule from './pages/Dashboard/FleetModule';
 import UsersModule from './pages/Dashboard/UsersModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
+import { UserProvider } from './context/UserContext';
 import './index.css';
+
+/**
+ * 🔱 Archon Root: App
+ * Implementation: Sovereign Identity Orchestration
+ * v.28.25.0 - Elevated UserProvider for Cross-Module Identity Sync
+ */
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const token = localStorage.getItem('auth_token');
@@ -19,7 +26,16 @@ const App: React.FC = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <UserProvider>
+              <DashboardLayout />
+            </UserProvider>
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<ArchonCenter />} />
         <Route path="fleet" element={<FleetModule />} />
         <Route path="users" element={<UsersModule />} />
