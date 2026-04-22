@@ -162,8 +162,7 @@ const ForecastCluster = ({
   let valClass = 'text-[#0f2a44]';
   let labelText = 'PRONÓSTICO';
   if (isOverdue) {
-    containerClass =
-      'bg-red-500 border-red-600 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]';
+    containerClass = 'bg-red-500 border-red-600 shadow-sm';
     textClass = 'text-white';
     valClass = 'text-white';
     labelText = 'VENCIDO';
