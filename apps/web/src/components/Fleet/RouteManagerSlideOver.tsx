@@ -42,7 +42,7 @@ const RouteManagerSlideOver: React.FC<{
       users.filter(
         (u) =>
           u.username.toLowerCase() !== 'archon' &&
-          u.role.name.toLowerCase() !== 'archon' &&
+          u.role?.name?.toLowerCase() !== 'archon' &&
           u.is_active
       ),
     [users]
