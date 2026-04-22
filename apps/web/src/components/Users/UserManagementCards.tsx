@@ -5,14 +5,14 @@ import { useUsers } from '../../context/UserContext';
 /**
  * 🔱 Archon Component: UserManagementCards
  * Implementation: Dual-Axis Symmetry Selector (Fleet-Standard)
- * v.28.24.0 - Industrial Visual Unification
+ * v.28.24.1 - Animation Purification (Static Entry)
  */
 
 const UserManagementCards: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel } = useUsers();
 
   return (
-    <div className="archon-central-axis animate-in fade-in slide-in-from-top-4 duration-700">
+    <div className="archon-central-axis animate-in fade-in duration-500">
       <div className="archon-grid-2 gap-8 mb-8">
         {/* ── CARD 01: Mando y Supervisión (NAVY) ────────────────────────── */}
         <div

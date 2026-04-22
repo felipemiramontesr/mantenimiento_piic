@@ -111,7 +111,7 @@ const UsersGridView = (): React.JSX.Element => {
   }
 
   return (
-    <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
+    <div className="animate-in fade-in duration-500 space-y-[20px] text-[#0f2a44]">
       <div
         className="glass-card-pro bg-white"
         style={{ borderTop: '4px solid #0f2a44', padding: '30px' }}

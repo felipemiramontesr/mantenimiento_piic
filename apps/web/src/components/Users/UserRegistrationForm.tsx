@@ -76,7 +76,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   if (successData) {
     return (
-      <div className="animate-in zoom-in duration-500 glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 border-t-4 border-emerald-500">
+      <div className="animate-in fade-in duration-500 glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 border-t-4 border-emerald-500">
         <div className="p-6 bg-emerald-50 rounded-full">
           <CheckCircle size={48} className="text-emerald-500" />
         </div>
@@ -116,7 +116,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   return (
     <form
       onSubmit={handleFormSubmit}
-      className="animate-in slide-in-from-bottom-8 duration-700 space-y-8 max-w-[1200px] mx-auto pb-20"
+      className="animate-in fade-in duration-500 space-y-8 max-w-[1200px] mx-auto pb-20"
     >
       <div className="archon-grid-2">
         <div

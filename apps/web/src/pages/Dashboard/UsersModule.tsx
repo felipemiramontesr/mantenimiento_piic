@@ -12,7 +12,7 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 /**
  * 🔱 Archon Component: UsersModuleContent
  * Inner orchestrator that consumes the UserContext
- * v.28.24.0 - Industrial Visual Unification (Target: Identity Mirror)
+ * v.28.24.1 - Animation Purification (Transition Fix)
  */
 const UsersModuleContent: React.FC = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -159,13 +159,14 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
         </div>
       </header>
 
-      {/* 📊 BODY MODULAR (Espejo de Flota) */}
+      {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        {/* 🔱 PERSISTENT MANAGEMENT CARDS (v.28.24.0) */}
+        {/* 🔱 PERSISTENT MANAGEMENT CARDS */}
         <UserManagementCards />
 
         <div ref={panelRef} className="w-full h-full pt-4">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          {/* ⚡ PURIFIED TRANSITION: Pure Fade-in (Static Geometry) */}
+          <div className="animate-in fade-in duration-500">
             {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
           </div>
         </div>
@@ -173,7 +174,7 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.24.0</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.24.1</p>
       </footer>
     </main>
   );
@@ -181,7 +182,7 @@ const UsersModuleContent: React.FC = (): React.JSX.Element => {
 
 /**
  * 🔱 Archon Page: UsersModule
- * Sovereign Personnel Administration v.28.24.0
+ * Sovereign Personnel Administration v.28.24.1
  */
 const UsersModule: React.FC = (): React.JSX.Element => (
   <UserProvider>
