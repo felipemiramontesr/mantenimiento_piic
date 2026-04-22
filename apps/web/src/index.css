@@ -1345,7 +1345,7 @@ body {
 .archon-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 40px; /* Golden Spacing */
+  gap: 35px; /* Symmetrical Compression v.28.25.5 */
   transition: all 0.3s ease-in-out;
 }
 
@@ -1353,7 +1353,7 @@ body {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-auto-rows: 1fr;
-  gap: 16px;
+  gap: 11px; /* Compressed 5px for visibility v.28.25.5 */
   transition: all 0.3s ease-in-out;
 }
 
@@ -1368,7 +1368,7 @@ body {
 .archon-workspace-chassis {
   display: grid !important;
   grid-template-rows: auto 1fr;
-  row-gap: 24px;
+  row-gap: 12px; /* Tightened for 3-row layout v.28.25.5 */
   padding: 24px 40px 60px 40px !important;
   height: calc(100vh - 120px);
   overflow-y: auto;

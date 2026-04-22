@@ -226,7 +226,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </header>
 
       <section className="archon-workspace-chassis">
-        <div className="archon-grid-3 mb-8">
+        <div className="archon-grid-3 mb-4">
           {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6', 'navy')}
           {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705', 'navy')}
           {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9', 'navy')}
