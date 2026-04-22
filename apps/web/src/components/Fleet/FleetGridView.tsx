@@ -208,7 +208,7 @@ const FleetRegistryRow = ({
     unit.lastServiceDate || null
   );
   const isOverdue = !!forecast?.isOverdue;
-  let rowClass = 'transition-all duration-300 hover:bg-[#0f2a44]/[0.02] border-b border-gray-50';
+  let rowClass = 'transition-all duration-300 hover:bg-[#0f2a44]/[0.015]';
   if (isOverdue) {
     rowClass = `${rowClass} bg-red-50/30`;
   }
@@ -240,12 +240,12 @@ const FleetRegistryRow = ({
           {hasImages ? (
             <img
               src={unit.images![0]}
-              className="w-48 h-48 rounded-[4px] object-cover border border-[#0f2a44]/10 cursor-pointer hover:border-[#0f2a44]"
+              className="w-48 h-48 rounded-[4px] object-cover cursor-pointer"
               alt={unit.id}
               onClick={(): void => onSelectImage(unit)}
             />
           ) : (
-            <div className="w-48 h-48 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
+            <div className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center text-gray-300">
               <ImageIcon size={48} />
             </div>
           )}
@@ -412,7 +412,7 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
         />
       )}
 
-      <div className="glass-card-pro bg-white" style={{ padding: '30px' }}>
+      <div className="glass-card-pro bg-white p-6">
         <table className="archon-registry-table w-full">
           <thead>
             <tr>

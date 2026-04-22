@@ -65,17 +65,17 @@ const UserRegistryRow = ({
   const { toggleUserStatus } = useUsers();
 
   return (
-    <tr className="transition-all duration-300 hover:bg-[#0f2a44]/[0.02] border-b border-gray-50">
+    <tr className="transition-all duration-300 hover:bg-[#0f2a44]/[0.015]">
       <td className="py-6 text-center">
         <div className="flex justify-center items-center">
           {user.imageUrl ? (
             <img
               src={user.imageUrl}
-              className="w-48 h-48 rounded-[4px] object-cover border border-[#0f2a44]/10"
+              className="w-48 h-48 rounded-[4px] object-cover"
               alt={user.username}
             />
           ) : (
-            <div className="w-48 h-48 rounded-[4px] bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-300">
+            <div className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center text-gray-300">
               <ImageIcon size={48} className="opacity-40" />
             </div>
           )}
@@ -139,7 +139,7 @@ const UsersGridView = (): React.JSX.Element => {
 
   if (isLoading) {
     return (
-      <div className="glass-card-pro bg-white p-12 flex flex-col items-center justify-center space-y-4">
+      <div className="glass-card-pro bg-white p-6 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-[#0f2a44]/10 border-t-[#0f2a44] rounded-[4px] animate-spin" />
         <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-widest animate-pulse">
           Sincronizando Identidades...
@@ -192,7 +192,7 @@ const UsersGridView = (): React.JSX.Element => {
 
   return (
     <div className="space-y-[20px] text-[#0f2a44]">
-      <div className="glass-card-pro bg-white" style={{ padding: '30px' }}>
+      <div className="glass-card-pro bg-white p-6">
         <table className="archon-registry-table w-full">
           <thead>
             <tr>

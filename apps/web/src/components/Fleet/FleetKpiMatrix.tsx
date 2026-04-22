@@ -48,7 +48,7 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
   };
 
   return (
-    <div className="grid grid-cols-2 gap-1.5 w-[160px] p-2 bg-gray-50/50 rounded-lg border border-gray-100 group-hover:border-[#0f2a44]/20 transition-all duration-300">
+    <div className="grid grid-cols-2 gap-1.5 w-[160px] p-2 bg-gray-50/50 rounded-[4px] transition-all duration-300">
       {/* 🚀 DISP - Disponibilidad */}
       <div className="flex flex-col items-start gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
@@ -61,7 +61,7 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
       </div>
 
       {/* 🛡️ MTBF - Fiabilidad */}
-      <div className="flex flex-col items-start gap-0.5 p-1 border-l border-gray-100">
+      <div className="flex flex-col items-start gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <ShieldCheck size={10} />
           <span className="text-[8px] font-black uppercase tracking-tighter">MTBF</span>
@@ -70,7 +70,7 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
       </div>
 
       {/* ⚡ MTTR - Velocidad de Respuesta */}
-      <div className="flex flex-col items-start gap-0.5 p-1 border-t border-gray-100">
+      <div className="flex flex-col items-start gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <Zap size={10} />
           <span className="text-[8px] font-black uppercase tracking-tighter">MTTR</span>
@@ -79,7 +79,7 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
       </div>
 
       {/* 📚 BCK - Pendientes (Backlog) */}
-      <div className="flex flex-col items-start gap-0.5 p-1 border-t border-l border-gray-100">
+      <div className="flex flex-col items-start gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <Layers size={10} />
           <span className="text-[8px] font-black uppercase tracking-tighter">BCK</span>
