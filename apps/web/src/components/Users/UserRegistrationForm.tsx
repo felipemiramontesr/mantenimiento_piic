@@ -9,10 +9,12 @@ import {
   Copy,
   CheckCircle,
   Hash,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
+import ArchonImageUploader from '../ArchonImageUploader';
 import api from '../../api/client';
 
 /**
@@ -35,6 +37,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     roleId: '2', // Default: Operador
     department: '',
     employeeNumber: '',
+    imageUrl: '',
   });
 
   useEffect(() => {
@@ -46,6 +49,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         roleId: String(editingUser.roleId),
         department: editingUser.department || '',
         employeeNumber: editingUser.employeeNumber || '',
+        imageUrl: editingUser.imageUrl || '',
       });
     }
   }, [editingUser]);
@@ -71,6 +75,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           roleId: parseInt(formData.roleId, 10),
           department: formData.department,
           employeeNumber: formData.employeeNumber,
+          imageUrl: formData.imageUrl,
         });
 
         if (success) {
@@ -86,6 +91,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           department: formData.department,
           employeeNumber: formData.employeeNumber,
           password: tempPass,
+          image_url: formData.imageUrl,
         });
 
         if (response.data.success) {
@@ -242,6 +248,26 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               />
             </ArchonField>
           </div>
+        </div>
+      </div>
+
+      {/* ── SECTION: Imagen de Identidad (v.28.32.1) ────────────────────── */}
+      <div className="glass-card-pro bg-white p-10 space-y-8 archon-central-axis">
+        <div className="archon-card-header-pro">
+          <ImageIcon size={22} className="text-[#f2b705]" />
+          <h3>Fotografía de Identidad</h3>
+        </div>
+        <div className="max-w-2xl mx-auto w-full">
+          <ArchonImageUploader
+            images={formData.imageUrl ? [formData.imageUrl] : []}
+            onChange={(imgs: string[]): void =>
+              setFormData({ ...formData, imageUrl: imgs[0] || '' })
+            }
+            maxImages={1}
+          />
+          <p className="text-[10px] uppercase tracking-widest opacity-40 mt-6 text-center">
+            Estándar Archon: Formato cuadrado recomendado • JPG, PNG • Máx 2MB
+          </p>
         </div>
       </div>
 
