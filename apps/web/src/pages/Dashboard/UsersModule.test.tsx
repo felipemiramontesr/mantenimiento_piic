@@ -4,8 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import UsersModule from './UsersModule';
 
 /**
- * 🔱 Archon Test Suite: UsersModule (v.28.23.3)
- * Implementation: PIIC Personnel Layout Certification
+ * 🔱 Archon Test Suite: UsersModule (v.28.24.0)
+ * Implementation: PIIC Personnel Layout Certification (Identity Mirror)
  */
 describe('UsersModule Component', () => {
   const renderModule = (): RenderResult =>
@@ -17,14 +17,14 @@ describe('UsersModule Component', () => {
 
   it('should render the correct administrative context', (): void => {
     renderModule();
-    // Updated to match Archon Standard label (v.28.23.0)
-    expect(screen.getByText(/Administración de Personal/i)).toBeInTheDocument();
+    // Updated to match Fleet-Standard label (v.28.24.0)
+    expect(screen.getByText(/Administrar Personal/i)).toBeInTheDocument();
   });
 
   it('should display the core personnel instruments', (): void => {
     renderModule();
-    // Updated to match Archon Standard labels (v.28.23.0)
-    expect(screen.getAllByText(/Mando y Supervisión/i)[0]).toBeInTheDocument();
-    expect(screen.getByText(/Incorporación de Personal/i)).toBeInTheDocument();
+    // Updated to match Archon Standard labels (v.28.24.0)
+    expect(screen.getByText(/Directorio Maestro/i)).toBeInTheDocument();
+    expect(screen.getByText(/Alta de Personal/i)).toBeInTheDocument();
   });
 });

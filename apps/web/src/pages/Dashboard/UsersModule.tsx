@@ -1,6 +1,10 @@
-import React from 'react';
-import { Users, ChevronRight, ShieldCheck, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Users, Settings, LogOut } from 'lucide-react';
 import { UserProvider, useUsers } from '../../context/UserContext';
+import { BRANDING_NAME } from '../../constants/versionConstants';
+
+// 🔱 Specialized Sub-components (Silicon Valley Standards)
 import UserManagementCards from '../../components/Users/UserManagementCards';
 import UsersGridView from '../../components/Users/UsersGridView';
 import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
@@ -8,70 +12,176 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 /**
  * 🔱 Archon Component: UsersModuleContent
  * Inner orchestrator that consumes the UserContext
- * v.28.23.5 - Homogenized Layout
+ * v.28.24.0 - Industrial Visual Unification (Target: Identity Mirror)
  */
 const UsersModuleContent: React.FC = (): React.JSX.Element => {
+  const navigate = useNavigate();
   const { activePanel } = useUsers();
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = (): void => setIsMenuOpen(false);
+
+  const handleLogout = (): void => {
+    localStorage.removeItem('archon_token');
+    navigate('/login');
+  };
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* ── HEADER SOBERANO (Homologado con Flota) ────────────────────────── */}
+      {/* 🚀 HEADER SOBERANO (Espejo de Flota) */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
-        <div className="flex flex-row items-center justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-[#f2b705]/10 rounded-lg">
-                <Users className="text-[#f2b705]" size={24} />
-              </div>
-              <h1 className="text-3xl font-black text-[#0f2a44] tracking-tighter uppercase">
-                Administración de Personal
-              </h1>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+          }}
+        >
+          {/* Left Panel: Operational Context */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '8px',
+              }}
+            >
+              <Users size={28} style={{ color: '#f2b705' }} />
+              <h2
+                className="text-[#0f2a44] tracking-tighter font-black text-2xl"
+                style={{ margin: 0, padding: 0, lineHeight: 1 }}
+              >
+                Administrar Personal
+              </h2>
             </div>
-            <nav className="flex items-center gap-2 text-[10px] font-bold text-[#0f2a44]/40 uppercase tracking-widest">
-              <span>Archon Central</span>
-              <ChevronRight size={12} />
-              <span className="text-[#0f2a44]/80">Gestión de Identidades</span>
-            </nav>
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+              Gestión de Identidades, Roles Industriales & Auditoría de Acceso
+            </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 group-focus-within:text-[#f2b705] transition-colors"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="BUSCAR PERSONAL..."
-                className="bg-white border border-[#0f2a44]/10 rounded-full py-3 pl-12 pr-6 text-[11px] font-black tracking-widest text-[#0f2a44] w-[300px] focus:outline-none focus:ring-2 focus:ring-[#f2b705] transition-all shadow-sm"
-              />
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-100">
-              <ShieldCheck size={14} className="text-emerald-600" />
-              <span className="text-[10px] font-black text-emerald-700 uppercase">
-                Soberanía Activa
-              </span>
-            </div>
+          {/* Right Panel: Identity & Access */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
+            <h1
+              style={{
+                fontSize: '26px',
+                fontWeight: 900,
+                margin: 0,
+                letterSpacing: '-0.03em',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                color: '#0f2a44',
+              }}
+            >
+              Archon
+            </h1>
+
+            <button
+              onClick={toggleMenu}
+              aria-label="User Menu"
+              className="avatar-trigger-pro"
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '4px',
+                border: '2px solid #f2b705',
+                backgroundColor: '#0f2a44',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
+                transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
+                padding: 0,
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 100 100">
+                <path
+                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+                  stroke="#f2b705"
+                  strokeWidth="16"
+                  fill="none"
+                />
+              </svg>
+            </button>
+
+            {isMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '60px',
+                  right: '0',
+                  width: '180px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '4px',
+                  boxShadow: '0 10px 30px rgba(15, 42, 68, 0.15)',
+                  border: '1px solid rgba(15, 42, 68, 0.08)',
+                  zIndex: 100,
+                  padding: '4px 0',
+                  animation: 'fade-in 0.2s ease-out',
+                }}
+              >
+                <div
+                  style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}
+                >
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontWeight: 900,
+                      color: '#f2b705',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                    }}
+                  >
+                    Sovereign Access
+                  </span>
+                </div>
+                <button className="dropdown-item-mock" onClick={closeMenu}>
+                  <Settings size={14} /> Ajustes
+                </button>
+                <div
+                  style={{ height: '1px', background: 'rgba(15,42,68,0.05)', margin: '4px 0' }}
+                />
+                <button
+                  className="dropdown-item-mock dropdown-item-mock-danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={14} /> Desconexión
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* ── INSTRUMENTS: Panel Selector ──────────────────────────────────── */}
-      <div className="archon-central-axis mt-8">
+      {/* 📊 BODY MODULAR (Espejo de Flota) */}
+      <section className="archon-workspace-chassis">
+        {/* 🔱 PERSISTENT MANAGEMENT CARDS (v.28.24.0) */}
         <UserManagementCards />
-      </div>
 
-      {/* ── DYNAMIC VIEWPORT: Table vs Form ──────────────────────────────── */}
-      <div className="archon-central-axis mt-12 pb-20">
-        {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
-      </div>
+        <div ref={panelRef} className="w-full h-full pt-4">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
+          </div>
+        </div>
+      </section>
+
+      <footer className="workspace-footer-pro">
+        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.24.0</p>
+      </footer>
     </main>
   );
 };
 
 /**
  * 🔱 Archon Page: UsersModule
- * Sovereign Personnel Administration v.28.23.5
+ * Sovereign Personnel Administration v.28.24.0
  */
 const UsersModule: React.FC = (): React.JSX.Element => (
   <UserProvider>

@@ -5,8 +5,8 @@ import { UserIndustrial } from '../../types/user';
 
 /**
  * 🔱 Archon Component: UsersGridView
- * Implementation: High-Density Industrial Registry
- * v.28.23.6 - Identity Oversight (CamelCase Standard)
+ * Implementation: High-Density Industrial Registry (Fleet-Standard)
+ * v.28.24.0 - Identity Oversight (Visual Unification)
  */
 
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
@@ -111,7 +111,7 @@ const UsersGridView = (): React.JSX.Element => {
   }
 
   return (
-    <div className="animate-in fade-in duration-700 space-y-6">
+    <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
       <div
         className="glass-card-pro bg-white"
         style={{ borderTop: '4px solid #0f2a44', padding: '30px' }}
