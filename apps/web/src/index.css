@@ -780,7 +780,7 @@ body {
   /* Triple Layer Depth */
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.04), inset 1px 1px 0 rgba(255, 255, 255, 0.9),
     inset -1px -1px 0 rgba(0, 0, 0, 0.03);
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1163,7 +1163,7 @@ body {
     padding: 40px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.04), inset 1px 1px 0 rgba(255, 255, 255, 0.9),
       inset -1px -1px 0 rgba(0, 0, 0, 0.03);
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -1181,7 +1181,7 @@ body {
     display: flex !important;
     flex-direction: column !important;
     padding: 40px !important;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease !important;
     box-sizing: border-box !important;
   }
 
@@ -1571,7 +1571,7 @@ body {
   display: flex !important;
   flex-direction: column !important;
   padding: 24px !important;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease !important;
   box-sizing: border-box !important;
 }
 
