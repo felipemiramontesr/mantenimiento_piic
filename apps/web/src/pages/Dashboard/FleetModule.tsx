@@ -190,7 +190,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         {/* 🔱 PERSISTENT MANAGEMENT CARDS (v.28.19.0) */}
         <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
 
-        <div ref={panelRef} className="w-full h-full pt-4">
+        <div ref={panelRef} className="w-full h-full pt-12">
           {registrationSuccess ? (
             <FleetSuccessView formData={formData} />
           ) : (

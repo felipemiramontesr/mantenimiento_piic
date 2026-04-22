@@ -163,7 +163,7 @@ const UsersModule: React.FC = (): React.JSX.Element => {
         {/* 🔱 PERSISTENT MANAGEMENT CARDS */}
         <UserManagementCards />
 
-        <div ref={panelRef} className="w-full h-full pt-4">
+        <div ref={panelRef} className="w-full h-full pt-12">
           <div className="w-full h-full">
             {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
           </div>

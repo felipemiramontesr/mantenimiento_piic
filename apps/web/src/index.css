@@ -1368,8 +1368,8 @@ body {
 .archon-workspace-chassis {
   display: grid !important;
   grid-template-rows: auto 1fr;
-  row-gap: 16px;
-  padding: 16px 40px 8px 40px !important;
+  row-gap: 24px;
+  padding: 24px 40px 60px 40px !important;
   height: calc(100vh - 120px);
   overflow-y: auto;
 }
@@ -1570,7 +1570,7 @@ body {
   max-height: 340px !important;
   display: flex !important;
   flex-direction: column !important;
-  padding: 24px !important;
+  padding: 40px !important;
   transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease !important;
   box-sizing: border-box !important;
 }
