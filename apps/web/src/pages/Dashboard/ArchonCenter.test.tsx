@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom';
 import ArchonCenter from './ArchonCenter';
 import { FleetProvider } from '../../context/FleetContext';
 
+import { UserProvider } from '../../context/UserContext';
+
 vi.mock('../../api/client', () => ({
   default: {
     get: vi.fn().mockResolvedValue({ data: { success: true, data: [] } }),
@@ -20,9 +22,11 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     await act(async () => {
       render(
         <BrowserRouter>
-          <FleetProvider>
-            <ArchonCenter />
-          </FleetProvider>
+          <UserProvider>
+            <FleetProvider>
+              <ArchonCenter />
+            </FleetProvider>
+          </UserProvider>
         </BrowserRouter>
       );
     });
@@ -36,9 +40,11 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     await act(async () => {
       render(
         <BrowserRouter>
-          <FleetProvider>
-            <ArchonCenter />
-          </FleetProvider>
+          <UserProvider>
+            <FleetProvider>
+              <ArchonCenter />
+            </FleetProvider>
+          </UserProvider>
         </BrowserRouter>
       );
     });
@@ -59,9 +65,11 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     await act(async () => {
       render(
         <BrowserRouter>
-          <FleetProvider>
-            <ArchonCenter />
-          </FleetProvider>
+          <UserProvider>
+            <FleetProvider>
+              <ArchonCenter />
+            </FleetProvider>
+          </UserProvider>
         </BrowserRouter>
       );
     });

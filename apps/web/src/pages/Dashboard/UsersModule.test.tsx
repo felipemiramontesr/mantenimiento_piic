@@ -3,15 +3,19 @@ import { describe, it, expect } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import UsersModule from './UsersModule';
 
+import { UserProvider } from '../../context/UserContext';
+
 /**
- * 🔱 Archon Test Suite: UsersModule (v.28.24.0)
- * Implementation: PIIC Personnel Layout Certification (Identity Mirror)
+ * 🔱 Archon Test Suite: UsersModule (v.28.25.2)
+ * Implementation: Identity Sync Certification
  */
 describe('UsersModule Component', () => {
   const renderModule = (): RenderResult =>
     render(
       <MemoryRouter>
-        <UsersModule />
+        <UserProvider>
+          <UsersModule />
+        </UserProvider>
       </MemoryRouter>
     );
 

@@ -9,6 +9,8 @@ import { FleetProvider } from '../../context/FleetContext';
  * Implementation: 100% Path Coverage (Pillar 2 - v.17.0.0)
  */
 
+import { UserProvider } from '../../context/UserContext';
+
 // Mock specialized context
 vi.mock('../../context/FleetContext', async () => {
   const actual = await vi.importActual('../../context/FleetContext');
@@ -26,9 +28,11 @@ describe('FleetModule Orchestrator', () => {
   const renderModule = (): RenderResult =>
     render(
       <MemoryRouter>
-        <FleetProvider>
-          <FleetModule />
-        </FleetProvider>
+        <UserProvider>
+          <FleetProvider>
+            <FleetModule />
+          </FleetProvider>
+        </UserProvider>
       </MemoryRouter>
     );
 
