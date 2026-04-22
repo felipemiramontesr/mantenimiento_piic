@@ -385,7 +385,7 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
   }): React.JSX.Element => (
     <span
       className={`inline-flex ml-1 transition-all duration-300 ${
-        active ? 'opacity-100 text-[#f2b705]' : 'opacity-20 text-[#0f2a44]'
+        active ? 'opacity-100 text-[#059669]' : 'opacity-60 text-[#10b981]'
       }`}
     >
       {active && direction === 'desc' ? <ChevronDown size={10} /> : <ChevronUp size={10} />}
