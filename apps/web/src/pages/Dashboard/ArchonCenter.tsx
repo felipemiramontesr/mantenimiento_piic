@@ -93,6 +93,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     variant: 'violet' | 'yellow' | 'sky' | 'navy'
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
+    const avail = data.availablePercent;
+
+    // Pulse Logic Engine (v.28.35.1) - Non-nested for ESLint compliance
+    let dotColor = 'bg-red-500 animate-pulse';
+    if (avail >= 90) dotColor = 'bg-emerald-500';
+    else if (avail >= 75) dotColor = 'bg-amber-500 animate-pulse';
 
     const categoryIcons: Record<string, React.ElementType> = {
       vehiculo: Truck,
@@ -152,7 +158,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </span>
             <div className="flex items-center justify-center gap-2 w-full">
               <span className="text-2xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className={`w-2 h-2 rounded-full transition-all duration-500 ${dotColor}`} />
             </div>
           </div>
           <div
