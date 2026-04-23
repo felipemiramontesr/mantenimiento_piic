@@ -358,43 +358,35 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="p-5 bg-slate-50 rounded border border-dashed border-slate-300">
-              <ArchonField label="Centro de Gestión Autorizado" icon={Settings}>
-                <ArchonSelect
-                  options={['PIIC', 'Archon Core']}
-                  value={formData.centroMantenimiento}
+            <ArchonField label="Centro de Gestión Autorizado" icon={Settings}>
+              <ArchonSelect
+                options={['PIIC', 'Archon Core']}
+                value={formData.centroMantenimiento}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
+                }
+              />
+            </ArchonField>
+
+            <div className="grid grid-cols-2 gap-6">
+              <ArchonField label="Fecha Último Servicio" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.lastServiceDate ?? ''}
                   onChange={(val: string): void =>
-                    setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
+                    setFormData({ ...formData, lastServiceDate: val })
                   }
                 />
               </ArchonField>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div className="p-5 bg-slate-50 rounded border border-dashed border-slate-300">
-                <ArchonField label="Fecha Último Servicio" icon={Calendar}>
-                  <ArchonDatePicker
-                    value={formData.lastServiceDate ?? ''}
-                    onChange={(val: string): void =>
-                      setFormData({ ...formData, lastServiceDate: val })
-                    }
-                  />
-                </ArchonField>
-              </div>
-              <div className="p-5 bg-slate-50 rounded border border-dashed border-slate-300">
-                <ArchonField label="Lectura de Servicio" icon={Gauge}>
-                  <input
-                    type="number"
-                    className="archon-input font-mono text-center"
-                    value={formData.lastServiceReading}
-                    onChange={(
-                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-                    ): void =>
-                      setFormData({ ...formData, lastServiceReading: parseInt(e.target.value, 10) })
-                    }
-                  />
-                </ArchonField>
-              </div>
+              <ArchonField label="Lectura de Servicio" icon={Gauge}>
+                <input
+                  type="number"
+                  className="archon-input font-mono text-center"
+                  value={formData.lastServiceReading}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
+                    setFormData({ ...formData, lastServiceReading: parseInt(e.target.value, 10) })
+                  }
+                />
+              </ArchonField>
             </div>
           </div>
         </div>
