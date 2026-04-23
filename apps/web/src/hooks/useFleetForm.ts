@@ -107,18 +107,25 @@ const useFleetForm = (): UseFleetFormReturn => {
         }
         return;
       }
+
+      // Atomic clearing before fetch to avoid ghost states
+      if (isMountedRef.current) setModelos([]);
+
       try {
-        const selectedBrand = marcas.find((m) => m.label === formData.marca);
+        const selectedBrand = (marcas || []).find(
+          (m) => m.label.trim().toLowerCase() === formData.marca.trim().toLowerCase()
+        );
         if (selectedBrand) {
           const res = await api.get(`/catalogs/MODEL?parentId=${selectedBrand.id}`);
-          if (isMountedRef.current && res.data?.length) {
-            setModelos(res.data);
+          if (isMountedRef.current) {
+            setModelos(res.data || []);
           }
         }
       } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
           console.error('Failed to fetch Models', err);
+          setModelos([]);
         }
       }
     };
@@ -235,16 +242,13 @@ const useFleetForm = (): UseFleetFormReturn => {
       marca: '',
       modelo: '',
     }));
-    setMarcas([]);
-    setModelos([]);
   }, []);
 
   const handleMarcaChange = useCallback(
     (marcaId: string) => {
-      const selected = marcas.find((m) => m.id.toString() === marcaId);
+      const selected = (marcas || []).find((m) => m.id.toString() === marcaId);
       if (selected) {
         setFormData((prev) => ({ ...prev, marca: selected.label, modelo: '' }));
-        setModelos([]); // Clear models when brand changes
       }
     },
     [marcas]
