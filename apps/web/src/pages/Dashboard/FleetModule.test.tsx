@@ -3,16 +3,19 @@ import { describe, it, expect, vi, Mock } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import FleetModule from './FleetModule';
 import { FleetProvider } from '../../context/FleetContext';
+import { UserProvider } from '../../context/UserContext';
+import {
+  UseFleetFormReturn,
+  CatalogOption,
+  MaintenanceFrequency,
+  CentroMantenimiento,
+} from '../../types/fleet';
+import useFleetForm from '../../hooks/useFleetForm';
 
 /**
  * 🔱 Archon Test Suite: FleetModule (Orchestrator)
- * Implementation: 100% Path Coverage (Pillar 2 - v.17.0.0)
+ * Implementation: Production-Grade Type Parity (v.21.0.0)
  */
-
-import { UserProvider } from '../../context/UserContext';
-import { UseFleetFormReturn } from '../../types/fleet';
-
-import useFleetForm from '../../hooks/useFleetForm';
 
 // Mock specialized context
 vi.mock('../../context/FleetContext', async () => {
@@ -39,10 +42,8 @@ vi.mock('../../hooks/useFleetForm', () => ({
       marca: '',
       modelo: '',
       year: new Date().getFullYear(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      maintenanceFrequency: 'Mensual' as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      centroMantenimiento: 'PIIC' as any,
+      maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
+      centroMantenimiento: 'PIIC' as CentroMantenimiento,
     },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),
@@ -51,28 +52,28 @@ vi.mock('../../hooks/useFleetForm', () => ({
     resetError: vi.fn(),
     handleSubmit: vi.fn(),
     resetForm: vi.fn(),
-    assetTypes: [],
-    fuelTypes: [],
-    driveTypes: [],
-    transmissionTypes: [],
-    availableMarcas: [],
-    availableModelos: [],
-    freqTime: [],
-    freqUsage: [],
-    departments: [],
-    locations: [],
-    useTypes: [],
-    tireBrands: [],
-    lubeBrands: [],
-    filterBrands: [],
-    marcas: [],
-    modelos: [],
+    assetTypes: [] as CatalogOption[],
+    fuelTypes: [] as CatalogOption[],
+    driveTypes: [] as CatalogOption[],
+    transmissionTypes: [] as CatalogOption[],
+    availableMarcas: [] as { value: string; label: string }[],
+    availableModelos: [] as { value: string; label: string }[],
+    freqTime: [] as string[],
+    freqUsage: [] as CatalogOption[],
+    departments: [] as string[],
+    locations: [] as string[],
+    useTypes: [] as string[],
+    tireBrands: [] as string[],
+    lubeBrands: [] as string[],
+    filterBrands: [] as string[],
+    marcas: [] as CatalogOption[],
+    modelos: [] as CatalogOption[],
     setError: vi.fn(),
     handleAssetTypeChange: vi.fn(),
     handleMarcaChange: vi.fn(),
     handleModeloChange: vi.fn(),
-    engineTypes: [],
-    terrainTypes: [],
+    engineTypes: [] as string[],
+    terrainTypes: [] as string[],
   })),
 }));
 
@@ -87,10 +88,8 @@ describe('FleetModule Orchestrator', () => {
       marca: 'Toyota',
       modelo: 'Hilux',
       year: 2024,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      maintenanceFrequency: 'Mensual' as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      centroMantenimiento: 'PIIC' as any,
+      maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
+      centroMantenimiento: 'PIIC' as CentroMantenimiento,
     },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),
@@ -99,29 +98,29 @@ describe('FleetModule Orchestrator', () => {
     resetError: vi.fn(),
     handleSubmit: vi.fn(),
     resetForm: vi.fn(),
-    assetTypes: [],
-    fuelTypes: [],
-    driveTypes: [],
-    transmissionTypes: [],
-    availableMarcas: [],
-    availableModelos: [],
-    freqTime: [],
-    freqUsage: [],
-    departments: [],
-    locations: [],
-    useTypes: [],
-    tireBrands: [],
-    lubeBrands: [],
-    filterBrands: [],
-    marcas: [],
-    modelos: [],
+    assetTypes: [] as CatalogOption[],
+    fuelTypes: [] as CatalogOption[],
+    driveTypes: [] as CatalogOption[],
+    transmissionTypes: [] as CatalogOption[],
+    availableMarcas: [] as { value: string; label: string }[],
+    availableModelos: [] as { value: string; label: string }[],
+    freqTime: [] as string[],
+    freqUsage: [] as CatalogOption[],
+    departments: [] as string[],
+    locations: [] as string[],
+    useTypes: [] as string[],
+    tireBrands: [] as string[],
+    lubeBrands: [] as string[],
+    filterBrands: [] as string[],
+    marcas: [] as CatalogOption[],
+    modelos: [] as CatalogOption[],
     setError: vi.fn(),
     handleAssetTypeChange: vi.fn(),
     handleMarcaChange: vi.fn(),
     handleModeloChange: vi.fn(),
-    engineTypes: [],
-    terrainTypes: [],
-  };
+    engineTypes: [] as string[],
+    terrainTypes: [] as string[],
+  } as unknown as UseFleetFormReturn;
 
   const renderModule = (): RenderResult =>
     render(
@@ -135,23 +134,20 @@ describe('FleetModule Orchestrator', () => {
     );
 
   it('should start in the GRID view', (): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (useFleetForm as Mock).mockReturnValue(baseMock as any);
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (useFleetForm as Mock).mockReturnValue(baseMock as any);
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking the "Estrategia Operativa" card', (): void => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (useFleetForm as Mock).mockReturnValue(baseMock as any);
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     // Clicking the Strategy card should return to the inventory table
@@ -161,8 +157,7 @@ describe('FleetModule Orchestrator', () => {
 
   it('should show success view after successful registration', async (): Promise<void> => {
     // 1. Setup Registration State
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (useFleetForm as Mock).mockReturnValue(baseMock as any);
+    (useFleetForm as Mock).mockReturnValue(baseMock);
 
     const { rerender } = renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
@@ -188,6 +183,7 @@ describe('FleetModule Orchestrator', () => {
   });
 
   it('should toggle user menu correctly', (): void => {
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     const menuButton = screen.getByRole('button', { name: /user menu/i });
     fireEvent.click(menuButton);
@@ -196,6 +192,7 @@ describe('FleetModule Orchestrator', () => {
   });
 
   it('should logout correctly', (): void => {
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem');
     renderModule();
     fireEvent.click(screen.getByRole('button', { name: /user menu/i }));

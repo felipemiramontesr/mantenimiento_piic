@@ -2,8 +2,19 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, Mock, beforeEach } from 'vitest';
 import FleetRegistrationForm from './FleetRegistrationForm';
 import useFleetForm from '../../hooks/useFleetForm';
+import {
+  UseFleetFormReturn,
+  CatalogOption,
+  MaintenanceFrequency,
+  CentroMantenimiento,
+  FleetStatus,
+} from '../../types/fleet';
 
-// 🔱 Mock the hook to control state and bypass initial empty-state validation in tests
+/**
+ * 🔱 Archon Test Suite: FleetRegistrationForm
+ * Logic: Production-Grade Type Parity (v.21.0.0)
+ */
+
 vi.mock('../../hooks/useFleetForm');
 
 describe('FleetRegistrationForm Component', () => {
@@ -30,9 +41,9 @@ describe('FleetRegistrationForm Component', () => {
       uso: 'CARGA',
       year: 2024,
       odometer: 0,
-      maintenanceFrequency: 'Mensual',
-      centroMantenimiento: 'PIIC',
-      status: 'Disponible',
+      maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
+      centroMantenimiento: 'PIIC' as CentroMantenimiento,
+      status: 'Disponible' as FleetStatus,
     },
     error: null,
     resetError: mockResetError,
@@ -40,32 +51,32 @@ describe('FleetRegistrationForm Component', () => {
     isSubmitting: false,
     isLoading: false,
     registrationSuccess: false,
-    assetTypes: [{ id: 1, label: 'Vehiculo' }],
-    fuelTypes: [],
-    driveTypes: [],
-    transmissionTypes: [],
-    availableMarcas: [{ value: '101', label: 'Toyota' }],
-    availableModelos: [{ value: '201', label: 'Hilux' }],
+    assetTypes: [{ id: 1, label: 'Vehiculo' }] as CatalogOption[],
+    fuelTypes: [] as CatalogOption[],
+    driveTypes: [] as CatalogOption[],
+    transmissionTypes: [] as CatalogOption[],
+    availableMarcas: [{ value: '101', label: 'Toyota' }] as { value: string; label: string }[],
+    availableModelos: [{ value: '201', label: 'Hilux' }] as { value: string; label: string }[],
     handleAssetTypeChange: vi.fn(),
     handleMarcaChange: vi.fn(),
     handleModeloChange: vi.fn(),
     handleSubmit: mockSubmit,
-    marcas: [],
-    modelos: [],
+    marcas: [] as CatalogOption[],
+    modelos: [] as CatalogOption[],
     setError: vi.fn(),
     setRegistrationSuccess: vi.fn(),
     resetForm: vi.fn(),
-    freqTime: [],
-    freqUsage: [],
-    departments: ['OPERACIONES'],
-    locations: [],
-    useTypes: ['CARGA'],
-    tireBrands: [],
-    lubeBrands: [],
-    filterBrands: [],
-    engineTypes: [],
-    terrainTypes: [],
-  };
+    freqTime: [] as string[],
+    freqUsage: [] as CatalogOption[],
+    departments: ['OPERACIONES'] as string[],
+    locations: [] as string[],
+    useTypes: ['CARGA'] as string[],
+    tireBrands: [] as string[],
+    lubeBrands: [] as string[],
+    filterBrands: [] as string[],
+    engineTypes: [] as string[],
+    terrainTypes: [] as string[],
+  } as unknown as UseFleetFormReturn;
 
   const mockProps = {
     onSuccess: vi.fn(async (): Promise<void> => Promise.resolve()),
@@ -76,8 +87,7 @@ describe('FleetRegistrationForm Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (useFleetForm as Mock).mockReturnValue(mockController as any);
+    (useFleetForm as Mock).mockReturnValue(mockController);
   });
 
   it('should render all form sections', (): void => {
@@ -93,7 +103,7 @@ describe('FleetRegistrationForm Component', () => {
   });
 
   it('should show "Transmitiendo..." when submitting', async (): Promise<void> => {
-    const submittingController = { ...mockController, isSubmitting: true };
+    const submittingController = { ...mockController, isSubmitting: true } as UseFleetFormReturn;
     (useFleetForm as Mock).mockReturnValue(submittingController);
 
     render(<FleetRegistrationForm controller={submittingController} {...mockProps} />);
