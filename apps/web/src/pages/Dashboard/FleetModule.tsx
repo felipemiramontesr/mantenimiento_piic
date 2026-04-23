@@ -187,11 +187,11 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        {/* 🔱 PERSISTENT MANAGEMENT CARDS (Axial Sync v.28.36.1) */}
-        <div className="archon-axial-container">
+        {/* 🔱 AXIAL SYNC CONTAINER (v.28.37.0) */}
+        <div className="archon-axial-container flex flex-col gap-12">
           <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
 
-          <div ref={panelRef} className="w-full h-full pt-12">
+          <div ref={panelRef}>
             {registrationSuccess ? (
               <FleetSuccessView formData={formData} />
             ) : (

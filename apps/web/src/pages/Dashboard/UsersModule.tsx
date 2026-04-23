@@ -178,14 +178,12 @@ const UsersModule: React.FC = (): React.JSX.Element => {
 
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        {/* 🔱 PERSISTENT MANAGEMENT CARDS (Axial Sync v.28.36.1) */}
-        <div className="archon-axial-container">
+        {/* 🔱 AXIAL SYNC CONTAINER (v.28.37.0) */}
+        <div className="archon-axial-container flex flex-col gap-12">
           <UserManagementCards />
 
-          <div ref={panelRef} className="w-full h-full pt-12">
-            <div className="w-full h-full">
-              {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
-            </div>
+          <div ref={panelRef}>
+            {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
           </div>
         </div>
       </section>
