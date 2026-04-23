@@ -28,6 +28,15 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
         }
 
         const [rows] = await db.execute(query, params);
+
+        // 🔱 ARCHON DIAGNOSTICS: Verify DB results in real-time
+        // eslint-disable-next-line no-console
+        console.log(
+          `[Archon API] Catalog: ${category} | Query: ${query} | Params: ${params} | Result: ${
+            (rows as unknown[]).length
+          } rows`
+        );
+
         return rows;
       } catch (error) {
         fastify.log.error(error);

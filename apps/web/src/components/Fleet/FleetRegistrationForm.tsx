@@ -114,8 +114,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Marca" icon={Truck} required>
               <ArchonSelect
                 options={availableMarcas}
-                disabled={!formData.assetTypeId || controller.isLoading}
-                placeholder={controller.isLoading ? 'Cargando marcas...' : 'Seleccionar marca...'}
+                placeholder={controller.isLoading ? 'Sincronizando...' : 'Seleccionar marca...'}
                 value={formData.marcaId || ''}
                 onChange={(val: string): void => handleMarcaChange(val)}
               />
@@ -134,8 +133,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Modelo" icon={Settings} required>
               <ArchonSelect
                 options={availableModelos}
-                disabled={!formData.marcaId || controller.isLoading}
-                placeholder={controller.isLoading ? 'Cargando modelos...' : 'Seleccionar modelo...'}
+                placeholder={controller.isLoading ? 'Sincronizando...' : 'Seleccionar modelo...'}
                 value={formData.modeloId || ''}
                 onChange={(val: string): void => handleModeloChange(val)}
               />
