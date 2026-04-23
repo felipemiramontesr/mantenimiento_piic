@@ -78,20 +78,23 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   // 🔄 Fetch Brands on Asset Type Change
   useEffect(() => {
+    if (!formData.assetTypeId) return;
+
     const fetchBrands = async (): Promise<void> => {
-      if (!formData.assetTypeId) return;
       try {
         const res = await api.get(`/catalogs/BRAND?parentId=${formData.assetTypeId}`);
         if (isMountedRef.current) {
-          setMarcas(res.data);
+          setMarcas(res.data || []);
         }
       } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
           console.error('Failed to fetch Brands', err);
+          setMarcas([]);
         }
       }
     };
+
     fetchBrands();
   }, [formData.assetTypeId]);
 
@@ -212,16 +215,16 @@ const useFleetForm = (): UseFleetFormReturn => {
   const availableMarcas = useMemo(
     () =>
       (marcas || [])
-        .map((m) => ({ value: m.id.toString(), label: m.label }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
+        .map((m) => ({ value: m.id.toString(), label: m.label || 'S/N' }))
+        .sort((a, b) => (a.label || '').localeCompare(b.label || '')),
     [marcas]
   );
 
   const availableModelos = useMemo(
     () =>
       (modelos || [])
-        .map((m) => ({ value: m.id.toString(), label: m.label }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
+        .map((m) => ({ value: m.id.toString(), label: m.label || 'S/N' }))
+        .sort((a, b) => (a.label || '').localeCompare(b.label || '')),
     [modelos]
   );
 
@@ -344,7 +347,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     terrainTypes: terrainTypes.map((t) => t.label).sort(),
     setFormData,
     setRegistrationSuccess,
-    isLoading,
+    isLoading: isLoading || (assetTypes.length > 0 && !formData.assetTypeId),
     setError,
     handleAssetTypeChange,
     handleMarcaChange,
