@@ -50,18 +50,23 @@ class EncryptionService {
       return encryptedText; // Not encrypted or malformed
     }
 
-    const decipher = crypto.createDecipheriv(
-      this.ALGORITHM,
-      this.getKey(),
-      Buffer.from(ivHex, 'hex')
-    );
+    try {
+      const decipher = crypto.createDecipheriv(
+        this.ALGORITHM,
+        this.getKey(),
+        Buffer.from(ivHex, 'hex')
+      );
 
-    decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+      decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
 
-    let decrypted = decipher.update(contentHex, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+      let decrypted = decipher.update(contentHex, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
 
-    return decrypted;
+      return decrypted;
+    } catch (e) {
+      // 🛡️ Fail-Safe: Return original text if decryption fails (orphaned data / key mismatch)
+      return encryptedText;
+    }
   }
 
   /**
