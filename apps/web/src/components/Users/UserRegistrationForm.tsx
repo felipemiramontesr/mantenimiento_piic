@@ -34,6 +34,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     null
   );
 
+  const [error, setError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
@@ -74,6 +76,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
     try {
       if (editingUser) {
@@ -89,6 +92,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
         if (success) {
           setSuccessData({ isEdit: true });
+        } else {
+          setError(
+            'Error de sincronización. Verifique que la contraseña tenga al menos 8 caracteres.'
+          );
         }
       } else {
         const tempPass = generateTempPassword();
@@ -111,6 +118,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     } catch (err: unknown) {
       if (!editingUser) {
         setSuccessData({ tempPass: `TEMP-${Math.random().toString(36).slice(-8)}` });
+      } else {
+        setError('Falla crítica en la transmisión de identidad.');
       }
     } finally {
       setIsSubmitting(false);
@@ -118,7 +127,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   };
 
   const passwordsMatch = formData.password === formData.confirmPassword;
-  const canSubmit = !formData.password || passwordsMatch;
+  const canSubmit = !formData.password || (passwordsMatch && formData.password.length >= 8);
 
   if (successData) {
     return (
@@ -169,6 +178,18 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-8 archon-central-axis pb-20">
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-6 animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center gap-4">
+            <div className="bg-red-100 p-2 rounded">
+              <Shield size={18} className="text-red-500" />
+            </div>
+            <p className="text-[11px] uppercase font-black tracking-widest text-[#0f2a44]">
+              {error}
+            </p>
+          </div>
+        </div>
+      )}
       <div className="archon-grid-2">
         <div className="glass-card-pro bg-white p-10 space-y-8">
           <div className="archon-card-header-pro">
@@ -284,6 +305,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  minLength={8}
                   placeholder={
                     editingUser
                       ? 'Dejar vacío para no cambiar'
