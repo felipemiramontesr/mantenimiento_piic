@@ -66,6 +66,14 @@ const handlers = [
       ]);
     }
 
+    if (category === 'ASSET_TYPE') {
+      return HttpResponse.json([
+        { id: 1, label: 'Vehículo', code: 'AT_VEH' },
+        { id: 2, label: 'Maquinaria', code: 'AT_MAQ' },
+        { id: 3, label: 'Herramienta', code: 'AT_HER' },
+      ]);
+    }
+
     return HttpResponse.json([]);
   }),
 ];
