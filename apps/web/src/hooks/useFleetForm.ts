@@ -211,13 +211,16 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   // 🔄 Sync assetTypeId with DB real ID for AT_VEH on load
   useEffect(() => {
-    if (assetTypes.length > 0 && !formData.assetTypeId) {
-      const vehType = assetTypes.find((a) => a.code === 'AT_VEH');
-      if (vehType) {
+    if (assetTypes.length > 0) {
+      const vehType = assetTypes.find(
+        (a) => a.code === 'AT_VEH' || a.label.toLowerCase().includes('vehículo')
+      );
+      // Only sync if different from current to avoid loops
+      if (vehType && formData.assetTypeId !== vehType.id) {
         setFormData((prev) => ({ ...prev, assetTypeId: vehType.id }));
       }
     }
-  }, [assetTypes]);
+  }, [assetTypes, formData.assetTypeId]);
 
   const availableMarcas = useMemo(
     () =>
@@ -354,7 +357,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     terrainTypes: terrainTypes.map((t) => t.label).sort(),
     setFormData,
     setRegistrationSuccess,
-    isLoading: isLoading || (assetTypes.length > 0 && !formData.assetTypeId),
+    isLoading,
     setError,
     handleAssetTypeChange,
     handleMarcaChange,
