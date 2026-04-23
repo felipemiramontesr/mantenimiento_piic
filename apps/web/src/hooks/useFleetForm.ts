@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { AxiosResponse } from 'axios';
 import { CreateFleetUnit, UseFleetFormReturn, CatalogOption } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
 import { DEPARTAMENTOS } from '../constants/fleetConstants';
@@ -17,6 +18,15 @@ interface AxiosErrorResponse {
     };
   };
 }
+
+/**
+ * 🔱 Archon Data Intelligence: Response Envelope Extractor
+ * Normalizes backend responses to always return a valid CatalogOption array.
+ */
+const extractCatalogData = (res: AxiosResponse): CatalogOption[] => {
+  const rawData = res.data?.data || res.data || [];
+  return Array.isArray(rawData) ? rawData : [];
+};
 
 const useFleetForm = (): UseFleetFormReturn => {
   const [formData, setFormData] = useState<CreateFleetUnit>(getInitialFleetForm());
@@ -86,15 +96,17 @@ const useFleetForm = (): UseFleetFormReturn => {
           ? `/catalogs/BRAND?parentId=${formData.assetTypeId}`
           : '/catalogs/BRAND';
 
-        let res = await api.get(url);
+        const res = await api.get(url);
+        let brandsData = extractCatalogData(res);
 
         // 🚨 Fallback: If filtered catalog is empty, fetch all brands globally
-        if ((!res.data || res.data.length === 0) && formData.assetTypeId) {
-          res = await api.get('/catalogs/BRAND');
+        if (brandsData.length === 0 && formData.assetTypeId) {
+          const globalRes = await api.get('/catalogs/BRAND');
+          brandsData = extractCatalogData(globalRes);
         }
 
         if (isMountedRef.current) {
-          setMarcas(res.data || []);
+          setMarcas(brandsData);
         }
       } catch (err) {
         if (isMountedRef.current) {
@@ -130,23 +142,25 @@ const useFleetForm = (): UseFleetFormReturn => {
           ? `/catalogs/MODEL?parentId=${selectedBrand.id}`
           : '/catalogs/MODEL';
 
-        let res = await api.get(url);
+        const res = await api.get(url);
+        let modelsData = extractCatalogData(res);
 
         // 🚨 Fallback: If filtered models are empty, try global fetch
-        if ((!res.data || res.data.length === 0) && selectedBrand) {
-          res = await api.get('/catalogs/MODEL');
+        if (modelsData.length === 0 && selectedBrand) {
+          const globalRes = await api.get('/catalogs/MODEL');
+          modelsData = extractCatalogData(globalRes);
         }
 
         if (isMountedRef.current) {
-          setModelos(res.data || []);
+          setModelos(modelsData);
           // Proactively try to resolve model ID if we have a label
-          if (formData.modelo && res.data) {
+          if (formData.modelo && modelsData.length > 0) {
             const normalizedM = formData.modelo
               .trim()
               .toLowerCase()
               .normalize('NFD')
               .replace(/[\u0300-\u036f]/g, '');
-            const foundM = res.data.find(
+            const foundM = modelsData.find(
               (m: CatalogOption) =>
                 m.label
                   .trim()
@@ -178,8 +192,8 @@ const useFleetForm = (): UseFleetFormReturn => {
       api.get('/catalogs/LUBE_BRAND'),
       api.get('/catalogs/FILTER_BRAND'),
     ]);
-    setLubeBrands(lubeB.data);
-    setFilterBrands(filterB.data);
+    setLubeBrands(extractCatalogData(lubeB));
+    setFilterBrands(extractCatalogData(filterB));
   };
 
   const loadCoreCatalogs = async (): Promise<void> => {
@@ -192,13 +206,13 @@ const useFleetForm = (): UseFleetFormReturn => {
       api.get('/catalogs/ASSET_TYPE'),
       api.get('/catalogs/DEPARTMENT'),
     ]);
-    setFreqTime(time.data);
-    setFreqUsage(usage.data);
-    setFuelTypes(fuel.data);
-    setDriveTypes(drive.data);
-    setTransmissionTypes(trans.data);
-    setAssetTypes(asset.data);
-    setDepartments(dept.data);
+    setFreqTime(extractCatalogData(time));
+    setFreqUsage(extractCatalogData(usage));
+    setFuelTypes(extractCatalogData(fuel));
+    setDriveTypes(extractCatalogData(drive));
+    setTransmissionTypes(extractCatalogData(trans));
+    setAssetTypes(extractCatalogData(asset));
+    setDepartments(extractCatalogData(dept));
   };
 
   const loadTechnicalCatalogs = async (): Promise<void> => {
@@ -206,8 +220,8 @@ const useFleetForm = (): UseFleetFormReturn => {
       api.get('/catalogs/ENGINE_TYPE'),
       api.get('/catalogs/TERRAIN'),
     ]);
-    setEngineTypes(engines.data);
-    setTerrainTypes(terrains.data);
+    setEngineTypes(extractCatalogData(engines));
+    setTerrainTypes(extractCatalogData(terrains));
   };
 
   const loadOperationalCatalogs = async (): Promise<void> => {
@@ -216,9 +230,9 @@ const useFleetForm = (): UseFleetFormReturn => {
       api.get('/catalogs/LOCATION'),
       api.get('/catalogs/TIRE_BRAND'),
     ]);
-    setUseTypes(uses.data);
-    setLocations(locs.data);
-    setTireBrands(tires.data);
+    setUseTypes(extractCatalogData(uses));
+    setLocations(extractCatalogData(locs));
+    setTireBrands(extractCatalogData(tires));
   };
 
   const fetchRootCatalogs = async (): Promise<void> => {

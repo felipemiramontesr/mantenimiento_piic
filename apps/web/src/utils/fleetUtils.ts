@@ -11,7 +11,7 @@ import { CreateFleetUnit, MaintenanceFrequency } from '../types/fleet';
  * @returns {CreateFleetUnit} A fully hydrated fleet registration payload.
  */
 export const getInitialFleetForm = (): CreateFleetUnit => ({
-  assetTypeId: 1, // Vehiculo (Default Fallback)
+  assetTypeId: null, // Initialized as null for reactive sync
   marcaId: '',
   modeloId: '',
   id: '',
