@@ -160,4 +160,94 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       return reply.code(500).send({ error: 'Falla al listar el personal activo' });
     }
   });
+
+  /**
+   * 🔱 PATCH /v1/auth/users/:id
+   * Purpose: Update personnel identity, industrial profile, and credentials.
+   */
+  fastify.patch('/users/:id', async (request, reply) => {
+    const updateSchema = z.object({
+      fullName: z.string().optional(),
+      email: z.string().email().optional(),
+      password: z.string().min(8).optional(),
+      roleId: z.number().int().optional(),
+      department: z.string().optional(),
+      employeeNumber: z.string().optional(),
+      image_url: z.string().optional(),
+      is_active: z.boolean().optional(),
+    });
+
+    const { id } = request.params as { id: string };
+    const body = updateSchema.safeParse(request.body);
+
+    if (!body.success) {
+      return reply.code(400).send({ error: 'Invalid update data', details: body.error.format() });
+    }
+
+    const updates = body.data;
+
+    try {
+      // 1. Logic for password hashing if provided (Sovereign Security)
+      let passwordHash: string | undefined;
+      if (updates.password) {
+        passwordHash = await argon2.hash(updates.password);
+      }
+
+      // 2. Encryption for email if provided (AES-256)
+      let encryptedEmail: string | undefined;
+      if (updates.email) {
+        encryptedEmail = EncryptionService.encrypt(updates.email);
+      }
+
+      // 3. Build Dynamic Query (Strict Typing v.28.38.1)
+      const fields: string[] = [];
+      const values: (string | number | boolean)[] = [];
+
+      if (updates.fullName !== undefined) {
+        fields.push('full_name = ?');
+        values.push(updates.fullName);
+      }
+      if (encryptedEmail !== undefined) {
+        fields.push('email = ?');
+        values.push(encryptedEmail);
+      }
+      if (passwordHash !== undefined) {
+        fields.push('password_hash = ?');
+        values.push(passwordHash);
+      }
+      if (updates.roleId !== undefined) {
+        fields.push('role_id = ?');
+        values.push(updates.roleId);
+      }
+      if (updates.department !== undefined) {
+        fields.push('department = ?');
+        values.push(updates.department);
+      }
+      if (updates.employeeNumber !== undefined) {
+        fields.push('employee_number = ?');
+        values.push(updates.employeeNumber);
+      }
+      if (updates.image_url !== undefined) {
+        fields.push('image_url = ?');
+        values.push(updates.image_url);
+      }
+      if (updates.is_active !== undefined) {
+        fields.push('is_active = ?');
+        values.push(updates.is_active ? 1 : 0);
+      }
+
+      if (fields.length === 0) {
+        return reply.code(400).send({ error: 'No hay campos que actualizar' });
+      }
+
+      values.push(id);
+      const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+      await db.execute(query, values);
+
+      return reply.send({ success: true, message: 'Identidad actualizada exitosamente' });
+    } catch (err: unknown) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Falla crítica durante la actualización de identidad' });
+    }
+  });
 }
