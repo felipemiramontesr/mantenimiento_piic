@@ -235,6 +235,8 @@ const useFleetForm = (): UseFleetFormReturn => {
       marca: '',
       modelo: '',
     }));
+    setMarcas([]);
+    setModelos([]);
   }, []);
 
   const handleMarcaChange = useCallback(
@@ -242,6 +244,7 @@ const useFleetForm = (): UseFleetFormReturn => {
       const selected = marcas.find((m) => m.id.toString() === marcaId);
       if (selected) {
         setFormData((prev) => ({ ...prev, marca: selected.label, modelo: '' }));
+        setModelos([]); // Clear models when brand changes
       }
     },
     [marcas]
