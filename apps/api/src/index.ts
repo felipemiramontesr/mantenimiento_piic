@@ -23,7 +23,7 @@ const buildApp = (opts = {}): FastifyInstance => {
   // Plugins Setup
   fastify.register(cors, {
     origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: false,
     optionsSuccessStatus: 204,
