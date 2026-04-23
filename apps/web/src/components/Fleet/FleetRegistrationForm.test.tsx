@@ -76,7 +76,8 @@ describe('FleetRegistrationForm Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useFleetForm as Mock).mockReturnValue(mockController);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useFleetForm as Mock).mockReturnValue(mockController as any);
   });
 
   it('should render all form sections', (): void => {

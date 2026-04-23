@@ -10,6 +10,7 @@ import { FleetProvider } from '../../context/FleetContext';
  */
 
 import { UserProvider } from '../../context/UserContext';
+import { UseFleetFormReturn } from '../../types/fleet';
 
 import useFleetForm from '../../hooks/useFleetForm';
 
@@ -35,6 +36,13 @@ vi.mock('../../hooks/useFleetForm', () => ({
       traccionId: null,
       transmisionId: null,
       fuelTypeId: null,
+      marca: '',
+      modelo: '',
+      year: new Date().getFullYear(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      maintenanceFrequency: 'Mensual' as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      centroMantenimiento: 'PIIC' as any,
     },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),
@@ -76,6 +84,13 @@ describe('FleetModule Orchestrator', () => {
       traccionId: null,
       transmisionId: null,
       fuelTypeId: null,
+      marca: 'Toyota',
+      modelo: 'Hilux',
+      year: 2024,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      maintenanceFrequency: 'Mensual' as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      centroMantenimiento: 'PIIC' as any,
     },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),
@@ -120,20 +135,23 @@ describe('FleetModule Orchestrator', () => {
     );
 
   it('should start in the GRID view', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useFleetForm as Mock).mockReturnValue(baseMock as any);
     renderModule();
     expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useFleetForm as Mock).mockReturnValue(baseMock as any);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking the "Estrategia Operativa" card', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useFleetForm as Mock).mockReturnValue(baseMock as any);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     // Clicking the Strategy card should return to the inventory table
@@ -143,7 +161,8 @@ describe('FleetModule Orchestrator', () => {
 
   it('should show success view after successful registration', async (): Promise<void> => {
     // 1. Setup Registration State
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (useFleetForm as Mock).mockReturnValue(baseMock as any);
 
     const { rerender } = renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
@@ -152,7 +171,7 @@ describe('FleetModule Orchestrator', () => {
     (useFleetForm as Mock).mockReturnValue({
       ...baseMock,
       registrationSuccess: true,
-    });
+    } as unknown as UseFleetFormReturn);
 
     // Re-render to pick up new mock values
     rerender(
