@@ -346,6 +346,22 @@ describe('Auth Integration Endpoints', () => {
       expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('is_active = ?'), [0, '1']);
     });
 
+    it('should update roleId and image_url for industrial profile completeness', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: { roleId: 3, image_url: 'https://cdn.piic.mx/profiles/ana.jpg' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining('role_id = ?'),
+        expect.arrayContaining([3, 'https://cdn.piic.mx/profiles/ana.jpg', '1'])
+      );
+    });
+
     it('should return 400 for invalid update schema (bad email)', async (): Promise<void> => {
       const response = await app.inject({
         method: 'PATCH',
