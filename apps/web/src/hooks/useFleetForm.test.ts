@@ -83,10 +83,10 @@ describe('useFleetForm Hook', () => {
     await expect(async (): Promise<void> => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
       await result.current.handleSubmit(e);
-    }).rejects.toThrow('Por favor, completa todos los campos obligatorios (*)');
+    }).rejects.toThrow('🚨 Todos los campos marcados con (*) son obligatorios.');
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Por favor, completa todos los campos obligatorios (*)');
+      expect(result.current.error).toBe('🚨 Todos los campos marcados con (*) son obligatorios.');
     });
   });
 

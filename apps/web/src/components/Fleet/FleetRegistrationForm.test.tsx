@@ -92,13 +92,13 @@ describe('FleetRegistrationForm Component', () => {
 
   it('should render all form sections', (): void => {
     render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
-    expect(screen.getByText('Clasificación del Activo')).toBeInTheDocument();
-    expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
+    expect(screen.getByText('Motor de Jerarquía')).toBeInTheDocument();
+    expect(screen.getByText('Identidad & Cumplimiento')).toBeInTheDocument();
   });
 
   it('should call onCancel when "Cancelar Registro" is clicked', (): void => {
     render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
-    fireEvent.click(screen.getByText('Cancelar Registro'));
+    fireEvent.click(screen.getByText(/Anular Operación/i));
     expect(mockProps.onCancel).toHaveBeenCalled();
   });
 
@@ -107,13 +107,13 @@ describe('FleetRegistrationForm Component', () => {
     (useFleetForm as Mock).mockReturnValue(submittingController);
 
     render(<FleetRegistrationForm controller={submittingController} {...mockProps} />);
-    expect(screen.getByText(/Transmitiendo.../i)).toBeInTheDocument();
+    expect(screen.getByText(/Transmitiendo ADN.../i)).toBeInTheDocument();
   });
 
   it('should call onSuccess and finish submission successfully', async (): Promise<void> => {
     render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
 
-    fireEvent.click(screen.getByText(/Confirmar Registro/i));
+    fireEvent.click(screen.getByText(/Registrar en Flotilla Central/i));
 
     await waitFor((): void => {
       expect(mockSubmit).toHaveBeenCalled();
