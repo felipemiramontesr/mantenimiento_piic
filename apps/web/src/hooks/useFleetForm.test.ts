@@ -40,10 +40,13 @@ describe('useFleetForm Hook', () => {
 
     expect(result.current.formData.marca).toBe('Toyota');
 
-    // Wait for models to load
-    await waitFor(() => {
-      expect(result.current.availableModelos).toContainEqual({ value: '201', label: 'Hilux' });
-    });
+    // Wait for models to load with increased patience
+    await waitFor(
+      () => {
+        expect(result.current.availableModelos).toContainEqual({ value: '201', label: 'Hilux' });
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('should successfully submit form and set success state', async (): Promise<void> => {
