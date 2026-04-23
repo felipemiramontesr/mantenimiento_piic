@@ -346,6 +346,19 @@ describe('Auth Integration Endpoints', () => {
       expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('is_active = ?'), [0, '1']);
     });
 
+    it('should reactivate personnel account correctly', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: { is_active: true },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('is_active = ?'), [1, '1']);
+    });
+
     it('should update roleId and image_url for industrial profile completeness', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
