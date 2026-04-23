@@ -11,7 +11,7 @@ import { CreateFleetUnit } from '../types/fleet';
  * @returns {CreateFleetUnit} A fully hydrated fleet registration payload.
  */
 export const getInitialFleetForm = (): CreateFleetUnit => ({
-  assetTypeId: 1, // Vehiculo
+  assetTypeId: null, // Initialized dynamically from DB
   id: 'ASM-002',
   placas: 'ZH-3153-B',
   numeroSerie: '1D7HW48P87S256272',

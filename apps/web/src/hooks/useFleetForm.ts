@@ -199,9 +199,19 @@ const useFleetForm = (): UseFleetFormReturn => {
     fetchRootCatalogs();
   }, []);
 
+  // 🔄 Sync assetTypeId with DB real ID for AT_VEH on load
+  useEffect(() => {
+    if (assetTypes.length > 0 && !formData.assetTypeId) {
+      const vehType = assetTypes.find((a) => a.code === 'AT_VEH');
+      if (vehType) {
+        setFormData((prev) => ({ ...prev, assetTypeId: vehType.id }));
+      }
+    }
+  }, [assetTypes]);
+
   const availableMarcas = useMemo(
     () =>
-      marcas
+      (marcas || [])
         .map((m) => ({ value: m.id.toString(), label: m.label }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     [marcas]
@@ -209,7 +219,7 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   const availableModelos = useMemo(
     () =>
-      modelos
+      (modelos || [])
         .map((m) => ({ value: m.id.toString(), label: m.label }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     [modelos]
