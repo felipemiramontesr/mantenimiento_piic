@@ -132,9 +132,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   if (successData) {
     return (
       <div className="glass-card-pro bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px]">
-        <div className="p-6 bg-emerald-50 rounded-[4px]">
-          <CheckCircle size={48} className="text-emerald-500" />
-        </div>
+        <CheckCircle size={64} className="text-emerald-500 animate-in zoom-in duration-500" />
         <div className="space-y-4">
           <h2 className="text-2xl font-black text-[#0f2a44] uppercase tracking-tight">
             {successData.isEdit ? 'Actualización Exitosa' : 'Incorporación Exitosa'}
