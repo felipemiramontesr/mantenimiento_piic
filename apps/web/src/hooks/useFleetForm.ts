@@ -22,6 +22,7 @@ const useFleetForm = (): UseFleetFormReturn => {
   const [formData, setFormData] = useState<CreateFleetUnit>(getInitialFleetForm());
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
 
   const resetError = useCallback(() => setError(null), []);
@@ -59,6 +60,13 @@ const useFleetForm = (): UseFleetFormReturn => {
     { id: 53, label: 'Horas (Generador)' },
   ]);
   const [departments, setDepartments] = useState<CatalogOption[]>([]);
+  const [locations, setLocations] = useState<CatalogOption[]>([]);
+  const [useTypes, setUseTypes] = useState<CatalogOption[]>([]);
+  const [tireBrands, setTireBrands] = useState<CatalogOption[]>([]);
+  const [lubeBrands, setLubeBrands] = useState<CatalogOption[]>([]);
+  const [filterBrands, setFilterBrands] = useState<CatalogOption[]>([]);
+  const [engineTypes, setEngineTypes] = useState<CatalogOption[]>([]);
+  const [terrainTypes, setTerrainTypes] = useState<CatalogOption[]>([]);
 
   const isMountedRef = React.useRef(true);
   useEffect(() => {
@@ -114,42 +122,92 @@ const useFleetForm = (): UseFleetFormReturn => {
     fetchModels();
   }, [formData.marca, marcas]);
 
+  /**
+   * 🔱 Archon Orchestrator: specialized catalog loaders
+   */
+  const loadServiceCatalogs = async (): Promise<void> => {
+    const [lubeB, filterB] = await Promise.all([
+      api.get('/catalogs/LUBE_BRAND'),
+      api.get('/catalogs/FILTER_BRAND'),
+    ]);
+    setLubeBrands(lubeB.data);
+    setFilterBrands(filterB.data);
+  };
+
+  const loadCoreCatalogs = async (): Promise<void> => {
+    const [time, usage, fuel, drive, trans, asset, dept] = await Promise.all([
+      api.get('/catalogs/FREQ_TIME'),
+      api.get('/catalogs/FREQ_USAGE'),
+      api.get('/catalogs/FUEL'),
+      api.get('/catalogs/DRIVE_TYPE'),
+      api.get('/catalogs/TRANSMISSION'),
+      api.get('/catalogs/ASSET_TYPE'),
+      api.get('/catalogs/DEPARTMENT'),
+    ]);
+    setFreqTime(time.data);
+    setFreqUsage(usage.data);
+    setFuelTypes(fuel.data);
+    setDriveTypes(drive.data);
+    setTransmissionTypes(trans.data);
+    setAssetTypes(asset.data);
+    setDepartments(dept.data);
+  };
+
+  const loadTechnicalCatalogs = async (): Promise<void> => {
+    const [engines, terrains] = await Promise.all([
+      api.get('/catalogs/ENGINE_TYPE'),
+      api.get('/catalogs/TERRAIN'),
+    ]);
+    setEngineTypes(engines.data);
+    setTerrainTypes(terrains.data);
+  };
+
+  const loadOperationalCatalogs = async (): Promise<void> => {
+    const [uses, locs, tires] = await Promise.all([
+      api.get('/catalogs/USE_TYPE'),
+      api.get('/catalogs/LOCATION'),
+      api.get('/catalogs/TIRE_BRAND'),
+    ]);
+    setUseTypes(uses.data);
+    setLocations(locs.data);
+    setTireBrands(tires.data);
+  };
+
+  const fetchRootCatalogs = async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        loadOperationalCatalogs(),
+        loadServiceCatalogs(),
+        loadTechnicalCatalogs(),
+        loadCoreCatalogs(),
+      ]);
+    } catch (err) {
+      if (isMountedRef.current) {
+        // eslint-disable-next-line no-console
+        console.error('Archon Catalog Hydration Failure:', err);
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  };
+
   // 🔄 Fetch All Root Catalogs on Mount
   useEffect(() => {
-    const fetchRootCatalogs = async (): Promise<void> => {
-      try {
-        const [timeRes, usageRes, fuelRes, driveRes, transRes, assetRes, departmentRes] =
-          await Promise.all([
-            api.get('/catalogs/FREQ_TIME'),
-            api.get('/catalogs/FREQ_USAGE'),
-            api.get('/catalogs/FUEL'),
-            api.get('/catalogs/DRIVE_TYPE'),
-            api.get('/catalogs/TRANSMISSION'),
-            api.get('/catalogs/ASSET_TYPE'),
-            api.get('/catalogs/DEPARTMENT'),
-          ]);
-        if (isMountedRef.current) {
-          if (timeRes.data?.length) setFreqTime(timeRes.data);
-          if (usageRes.data?.length) setFreqUsage(usageRes.data);
-          if (fuelRes.data?.length) setFuelTypes(fuelRes.data);
-          if (driveRes.data?.length) setDriveTypes(driveRes.data);
-          if (transRes.data?.length) setTransmissionTypes(transRes.data);
-          if (assetRes.data?.length) setAssetTypes(assetRes.data);
-          if (departmentRes.data?.length) setDepartments(departmentRes.data);
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          // Fallback handled by initial mock state
-          // eslint-disable-next-line no-console
-          console.warn('Backend catalogs unavailable. Using frontend mocks.', err);
-        }
-      }
-    };
     fetchRootCatalogs();
   }, []);
 
-  const availableMarcas = useMemo(() => marcas.map((m) => m.label), [marcas]);
-  const availableModelos = useMemo(() => modelos.map((m) => m.label), [modelos]);
+  const availableMarcas = useMemo(
+    () => marcas.map((m) => ({ value: m.id.toString(), label: m.label })),
+    [marcas]
+  );
+
+  const availableModelos = useMemo(
+    () => modelos.map((m) => ({ value: m.id.toString(), label: m.label })),
+    [modelos]
+  );
 
   const handleAssetTypeChange = useCallback((id: number): void => {
     setFormData((prev) => ({
@@ -160,13 +218,25 @@ const useFleetForm = (): UseFleetFormReturn => {
     }));
   }, []);
 
-  const handleMarcaChange = useCallback((marca: string): void => {
-    setFormData((prev) => ({
-      ...prev,
-      marca,
-      modelo: '',
-    }));
-  }, []);
+  const handleMarcaChange = useCallback(
+    (marcaId: string) => {
+      const selected = marcas.find((m) => m.id.toString() === marcaId);
+      if (selected) {
+        setFormData((prev) => ({ ...prev, marca: selected.label, modelo: '' }));
+      }
+    },
+    [marcas]
+  );
+
+  const handleModeloChange = useCallback(
+    (modeloId: string) => {
+      const selected = modelos.find((m) => m.id.toString() === modeloId);
+      if (selected) {
+        setFormData((prev) => ({ ...prev, modelo: selected.label }));
+      }
+    },
+    [modelos]
+  );
 
   const resetForm = useCallback((): void => {
     setFormData(getInitialFleetForm());
@@ -247,11 +317,20 @@ const useFleetForm = (): UseFleetFormReturn => {
       departments.length > 0
         ? departments.map((d) => d.label)
         : (DEPARTAMENTOS as unknown as string[]),
+    locations: locations.map((l) => l.label),
+    useTypes: useTypes.map((u) => u.label),
+    tireBrands: tireBrands.map((b) => b.label),
+    lubeBrands: lubeBrands.map((b) => b.label),
+    filterBrands: filterBrands.map((b) => b.label),
+    engineTypes: engineTypes.map((e) => e.label),
+    terrainTypes: terrainTypes.map((t) => t.label),
     setFormData,
-    setError,
     setRegistrationSuccess,
+    isLoading,
+    setError,
     handleAssetTypeChange,
     handleMarcaChange,
+    handleModeloChange,
     handleSubmit,
     resetForm,
   };

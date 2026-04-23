@@ -39,6 +39,8 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   protocolStartDate: '2024-04-17',
   status: 'Disponible',
   color: 'Blanco',
+  lubeType: 'Voltro Heavy Duty 20W-50',
+  filterBrand: 'Donaldson',
   description:
     'Unidad asignada a Medio Ambiente para monitoreo en zonas de terracería. Cuenta con radio y kit de seguridad minero.',
   // 🔱 Archon Intelligence (v.18.0.0)

@@ -58,6 +58,8 @@ export interface FleetUnit {
   vigenciaSeguro: string | null; // ISO date
   vencimientoVerificacion: string | null; // ISO date
   tarjetaCirculacion: string | null;
+  lubeType: string | null;
+  filterBrand: string | null;
   // Status
   status: FleetStatus;
   assignedOperatorId: number | null;
@@ -128,6 +130,8 @@ export interface CreateFleetUnit {
   status?: FleetStatus;
   color?: string;
   description?: string;
+  lubeType?: string;
+  filterBrand?: string;
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId?: number | null;
   maintenanceUsageFreqId?: number | null;
@@ -143,22 +147,31 @@ export interface UseFleetFormReturn {
   error: string | null;
   resetError: () => void;
   isSubmitting: boolean;
+  isLoading: boolean;
   registrationSuccess: boolean;
   // Dynamic Catalogs (v.21.0.0)
   assetTypes: CatalogOption[];
   fuelTypes: CatalogOption[];
   driveTypes: CatalogOption[];
   transmissionTypes: CatalogOption[];
-  availableMarcas: string[];
-  availableModelos: string[];
+  availableMarcas: { value: string; label: string }[];
+  availableModelos: { value: string; label: string }[];
   freqTime: string[];
   freqUsage: CatalogOption[];
   departments: string[];
+  locations: string[];
+  useTypes: string[];
+  tireBrands: string[];
+  lubeBrands: string[];
+  filterBrands: string[];
+  engineTypes: string[];
+  terrainTypes: string[];
   setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;
   handleAssetTypeChange: (typeId: number) => void;
-  handleMarcaChange: (marca: string) => void;
+  handleMarcaChange: (marcaId: string) => void;
+  handleModeloChange: (modeloId: string) => void;
   handleSubmit: (e: React.FormEvent, onSuccess?: () => Promise<void>) => Promise<void>;
   resetForm: () => void;
 }
