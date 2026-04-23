@@ -64,4 +64,17 @@ describe('EncryptionService (ARCHON CORE)', () => {
     expect(index1).not.to.equal(text);
     expect(index1).to.have.lengthOf(64); // Hex SHA-256
   });
+
+  it('should return original text if decryption process fails (e.g. key mismatch or corruption)', () => {
+    const text = 'Sovereign Data';
+    const encrypted = EncryptionService.encrypt(text);
+    const parts = encrypted.split(':');
+
+    // Tamper with the authentication tag to force a decryption failure
+    parts[1] = `${parts[1].substring(0, parts[1].length - 2)}00`;
+    const corrupted = parts.join(':');
+
+    const result = EncryptionService.decrypt(corrupted);
+    expect(result).to.equal(corrupted);
+  });
 });
