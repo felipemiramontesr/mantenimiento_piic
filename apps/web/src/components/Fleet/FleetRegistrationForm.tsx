@@ -15,7 +15,6 @@ import {
   Save,
   Cpu,
   Layers,
-  Database,
 } from 'lucide-react';
 import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
@@ -94,10 +93,6 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           className="glass-card-pro bg-white p-10 space-y-8 relative overflow-hidden"
           style={{ borderTop: '4px solid #f2b705' }}
         >
-          <div className="absolute top-0 right-0 p-8 opacity-5">
-            <Database size={200} />
-          </div>
-
           <div className="archon-card-header-pro">
             <Layers className="text-yellow-500" size={24} />
             <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">
@@ -405,22 +400,27 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-8 border-t border-slate-200 mt-8">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-10 py-4 rounded font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all duration-300 active:scale-95 uppercase tracking-widest text-xs"
-        >
-          Anular Operación
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="px-14 py-4 rounded font-bold bg-navy-900 text-white hover:bg-navy-800 shadow-xl shadow-navy-200 transition-all duration-300 active:scale-95 flex items-center uppercase tracking-widest text-xs"
-        >
-          {isSubmitting ? 'Transmitiendo ADN...' : 'Registrar en Flotilla Central'}
-          <Save size={18} className="ml-3 text-yellow-400" />
-        </button>
+      <div className="archon-grid-2 mt-8">
+        <div />
+        <div className="grid grid-cols-2 gap-6">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="btn-sentinel-red w-full uppercase font-black text-[11px] tracking-widest rounded-[4px]"
+          >
+            Anular Operación
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
+              isSubmitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
+            }`}
+          >
+            {isSubmitting ? 'Transmitiendo...' : 'Registrar en Flotilla Central'}
+            <Save size={16} />
+          </button>
+        </div>
       </div>
     </form>
   );
