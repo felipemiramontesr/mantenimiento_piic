@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { CreateFleetUnit, UseFleetFormReturn, CatalogOption } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
+import { DEPARTAMENTOS } from '../constants/fleetConstants';
 import api from '../api/client';
 
 /**
@@ -57,6 +58,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     { id: 52, label: 'Horas (Maquinaria)' },
     { id: 53, label: 'Horas (Generador)' },
   ]);
+  const [departments, setDepartments] = useState<CatalogOption[]>([]);
 
   const isMountedRef = React.useRef(true);
   useEffect(() => {
@@ -116,14 +118,16 @@ const useFleetForm = (): UseFleetFormReturn => {
   useEffect(() => {
     const fetchRootCatalogs = async (): Promise<void> => {
       try {
-        const [timeRes, usageRes, fuelRes, driveRes, transRes, assetRes] = await Promise.all([
-          api.get('/catalogs/FREQ_TIME'),
-          api.get('/catalogs/FREQ_USAGE'),
-          api.get('/catalogs/FUEL'),
-          api.get('/catalogs/DRIVE_TYPE'),
-          api.get('/catalogs/TRANSMISSION'),
-          api.get('/catalogs/ASSET_TYPE'),
-        ]);
+        const [timeRes, usageRes, fuelRes, driveRes, transRes, assetRes, departmentRes] =
+          await Promise.all([
+            api.get('/catalogs/FREQ_TIME'),
+            api.get('/catalogs/FREQ_USAGE'),
+            api.get('/catalogs/FUEL'),
+            api.get('/catalogs/DRIVE_TYPE'),
+            api.get('/catalogs/TRANSMISSION'),
+            api.get('/catalogs/ASSET_TYPE'),
+            api.get('/catalogs/DEPARTMENT'),
+          ]);
         if (isMountedRef.current) {
           if (timeRes.data?.length) setFreqTime(timeRes.data);
           if (usageRes.data?.length) setFreqUsage(usageRes.data);
@@ -131,6 +135,7 @@ const useFleetForm = (): UseFleetFormReturn => {
           if (driveRes.data?.length) setDriveTypes(driveRes.data);
           if (transRes.data?.length) setTransmissionTypes(transRes.data);
           if (assetRes.data?.length) setAssetTypes(assetRes.data);
+          if (departmentRes.data?.length) setDepartments(departmentRes.data);
         }
       } catch (err) {
         if (isMountedRef.current) {
@@ -238,6 +243,10 @@ const useFleetForm = (): UseFleetFormReturn => {
     transmissionTypes,
     freqTime: freqTime.map((f) => f.label),
     freqUsage: freqUsage.map((f) => ({ id: f.id, label: f.label })),
+    departments:
+      departments.length > 0
+        ? departments.map((d) => d.label)
+        : (DEPARTAMENTOS as unknown as string[]),
     setFormData,
     setError,
     setRegistrationSuccess,

@@ -27,7 +27,8 @@ import api from '../../api/client';
  */
 
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
-  const { setActivePanel, fetchUsers, editingUser, setEditingUser, updateUser } = useUsers();
+  const { setActivePanel, fetchUsers, editingUser, setEditingUser, updateUser, departments } =
+    useUsers();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [successData, setSuccessData] = useState<{ tempPass?: string; isEdit?: boolean } | null>(
@@ -283,14 +284,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               />
             </ArchonField>
             <ArchonField label="Departamento" icon={Briefcase}>
-              <input
-                type="text"
-                placeholder="Ej. Administración"
-                className="archon-input"
+              <ArchonSelect
+                options={departments}
                 value={formData.department}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, department: e.target.value })
-                }
+                onChange={(val: string): void => setFormData({ ...formData, department: val })}
               />
             </ArchonField>
           </div>

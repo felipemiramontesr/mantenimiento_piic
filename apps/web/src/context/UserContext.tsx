@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserIndustrial, UserPanel } from '../types/user';
+import { DEPARTAMENTOS } from '../constants/fleetConstants';
 import api from '../api/client';
 
 /**
@@ -23,6 +24,11 @@ interface RawUserResponse {
   image_url?: string;
 }
 
+interface CatalogOption {
+  id: number;
+  label: string;
+}
+
 interface UserContextType {
   users: UserIndustrial[];
   isLoading: boolean;
@@ -33,6 +39,7 @@ interface UserContextType {
   updateUser: (id: string, data: Partial<UserIndustrial>) => Promise<boolean>;
   editingUser: UserIndustrial | null;
   setEditingUser: (user: UserIndustrial | null) => void;
+  departments: string[];
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -44,6 +51,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [activePanel, setActivePanel] = useState<UserPanel>('DIRECTORY');
   const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);
+  const [departments, setDepartments] = useState<string[]>([]);
 
   const fetchUsers = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -117,9 +125,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const fetchDepartments = useCallback(async (): Promise<void> => {
+    try {
+      const response = await api.get('/catalogs/DEPARTMENT');
+      if (response.data?.length) {
+        setDepartments(response.data.map((d: CatalogOption) => d.label));
+      }
+    } catch (err) {
+      // Slient fallback
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchDepartments();
+  }, [fetchUsers, fetchDepartments]);
 
   return (
     <UserContext.Provider
@@ -133,6 +153,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         updateUser,
         editingUser,
         setEditingUser,
+        departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
       }}
     >
       {children}

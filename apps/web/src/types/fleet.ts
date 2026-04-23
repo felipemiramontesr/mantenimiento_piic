@@ -153,6 +153,7 @@ export interface UseFleetFormReturn {
   availableModelos: string[];
   freqTime: string[];
   freqUsage: CatalogOption[];
+  departments: string[];
   setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;

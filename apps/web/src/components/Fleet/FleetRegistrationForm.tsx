@@ -20,13 +20,7 @@ import ArchonSelect from '../ArchonSelect';
 import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
-import {
-  USO_OPTIONS,
-  DEPARTAMENTOS,
-  MARCAS_NEUMATICOS,
-  SEDES,
-  COLORES,
-} from '../../constants/fleetConstants';
+import { USO_OPTIONS, MARCAS_NEUMATICOS, SEDES, COLORES } from '../../constants/fleetConstants';
 import {
   CentroMantenimiento,
   MaintenanceFrequency,
@@ -69,6 +63,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
     handleSubmit,
     freqTime,
     freqUsage,
+    departments,
   } = controller;
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -194,7 +189,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             </ArchonField>
             <ArchonField label="Departamento" icon={Wrench} required>
               <ArchonSelect
-                options={DEPARTAMENTOS}
+                options={departments}
                 value={formData.departamento ?? ''}
                 onChange={(val: string): void => setFormData({ ...formData, departamento: val })}
               />
