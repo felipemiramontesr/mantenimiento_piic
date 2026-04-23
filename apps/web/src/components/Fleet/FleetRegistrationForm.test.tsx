@@ -18,6 +18,10 @@ describe('FleetRegistrationForm Component', () => {
   const mockController = {
     formData: {
       id: 'UNIT-TEST',
+      assetTypeId: 1,
+      traccionId: null,
+      transmisionId: null,
+      fuelTypeId: null,
       marca: 'Toyota',
       marcaId: '101',
       modelo: 'Hilux',

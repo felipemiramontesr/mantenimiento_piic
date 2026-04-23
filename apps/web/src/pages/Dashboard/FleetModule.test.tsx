@@ -29,7 +29,13 @@ vi.mock('../../context/FleetContext', async () => {
 // 🔱 Mock the hook to control transitions and state
 vi.mock('../../hooks/useFleetForm', () => ({
   default: vi.fn(() => ({
-    formData: { id: '' },
+    formData: {
+      id: '',
+      assetTypeId: 1,
+      traccionId: null,
+      transmisionId: null,
+      fuelTypeId: null,
+    },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),
     isLoading: false,
@@ -64,7 +70,13 @@ vi.mock('../../hooks/useFleetForm', () => ({
 
 describe('FleetModule Orchestrator', () => {
   const baseMock = {
-    formData: { id: 'UNIT-TEST' },
+    formData: {
+      id: 'UNIT-TEST',
+      assetTypeId: 1,
+      traccionId: null,
+      transmisionId: null,
+      fuelTypeId: null,
+    },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),
     isLoading: false,
