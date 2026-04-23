@@ -25,7 +25,7 @@ export type CentroMantenimiento = 'PIIC' | 'Archon Core';
 
 export interface CatalogOption {
   id: number;
-  code: string;
+  code?: string;
   label: string;
 }
 
