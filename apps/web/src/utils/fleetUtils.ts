@@ -1,4 +1,4 @@
-import { CreateFleetUnit } from '../types/fleet';
+import { CreateFleetUnit, MaintenanceFrequency } from '../types/fleet';
 
 /**
  * World-Class Engineering Utility: Fleet Asset Initialization
@@ -12,42 +12,43 @@ import { CreateFleetUnit } from '../types/fleet';
  */
 export const getInitialFleetForm = (): CreateFleetUnit => ({
   assetTypeId: 1, // Vehiculo (Default Fallback)
-  id: 'ASM-002',
-  placas: 'ZH-3153-B',
-  numeroSerie: '1D7HW48P87S256272',
+  marcaId: '',
+  modeloId: '',
+  id: '',
+  placas: '',
+  numeroSerie: '',
   images: [] as string[],
-  marca: 'Toyota',
-  modelo: 'Hilux',
-  year: 2007,
-  departamento: 'Medio Ambiente',
-  uso: 'Terracería',
-  motor: '2KD-FTV 2.5L Turbo Diesel',
-  traccionId: 20, // 4x4 (Total)
-  transmisionId: 31, // Manual (5 vel)
-  fuelTypeId: 11, // Diesel
-  tireSpec: '255/70 R17',
-  tireBrand: 'BFGoodrich',
-  tipoTerreno: 'All-Terrain',
-  capacidadCarga: '1,000 kg',
-  odometer: 152430,
-  sede: 'Arian Silver Zacatecas',
+  marca: '',
+  modelo: '',
+  year: new Date().getFullYear(),
+  departamento: '',
+  uso: '',
+  motor: '',
+  traccionId: undefined,
+  transmisionId: undefined,
+  fuelTypeId: undefined,
+  tireSpec: '',
+  tireBrand: '',
+  tipoTerreno: '',
+  capacidadCarga: '',
+  odometer: 0,
+  sede: '',
   centroMantenimiento: 'PIIC',
-  vigenciaSeguro: '2025-12-31',
-  vencimientoVerificacion: '2025-06-30',
-  tarjetaCirculacion: 'TC-ASM-002-2024',
-  maintenanceFrequency: 'Mensual',
-  protocolStartDate: '2024-04-17',
+  vigenciaSeguro: '',
+  vencimientoVerificacion: '',
+  tarjetaCirculacion: '',
+  maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
+  protocolStartDate: '',
   status: 'Disponible',
-  color: 'Blanco',
-  lubeType: 'Voltro Heavy Duty 20W-50',
-  filterBrand: 'Donaldson',
-  description:
-    'Unidad asignada a Medio Ambiente para monitoreo en zonas de terracería. Cuenta con radio y kit de seguridad minero.',
+  color: '',
+  lubeType: '',
+  filterBrand: '',
+  description: '',
   // 🔱 Archon Intelligence (v.18.0.0)
-  maintenanceTimeFreqId: 41, // Mensual
-  maintenanceUsageFreqId: 51, // Kilometraje (Motor)
-  lastServiceDate: '2024-03-01',
-  lastServiceReading: 150000,
+  maintenanceTimeFreqId: undefined,
+  maintenanceUsageFreqId: undefined,
+  lastServiceDate: '',
+  lastServiceReading: 0,
 });
 
 export default getInitialFleetForm;

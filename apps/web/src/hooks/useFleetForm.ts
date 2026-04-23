@@ -139,6 +139,25 @@ const useFleetForm = (): UseFleetFormReturn => {
 
         if (isMountedRef.current) {
           setModelos(res.data || []);
+          // Proactively try to resolve model ID if we have a label
+          if (formData.modelo && res.data) {
+            const normalizedM = formData.modelo
+              .trim()
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '');
+            const foundM = res.data.find(
+              (m: CatalogOption) =>
+                m.label
+                  .trim()
+                  .toLowerCase()
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '') === normalizedM
+            );
+            if (foundM) {
+              setFormData((prev) => ({ ...prev, modeloId: String(foundM.id) }));
+            }
+          }
         }
       } catch (err) {
         if (isMountedRef.current) {
@@ -232,14 +251,69 @@ const useFleetForm = (): UseFleetFormReturn => {
   useEffect(() => {
     if (assetTypes.length > 0) {
       const vehType = assetTypes.find(
-        (a) => a.code === 'AT_VEH' || a.label.toLowerCase().includes('vehículo')
+        (a) =>
+          a.code === 'AT_VEH' ||
+          a.label
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .includes('vehiculo')
       );
       // Only sync if different from current to avoid loops
-      if (vehType && formData.assetTypeId !== vehType.id) {
+      // Normalize to String comparison for safety
+      if (vehType && String(formData.assetTypeId) !== String(vehType.id)) {
         setFormData((prev) => ({ ...prev, assetTypeId: vehType.id }));
       }
     }
   }, [assetTypes, formData.assetTypeId]);
+
+  // 🔄 Proactive ID Hydration (Sovereign Sync)
+  // If we have text labels but no IDs, find them in the catalogs
+  useEffect(() => {
+    if (marcas.length > 0 && formData.marca && !formData.marcaId) {
+      const normalizedLabel = formData.marca
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      const found = marcas.find(
+        (m) =>
+          (m.label || '')
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') === normalizedLabel
+      );
+
+      if (found) {
+        setFormData((prev) => ({ ...prev, marcaId: String(found.id) }));
+      }
+    }
+  }, [marcas, formData.marca, formData.marcaId]);
+
+  useEffect(() => {
+    if (modelos.length > 0 && formData.modelo && !formData.modeloId) {
+      const normalizedLabel = formData.modelo
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      const found = modelos.find(
+        (m) =>
+          (m.label || '')
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') === normalizedLabel
+      );
+
+      if (found) {
+        setFormData((prev) => ({ ...prev, modeloId: String(found.id) }));
+      }
+    }
+  }, [modelos, formData.modelo, formData.modeloId]);
 
   const availableMarcas = useMemo(
     () =>
@@ -261,6 +335,8 @@ const useFleetForm = (): UseFleetFormReturn => {
     setFormData((prev) => ({
       ...prev,
       assetTypeId: id,
+      marcaId: '',
+      modeloId: '',
       marca: '',
       modelo: '',
     }));
@@ -268,9 +344,15 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   const handleMarcaChange = useCallback(
     (marcaId: string) => {
-      const selected = (marcas || []).find((m) => m.id.toString() === marcaId);
+      const selected = (marcas || []).find((m) => String(m.id) === marcaId);
       if (selected) {
-        setFormData((prev) => ({ ...prev, marca: selected.label, modelo: '' }));
+        setFormData((prev) => ({
+          ...prev,
+          marcaId,
+          marca: selected.label,
+          modeloId: '',
+          modelo: '',
+        }));
       }
     },
     [marcas]
@@ -278,9 +360,13 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   const handleModeloChange = useCallback(
     (modeloId: string) => {
-      const selected = modelos.find((m) => m.id.toString() === modeloId);
+      const selected = modelos.find((m) => String(m.id) === modeloId);
       if (selected) {
-        setFormData((prev) => ({ ...prev, modelo: selected.label }));
+        setFormData((prev) => ({
+          ...prev,
+          modeloId,
+          modelo: selected.label,
+        }));
       }
     },
     [modelos]

@@ -41,6 +41,8 @@ export default function ArchonSelect({
     return typeof selected === 'string' ? selected : selected.label;
   };
 
+  const hasOptions = options && options.length > 0;
+
   // Close on outside click
   useEffect((): (() => void) => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -99,27 +101,33 @@ export default function ArchonSelect({
               overflowY: 'auto',
             }}
           >
-            {options.map((option, idx) => {
-              const optValue = typeof option === 'string' ? option : option.value;
-              const optLabel = typeof option === 'string' ? option : option.label;
+            {hasOptions ? (
+              options.map((option, idx) => {
+                const optValue = typeof option === 'string' ? option : option.value;
+                const optLabel = typeof option === 'string' ? option : option.label;
 
-              return (
-                <div
-                  key={`${optValue}-${idx}`}
-                  onClick={(): void => {
-                    onChange(optValue);
-                    setIsOpen(false);
-                  }}
-                  className={`px-5 py-3.5 text-[13px] font-bold cursor-pointer transition-all duration-200 border-l-[3px] ${
-                    value === optValue
-                      ? 'border-[#f2b705] bg-[rgba(242,183,5,0.05)] text-[#f2b705]'
-                      : 'border-transparent text-[#0f2a44] hover:bg-[rgba(15,42,68,0.02)] hover:border-[rgba(15,42,68,0.2)]'
-                  }`}
-                >
-                  {optLabel}
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={`${optValue}-${idx}`}
+                    onClick={(): void => {
+                      onChange(optValue);
+                      setIsOpen(false);
+                    }}
+                    className={`px-5 py-3.5 text-[13px] font-bold cursor-pointer transition-all duration-200 border-l-[3px] ${
+                      value === optValue
+                        ? 'border-[#f2b705] bg-[rgba(242,183,5,0.05)] text-[#f2b705]'
+                        : 'border-transparent text-[#0f2a44] hover:bg-[rgba(15,42,68,0.02)] hover:border-[rgba(15,42,68,0.2)]'
+                    }`}
+                  >
+                    {optLabel}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="px-5 py-10 text-center text-[#0f2a44] opacity-40 text-xs italic">
+                No hay opciones para este filtro
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

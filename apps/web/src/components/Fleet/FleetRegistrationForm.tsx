@@ -72,8 +72,6 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
     filterBrands,
     engineTypes,
     terrainTypes,
-    marcas,
-    modelos,
   } = controller;
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -118,7 +116,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 options={availableMarcas}
                 disabled={!formData.assetTypeId || controller.isLoading}
                 placeholder={controller.isLoading ? 'Cargando marcas...' : 'Seleccionar marca...'}
-                value={marcas?.find((m) => m.label === formData.marca)?.id.toString() || ''}
+                value={formData.marcaId || ''}
                 onChange={(val: string): void => handleMarcaChange(val)}
               />
             </ArchonField>
@@ -136,9 +134,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Modelo" icon={Settings} required>
               <ArchonSelect
                 options={availableModelos}
-                disabled={!formData.marca || controller.isLoading}
+                disabled={!formData.marcaId || controller.isLoading}
                 placeholder={controller.isLoading ? 'Cargando modelos...' : 'Seleccionar modelo...'}
-                value={modelos?.find((m) => m.label === formData.modelo)?.id.toString() || ''}
+                value={formData.modeloId || ''}
                 onChange={(val: string): void => handleModeloChange(val)}
               />
             </ArchonField>
@@ -184,7 +182,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <input
               required
               type="text"
-              placeholder="Ej. ASM-001"
+              placeholder="Identificador Único"
               className="archon-input"
               value={formData.id}
               onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
@@ -214,7 +212,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Placas" icon={Tag}>
               <input
                 type="text"
-                placeholder="Ej. ZH-3153-B"
+                placeholder="Placas Oficiales"
                 className="archon-input"
                 value={formData.placas}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
@@ -310,7 +308,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Especificación Neumáticos" icon={Gauge}>
               <input
                 type="text"
-                placeholder="Ej. 255/70 R17"
+                placeholder="Especificación Técnica"
                 className="archon-input"
                 value={formData.tireSpec}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>

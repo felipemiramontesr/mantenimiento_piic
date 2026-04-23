@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, Settings, LogOut } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
-import { BRANDING_NAME } from '../../constants/versionConstants';
+import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
 import FleetManagementCards, { ManagementPanel } from '../../components/Fleet/FleetManagementCards';
@@ -212,7 +212,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} V28.19.0</p>
+        <p className="text-[#0f2a44]">
+          {BRANDING_NAME} {SYSTEM_VERSION}
+        </p>
       </footer>
     </main>
   );

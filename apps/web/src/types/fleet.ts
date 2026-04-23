@@ -70,6 +70,8 @@ export interface FleetUnit {
   routeDestination?: string;
   // 🔱 Relational ID Fields (v.21.0.0)
   assetTypeId: number;
+  marcaId?: string | null;
+  modeloId?: string | null;
   fuelTypeId: number;
   traccionId: number;
   transmisionId: number;
@@ -103,6 +105,8 @@ export interface FleetUnit {
 
 export interface CreateFleetUnit {
   assetTypeId: number | null;
+  marcaId?: string | null;
+  modeloId?: string | null;
   id: string;
   placas?: string;
   numeroSerie?: string;

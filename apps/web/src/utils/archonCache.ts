@@ -4,8 +4,8 @@
  * v.1.0.0 - Production Grade Persistence
  */
 
-const CACHE_PREFIX = 'archon_cache_';
-const SYSTEM_VERSION = '29.0.0';
+const CACHE_PREFIX = 'archon_v30_';
+const SYSTEM_VERSION = '30.0.0';
 
 export interface CacheMetadata {
   version: string;
