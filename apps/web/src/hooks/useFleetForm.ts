@@ -82,7 +82,17 @@ const useFleetForm = (): UseFleetFormReturn => {
 
     const fetchBrands = async (): Promise<void> => {
       try {
-        const res = await api.get(`/catalogs/BRAND?parentId=${formData.assetTypeId}`);
+        const url = formData.assetTypeId
+          ? `/catalogs/BRAND?parentId=${formData.assetTypeId}`
+          : '/catalogs/BRAND';
+
+        let res = await api.get(url);
+
+        // 🚨 Fallback: If filtered catalog is empty, fetch all brands globally
+        if ((!res.data || res.data.length === 0) && formData.assetTypeId) {
+          res = await api.get('/catalogs/BRAND');
+        }
+
         if (isMountedRef.current) {
           setMarcas(res.data || []);
         }
@@ -115,11 +125,20 @@ const useFleetForm = (): UseFleetFormReturn => {
         const selectedBrand = (marcas || []).find(
           (m) => m.label.trim().toLowerCase() === formData.marca.trim().toLowerCase()
         );
-        if (selectedBrand) {
-          const res = await api.get(`/catalogs/MODEL?parentId=${selectedBrand.id}`);
-          if (isMountedRef.current) {
-            setModelos(res.data || []);
-          }
+
+        const url = selectedBrand
+          ? `/catalogs/MODEL?parentId=${selectedBrand.id}`
+          : '/catalogs/MODEL';
+
+        let res = await api.get(url);
+
+        // 🚨 Fallback: If filtered models are empty, try global fetch
+        if ((!res.data || res.data.length === 0) && selectedBrand) {
+          res = await api.get('/catalogs/MODEL');
+        }
+
+        if (isMountedRef.current) {
+          setModelos(res.data || []);
         }
       } catch (err) {
         if (isMountedRef.current) {
