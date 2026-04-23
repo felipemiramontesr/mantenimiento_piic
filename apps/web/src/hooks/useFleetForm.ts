@@ -88,31 +88,35 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   // 🔄 Fetch Brands on Asset Type Change
   useEffect(() => {
-    if (!formData.assetTypeId) return;
-
     const fetchBrands = async (): Promise<void> => {
       try {
-        const url = formData.assetTypeId
-          ? `/catalogs/BRAND?parentId=${formData.assetTypeId}`
-          : '/catalogs/BRAND';
+        const idToUse = formData.assetTypeId;
+        const url = idToUse ? `/catalogs/BRAND?parentId=${idToUse}` : '/catalogs/BRAND';
 
         const res = await api.get(url);
         let brandsData = extractCatalogData(res);
 
-        // 🚨 Fallback: If filtered catalog is empty, fetch all brands globally
-        if (brandsData.length === 0 && formData.assetTypeId) {
+        // 🚨 Fallback 1: If filtered catalog is empty, fetch all brands globally
+        if (brandsData.length === 0 && idToUse) {
           const globalRes = await api.get('/catalogs/BRAND');
-          brandsData = extractCatalogData(globalRes);
+          const globalData = extractCatalogData(globalRes);
+          // 🔱 Hybrid Filtering: Try to filter locally if the backend parentId link is broken
+          const localFiltered = globalData.filter((b) => Number(b.id) === Number(idToUse) || !b.id);
+          brandsData = localFiltered.length > 0 ? localFiltered : globalData;
         }
 
         if (isMountedRef.current) {
-          setMarcas(brandsData);
+          // Atomic Guard: Don't overwrite with empty if we already have brands and this was a sync attempt
+          if (brandsData.length > 0 || !idToUse) {
+            setMarcas(brandsData);
+          }
         }
       } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
           console.error('Failed to fetch Brands', err);
-          setMarcas([]);
+          // If we have marcas, keep them instead of clearing
+          setMarcas((prev) => (prev.length > 0 ? prev : []));
         }
       }
     };
@@ -124,36 +128,32 @@ const useFleetForm = (): UseFleetFormReturn => {
   useEffect(() => {
     const fetchModels = async (): Promise<void> => {
       if (!formData.marca) {
-        if (isMountedRef.current) {
-          setModelos([]);
-        }
+        if (isMountedRef.current) setModelos([]);
         return;
       }
-
-      // Atomic clearing before fetch to avoid ghost states
-      if (isMountedRef.current) setModelos([]);
 
       try {
         const selectedBrand = (marcas || []).find(
           (m) => m.label.trim().toLowerCase() === formData.marca.trim().toLowerCase()
         );
 
-        const url = selectedBrand
-          ? `/catalogs/MODEL?parentId=${selectedBrand.id}`
-          : '/catalogs/MODEL';
+        const idToUse = selectedBrand?.id;
+        const url = idToUse ? `/catalogs/MODEL?parentId=${idToUse}` : '/catalogs/MODEL';
 
         const res = await api.get(url);
         let modelsData = extractCatalogData(res);
 
-        // 🚨 Fallback: If filtered models are empty, try global fetch
-        if (modelsData.length === 0 && selectedBrand) {
+        // 🚨 Fallback 1: Try local filtering if filtered result is empty
+        if (modelsData.length === 0 && idToUse) {
           const globalRes = await api.get('/catalogs/MODEL');
-          modelsData = extractCatalogData(globalRes);
+          const globalData = extractCatalogData(globalRes);
+          const localFiltered = globalData.filter((m) => Number(m.id) === Number(idToUse));
+          modelsData = localFiltered.length > 0 ? localFiltered : globalData;
         }
 
         if (isMountedRef.current) {
           setModelos(modelsData);
-          // Proactively try to resolve model ID if we have a label
+          // Resolve model ID if missing
           if (formData.modelo && modelsData.length > 0) {
             const normalizedM = formData.modelo
               .trim()
@@ -168,16 +168,14 @@ const useFleetForm = (): UseFleetFormReturn => {
                   .normalize('NFD')
                   .replace(/[\u0300-\u036f]/g, '') === normalizedM
             );
-            if (foundM) {
-              setFormData((prev) => ({ ...prev, modeloId: String(foundM.id) }));
-            }
+            if (foundM) setFormData((prev) => ({ ...prev, modeloId: String(foundM.id) }));
           }
         }
       } catch (err) {
         if (isMountedRef.current) {
           // eslint-disable-next-line no-console
           console.error('Failed to fetch Models', err);
-          setModelos([]);
+          setModelos((prev) => (prev.length > 0 ? prev : []));
         }
       }
     };
