@@ -333,6 +333,8 @@ const useFleetForm = (): UseFleetFormReturn => {
     handleModeloChange,
     handleSubmit,
     resetForm,
+    marcas,
+    modelos,
   };
 };
 

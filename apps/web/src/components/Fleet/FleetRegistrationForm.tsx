@@ -116,7 +116,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Marca" icon={Truck} required>
               <ArchonSelect
                 options={availableMarcas}
-                value={marcas.find((m) => m.label === formData.marca)?.id.toString() || ''}
+                value={marcas?.find((m) => m.label === formData.marca)?.id.toString() || ''}
                 onChange={(val: string): void => handleMarcaChange(val)}
               />
             </ArchonField>
@@ -134,7 +134,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Modelo" icon={Settings} required>
               <ArchonSelect
                 options={availableModelos}
-                value={modelos.find((m) => m.label === formData.modelo)?.id.toString() || ''}
+                value={modelos?.find((m) => m.label === formData.modelo)?.id.toString() || ''}
                 onChange={(val: string): void => handleModeloChange(val)}
               />
             </ArchonField>

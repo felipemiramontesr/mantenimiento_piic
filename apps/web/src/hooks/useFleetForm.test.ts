@@ -31,18 +31,18 @@ describe('useFleetForm Hook', () => {
 
     // Wait for initial brands to load
     await waitFor(() => {
-      expect(result.current.availableMarcas).toContain('Toyota');
+      expect(result.current.availableMarcas).toContainEqual({ value: '101', label: 'Toyota' });
     });
 
     act((): void => {
-      result.current.handleMarcaChange('Toyota');
+      result.current.handleMarcaChange('101');
     });
 
     expect(result.current.formData.marca).toBe('Toyota');
 
     // Wait for models to load
     await waitFor(() => {
-      expect(result.current.availableModelos).toContain('Hilux');
+      expect(result.current.availableModelos).toContainEqual({ value: '201', label: 'Hilux' });
     });
   });
 

@@ -166,6 +166,8 @@ export interface UseFleetFormReturn {
   filterBrands: string[];
   engineTypes: string[];
   terrainTypes: string[];
+  marcas: CatalogOption[];
+  modelos: CatalogOption[];
   setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;
