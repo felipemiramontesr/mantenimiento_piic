@@ -96,9 +96,9 @@ describe('FleetRegistrationForm Component', () => {
     expect(screen.getByText('Identidad & Cumplimiento')).toBeInTheDocument();
   });
 
-  it('should call onCancel when "Cancelar Registro" is clicked', (): void => {
+  it('should call onCancel when "Cancelar" is clicked', (): void => {
     render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
-    fireEvent.click(screen.getByText(/Anular Operación/i));
+    fireEvent.click(screen.getByText(/Cancelar/i));
     expect(mockProps.onCancel).toHaveBeenCalled();
   });
 
@@ -113,7 +113,7 @@ describe('FleetRegistrationForm Component', () => {
   it('should call onSuccess and finish submission successfully', async (): Promise<void> => {
     render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
 
-    fireEvent.click(screen.getByText(/Registrar en Flotilla Central/i));
+    fireEvent.click(screen.getByText(/Confirmar Alta/i));
 
     await waitFor((): void => {
       expect(mockSubmit).toHaveBeenCalled();

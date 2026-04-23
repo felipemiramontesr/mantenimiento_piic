@@ -53,6 +53,7 @@ const createFleetSchema = z.object({
   maintenanceUsageFreqId: z.number().int().optional().nullable(),
   lastServiceDate: z.string().optional().nullable(),
   lastServiceReading: z.number().optional().default(0),
+  dailyUsageAvg: z.number().min(0).optional().nullable(),
 });
 
 // ============================================================================
@@ -101,6 +102,7 @@ const updateFleetSchema = z.object({
   maintenanceUsageFreqId: z.number().int().optional().nullable(),
   lastServiceDate: z.string().optional().nullable(),
   lastServiceReading: z.number().optional().nullable(),
+  dailyUsageAvg: z.number().min(0).optional().nullable(),
 });
 
 // ============================================================================
@@ -162,6 +164,7 @@ interface FleetUnit extends RowDataPacket {
   fuel_type_id: number;
   traccion_id: number;
   transmision_id: number;
+  daily_usage_avg: number | null;
 }
 
 interface UnitHealth {

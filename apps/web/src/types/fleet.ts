@@ -100,7 +100,7 @@ export interface FleetUnit {
   // 🔱 Predictive Strategy (v.28.0.0)
   maintIntervalKm?: number;
   maintIntervalDays?: number;
-  avgDailyKm?: number;
+  dailyUsageAvg?: number | null;
 }
 
 export interface CreateFleetUnit {
@@ -144,7 +144,7 @@ export interface CreateFleetUnit {
   lastServiceReading?: number;
   maintIntervalKm?: number;
   maintIntervalDays?: number;
-  avgDailyKm?: number;
+  dailyUsageAvg?: number | null;
 }
 
 export interface UseFleetFormReturn {

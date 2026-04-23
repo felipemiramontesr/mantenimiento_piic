@@ -107,7 +107,7 @@ const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element 
 const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const intervalKm = unit.maintIntervalKm || 10000;
   const intervalDays = unit.maintIntervalDays || 180;
-  const avgDaily = unit.avgDailyKm || 0;
+  const avgDaily = unit.dailyUsageAvg || 0;
   return (
     <div className="flex flex-col items-center space-y-1.5">
       <div className="flex items-center gap-1.5 opacity-60">
@@ -204,7 +204,7 @@ const FleetRegistryRow = ({
   const forecast = calculateMaintForecast(
     unit.maintIntervalDays || 180,
     unit.maintIntervalKm || 10000,
-    unit.avgDailyKm || 30,
+    unit.dailyUsageAvg || 0,
     unit.odometer,
     unit.lastServiceReading || 0,
     unit.lastServiceDate || null
@@ -341,7 +341,7 @@ export const FleetGridView = ({
       forecast: calculateMaintForecast(
         u.maintIntervalDays || 180,
         u.maintIntervalKm || 10000,
-        u.avgDailyKm || 30,
+        u.dailyUsageAvg || 0,
         u.odometer,
         u.lastServiceReading || 0,
         u.lastServiceDate || null

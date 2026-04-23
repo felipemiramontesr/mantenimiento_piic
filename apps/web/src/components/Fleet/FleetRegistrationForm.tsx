@@ -21,12 +21,14 @@ import ArchonSelect from '../ArchonSelect';
 import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
+import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
 import { COLORES } from '../../constants/fleetConstants';
 import {
   CentroMantenimiento,
   MaintenanceFrequency,
   UseFleetFormReturn,
   CatalogOption,
+  CreateFleetUnit,
 } from '../../types/fleet';
 
 /**
@@ -40,6 +42,63 @@ interface FleetRegistrationFormProps {
   onSuccess: () => Promise<void>;
   onCancel: () => void;
 }
+
+const getPronosticoArchon = (
+  formData: CreateFleetUnit,
+  freqUsage: CatalogOption[]
+): {
+  pronosticoText: string;
+  pronosticoDateStr: string;
+  isPronosticoReady: boolean;
+} => {
+  let pronosticoText = 'A la espera de métricas operativas...';
+  let pronosticoDateStr = '-- / -- / ----';
+  let isPronosticoReady = false;
+
+  if (
+    formData.lastServiceDate &&
+    formData.maintenanceUsageFreqId &&
+    formData.dailyUsageAvg &&
+    formData.dailyUsageAvg > 0
+  ) {
+    const usageLimitOption = freqUsage.find((u) => u.id === formData.maintenanceUsageFreqId);
+    const intServi = usageLimitOption
+      ? parseInt(usageLimitOption.label.replace(/[^0-9]/g, ''), 10)
+      : 0;
+
+    let intDias = 0;
+    if (formData.maintenanceFrequency === 'Semestral') intDias = 180;
+    else if (formData.maintenanceFrequency === 'Mensual') intDias = 30;
+    else if (formData.maintenanceFrequency === 'Bimestral') intDias = 60;
+    else if (formData.maintenanceFrequency === 'Trimestral') intDias = 90;
+    else if (formData.maintenanceFrequency === 'Anual') intDias = 365;
+
+    if (intServi > 0 && intDias > 0 && formData.lastServiceReading !== undefined) {
+      const forecast = calculateMaintForecast(
+        intDias,
+        intServi,
+        formData.dailyUsageAvg,
+        formData.odometer,
+        formData.lastServiceReading,
+        formData.lastServiceDate
+      );
+
+      if (forecast) {
+        pronosticoDateStr = forecast.forecastDate.toLocaleDateString('es-MX', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        const motivo =
+          forecast.serviceByKmDate < forecast.serviceByTimeDate ? 'Kilometraje' : 'Tiempo';
+        pronosticoText = `Vencimiento proyectado por límite de ${motivo}.`;
+        isPronosticoReady = true;
+      }
+    }
+  }
+
+  return { pronosticoText, pronosticoDateStr, isPronosticoReady };
+};
 
 const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   controller,
@@ -70,6 +129,25 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
     useTypes,
     engineTypes,
   } = controller;
+
+  const canSubmit = Boolean(
+    formData.assetTypeId &&
+      formData.marcaId &&
+      formData.modeloId &&
+      formData.year &&
+      formData.year >= 1990 &&
+      formData.id &&
+      formData.id.trim() !== '' &&
+      formData.uso &&
+      formData.departamento &&
+      formData.dailyUsageAvg !== undefined &&
+      formData.dailyUsageAvg > 0
+  );
+
+  const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(
+    formData,
+    freqUsage
+  );
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     try {
@@ -388,6 +466,51 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 />
               </ArchonField>
             </div>
+
+            <ArchonField label="Uso Promedio Diario (Km/Hr)" icon={Activity}>
+              <input
+                type="number"
+                step="0.1"
+                className="archon-input font-mono text-center text-emerald-700 font-bold"
+                value={formData.dailyUsageAvg || ''}
+                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
+                  setFormData({ ...formData, dailyUsageAvg: parseFloat(e.target.value) || 0 })
+                }
+              />
+            </ArchonField>
+
+            {/* 🔮 WOW CARD: PRONÓSTICO ARCHON */}
+            <div
+              className={`mt-6 p-5 rounded border ${
+                isPronosticoReady ? 'bg-navy-900 border-navy-700' : 'bg-slate-100 border-slate-200'
+              } transition-colors duration-500`}
+            >
+              <div className="flex items-center gap-3">
+                <Zap
+                  className={isPronosticoReady ? 'text-yellow-400' : 'text-slate-400'}
+                  size={20}
+                />
+                <div>
+                  <h4
+                    className={`text-xs font-black uppercase tracking-widest ${
+                      isPronosticoReady ? 'text-white' : 'text-slate-500'
+                    }`}
+                  >
+                    PRONÓSTICO AUTOMÁTICO
+                  </h4>
+                  {isPronosticoReady ? (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-2xl font-black text-rose-500 tracking-tight">
+                        {pronosticoDateStr}
+                      </p>
+                      <p className="text-xs text-slate-400 font-medium">{pronosticoText}</p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-500 font-medium">{pronosticoText}</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -400,16 +523,16 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             onClick={onCancel}
             className="btn-sentinel-red w-full uppercase font-black text-[11px] tracking-widest rounded-[4px]"
           >
-            Anular Operación
+            Cancelar
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canSubmit}
             className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
-              isSubmitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
+              !canSubmit || isSubmitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
             }`}
           >
-            {isSubmitting ? 'Transmitiendo...' : 'Registrar en Flotilla Central'}
+            {isSubmitting ? 'Transmitiendo...' : 'Confirmar Alta'}
             <Save size={16} />
           </button>
         </div>
