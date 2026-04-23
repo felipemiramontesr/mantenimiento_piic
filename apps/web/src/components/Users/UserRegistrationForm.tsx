@@ -131,7 +131,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   if (successData) {
     return (
-      <div className="glass-card-pro bg-white p-12 max-w-2xl mx-auto flex flex-col items-center text-center space-y-8 rounded-[4px]">
+      <div className="glass-card-pro bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px]">
         <div className="p-6 bg-emerald-50 rounded-[4px]">
           <CheckCircle size={48} className="text-emerald-500" />
         </div>
