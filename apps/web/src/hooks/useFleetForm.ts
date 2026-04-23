@@ -20,6 +20,16 @@ interface AxiosErrorResponse {
 }
 
 /**
+ * 🔱 ARCHON SOVEREIGN CONSTANTS (v.21.0.0)
+ * Logic: Canonical Codes for deterministic mapping.
+ */
+const ASSET_CODES = {
+  VEHICLE: 'AT_VEH',
+  MACHINERY: 'AT_MAQ',
+  TOOL: 'AT_HER',
+};
+
+/**
  * 🔱 Archon Data Intelligence: Response Envelope Extractor
  * Normalizes backend responses to always return a valid CatalogOption array.
  */
@@ -37,38 +47,25 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   const resetError = useCallback(() => setError(null), []);
 
+  const isMountedRef = React.useRef(true);
+  const coreLoadedRef = React.useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return (): void => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // ── 📦 CATALOG STATE (Clean Slate Architecture) ──────────────────────────
   const [assetTypes, setAssetTypes] = useState<CatalogOption[]>([]);
-  const [fuelTypes, setFuelTypes] = useState<CatalogOption[]>([
-    { id: 11, label: 'Diesel' },
-    { id: 12, label: 'Gasolina' },
-    { id: 13, label: 'Híbrido' },
-    { id: 14, label: 'Eléctrico' },
-  ]);
-  const [driveTypes, setDriveTypes] = useState<CatalogOption[]>([
-    { id: 20, label: '4x4 (Total)' },
-    { id: 21, label: '4x2 (RWD)' },
-    { id: 22, label: '4x2 (FWD)' },
-    { id: 23, label: 'AWD (Integral)' },
-  ]);
-  const [transmissionTypes, setTransmissionTypes] = useState<CatalogOption[]>([
-    { id: 31, label: 'Manual (5 vel)' },
-    { id: 32, label: 'Manual (6 vel)' },
-    { id: 33, label: 'Automática' },
-    { id: 34, label: 'CVT' },
-  ]);
+  const [fuelTypes, setFuelTypes] = useState<CatalogOption[]>([]);
+  const [driveTypes, setDriveTypes] = useState<CatalogOption[]>([]);
+  const [transmissionTypes, setTransmissionTypes] = useState<CatalogOption[]>([]);
   const [marcas, setMarcas] = useState<CatalogOption[]>([]);
   const [modelos, setModelos] = useState<CatalogOption[]>([]);
-  const [freqTime, setFreqTime] = useState<CatalogOption[]>([
-    { id: 41, label: 'Mensual' },
-    { id: 42, label: 'Trimestral' },
-    { id: 43, label: 'Semestral' },
-    { id: 44, label: 'Anual' },
-  ]);
-  const [freqUsage, setFreqUsage] = useState<CatalogOption[]>([
-    { id: 51, label: 'Kilometraje (Motor)' },
-    { id: 52, label: 'Horas (Maquinaria)' },
-    { id: 53, label: 'Horas (Generador)' },
-  ]);
+  const [freqTime, setFreqTime] = useState<CatalogOption[]>([]);
+  const [freqUsage, setFreqUsage] = useState<CatalogOption[]>([]);
   const [departments, setDepartments] = useState<CatalogOption[]>([]);
   const [locations, setLocations] = useState<CatalogOption[]>([]);
   const [useTypes, setUseTypes] = useState<CatalogOption[]>([]);
@@ -78,109 +75,40 @@ const useFleetForm = (): UseFleetFormReturn => {
   const [engineTypes, setEngineTypes] = useState<CatalogOption[]>([]);
   const [terrainTypes, setTerrainTypes] = useState<CatalogOption[]>([]);
 
-  const isMountedRef = React.useRef(true);
-  useEffect(() => {
-    isMountedRef.current = true;
-    return (): void => {
-      isMountedRef.current = false;
-    };
+  // ── 📦 DATA ORCHESTRATION (v.21.0.1) ───────────────────────────────────────
+
+  const fetchBrands = useCallback(async (parentId?: number) => {
+    try {
+      const url = parentId ? `/catalogs/BRAND?parentId=${parentId}` : '/catalogs/BRAND';
+      const res = await api.get(url);
+      const data = extractCatalogData(res);
+
+      // Safety Fallback: If filtered returns empty (DB desync), load global
+      if (data.length === 0 && parentId) {
+        const globalRes = await api.get('/catalogs/BRAND');
+        if (isMountedRef.current) setMarcas(extractCatalogData(globalRes));
+      } else if (isMountedRef.current) setMarcas(data);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Archon Catalog Fetch Error (BRAND):', err);
+    }
   }, []);
 
-  // 🔄 Fetch Brands on Asset Type Change
-  useEffect(() => {
-    const fetchBrands = async (): Promise<void> => {
-      try {
-        const idToUse = formData.assetTypeId;
-        const url = idToUse ? `/catalogs/BRAND?parentId=${idToUse}` : '/catalogs/BRAND';
+  const fetchModels = useCallback(async (brandId?: number) => {
+    try {
+      const url = brandId ? `/catalogs/MODEL?parentId=${brandId}` : '/catalogs/MODEL';
+      const res = await api.get(url);
+      const data = extractCatalogData(res);
 
-        const res = await api.get(url);
-        let brandsData = extractCatalogData(res);
-
-        // 🚨 Fallback 1: If filtered catalog is empty, fetch all brands globally
-        if (brandsData.length === 0 && idToUse) {
-          const globalRes = await api.get('/catalogs/BRAND');
-          const globalData = extractCatalogData(globalRes);
-          // 🔱 Hybrid Filtering: Try to filter locally if the backend parentId link is broken
-          const localFiltered = globalData.filter((b) => Number(b.id) === Number(idToUse) || !b.id);
-          brandsData = localFiltered.length > 0 ? localFiltered : globalData;
-        }
-
-        if (isMountedRef.current) {
-          // Atomic Guard: Don't overwrite with empty if we already have brands and this was a sync attempt
-          if (brandsData.length > 0 || !idToUse) {
-            setMarcas(brandsData);
-          }
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to fetch Brands', err);
-          // If we have marcas, keep them instead of clearing
-          setMarcas((prev) => (prev.length > 0 ? prev : []));
-        }
-      }
-    };
-
-    fetchBrands();
-  }, [formData.assetTypeId]);
-
-  // 🔄 Fetch Models on Brand Change
-  useEffect(() => {
-    const fetchModels = async (): Promise<void> => {
-      if (!formData.marca) {
-        if (isMountedRef.current) setModelos([]);
-        return;
-      }
-
-      try {
-        const selectedBrand = (marcas || []).find(
-          (m) => m.label.trim().toLowerCase() === formData.marca.trim().toLowerCase()
-        );
-
-        const idToUse = selectedBrand?.id;
-        const url = idToUse ? `/catalogs/MODEL?parentId=${idToUse}` : '/catalogs/MODEL';
-
-        const res = await api.get(url);
-        let modelsData = extractCatalogData(res);
-
-        // 🚨 Fallback 1: Try local filtering if filtered result is empty
-        if (modelsData.length === 0 && idToUse) {
-          const globalRes = await api.get('/catalogs/MODEL');
-          const globalData = extractCatalogData(globalRes);
-          const localFiltered = globalData.filter((m) => Number(m.id) === Number(idToUse));
-          modelsData = localFiltered.length > 0 ? localFiltered : globalData;
-        }
-
-        if (isMountedRef.current) {
-          setModelos(modelsData);
-          // Resolve model ID if missing
-          if (formData.modelo && modelsData.length > 0) {
-            const normalizedM = formData.modelo
-              .trim()
-              .toLowerCase()
-              .normalize('NFD')
-              .replace(/[\u0300-\u036f]/g, '');
-            const foundM = modelsData.find(
-              (m: CatalogOption) =>
-                m.label
-                  .trim()
-                  .toLowerCase()
-                  .normalize('NFD')
-                  .replace(/[\u0300-\u036f]/g, '') === normalizedM
-            );
-            if (foundM) setFormData((prev) => ({ ...prev, modeloId: String(foundM.id) }));
-          }
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to fetch Models', err);
-          setModelos((prev) => (prev.length > 0 ? prev : []));
-        }
-      }
-    };
-    fetchModels();
-  }, [formData.marca, marcas]);
+      if (data.length === 0 && brandId) {
+        const globalRes = await api.get('/catalogs/MODEL');
+        if (isMountedRef.current) setModelos(extractCatalogData(globalRes));
+      } else if (isMountedRef.current) setModelos(data);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Archon Catalog Fetch Error (MODEL):', err);
+    }
+  }, []);
 
   /**
    * 🔱 Archon Orchestrator: specialized catalog loaders
@@ -259,73 +187,56 @@ const useFleetForm = (): UseFleetFormReturn => {
     fetchRootCatalogs();
   }, []);
 
-  // 🔄 Sync assetTypeId with DB real ID for AT_VEH on load
+  // 🔱 TRIGGER 1: Asset Type Code-Centric Synchronization
   useEffect(() => {
-    if (assetTypes.length > 0) {
-      const vehType = assetTypes.find(
+    if (assetTypes.length > 0 && !coreLoadedRef.current) {
+      const target = assetTypes.find(
         (a) =>
-          a.code === 'AT_VEH' ||
+          a.code === ASSET_CODES.VEHICLE ||
           a.label
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .includes('vehiculo')
       );
-      // Only sync if different from current to avoid loops
-      // Normalize to String comparison for safety
-      if (vehType && String(formData.assetTypeId) !== String(vehType.id)) {
-        setFormData((prev) => ({ ...prev, assetTypeId: vehType.id }));
+
+      if (target) {
+        setFormData((prev) => ({ ...prev, assetTypeId: target.id }));
+        fetchBrands(target.id);
+        coreLoadedRef.current = true;
       }
     }
-  }, [assetTypes, formData.assetTypeId]);
+  }, [assetTypes, fetchBrands]);
 
-  // 🔄 Proactive ID Hydration (Sovereign Sync)
-  // If we have text labels but no IDs, find them in the catalogs
+  // 🔱 TRIGGER 2: Reactive Brand -> Model Cascade
   useEffect(() => {
-    if (marcas.length > 0 && formData.marca && !formData.marcaId) {
-      const normalizedLabel = formData.marca
-        .trim()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-
-      const found = marcas.find(
+    if (formData.marca && marcas.length > 0) {
+      const selectedM = marcas.find(
         (m) =>
-          (m.label || '')
-            .trim()
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') === normalizedLabel
+          m.label.trim().toLowerCase() === formData.marca.trim().toLowerCase() ||
+          String(m.id) === String(formData.marcaId)
       );
 
-      if (found) {
-        setFormData((prev) => ({ ...prev, marcaId: String(found.id) }));
+      if (selectedM) {
+        fetchModels(selectedM.id);
       }
     }
-  }, [marcas, formData.marca, formData.marcaId]);
+  }, [formData.marca, marcas, fetchModels, formData.marcaId]);
 
+  // 🔱 TRIGGER 3: Deterministic Model ID Resolution
   useEffect(() => {
-    if (modelos.length > 0 && formData.modelo && !formData.modeloId) {
-      const normalizedLabel = formData.modelo
-        .trim()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-
+    if (formData.modelo && modelos.length > 0) {
+      const normalizedQuery = formData.modelo.trim().toLowerCase();
       const found = modelos.find(
         (m) =>
-          (m.label || '')
-            .trim()
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') === normalizedLabel
+          m.label.trim().toLowerCase() === normalizedQuery ||
+          String(m.id) === String(formData.modeloId)
       );
-
-      if (found) {
+      if (found && String(formData.modeloId) !== String(found.id)) {
         setFormData((prev) => ({ ...prev, modeloId: String(found.id) }));
       }
     }
-  }, [modelos, formData.modelo, formData.modeloId]);
+  }, [formData.modelo, modelos, formData.modeloId]);
 
   const availableMarcas = useMemo(
     () =>
@@ -343,31 +254,34 @@ const useFleetForm = (): UseFleetFormReturn => {
     [modelos]
   );
 
-  const handleAssetTypeChange = useCallback((id: number): void => {
-    setFormData((prev) => ({
-      ...prev,
-      assetTypeId: id,
-      marcaId: '',
-      modeloId: '',
-      marca: '',
-      modelo: '',
-    }));
-  }, []);
+  const handleAssetTypeChange = useCallback(
+    (id: number): void => {
+      setFormData((prev) => ({
+        ...prev,
+        assetTypeId: id,
+        marcaId: '',
+        modeloId: '',
+        marca: '',
+        modelo: '',
+      }));
+      fetchBrands(id);
+    },
+    [fetchBrands]
+  );
 
   const handleMarcaChange = useCallback(
     (marcaId: string) => {
       const selected = (marcas || []).find((m) => String(m.id) === marcaId);
-      if (selected) {
-        setFormData((prev) => ({
-          ...prev,
-          marcaId,
-          marca: selected.label,
-          modeloId: '',
-          modelo: '',
-        }));
-      }
+      setFormData((prev) => ({
+        ...prev,
+        marcaId,
+        marca: selected?.label || '',
+        modeloId: '',
+        modelo: '',
+      }));
+      if (selected) fetchModels(selected.id);
     },
-    [marcas]
+    [marcas, fetchModels]
   );
 
   const handleModeloChange = useCallback(
