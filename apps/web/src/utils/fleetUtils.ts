@@ -24,9 +24,9 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   departamento: '',
   uso: '',
   motor: '',
-  traccionId: undefined,
-  transmisionId: undefined,
-  fuelTypeId: undefined,
+  traccionId: null,
+  transmisionId: null,
+  fuelTypeId: null,
   tireSpec: '',
   tireBrand: '',
   tipoTerreno: '',
@@ -45,8 +45,8 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   filterBrand: '',
   description: '',
   // 🔱 Archon Intelligence (v.18.0.0)
-  maintenanceTimeFreqId: undefined,
-  maintenanceUsageFreqId: undefined,
+  maintenanceTimeFreqId: null,
+  maintenanceUsageFreqId: null,
   lastServiceDate: '',
   lastServiceReading: 0,
 });
