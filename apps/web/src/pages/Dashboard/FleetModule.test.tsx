@@ -57,6 +57,33 @@ vi.mock('../../hooks/useFleetForm', () => ({
 }));
 
 describe('FleetModule Orchestrator', () => {
+  const baseMock = {
+    formData: { id: 'UNIT-TEST' },
+    registrationSuccess: false,
+    setRegistrationSuccess: vi.fn(),
+    isLoading: false,
+    error: null,
+    resetError: vi.fn(),
+    handleSubmit: vi.fn(),
+    resetForm: vi.fn(),
+    assetTypes: [],
+    fuelTypes: [],
+    driveTypes: [],
+    transmissionTypes: [],
+    availableMarcas: [],
+    availableModelos: [],
+    freqTime: [],
+    freqUsage: [],
+    departments: [],
+    locations: [],
+    useTypes: [],
+    tireBrands: [],
+    lubeBrands: [],
+    filterBrands: [],
+    engineTypes: [],
+    terrainTypes: [],
+  };
+
   const renderModule = (): RenderResult =>
     render(
       <MemoryRouter>
@@ -69,17 +96,20 @@ describe('FleetModule Orchestrator', () => {
     );
 
   it('should start in the GRID view', (): void => {
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     expect(screen.getByText('Identidad del Activo')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking the "Estrategia Operativa" card', (): void => {
+    (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     // Clicking the Strategy card should return to the inventory table
@@ -89,56 +119,15 @@ describe('FleetModule Orchestrator', () => {
 
   it('should show success view after successful registration', async (): Promise<void> => {
     // 1. Setup Registration State
-    (useFleetForm as Mock).mockReturnValue({
-      formData: { id: 'UNIT-TEST' },
-      registrationSuccess: false,
-      setRegistrationSuccess: vi.fn(),
-      isLoading: false,
-      error: null,
-      resetError: vi.fn(),
-      handleSubmit: vi.fn(),
-      resetForm: vi.fn(),
-      assetTypes: [],
-      availableMarcas: [],
-      availableModelos: [],
-      freqTime: [],
-      freqUsage: [],
-      departments: [],
-      locations: [],
-      useTypes: [],
-      tireBrands: [],
-      lubeBrands: [],
-      filterBrands: [],
-      engineTypes: [],
-      terrainTypes: [],
-    });
+    (useFleetForm as Mock).mockReturnValue(baseMock);
 
     const { rerender } = renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
 
     // 2. Transition to Success State
     (useFleetForm as Mock).mockReturnValue({
-      formData: { id: 'UNIT-TEST' },
+      ...baseMock,
       registrationSuccess: true,
-      setRegistrationSuccess: vi.fn(),
-      isLoading: false,
-      error: null,
-      resetError: vi.fn(),
-      handleSubmit: vi.fn(),
-      resetForm: vi.fn(),
-      assetTypes: [],
-      availableMarcas: [],
-      availableModelos: [],
-      freqTime: [],
-      freqUsage: [],
-      departments: [],
-      locations: [],
-      useTypes: [],
-      tireBrands: [],
-      lubeBrands: [],
-      filterBrands: [],
-      engineTypes: [],
-      terrainTypes: [],
     });
 
     // Re-render to pick up new mock values
