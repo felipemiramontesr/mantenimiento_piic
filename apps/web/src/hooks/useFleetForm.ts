@@ -200,12 +200,18 @@ const useFleetForm = (): UseFleetFormReturn => {
   }, []);
 
   const availableMarcas = useMemo(
-    () => marcas.map((m) => ({ value: m.id.toString(), label: m.label })),
+    () =>
+      marcas
+        .map((m) => ({ value: m.id.toString(), label: m.label }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [marcas]
   );
 
   const availableModelos = useMemo(
-    () => modelos.map((m) => ({ value: m.id.toString(), label: m.label })),
+    () =>
+      modelos
+        .map((m) => ({ value: m.id.toString(), label: m.label }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     [modelos]
   );
 
@@ -311,19 +317,21 @@ const useFleetForm = (): UseFleetFormReturn => {
     fuelTypes,
     driveTypes,
     transmissionTypes,
-    freqTime: freqTime.map((f) => f.label),
-    freqUsage: freqUsage.map((f) => ({ id: f.id, label: f.label })),
-    departments:
-      departments.length > 0
-        ? departments.map((d) => d.label)
-        : (DEPARTAMENTOS as unknown as string[]),
-    locations: locations.map((l) => l.label),
-    useTypes: useTypes.map((u) => u.label),
-    tireBrands: tireBrands.map((b) => b.label),
-    lubeBrands: lubeBrands.map((b) => b.label),
-    filterBrands: filterBrands.map((b) => b.label),
-    engineTypes: engineTypes.map((e) => e.label),
-    terrainTypes: terrainTypes.map((t) => t.label),
+    freqTime: freqTime.map((f) => f.label).sort(),
+    freqUsage: freqUsage
+      .map((f) => ({ id: f.id, label: f.label }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+    departments: (departments.length > 0
+      ? departments.map((d) => d.label)
+      : (DEPARTAMENTOS as unknown as string[])
+    ).sort(),
+    locations: locations.map((l) => l.label).sort(),
+    useTypes: useTypes.map((u) => u.label).sort(),
+    tireBrands: tireBrands.map((b) => b.label).sort(),
+    lubeBrands: lubeBrands.map((b) => b.label).sort(),
+    filterBrands: filterBrands.map((b) => b.label).sort(),
+    engineTypes: engineTypes.map((e) => e.label).sort(),
+    terrainTypes: terrainTypes.map((t) => t.label).sort(),
     setFormData,
     setRegistrationSuccess,
     isLoading,

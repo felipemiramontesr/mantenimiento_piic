@@ -19,7 +19,7 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
 
       try {
         let query =
-          'SELECT id, code, label, numeric_value as numericValue, unit FROM common_catalogs WHERE category = ? AND is_active = TRUE';
+          'SELECT id, code, label, numeric_value as numericValue, unit FROM common_catalogs WHERE category = ? AND is_active = TRUE ORDER BY label ASC';
         const params: (string | number)[] = [category];
 
         if (parentId) {
