@@ -4,17 +4,16 @@
 -- Scope: TOTAL Mexican Market (2000-2026) -> Vehicles, Heavy Machinery & Tools
 -- =============================================================================
 
--- ── 1. HELPERS: STABILIZE ROOT ASSET TYPE IDs ───────────────────────────────
--- We DELETE and RE-INSERT to force FIXED IDs (Predictability)
-DELETE FROM common_catalogs WHERE code IN ('AT_VEH', 'AT_MAQ', 'AT_HER');
-INSERT INTO common_catalogs (id, category, code, label) VALUES 
-(1, 'ASSET_TYPE', 'AT_VEH', 'Vehículo'),
-(2, 'ASSET_TYPE', 'AT_MAQ', 'Maquinaria'),
-(3, 'ASSET_TYPE', 'AT_HER', 'Herramienta');
+-- ── 1. HELPERS: CAPTURE EXISTING IDs (No destruction) ────────────────────────
+-- Aseguramos que existan los códigos base sin alterar sus IDs actuales
+INSERT IGNORE INTO common_catalogs (category, code, label) VALUES 
+('ASSET_TYPE', 'AT_VEH', 'Vehículo'),
+('ASSET_TYPE', 'AT_MAQ', 'Maquinaria'),
+('ASSET_TYPE', 'AT_HER', 'Herramienta');
 
-SET @at_veh = 1;
-SET @at_maq = 2;
-SET @at_her = 3;
+SET @at_veh = (SELECT id FROM common_catalogs WHERE code = 'AT_VEH');
+SET @at_maq = (SELECT id FROM common_catalogs WHERE code = 'AT_MAQ');
+SET @at_her = (SELECT id FROM common_catalogs WHERE code = 'AT_HER');
 
 -- ── 2. GEOGRAPHIC & OPERATIONAL NODES ───────────────────────────────────────
 INSERT IGNORE INTO common_catalogs (category, code, label) VALUES 
