@@ -22,6 +22,13 @@ vi.mock('argon2', () => ({
   },
 }));
 
+vi.mock('../services/encryption', () => ({
+  default: {
+    encrypt: vi.fn((val) => `encrypted_${val}`),
+    decrypt: vi.fn((val) => val.replace('encrypted_', '')),
+  },
+}));
+
 describe('Auth Integration Endpoints', () => {
   const app = buildApp();
 
