@@ -264,4 +264,112 @@ describe('Auth Integration Endpoints', () => {
       expect(response.statusCode).toBe(500);
     });
   });
+
+  describe('PATCH /v1/auth/users/:id', () => {
+    const updateData = {
+      fullName: 'Ana Karen Actualizada',
+      department: 'Logística',
+      employeeNumber: 'EMP-999',
+    };
+
+    it('should successfully update personnel identity', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: updateData,
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).message).toContain('exitosamente');
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('UPDATE users SET'), [
+        'Ana Karen Actualizada',
+        'Logística',
+        'EMP-999',
+        '1',
+      ]);
+    });
+
+    it('should securely update password with argon2 hashing', async (): Promise<void> => {
+      (argon2.hash as Mock).mockResolvedValueOnce('new_hashed_password');
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: { password: 'new_secure_password' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(argon2.hash).toHaveBeenCalledWith('new_secure_password');
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('password_hash = ?'), [
+        'new_hashed_password',
+        '1',
+      ]);
+    });
+
+    it('should encrypt email updates for sovereign privacy', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: { email: 'new@piic.mx' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const encrypted = EncryptionService.encrypt('new@piic.mx');
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('email = ?'), [
+        encrypted,
+        '1',
+      ]);
+    });
+
+    it('should update is_active status correctly', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: { is_active: false },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('is_active = ?'), [0, '1']);
+    });
+
+    it('should return 400 for invalid update schema (bad email)', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: { email: 'not-an-email' },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should return 400 if no fields are provided for update', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: {},
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).error).toContain('campos que actualizar');
+    });
+
+    it('should handle critical failure during identity update', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('CRITICAL_DB_FAIL'));
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        payload: { fullName: 'Failure Test' },
+      });
+
+      expect(response.statusCode).toBe(500);
+    });
+  });
 });
