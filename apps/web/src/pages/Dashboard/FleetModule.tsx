@@ -19,7 +19,7 @@ import useFleetForm from '../../hooks/useFleetForm';
  */
 const FleetModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
-  const { refreshUnits, units } = useFleet();
+  const { refreshUnits, units, loading } = useFleet();
   const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -196,7 +196,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
               <FleetSuccessView formData={formData} />
             ) : (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                {activePanel === 'STRATEGY' && <FleetGridView units={units} />}
+                {activePanel === 'STRATEGY' && <FleetGridView units={units} loading={loading} />}
                 {activePanel === 'EXPANSION' && (
                   <FleetRegistrationForm
                     controller={fleetController}

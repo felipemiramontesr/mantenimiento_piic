@@ -25,9 +25,11 @@ import {
   formatDate,
   MaintenanceForecast,
 } from '../../utils/fleetPredictiveEngine';
+import { ArchonTableSkeleton } from '../ArchonSkeleton';
 
 interface FleetGridViewProps {
   units: FleetUnit[];
+  loading?: boolean;
 }
 
 const resolveAreaFull = (code: string | undefined): string => {
@@ -321,7 +323,10 @@ const FleetRegistryRow = ({
   );
 };
 
-export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Element => {
+export const FleetGridView = ({
+  units = [],
+  loading = false,
+}: FleetGridViewProps): React.JSX.Element => {
   const [selectedGalleryUnit, setSelectedGalleryUnit] = React.useState<FleetUnit | null>(null);
   const [selectedRouteUnit, setSelectedRouteUnit] = React.useState<FleetUnit | null>(null);
   const [sortConfig, setSortConfig] = React.useState<{
@@ -391,6 +396,20 @@ export const FleetGridView = ({ units = [] }: FleetGridViewProps): React.JSX.Ele
       {active && direction === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
     </span>
   );
+
+  if (loading) {
+    return (
+      <div className="glass-card-pro bg-white p-6 space-y-6">
+        <div className="flex items-center gap-3 opacity-40 animate-pulse">
+          <div className="w-4 h-4 bg-[#f2b705] rounded-full" />
+          <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
+            Sincronizando Activos...
+          </span>
+        </div>
+        <ArchonTableSkeleton rows={6} />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">

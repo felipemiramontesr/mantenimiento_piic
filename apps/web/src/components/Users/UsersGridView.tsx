@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
+import { ArchonTableSkeleton } from '../ArchonSkeleton';
 
 /**
  * 🔱 Archon Component: UsersGridView
@@ -139,11 +140,14 @@ const UsersGridView = (): React.JSX.Element => {
 
   if (isLoading) {
     return (
-      <div className="glass-card-pro bg-white p-6 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-[#0f2a44]/10 border-t-[#0f2a44] rounded-[4px] animate-spin" />
-        <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-widest animate-pulse">
-          Sincronizando Identidades...
-        </span>
+      <div className="glass-card-pro bg-white p-6 space-y-6">
+        <div className="flex items-center gap-3 opacity-40 animate-pulse">
+          <div className="w-4 h-4 bg-[#0f2a44] rounded-full" />
+          <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
+            Sincronizando Identidades...
+          </span>
+        </div>
+        <ArchonTableSkeleton rows={8} />
       </div>
     );
   }

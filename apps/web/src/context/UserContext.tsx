@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserIndustrial, UserPanel } from '../types/user';
 import { DEPARTAMENTOS } from '../constants/fleetConstants';
+import { archonCache } from '../utils/archonCache';
 import api from '../api/client';
 
 /**
@@ -47,11 +48,17 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }): React.JSX.Element => {
-  const [users, setUsers] = useState<UserIndustrial[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [users, setUsers] = useState<UserIndustrial[]>(
+    () =>
+      // Initial hydration from Persistent Cache
+      archonCache.get<UserIndustrial[]>('users_directory') || []
+  );
+  const [isLoading, setIsLoading] = useState(!users.length);
   const [activePanel, setActivePanel] = useState<UserPanel>('DIRECTORY');
   const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);
-  const [departments, setDepartments] = useState<string[]>([]);
+  const [departments, setDepartments] = useState<string[]>(
+    () => archonCache.get<string[]>('system_departments') || []
+  );
 
   const fetchUsers = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -79,6 +86,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           })
         );
         setUsers(mappedUsers);
+        // Commit to Persistent Cache
+        archonCache.set('users_directory', mappedUsers);
       }
     } catch (err: unknown) {
       // Silently handle error as per Zero-Noise policy
@@ -129,7 +138,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const response = await api.get('/catalogs/DEPARTMENT');
       if (response.data?.length) {
-        setDepartments(response.data.map((d: CatalogOption) => d.label));
+        const labels = response.data.map((d: CatalogOption) => d.label);
+        setDepartments(labels);
+        // Commit to Persistent Cache
+        archonCache.set('system_departments', labels);
       }
     } catch (err) {
       // Slient fallback

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import api from '../api/client';
 import { FleetUnit } from '../types/fleet';
+import { archonCache } from '../utils/archonCache';
 
 interface CategorizedMetrics {
   count: number;
@@ -40,21 +41,13 @@ interface FleetContextType {
 const FleetContext = createContext<FleetContextType | undefined>(undefined);
 
 export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [units, setUnits] = useState<FleetUnit[]>(() => {
-    try {
-      const cached = localStorage.getItem('archon_fleet_cache');
-      // ⚡ AGGRESSIVE HYDRATION: Immediate memory population from cache
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [units, setUnits] = useState<FleetUnit[]>(
+    () =>
+      // ⚡ AGGRESSIVE HYDRATION: Immediate memory population from Archon Cache
+      archonCache.get<FleetUnit[]>('fleet_units') || []
+  );
 
-  const [loading, setLoading] = useState<boolean>(() => {
-    // If we have cache, we don't 'block' with a total loading state
-    const cached = localStorage.getItem('archon_fleet_cache');
-    return !cached;
-  });
+  const [loading, setLoading] = useState<boolean>(!units.length);
 
   const isMountedRef = React.useRef(true);
   useEffect(() => {
@@ -70,7 +63,8 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (isMountedRef.current && response.data.success) {
         const freshData = response.data.data;
         setUnits(freshData);
-        localStorage.setItem('archon_fleet_cache', JSON.stringify(freshData));
+        // Commit to Persistent Cache
+        archonCache.set('fleet_units', freshData);
       }
     } catch (error) {
       // Noise reduction for Sovereign operations
