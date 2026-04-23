@@ -224,8 +224,9 @@ const useFleetForm = (): UseFleetFormReturn => {
       !formData.departamento ||
       !formData.uso
     ) {
-      setError('Por favor, completa todos los campos obligatorios (*)');
-      return;
+      const msg = 'Por favor, completa todos los campos obligatorios (*)';
+      setError(msg);
+      throw new Error(msg);
     }
     setIsSubmitting(true);
     try {
@@ -233,12 +234,23 @@ const useFleetForm = (): UseFleetFormReturn => {
       if (res.data.success) {
         if (onSuccess) await onSuccess();
         setRegistrationSuccess(true);
+      } else {
+        throw new Error(res.data.error || 'Server Error');
       }
-    } catch (err) {
-      setError('Error al registrar unidad. Revisa la conexion.');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorMsg = (err as any).response?.data?.error || (err as Error).message;
+      setError(errorMsg);
+      throw new Error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetForm = (): void => {
+    setFormData(getInitialFleetForm());
+    setRegistrationSuccess(false);
+    setError(null);
   };
 
   return {
@@ -268,7 +280,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     handleModeloChange,
     handleSubmit,
     resetError,
-    resetForm: () => setFormData(getInitialFleetForm()),
+    resetForm,
   };
 };
 
