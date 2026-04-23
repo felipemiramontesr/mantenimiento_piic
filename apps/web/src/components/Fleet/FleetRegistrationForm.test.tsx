@@ -107,7 +107,7 @@ describe('FleetRegistrationForm Component', () => {
     (useFleetForm as Mock).mockReturnValue(submittingController);
 
     render(<FleetRegistrationForm controller={submittingController} {...mockProps} />);
-    expect(screen.getByText(/Transmitiendo ADN.../i)).toBeInTheDocument();
+    expect(screen.getByText(/Transmitiendo.../i)).toBeInTheDocument();
   });
 
   it('should call onSuccess and finish submission successfully', async (): Promise<void> => {
