@@ -769,26 +769,68 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+/* 📐 ARCHON AXIAL GRID SYSTEM (V37.0.0 Alpha) */
+.archon-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 32px;
+}
+
+@media (min-width: 1440px) {
+  .archon-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.archon-card-header-pro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(15, 42, 68, 0.08);
+  margin-bottom: 8px;
+}
+
+/* 🖋️ ARCHON INPUT ENGINE (High Performance) */
+.archon-input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 20px;
+  color: #0f2a44;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.archon-input:focus {
+  background: #ffffff;
+  border-color: #f2b705;
+  box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.1);
+  transform: translateY(-1px);
+}
+
+.archon-input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* 💎 SENTINEL GLASS NEXUS (V4.1.0) - HERITAGE V4.3.0 - SOVEREIGN V4.4.0 */
 .glass-card-pro {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.45));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(15, 42, 68, 0.08);
-  border-radius: 4px;
+  border-radius: 20px; /* Refined for v37 */
   padding: 40px; /* Golden Padding V.4.4.0 */
-  /* Triple Layer Depth */
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.04), inset 1px 1px 0 rgba(255, 255, 255, 0.9),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.03);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.03), inset 1px 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.4s ease;
 }
 
-/* Base hover — subtle background lift only */
 .glass-card-pro:hover {
-  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.06);
 }
 
 /* 🟡 Yellow-accent card hover */

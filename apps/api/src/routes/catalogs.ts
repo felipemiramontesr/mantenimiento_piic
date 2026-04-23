@@ -19,12 +19,25 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
 
       try {
         let query =
-          'SELECT id, code, label, numeric_value as numericValue, unit FROM common_catalogs WHERE category = ? AND is_active = TRUE ORDER BY label ASC';
+          'SELECT id, code, label, numeric_value as numericValue, unit FROM common_catalogs WHERE category = ? AND is_active = TRUE';
         const params: (string | number)[] = [category];
 
         if (parentId) {
           query += ' AND parent_id = ?';
           params.push(parentId);
+        }
+
+        // 👑 Archon Ordering Intelligence
+        if (
+          category === 'BRAND' ||
+          category === 'MODEL' ||
+          category === 'DEPARTMENT' ||
+          category === 'LOCATION'
+        ) {
+          query += ' ORDER BY label ASC';
+        } else {
+          // ASSET_TYPE, FREQ_TIME, FREQ_USAGE are ordered chronologically by ID
+          query += ' ORDER BY id ASC';
         }
 
         const [rows] = await db.execute(query, params);

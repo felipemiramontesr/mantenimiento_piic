@@ -5,8 +5,9 @@ import getInitialFleetForm from '../utils/fleetUtils';
 import api from '../api/client';
 
 /**
- * Archon Alpha Engine (v.36.0.0)
- * Logic: Deterministic Sync Machine with Fail-Safe Hydration.
+ * 🔱 Archon Alpha Engine (v.37.0.0) - THE CASCADE REBUILD
+ * Logic: Strict Progressive Cascade (Asset -> Brand -> Model)
+ * Architecture: Database-First Deterministic Streams.
  */
 
 const extractCatalogData = (res: AxiosResponse): CatalogOption[] => {
@@ -15,13 +16,9 @@ const extractCatalogData = (res: AxiosResponse): CatalogOption[] => {
 };
 
 const EMERGENCY_BRANDS = [
-  { id: 9001, code: 'B_TOYOTA', label: 'Toyota' },
-  { id: 9002, code: 'B_NISSAN', label: 'Nissan' },
-  { id: 9003, code: 'B_FORD', label: 'Ford' },
-  { id: 9004, code: 'B_CAT', label: 'Caterpillar' },
-  { id: 9005, code: 'B_JD', label: 'John Deere' },
-  { id: 9006, code: 'B_CASE', label: 'Case' },
-  { id: 9007, code: 'B_GENERIC', label: 'Generico / Otros' },
+  { id: 9001, code: 'B_TOYOTA', label: 'Toyota (Safe Mode)' },
+  { id: 9002, code: 'B_CATERPILLAR', label: 'Caterpillar (Safe Mode)' },
+  { id: 9003, code: 'B_MILWAUKEE', label: 'Milwaukee (Safe Mode)' },
 ];
 
 const useFleetForm = (): UseFleetFormReturn => {
@@ -55,9 +52,13 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   const resetError = useCallback(() => setError(null), []);
 
+  /**
+   * 🌊 Pure Cascade Fetcher
+   */
   const fetchCategory = async (category: string, parentId?: number): Promise<CatalogOption[]> => {
     const ts = Date.now();
     const pid = parentId ? Number(parentId) : null;
+    // Strict parent filtering
     const url = pid
       ? `/catalogs/${category}?parentId=${pid}&_cb=${ts}`
       : `/catalogs/${category}?_cb=${ts}`;
@@ -65,18 +66,23 @@ const useFleetForm = (): UseFleetFormReturn => {
     try {
       const res = await api.get(url);
       const data = extractCatalogData(res);
-      if (data.length === 0 && pid) {
-        const globalRes = await api.get(`/catalogs/${category}?_cb=${ts}`);
-        return extractCatalogData(globalRes);
+
+      // If empty but strictly needed, we allow a global lookup ONLY for Brands if parent is missing
+      if (data.length === 0 && pid && category === 'BRAND') {
+        const fallback = await api.get(`/catalogs/${category}?_cb=${ts}`);
+        return extractCatalogData(fallback);
       }
       return data;
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('[Archon Alpha] Fetch Failure', err);
+      console.error(`[Archon Alpha] Fetch Failure: ${category}`, err);
       return [];
     }
   };
 
+  /**
+   * 🏗️ Foundation Hydration
+   */
   const hydrate = useCallback(async (): Promise<void> => {
     if (hasHydratedRef.current) return;
     setIsLoading(true);
@@ -116,6 +122,7 @@ const useFleetForm = (): UseFleetFormReturn => {
       ]);
 
       const assetList = extractCatalogData(asset);
+      // Initialize brands for the first asset type (usually VEH)
       const brandsInitial = await fetchCategory('BRAND', assetList[0]?.id);
 
       if (isMountedRef.current) {
@@ -130,11 +137,11 @@ const useFleetForm = (): UseFleetFormReturn => {
           departments: extractCatalogData(dept),
           locations: extractCatalogData(loc),
           useTypes: extractCatalogData(uses),
-          tireBrands: extractCatalogData(tires) as CatalogOption[],
-          lubeBrands: extractCatalogData(lube) as CatalogOption[],
-          filterBrands: extractCatalogData(filter) as CatalogOption[],
-          engineTypes: extractCatalogData(engines) as CatalogOption[],
-          terrainTypes: extractCatalogData(terrains) as CatalogOption[],
+          tireBrands: extractCatalogData(tires),
+          lubeBrands: extractCatalogData(lube),
+          filterBrands: extractCatalogData(filter),
+          engineTypes: extractCatalogData(engines),
+          terrainTypes: extractCatalogData(terrains),
           marcas: brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
         }));
 
@@ -145,7 +152,7 @@ const useFleetForm = (): UseFleetFormReturn => {
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('[Archon Alpha] Hydration Critical Failure', err);
+      console.error('[Archon Alpha] Critical Hydration Failure', err);
     } finally {
       if (isMountedRef.current) setIsLoading(false);
     }
@@ -158,26 +165,35 @@ const useFleetForm = (): UseFleetFormReturn => {
     };
   }, [hydrate]);
 
+  /**
+   * 🔱 CASCADE HANDLERS
+   */
   const handleAssetTypeChange = async (id: number): Promise<void> => {
+    setIsLoading(true);
+    // CRITICAL: Reset children in cascade
     setFormData((prev) => ({
       ...prev,
       assetTypeId: id,
       marcaId: '',
-      modeloId: '',
       marca: '',
+      modeloId: '',
       modelo: '',
     }));
-    setIsLoading(true);
+
     const brands = await fetchCategory('BRAND', id);
     setCatalogs((prev) => ({
       ...prev,
       marcas: brands.length > 0 ? brands : (EMERGENCY_BRANDS as CatalogOption[]),
+      modelos: [], // Clear models catalog
     }));
     setIsLoading(false);
   };
 
   const handleMarcaChange = async (marcaId: string): Promise<void> => {
+    setIsLoading(true);
     const selected = catalogs.marcas.find((m) => String(m.id) === String(marcaId));
+
+    // CRITICAL: Reset dependent model
     setFormData((prev) => ({
       ...prev,
       marcaId,
@@ -185,28 +201,32 @@ const useFleetForm = (): UseFleetFormReturn => {
       modeloId: '',
       modelo: '',
     }));
+
     if (selected) {
-      setIsLoading(true);
       const models = await fetchCategory('MODEL', selected.id);
       setCatalogs((prev) => ({ ...prev, modelos: models }));
-      setIsLoading(false);
+    } else {
+      setCatalogs((prev) => ({ ...prev, modelos: [] }));
     }
+    setIsLoading(false);
   };
 
   const handleModeloChange = (modeloId: string): void => {
     const selected = catalogs.modelos.find((m) => String(m.id) === String(modeloId));
     if (selected) {
       setFormData((prev) => ({ ...prev, modeloId, modelo: selected.label }));
+    } else {
+      setFormData((prev) => ({ ...prev, modeloId: '', modelo: '' }));
     }
   };
 
   const availableMarcas = useMemo(
-    () => catalogs.marcas.map((m) => ({ value: m.id.toString(), label: m.label || 'S/N' })),
+    () => catalogs.marcas.map((m) => ({ value: m.id.toString(), label: m.label })),
     [catalogs.marcas]
   );
 
   const availableModelos = useMemo(
-    () => catalogs.modelos.map((m) => ({ value: m.id.toString(), label: m.label || 'S/N' })),
+    () => catalogs.modelos.map((m) => ({ value: m.id.toString(), label: m.label })),
     [catalogs.modelos]
   );
 
@@ -217,6 +237,8 @@ const useFleetForm = (): UseFleetFormReturn => {
     e.preventDefault();
     if (isSubmitting) return;
     setError(null);
+
+    // Validation Shield
     if (
       !formData.marca ||
       !formData.modelo ||
@@ -224,10 +246,11 @@ const useFleetForm = (): UseFleetFormReturn => {
       !formData.departamento ||
       !formData.uso
     ) {
-      const msg = 'Por favor, completa todos los campos obligatorios (*)';
+      const msg = '🚨 Todos los campos marcados con (*) son obligatorios.';
       setError(msg);
       throw new Error(msg);
     }
+
     setIsSubmitting(true);
     try {
       const res = await api.post('/fleet', formData);
@@ -235,7 +258,7 @@ const useFleetForm = (): UseFleetFormReturn => {
         if (onSuccess) await onSuccess();
         setRegistrationSuccess(true);
       } else {
-        throw new Error(res.data.error || 'Server Error');
+        throw new Error(res.data.error || 'Server Internal Error');
       }
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -267,11 +290,11 @@ const useFleetForm = (): UseFleetFormReturn => {
     departments: catalogs.departments.map((d) => d.label),
     locations: catalogs.locations.map((l) => l.label),
     useTypes: catalogs.useTypes.map((u) => u.label),
-    tireBrands: catalogs.tireBrands.map((b: CatalogOption) => b.label),
-    lubeBrands: catalogs.lubeBrands.map((b: CatalogOption) => b.label),
-    filterBrands: catalogs.filterBrands.map((b: CatalogOption) => b.label),
-    engineTypes: catalogs.engineTypes.map((e: CatalogOption) => e.label),
-    terrainTypes: catalogs.terrainTypes.map((t: CatalogOption) => t.label),
+    tireBrands: catalogs.tireBrands.map((b) => b.label),
+    lubeBrands: catalogs.lubeBrands.map((b) => b.label),
+    filterBrands: catalogs.filterBrands.map((b) => b.label),
+    engineTypes: catalogs.engineTypes.map((e) => e.label),
+    terrainTypes: catalogs.terrainTypes.map((t) => t.label),
     setFormData,
     setRegistrationSuccess,
     setError,
