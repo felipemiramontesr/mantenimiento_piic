@@ -12,7 +12,7 @@ import server from '../test/server';
 describe('useFleetForm Hook', () => {
   it('should initialize with default fleet form data', (): void => {
     const { result } = renderHook(() => useFleetForm());
-    expect(result.current.formData.id).toBe('ASM-002');
+    expect(result.current.formData.id).toBe('');
     expect(result.current.formData.assetTypeId).toBe(1);
   });
 
@@ -50,10 +50,22 @@ describe('useFleetForm Hook', () => {
   });
 
   it('should successfully submit form and set success state', async (): Promise<void> => {
-    const onSuccess = vi.fn(async (): Promise<void> => {
-      /* No-op */
-    });
+    const onSuccess = vi.fn(async (): Promise<void> => Promise.resolve());
     const { result } = renderHook(() => useFleetForm());
+
+    // Populate ALL required fields as per v35 validation logic
+    act((): void => {
+      result.current.setFormData((prev) => ({
+        ...prev,
+        id: 'UNIT-001',
+        marca: 'Toyota',
+        marcaId: '101',
+        modelo: 'Hilux',
+        modeloId: '201',
+        departamento: 'OPERACIONES',
+        uso: 'CARGA',
+      }));
+    });
 
     await act(async (): Promise<void> => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
@@ -67,11 +79,7 @@ describe('useFleetForm Hook', () => {
   it('should throw error when submitting with missing required fields', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
 
-    // Clear required field
-    act((): void => {
-      result.current.setFormData((prev) => ({ ...prev, id: '' }));
-    });
-
+    // Initial state is already missing fields, so it should throw
     await expect(async (): Promise<void> => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
       await result.current.handleSubmit(e);
@@ -93,6 +101,18 @@ describe('useFleetForm Hook', () => {
     );
 
     const { result } = renderHook(() => useFleetForm());
+
+    // Populate required fields to bypass client-side validation first
+    act((): void => {
+      result.current.setFormData((prev) => ({
+        ...prev,
+        id: 'UNIT-001',
+        marca: 'Toyota',
+        modelo: 'Hilux',
+        departamento: 'OPERACIONES',
+        uso: 'CARGA',
+      }));
+    });
 
     await expect(async (): Promise<void> => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
@@ -117,7 +137,7 @@ describe('useFleetForm Hook', () => {
       result.current.resetForm();
     });
 
-    expect(result.current.formData.id).toBe('ASM-002');
+    expect(result.current.formData.id).toBe('');
     expect(result.current.registrationSuccess).toBe(false);
   });
 });

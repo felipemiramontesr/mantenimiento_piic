@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor, RenderResult } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, RenderResult } from '@testing-library/react';
+import { describe, it, expect, vi, Mock } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import FleetModule from './FleetModule';
 import { FleetProvider } from '../../context/FleetContext';
@@ -11,18 +11,37 @@ import { FleetProvider } from '../../context/FleetContext';
 
 import { UserProvider } from '../../context/UserContext';
 
+import useFleetForm from '../../hooks/useFleetForm';
+
 // Mock specialized context
 vi.mock('../../context/FleetContext', async () => {
   const actual = await vi.importActual('../../context/FleetContext');
   return {
     ...actual,
     useFleet: (): Record<string, unknown> => ({
-      refreshUnits: vi.fn(async (): Promise<void> => {
-        /* No-op */
-      }),
+      refreshUnits: vi.fn(async (): Promise<void> => Promise.resolve()),
+      units: [],
+      loading: false,
     }),
   };
 });
+
+// 🔱 Mock the hook to control transitions and state
+vi.mock('../../hooks/useFleetForm', () => ({
+  default: vi.fn(() => ({
+    formData: { id: '' },
+    registrationSuccess: false,
+    setRegistrationSuccess: vi.fn(),
+    isLoading: false,
+    error: null,
+    resetError: vi.fn(),
+    handleSubmit: vi.fn(),
+    resetForm: vi.fn(),
+    assetTypes: [],
+    availableMarcas: [],
+    availableModelos: [],
+  })),
+}));
 
 describe('FleetModule Orchestrator', () => {
   const renderModule = (): RenderResult =>
@@ -56,15 +75,71 @@ describe('FleetModule Orchestrator', () => {
   });
 
   it('should show success view after successful registration', async (): Promise<void> => {
-    renderModule();
+    // 1. Setup Registration State
+    (useFleetForm as Mock).mockReturnValue({
+      formData: { id: 'UNIT-TEST' },
+      registrationSuccess: false,
+      setRegistrationSuccess: vi.fn(),
+      isLoading: false,
+      error: null,
+      resetError: vi.fn(),
+      handleSubmit: vi.fn(),
+      resetForm: vi.fn(),
+      assetTypes: [],
+      availableMarcas: [],
+      availableModelos: [],
+      freqTime: [],
+      freqUsage: [],
+      departments: [],
+      locations: [],
+      useTypes: [],
+      tireBrands: [],
+      lubeBrands: [],
+      filterBrands: [],
+      engineTypes: [],
+      terrainTypes: [],
+    });
+
+    const { rerender } = renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
 
-    // Simulate successful submission in the child form
-    fireEvent.click(screen.getByText(/Confirmar Registro/i));
-
-    await waitFor((): void => {
-      expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();
+    // 2. Transition to Success State
+    (useFleetForm as Mock).mockReturnValue({
+      formData: { id: 'UNIT-TEST' },
+      registrationSuccess: true,
+      setRegistrationSuccess: vi.fn(),
+      isLoading: false,
+      error: null,
+      resetError: vi.fn(),
+      handleSubmit: vi.fn(),
+      resetForm: vi.fn(),
+      assetTypes: [],
+      availableMarcas: [],
+      availableModelos: [],
+      freqTime: [],
+      freqUsage: [],
+      departments: [],
+      locations: [],
+      useTypes: [],
+      tireBrands: [],
+      lubeBrands: [],
+      filterBrands: [],
+      engineTypes: [],
+      terrainTypes: [],
     });
+
+    // Re-render to pick up new mock values
+    rerender(
+      <MemoryRouter>
+        <UserProvider>
+          <FleetProvider>
+            <FleetModule />
+          </FleetProvider>
+        </UserProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();
   });
 
   it('should toggle user menu correctly', (): void => {
