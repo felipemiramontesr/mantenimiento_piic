@@ -13,7 +13,7 @@ describe('useFleetForm Hook', () => {
   it('should initialize with default fleet form data', (): void => {
     const { result } = renderHook(() => useFleetForm());
     expect(result.current.formData.id).toBe('');
-    expect(result.current.formData.assetTypeId).toBe(1);
+    expect(result.current.formData.assetTypeId).toBe(null);
   });
 
   it('should handle asset type changes correctly', (): void => {
