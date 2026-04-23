@@ -1,5 +1,6 @@
-export const SYSTEM_VERSION = '35.9.1';
-export const BRANDING_NAME = 'ArchonCore Sovereign SV';
-export const CACHE_PREFIX = 'archon_cache_v35.9.1';
+export const SYSTEM_VERSION = '36.0.0';
+export const BRANDING_NAME = 'ArchonCore Alpha Engine';
+export const CACHE_PREFIX = 'archon_alpha_v36_final';
 export const SOVEREIGN_MODE = true;
-export const LAST_SYNC = '2026-04-23T15:58:00Z';
+export const LAST_SYNC = '2026-04-23T16:10:00Z';
+export const ENABLE_DEBUG = true;
