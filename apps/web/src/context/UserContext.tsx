@@ -94,13 +94,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateUser = async (id: string, data: Partial<UserIndustrial>): Promise<boolean> => {
     try {
-      // Map frontend update to backend schema
+      // Map frontend update to backend schema (CamelCase Sync v.28.40.0)
       const backendData = {
         fullName: data.fullName,
         email: data.email,
         roleId: data.roleId,
         department: data.department,
-        employee_number: data.employeeNumber,
+        employeeNumber: data.employeeNumber,
         image_url: data.imageUrl,
         password: data.password,
       };
