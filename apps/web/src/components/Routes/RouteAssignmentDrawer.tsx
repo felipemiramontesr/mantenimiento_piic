@@ -47,7 +47,7 @@ const RouteAssignmentDrawer: React.FC<RouteAssignmentDrawerProps> = ({ isOpen, o
   useEffect((): void => {
     if (formData.unitId) {
       const unit = units.find((u) => u.id === formData.unitId);
-      setSelectedUnitData(unit);
+      setSelectedUnitData(unit || null);
     } else {
       setSelectedUnitData(null);
     }
