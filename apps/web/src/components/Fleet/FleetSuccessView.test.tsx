@@ -9,6 +9,7 @@ import { CreateFleetUnit } from '../../types/fleet';
  */
 describe('FleetSuccessView Component', () => {
   const mockFormData: CreateFleetUnit = {
+    assetTypeId: 1,
     id: 'ASM-TEST-001',
     brandId: 253,
     modelId: 636,
