@@ -10,6 +10,8 @@ export interface RouteLog {
   operator_id: string;
   origin: string;
   destination: string;
+  description?: string;
+  fuelLevel?: number;
   start_time: string;
   end_time: string | null;
   start_km: number;
@@ -37,6 +39,8 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
       operator_id: '1',
       origin: 'Base Arian',
       destination: 'Test Route - Day Zero Baseline',
+      description: 'Prueba de sistema inicial',
+      fuelLevel: 100,
       start_time: '2026-03-09 00:00:00',
       end_time: '2026-04-01 00:00:00',
       start_km: 119728,
@@ -48,6 +52,8 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
       operator_id: '1',
       origin: 'Base Arian',
       destination: 'Mina Nivel 200',
+      description: 'Extracción rutinaria',
+      fuelLevel: 75,
       start_time: '2026-03-11 00:00:00',
       end_time: null, // Active
       start_km: 356944,
