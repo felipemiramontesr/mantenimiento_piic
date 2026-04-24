@@ -5,6 +5,7 @@ import {
   ShieldAlert,
   Settings,
   Users,
+  Navigation,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -148,8 +149,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             isCollapsed={isCollapsed}
           />
           <NavItem
+            icon={<Navigation size={20} />}
+            label="Administrar Rutas"
+            path="/dashboard/routes"
+            active={location.pathname === '/dashboard/routes'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem
             icon={<Users size={20} />}
-            label="Administrar personal"
+            label="Administrar Personal"
             path="/dashboard/users"
             active={location.pathname === '/dashboard/users'}
             isCollapsed={isCollapsed}

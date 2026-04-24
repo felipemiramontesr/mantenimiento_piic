@@ -4,6 +4,7 @@ import LoginPage from './pages/Auth/Login';
 import DashboardLayout from './pages/Dashboard/Layout';
 import ArchonCenter from './pages/Dashboard/ArchonCenter';
 import FleetModule from './pages/Dashboard/FleetModule';
+import RoutesModule from './pages/Dashboard/RoutesModule';
 import UsersModule from './pages/Dashboard/UsersModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
@@ -38,6 +39,7 @@ const App: React.FC = () => (
       >
         <Route index element={<ArchonCenter />} />
         <Route path="fleet" element={<FleetModule />} />
+        <Route path="routes" element={<RoutesModule />} />
         <Route path="users" element={<UsersModule />} />
         <Route path="logs" element={<LogsModule />} />
         <Route path="settings" element={<SettingsModule />} />
