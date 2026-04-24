@@ -15,10 +15,12 @@ import {
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import ArchonSelect from '../ArchonSelect';
+import { RouteLog } from './RouteLogTable';
 
 interface RouteAssignmentDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  routeToEdit?: RouteLog | null;
 }
 
 /**
@@ -26,7 +28,11 @@ interface RouteAssignmentDrawerProps {
  * Architecture: Sovereign Dispatch System
  * Purpose: High-precision route creation & active asset tracking.
  */
-const RouteAssignmentDrawer: React.FC<RouteAssignmentDrawerProps> = ({ isOpen, onClose }) => {
+const RouteAssignmentDrawer: React.FC<RouteAssignmentDrawerProps> = ({
+  isOpen,
+  onClose,
+  routeToEdit,
+}) => {
   const { units } = useFleet();
   const { users } = useUsers();
 
@@ -38,6 +44,31 @@ const RouteAssignmentDrawer: React.FC<RouteAssignmentDrawerProps> = ({ isOpen, o
     description: '',
     fuelLevel: 100,
   });
+
+  const isEdit = !!routeToEdit;
+
+  // Populate form for edit mode
+  useEffect((): void => {
+    if (routeToEdit) {
+      setFormData({
+        unitId: routeToEdit.unit_id,
+        operatorId: routeToEdit.operator_id,
+        origin: routeToEdit.origin || 'Arian Silver Zacatecas',
+        destination: routeToEdit.destination,
+        description: routeToEdit.description || '',
+        fuelLevel: routeToEdit.fuelLevel || 100,
+      });
+    } else {
+      setFormData({
+        unitId: '',
+        operatorId: '',
+        origin: 'Arian Silver Zacatecas',
+        destination: '',
+        description: '',
+        fuelLevel: 100,
+      });
+    }
+  }, [routeToEdit, isOpen]);
 
   const [selectedUnitData, setSelectedUnitData] = useState<
     import('../../types/fleet').FleetUnit | null
@@ -53,9 +84,9 @@ const RouteAssignmentDrawer: React.FC<RouteAssignmentDrawerProps> = ({ isOpen, o
     }
   }, [formData.unitId, units]);
 
-  // Filter only available units
+  // Filter only available units (allow current unit if editing)
   const availableUnits = units
-    .filter((u) => u.status === 'Disponible')
+    .filter((u) => u.status === 'Disponible' || (isEdit && u.id === routeToEdit?.unit_id))
     .map((u) => ({
       value: u.id,
       label: `${u.id} - ${u.marca} ${u.modelo}`,
@@ -103,10 +134,10 @@ const RouteAssignmentDrawer: React.FC<RouteAssignmentDrawerProps> = ({ isOpen, o
                 </div>
                 <div>
                   <h2 className="text-lg font-black uppercase tracking-tighter leading-none">
-                    Orden de Despacho
+                    {isEdit ? 'Rectificación de Ruta' : 'Orden de Despacho'}
                   </h2>
                   <p className="text-[10px] uppercase tracking-widest opacity-60 font-bold">
-                    Control de Salida de Activos
+                    {isEdit ? 'Edición de información operativa' : 'Control de Salida de Activos'}
                   </p>
                 </div>
               </div>
@@ -338,9 +369,13 @@ const RouteAssignmentDrawer: React.FC<RouteAssignmentDrawerProps> = ({ isOpen, o
               <button
                 onClick={handleSubmit}
                 disabled={!formData.unitId || !formData.operatorId || !formData.destination}
-                className="flex-[2] px-6 py-4 bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/20"
+                className={`flex-[2] px-6 py-4 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg ${
+                  isEdit
+                    ? 'bg-[#0f2a44] hover:bg-[#1a3a5a] shadow-blue-900/20'
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                }`}
               >
-                Autorizar Despacho <ChevronRight size={14} />
+                {isEdit ? 'Guardar Cambios' : 'Autorizar Despacho'} <ChevronRight size={14} />
               </button>
             </footer>
           </motion.div>

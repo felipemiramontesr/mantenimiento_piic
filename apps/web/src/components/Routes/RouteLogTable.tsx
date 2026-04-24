@@ -1,18 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  User,
-  Clock,
-  ArrowRight,
-  Gauge,
-  MoreVertical,
-  CheckCircle2,
-  Navigation,
-} from 'lucide-react';
+import { User, Clock, ArrowRight, Gauge, Pencil, CheckCircle2, Navigation } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 
-interface RouteLog {
+export interface RouteLog {
   id: string;
   unit_id: string;
   operator_id: string;
@@ -24,12 +16,16 @@ interface RouteLog {
   end_km: number | null;
 }
 
+interface RouteLogTableProps {
+  onEdit?: (log: RouteLog) => void;
+}
+
 /**
  * 🔱 ARCHON ROUTE LOG TABLE
  * Architecture: Sovereign Instrumental Grid (Symmetrical Alignment)
- * Version: 36.5.3 - Standardized Layout & Symmetrical Identity
+ * Version: 36.5.4 - Operational Rectification Protocol
  */
-const RouteLogTable: React.FC = () => {
+const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { units } = useFleet();
   const { users } = useUsers();
 
@@ -211,8 +207,14 @@ const RouteLogTable: React.FC = () => {
                 {/* Ajustes - ESTILO ADMINISTRACIÓN */}
                 <td className="py-6 px-4">
                   <div className="flex justify-center">
-                    <button className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm border-none outline-none">
-                      <MoreVertical size={18} />
+                    <button
+                      onClick={(): void => onEdit?.(log)}
+                      className="flex items-center justify-center w-10 h-10 text-[#059669] bg-emerald-50/30 hover:bg-emerald-100/50 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+                    >
+                      <Pencil
+                        size={18}
+                        className="transition-transform duration-300 group-hover:rotate-12"
+                      />
                     </button>
                   </div>
                 </td>

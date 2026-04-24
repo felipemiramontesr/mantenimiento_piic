@@ -3,21 +3,28 @@ import { Navigation } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 import RouteAssignmentDrawer from '../../components/Routes/RouteAssignmentDrawer';
-import RouteLogTable from '../../components/Routes/RouteLogTable';
+import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.5.3)
+ * 🚀 ARCHON ROUTES MODULE (v.36.5.4)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
  */
 const RoutesModule: React.FC = (): React.JSX.Element => {
   const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingRoute, setEditingRoute] = useState<RouteLog | null>(null);
 
   const handleAction = (action: 'DESPACHO' | 'BITACORA'): void => {
     if (action === 'DESPACHO') {
+      setEditingRoute(null);
       setIsDrawerOpen(true);
     }
+  };
+
+  const handleEdit = (route: RouteLog): void => {
+    setEditingRoute(route);
+    setIsDrawerOpen(true);
   };
 
   return (
@@ -107,7 +114,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
         {/* 📊 CONTENIDO DINÁMICO DE PANEL */}
         <div className="mt-8">
           {activePanel === 'LOGS' ? (
-            <RouteLogTable />
+            <RouteLogTable onEdit={handleEdit} />
           ) : (
             <div className="flex items-center justify-center min-h-[40vh] glass-card-pro bg-white border-2 border-dashed border-[rgba(15,42,68,0.1)]">
               <div className="text-center space-y-4">
@@ -136,8 +143,15 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
         </p>
       </footer>
 
-      {/* 🔱 DRAWER DE ASIGNACIÓN */}
-      <RouteAssignmentDrawer isOpen={isDrawerOpen} onClose={(): void => setIsDrawerOpen(false)} />
+      {/* 🔱 DRAWER DE ASIGNACIÓN / EDICIÓN */}
+      <RouteAssignmentDrawer
+        isOpen={isDrawerOpen}
+        onClose={(): void => {
+          setIsDrawerOpen(false);
+          setEditingRoute(null);
+        }}
+        routeToEdit={editingRoute}
+      />
     </main>
   );
 };
