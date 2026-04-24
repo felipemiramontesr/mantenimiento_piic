@@ -285,7 +285,7 @@ const useFleetForm = (): UseFleetFormReturn => {
     registrationSuccess,
     availableMarcas,
     availableModelos,
-    freqTime: catalogs.freqTime.map((f) => f.label),
+    freqTime: catalogs.freqTime,
     freqUsage: catalogs.freqUsage.map((f) => ({ id: f.id, label: f.label })),
     departments: catalogs.departments.map((d) => d.label),
     locations: catalogs.locations.map((l) => l.label),

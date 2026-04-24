@@ -34,9 +34,6 @@ const createFleetSchema = z.object({
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).default(0),
   sede: z.string().max(150).optional(),
-  maintenanceFrequency: z
-    .enum(['Diaria', 'Semanal', 'Mensual', 'Trimestral', 'Bimestral', 'Semestral', 'Anual'])
-    .default('Mensual'),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
   protocolStartDate: z.string().optional().nullable(),
   vigenciaSeguro: z.string().optional().nullable(),
@@ -85,9 +82,6 @@ const updateFleetSchema = z.object({
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).optional(),
   sede: z.string().max(150).optional(),
-  maintenanceFrequency: z
-    .enum(['Diaria', 'Semanal', 'Mensual', 'Trimestral', 'Bimestral', 'Semestral', 'Anual'])
-    .optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).optional(),
   protocolStartDate: z.string().optional().nullable(),
   vigenciaSeguro: z.string().optional().nullable(),
@@ -132,7 +126,6 @@ interface FleetUnit extends RowDataPacket {
   capacidad_carga: string | null;
   odometer: number;
   sede: string | null;
-  maintenance_frequency: string;
   centro_mantenimiento: string;
   protocol_start_date: string | null;
   vigencia_seguro: string | null;

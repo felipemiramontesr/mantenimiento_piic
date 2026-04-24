@@ -25,7 +25,6 @@ import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
 import { COLORES } from '../../constants/fleetConstants';
 import {
   CentroMantenimiento,
-  MaintenanceFrequency,
   UseFleetFormReturn,
   CatalogOption,
   CreateFleetUnit,
@@ -45,6 +44,7 @@ interface FleetRegistrationFormProps {
 
 const getPronosticoArchon = (
   formData: CreateFleetUnit,
+  freqTime: CatalogOption[],
   freqUsage: CatalogOption[]
 ): {
   pronosticoText: string;
@@ -66,7 +66,8 @@ const getPronosticoArchon = (
       ? parseInt(usageLimitOption.label.replace(/[^0-9]/g, ''), 10)
       : 0;
 
-    const intervalMap: Record<MaintenanceFrequency, number> = {
+    const timeLimitOption = freqTime.find((t) => t.id === formData.maintenanceTimeFreqId);
+    const intervalMap: Record<string, number> = {
       Diaria: 1,
       Semanal: 7,
       Mensual: 30,
@@ -75,7 +76,7 @@ const getPronosticoArchon = (
       Semestral: 180,
       Anual: 365,
     };
-    const intDias = intervalMap[formData.maintenanceFrequency] || 0;
+    const intDias = timeLimitOption ? intervalMap[timeLimitOption.label] || 0 : 0;
 
     if (intServi > 0 && intDias > 0 && formData.lastServiceReading !== undefined) {
       const forecast = calculateMaintForecast(
@@ -150,6 +151,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
   const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(
     formData,
+    freqTime,
     freqUsage
   );
 
@@ -421,10 +423,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Ciclo Mto. (Fec.)" icon={Calendar}>
                 <ArchonSelect
-                  options={freqTime}
-                  value={formData.maintenanceFrequency}
+                  options={freqTime.map((f) => ({ value: f.id.toString(), label: f.label }))}
+                  value={formData.maintenanceTimeFreqId?.toString() || ''}
                   onChange={(val: string): void =>
-                    setFormData({ ...formData, maintenanceFrequency: val as MaintenanceFrequency })
+                    setFormData({ ...formData, maintenanceTimeFreqId: parseInt(val, 10) })
                   }
                 />
               </ArchonField>

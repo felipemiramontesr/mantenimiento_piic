@@ -11,14 +11,12 @@ describe('Fleet Logic Ecosystem', () => {
       const input = {
         assetType: 'Vehiculo',
         numeroSerie: 'SN123',
-        maintenanceFrequency: 'Mensual',
         protocolStartDate: '2026-04-16',
       };
 
       const expected = {
         asset_type: 'Vehiculo',
         numero_serie: 'SN123',
-        maintenance_frequency: 'Mensual',
         protocol_start_date: '2026-04-16',
       };
 
@@ -29,13 +27,11 @@ describe('Fleet Logic Ecosystem', () => {
       const input = {
         asset_type: 'Vehiculo',
         numero_serie: 'SN123',
-        maintenance_frequency: 'Mensual',
       };
 
       const expected = {
         assetType: 'Vehiculo',
         numeroSerie: 'SN123',
-        maintenanceFrequency: 'Mensual',
       };
 
       expect(toCamelCase(input)).toEqual(expected);

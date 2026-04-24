@@ -13,14 +13,6 @@ export type FleetStatus =
 export type Traccion = '4x2' | '4x4' | 'Doble Tracción' | 'AWD' | 'Oruga' | 'No Aplica';
 export type Transmision = 'Automática' | 'Estándar (Manual)' | 'CVT' | 'Hidrostática' | 'No Aplica';
 export type FuelType = 'Gasolina' | 'Diesel' | 'Eléctrico' | 'Híbrido' | 'No Aplica';
-export type MaintenanceFrequency =
-  | 'Diaria'
-  | 'Semanal'
-  | 'Mensual'
-  | 'Trimestral'
-  | 'Bimestral'
-  | 'Semestral'
-  | 'Anual';
 export type CentroMantenimiento = 'PIIC' | 'Archon Core';
 
 export interface CatalogOption {
@@ -52,7 +44,6 @@ export interface FleetUnit {
   odometer: number; // km (Vehiculo) | hrs (Maquinaria)
   // Organization
   sede: string | null;
-  maintenanceFrequency: MaintenanceFrequency;
   centroMantenimiento: CentroMantenimiento;
   protocolStartDate: string | null; // ISO date
   // Legal & Compliance
@@ -126,7 +117,6 @@ export interface CreateFleetUnit {
   capacidadCarga?: string;
   odometer?: number;
   sede?: string;
-  maintenanceFrequency: MaintenanceFrequency;
   centroMantenimiento: CentroMantenimiento;
   protocolStartDate?: string;
   vigenciaSeguro?: string;

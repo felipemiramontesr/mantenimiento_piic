@@ -16,7 +16,6 @@ describe('Fleet Incorporation Certification', () => {
       color: 'Blanco Glaciar',
       description: 'Unidad de supervisión de obra con equipo de radiocomunicación.',
       odometer: 0,
-      maintenanceFrequency: 'Mensual',
       centroMantenimiento: 'PIIC',
       status: 'Disponible',
       images: ['data:image/jpeg;base64,123', 'data:image/jpeg;base64,456'],
@@ -30,7 +29,6 @@ describe('Fleet Incorporation Certification', () => {
       'description',
       'Unidad de supervisión de obra con equipo de radiocomunicación.'
     );
-    expect(snakeData).toHaveProperty('maintenance_frequency', 'Mensual');
     expect(snakeData).toHaveProperty('centro_mantenimiento', 'PIIC');
   });
 

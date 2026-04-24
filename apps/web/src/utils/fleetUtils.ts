@@ -1,4 +1,4 @@
-import { CreateFleetUnit, MaintenanceFrequency } from '../types/fleet';
+import { CreateFleetUnit } from '../types/fleet';
 
 /**
  * World-Class Engineering Utility: Fleet Asset Initialization
@@ -37,7 +37,6 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   vigenciaSeguro: '',
   vencimientoVerificacion: '',
   tarjetaCirculacion: '',
-  maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
   protocolStartDate: '',
   status: 'Disponible',
   color: '',
