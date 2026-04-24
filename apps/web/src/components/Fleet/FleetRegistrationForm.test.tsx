@@ -62,6 +62,7 @@ describe('FleetRegistrationForm Component', () => {
     useTypes: [{ id: 236, label: 'Staff' }] as CatalogOption[],
     tireBrands: [] as CatalogOption[],
     terrainTypes: [] as CatalogOption[],
+    engineTypes: [] as CatalogOption[],
     handleAssetTypeChange: vi.fn(),
     handleMarcaChange: vi.fn(),
     handleModeloChange: vi.fn(),
