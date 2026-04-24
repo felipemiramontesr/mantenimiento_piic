@@ -57,15 +57,16 @@ describe('Fleet Integration Endpoints', () => {
     const validUnit = {
       assetTypeId: 1, // Vehiculo
       id: 'ASM-001',
-      marca: 'Toyota',
-      modelo: 'Hilux',
+      brandId: 253, // Toyota
+      modelId: 636, // Hilux
       year: 2024,
-      departamento: 'Admin',
-      uso: 'General',
+      departmentId: 228, // Medio Ambiente
+      operationalUseId: 236, // Staff
       traccionId: 1, // 4x2
       transmisionId: 2, // Estándar
-      fuelTypeId: 1, // Gasolina
-      maintenanceFrequency: 'Mensual',
+      fuelTypeId: 10, // Diesel
+      maintenanceTimeFreqId: 4, // Mensual
+      maintenanceUsageFreqId: 6, // 5,000 KM
       centroMantenimiento: 'PIIC',
       odometer: 100,
       protocolStartDate: '2026-04-16',
@@ -261,11 +262,11 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
       expect(data[0].motor).toBe('MOT1');
-      expect(data[0].numero_serie).toBe('SN1');
+      expect(data[0].numeroSerie).toBe('SN1');
       expect(data[0].placas).toBe('PL1');
-      expect(data[0].tarjeta_circulacion).toBeNull();
+      expect(data[0].tarjetaCirculacion).toBeNull();
       expect(data[1].motor).toBeNull();
-      expect(data[1].tarjeta_circulacion).toBe('TC2');
+      expect(data[1].tarjetaCirculacion).toBe('TC2');
     });
 
     it('should calculate complex health states for predictive maintenance', async (): Promise<void> => {
@@ -322,12 +323,12 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
 
-      expect(data[0].health_status).toBe('Overdue');
-      expect(data[0].health_color).toBe('#ef4444');
-      expect(data[1].health_status).toBe('Caution');
-      expect(data[1].health_color).toBe('#f2b705');
-      expect(data[2].health_status).toBe('Healthy');
-      expect(data[2].days_since_service).toBe(0);
+      expect(data[0].healthStatus).toBe('Overdue');
+      expect(data[0].healthColor).toBe('#ef4444');
+      expect(data[1].healthStatus).toBe('Caution');
+      expect(data[1].healthColor).toBe('#f2b705');
+      expect(data[2].healthStatus).toBe('Healthy');
+      expect(data[2].daysSinceService).toBe(0);
     });
 
     it('should parse images from JSON string and handle corrupt data variants', async (): Promise<void> => {
