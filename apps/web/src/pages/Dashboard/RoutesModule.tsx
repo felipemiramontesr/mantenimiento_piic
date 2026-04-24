@@ -2,14 +2,23 @@ import React, { useState } from 'react';
 import { Navigation } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
+import RouteAssignmentDrawer from '../../components/Routes/RouteAssignmentDrawer';
+import RouteLogTable from '../../components/Routes/RouteLogTable';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.4.0)
+ * 🚀 ARCHON ROUTES MODULE (v.36.5.0)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
  */
-const RoutesModule: React.FC = (): React.ReactElement => {
+const RoutesModule: React.FC = (): React.JSX.Element => {
   const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleAction = (action: 'DESPACHO' | 'BITACORA'): void => {
+    if (action === 'DESPACHO') {
+      setIsDrawerOpen(true);
+    }
+  };
 
   return (
     <main className="workspace-container-pro animate-in fade-in duration-700">
@@ -89,21 +98,33 @@ const RoutesModule: React.FC = (): React.ReactElement => {
 
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">
-        <RouteManagementCards activePanel={activePanel} onPanelChange={setActivePanel} />
+        <RouteManagementCards
+          activePanel={activePanel}
+          onPanelChange={setActivePanel}
+          onAction={handleAction}
+        />
 
-        {/* Placeholder for Panel Content */}
-        <div className="flex items-center justify-center min-h-[30vh] opacity-20 mt-8">
-          <div className="text-center">
-            <h3 className="text-xl font-black uppercase tracking-widest text-[#0f2a44]">
-              {activePanel === 'LOGS'
-                ? 'Bitácora en Preparación'
-                : 'Sistema de Despacho en Preparación'}
-            </h3>
-            <p className="text-sm font-bold uppercase tracking-widest text-[#0f2a44]">
-              Esperando configuración de {activePanel === 'LOGS' ? 'histórico' : 'asignación'}{' '}
-              soberano
-            </p>
-          </div>
+        {/* 📊 CONTENIDO DINÁMICO DE PANEL */}
+        <div className="mt-8">
+          {activePanel === 'LOGS' ? (
+            <RouteLogTable />
+          ) : (
+            <div className="flex items-center justify-center min-h-[40vh] bg-white rounded-xl border-2 border-dashed border-[rgba(15,42,68,0.1)]">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-[#0f2a44]/5 flex items-center justify-center mx-auto">
+                  <Navigation className="text-[#0f2a44] opacity-20" size={32} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-widest text-[#0f2a44]">
+                    Control de Despacho Activo
+                  </h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#0f2a44] opacity-40">
+                    Use las tarjetas superiores para iniciar una nueva orden
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -114,6 +135,9 @@ const RoutesModule: React.FC = (): React.ReactElement => {
           {BRANDING_NAME} {SYSTEM_VERSION}
         </p>
       </footer>
+
+      {/* 🔱 DRAWER DE ASIGNACIÓN */}
+      <RouteAssignmentDrawer isOpen={isDrawerOpen} onClose={(): void => setIsDrawerOpen(false)} />
     </main>
   );
 };

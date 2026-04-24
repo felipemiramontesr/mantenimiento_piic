@@ -6,11 +6,13 @@ export type RoutePanel = 'LOGS' | 'DISPATCH';
 interface RouteManagementCardsProps {
   activePanel: RoutePanel;
   onPanelChange: (panel: RoutePanel) => void;
+  onAction?: (action: 'DESPACHO' | 'BITACORA') => void;
 }
 
 const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
   activePanel,
   onPanelChange,
+  onAction,
 }) => (
   <div className="archon-central-axis animate-in fade-in slide-in-from-top-4 duration-700">
     <div className="archon-grid-2 gap-8 mb-8">
@@ -58,6 +60,11 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
 
         <div className="archon-tile-action">
           <button
+            onClick={(e): void => {
+              e.stopPropagation();
+              if (onAction) onAction('BITACORA');
+              onPanelChange('LOGS');
+            }}
             className={`btn-sentinel-navy w-full ${
               activePanel === 'LOGS' ? 'bg-[#0f2a44] text-white' : ''
             }`}
@@ -111,6 +118,11 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
 
         <div className="archon-tile-action">
           <button
+            onClick={(e): void => {
+              e.stopPropagation();
+              if (onAction) onAction('DESPACHO');
+              onPanelChange('DISPATCH');
+            }}
             className={`btn-sentinel-emerald w-full ${
               activePanel === 'DISPATCH' ? 'bg-emerald-600 text-white' : ''
             }`}
