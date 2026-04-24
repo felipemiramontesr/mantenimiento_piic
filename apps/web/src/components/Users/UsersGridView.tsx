@@ -48,10 +48,6 @@ const UserIdentityCluster = ({ user }: { user: UserIndustrial }): React.JSX.Elem
       <span className="text-[12px] font-black text-[#0f2a44] uppercase tracking-tight leading-tight text-center">
         {user.fullName || user.username}
       </span>
-      <div className="flex items-center gap-1 opacity-40">
-        <User size={9} />
-        <span className="text-[9px] font-bold tracking-widest">{user.username.toUpperCase()}</span>
-      </div>
     </div>
   </div>
 );
@@ -80,6 +76,14 @@ const UserRegistryRow = ({
               <ImageIcon size={48} className="opacity-40" />
             </div>
           )}
+        </div>
+      </td>
+      <td className="text-center px-4">
+        <div className="flex items-center justify-center gap-2 text-[#0f2a44] opacity-80">
+          <User size={12} className="text-[#f2b705]" />
+          <span className="text-[11px] font-black tracking-widest">
+            {user.username.toUpperCase()}
+          </span>
         </div>
       </td>
       <td className="text-center px-4">
@@ -134,7 +138,7 @@ const UserRegistryRow = ({
 const UsersGridView = (): React.JSX.Element => {
   const { users, isLoading, setEditingUser, setActivePanel } = useUsers();
   const [sortConfig, setSortConfig] = React.useState<{
-    field: 'identity' | 'role' | 'status' | null;
+    field: 'username' | 'identity' | 'role' | 'status' | null;
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
@@ -152,7 +156,7 @@ const UsersGridView = (): React.JSX.Element => {
     );
   }
 
-  const handleSort = (field: 'identity' | 'role' | 'status'): void => {
+  const handleSort = (field: 'username' | 'identity' | 'role' | 'status'): void => {
     setSortConfig((prev) => ({
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
@@ -180,7 +184,10 @@ const UsersGridView = (): React.JSX.Element => {
     let valA = '';
     let valB = '';
 
-    if (sortConfig.field === 'identity') {
+    if (sortConfig.field === 'username') {
+      valA = a.username;
+      valB = b.username;
+    } else if (sortConfig.field === 'identity') {
       valA = a.fullName || a.username;
       valB = b.fullName || b.username;
     } else if (sortConfig.field === 'role') {
@@ -202,11 +209,23 @@ const UsersGridView = (): React.JSX.Element => {
             <tr>
               <th className="py-4 opacity-40">ACTIVO</th>
               <th
+                onClick={(): void => handleSort('username')}
+                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  EMPLEADO
+                  <SortIndicator
+                    active={sortConfig.field === 'username'}
+                    direction={sortConfig.direction}
+                  />
+                </div>
+              </th>
+              <th
                 onClick={(): void => handleSort('identity')}
                 className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
               >
                 <div className="flex items-center justify-center gap-1">
-                  IDENTIDAD / EMPLEADO
+                  IDENTIDAD
                   <SortIndicator
                     active={sortConfig.field === 'identity'}
                     direction={sortConfig.direction}
