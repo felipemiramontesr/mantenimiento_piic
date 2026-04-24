@@ -3,7 +3,7 @@ import { Navigation } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.1.0)
+ * 🚀 ARCHON ROUTES MODULE (v.36.1.1)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
  * Status: Structural Placeholder (Ready for Integration)

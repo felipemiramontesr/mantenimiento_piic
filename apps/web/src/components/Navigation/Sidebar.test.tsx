@@ -32,8 +32,9 @@ describe('Sidebar Component (Archon Core)', () => {
 
     expect(screen.getByText('Centro de Comando')).toBeDefined();
     expect(screen.getByText('Administrar Unidades')).toBeDefined();
+    expect(screen.getByText('Administrar Rutas')).toBeDefined();
     expect(screen.getByText('Logs de Seguridad')).toBeDefined();
-    expect(screen.getByText('Administrar personal')).toBeDefined();
+    expect(screen.getByText('Administrar Personal')).toBeDefined();
 
     // Configuración should now be found as the bottom action button
     expect(screen.getByText('Configuración')).toBeDefined();
@@ -52,7 +53,10 @@ describe('Sidebar Component (Archon Core)', () => {
     fireEvent.click(screen.getByText('Administrar Unidades'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/fleet');
 
-    fireEvent.click(screen.getByText('Administrar personal'));
+    fireEvent.click(screen.getByText('Administrar Rutas'));
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/routes');
+
+    fireEvent.click(screen.getByText('Administrar Personal'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/users');
   });
 
