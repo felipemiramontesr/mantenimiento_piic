@@ -1,112 +1,121 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Navigation } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.2.0)
+ * 🚀 ARCHON ROUTES MODULE (v.36.3.0)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
- * Status: Structural Placeholder (Ready for Integration)
  */
-const RoutesModule: React.FC = (): React.ReactElement => (
-  <main className="workspace-container-pro animate-in fade-in duration-700">
-    {/* 🚀 HEADER SOBERANO */}
-    <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-        }}
-      >
-        {/* Left Panel: Operational Context */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '8px',
-            }}
-          >
-            <Navigation size={28} style={{ color: '#f2b705' }} />
-            <h2
-              className="text-[#0f2a44] tracking-tighter font-black text-2xl"
-              style={{ margin: 0, padding: 0, lineHeight: 1 }}
+const RoutesModule: React.FC = (): React.ReactElement => {
+  const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
+
+  return (
+    <main className="workspace-container-pro animate-in fade-in duration-700">
+      {/* 🚀 HEADER SOBERANO */}
+      <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+          }}
+        >
+          {/* Left Panel: Operational Context */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '8px',
+              }}
             >
-              Administrar Rutas
-            </h2>
+              <Navigation size={28} style={{ color: '#f2b705' }} />
+              <h2
+                className="text-[#0f2a44] tracking-tighter font-black text-2xl"
+                style={{ margin: 0, padding: 0, lineHeight: 1 }}
+              >
+                Administrar Rutas
+              </h2>
+            </div>
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+              Despacho Logístico, Control de Tránsito & Histórico de Operaciones
+            </p>
           </div>
-          <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-            Despacho Logístico, Control de Tránsito & Histórico de Operaciones
-          </p>
-        </div>
 
-        {/* Right Panel: Identity */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <h1
-            style={{
-              fontSize: '26px',
-              fontWeight: 900,
-              margin: 0,
-              letterSpacing: '-0.03em',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              color: '#0f2a44',
-            }}
-          >
-            Archon
-          </h1>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '4px',
-              border: '2px solid #f2b705',
-              backgroundColor: '#0f2a44',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 100 100">
-              <path
-                d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
-                stroke="#f2b705"
-                strokeWidth="16"
-                fill="none"
-              />
-            </svg>
+          {/* Right Panel: Identity */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <h1
+              style={{
+                fontSize: '26px',
+                fontWeight: 900,
+                margin: 0,
+                letterSpacing: '-0.03em',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                color: '#0f2a44',
+              }}
+            >
+              Archon
+            </h1>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '4px',
+                border: '2px solid #f2b705',
+                backgroundColor: '#0f2a44',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 100 100">
+                <path
+                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+                  stroke="#f2b705"
+                  strokeWidth="16"
+                  fill="none"
+                />
+              </svg>
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    {/* 📊 BODY MODULAR (Empty State Placeholder) */}
-    <section className="archon-workspace-chassis flex items-center justify-center min-h-[50vh]">
-      <div className="flex flex-col items-center gap-6 opacity-20">
-        <Navigation size={80} className="text-[#0f2a44]" />
-        <div className="text-center">
-          <h3 className="text-xl font-black uppercase tracking-widest text-[#0f2a44]">
-            Panel en Preparación
-          </h3>
-          <p className="text-sm font-bold uppercase tracking-widest text-[#0f2a44]">
-            Esperando configuración de despacho soberano
-          </p>
+      {/* 📊 BODY MODULAR (Action Cards) */}
+      <section className="archon-workspace-chassis">
+        <RouteManagementCards activePanel={activePanel} onPanelChange={setActivePanel} />
+
+        {/* Placeholder for Panel Content */}
+        <div className="flex items-center justify-center min-h-[30vh] opacity-20 mt-8">
+          <div className="text-center">
+            <h3 className="text-xl font-black uppercase tracking-widest text-[#0f2a44]">
+              {activePanel === 'LOGS'
+                ? 'Bitácora en Preparación'
+                : 'Sistema de Despacho en Preparación'}
+            </h3>
+            <p className="text-sm font-bold uppercase tracking-widest text-[#0f2a44]">
+              Esperando configuración de {activePanel === 'LOGS' ? 'histórico' : 'asignación'}{' '}
+              soberano
+            </p>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    {/* 📜 FOOTER (Sovereign Standards) */}
-    <footer className="workspace-footer-pro">
-      <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-      <p className="text-[#0f2a44]">
-        {BRANDING_NAME} {SYSTEM_VERSION}
-      </p>
-    </footer>
-  </main>
-);
+      {/* 📜 FOOTER (Sovereign Standards) */}
+      <footer className="workspace-footer-pro">
+        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+        <p className="text-[#0f2a44]">
+          {BRANDING_NAME} {SYSTEM_VERSION}
+        </p>
+      </footer>
+    </main>
+  );
+};
 
 export default RoutesModule;
