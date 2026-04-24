@@ -2,29 +2,36 @@ import React, { useState } from 'react';
 import { Navigation } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
-import RouteAssignmentDrawer from '../../components/Routes/RouteAssignmentDrawer';
+import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
 import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.5.5)
+ * 🚀 ARCHON ROUTES MODULE (v.36.5.6)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
+ * Update: Integrated Form Architecture for Design Cohesion.
  */
 const RoutesModule: React.FC = (): React.JSX.Element => {
   const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<RouteLog | null>(null);
 
   const handleAction = (action: 'DESPACHO' | 'BITACORA'): void => {
     if (action === 'DESPACHO') {
       setEditingRoute(null);
-      setIsDrawerOpen(true);
+      setActivePanel('DISPATCH');
+    } else {
+      setActivePanel('LOGS');
     }
   };
 
   const handleEdit = (route: RouteLog): void => {
     setEditingRoute(route);
-    setIsDrawerOpen(true);
+    setActivePanel('DISPATCH');
+  };
+
+  const handleReturnToLogs = (): void => {
+    setEditingRoute(null);
+    setActivePanel('LOGS');
   };
 
   return (
@@ -111,26 +118,12 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
           onAction={handleAction}
         />
 
-        {/* 📊 CONTENIDO DINÁMICO DE PANEL */}
+        {/* 📊 CONTENIDO DINÁMICO DE PANEL INTEGRADO */}
         <div className="mt-8">
-          {activePanel === 'LOGS' ? (
-            <RouteLogTable onEdit={handleEdit} />
-          ) : (
-            <div className="flex items-center justify-center min-h-[40vh] glass-card-pro bg-white border-2 border-dashed border-[rgba(15,42,68,0.1)]">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-[#0f2a44]/5 flex items-center justify-center mx-auto">
-                  <Navigation className="text-[#0f2a44] opacity-20" size={32} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-widest text-[#0f2a44]">
-                    Control de Despacho Activo
-                  </h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#0f2a44] opacity-40">
-                    Use las tarjetas superiores para iniciar una nueva orden
-                  </p>
-                </div>
-              </div>
-            </div>
+          {activePanel === 'LOGS' && <RouteLogTable onEdit={handleEdit} />}
+
+          {activePanel === 'DISPATCH' && (
+            <RouteAssignmentForm onClose={handleReturnToLogs} routeToEdit={editingRoute} />
           )}
         </div>
       </section>
@@ -142,16 +135,6 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
           {BRANDING_NAME} {SYSTEM_VERSION}
         </p>
       </footer>
-
-      {/* 🔱 DRAWER DE ASIGNACIÓN / EDICIÓN */}
-      <RouteAssignmentDrawer
-        isOpen={isDrawerOpen}
-        onClose={(): void => {
-          setIsDrawerOpen(false);
-          setEditingRoute(null);
-        }}
-        routeToEdit={editingRoute}
-      />
     </main>
   );
 };
