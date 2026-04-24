@@ -44,6 +44,7 @@ describe('FleetRegistrationForm Component', () => {
       maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
       centroMantenimiento: 'PIIC' as CentroMantenimiento,
       status: 'Disponible' as FleetStatus,
+      dailyUsageAvg: 30,
     },
     error: null,
     resetError: mockResetError,
