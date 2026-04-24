@@ -131,10 +131,10 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const globalMetrics = computeAverages(units);
 
-    // Grouping by Asset Type (v.21.3.1 Relational Architecture)
-    const vehiculos = units.filter((u) => u.assetType === 'Vehiculo');
-    const maquinaria = units.filter((u) => u.assetType === 'Maquinaria');
-    const herramienta = units.filter((u) => u.assetType === 'Herramienta');
+    // Grouping by Asset Type (v.21.3.1 Relational Architecture - Using Catalog IDs)
+    const vehiculos = units.filter((u) => u.assetTypeId === 1);
+    const maquinaria = units.filter((u) => u.assetTypeId === 2);
+    const herramienta = units.filter((u) => u.assetTypeId === 3);
 
     return {
       total,
