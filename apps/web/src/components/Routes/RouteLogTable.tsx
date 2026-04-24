@@ -26,8 +26,8 @@ interface RouteLog {
 
 /**
  * 🔱 ARCHON ROUTE LOG TABLE
- * Architecture: Sovereign Instrumental Grid
- * Purpose: High-density visualization of operational history.
+ * Architecture: Sovereign Instrumental Grid (Standard Alignment)
+ * Version: 36.5.2 - Standardized Layout (v.18.6.0.2 Protocol)
  */
 const RouteLogTable: React.FC = () => {
   const { units } = useFleet();
@@ -78,39 +78,19 @@ const RouteLogTable: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-white rounded-xl shadow-sm border border-[rgba(15,42,68,0.05)] overflow-hidden">
-      <table className="w-full border-collapse">
+    <div className="glass-card-pro bg-white p-6 animate-in fade-in duration-700">
+      <table className="archon-registry-table w-full">
         <thead>
-          <tr className="bg-[#0f2a44]/[0.02] border-b border-[rgba(15,42,68,0.05)]">
-            <th className="px-6 py-4 text-left">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
-                Operador
-              </span>
-            </th>
-            <th className="px-6 py-4 text-left">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
-                Activo / Unidad
-              </span>
-            </th>
-            <th className="px-6 py-4 text-left">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
-                Misión / Trayecto
-              </span>
-            </th>
-            <th className="px-6 py-4 text-left">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
-                Telemetría
-              </span>
-            </th>
-            <th className="px-6 py-4 text-center">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
-                Estado
-              </span>
-            </th>
-            <th className="px-6 py-4"></th>
+          <tr>
+            <th>OPERADOR</th>
+            <th>ACTIVO / UNIDAD</th>
+            <th>MISIÓN / TRAYECTO</th>
+            <th>TELEMETRÍA</th>
+            <th>ESTADO</th>
+            <th>ACCIONES</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[rgba(15,42,68,0.03)]">
+        <tbody>
           {logs.map((log, index): React.JSX.Element => {
             const operator = users.find((u) => u.id === log.operator_id);
             const unit = units.find((u) => u.id === log.unit_id);
@@ -119,14 +99,13 @@ const RouteLogTable: React.FC = () => {
             return (
               <motion.tr
                 key={log.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="hover:bg-[rgba(15,42,68,0.01)] transition-colors group"
               >
                 {/* Operador */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
+                <td className="py-6">
+                  <div className="flex items-center justify-center gap-3">
                     <div className="relative">
                       <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-gray-100">
                         <img
@@ -142,7 +121,7 @@ const RouteLogTable: React.FC = () => {
                         <User size={8} className="text-white" />
                       </div>
                     </div>
-                    <div>
+                    <div className="text-left">
                       <p className="text-[12px] font-black text-[#0f2a44] leading-tight">
                         {operator?.fullName || 'Operador Externo'}
                       </p>
@@ -154,16 +133,16 @@ const RouteLogTable: React.FC = () => {
                 </td>
 
                 {/* Unidad */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center">
+                <td className="py-6">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-12 h-12 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center">
                       <img
                         src={unit?.images?.[0] || 'https://via.placeholder.com/100x100?text=UNIT'}
                         alt="Unit"
                         className="w-full h-full object-cover opacity-80"
                       />
                     </div>
-                    <div>
+                    <div className="text-left">
                       <p className="text-[12px] font-black text-[#0f2a44] leading-tight">
                         {log.unit_id}
                       </p>
@@ -175,8 +154,8 @@ const RouteLogTable: React.FC = () => {
                 </td>
 
                 {/* Trayecto */}
-                <td className="px-6 py-4">
-                  <div className="space-y-1">
+                <td className="py-6">
+                  <div className="flex flex-col items-center space-y-1">
                     <div className="flex items-center gap-2">
                       <Navigation size={12} className="text-emerald-500" />
                       <p className="text-[11px] font-black text-[#0f2a44] tracking-tight">
@@ -199,8 +178,8 @@ const RouteLogTable: React.FC = () => {
                 </td>
 
                 {/* Telemetría */}
-                <td className="px-6 py-4">
-                  <div className="space-y-1">
+                <td className="py-6">
+                  <div className="flex flex-col items-center space-y-1">
                     <div className="flex items-center gap-2">
                       <Gauge size={12} className="text-[#0f2a44]/30" />
                       <p className="text-[11px] font-black text-[#0f2a44]">
@@ -219,19 +198,23 @@ const RouteLogTable: React.FC = () => {
                 </td>
 
                 {/* Estado */}
-                <td className="px-6 py-4 text-center">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded text-[9px] font-black tracking-widest border ${status.bg} ${status.color} ${status.border}`}
-                  >
-                    {status.label}
-                  </span>
+                <td className="py-6">
+                  <div className="flex justify-center">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-[4px] text-[9px] font-black tracking-widest border ${status.bg} ${status.color} ${status.border}`}
+                    >
+                      {status.label}
+                    </span>
+                  </div>
                 </td>
 
                 {/* Actions */}
-                <td className="px-6 py-4 text-right">
-                  <button className="p-2 hover:bg-[rgba(15,42,68,0.05)] rounded transition-colors text-[#0f2a44]/40 hover:text-[#0f2a44]">
-                    <MoreVertical size={16} />
-                  </button>
+                <td className="py-6">
+                  <div className="flex justify-center">
+                    <button className="p-2 hover:bg-[rgba(15,42,68,0.05)] rounded-[4px] transition-colors text-[#0f2a44]/40 hover:text-[#0f2a44] border border-[rgba(15,42,68,0.1)]">
+                      <MoreVertical size={16} />
+                    </button>
+                  </div>
                 </td>
               </motion.tr>
             );

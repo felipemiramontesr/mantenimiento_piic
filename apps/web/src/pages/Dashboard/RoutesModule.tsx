@@ -6,7 +6,7 @@ import RouteAssignmentDrawer from '../../components/Routes/RouteAssignmentDrawer
 import RouteLogTable from '../../components/Routes/RouteLogTable';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.5.1)
+ * 🚀 ARCHON ROUTES MODULE (v.36.5.2)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
  */
@@ -109,7 +109,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
           {activePanel === 'LOGS' ? (
             <RouteLogTable />
           ) : (
-            <div className="flex items-center justify-center min-h-[40vh] bg-white rounded-xl border-2 border-dashed border-[rgba(15,42,68,0.1)]">
+            <div className="flex items-center justify-center min-h-[40vh] glass-card-pro bg-white border-2 border-dashed border-[rgba(15,42,68,0.1)]">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-[#0f2a44]/5 flex items-center justify-center mx-auto">
                   <Navigation className="text-[#0f2a44] opacity-20" size={32} />
