@@ -151,7 +151,7 @@ export interface UseFleetFormReturn {
   transmissionTypes: CatalogOption[];
   availableMarcas: { value: string; label: string }[];
   availableModelos: { value: string; label: string }[];
-  freqTime: string[];
+  freqTime: CatalogOption[];
   freqUsage: CatalogOption[];
   departments: string[];
   locations: string[];

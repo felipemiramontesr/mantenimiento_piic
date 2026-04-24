@@ -17,7 +17,7 @@ describe('FleetSuccessView Component', () => {
     traccionId: 2,
     transmisionId: 2,
     fuelTypeId: 2,
-    maintenanceFrequency: 'Mensual',
+    maintenanceTimeFreqId: 1,
     centroMantenimiento: 'PIIC',
   };
 

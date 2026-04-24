@@ -4,12 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import FleetModule from './FleetModule';
 import { FleetProvider } from '../../context/FleetContext';
 import { UserProvider } from '../../context/UserContext';
-import {
-  UseFleetFormReturn,
-  CatalogOption,
-  MaintenanceFrequency,
-  CentroMantenimiento,
-} from '../../types/fleet';
+import { UseFleetFormReturn, CatalogOption, CentroMantenimiento } from '../../types/fleet';
 import useFleetForm from '../../hooks/useFleetForm';
 
 /**
@@ -42,7 +37,7 @@ vi.mock('../../hooks/useFleetForm', () => ({
       marca: '',
       modelo: '',
       year: new Date().getFullYear(),
-      maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
+      maintenanceTimeFreqId: 1,
       centroMantenimiento: 'PIIC' as CentroMantenimiento,
     },
     registrationSuccess: false,
@@ -58,7 +53,7 @@ vi.mock('../../hooks/useFleetForm', () => ({
     transmissionTypes: [] as CatalogOption[],
     availableMarcas: [] as { value: string; label: string }[],
     availableModelos: [] as { value: string; label: string }[],
-    freqTime: [] as string[],
+    freqTime: [{ id: 1, label: 'Mensual' }] as CatalogOption[],
     freqUsage: [] as CatalogOption[],
     departments: [] as string[],
     locations: [] as string[],
@@ -88,7 +83,7 @@ describe('FleetModule Orchestrator', () => {
       marca: 'Toyota',
       modelo: 'Hilux',
       year: 2024,
-      maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
+      maintenanceTimeFreqId: 1,
       centroMantenimiento: 'PIIC' as CentroMantenimiento,
     },
     registrationSuccess: false,
@@ -104,7 +99,7 @@ describe('FleetModule Orchestrator', () => {
     transmissionTypes: [] as CatalogOption[],
     availableMarcas: [] as { value: string; label: string }[],
     availableModelos: [] as { value: string; label: string }[],
-    freqTime: [] as string[],
+    freqTime: [{ id: 1, label: 'Mensual' }] as CatalogOption[],
     freqUsage: [] as CatalogOption[],
     departments: [] as string[],
     locations: [] as string[],

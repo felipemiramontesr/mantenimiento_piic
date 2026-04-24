@@ -5,7 +5,6 @@ import useFleetForm from '../../hooks/useFleetForm';
 import {
   UseFleetFormReturn,
   CatalogOption,
-  MaintenanceFrequency,
   CentroMantenimiento,
   FleetStatus,
 } from '../../types/fleet';
@@ -41,7 +40,7 @@ describe('FleetRegistrationForm Component', () => {
       uso: 'CARGA',
       year: 2024,
       odometer: 0,
-      maintenanceFrequency: 'Mensual' as MaintenanceFrequency,
+      maintenanceTimeFreqId: 1,
       centroMantenimiento: 'PIIC' as CentroMantenimiento,
       status: 'Disponible' as FleetStatus,
       dailyUsageAvg: 30,
@@ -67,7 +66,7 @@ describe('FleetRegistrationForm Component', () => {
     setError: vi.fn(),
     setRegistrationSuccess: vi.fn(),
     resetForm: vi.fn(),
-    freqTime: [] as string[],
+    freqTime: [{ id: 1, label: 'Mensual' }] as CatalogOption[],
     freqUsage: [] as CatalogOption[],
     departments: ['OPERACIONES'] as string[],
     locations: [] as string[],
