@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
-import { toSnakeCase } from '../utils/mappers';
+import { toSnakeCase, toCamelCase } from '../utils/mappers';
 
 // ============================================================================
 // ZOD SCHEMA: CREATE
@@ -276,7 +276,7 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
     today,
   } = computeUnitHealth(unit);
 
-  return {
+  return toCamelCase({
     ...decrypted,
     images: parseUnitImages(unit.images, unit.id, logger),
     health_score: healthScore,
@@ -286,7 +286,7 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
       ? Math.floor((today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24))
       : null,
     units_since_service: currentReading - lastReading,
-  };
+  }) as Record<string, unknown>;
 }
 
 // ============================================================================
