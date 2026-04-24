@@ -10,9 +10,8 @@ import { CreateFleetUnit } from '../../types/fleet';
 describe('FleetSuccessView Component', () => {
   const mockFormData: CreateFleetUnit = {
     id: 'ASM-TEST-001',
-    assetTypeId: 1,
-    marca: 'Toyota',
-    modelo: 'Hilux',
+    brandId: 253,
+    modelId: 636,
     year: 2024,
     traccionId: 2,
     transmisionId: 2,

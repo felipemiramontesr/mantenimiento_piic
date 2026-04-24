@@ -28,17 +28,23 @@ export interface FleetUnit {
   placas: string | null;
   numeroSerie: string | null;
   // Level 2 & 3: Cascade
-  marca: string;
-  modelo: string;
+  marca: string | null;
+  brandId: number | null;
+  modelo: string | null;
+  modelId: number | null;
   images: string[] | null;
   year: number;
   departamento: string | null;
+  departmentId: number | null;
   uso: string | null;
+  operationalUseId: number | null;
   motor: string | null;
   // Tires
   tireSpec: string | null;
   tireBrand: string | null;
+  tireBrandId: number | null;
   tipoTerreno: string | null;
+  terrainTypeId: number | null;
   // Operational
   capacidadCarga: string | null;
   odometer: number; // km (Vehiculo) | hrs (Maquinaria)
@@ -61,8 +67,6 @@ export interface FleetUnit {
   routeDestination?: string;
   // 🔱 Relational ID Fields (v.21.0.0)
   assetTypeId: number;
-  marcaId?: string | null;
-  modeloId?: string | null;
   fuelTypeId: number;
   traccionId: number;
   transmisionId: number;
@@ -96,24 +100,22 @@ export interface FleetUnit {
 
 export interface CreateFleetUnit {
   assetTypeId: number | null;
-  marcaId?: string | null;
-  modeloId?: string | null;
+  brandId: number | null;
+  modelId: number | null;
   id: string;
   placas?: string;
   numeroSerie?: string;
-  marca: string;
-  modelo: string;
   images?: string[];
   year: number;
-  departamento?: string;
-  uso?: string;
+  departmentId?: number;
+  operationalUseId?: number;
   motor?: string;
   traccionId: number | null;
   transmisionId: number | null;
   fuelTypeId: number | null;
   tireSpec?: string;
-  tireBrand?: string;
-  tipoTerreno?: string;
+  tireBrandId?: number;
+  terrainTypeId?: number;
   capacidadCarga?: string;
   odometer?: number;
   sede?: string;
@@ -149,26 +151,24 @@ export interface UseFleetFormReturn {
   fuelTypes: CatalogOption[];
   driveTypes: CatalogOption[];
   transmissionTypes: CatalogOption[];
-  availableMarcas: { value: string; label: string }[];
-  availableModelos: { value: string; label: string }[];
   freqTime: CatalogOption[];
   freqUsage: CatalogOption[];
-  departments: string[];
-  locations: string[];
-  useTypes: string[];
-  tireBrands: string[];
-  lubeBrands: string[];
-  filterBrands: string[];
-  engineTypes: string[];
-  terrainTypes: string[];
+  departments: CatalogOption[];
+  locations: CatalogOption[];
+  useTypes: CatalogOption[];
+  tireBrands: CatalogOption[];
+  lubeBrands: CatalogOption[];
+  filterBrands: CatalogOption[];
+  engineTypes: CatalogOption[];
+  terrainTypes: CatalogOption[];
   marcas: CatalogOption[];
   modelos: CatalogOption[];
   setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;
   handleAssetTypeChange: (typeId: number) => void;
-  handleMarcaChange: (marcaId: string) => void;
-  handleModeloChange: (modeloId: string) => void;
+  handleMarcaChange: (brandId: number) => void;
+  handleModeloChange: (modelId: number) => void;
   handleSubmit: (e: React.FormEvent, onSuccess?: () => Promise<void>) => Promise<void>;
   resetForm: () => void;
 }

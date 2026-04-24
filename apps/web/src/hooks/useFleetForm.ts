@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AxiosResponse } from 'axios';
 import { CreateFleetUnit, UseFleetFormReturn, CatalogOption } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
@@ -170,65 +170,38 @@ const useFleetForm = (): UseFleetFormReturn => {
    */
   const handleAssetTypeChange = async (id: number): Promise<void> => {
     setIsLoading(true);
-    // CRITICAL: Reset children in cascade
     setFormData((prev) => ({
       ...prev,
       assetTypeId: id,
-      marcaId: '',
-      marca: '',
-      modeloId: '',
-      modelo: '',
+      brandId: null,
+      modelId: null,
     }));
 
     const brands = await fetchCategory('BRAND', id);
     setCatalogs((prev) => ({
       ...prev,
       marcas: brands.length > 0 ? brands : (EMERGENCY_BRANDS as CatalogOption[]),
-      modelos: [], // Clear models catalog
+      modelos: [],
     }));
     setIsLoading(false);
   };
 
-  const handleMarcaChange = async (marcaId: string): Promise<void> => {
+  const handleMarcaChange = async (brandId: number): Promise<void> => {
     setIsLoading(true);
-    const selected = catalogs.marcas.find((m) => String(m.id) === String(marcaId));
-
-    // CRITICAL: Reset dependent model
     setFormData((prev) => ({
       ...prev,
-      marcaId,
-      marca: selected?.label || '',
-      modeloId: '',
-      modelo: '',
+      brandId,
+      modelId: null,
     }));
 
-    if (selected) {
-      const models = await fetchCategory('MODEL', selected.id);
-      setCatalogs((prev) => ({ ...prev, modelos: models }));
-    } else {
-      setCatalogs((prev) => ({ ...prev, modelos: [] }));
-    }
+    const models = await fetchCategory('MODEL', brandId);
+    setCatalogs((prev) => ({ ...prev, modelos: models }));
     setIsLoading(false);
   };
 
-  const handleModeloChange = (modeloId: string): void => {
-    const selected = catalogs.modelos.find((m) => String(m.id) === String(modeloId));
-    if (selected) {
-      setFormData((prev) => ({ ...prev, modeloId, modelo: selected.label }));
-    } else {
-      setFormData((prev) => ({ ...prev, modeloId: '', modelo: '' }));
-    }
+  const handleModeloChange = (modelId: number): void => {
+    setFormData((prev) => ({ ...prev, modelId }));
   };
-
-  const availableMarcas = useMemo(
-    () => catalogs.marcas.map((m) => ({ value: m.id.toString(), label: m.label })),
-    [catalogs.marcas]
-  );
-
-  const availableModelos = useMemo(
-    () => catalogs.modelos.map((m) => ({ value: m.id.toString(), label: m.label })),
-    [catalogs.modelos]
-  );
 
   const handleSubmit = async (
     e: React.FormEvent,
@@ -240,11 +213,11 @@ const useFleetForm = (): UseFleetFormReturn => {
 
     // Validation Shield
     if (
-      !formData.marca ||
-      !formData.modelo ||
+      !formData.brandId ||
+      !formData.modelId ||
       !formData.id ||
-      !formData.departamento ||
-      !formData.uso
+      !formData.departmentId ||
+      !formData.operationalUseId
     ) {
       const msg = '🚨 Todos los campos marcados con (*) son obligatorios.';
       setError(msg);
@@ -283,18 +256,16 @@ const useFleetForm = (): UseFleetFormReturn => {
     isSubmitting,
     isLoading,
     registrationSuccess,
-    availableMarcas,
-    availableModelos,
     freqTime: catalogs.freqTime,
-    freqUsage: catalogs.freqUsage.map((f) => ({ id: f.id, label: f.label })),
-    departments: catalogs.departments.map((d) => d.label),
-    locations: catalogs.locations.map((l) => l.label),
-    useTypes: catalogs.useTypes.map((u) => u.label),
-    tireBrands: catalogs.tireBrands.map((b) => b.label),
-    lubeBrands: catalogs.lubeBrands.map((b) => b.label),
-    filterBrands: catalogs.filterBrands.map((b) => b.label),
-    engineTypes: catalogs.engineTypes.map((e) => e.label),
-    terrainTypes: catalogs.terrainTypes.map((t) => t.label),
+    freqUsage: catalogs.freqUsage,
+    departments: catalogs.departments,
+    locations: catalogs.locations,
+    useTypes: catalogs.useTypes,
+    tireBrands: catalogs.tireBrands,
+    lubeBrands: catalogs.lubeBrands,
+    filterBrands: catalogs.filterBrands,
+    engineTypes: catalogs.engineTypes,
+    terrainTypes: catalogs.terrainTypes,
     setFormData,
     setRegistrationSuccess,
     setError,

@@ -15,22 +15,22 @@ const createFleetSchema = z.object({
   placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
   images: z.array(z.string()).max(4).optional(),
-  marca: z.string().min(1).max(100),
-  modelo: z.string().min(1).max(100),
+  brandId: z.number().int(),
+  modelId: z.number().int(),
   year: z
     .number()
     .int()
     .min(1900)
     .max(new Date().getFullYear() + 1),
-  departamento: z.string().max(150).optional().nullable(),
-  uso: z.string().max(100).optional().nullable(),
+  departmentId: z.number().int().optional().nullable(),
+  operationalUseId: z.number().int().optional().nullable(),
   motor: z.string().max(150).optional(),
   traccionId: z.number().int().optional().nullable(),
   transmisionId: z.number().int().optional().nullable(),
   fuelTypeId: z.number().int().optional().nullable(),
   tireSpec: z.string().max(50).optional(),
-  tireBrand: z.string().max(100).optional(),
-  tipoTerreno: z.string().max(100).optional().nullable(),
+  tireBrandId: z.number().int().optional().nullable(),
+  terrainTypeId: z.number().int().optional().nullable(),
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).default(0),
   sede: z.string().max(150).optional(),
@@ -62,23 +62,23 @@ const updateFleetSchema = z.object({
   placas: z.string().max(20).optional().nullable(),
   numeroSerie: z.string().max(100).optional(),
   images: z.array(z.string()).max(4).optional(),
-  marca: z.string().min(1).max(100).optional(),
-  modelo: z.string().min(1).max(100).optional(),
+  brandId: z.number().int().optional(),
+  modelId: z.number().int().optional(),
   year: z
     .number()
     .int()
     .min(1900)
     .max(new Date().getFullYear() + 1)
     .optional(),
-  departamento: z.string().max(150).optional().nullable(),
-  uso: z.string().max(100).optional().nullable(),
+  departmentId: z.number().int().optional().nullable(),
+  operationalUseId: z.number().int().optional().nullable(),
   motor: z.string().max(150).optional(),
   traccionId: z.number().int().optional().nullable(),
   transmisionId: z.number().int().optional().nullable(),
   fuelTypeId: z.number().int().optional().nullable(),
   tireSpec: z.string().max(50).optional(),
-  tireBrand: z.string().max(100).optional(),
-  tipoTerreno: z.string().max(100).optional().nullable(),
+  tireBrandId: z.number().int().optional().nullable(),
+  terrainTypeId: z.number().int().optional().nullable(),
   capacidadCarga: z.string().max(50).optional(),
   odometer: z.number().min(0).optional(),
   sede: z.string().max(150).optional(),
@@ -110,19 +110,25 @@ interface FleetUnit extends RowDataPacket {
   placas_hash: string | null;
   numero_serie: string | null;
   numero_serie_hash: string | null;
-  marca: string;
-  modelo: string;
+  marca: string | null;
+  brand_id: number | null;
+  modelo: string | null;
+  model_id: number | null;
   images: string | null;
   year: number;
   departamento: string | null;
+  department_id: number | null;
   uso: string | null;
+  operational_use_id: number | null;
   motor: string | null;
   traccion: string;
   transmision: string;
   fuel_type: string;
   tire_spec: string | null;
   tire_brand: string | null;
+  tire_brand_id: number | null;
   tipo_terreno: string | null;
+  terrain_type_id: number | null;
   capacidad_carga: string | null;
   odometer: number;
   sede: string | null;
@@ -312,17 +318,29 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         SELECT 
           f.*,
           c_at.label AS asset_type,
+          c_brand.label AS marca,
+          c_model.label AS modelo,
+          c_dept.label AS departamento,
+          c_use.label AS uso,
           c_ft.label AS fuel_type,
           c_tr.label AS traccion,
           c_ts.label AS transmision,
+          c_tire_brand.label AS tire_brand,
+          c_terrain.label AS tipo_terreno,
           ct.numeric_value AS time_limit_days,
           cu.numeric_value AS usage_limit_units,
           cu.unit AS usage_unit_name
         FROM fleet_units f
         LEFT JOIN common_catalogs c_at ON f.asset_type_id = c_at.id
+        LEFT JOIN common_catalogs c_brand ON f.brand_id = c_brand.id
+        LEFT JOIN common_catalogs c_model ON f.model_id = c_model.id
+        LEFT JOIN common_catalogs c_dept ON f.department_id = c_dept.id
+        LEFT JOIN common_catalogs c_use ON f.operational_use_id = c_use.id
         LEFT JOIN common_catalogs c_ft ON f.fuel_type_id = c_ft.id
         LEFT JOIN common_catalogs c_tr ON f.traccion_id = c_tr.id
         LEFT JOIN common_catalogs c_ts ON f.transmision_id = c_ts.id
+        LEFT JOIN common_catalogs c_tire_brand ON f.tire_brand_id = c_tire_brand.id
+        LEFT JOIN common_catalogs c_terrain ON f.terrain_type_id = c_terrain.id
         LEFT JOIN common_catalogs ct ON f.maintenance_time_freq_id = ct.id
         LEFT JOIN common_catalogs cu ON f.maintenance_usage_freq_id = cu.id
         ORDER BY f.created_at DESC

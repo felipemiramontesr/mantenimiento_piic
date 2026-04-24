@@ -15,6 +15,7 @@ import {
   ChevronUp,
   ChevronDown,
   Compass,
+  Truck,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -32,49 +33,24 @@ interface FleetGridViewProps {
   loading?: boolean;
 }
 
-const resolveAreaFull = (code: string | undefined): string => {
-  const mapping: Record<string, string> = {
-    MA: 'MEDIO AMBIENTE',
-    LAB: 'LABORATORIO',
-    ADM: 'ADMINISTRACIÓN',
-    SEG: 'SEGURIDAD',
-    GEO: 'GEOLOGÍA',
-    OPS: 'OPERACIONES',
-    MAN: 'MANTENIMIENTO',
-    GER: 'GERENCIA',
-  };
-  const key = (code || '').toUpperCase();
-  return mapping[key] || 'GENERAL';
-};
-
-const processTechnicalIdentity = (modelStr: string): { cleanModel: string; areaFull: string } => {
-  const match = modelStr.match(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN|GER)$/i);
-  const [, areaCode = ''] = match || [];
-  const cleanModel = modelStr.replace(/\s(MA|LAB|ADM|SEG|GEO|OPS|MAN|GER)$/i, '').trim();
-  return { cleanModel: cleanModel.toUpperCase(), areaFull: resolveAreaFull(areaCode) };
-};
-
-const AssetUnitCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
-  const identity = processTechnicalIdentity(unit.modelo);
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-[4px] tracking-tighter">
-        {unit.id}
+const AssetUnitCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => (
+  <div className="flex flex-col items-center gap-1.5">
+    <span className="text-[11px] font-black text-[#f2b705] bg-[#0f2a44] px-2 py-0.5 rounded-[4px] tracking-tighter">
+      {unit.id}
+    </span>
+    <div className="flex flex-col items-center -space-y-0.5">
+      <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-tight">
+        {unit.marca}
       </span>
-      <div className="flex flex-col items-center -space-y-0.5">
-        <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-tight">
-          {unit.marca}
-        </span>
-        <span className="text-[10px] font-bold text-[#0f2a44] opacity-50 uppercase tracking-tight">
-          {identity.cleanModel}
-        </span>
-      </div>
-      <span className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest opacity-80">
-        {identity.areaFull}
+      <span className="text-[10px] font-bold text-[#0f2a44] opacity-50 uppercase tracking-tight">
+        {unit.modelo}
       </span>
     </div>
-  );
-};
+    <span className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest opacity-80">
+      {unit.departamento}
+    </span>
+  </div>
+);
 
 const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const plates = unit.placas || 'SIN PLACAS';
@@ -141,7 +117,29 @@ const TechnicalStatusCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Elemen
         <Gauge size={12} className="text-sky-600" />
         <span className="text-[12px] font-black text-sky-800">{odometer.toLocaleString()}</span>
       </div>
-      <div className="flex flex-col items-center opacity-40">
+
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-50 rounded-[4px]">
+          <Zap size={9} className="text-yellow-600" />
+          <span className="text-[9px] font-black text-yellow-800 uppercase tracking-tight">
+            {unit.fuelType || 'Combustible'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 rounded-[4px]">
+          <Truck size={9} className="text-slate-600" />
+          <span className="text-[8px] font-bold text-slate-700 uppercase tracking-tighter">
+            {unit.tireSpec} / {unit.tireBrand}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-50 rounded-[4px]">
+          <Compass size={9} className="text-rose-600" />
+          <span className="text-[8px] font-black text-rose-800 uppercase tracking-tighter">
+            {unit.tipoTerreno || 'Terreno'}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center opacity-40 pt-1">
         <div className="flex items-center gap-1">
           <History size={9} />
           <span className="text-[9px] font-bold">{lastReading.toLocaleString()} KM</span>

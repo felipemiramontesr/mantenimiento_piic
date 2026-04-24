@@ -22,8 +22,8 @@ describe('useFleetForm Hook', () => {
       result.current.handleAssetTypeChange(2);
     });
     expect(result.current.formData.assetTypeId).toBe(2);
-    expect(result.current.formData.marca).toBe('');
-    expect(result.current.formData.modelo).toBe('');
+    expect(result.current.formData.brandId).toBe(null);
+    expect(result.current.formData.modelId).toBe(null);
   });
 
   it('should handle marca changes and update available models', async (): Promise<void> => {
@@ -31,19 +31,23 @@ describe('useFleetForm Hook', () => {
 
     // Wait for initial brands to load
     await waitFor(() => {
-      expect(result.current.availableMarcas).toContainEqual({ value: '101', label: 'Toyota' });
+      expect(result.current.marcas).toContainEqual(
+        expect.objectContaining({ id: 101, label: 'Toyota' })
+      );
     });
 
     act((): void => {
-      result.current.handleMarcaChange('101');
+      result.current.handleMarcaChange(101);
     });
 
-    expect(result.current.formData.marca).toBe('Toyota');
+    expect(result.current.formData.brandId).toBe(101);
 
     // Wait for models to load with increased patience
     await waitFor(
       () => {
-        expect(result.current.availableModelos).toContainEqual({ value: '201', label: 'Hilux' });
+        expect(result.current.modelos).toContainEqual(
+          expect.objectContaining({ id: 201, label: 'Hilux' })
+        );
       },
       { timeout: 3000 }
     );
@@ -58,12 +62,11 @@ describe('useFleetForm Hook', () => {
       result.current.setFormData((prev) => ({
         ...prev,
         id: 'UNIT-001',
-        marca: 'Toyota',
-        marcaId: '101',
-        modelo: 'Hilux',
-        modeloId: '201',
-        departamento: 'OPERACIONES',
-        uso: 'CARGA',
+        brandId: 101,
+        modelId: 201,
+        departmentId: 228,
+        operationalUseId: 236,
+        dailyUsageAvg: 10,
       }));
     });
 
@@ -107,10 +110,11 @@ describe('useFleetForm Hook', () => {
       result.current.setFormData((prev) => ({
         ...prev,
         id: 'UNIT-001',
-        marca: 'Toyota',
-        modelo: 'Hilux',
-        departamento: 'OPERACIONES',
-        uso: 'CARGA',
+        brandId: 101,
+        modelId: 201,
+        departmentId: 228,
+        operationalUseId: 236,
+        dailyUsageAvg: 10,
       }));
     });
 
