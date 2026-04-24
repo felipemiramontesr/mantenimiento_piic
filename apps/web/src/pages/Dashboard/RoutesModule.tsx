@@ -4,7 +4,7 @@ import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants'
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.3.0)
+ * 🚀 ARCHON ROUTES MODULE (v.36.4.0)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
  */

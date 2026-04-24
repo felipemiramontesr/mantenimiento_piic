@@ -4,7 +4,7 @@ import Sidebar from '../../components/Navigation/Sidebar';
 import { FleetProvider } from '../../context/FleetContext';
 
 const DashboardLayout: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(true);
 
   return (
     <FleetProvider>
