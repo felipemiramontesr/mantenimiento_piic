@@ -66,18 +66,22 @@ const getPronosticoArchon = (
       ? parseInt(usageLimitOption.label.replace(/[^0-9]/g, ''), 10)
       : 0;
 
-    let intDias = 0;
-    if (formData.maintenanceFrequency === 'Semestral') intDias = 180;
-    else if (formData.maintenanceFrequency === 'Mensual') intDias = 30;
-    else if (formData.maintenanceFrequency === 'Bimestral') intDias = 60;
-    else if (formData.maintenanceFrequency === 'Trimestral') intDias = 90;
-    else if (formData.maintenanceFrequency === 'Anual') intDias = 365;
+    const intervalMap: Record<MaintenanceFrequency, number> = {
+      Diaria: 1,
+      Semanal: 7,
+      Mensual: 30,
+      Bimestral: 60,
+      Trimestral: 90,
+      Semestral: 180,
+      Anual: 365,
+    };
+    const intDias = intervalMap[formData.maintenanceFrequency] || 0;
 
     if (intServi > 0 && intDias > 0 && formData.lastServiceReading !== undefined) {
       const forecast = calculateMaintForecast(
         intDias,
         intServi,
-        formData.dailyUsageAvg,
+        formData.dailyUsageAvg || 0,
         formData.odometer,
         formData.lastServiceReading,
         formData.lastServiceDate
@@ -140,7 +144,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       formData.id.trim() !== '' &&
       formData.uso &&
       formData.departamento &&
-      formData.dailyUsageAvg !== undefined &&
+      formData.dailyUsageAvg != null &&
       formData.dailyUsageAvg > 0
   );
 
