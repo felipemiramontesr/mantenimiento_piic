@@ -14,19 +14,31 @@ import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
 const RoutesModule: React.FC = (): React.JSX.Element => {
   const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
   const [editingRoute, setEditingRoute] = useState<RouteLog | null>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollToPanel = (): void => {
+    if (panelRef.current?.scrollIntoView) {
+      setTimeout(() => {
+        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  };
 
   const handleAction = (action: 'DESPACHO' | 'BITACORA'): void => {
     if (action === 'DESPACHO') {
       setEditingRoute(null);
       setActivePanel('DISPATCH');
+      scrollToPanel();
     } else {
       setActivePanel('LOGS');
+      scrollToPanel();
     }
   };
 
   const handleEdit = (route: RouteLog): void => {
     setEditingRoute(route);
     setActivePanel('DISPATCH');
+    scrollToPanel();
   };
 
   const handleReturnToLogs = (): void => {
@@ -114,12 +126,15 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       <section className="archon-workspace-chassis">
         <RouteManagementCards
           activePanel={activePanel}
-          onPanelChange={setActivePanel}
+          onPanelChange={(p): void => {
+            setActivePanel(p);
+            scrollToPanel();
+          }}
           onAction={handleAction}
         />
 
         {/* 📊 CONTENIDO DINÁMICO DE PANEL INTEGRADO */}
-        <div className="mt-8">
+        <div className="mt-8" ref={panelRef}>
           {activePanel === 'LOGS' && <RouteLogTable onEdit={handleEdit} />}
 
           {activePanel === 'DISPATCH' && (
