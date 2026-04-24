@@ -26,8 +26,8 @@ interface RouteLog {
 
 /**
  * 🔱 ARCHON ROUTE LOG TABLE
- * Architecture: Sovereign Instrumental Grid (Standard Alignment)
- * Version: 36.5.2 - Standardized Layout (v.18.6.0.2 Protocol)
+ * Architecture: Sovereign Instrumental Grid (Symmetrical Alignment)
+ * Version: 36.5.3 - Standardized Layout & Symmetrical Identity
  */
 const RouteLogTable: React.FC = () => {
   const { units } = useFleet();
@@ -87,7 +87,7 @@ const RouteLogTable: React.FC = () => {
             <th>MISIÓN / TRAYECTO</th>
             <th>TELEMETRÍA</th>
             <th>ESTADO</th>
-            <th>ACCIONES</th>
+            <th>AJUSTES</th>
           </tr>
         </thead>
         <tbody>
@@ -132,18 +132,18 @@ const RouteLogTable: React.FC = () => {
                   </div>
                 </td>
 
-                {/* Unidad */}
+                {/* Unidad - CENTRADO */}
                 <td className="py-6">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <div className="flex flex-col items-center justify-center gap-1.5">
+                    <div className="w-12 h-12 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center mb-1">
                       <img
                         src={unit?.images?.[0] || 'https://via.placeholder.com/100x100?text=UNIT'}
                         alt="Unit"
                         className="w-full h-full object-cover opacity-80"
                       />
                     </div>
-                    <div className="text-left">
-                      <p className="text-[12px] font-black text-[#0f2a44] leading-tight">
+                    <div className="text-center">
+                      <p className="text-[12px] font-black text-[#0f2a44] leading-tight tracking-tighter bg-[#0f2a44]/5 px-2 py-0.5 rounded-[3px] inline-block mb-1">
                         {log.unit_id}
                       </p>
                       <p className="text-[9px] font-bold text-[#0f2a44] opacity-40 uppercase tracking-tighter">
@@ -208,11 +208,11 @@ const RouteLogTable: React.FC = () => {
                   </div>
                 </td>
 
-                {/* Actions */}
-                <td className="py-6">
+                {/* Ajustes - ESTILO ADMINISTRACIÓN */}
+                <td className="py-6 px-4">
                   <div className="flex justify-center">
-                    <button className="p-2 hover:bg-[rgba(15,42,68,0.05)] rounded-[4px] transition-colors text-[#0f2a44]/40 hover:text-[#0f2a44] border border-[rgba(15,42,68,0.1)]">
-                      <MoreVertical size={16} />
+                    <button className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm border-none outline-none">
+                      <MoreVertical size={18} />
                     </button>
                   </div>
                 </td>
