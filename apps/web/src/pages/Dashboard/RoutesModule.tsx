@@ -7,7 +7,7 @@ import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
 
 /**
  * 🚀 ARCHON ROUTES MODULE (v.36.6.2)
- * Architecture: Sovereign Instrumental Node
+ * Version: 37.1.2 - Sovereign Senior Standard
  * Purpose: Central command for Route Dispatch & Logistics.
  * Update: Integrated Form Architecture for Design Cohesion.
  */

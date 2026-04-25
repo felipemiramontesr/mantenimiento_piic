@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 36.7.0 - Stand-Alone Instrumental Node
+ * Version: 37.1.2 - Sovereign Senior Standard
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -104,11 +104,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl"
+      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full"
     >
       {/* Header Integrado */}
       <header
-        className={`py-3 px-6 text-white flex items-center justify-between ${
+        className={`py-3 px-6 text-white flex items-center justify-between rounded-t-[4px] ${
           isEdit ? 'bg-[#0f2a44]' : 'bg-emerald-600'
         }`}
       >
@@ -339,19 +339,19 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
         </div>
 
-        {/* Footer Integrado */}
-        <div className="pt-4 border-t flex gap-4">
+        {/* Footer Integrado - Senior Block Alignment */}
+        <div className="pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-8">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-[#0f2a44] border-2 border-[#0f2a44]/10 hover:bg-[#0f2a44]/5 transition-colors rounded-[4px]"
+            className="w-full px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all rounded-[4px] border-none outline-none"
           >
-            Cancelar
+            Terminar Ruta
           </button>
           <button
             onClick={handleSubmit}
             disabled={!formData.unitId || !formData.operatorId || !formData.destination}
-            className={`flex-1 px-6 py-3 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] ${
+            className={`w-full px-6 py-4 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] border-none outline-none ${
               isEdit
                 ? 'bg-[#0f2a44] hover:bg-[#1a3a5a] shadow-blue-900/20'
                 : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'

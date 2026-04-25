@@ -887,7 +887,7 @@ body {
   justify-content: center;
   align-items: flex-start;
   border-bottom: 1px solid rgba(15, 42, 68, 0.05);
-  padding: 40px 60px 0px 60px; /* Vertical Compression v.28.27.1 */
+  padding: 40px 40px 0px 40px; /* Synchronized with Chassis v.37.1.2 */
 }
 
 .workspace-body-pro {
