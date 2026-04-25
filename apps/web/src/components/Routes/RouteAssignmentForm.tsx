@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 37.4.1 - Full Radius Standardization
+ * Version: 37.5.0 - Consumption Node Harmonization
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -253,73 +253,68 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             </div>
           </div>
 
-          {/* COLUMNA 2: TELEMETRÍA */}
           <div className="space-y-4">
-            {/* SECTION 3: TELEMETRÍA INICIAL */}
+            {/* SECTION 3: CONSUMO */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-2">
                 <Gauge size={14} className="text-[#0f2a44]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-                  Sección III: Telemetría Inicial
+                  Sección III: Información de Consumo
                 </span>
               </div>
 
-              <div className="bg-[#0f2a44]/5 p-4 rounded-[4px] space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Gauge size={20} className="text-[#0f2a44]/40" />
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-tighter text-[#0f2a44]">
-                        Lectura de Odómetro
-                      </p>
-                      <p className="text-[9px] font-bold opacity-50 uppercase">
-                        Valor de entrada (KM)
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-[#0f2a44] tracking-tighter">
-                      {selectedUnitData
-                        ? Number(selectedUnitData.odometer).toLocaleString()
-                        : '0,000'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+                  Telemetría Inicial
+                </label>
+                <div className="bg-[#0f2a44]/5 p-4 rounded-[4px] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Droplets size={20} className="text-emerald-500" />
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-tighter text-[#0f2a44]">
-                          Nivel de Combustible
-                        </p>
-                        <p className="text-[9px] font-bold opacity-50 uppercase">
-                          Estado al momento de salida
-                        </p>
-                      </div>
+                      <Gauge size={20} className="text-[#0f2a44]/40" />
+                      <p className="text-2xl font-black text-[#0f2a44] tracking-tighter">
+                        {selectedUnitData
+                          ? Number(selectedUnitData.odometer).toLocaleString()
+                          : '0,000'}{' '}
+                        <span className="text-[10px] opacity-40 font-bold ml-1">KM</span>
+                      </p>
                     </div>
-                    <p className="text-xl font-black text-emerald-600 tracking-tighter">
-                      {formData.fuelLevel}%
-                    </p>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="25"
-                    value={formData.fuelLevel}
-                    onChange={(e): void =>
-                      setFormData({ ...formData, fuelLevel: Number(e.target.value) })
-                    }
-                    className="w-full accent-emerald-500"
-                  />
-                  <div className="flex justify-between text-[9px] font-bold text-[#0f2a44] opacity-40 px-1">
-                    <span>E</span>
-                    <span>1/4</span>
-                    <span>1/2</span>
-                    <span>3/4</span>
-                    <span>F</span>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Droplets size={20} className="text-emerald-500" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-tighter text-[#0f2a44]">
+                            Nivel de Combustible
+                          </p>
+                          <p className="text-[9px] font-bold opacity-50 uppercase">
+                            Estado al momento de salida
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xl font-black text-emerald-600 tracking-tighter">
+                        {formData.fuelLevel}%
+                      </p>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="25"
+                      value={formData.fuelLevel}
+                      onChange={(e): void =>
+                        setFormData({ ...formData, fuelLevel: Number(e.target.value) })
+                      }
+                      className="w-full accent-emerald-500"
+                    />
+                    <div className="flex justify-between text-[9px] font-bold text-[#0f2a44] opacity-40 px-1">
+                      <span>E</span>
+                      <span>1/4</span>
+                      <span>1/2</span>
+                      <span>3/4</span>
+                      <span>F</span>
+                    </div>
                   </div>
                 </div>
               </div>
