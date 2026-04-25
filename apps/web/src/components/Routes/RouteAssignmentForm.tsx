@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 36.5.6 - Instrumental Node Standard
+ * Version: 36.6.3 - Instrumental Node Compact Standard
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -108,7 +108,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     >
       {/* Header Integrado */}
       <header
-        className={`p-6 text-white flex items-center justify-between ${
+        className={`py-3 px-6 text-white flex items-center justify-between ${
           isEdit ? 'bg-[#0f2a44]' : 'bg-emerald-600'
         }`}
       >
@@ -134,15 +134,15 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
       </header>
 
       {/* Body Integrado */}
-      <form onSubmit={handleSubmit} className="p-8 space-y-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* COLUMNA 1: IDENTIDAD Y LOGÍSTICA */}
-          <div className="space-y-10">
+          <div className="space-y-4">
             {/* SECTION 1: IDENTIDAD */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck size={16} className="text-[#0f2a44]" />
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck size={14} className="text-[#0f2a44]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
                   Sección I: Identidad del Servicio
                 </span>
               </div>
@@ -157,16 +157,16 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                   value={formData.unitId}
                   onChange={(val): void => setFormData({ ...formData, unitId: val })}
                   icon={Truck}
-                  placeholder="Buscar clave o modelo..."
+                  placeholder="Clave o modelo..."
                 />
                 {selectedUnitData && (
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-[#0f2a44]/5 p-3 rounded border-l-4 border-emerald-500 flex items-center justify-between"
+                    className="bg-[#0f2a44]/5 p-2 rounded border-l-4 border-emerald-500 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded border flex items-center justify-center overflow-hidden">
+                      <div className="w-8 h-8 bg-white rounded border flex items-center justify-center overflow-hidden">
                         <img
                           src={
                             selectedUnitData.images?.[0] ||
@@ -205,10 +205,10 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             </div>
 
             {/* SECTION 2: LOGÍSTICA */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin size={16} className="text-[#0f2a44]" />
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin size={14} className="text-[#0f2a44]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
                   Sección II: Misión y Destino
                 </span>
               </div>
@@ -244,17 +244,17 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
 
           {/* COLUMNA 2: TELEMETRÍA Y OBSERVACIONES */}
-          <div className="space-y-10">
+          <div className="space-y-4">
             {/* SECTION 3: ESTADO TÉCNICO */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Gauge size={16} className="text-[#0f2a44]" />
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Gauge size={14} className="text-[#0f2a44]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
                   Sección III: Telemetría Inicial
                 </span>
               </div>
 
-              <div className="bg-[#0f2a44]/5 p-6 rounded-lg space-y-8">
+              <div className="bg-[#0f2a44]/5 p-4 rounded-lg space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Gauge size={20} className="text-[#0f2a44]/40" />
@@ -320,8 +320,8 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 Motivo de Ruta / Observaciones
               </label>
               <textarea
-                rows={4}
-                placeholder="Descripción detallada de la misión..."
+                rows={2}
+                placeholder="Observaciones..."
                 value={formData.description}
                 onChange={(e): void => setFormData({ ...formData, description: e.target.value })}
                 className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px]"
@@ -329,9 +329,9 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             </div>
 
             {/* Validation Hint */}
-            <div className="flex gap-3 p-4 bg-amber-50 rounded border border-amber-200">
-              <AlertCircle size={18} className="text-amber-600 shrink-0" />
-              <p className="text-[10px] font-bold text-amber-800 leading-relaxed">
+            <div className="flex gap-2 p-3 bg-amber-50 rounded border border-amber-200">
+              <AlertCircle size={14} className="text-amber-600 shrink-0" />
+              <p className="text-[9px] font-bold text-amber-800 leading-relaxed">
                 Al confirmar, el estatus de la unidad cambiará automáticamente a{' '}
                 <span className="font-black underline">EN RUTA</span>.
               </p>
@@ -340,18 +340,18 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         </div>
 
         {/* Footer Integrado */}
-        <div className="pt-8 border-t flex gap-4">
+        <div className="pt-4 border-t flex gap-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-[#0f2a44] border-2 border-[#0f2a44]/10 hover:bg-[#0f2a44]/5 transition-colors rounded-[4px]"
+            className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-[#0f2a44] border-2 border-[#0f2a44]/10 hover:bg-[#0f2a44]/5 transition-colors rounded-[4px]"
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={!formData.unitId || !formData.operatorId || !formData.destination}
-            className={`flex-1 px-8 py-4 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] ${
+            className={`flex-1 px-6 py-3 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] ${
               isEdit
                 ? 'bg-[#0f2a44] hover:bg-[#1a3a5a] shadow-blue-900/20'
                 : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
