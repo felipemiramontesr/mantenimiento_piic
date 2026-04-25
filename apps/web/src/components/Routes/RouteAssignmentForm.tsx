@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 37.2.2 - Monolithic Instrumental Seal Standard
+ * Version: 37.3.0 - Operational Consolidation Node
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -203,54 +203,16 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 />
               </div>
             </div>
-
-            {/* SECTION 2: LOGÍSTICA */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin size={14} className="text-[#0f2a44]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-                  Sección II: Misión y Destino
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
-                    Origen
-                  </label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={formData.origin}
-                    className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 p-3 text-xs font-bold text-[#0f2a44] outline-none rounded-t-[4px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
-                    Destino
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Mina Nivel 400"
-                    value={formData.destination}
-                    onChange={(e): void =>
-                      setFormData({ ...formData, destination: e.target.value })
-                    }
-                    className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors rounded-[4px]"
-                  />
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* COLUMNA 2: TELEMETRÍA Y OBSERVACIONES */}
+          {/* COLUMNA 2: TELEMETRÍA Y MISIÓN */}
           <div className="space-y-4">
-            {/* SECTION 3: ESTADO TÉCNICO */}
+            {/* SECTION 2: TELEMETRÍA INICIAL */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-2">
                 <Gauge size={14} className="text-[#0f2a44]" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-                  Sección III: Telemetría Inicial
+                  Sección II: Telemetría Inicial
                 </span>
               </div>
 
@@ -315,17 +277,51 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
-                Misión y Destino
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Observaciones..."
-                value={formData.description}
-                onChange={(e): void => setFormData({ ...formData, description: e.target.value })}
-                className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px]"
-              />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin size={14} className="text-[#0f2a44]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
+                  Sección III: Misión y Destino
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+                    Origen
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={formData.origin}
+                    className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 p-3 text-xs font-bold text-[#0f2a44] outline-none rounded-t-[4px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+                    Destino
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Mina Nivel 400"
+                    value={formData.destination}
+                    onChange={(e): void =>
+                      setFormData({ ...formData, destination: e.target.value })
+                    }
+                    className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors rounded-[4px]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <textarea
+                  rows={2}
+                  placeholder="Observaciones de la misión..."
+                  value={formData.description}
+                  onChange={(e): void => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px]"
+                />
+              </div>
             </div>
 
             {/* Validation Hint */}
