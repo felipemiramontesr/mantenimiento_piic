@@ -50,41 +50,43 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
   return (
     <div className="grid grid-cols-2 gap-1.5 w-[160px] p-2 bg-gray-50/50 rounded-[4px] transition-all duration-300">
       {/* 🚀 DISP - Disponibilidad */}
-      <div className="flex flex-col items-start gap-0.5 p-1">
+      <div className="flex flex-col items-center gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <Activity size={10} />
           <span className="text-[8px] font-black uppercase tracking-tighter">DISP</span>
         </div>
-        <span className={`text-[10px] font-bold ${getAvaColor(availability)}`}>
+        <span className={`text-[10px] font-bold text-center ${getAvaColor(availability)}`}>
           {availability.toFixed(1)}%
         </span>
       </div>
 
       {/* 🛡️ MTBF - Fiabilidad */}
-      <div className="flex flex-col items-start gap-0.5 p-1">
+      <div className="flex flex-col items-center gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <ShieldCheck size={10} />
           <span className="text-[8px] font-black uppercase tracking-tighter">MTBF</span>
         </div>
-        <span className={`text-[10px] font-bold ${getRelColor(mtbf)}`}>{mtbf}h</span>
+        <span className={`text-[10px] font-bold text-center ${getRelColor(mtbf)}`}>{mtbf}h</span>
       </div>
 
       {/* ⚡ MTTR - Velocidad de Respuesta */}
-      <div className="flex flex-col items-start gap-0.5 p-1">
+      <div className="flex flex-col items-center gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <Zap size={10} />
           <span className="text-[8px] font-black uppercase tracking-tighter">MTTR</span>
         </div>
-        <span className={`text-[10px] font-bold ${getSpdColor(mttr)}`}>{mttr}h</span>
+        <span className={`text-[10px] font-bold text-center ${getSpdColor(mttr)}`}>{mttr}h</span>
       </div>
 
       {/* 📚 BCK - Pendientes (Backlog) */}
-      <div className="flex flex-col items-start gap-0.5 p-1">
+      <div className="flex flex-col items-center gap-0.5 p-1">
         <div className="flex items-center gap-1 opacity-40">
           <Layers size={10} />
           <span className="text-[8px] font-black uppercase tracking-tighter">BCK</span>
         </div>
-        <span className={`text-[10px] font-bold ${getBckColor(backlog)}`}>{backlog}</span>
+        <span className={`text-[10px] font-bold text-center ${getBckColor(backlog)}`}>
+          {backlog}
+        </span>
       </div>
     </div>
   );
