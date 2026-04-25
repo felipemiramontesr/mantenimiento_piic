@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 37.1.2 - Sovereign Senior Standard
+ * Version: 37.2.0 - Sovereign Senior Precision Standard
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -104,7 +104,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full"
+      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full !p-0"
     >
       {/* Header Integrado */}
       <header
@@ -163,10 +163,10 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-[#0f2a44]/5 p-2 rounded border-l-4 border-emerald-500 flex items-center justify-between"
+                    className="bg-[#0f2a44]/5 p-2 rounded-[4px] border-l-4 border-emerald-500 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white rounded border flex items-center justify-center overflow-hidden">
+                      <div className="w-8 h-8 bg-white rounded-[4px] border flex items-center justify-center overflow-hidden">
                         <img
                           src={
                             selectedUnitData.images?.[0] ||
@@ -236,7 +236,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                     onChange={(e): void =>
                       setFormData({ ...formData, destination: e.target.value })
                     }
-                    className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors"
+                    className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors rounded-[4px]"
                   />
                 </div>
               </div>
@@ -254,7 +254,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 </span>
               </div>
 
-              <div className="bg-[#0f2a44]/5 p-4 rounded-lg space-y-4">
+              <div className="bg-[#0f2a44]/5 p-4 rounded-[4px] space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Gauge size={20} className="text-[#0f2a44]/40" />
@@ -329,7 +329,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             </div>
 
             {/* Validation Hint */}
-            <div className="flex gap-2 p-3 bg-amber-50 rounded border border-amber-200">
+            <div className="flex gap-2 p-3 bg-amber-50 rounded-[4px] border border-amber-200">
               <AlertCircle size={14} className="text-amber-600 shrink-0" />
               <p className="text-[9px] font-bold text-amber-800 leading-relaxed">
                 Al confirmar, el estatus de la unidad cambiará automáticamente a{' '}
