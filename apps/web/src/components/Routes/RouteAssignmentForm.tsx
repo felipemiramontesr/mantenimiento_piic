@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 37.4.0 - Primary Column Realignment
+ * Version: 37.4.1 - Full Radius Standardization
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -222,7 +222,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                     type="text"
                     readOnly
                     value={formData.origin}
-                    className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 p-3 text-xs font-bold text-[#0f2a44] outline-none rounded-t-[4px]"
+                    className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 p-3 text-xs font-bold text-[#0f2a44] outline-none rounded-[4px]"
                   />
                 </div>
                 <div className="space-y-2">
