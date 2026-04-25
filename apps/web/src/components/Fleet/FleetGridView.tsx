@@ -20,7 +20,6 @@ import {
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
 import FleetKpiMatrix from './FleetKpiMatrix';
-import RouteManagerSlideOver from './RouteManagerSlideOver';
 import {
   calculateMaintForecast,
   formatDate,
@@ -206,11 +205,9 @@ const ForecastCluster = ({
 const FleetRegistryRow = ({
   unit,
   onSelectImage,
-  onManageRoute,
 }: {
   unit: FleetUnit;
   onSelectImage: (u: FleetUnit) => void;
-  onManageRoute: (u: FleetUnit) => void;
 }): React.JSX.Element => {
   const forecast = calculateMaintForecast(
     unit.maintIntervalDays || 180,
@@ -231,17 +228,6 @@ const FleetRegistryRow = ({
   if (forecast && forecast.kmParaServicio < 1000) {
     zapClass = 'text-red-500';
     kmTextClass = 'text-red-600';
-  }
-
-  let statusStyles = 'bg-gray-100 text-gray-400 opacity-50 cursor-not-allowed';
-  if (unit.status === 'Disponible') {
-    statusStyles = 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white';
-  }
-  if (unit.status === 'Asignada') {
-    statusStyles = 'bg-amber-500 text-white hover:bg-amber-700';
-  }
-  if (unit.status === 'En Ruta') {
-    statusStyles = 'bg-emerald-600 text-white hover:bg-emerald-800';
   }
 
   const hasImages = Array.isArray(unit.images) && unit.images.length > 0;
@@ -309,30 +295,6 @@ const FleetRegistryRow = ({
           />
         </div>
       </td>
-      <td className="text-center px-4">
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={(): void => onManageRoute(unit)}
-            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-[4px] font-black text-[10px] uppercase transition-all ${statusStyles}`}
-          >
-            {unit.status === 'Disponible' && (
-              <>
-                <Compass size={12} /> Despachar
-              </>
-            )}
-            {unit.status === 'Asignada' && (
-              <>
-                <Zap size={12} /> Iniciar
-              </>
-            )}
-            {unit.status === 'En Ruta' && (
-              <>
-                <History size={12} /> Concluir
-              </>
-            )}
-          </button>
-        </div>
-      </td>
     </tr>
   );
 };
@@ -342,9 +304,8 @@ export const FleetGridView = ({
   loading = false,
 }: FleetGridViewProps): React.JSX.Element => {
   const [selectedGalleryUnit, setSelectedGalleryUnit] = React.useState<FleetUnit | null>(null);
-  const [selectedRouteUnit, setSelectedRouteUnit] = React.useState<FleetUnit | null>(null);
   const [sortConfig, setSortConfig] = React.useState<{
-    field: 'unidad' | 'programacion' | 'pronostico' | 'acciones' | null;
+    field: 'unidad' | 'programacion' | 'pronostico' | null;
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
@@ -374,21 +335,13 @@ export const FleetGridView = ({
         } else if (sortConfig.field === 'pronostico') {
           valA = a.forecast ? a.forecast.forecastDate.getTime() : Infinity;
           valB = b.forecast ? b.forecast.forecastDate.getTime() : Infinity;
-        } else if (sortConfig.field === 'acciones') {
-          const actionWeight: Record<string, number> = {
-            Disponible: 1, // Despachar
-            Asignada: 2, // Iniciar
-            'En Ruta': 3, // Concluir
-          };
-          valA = actionWeight[a.unit.status] || 4;
-          valB = actionWeight[b.unit.status] || 4;
         }
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
       })
       .map((item) => item.unit);
   }, [units, sortConfig]);
 
-  const handleSort = (field: 'unidad' | 'programacion' | 'pronostico' | 'acciones'): void => {
+  const handleSort = (field: 'unidad' | 'programacion' | 'pronostico'): void => {
     setSortConfig((prev) => ({
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
@@ -434,14 +387,11 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      {selectedRouteUnit && (
-        <RouteManagerSlideOver
-          isOpen={!!selectedRouteUnit}
-          onClose={(): void => setSelectedRouteUnit(null)}
-          unit={selectedRouteUnit}
-          onActionComplete={(): void => {
-            window.location.reload();
-          }}
+      {selectedGalleryUnit && (
+        <ArchonGalleryOverlay
+          images={selectedGalleryUnit.images || []}
+          assetId={selectedGalleryUnit.id}
+          onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
 
@@ -491,18 +441,6 @@ export const FleetGridView = ({
                 </div>
               </th>
               <th className="opacity-40">SALUD</th>
-              <th
-                onClick={(): void => handleSort('acciones')}
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  ACCIONES
-                  <SortIndicator
-                    active={sortConfig.field === 'acciones'}
-                    direction={sortConfig.direction}
-                  />
-                </div>
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -512,7 +450,6 @@ export const FleetGridView = ({
                   key={item.uuid}
                   unit={item}
                   onSelectImage={(u): void => setSelectedGalleryUnit(u)}
-                  onManageRoute={(u): void => setSelectedRouteUnit(u)}
                 />
               )
             )}
