@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 36.6.3 - Instrumental Node Compact Standard
+ * Version: 36.7.0 - Stand-Alone Instrumental Node
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -134,7 +134,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
       </header>
 
       {/* Body Integrado */}
-      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+      <form onSubmit={handleSubmit} className="py-5 px-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* COLUMNA 1: IDENTIDAD Y LOGÍSTICA */}
           <div className="space-y-4">
