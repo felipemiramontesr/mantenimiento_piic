@@ -1,4 +1,4 @@
-export const SYSTEM_VERSION = '37.2.0';
+export const SYSTEM_VERSION = '37.2.1';
 export const BRANDING_NAME = 'ArchonCore Alpha Engine';
 export const CACHE_PREFIX = 'archon_alpha_v36_final';
 export const SOVEREIGN_MODE = true;

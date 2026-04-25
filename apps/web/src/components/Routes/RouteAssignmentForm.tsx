@@ -127,9 +127,9 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         </div>
         <button
           onClick={onClose}
-          className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-[4px] hover:bg-white/10 flex items-center justify-center transition-colors border border-white/20"
         >
-          <X size={20} />
+          <X size={16} />
         </button>
       </header>
 
@@ -222,7 +222,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                     type="text"
                     readOnly
                     value={formData.origin}
-                    className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 p-3 text-xs font-bold text-[#0f2a44] outline-none"
+                    className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 p-3 text-xs font-bold text-[#0f2a44] outline-none rounded-t-[4px]"
                   />
                 </div>
                 <div className="space-y-2">

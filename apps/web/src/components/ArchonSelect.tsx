@@ -58,7 +58,7 @@ export default function ArchonSelect({
     <div className="relative w-full" ref={containerRef}>
       {/* Trigger Area */}
       <div
-        className={`archon-select flex items-center justify-between transition-all duration-300 ${
+        className={`archon-select flex items-center justify-between transition-all duration-300 rounded-[4px] ${
           disabled ? 'opacity-40 cursor-not-allowed bg-[rgba(15,42,68,0.05)]' : 'cursor-pointer'
         } ${isOpen ? 'border-b-[#f2b705] bg-white' : ''}`}
         onClick={(): void => {
@@ -95,7 +95,7 @@ export default function ArchonSelect({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full left-0 w-full mt-2 bg-white border border-[rgba(15,42,68,0.1)] rounded-lg shadow-2xl z-[500] overflow-hidden"
+            className="absolute top-full left-0 w-full mt-2 bg-white border border-[rgba(15,42,68,0.1)] rounded-[4px] shadow-2xl z-[500] overflow-hidden"
             style={{
               maxHeight: '280px',
               overflowY: 'auto',
