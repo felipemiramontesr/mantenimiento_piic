@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 37.2.0 - Sovereign Senior Precision Standard
+ * Version: 37.2.2 - Monolithic Instrumental Seal Standard
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -108,8 +108,8 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     >
       {/* Header Integrado */}
       <header
-        className={`py-3 px-6 text-white flex items-center justify-between rounded-t-[4px] ${
-          isEdit ? 'bg-[#0f2a44]' : 'bg-emerald-600'
+        className={`py-3 px-6 text-white flex items-center justify-between rounded-t-[4px] border -m-[1px] ${
+          isEdit ? 'bg-[#0f2a44] border-[#0f2a44]' : 'bg-emerald-600 border-emerald-600'
         }`}
       >
         <div className="flex items-center gap-4">
