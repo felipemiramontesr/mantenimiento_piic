@@ -6,7 +6,7 @@ import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
 import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
 
 /**
- * 🚀 ARCHON ROUTES MODULE (v.36.5.6)
+ * 🚀 ARCHON ROUTES MODULE (v.36.6.2)
  * Architecture: Sovereign Instrumental Node
  * Purpose: Central command for Route Dispatch & Logistics.
  * Update: Integrated Form Architecture for Design Cohesion.
@@ -124,22 +124,24 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
 
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">
-        <RouteManagementCards
-          activePanel={activePanel}
-          onPanelChange={(p): void => {
-            setActivePanel(p);
-            scrollToPanel();
-          }}
-          onAction={handleAction}
-        />
+        <div className="flex flex-col gap-12">
+          <RouteManagementCards
+            activePanel={activePanel}
+            onPanelChange={(p): void => {
+              setActivePanel(p);
+              scrollToPanel();
+            }}
+            onAction={handleAction}
+          />
 
-        {/* 📊 CONTENIDO DINÁMICO DE PANEL INTEGRADO */}
-        <div className="mt-8" ref={panelRef}>
-          {activePanel === 'LOGS' && <RouteLogTable onEdit={handleEdit} />}
+          {/* 📊 CONTENIDO DINÁMICO DE PANEL INTEGRADO */}
+          <div ref={panelRef}>
+            {activePanel === 'LOGS' && <RouteLogTable onEdit={handleEdit} />}
 
-          {activePanel === 'DISPATCH' && (
-            <RouteAssignmentForm onClose={handleReturnToLogs} routeToEdit={editingRoute} />
-          )}
+            {activePanel === 'DISPATCH' && (
+              <RouteAssignmentForm onClose={handleReturnToLogs} routeToEdit={editingRoute} />
+            )}
+          </div>
         </div>
       </section>
 
