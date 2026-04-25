@@ -317,7 +317,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
-                Motivo de Ruta / Observaciones
+                Misión y Destino
               </label>
               <textarea
                 rows={2}
