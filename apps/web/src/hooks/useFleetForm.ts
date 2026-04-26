@@ -123,7 +123,7 @@ const useFleetForm = (): UseFleetFormReturn => {
         api.get(`/catalogs/LUBE_BRAND?_cb=${ts}`),
         api.get(`/catalogs/FILTER_BRAND?_cb=${ts}`),
         api.get(`/catalogs/ENGINE_TYPE?_cb=${ts}`),
-        api.get(`/catalogs/TERRAIN?_cb=${ts}`),
+        api.get(`/catalogs/TERRAIN_TYPE?_cb=${ts}`),
         api.get(`/catalogs/FLEET_OWNER?_cb=${ts}`),
         api.get(`/catalogs/COMPLIANCE_STATUS?_cb=${ts}`),
       ]);
