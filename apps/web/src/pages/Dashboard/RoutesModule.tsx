@@ -20,14 +20,18 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
     const element = panelRef.current;
     if (element) {
       setTimeout(() => {
-        // Dynamic Phase-Transition Scroll (v.38.6.0)
-        const chassis = element.closest('.archon-workspace-chassis');
-        const cards = chassis?.querySelector('.archon-grid-2') as HTMLElement;
+        // Geometric Phase-Transition Scroll (v.38.6.1)
+        // Using Differential Rectangle Calculation for absolute precision
+        const chassis = element.closest('.archon-workspace-chassis') as HTMLElement;
 
-        if (chassis && cards) {
-          // Logic: Find the exact bottom of the cards and add half of the 48px gap (24px)
-          const cardsBottom = cards.offsetTop + cards.offsetHeight;
-          const targetPosition = cardsBottom + 24;
+        if (chassis) {
+          const chassisRect = chassis.getBoundingClientRect();
+          const elementRect = element.getBoundingClientRect();
+
+          // Calculate the relative position of the element within the scrollable chassis
+          // Offset of 24px (half-gap) ensures breathing room and avoids clipping
+          const relativeTop = elementRect.top - chassisRect.top + chassis.scrollTop;
+          const targetPosition = relativeTop - 24;
 
           chassis.scrollTo({
             top: targetPosition,
@@ -162,7 +166,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.6.0</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.6.1</p>
       </footer>
     </main>
   );
