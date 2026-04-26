@@ -20,13 +20,14 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
     const element = panelRef.current;
     if (element) {
       setTimeout(() => {
-        // Targeted Chassis Scroll (v.38.5.0)
-        // Offset set to 0 for perfect header-flush alignment
+        // Dynamic Phase-Transition Scroll (v.38.6.0)
         const chassis = element.closest('.archon-workspace-chassis');
+        const cards = chassis?.querySelector('.archon-grid-2') as HTMLElement;
 
-        if (chassis) {
-          const offset = 0; // Absolute Flush Alignment
-          const targetPosition = (element as HTMLElement).offsetTop - offset;
+        if (chassis && cards) {
+          // Logic: Find the exact bottom of the cards and add half of the 48px gap (24px)
+          const cardsBottom = cards.offsetTop + cards.offsetHeight;
+          const targetPosition = cardsBottom + 24;
 
           chassis.scrollTo({
             top: targetPosition,
@@ -161,7 +162,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.5.0</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.6.0</p>
       </footer>
     </main>
   );

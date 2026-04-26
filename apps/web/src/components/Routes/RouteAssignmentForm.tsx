@@ -103,11 +103,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full !p-0 min-h-[800px] flex flex-col"
+      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full !p-0 min-h-[850px] flex flex-col"
     >
       {/* Header Integrado */}
       <header
-        className={`py-3 px-6 text-white flex items-center justify-between rounded-t-[4px] border -m-[1px] ${
+        className={`py-3 px-6 text-white flex items-center justify-between rounded-t-[4px] border ${
           isEdit ? 'bg-[#0f2a44] border-[#0f2a44]' : 'bg-emerald-600 border-emerald-600'
         }`}
       >
