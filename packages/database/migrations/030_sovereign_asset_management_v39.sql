@@ -21,10 +21,11 @@ ADD COLUMN IF NOT EXISTS legal_compliance_date DATE,
 ADD COLUMN IF NOT EXISTS insurance_expiry_date DATE,
 ADD COLUMN IF NOT EXISTS monthly_lease_payment DECIMAL(12, 2) DEFAULT 0;
 
--- 3. Comments for Documentation
-COMMENT ON COLUMN fleet_units.owner_id IS 'Link to common_catalogs (category=FLEET_OWNER)';
-COMMENT ON COLUMN fleet_units.compliance_status_id IS 'Link to common_catalogs (category=COMPLIANCE_STATUS)';
-COMMENT ON COLUMN fleet_units.accounting_account IS 'Accounting mapping for cost center integration';
-COMMENT ON COLUMN fleet_units.legal_compliance_date IS 'Expiration of plates/circulation card';
-COMMENT ON COLUMN fleet_units.insurance_expiry_date IS 'Expiration of insurance policy';
-COMMENT ON COLUMN fleet_units.monthly_lease_payment IS 'Monthly cost of lease or finance';
+-- 3. Comments for Documentation (MariaDB/MySQL Syntax)
+ALTER TABLE fleet_units 
+MODIFY owner_id INTEGER COMMENT 'Link to common_catalogs (category=FLEET_OWNER)',
+MODIFY compliance_status_id INTEGER COMMENT 'Link to common_catalogs (category=COMPLIANCE_STATUS)',
+MODIFY accounting_account VARCHAR(50) COMMENT 'Accounting mapping for cost center integration',
+MODIFY legal_compliance_date DATE COMMENT 'Expiration of plates/circulation card',
+MODIFY insurance_expiry_date DATE COMMENT 'Expiration of insurance policy',
+MODIFY monthly_lease_payment DECIMAL(12, 2) COMMENT 'Monthly cost of lease or finance';
