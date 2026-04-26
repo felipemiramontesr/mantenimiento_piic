@@ -140,7 +140,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
 
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">
-        <div className="flex flex-col gap-12">
+        <div className="flex flex-col gap-12 pb-[60vh]">
           <RouteManagementCards
             activePanel={activePanel}
             onPanelChange={(p): void => {
@@ -164,7 +164,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.8.0</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.8.1</p>
       </footer>
     </main>
   );
