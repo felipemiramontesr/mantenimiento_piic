@@ -178,9 +178,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         >
           <div className="archon-card-header-pro">
             <Layers className="text-yellow-500" size={24} />
-            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">
-              Motor de Jerarquía
-            </h3>
+            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">IDENTIDAD</h3>
           </div>
 
           <div className="space-y-6 relative z-10">
@@ -220,22 +218,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 onChange={(val: string): void => handleModeloChange(parseInt(val, 10))}
               />
             </ArchonField>
-          </div>
-        </div>
 
-        {/* PANEL 2: IDENTIDAD & CUMPLIMIENTO (Top-Right) */}
-        <div
-          className="glass-card-pro bg-white p-10 space-y-8 relative overflow-hidden"
-          style={{ borderTop: '4px solid #0ea5e9' }}
-        >
-          <div className="archon-card-header-pro">
-            <ShieldCheck size={24} className="text-sky-600" />
-            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">
-              Identidad & Cumplimiento
-            </h3>
-          </div>
-
-          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Número Económico" icon={Tag} required>
                 <input
@@ -312,52 +295,61 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 />
               </ArchonField>
             </div>
+          </div>
+        </div>
 
-            {/* 🛡️ CUMPLIMIENTO SOBERANO */}
-            <div className="pt-4 border-t border-slate-100 space-y-6">
-              <h4 className="text-[10px] font-black text-sky-600 uppercase tracking-[0.2em]">
-                Capa de Cumplimiento Legal & Seguridad
-              </h4>
-              <div className="grid grid-cols-2 gap-6">
-                <ArchonField label="Estatus Botiquín PA" icon={ShieldCheck}>
-                  <ArchonSelect
-                    options={controller.complianceStatuses.map((s: CatalogOption) => ({
-                      value: s.id.toString(),
-                      label: s.label,
-                    }))}
-                    value={formData.complianceStatusId?.toString() || ''}
-                    onChange={(val: string): void =>
-                      setFormData({ ...formData, complianceStatusId: parseInt(val, 10) })
-                    }
-                  />
-                </ArchonField>
-                <ArchonField label="Vigencia Seguro" icon={Calendar}>
-                  <ArchonDatePicker
-                    value={formData.insuranceExpiryDate || ''}
-                    onChange={(val: string): void =>
-                      setFormData({ ...formData, insuranceExpiryDate: val })
-                    }
-                  />
-                </ArchonField>
-              </div>
-              <ArchonField label="Cumplimiento Legal (Placas/Tarjeta)" icon={Calendar}>
-                <ArchonDatePicker
-                  value={formData.legalComplianceDate || ''}
+        {/* PANEL 2: IDENTIDAD & CUMPLIMIENTO (Top-Right) */}
+        <div
+          className="glass-card-pro bg-white p-10 space-y-8 relative overflow-hidden"
+          style={{ borderTop: '4px solid #0ea5e9' }}
+        >
+          <div className="archon-card-header-pro">
+            <ShieldCheck size={24} className="text-sky-600" />
+            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">
+              CUMPLIMIENTO
+            </h3>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <ArchonField label="Estatus Botiquín PA" icon={ShieldCheck}>
+                <ArchonSelect
+                  options={controller.complianceStatuses.map((s: CatalogOption) => ({
+                    value: s.id.toString(),
+                    label: s.label,
+                  }))}
+                  value={formData.complianceStatusId?.toString() || ''}
                   onChange={(val: string): void =>
-                    setFormData({ ...formData, legalComplianceDate: val })
+                    setFormData({ ...formData, complianceStatusId: parseInt(val, 10) })
+                  }
+                />
+              </ArchonField>
+              <ArchonField label="Vigencia Seguro" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.insuranceExpiryDate || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, insuranceExpiryDate: val })
                   }
                 />
               </ArchonField>
             </div>
-
-            <ArchonField label="Evidencia Fotográfica" icon={PlusCircle}>
-              <ArchonImageUploader
-                images={formData.images ?? []}
-                onChange={(imgs: string[]): void => setFormData({ ...formData, images: imgs })}
-                maxImages={4}
+            <ArchonField label="Cumplimiento Legal (Placas/Tarjeta)" icon={Calendar}>
+              <ArchonDatePicker
+                value={formData.legalComplianceDate || ''}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, legalComplianceDate: val })
+                }
               />
             </ArchonField>
           </div>
+
+          <ArchonField label="Evidencia Fotográfica" icon={PlusCircle}>
+            <ArchonImageUploader
+              images={formData.images ?? []}
+              onChange={(imgs: string[]): void => setFormData({ ...formData, images: imgs })}
+              maxImages={4}
+            />
+          </ArchonField>
         </div>
 
         {/* PANEL 3: PERFIL TÉCNICO DE LA UNIDAD (Bottom-Left) */}
