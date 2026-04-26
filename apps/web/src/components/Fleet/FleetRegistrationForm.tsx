@@ -567,12 +567,14 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
 
               <ArchonField
-                label={
-                  controller.assetTypes.find((at) => at.id === formData.assetTypeId)?.label ===
-                  'Vehículo'
-                    ? 'Odómetro (KM)'
-                    : 'Horómetro (HRS)'
-                }
+                label={((): string => {
+                  const selected = controller.assetTypes.find(
+                    (at) => at.id === formData.assetTypeId
+                  );
+                  // 🔱 Archon Sovereign Detection Logic: Code 'AT_VEH' or Label 'Vehículo'
+                  const isVehicle = selected?.code === 'AT_VEH' || selected?.label === 'Vehículo';
+                  return isVehicle ? 'Odómetro (KM)' : 'Horómetro (HRS)';
+                })()}
                 icon={Gauge}
               >
                 <input
