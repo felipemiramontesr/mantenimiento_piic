@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Navigation,
   User,
@@ -26,7 +26,7 @@ interface RouteAssignmentFormProps {
  * 🔱 ARCHON ROUTE ASSIGNMENT FORM
  * Architecture: Sovereign Integrated Component
  * Purpose: High-precision route creation & rectification in main chassis.
- * Version: 37.6.0 - Dual Consumption Cluster & Axial Parity
+ * Version: 38.0.0 - Archon Obsidian Cluster (Instrumental Refinement)
  */
 const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, routeToEdit }) => {
   const { units } = useFleet();
@@ -273,29 +273,49 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
                   Telemetría Inicial
                 </label>
-                <div className="bg-[#0f2a44]/5 p-5 rounded-[4px] flex-1 flex flex-col justify-between border border-[#0f2a44]/5">
-                  {/* NIVEL 1: ODÓMETRO */}
-                  <div className="flex items-center justify-between bg-white/50 p-3 rounded-[4px] border border-[#0f2a44]/5">
-                    <div className="flex items-center gap-3">
-                      <Gauge size={18} className="text-[#0f2a44]/40" />
-                      <p className="text-2xl font-black text-[#0f2a44] tracking-tighter">
-                        {selectedUnitData
-                          ? Number(selectedUnitData.odometer).toLocaleString()
-                          : '0,000'}{' '}
-                        <span className="text-[10px] opacity-40 font-bold ml-1 uppercase">KM</span>
-                      </p>
+                <div className="bg-[#0f2a44]/5 p-6 rounded-[4px] flex-1 flex flex-col justify-between border border-[#0f2a44]/5 relative overflow-hidden group">
+                  {/* Glass Background Overlay */}
+                  <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+
+                  {/* NIVEL 1: ODÓMETRO (HUD INTEGRATION) */}
+                  <div className="relative z-10 flex items-center justify-between bg-white/80 p-4 rounded-[4px] border border-[#0f2a44]/5 shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-[4px] bg-[#0f2a44]/5 flex items-center justify-center">
+                        <Gauge size={20} className="text-[#0f2a44]/60" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40 mb-0.5">
+                          Lectura Actual
+                        </p>
+                        <p className="text-2xl font-black text-[#0f2a44] tracking-tighter flex items-baseline gap-1">
+                          {selectedUnitData
+                            ? Number(selectedUnitData.odometer).toLocaleString()
+                            : '0,000'}
+                          <span className="text-[10px] opacity-40 font-bold uppercase tracking-tighter">
+                            KM
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* NIVEL 2: SELECTOR DE MODO */}
-                  <div className="flex justify-center my-4">
-                    <div className="bg-[#0f2a44]/10 p-1 rounded-[4px] flex gap-1">
+                  {/* NIVEL 2: SEGMENTED SELECTOR (SENIOR INTERACTION) */}
+                  <div className="relative z-10 flex justify-center my-6">
+                    <div className="bg-[#0f2a44]/10 p-1 rounded-[4px] flex gap-1 relative w-full max-w-[280px]">
+                      {/* Sliding Pill */}
+                      <motion.div
+                        initial={false}
+                        animate={{ x: fuelMode === 'percentage' ? 0 : '102%' }}
+                        className="absolute inset-y-1 left-1 w-[48%] bg-[#0f2a44] rounded-[3px] shadow-lg shadow-blue-900/20"
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                      />
+
                       <button
                         type="button"
                         onClick={(): void => setFuelMode('percentage')}
-                        className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-[3px] transition-all ${
+                        className={`relative z-20 flex-1 py-2 text-[9px] font-black uppercase tracking-[0.15em] transition-colors duration-300 ${
                           fuelMode === 'percentage'
-                            ? 'bg-[#0f2a44] text-white shadow-md'
+                            ? 'text-white'
                             : 'text-[#0f2a44] opacity-50 hover:opacity-100'
                         }`}
                       >
@@ -304,9 +324,9 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                       <button
                         type="button"
                         onClick={(): void => setFuelMode('liters')}
-                        className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-[3px] transition-all ${
+                        className={`relative z-20 flex-1 py-2 text-[9px] font-black uppercase tracking-[0.15em] transition-colors duration-300 ${
                           fuelMode === 'liters'
-                            ? 'bg-[#0f2a44] text-white shadow-md'
+                            ? 'text-white'
                             : 'text-[#0f2a44] opacity-50 hover:opacity-100'
                         }`}
                       >
@@ -315,98 +335,120 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                     </div>
                   </div>
 
-                  {/* NIVEL 3: EL CANAL DE COMBUSTIBLE DUAL */}
-                  <div className="space-y-6">
-                    {/* VISTA PORCENTAJE */}
-                    <div
-                      className={`transition-all duration-300 ${
-                        fuelMode === 'percentage'
-                          ? 'opacity-100 scale-100'
-                          : 'opacity-20 scale-95 pointer-events-none'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Droplets size={16} className="text-emerald-500" />
-                          <p className="text-[10px] font-black uppercase tracking-tighter text-[#0f2a44]">
-                            Nivel de Combustible
-                          </p>
-                        </div>
-                        <p className="text-lg font-black text-emerald-600 tracking-tighter">
-                          {formData.fuelLevel}%
-                        </p>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="25"
-                        value={formData.fuelLevel}
-                        onChange={(e): void =>
-                          setFormData({ ...formData, fuelLevel: Number(e.target.value) })
-                        }
-                        className="w-full accent-emerald-500 cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[9px] font-bold text-[#0f2a44] opacity-40 px-1 mt-2">
-                        <span>E</span>
-                        <span>1/4</span>
-                        <span>1/2</span>
-                        <span>3/4</span>
-                        <span>F</span>
-                      </div>
-                    </div>
-
-                    {/* VISTA LITROS */}
-                    <div
-                      className={`transition-all duration-300 ${
-                        fuelMode === 'liters'
-                          ? 'opacity-100 scale-100'
-                          : 'opacity-20 scale-95 pointer-events-none'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Droplets size={16} className="text-blue-500" />
-                          <p className="text-[10px] font-black uppercase tracking-tighter text-[#0f2a44]">
-                            Volumen en Litros
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            placeholder="0"
-                            value={formData.fuelLiters || ''}
-                            onChange={(e): void =>
-                              setFormData({ ...formData, fuelLiters: Number(e.target.value) })
-                            }
-                            className="w-16 bg-white border border-[#0f2a44]/10 p-1 text-right text-xs font-black text-[#0f2a44] outline-none rounded-[4px] focus:border-blue-500"
-                          />
-                          <span className="text-[10px] font-black text-[#0f2a44] opacity-50">
-                            L
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* TANQUE HORIZONTAL GRÁFICO */}
-                      <div className="h-6 w-full bg-[#0f2a44]/5 rounded-[4px] border border-[#0f2a44]/10 relative overflow-hidden">
+                  {/* NIVEL 3: EL CANAL DE COMBUSTIBLE DUAL (CROSSFADE TRANSITION) */}
+                  <div className="relative z-10 flex-1 flex flex-col justify-end min-h-[120px]">
+                    <AnimatePresence mode="wait">
+                      {fuelMode === 'percentage' ? (
                         <motion.div
-                          initial={false}
-                          animate={{
-                            width: `${Math.min((formData.fuelLiters / 500) * 100, 100)}%`,
-                          }}
-                          className="h-full bg-gradient-to-r from-blue-400 to-blue-600 relative"
+                          key="percentage"
+                          initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                          exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-4"
                         >
-                          {/* Brillo de Cristal Líquido */}
-                          <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent h-[40%]" />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Droplets size={16} className="text-emerald-500" />
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]">
+                                Nivel de Combustible
+                              </p>
+                            </div>
+                            <p className="text-xl font-black text-emerald-600 tracking-tighter">
+                              {formData.fuelLevel}%
+                            </p>
+                          </div>
+
+                          <div className="relative pt-2">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              step="25"
+                              value={formData.fuelLevel}
+                              onChange={(e): void =>
+                                setFormData({ ...formData, fuelLevel: Number(e.target.value) })
+                              }
+                              className="w-full accent-emerald-500 cursor-pointer h-1.5 bg-[#0f2a44]/5 rounded-full appearance-none"
+                            />
+                            <div className="flex justify-between text-[8px] font-black text-[#0f2a44] opacity-30 px-1 mt-3 tracking-widest">
+                              <span>VACÍO</span>
+                              <span>1/4</span>
+                              <span>1/2</span>
+                              <span>3/4</span>
+                              <span>LLENO</span>
+                            </div>
+                          </div>
                         </motion.div>
-                        {/* Marcas de Graduación */}
-                        <div className="absolute inset-0 flex justify-between px-1 pointer-events-none opacity-20">
-                          {[...Array(11)].map((_, i) => (
-                            <div key={i} className="h-full w-[1px] bg-[#0f2a44]" />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                      ) : (
+                        <motion.div
+                          key="liters"
+                          initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                          exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Droplets size={16} className="text-blue-500" />
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]">
+                                Volumen de Carga
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-[4px] border border-[#0f2a44]/10">
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={formData.fuelLiters || ''}
+                                onChange={(e): void =>
+                                  setFormData({ ...formData, fuelLiters: Number(e.target.value) })
+                                }
+                                className="w-14 text-right text-xs font-black text-[#0f2a44] outline-none"
+                              />
+                              <span className="text-[9px] font-black text-[#0f2a44] opacity-40">
+                                L
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* TANQUE HORIZONTAL SENIOR (LCD CRYSTAL FINISH) */}
+                          <div className="relative pt-1">
+                            <div className="h-8 w-full bg-[#0f2a44]/5 rounded-[4px] border border-[#0f2a44]/10 relative overflow-hidden p-1 shadow-inner">
+                              <motion.div
+                                initial={false}
+                                animate={{
+                                  width: `${Math.min((formData.fuelLiters / 500) * 100, 100)}%`,
+                                }}
+                                className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-400 relative rounded-[2px] shadow-sm"
+                                transition={{ type: 'spring', stiffness: 50, damping: 15 }}
+                              >
+                                {/* LCD Gloss Reflection */}
+                                <div className="absolute inset-x-0 top-0 h-[40%] bg-white/20 rounded-t-[1px]" />
+                                <div className="absolute inset-x-0 bottom-0 h-[20%] bg-black/10 rounded-b-[1px]" />
+                              </motion.div>
+
+                              {/* Precise Measurement Ticks */}
+                              <div className="absolute inset-0 flex justify-between px-2 pointer-events-none">
+                                {[...Array(21)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className={`h-full w-[1px] bg-[#0f2a44] ${
+                                      i % 5 === 0 ? 'opacity-20' : 'opacity-5 h-[40%] self-center'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex justify-between text-[8px] font-black text-[#0f2a44] opacity-30 px-1 mt-3 tracking-[0.2em]">
+                              <span>0 L</span>
+                              <span>250 L</span>
+                              <span>500 L</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
