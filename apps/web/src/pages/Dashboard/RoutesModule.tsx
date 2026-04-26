@@ -135,7 +135,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
           />
 
           {/* 📊 CONTENIDO DINÁMICO DE PANEL INTEGRADO */}
-          <div ref={panelRef}>
+          <div ref={panelRef} className="scroll-mt-6">
             {activePanel === 'LOGS' && <RouteLogTable onEdit={handleEdit} />}
 
             {activePanel === 'DISPATCH' && (
