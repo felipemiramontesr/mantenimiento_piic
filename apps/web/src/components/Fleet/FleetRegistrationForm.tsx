@@ -566,13 +566,22 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 />
               </ArchonField>
 
-              <ArchonField label="Horómetro / Odómetro" icon={Gauge}>
+              <ArchonField
+                label={
+                  controller.assetTypes.find((at) => at.id === formData.assetTypeId)?.label ===
+                  'Vehículo'
+                    ? 'Odómetro (KM)'
+                    : 'Horómetro (HRS)'
+                }
+                icon={Gauge}
+              >
                 <input
                   type="number"
+                  placeholder="0"
                   className="archon-input font-mono text-center text-navy-800"
                   value={formData.odometer}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
-                    setFormData({ ...formData, odometer: parseInt(e.target.value, 10) })
+                    setFormData({ ...formData, odometer: parseInt(e.target.value, 10) || 0 })
                   }
                 />
               </ArchonField>
