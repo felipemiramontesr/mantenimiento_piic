@@ -125,16 +125,14 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">
         <div className="flex flex-col gap-12">
-          {activePanel !== 'DISPATCH' && (
-            <RouteManagementCards
-              activePanel={activePanel}
-              onPanelChange={(p): void => {
-                setActivePanel(p);
-                scrollToPanel();
-              }}
-              onAction={handleAction}
-            />
-          )}
+          <RouteManagementCards
+            activePanel={activePanel}
+            onPanelChange={(p): void => {
+              setActivePanel(p);
+              scrollToPanel();
+            }}
+            onAction={handleAction}
+          />
 
           {/* 📊 CONTENIDO DINÁMICO DE PANEL INTEGRADO */}
           <div ref={panelRef}>

@@ -10,7 +10,6 @@ import {
   ChevronRight,
   ShieldCheck,
   AlertCircle,
-  X,
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
@@ -118,19 +117,10 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
           <div>
             <h2 className="text-lg font-black uppercase tracking-tighter leading-none">
-              {isEdit ? 'Rectificación de Ruta' : 'Orden de Despacho'}
+              Control de Salida de Activos
             </h2>
-            <p className="text-[10px] uppercase tracking-widest opacity-60 font-bold">
-              {isEdit ? 'Edición de información operativa' : 'Control de Salida de Activos'}
-            </p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-[4px] hover:bg-white/10 flex items-center justify-center transition-colors border border-white/20"
-        >
-          <X size={16} />
-        </button>
       </header>
 
       {/* Body Integrado */}
