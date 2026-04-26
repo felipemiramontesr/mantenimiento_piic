@@ -17,16 +17,15 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToPanel = (): void => {
-    if (panelRef.current) {
+    const element = panelRef.current;
+    if (element) {
       setTimeout(() => {
-        // Targeted Chassis Scroll (v.38.3.0)
-        // Since Archon uses an internal 'overflow-y: auto' chassis, window.scrollTo is ineffective.
-        const element = panelRef.current;
+        // Targeted Chassis Scroll (v.38.3.1)
         const chassis = element.closest('.archon-workspace-chassis');
 
         if (chassis) {
           const offset = 100; // Calibrated Offset for Professional Breathing Room
-          const targetPosition = element.offsetTop - offset;
+          const targetPosition = (element as HTMLElement).offsetTop - offset;
 
           chassis.scrollTo({
             top: targetPosition,
@@ -161,7 +160,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.3.0</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.3.1</p>
       </footer>
     </main>
   );
