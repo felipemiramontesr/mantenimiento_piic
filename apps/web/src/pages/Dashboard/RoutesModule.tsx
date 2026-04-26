@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigation } from 'lucide-react';
-import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+import { BRANDING_NAME } from '../../constants/versionConstants';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
 import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
@@ -17,10 +17,21 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToPanel = (): void => {
-    if (panelRef.current?.scrollIntoView) {
+    if (panelRef.current) {
       setTimeout(() => {
-        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+        // Manual Calculation for 100% Reliability (Bypassing CSS Scroll-MT)
+        const element = panelRef.current;
+        const offset = 100; // Calibrated for the specific Archon Header Height
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = element?.getBoundingClientRect().top ?? 0;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth',
+        });
+      }, 150);
     }
   };
 
@@ -148,9 +159,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">
-          {BRANDING_NAME} {SYSTEM_VERSION}
-        </p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.2.1</p>
       </footer>
     </main>
   );
