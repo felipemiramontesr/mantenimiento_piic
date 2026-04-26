@@ -12,11 +12,9 @@ export interface RouteLog {
   destination: string;
   description?: string;
   fuelLevel?: number;
-  fuelLiters?: number;
   start_time: string;
   end_time: string | null;
   start_km: number;
-  odometer?: number;
   end_km: number | null;
 }
 
