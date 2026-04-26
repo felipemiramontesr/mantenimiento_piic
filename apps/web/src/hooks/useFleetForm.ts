@@ -48,6 +48,9 @@ const useFleetForm = (): UseFleetFormReturn => {
     filterBrands: [] as CatalogOption[],
     engineTypes: [] as CatalogOption[],
     terrainTypes: [] as CatalogOption[],
+    // 🔱 Sovereign Asset Management Catalogs (v.39.0.0)
+    owners: [] as CatalogOption[],
+    complianceStatuses: [] as CatalogOption[],
   });
 
   const resetError = useCallback(() => setError(null), []);
@@ -104,6 +107,8 @@ const useFleetForm = (): UseFleetFormReturn => {
         filter,
         engines,
         terrains,
+        ownersRes,
+        complianceRes,
       ] = await Promise.all([
         api.get(`/catalogs/ASSET_TYPE?_cb=${ts}`),
         api.get(`/catalogs/FUEL?_cb=${ts}`),
@@ -119,6 +124,8 @@ const useFleetForm = (): UseFleetFormReturn => {
         api.get(`/catalogs/FILTER_BRAND?_cb=${ts}`),
         api.get(`/catalogs/ENGINE_TYPE?_cb=${ts}`),
         api.get(`/catalogs/TERRAIN?_cb=${ts}`),
+        api.get(`/catalogs/FLEET_OWNER?_cb=${ts}`),
+        api.get(`/catalogs/COMPLIANCE_STATUS?_cb=${ts}`),
       ]);
 
       const assetList = extractCatalogData(asset);
@@ -142,6 +149,8 @@ const useFleetForm = (): UseFleetFormReturn => {
           filterBrands: extractCatalogData(filter),
           engineTypes: extractCatalogData(engines),
           terrainTypes: extractCatalogData(terrains),
+          owners: extractCatalogData(ownersRes),
+          complianceStatuses: extractCatalogData(complianceRes),
           marcas: brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
         }));
 

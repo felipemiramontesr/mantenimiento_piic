@@ -58,6 +58,15 @@ export interface FleetUnit {
   tarjetaCirculacion: string | null;
   lubeType: string | null;
   filterBrand: string | null;
+  // 🔱 Sovereign Asset Management (v.39.0.0)
+  ownerId: number | null;
+  owner?: string;
+  complianceStatusId: number | null;
+  complianceStatus?: string;
+  accountingAccount: string | null;
+  legalComplianceDate: string | null;
+  insuranceExpiryDate: string | null;
+  monthlyLeasePayment: number;
   // Status
   status: FleetStatus;
   assignedOperatorId: number | null;
@@ -129,6 +138,13 @@ export interface CreateFleetUnit {
   description?: string;
   lubeType?: string;
   filterBrand?: string;
+  // 🔱 Sovereign Asset Management (v.39.0.0)
+  ownerId?: number | null;
+  complianceStatusId?: number | null;
+  accountingAccount?: string;
+  legalComplianceDate?: string;
+  insuranceExpiryDate?: string;
+  monthlyLeasePayment?: number;
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId?: number | null;
   maintenanceUsageFreqId?: number | null;
@@ -163,6 +179,9 @@ export interface UseFleetFormReturn {
   terrainTypes: CatalogOption[];
   marcas: CatalogOption[];
   modelos: CatalogOption[];
+  // 🔱 Sovereign Asset Management Catalogs (v.39.0.0)
+  owners: CatalogOption[];
+  complianceStatuses: CatalogOption[];
   setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;

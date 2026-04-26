@@ -236,18 +236,32 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           </div>
 
           <div className="space-y-6">
-            <ArchonField label="Número Económico (ID Único)" icon={Tag} required>
-              <input
-                required
-                type="text"
-                placeholder="Ej: VEH-001"
-                className="archon-input font-bold text-lg tracking-widest text-sky-800"
-                value={formData.id}
-                onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
-                  setFormData({ ...formData, id: e.target.value })
-                }
-              />
-            </ArchonField>
+            <div className="grid grid-cols-2 gap-6">
+              <ArchonField label="Número Económico" icon={Tag} required>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej: VEH-001"
+                  className="archon-input font-bold text-lg tracking-widest text-sky-800"
+                  value={formData.id}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
+                    setFormData({ ...formData, id: e.target.value })
+                  }
+                />
+              </ArchonField>
+              <ArchonField label="Estatus de Propiedad" icon={Layers}>
+                <ArchonSelect
+                  options={controller.owners.map((o: CatalogOption) => ({
+                    value: o.id.toString(),
+                    label: o.label,
+                  }))}
+                  value={formData.ownerId?.toString() || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, ownerId: parseInt(val, 10) })
+                  }
+                />
+              </ArchonField>
+            </div>
 
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Placas / Matrícula" icon={Tag}>
@@ -294,6 +308,43 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   value={formData.departmentId?.toString() ?? ''}
                   onChange={(val: string): void =>
                     setFormData({ ...formData, departmentId: parseInt(val, 10) })
+                  }
+                />
+              </ArchonField>
+            </div>
+
+            {/* 🛡️ CUMPLIMIENTO SOBERANO */}
+            <div className="pt-4 border-t border-slate-100 space-y-6">
+              <h4 className="text-[10px] font-black text-sky-600 uppercase tracking-[0.2em]">
+                Capa de Cumplimiento Legal & Seguridad
+              </h4>
+              <div className="grid grid-cols-2 gap-6">
+                <ArchonField label="Estatus Botiquín PA" icon={ShieldCheck}>
+                  <ArchonSelect
+                    options={controller.complianceStatuses.map((s: CatalogOption) => ({
+                      value: s.id.toString(),
+                      label: s.label,
+                    }))}
+                    value={formData.complianceStatusId?.toString() || ''}
+                    onChange={(val: string): void =>
+                      setFormData({ ...formData, complianceStatusId: parseInt(val, 10) })
+                    }
+                  />
+                </ArchonField>
+                <ArchonField label="Vigencia Seguro" icon={Calendar}>
+                  <ArchonDatePicker
+                    value={formData.insuranceExpiryDate || ''}
+                    onChange={(val: string): void =>
+                      setFormData({ ...formData, insuranceExpiryDate: val })
+                    }
+                  />
+                </ArchonField>
+              </div>
+              <ArchonField label="Cumplimiento Legal (Placas/Tarjeta)" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.legalComplianceDate || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, legalComplianceDate: val })
                   }
                 />
               </ArchonField>
@@ -450,6 +501,46 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 }
               />
             </ArchonField>
+
+            {/* 💰 GESTIÓN FINANCIERA */}
+            <div className="pt-4 border-t border-slate-100 space-y-6">
+              <h4 className="text-[10px] font-black text-navy-400 uppercase tracking-[0.2em]">
+                Capa de Gestión Financiera
+              </h4>
+              <div className="grid grid-cols-2 gap-6">
+                <ArchonField label="Cuenta Contable" icon={Tag}>
+                  <input
+                    type="text"
+                    placeholder="8019-XXX-XXX"
+                    className="archon-input font-mono"
+                    value={formData.accountingAccount || ''}
+                    onChange={(
+                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                    ): void => setFormData({ ...formData, accountingAccount: e.target.value })}
+                  />
+                </ArchonField>
+                <ArchonField label="Cuota Mensual / Arrend." icon={Zap}>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                      $
+                    </span>
+                    <input
+                      type="number"
+                      className="archon-input pl-8 font-mono text-emerald-700 font-bold"
+                      value={formData.monthlyLeasePayment || ''}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                      ): void =>
+                        setFormData({
+                          ...formData,
+                          monthlyLeasePayment: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                    />
+                  </div>
+                </ArchonField>
+              </div>
+            </div>
           </div>
         </div>
 

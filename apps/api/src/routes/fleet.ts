@@ -51,6 +51,13 @@ const createFleetSchema = z.object({
   lastServiceDate: z.string().optional().nullable(),
   lastServiceReading: z.number().optional().default(0),
   dailyUsageAvg: z.number().min(0).optional().nullable(),
+  // 🔱 Sovereign Asset Management (v.39.0.0)
+  ownerId: z.number().int().optional().nullable(),
+  complianceStatusId: z.number().int().optional().nullable(),
+  accountingAccount: z.string().max(50).optional().nullable(),
+  legalComplianceDate: z.string().optional().nullable(),
+  insuranceExpiryDate: z.string().optional().nullable(),
+  monthlyLeasePayment: z.number().min(0).default(0),
 });
 
 // ============================================================================
@@ -97,6 +104,13 @@ const updateFleetSchema = z.object({
   lastServiceDate: z.string().optional().nullable(),
   lastServiceReading: z.number().optional().nullable(),
   dailyUsageAvg: z.number().min(0).optional().nullable(),
+  // 🔱 Sovereign Asset Management (v.39.0.0)
+  ownerId: z.number().int().optional().nullable(),
+  complianceStatusId: z.number().int().optional().nullable(),
+  accountingAccount: z.string().max(50).optional().nullable(),
+  legalComplianceDate: z.string().optional().nullable(),
+  insuranceExpiryDate: z.string().optional().nullable(),
+  monthlyLeasePayment: z.number().min(0).optional(),
 });
 
 // ============================================================================
@@ -164,6 +178,15 @@ interface FleetUnit extends RowDataPacket {
   traccion_id: number;
   transmision_id: number;
   daily_usage_avg: number | null;
+  // 🔱 Sovereign Asset Management (v.39.0.0)
+  owner_id: number | null;
+  owner: string | null;
+  compliance_status_id: number | null;
+  compliance_status: string | null;
+  accounting_account: string | null;
+  legal_compliance_date: string | null;
+  insurance_expiry_date: string | null;
+  monthly_lease_payment: number;
 }
 
 interface UnitHealth {
@@ -327,6 +350,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_ts.label AS transmision,
           c_tire_brand.label AS tire_brand,
           c_terrain.label AS tipo_terreno,
+          c_owner.label AS owner,
+          c_compl.label AS compliance_status,
           ct.numeric_value AS time_limit_days,
           cu.numeric_value AS usage_limit_units,
           cu.unit AS usage_unit_name
@@ -341,6 +366,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         LEFT JOIN common_catalogs c_ts ON f.transmision_id = c_ts.id
         LEFT JOIN common_catalogs c_tire_brand ON f.tire_brand_id = c_tire_brand.id
         LEFT JOIN common_catalogs c_terrain ON f.terrain_type_id = c_terrain.id
+        LEFT JOIN common_catalogs c_owner ON f.owner_id = c_owner.id
+        LEFT JOIN common_catalogs c_compl ON f.compliance_status_id = c_compl.id
         LEFT JOIN common_catalogs ct ON f.maintenance_time_freq_id = ct.id
         LEFT JOIN common_catalogs cu ON f.maintenance_usage_freq_id = cu.id
         ORDER BY f.created_at DESC
