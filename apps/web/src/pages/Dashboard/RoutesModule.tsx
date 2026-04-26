@@ -20,11 +20,11 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
     const element = panelRef.current;
     if (element) {
       setTimeout(() => {
-        // Targeted Chassis Scroll (v.38.3.1)
+        // Targeted Chassis Scroll (v.38.4.0)
         const chassis = element.closest('.archon-workspace-chassis');
 
         if (chassis) {
-          const offset = 100; // Calibrated Offset for Professional Breathing Room
+          const offset = 24; // Calibrated Offset: Exactly Half of Gap-12 (48px)
           const targetPosition = (element as HTMLElement).offsetTop - offset;
 
           chassis.scrollTo({
@@ -32,7 +32,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
             behavior: 'smooth',
           });
         }
-      }, 200);
+      }, 300); // Increased stability delay
     }
   };
 
@@ -160,7 +160,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.3.1</p>
+        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.4.0</p>
       </footer>
     </main>
   );
