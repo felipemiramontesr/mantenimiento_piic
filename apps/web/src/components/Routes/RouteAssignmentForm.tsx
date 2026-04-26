@@ -111,15 +111,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           isEdit ? 'bg-[#0f2a44] border-[#0f2a44]' : 'bg-emerald-600 border-emerald-600'
         }`}
       >
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded bg-white/20 border border-white/40 flex items-center justify-center">
-            <Navigation className="text-white" size={24} />
-          </div>
-          <div>
-            <h2 className="text-lg font-black uppercase tracking-tighter leading-none">
-              Control de Salida de Activos
-            </h2>
-          </div>
+        <div className="flex items-center gap-3">
+          <Navigation className="text-white shrink-0" size={20} />
+          <h2 className="text-lg font-black uppercase tracking-tighter leading-none">
+            Control de Salida de Activos
+          </h2>
         </div>
       </header>
 
