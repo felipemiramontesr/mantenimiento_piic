@@ -156,8 +156,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const response = await api.get('/catalogs/USER_ROLE');
       if (response.data?.length) {
-        setRoles(response.data);
-        archonCache.set('system_roles', response.data);
+        // 🔱 ARCHON PRIORITY SORTING: Archon must always be at the zenith of the hierarchy
+        const sortedRoles = [...response.data].sort((a: CatalogOption, b: CatalogOption) => {
+          if (a.label === 'Archon') return -1;
+          if (b.label === 'Archon') return 1;
+          return a.label.localeCompare(b.label);
+        });
+        setRoles(sortedRoles);
+        archonCache.set('system_roles', sortedRoles);
       }
     } catch (err) {
       // Slient fallback
