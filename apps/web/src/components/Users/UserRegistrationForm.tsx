@@ -275,6 +275,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
             <ArchonField label="Rol Archon" icon={Shield} required>
               <ArchonSelect
                 options={[
+                  { value: '989', label: 'Auditor' },
                   { value: '1', label: 'Administrador' },
                   { value: '2', label: 'Operador' },
                   { value: '3', label: 'Técnico' },

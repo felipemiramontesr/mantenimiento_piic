@@ -24,6 +24,7 @@ const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
   let styles = 'bg-gray-100 text-gray-600';
   if (roleName === 'Archon') styles = 'bg-[#0f2a44] text-white';
   if (roleName === 'Administrador') styles = 'bg-blue-100 text-blue-700';
+  if (roleName === 'Auditor') styles = 'bg-purple-100 text-purple-700';
   if (roleName === 'Técnico') styles = 'bg-cyan-100 text-cyan-700';
   if (roleName === 'Operador') styles = 'bg-emerald-100 text-emerald-700';
 

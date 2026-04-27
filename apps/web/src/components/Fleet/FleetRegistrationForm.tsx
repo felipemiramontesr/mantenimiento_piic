@@ -324,6 +324,34 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   }
                 />
               </ArchonField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <ArchonField label="Póliza de Seguro" icon={FileText}>
+                <input
+                  type="text"
+                  placeholder="Folio de Póliza"
+                  className="archon-input font-mono"
+                  value={formData.insurance_policy_number || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
+                    setFormData({ ...formData, insurance_policy_number: e.target.value })
+                  }
+                />
+              </ArchonField>
+              <ArchonField label="Aseguradora" icon={ShieldCheck}>
+                <input
+                  type="text"
+                  placeholder="Ej: AXA, Qualitas..."
+                  className="archon-input"
+                  value={formData.insurance_company || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
+                    setFormData({ ...formData, insurance_company: e.target.value })
+                  }
+                />
+              </ArchonField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Vigencia Seguro" icon={Calendar}>
                 <ArchonDatePicker
                   value={formData.insuranceExpiryDate || ''}
@@ -332,12 +360,43 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   }
                 />
               </ArchonField>
+              <ArchonField label="Folio Tarjeta Circulación" icon={Tag}>
+                <input
+                  type="text"
+                  placeholder="Número de Folio"
+                  className="archon-input font-mono"
+                  value={formData.circulation_card_number || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
+                    setFormData({ ...formData, circulation_card_number: e.target.value })
+                  }
+                />
+              </ArchonField>
             </div>
-            <ArchonField label="Cumplimiento Legal (Placas/Tarjeta)" icon={Calendar}>
+
+            <div className="grid grid-cols-2 gap-6">
+              <ArchonField label="Cumplimiento Legal (Placas)" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.legalComplianceDate || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, legalComplianceDate: val })
+                  }
+                />
+              </ArchonField>
+              <ArchonField label="Verif. Ambiental" icon={Activity}>
+                <ArchonDatePicker
+                  value={formData.last_environmental_verification || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, last_environmental_verification: val })
+                  }
+                />
+              </ArchonField>
+            </div>
+
+            <ArchonField label="Inspección Físico-Mecánica" icon={Settings}>
               <ArchonDatePicker
-                value={formData.legalComplianceDate || ''}
+                value={formData.last_mechanical_verification || ''}
                 onChange={(val: string): void =>
-                  setFormData({ ...formData, legalComplianceDate: val })
+                  setFormData({ ...formData, last_mechanical_verification: val })
                 }
               />
             </ArchonField>
