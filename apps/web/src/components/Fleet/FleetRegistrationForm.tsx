@@ -173,7 +173,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       <div className="archon-grid-2 items-start gap-8">
         {/* PANEL 1: MOTOR DE JERARQUÍA (Top-Left) */}
         <div
-          className="glass-card-pro bg-white p-10 space-y-8 relative overflow-hidden"
+          className="glass-card-pro bg-white p-10 space-y-8 relative overflow-hidden z-20"
           style={{ borderTop: '4px solid #f2b705' }}
         >
           <div className="archon-card-header-pro">
@@ -300,7 +300,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
         {/* PANEL 2: IDENTIDAD & CUMPLIMIENTO (Top-Right) */}
         <div
-          className="glass-card-pro bg-white p-10 space-y-8 relative overflow-hidden"
+          className="glass-card-pro bg-white p-10 space-y-8 relative overflow-hidden z-20"
           style={{ borderTop: '4px solid #0ea5e9' }}
         >
           <div className="archon-card-header-pro">
@@ -354,7 +354,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
         {/* PANEL 3: PERFIL TÉCNICO DE LA UNIDAD (Bottom-Left) */}
         <div
-          className="glass-card-pro bg-white p-10 space-y-8"
+          className="glass-card-pro bg-white p-10 space-y-8 relative z-10"
           style={{ borderTop: '4px solid #0f2a44' }}
         >
           <div className="archon-card-header-pro">
@@ -538,7 +538,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
         {/* PANEL 4: LOGÍSTICA ESTRATÉGICA & MANTENIMIENTO (Bottom-Right) */}
         <div
-          className="glass-card-pro bg-white p-10 space-y-8"
+          className="glass-card-pro bg-white p-10 space-y-8 relative z-10"
           style={{ borderTop: '4px solid #64748b' }}
         >
           <div className="archon-card-header-pro">
