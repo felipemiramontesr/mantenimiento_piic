@@ -164,7 +164,6 @@ export interface CreateFleetUnit {
   lastServiceReading?: number;
   maintIntervalKm?: number;
   maintIntervalDays?: number;
-  dailyUsageAvg?: number | null;
   insurance_company_id?: number | null;
 }
 

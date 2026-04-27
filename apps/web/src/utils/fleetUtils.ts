@@ -29,7 +29,7 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   tireBrandId: undefined,
   terrainTypeId: undefined,
   capacidadCarga: '',
-  odometer: 0,
+  odometer: undefined,
   sede: '',
   centroMantenimiento: 'PIIC',
   vigenciaSeguro: '',
@@ -52,13 +52,12 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   last_environmental_verification: '',
   last_mechanical_verification: '',
   circulation_card_number: '',
-  monthlyLeasePayment: 0,
+  monthlyLeasePayment: undefined,
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId: null,
   maintenanceUsageFreqId: null,
   lastServiceDate: '',
-  lastServiceReading: 0,
-  dailyUsageAvg: 0,
+  lastServiceReading: undefined,
 });
 
 export default getInitialFleetForm;

@@ -34,7 +34,6 @@ describe('FleetRegistrationForm Component', () => {
       year: 2024,
       departmentId: 228,
       operationalUseId: 236,
-      dailyUsageAvg: 30,
       traccionId: null,
       transmisionId: null,
       fuelTypeId: null,
