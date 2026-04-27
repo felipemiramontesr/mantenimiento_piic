@@ -19,6 +19,8 @@ export interface CatalogOption {
   id: number;
   code?: string;
   label: string;
+  unit?: string;
+  numeric_value?: number;
 }
 
 export interface FleetUnit {
