@@ -339,7 +339,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
               <ArchonField label="Aseguradora" icon={ShieldCheck}>
                 <ArchonSelect
-                  options={controller.insuranceCompanies.map((c: CatalogOption) => ({
+                  options={(controller.insuranceCompanies || []).map((c: CatalogOption) => ({
                     value: c.label,
                     label: c.label,
                   }))}
@@ -477,7 +477,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
               <ArchonField label="Color Dominante" icon={Activity}>
                 <ArchonSelect
-                  options={controller.colors.map((c: CatalogOption) => ({
+                  options={(controller.colors || []).map((c: CatalogOption) => ({
                     value: c.label,
                     label: c.label,
                   }))}
@@ -700,7 +700,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             <ArchonField label="Centro de Gestión Autorizado" icon={Settings}>
               <ArchonSelect
-                options={controller.maintenanceCenters.map((m: CatalogOption) => ({
+                options={(controller.maintenanceCenters || []).map((m: CatalogOption) => ({
                   value: m.label,
                   label: m.label,
                 }))}

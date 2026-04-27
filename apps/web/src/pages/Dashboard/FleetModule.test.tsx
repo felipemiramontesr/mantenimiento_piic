@@ -71,6 +71,10 @@ vi.mock('../../hooks/useFleetForm', () => ({
     handleModeloChange: vi.fn(),
     engineTypes: [] as string[],
     terrainTypes: [] as string[],
+    colors: [] as CatalogOption[],
+    maintenanceCenters: [] as CatalogOption[],
+    insuranceCompanies: [] as CatalogOption[],
+    routeOrigins: [] as CatalogOption[],
   })),
 }));
 
@@ -119,6 +123,10 @@ describe('FleetModule Orchestrator', () => {
     handleModeloChange: vi.fn(),
     engineTypes: [] as string[],
     terrainTypes: [] as string[],
+    colors: [] as CatalogOption[],
+    maintenanceCenters: [] as CatalogOption[],
+    insuranceCompanies: [] as CatalogOption[],
+    routeOrigins: [] as CatalogOption[],
   } as unknown as UseFleetFormReturn;
 
   const renderModule = (): RenderResult =>
