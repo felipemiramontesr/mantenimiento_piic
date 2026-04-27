@@ -344,9 +344,6 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             {/* 💰 GESTIÓN FINANCIERA */}
             <div className="pt-4 border-t border-slate-100 space-y-6">
-              <h4 className="text-[10px] font-black text-navy-400 uppercase tracking-[0.2em]">
-                Capa de Gestión Financiera
-              </h4>
               <div className="grid grid-cols-2 gap-6">
                 <ArchonField label="Cuenta Contable" icon={Tag}>
                   <input
