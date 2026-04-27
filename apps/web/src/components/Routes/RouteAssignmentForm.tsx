@@ -15,6 +15,9 @@ import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import ArchonSelect from '../ArchonSelect';
 import { RouteLog } from './RouteLogTable';
+import { CatalogOption } from '../../types/fleet';
+import { archonCache } from '../../utils/archonCache';
+import api from '../../api/client';
 
 interface RouteAssignmentFormProps {
   onClose: () => void;
@@ -34,11 +37,15 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   const [formData, setFormData] = useState({
     unitId: '',
     operatorId: '',
-    origin: 'Arian Silver Zacatecas',
+    origin: '',
     destination: '',
     description: '',
     fuelLevel: 100,
   });
+
+  const [origins, setOrigins] = useState<CatalogOption[]>(
+    () => archonCache.get<CatalogOption[]>('route_origins') || []
+  );
 
   const isEdit = !!routeToEdit;
 
@@ -68,6 +75,27 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   const [selectedUnitData, setSelectedUnitData] = useState<
     import('../../types/fleet').FleetUnit | null
   >(null);
+
+  // Hydrate Origins
+  useEffect(() => {
+    const fetchOrigins = async (): Promise<void> => {
+      try {
+        const res = await api.get('/catalogs/ROUTE_ORIGIN');
+        const data = res.data?.data || res.data || [];
+        setOrigins(data);
+        archonCache.set('route_origins', data);
+        if (data.length > 0 && !formData.origin && !routeToEdit) {
+          setFormData((prev) => ({ ...prev, origin: data[0].label }));
+        }
+      } catch (err) {
+        // Fallback to default if everything fails
+        if (origins.length === 0) {
+          setOrigins([{ id: 1, label: 'Arian Silver Zacatecas' }]);
+        }
+      }
+    };
+    fetchOrigins();
+  }, []);
 
   // Sync unit data when selection changes
   useEffect((): void => {
@@ -204,11 +232,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                   <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
                     Origen
                   </label>
-                  <input
-                    type="text"
-                    readOnly
+                  <ArchonSelect
+                    options={origins.map((o) => ({ value: o.label, label: o.label }))}
                     value={formData.origin}
-                    className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 p-3 text-xs font-bold text-[#0f2a44] outline-none rounded-[4px]"
+                    onChange={(val): void => setFormData({ ...formData, origin: val })}
+                    icon={MapPin}
                   />
                 </div>
                 <div className="space-y-2">

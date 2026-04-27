@@ -51,6 +51,10 @@ const useFleetForm = (): UseFleetFormReturn => {
     // 🔱 Sovereign Asset Management Catalogs (v.39.0.0)
     owners: [] as CatalogOption[],
     complianceStatuses: [] as CatalogOption[],
+    colors: [] as CatalogOption[],
+    maintenanceCenters: [] as CatalogOption[],
+    insuranceCompanies: [] as CatalogOption[],
+    routeOrigins: [] as CatalogOption[],
   });
 
   const resetError = useCallback(() => setError(null), []);
@@ -109,6 +113,10 @@ const useFleetForm = (): UseFleetFormReturn => {
         terrains,
         ownersRes,
         complianceRes,
+        colorsRes,
+        maintCentersRes,
+        insuranceRes,
+        originsRes,
       ] = await Promise.all([
         api.get(`/catalogs/ASSET_TYPE?_cb=${ts}`),
         api.get(`/catalogs/FUEL?_cb=${ts}`),
@@ -126,6 +134,10 @@ const useFleetForm = (): UseFleetFormReturn => {
         api.get(`/catalogs/TERRAIN_TYPE?_cb=${ts}`),
         api.get(`/catalogs/FLEET_OWNER?_cb=${ts}`),
         api.get(`/catalogs/COMPLIANCE_STATUS?_cb=${ts}`),
+        api.get(`/catalogs/VEHICLE_COLOR?_cb=${ts}`),
+        api.get(`/catalogs/MAINTENANCE_CENTER?_cb=${ts}`),
+        api.get(`/catalogs/INSURANCE_COMPANY?_cb=${ts}`),
+        api.get(`/catalogs/ROUTE_ORIGIN?_cb=${ts}`),
       ]);
 
       const assetList = extractCatalogData(asset);
@@ -151,6 +163,10 @@ const useFleetForm = (): UseFleetFormReturn => {
           terrainTypes: extractCatalogData(terrains),
           owners: extractCatalogData(ownersRes),
           complianceStatuses: extractCatalogData(complianceRes),
+          colors: extractCatalogData(colorsRes),
+          maintenanceCenters: extractCatalogData(maintCentersRes),
+          insuranceCompanies: extractCatalogData(insuranceRes),
+          routeOrigins: extractCatalogData(originsRes),
           marcas: brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
         }));
 

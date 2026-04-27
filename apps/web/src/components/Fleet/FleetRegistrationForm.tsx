@@ -22,7 +22,6 @@ import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
 import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
-import { COLORES } from '../../constants/fleetConstants';
 import {
   CentroMantenimiento,
   UseFleetFormReturn,
@@ -339,13 +338,14 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 />
               </ArchonField>
               <ArchonField label="Aseguradora" icon={ShieldCheck}>
-                <input
-                  type="text"
-                  placeholder="Ej: AXA, Qualitas..."
-                  className="archon-input"
+                <ArchonSelect
+                  options={controller.insuranceCompanies.map((c: CatalogOption) => ({
+                    value: c.label,
+                    label: c.label,
+                  }))}
                   value={formData.insurance_company || ''}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
-                    setFormData({ ...formData, insurance_company: e.target.value })
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, insurance_company: val })
                   }
                 />
               </ArchonField>
@@ -477,7 +477,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
               <ArchonField label="Color Dominante" icon={Activity}>
                 <ArchonSelect
-                  options={COLORES}
+                  options={controller.colors.map((c: CatalogOption) => ({
+                    value: c.label,
+                    label: c.label,
+                  }))}
                   value={formData.color ?? ''}
                   onChange={(val: string): void => setFormData({ ...formData, color: val })}
                 />
@@ -697,7 +700,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             <ArchonField label="Centro de Gestión Autorizado" icon={Settings}>
               <ArchonSelect
-                options={['PIIC', 'Archon Core']}
+                options={controller.maintenanceCenters.map((m: CatalogOption) => ({
+                  value: m.label,
+                  label: m.label,
+                }))}
                 value={formData.centroMantenimiento}
                 onChange={(val: string): void =>
                   setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })

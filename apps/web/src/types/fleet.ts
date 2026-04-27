@@ -165,6 +165,7 @@ export interface CreateFleetUnit {
   maintIntervalKm?: number;
   maintIntervalDays?: number;
   dailyUsageAvg?: number | null;
+  insurance_company_id?: number | null;
 }
 
 export interface UseFleetFormReturn {
@@ -191,9 +192,12 @@ export interface UseFleetFormReturn {
   terrainTypes: CatalogOption[];
   marcas: CatalogOption[];
   modelos: CatalogOption[];
-  // 🔱 Sovereign Asset Management Catalogs (v.39.0.0)
   owners: CatalogOption[];
   complianceStatuses: CatalogOption[];
+  colors: CatalogOption[];
+  maintenanceCenters: CatalogOption[];
+  insuranceCompanies: CatalogOption[];
+  routeOrigins: CatalogOption[];
   setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;
