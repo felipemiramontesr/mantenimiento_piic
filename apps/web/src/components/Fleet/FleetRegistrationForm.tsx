@@ -594,10 +594,22 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
               <ArchonField label="Ciclo Mto. (Uso)" icon={Activity}>
                 <ArchonSelect
-                  options={freqUsage.map((u: CatalogOption) => ({
-                    value: u.id.toString(),
-                    label: u.label,
-                  }))}
+                  options={freqUsage
+                    .filter((u: CatalogOption) => {
+                      const selectedAsset = assetTypes.find((at) => at.id === formData.assetTypeId);
+                      const isVehicle =
+                        selectedAsset?.code === 'AT_VEH' || selectedAsset?.label === 'Vehículo';
+
+                      // 🔱 Archon Dynamic Filtering Logic
+                      if (isVehicle) {
+                        return u.unit === 'km' || u.label.includes('KM');
+                      }
+                      return u.unit === 'hrs' || u.label.includes('HRS');
+                    })
+                    .map((u: CatalogOption) => ({
+                      value: u.id.toString(),
+                      label: u.label,
+                    }))}
                   value={formData.maintenanceUsageFreqId?.toString() || ''}
                   onChange={(val: string): void =>
                     setFormData({ ...formData, maintenanceUsageFreqId: parseInt(val, 10) })
