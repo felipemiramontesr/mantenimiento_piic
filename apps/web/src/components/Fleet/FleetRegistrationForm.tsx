@@ -800,7 +800,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="number"
                   step="0.1"
                   placeholder="Ej: 50.5"
-                  className="archon-input font-mono text-emerald-700 font-bold w-full pr-16"
+                  className="archon-input font-mono text-emerald-700 font-bold w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   value={formData.dailyUsageAvg ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({
