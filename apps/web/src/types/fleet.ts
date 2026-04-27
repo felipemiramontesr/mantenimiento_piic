@@ -161,8 +161,10 @@ export interface CreateFleetUnit {
   maintenanceTimeFreqId?: number | null;
   maintenanceUsageFreqId?: number | null;
   lastServiceDate?: string | null;
+  lastServiceReading?: number;
   maintIntervalKm?: number;
   maintIntervalDays?: number;
+  dailyUsageAvg?: number | null;
   insurance_company_id?: number | null;
 }
 

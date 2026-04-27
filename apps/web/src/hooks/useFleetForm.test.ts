@@ -66,6 +66,8 @@ describe('useFleetForm Hook', () => {
         modelId: 201,
         departmentId: 228,
         operationalUseId: 236,
+        dailyUsageAvg: 10,
+        lastServiceReading: 0,
       }));
     });
 
@@ -113,6 +115,8 @@ describe('useFleetForm Hook', () => {
         modelId: 201,
         departmentId: 228,
         operationalUseId: 236,
+        dailyUsageAvg: 10,
+        lastServiceReading: 0,
       }));
     });
 

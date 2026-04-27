@@ -57,6 +57,8 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   maintenanceTimeFreqId: null,
   maintenanceUsageFreqId: null,
   lastServiceDate: '',
+  lastServiceReading: undefined,
+  dailyUsageAvg: undefined,
 });
 
 export default getInitialFleetForm;

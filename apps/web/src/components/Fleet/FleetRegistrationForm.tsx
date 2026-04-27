@@ -21,6 +21,7 @@ import ArchonSelect from '../ArchonSelect';
 import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
+import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
 import {
   CentroMantenimiento,
   UseFleetFormReturn,
@@ -40,49 +41,97 @@ interface FleetRegistrationFormProps {
   onCancel: () => void;
 }
 
+const getDaysFromFreqId = (
+  freqId: number | null | undefined,
+  freqTime: CatalogOption[]
+): number => {
+  if (!freqId) return 0;
+  const timeLimitOption = freqTime.find((t) => t.id === freqId);
+  if (!timeLimitOption) return 0;
+
+  const intervalMap: Record<string, number> = {
+    Diaria: 1,
+    Semanal: 7,
+    Mensual: 30,
+    Bimestral: 60,
+    Trimestral: 90,
+    Semestral: 180,
+    Anual: 365,
+  };
+  return intervalMap[timeLimitOption.label] || 0;
+};
+
 const getPronosticoArchon = (
   formData: CreateFleetUnit,
-  freqTime: CatalogOption[]
+  freqTime: CatalogOption[],
+  freqUsage: CatalogOption[]
 ): {
   pronosticoText: string;
   pronosticoDateStr: string;
   isPronosticoReady: boolean;
 } => {
-  let pronosticoText = 'A la espera de fecha de servicio y ciclo de tiempo...';
-  let pronosticoDateStr = '-- / -- / ----';
-  let isPronosticoReady = false;
+  const result = {
+    pronosticoText: 'A la espera de fecha de servicio y métricas...',
+    pronosticoDateStr: '-- / -- / ----',
+    isPronosticoReady: false,
+  };
 
-  if (formData.lastServiceDate && formData.maintenanceTimeFreqId) {
-    const timeLimitOption = freqTime.find((t) => t.id === formData.maintenanceTimeFreqId);
-    const intervalMap: Record<string, number> = {
-      Diaria: 1,
-      Semanal: 7,
-      Mensual: 30,
-      Bimestral: 60,
-      Trimestral: 90,
-      Semestral: 180,
-      Anual: 365,
-    };
-    const intDias = timeLimitOption ? intervalMap[timeLimitOption.label] || 0 : 0;
+  if (!formData.lastServiceDate || !formData.maintenanceTimeFreqId) return result;
 
-    if (intDias > 0) {
-      // Usar lógica nativa sin dependencias de uso promedio
-      const lastDate = new Date(formData.lastServiceDate);
-      const forecastDate = new Date(lastDate);
-      forecastDate.setDate(forecastDate.getDate() + intDias);
+  const intDias = getDaysFromFreqId(formData.maintenanceTimeFreqId, freqTime);
+  if (intDias <= 0) return result;
 
-      pronosticoDateStr = forecastDate.toLocaleDateString('es-MX', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-      pronosticoText =
-        'Vencimiento proyectado por límite de Tiempo. (Telemetría de rutas pendiente)';
-      isPronosticoReady = true;
+  const hasUsageData =
+    formData.maintenanceUsageFreqId &&
+    formData.dailyUsageAvg &&
+    formData.dailyUsageAvg > 0 &&
+    formData.lastServiceReading !== undefined;
+
+  if (hasUsageData) {
+    const usageLimitOption = freqUsage.find((u) => u.id === formData.maintenanceUsageFreqId);
+    const intServi = usageLimitOption
+      ? parseInt(usageLimitOption.label.replace(/[^0-9]/g, ''), 10)
+      : 0;
+
+    if (intServi > 0) {
+      const forecast = calculateMaintForecast(
+        intDias,
+        intServi,
+        formData.dailyUsageAvg || 0,
+        formData.odometer,
+        formData.lastServiceReading || 0,
+        formData.lastServiceDate
+      );
+
+      if (forecast) {
+        result.pronosticoDateStr = forecast.forecastDate.toLocaleDateString('es-MX', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        const motivo =
+          forecast.serviceByKmDate < forecast.serviceByTimeDate ? 'Kilometraje' : 'Tiempo';
+        result.pronosticoText = `Vencimiento proyectado por límite de ${motivo}.`;
+        result.isPronosticoReady = true;
+        return result;
+      }
     }
   }
 
-  return { pronosticoText, pronosticoDateStr, isPronosticoReady };
+  // 🔱 Fallback Soberano: Proyectar solo por tiempo si no hay uso o la previsión híbrida falla
+  const lastDate = new Date(formData.lastServiceDate);
+  const forecastDate = new Date(lastDate);
+  forecastDate.setDate(forecastDate.getDate() + intDias);
+
+  result.pronosticoDateStr = forecastDate.toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  result.pronosticoText = 'Vencimiento proyectado por límite de Tiempo. (Histórico pendiente)';
+  result.isPronosticoReady = true;
+
+  return result;
 };
 
 const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
@@ -122,12 +171,15 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       formData.year >= 1990 &&
       formData.id.trim() !== '' &&
       formData.operationalUseId &&
-      formData.departmentId
+      formData.departmentId &&
+      formData.dailyUsageAvg != null &&
+      formData.dailyUsageAvg > 0
   );
 
   const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(
     formData,
-    freqTime
+    freqTime,
+    freqUsage
   );
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -701,11 +753,73 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               />
             </ArchonField>
 
-            <ArchonField label="Fecha Último Servicio" icon={Calendar}>
-              <ArchonDatePicker
-                value={formData.lastServiceDate ?? ''}
-                onChange={(val: string): void => setFormData({ ...formData, lastServiceDate: val })}
-              />
+            <div className="grid grid-cols-2 gap-6">
+              <ArchonField label="Fecha Último Servicio" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.lastServiceDate ?? ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, lastServiceDate: val })
+                  }
+                />
+              </ArchonField>
+              <ArchonField label="Lectura de Servicio" icon={Gauge}>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej: 40000"
+                    className="archon-input font-mono w-full pr-14"
+                    value={formData.lastServiceReading ?? ''}
+                    onChange={(
+                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                    ): void => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '');
+                      setFormData({
+                        ...formData,
+                        lastServiceReading: raw ? parseInt(raw, 10) : undefined,
+                      });
+                    }}
+                  />
+                  <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                    {((): string => {
+                      const selected = controller.assetTypes.find(
+                        (at) => at.id === formData.assetTypeId
+                      );
+                      return selected?.code === 'AT_VEH' || selected?.label === 'Vehículo'
+                        ? 'KM'
+                        : 'HRS';
+                    })()}
+                  </span>
+                </div>
+              </ArchonField>
+            </div>
+
+            <ArchonField label="Uso Promedio Diario (Km/Hr)" icon={Activity}>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="Ej: 50.5"
+                  className="archon-input font-mono text-emerald-700 font-bold w-full pr-16"
+                  value={formData.dailyUsageAvg ?? ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
+                    setFormData({
+                      ...formData,
+                      dailyUsageAvg: e.target.value ? parseFloat(e.target.value) : undefined,
+                    })
+                  }
+                />
+                <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                  {((): string => {
+                    const selected = controller.assetTypes.find(
+                      (at) => at.id === formData.assetTypeId
+                    );
+                    return selected?.code === 'AT_VEH' || selected?.label === 'Vehículo'
+                      ? 'KM/D'
+                      : 'HR/D';
+                  })()}
+                </span>
+              </div>
             </ArchonField>
 
             {/* 🔮 WOW CARD: PRONÓSTICO ARCHON */}
