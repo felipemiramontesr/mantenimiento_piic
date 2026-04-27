@@ -393,15 +393,15 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   />
                 </ArchonField>
                 <ArchonField label="Cuota Mensual / Arrend." icon={Zap}>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-sky-500/50 focus-within:border-sky-500 transition-all duration-300 shadow-inner">
+                    <span className="px-4 py-3 text-slate-400 font-bold border-r border-slate-200 bg-slate-100 flex-shrink-0">
                       $
                     </span>
                     <input
                       type="number"
                       step="0.01"
                       placeholder="Ej: 15500.50"
-                      className="archon-input pl-10 font-mono text-emerald-700 font-bold w-full"
+                      className="flex-1 w-full bg-transparent px-4 py-3 outline-none font-mono text-emerald-700 font-bold"
                       value={formData.monthlyLeasePayment ?? ''}
                       onChange={(
                         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -601,18 +601,20 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonField label="Lectura Base (Odómetro / Horómetro)" icon={Gauge}>
                 <div className="relative flex items-center">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="Ej: 45000"
                     className="archon-input font-mono text-navy-800 w-full pr-14"
                     value={formData.odometer ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-                    ): void =>
+                    ): void => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '');
                       setFormData({
                         ...formData,
-                        odometer: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                      })
-                    }
+                        odometer: raw ? parseInt(raw, 10) : undefined,
+                      });
+                    }}
                   />
                   <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                     {((): string => {
@@ -699,46 +701,12 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               />
             </ArchonField>
 
-            <div className="grid grid-cols-2 gap-6">
-              <ArchonField label="Fecha Último Servicio" icon={Calendar}>
-                <ArchonDatePicker
-                  value={formData.lastServiceDate ?? ''}
-                  onChange={(val: string): void =>
-                    setFormData({ ...formData, lastServiceDate: val })
-                  }
-                />
-              </ArchonField>
-              <ArchonField label="Lectura de Servicio" icon={Gauge}>
-                <div className="relative flex items-center">
-                  <input
-                    type="number"
-                    placeholder="Ej: 40000"
-                    className="archon-input font-mono w-full pr-14"
-                    value={formData.lastServiceReading ?? ''}
-                    onChange={(
-                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-                    ): void =>
-                      setFormData({
-                        ...formData,
-                        lastServiceReading: e.target.value
-                          ? parseInt(e.target.value, 10)
-                          : undefined,
-                      })
-                    }
-                  />
-                  <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
-                    {((): string => {
-                      const selected = controller.assetTypes.find(
-                        (at) => at.id === formData.assetTypeId
-                      );
-                      return selected?.code === 'AT_VEH' || selected?.label === 'Vehículo'
-                        ? 'KM'
-                        : 'HRS';
-                    })()}
-                  </span>
-                </div>
-              </ArchonField>
-            </div>
+            <ArchonField label="Fecha Último Servicio" icon={Calendar}>
+              <ArchonDatePicker
+                value={formData.lastServiceDate ?? ''}
+                onChange={(val: string): void => setFormData({ ...formData, lastServiceDate: val })}
+              />
+            </ArchonField>
 
             {/* 🔮 WOW CARD: PRONÓSTICO ARCHON */}
             <div
