@@ -653,18 +653,17 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonField label="Lectura Base (Odómetro / Horómetro)" icon={Gauge}>
                 <div className="relative flex items-center">
                   <input
-                    type="text"
-                    inputMode="numeric"
+                    type="number"
+                    step="0.1"
                     placeholder="Ej: 45000"
-                    className="archon-input font-mono text-navy-800 w-full pr-14"
+                    className="archon-input font-mono text-navy-800 w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.odometer ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
                     ): void => {
-                      const raw = e.target.value.replace(/[^0-9]/g, '');
                       setFormData({
                         ...formData,
-                        odometer: raw ? parseInt(raw, 10) : undefined,
+                        odometer: e.target.value ? parseFloat(e.target.value) : undefined,
                       });
                     }}
                   />
@@ -765,18 +764,17 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonField label="Lectura de Servicio" icon={Gauge}>
                 <div className="relative flex items-center">
                   <input
-                    type="text"
-                    inputMode="numeric"
+                    type="number"
+                    step="0.1"
                     placeholder="Ej: 40000"
-                    className="archon-input font-mono w-full pr-14"
+                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.lastServiceReading ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
                     ): void => {
-                      const raw = e.target.value.replace(/[^0-9]/g, '');
                       setFormData({
                         ...formData,
-                        lastServiceReading: raw ? parseInt(raw, 10) : undefined,
+                        lastServiceReading: e.target.value ? parseFloat(e.target.value) : undefined,
                       });
                     }}
                   />
