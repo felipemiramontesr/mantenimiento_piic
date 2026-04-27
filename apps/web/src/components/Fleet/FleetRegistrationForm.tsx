@@ -453,7 +453,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                       type="number"
                       step="0.01"
                       placeholder="Ej: 15500.50"
-                      className="flex-1 w-full bg-transparent px-4 py-3 outline-none font-mono text-emerald-700 font-bold"
+                      className="flex-1 w-full bg-transparent px-4 py-3 outline-none border-none focus:ring-0 font-mono text-emerald-700 font-bold"
                       value={formData.monthlyLeasePayment ?? ''}
                       onChange={(
                         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
