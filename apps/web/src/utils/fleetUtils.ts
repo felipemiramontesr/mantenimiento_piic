@@ -47,6 +47,11 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   accountingAccount: '',
   legalComplianceDate: '',
   insuranceExpiryDate: '',
+  insurance_policy_number: '',
+  insurance_company: '',
+  last_environmental_verification: '',
+  last_mechanical_verification: '',
+  circulation_card_number: '',
   monthlyLeasePayment: 0,
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId: null,

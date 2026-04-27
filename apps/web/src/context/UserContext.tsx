@@ -41,6 +41,7 @@ interface UserContextType {
   editingUser: UserIndustrial | null;
   setEditingUser: (user: UserIndustrial | null) => void;
   departments: string[];
+  roles: CatalogOption[];
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -58,6 +59,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);
   const [departments, setDepartments] = useState<string[]>(
     () => archonCache.get<string[]>('system_departments') || []
+  );
+  const [roles, setRoles] = useState<CatalogOption[]>(
+    () => archonCache.get<CatalogOption[]>('system_roles') || []
   );
 
   const fetchUsers = useCallback(async (): Promise<void> => {
@@ -148,10 +152,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const fetchRoles = useCallback(async (): Promise<void> => {
+    try {
+      const response = await api.get('/catalogs/USER_ROLE');
+      if (response.data?.length) {
+        setRoles(response.data);
+        archonCache.set('system_roles', response.data);
+      }
+    } catch (err) {
+      // Slient fallback
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
     fetchDepartments();
-  }, [fetchUsers, fetchDepartments]);
+    fetchRoles();
+  }, [fetchUsers, fetchDepartments, fetchRoles]);
 
   return (
     <UserContext.Provider
@@ -166,6 +183,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         editingUser,
         setEditingUser,
         departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
+        roles,
       }}
     >
       {children}

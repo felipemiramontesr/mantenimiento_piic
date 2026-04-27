@@ -16,6 +16,7 @@ const userDbSchema = z.object({
   email: z.string(),
   passwordHash: z.string(),
   roleId: z.number(),
+  roleName: z.string(),
 });
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -30,8 +31,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
     try {
       // 1. Fetch user from DB
-      const query =
-        'SELECT id, username, email, password_hash as passwordHash, role_id as roleId FROM users WHERE username = ?';
+      const query = `
+        SELECT u.id, u.username, u.email, u.password_hash as passwordHash, 
+               u.role_id as roleId, r.label as roleName 
+        FROM users u
+        JOIN common_catalogs r ON u.role_id = r.id
+        WHERE u.username = ?
+      `;
       const [rows] = await db.execute(query, [username]);
 
       const result = z.array(userDbSchema).safeParse(rows);
@@ -67,6 +73,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           username: user.username,
           email: decryptedEmail,
           roleId: user.roleId,
+          roleName: user.roleName,
         },
       });
     } catch (err: unknown) {
@@ -135,10 +142,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
     try {
       let query = `
-        SELECT u.id, u.username, u.email, u.role_id as roleId, r.name as roleName,
+        SELECT u.id, u.username, u.email, u.role_id as roleId, r.label as roleName,
                u.full_name, u.department, u.employee_number, u.is_active
         FROM users u
-        JOIN roles r ON u.role_id = r.id
+        JOIN common_catalogs r ON u.role_id = r.id
         WHERE 1=1
       `;
       const params: (string | number)[] = [];

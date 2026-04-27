@@ -26,22 +26,71 @@ import api from '../../api/client';
  * v.28.24.2 - Security First & Static Entry
  */
 
+interface SuccessViewProps {
+  data: { tempPass?: string; isEdit?: boolean };
+  onClose: () => void;
+}
+
+const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
+  <div className="glass-card-pro bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px]">
+    <CheckCircle size={64} className="text-emerald-500 animate-in zoom-in duration-500" />
+    <div className="space-y-4">
+      <h2 className="text-2xl font-black text-[#0f2a44] uppercase tracking-tight">
+        {data.isEdit ? 'Actualización Exitosa' : 'Incorporación Exitosa'}
+      </h2>
+      <p className="text-[#0f2a44]/60 font-medium">
+        {data.isEdit
+          ? 'La identidad ha sido sincronizada correctamente en los sistemas Archon.'
+          : 'El personal ha sido registrado bajo el estándar Archon. Entregue la siguiente clave temporal al operador:'}
+      </p>
+    </div>
+
+    {!data.isEdit && data.tempPass && (
+      <div className="w-full bg-[#0f2a44]/5 p-6 rounded-[4px] border-2 border-dashed border-[#0f2a44]/20 group relative">
+        <span className="text-3xl font-black text-[#0f2a44] tracking-[0.2em] font-mono">
+          {data.tempPass}
+        </span>
+        <button
+          type="button"
+          onClick={(): Promise<void> => navigator.clipboard.writeText(data.tempPass || '')}
+          className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#0f2a44]/40 hover:text-[#0f2a44]"
+        >
+          <Copy size={16} />
+        </button>
+      </div>
+    )}
+
+    <button
+      onClick={onClose}
+      className="btn-sentinel-navy px-12 py-4 uppercase font-black tracking-widest text-[11px] rounded-[4px]"
+    >
+      Volver al Directorio
+    </button>
+  </div>
+);
+
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
-  const { setActivePanel, fetchUsers, editingUser, setEditingUser, updateUser, departments } =
-    useUsers();
+  const {
+    setActivePanel,
+    fetchUsers,
+    editingUser,
+    setEditingUser,
+    updateUser,
+    departments,
+    roles,
+  } = useUsers();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [successData, setSuccessData] = useState<{ tempPass?: string; isEdit?: boolean } | null>(
     null
   );
-
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
     email: '',
-    roleId: '2', // Default: Operador
+    roleId: roles.find((r) => r.label === 'Operador')?.id.toString() || '',
     department: '',
     employeeNumber: '',
     imageUrl: '',
@@ -59,7 +108,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         department: editingUser.department || '',
         employeeNumber: editingUser.employeeNumber || '',
         imageUrl: editingUser.imageUrl || '',
-        password: '', // Always start empty for security
+        password: '',
         confirmPassword: '',
       });
     }
@@ -74,6 +123,44 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     return retVal;
   };
 
+  const handleUpdate = async (): Promise<void> => {
+    if (!editingUser) return;
+    const success = await updateUser(editingUser.id, {
+      fullName: formData.fullName,
+      email: formData.email.toLowerCase(),
+      roleId: parseInt(formData.roleId, 10),
+      department: formData.department,
+      employeeNumber: formData.employeeNumber,
+      imageUrl: formData.imageUrl,
+      password: formData.password || undefined,
+    });
+
+    if (success) {
+      setSuccessData({ isEdit: true });
+    } else {
+      setError('Error de sincronización. Verifique que la contraseña tenga al menos 8 caracteres.');
+    }
+  };
+
+  const handleCreate = async (): Promise<void> => {
+    const tempPass = generateTempPassword();
+    const response = await api.post('/auth/register', {
+      username: formData.username.toLowerCase(),
+      fullName: formData.fullName,
+      email: formData.email.toLowerCase(),
+      roleId: parseInt(formData.roleId, 10),
+      department: formData.department,
+      employeeNumber: formData.employeeNumber,
+      password: formData.password || tempPass,
+      image_url: formData.imageUrl,
+    });
+
+    if (response.data.success) {
+      setSuccessData({ tempPass });
+      await fetchUsers();
+    }
+  };
+
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -81,40 +168,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
     try {
       if (editingUser) {
-        const success = await updateUser(editingUser.id, {
-          fullName: formData.fullName,
-          email: formData.email.toLowerCase(),
-          roleId: parseInt(formData.roleId, 10),
-          department: formData.department,
-          employeeNumber: formData.employeeNumber,
-          imageUrl: formData.imageUrl,
-          password: formData.password || undefined,
-        });
-
-        if (success) {
-          setSuccessData({ isEdit: true });
-        } else {
-          setError(
-            'Error de sincronización. Verifique que la contraseña tenga al menos 8 caracteres.'
-          );
-        }
+        await handleUpdate();
       } else {
-        const tempPass = generateTempPassword();
-        const response = await api.post('/auth/register', {
-          username: formData.username.toLowerCase(),
-          fullName: formData.fullName,
-          email: formData.email.toLowerCase(),
-          roleId: parseInt(formData.roleId, 10),
-          department: formData.department,
-          employeeNumber: formData.employeeNumber,
-          password: formData.password || generateTempPassword(),
-          image_url: formData.imageUrl,
-        });
-
-        if (response.data.success) {
-          setSuccessData({ tempPass });
-          await fetchUsers();
-        }
+        await handleCreate();
       }
     } catch (err: unknown) {
       if (!editingUser) {
@@ -132,46 +188,13 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   if (successData) {
     return (
-      <div className="glass-card-pro bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px]">
-        <CheckCircle size={64} className="text-emerald-500 animate-in zoom-in duration-500" />
-        <div className="space-y-4">
-          <h2 className="text-2xl font-black text-[#0f2a44] uppercase tracking-tight">
-            {successData.isEdit ? 'Actualización Exitosa' : 'Incorporación Exitosa'}
-          </h2>
-          <p className="text-[#0f2a44]/60 font-medium">
-            {successData.isEdit
-              ? 'La identidad ha sido sincronizada correctamente en los sistemas Archon.'
-              : 'El personal ha sido registrado bajo el estándar Archon. Entregue la siguiente clave temporal al operador:'}
-          </p>
-        </div>
-
-        {!successData.isEdit && successData.tempPass && (
-          <div className="w-full bg-[#0f2a44]/5 p-6 rounded-[4px] border-2 border-dashed border-[#0f2a44]/20 group relative">
-            <span className="text-3xl font-black text-[#0f2a44] tracking-[0.2em] font-mono">
-              {successData.tempPass}
-            </span>
-            <button
-              type="button"
-              onClick={(): Promise<void> =>
-                navigator.clipboard.writeText(successData.tempPass || '')
-              }
-              className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#0f2a44]/40 hover:text-[#0f2a44]"
-            >
-              <Copy size={16} />
-            </button>
-          </div>
-        )}
-
-        <button
-          onClick={(): void => {
-            setEditingUser(null);
-            setActivePanel('DIRECTORY');
-          }}
-          className="btn-sentinel-navy px-12 py-4 uppercase font-black tracking-widest text-[11px] rounded-[4px]"
-        >
-          Volver al Directorio
-        </button>
-      </div>
+      <SuccessView
+        data={successData}
+        onClose={(): void => {
+          setEditingUser(null);
+          setActivePanel('DIRECTORY');
+        }}
+      />
     );
   }
 
@@ -274,12 +297,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           <div className="grid grid-cols-2 gap-8">
             <ArchonField label="Rol Archon" icon={Shield} required>
               <ArchonSelect
-                options={[
-                  { value: '989', label: 'Auditor' },
-                  { value: '1', label: 'Administrador' },
-                  { value: '2', label: 'Operador' },
-                  { value: '3', label: 'Técnico' },
-                ]}
+                options={roles.map((r) => ({ value: r.id.toString(), label: r.label }))}
                 value={formData.roleId}
                 onChange={(val: string): void => setFormData({ ...formData, roleId: val })}
               />
