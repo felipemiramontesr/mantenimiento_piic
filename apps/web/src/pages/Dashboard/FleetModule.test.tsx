@@ -142,7 +142,7 @@ describe('FleetModule Orchestrator', () => {
     (useFleetForm as Mock).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
-    expect(screen.getByText('Motor de Jerarquía')).toBeInTheDocument();
+    expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking the "Estrategia Operativa" card', (): void => {

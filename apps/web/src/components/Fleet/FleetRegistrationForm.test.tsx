@@ -90,8 +90,8 @@ describe('FleetRegistrationForm Component', () => {
 
   it('should render all form sections', (): void => {
     render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
-    expect(screen.getByText('Motor de Jerarquía')).toBeInTheDocument();
-    expect(screen.getByText('Identidad & Cumplimiento')).toBeInTheDocument();
+    expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
+    expect(screen.getByText('CUMPLIMIENTO')).toBeInTheDocument();
   });
 
   it('should call onCancel when "Cancelar" is clicked', (): void => {
