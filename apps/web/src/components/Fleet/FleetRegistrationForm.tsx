@@ -310,20 +310,18 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           </div>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <ArchonField label="Estatus Botiquín PA" icon={ShieldCheck}>
-                <ArchonSelect
-                  options={controller.complianceStatuses.map((s: CatalogOption) => ({
-                    value: s.id.toString(),
-                    label: s.label,
-                  }))}
-                  value={formData.complianceStatusId?.toString() || ''}
-                  onChange={(val: string): void =>
-                    setFormData({ ...formData, complianceStatusId: parseInt(val, 10) })
-                  }
-                />
-              </ArchonField>
-            </div>
+            <ArchonField label="Estatus Botiquín PA" icon={ShieldCheck}>
+              <ArchonSelect
+                options={(controller.complianceStatuses || []).map((s: CatalogOption) => ({
+                  value: s.id.toString(),
+                  label: s.label,
+                }))}
+                value={formData.complianceStatusId?.toString() || ''}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, complianceStatusId: parseInt(val, 10) })
+                }
+              />
+            </ArchonField>
 
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Póliza de Seguro" icon={FileText}>
