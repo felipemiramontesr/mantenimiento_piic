@@ -581,10 +581,23 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Ciclo Mto. (Fec.)" icon={Calendar}>
                 <ArchonSelect
-                  options={freqTime.map((f: CatalogOption) => ({
-                    value: f.id.toString(),
-                    label: f.label,
-                  }))}
+                  options={freqTime
+                    .sort((a, b) => {
+                      const map: Record<string, number> = {
+                        Diaria: 1,
+                        Semanal: 7,
+                        Mensual: 30,
+                        Bimestral: 60,
+                        Trimestral: 90,
+                        Semestral: 180,
+                        Anual: 365,
+                      };
+                      return (map[a.label] || 999) - (map[b.label] || 999);
+                    })
+                    .map((f: CatalogOption) => ({
+                      value: f.id.toString(),
+                      label: f.label,
+                    }))}
                   value={formData.maintenanceTimeFreqId?.toString() || ''}
                   onChange={(val: string): void =>
                     setFormData({ ...formData, maintenanceTimeFreqId: parseInt(val, 10) })
@@ -595,17 +608,22 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonField label="Ciclo Mto. (Uso)" icon={Activity}>
                 <ArchonSelect
                   options={freqUsage
-                    .filter((u: CatalogOption) => {
+                    .filter((u: CatalogOption, index, self) => {
                       const selectedAsset = assetTypes.find((at) => at.id === formData.assetTypeId);
                       const isVehicle =
                         selectedAsset?.code === 'AT_VEH' || selectedAsset?.label === 'Vehículo';
 
-                      // 🔱 Archon Dynamic Filtering Logic
-                      if (isVehicle) {
-                        return u.unit === 'km' || u.label.includes('KM');
-                      }
-                      return u.unit === 'hrs' || u.label.includes('HRS');
+                      // 1. Dynamic Filtering by Asset Type
+                      const isMatch = isVehicle
+                        ? u.unit === 'km' || u.label.includes('KM')
+                        : u.unit === 'hrs' || u.label.includes('HRS');
+
+                      if (!isMatch) return false;
+
+                      // 2. De-duplication by Label
+                      return self.findIndex((t) => t.label === u.label) === index;
                     })
+                    .sort((a, b) => (a.numeric_value || 0) - (b.numeric_value || 0))
                     .map((u: CatalogOption) => ({
                       value: u.id.toString(),
                       label: u.label,
