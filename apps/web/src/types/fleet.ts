@@ -48,7 +48,7 @@ export interface FleetUnit {
   tipoTerreno: string | null;
   terrainTypeId: number | null;
   // Operational
-  capacidadCarga: string | null;
+  capacidadCarga: number | null;
   odometer: number; // km (Vehiculo) | hrs (Maquinaria)
   // Organization
   sede: string | null;
@@ -132,7 +132,7 @@ export interface CreateFleetUnit {
   tireSpec?: string;
   tireBrandId?: number;
   terrainTypeId?: number;
-  capacidadCarga?: string;
+  capacidadCarga?: number;
   odometer?: number;
   sede?: string;
   centroMantenimiento: CentroMantenimiento;
