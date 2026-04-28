@@ -14,7 +14,6 @@ import {
   MapPin,
   ChevronUp,
   ChevronDown,
-  Compass,
   Truck,
   Wrench,
 } from 'lucide-react';
@@ -84,6 +83,7 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const intervalKm = unit.usageLimitUnits || unit.maintIntervalKm || 10000;
   const intervalDays = unit.timeLimitDays || unit.maintIntervalDays || 180;
   const avgDaily = unit.dailyUsageAvg || 0;
+  const lease = unit.monthlyLeasePayment || 0;
 
   // 🔱 Dynamic Asset Type Mapping
   const isMaquinaria = unit.assetTypeId === 2 || unit.assetType === 'Maquinaria';
@@ -92,12 +92,19 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
 
   return (
     <div className="flex flex-col items-center space-y-2">
-      {/* 🔱 Asset Type Header */}
+      {/* 🔱 Asset Type & Lease */}
       <div className="flex flex-col items-center mb-1">
         <StrategyIcon size={14} className="text-[#0f2a44] opacity-80" />
         <span className="text-[8px] font-black uppercase tracking-[0.1em] text-[#0f2a44] opacity-40">
           {strategyLabel}
         </span>
+        {lease > 0 && (
+          <div className="mt-1 px-1.5 py-0.5 bg-gray-50 rounded-[3px] border border-gray-100">
+            <span className="text-[8px] font-black text-gray-500">
+              ${lease.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col items-center gap-0.5">
@@ -107,11 +114,6 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
             {unit.usageFreqLabel || `${intervalKm.toLocaleString()} KM`}
           </span>
         </div>
-        {unit.usageFreqLabel && (
-          <span className="text-[7px] font-bold opacity-30 tracking-tighter">
-            ({intervalKm.toLocaleString()} KM)
-          </span>
-        )}
       </div>
 
       <div className="flex flex-col items-center gap-0.5">
@@ -121,11 +123,6 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
             {unit.timeFreqLabel || `${intervalDays} DÍAS`}
           </span>
         </div>
-        {unit.timeFreqLabel && (
-          <span className="text-[7px] font-bold opacity-30 tracking-tighter">
-            ({intervalDays} DÍAS)
-          </span>
-        )}
       </div>
 
       <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded-[4px]">
@@ -139,12 +136,16 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
 const OdometryCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const odometer = unit.odometer || 0;
   const lastReading = unit.lastServiceReading || 0;
+  const intervalKm = unit.usageLimitUnits || unit.maintIntervalKm || 10000;
+  const targetKm = lastReading + intervalKm;
+
   let serviceDateStr = '---';
   if (unit.lastServiceDate) {
     serviceDateStr = formatDate(new Date(unit.lastServiceDate));
   }
   return (
     <div className="flex flex-col items-center space-y-3">
+      {/* Actual */}
       <div className="flex items-center gap-2 bg-sky-50 px-3 py-1 rounded-[4px] border border-sky-100/50 shadow-sm">
         <Gauge size={13} className="text-sky-600" />
         <span className="text-[13px] font-black text-sky-800 tracking-tight">
@@ -152,48 +153,72 @@ const OdometryCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         </span>
       </div>
 
-      <div className="flex flex-col items-center opacity-40 pt-1 group hover:opacity-100 transition-opacity">
-        <div className="flex items-center gap-1 mb-0.5">
+      {/* Anterior */}
+      <div className="flex flex-col items-center opacity-40 group hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1">
           <History size={10} className="text-slate-500" />
           <span className="text-[10px] font-bold text-slate-600">
             {lastReading.toLocaleString()} KM
           </span>
         </div>
-        <span className="text-[9px] font-black uppercase text-center tracking-wider text-slate-500">
+        <span className="text-[8px] font-black uppercase text-center tracking-wider text-slate-500">
           {serviceDateStr}
+        </span>
+      </div>
+
+      {/* Próximo KM (Target) */}
+      <div className="flex flex-col items-center bg-amber-50 px-2 py-0.5 rounded-[4px] border border-amber-100">
+        <span className="text-[7px] font-black text-amber-600 uppercase tracking-tighter">
+          OBJETIVO KM
+        </span>
+        <span className="text-[10px] font-black text-amber-800 tracking-tighter">
+          {targetKm.toLocaleString()}
         </span>
       </div>
     </div>
   );
 };
 
-const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => (
-  <div className="flex flex-col items-center gap-2">
-    {/* Energía */}
-    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-50 rounded-[4px] border border-yellow-100/50 w-full justify-center">
-      <Zap size={10} className="text-yellow-600 fill-yellow-600/10" />
-      <span className="text-[9px] font-black text-yellow-800 uppercase tracking-widest leading-none">
-        {unit.fuelType || 'Combustible'}
-      </span>
-    </div>
+const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
+  const insuranceDate = unit.insuranceExpiryDate || unit.vigenciaSeguro;
+  const verificationDate = unit.vencimientoVerificacion;
 
-    {/* Rodado */}
-    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-[4px] border border-slate-100 w-full justify-center">
-      <Truck size={10} className="text-slate-600" />
-      <span className="text-[9px] font-bold text-slate-700 uppercase tracking-tighter leading-none">
-        {unit.tireSpec} <span className="opacity-30 mx-0.5">/</span> {unit.tireBrand}
-      </span>
-    </div>
+  return (
+    <div className="flex flex-col items-center gap-2">
+      {/* Energía & Rodado */}
+      <div className="grid grid-cols-2 gap-1 w-full">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-yellow-50 rounded-[3px] border border-yellow-100/50 justify-center">
+          <Zap size={9} className="text-yellow-600" />
+          <span className="text-[8px] font-black text-yellow-800 uppercase tracking-tighter">
+            {unit.fuelType || 'GAS'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 rounded-[3px] border border-slate-100 justify-center">
+          <Truck size={9} className="text-slate-600" />
+          <span className="text-[8px] font-bold text-slate-700 uppercase tracking-tighter">
+            {unit.tireSpec}
+          </span>
+        </div>
+      </div>
 
-    {/* Terreno */}
-    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 rounded-[4px] border border-rose-100/50 w-full justify-center">
-      <Compass size={10} className="text-rose-600" />
-      <span className="text-[9px] font-black text-rose-800 uppercase tracking-tighter leading-none">
-        {unit.tipoTerreno || 'Terreno'}
-      </span>
+      {/* Cumplimiento Legal (Fechas) */}
+      <div className="flex flex-col gap-1 w-full border-t border-gray-100 pt-2 mt-1">
+        <div className="flex items-center justify-between px-2 py-0.5 bg-rose-50/50 rounded-[4px]">
+          <span className="text-[7px] font-black text-rose-800 uppercase">Seguro:</span>
+          <span className="text-[8px] font-bold text-rose-900">
+            {insuranceDate ? formatDate(new Date(insuranceDate)) : 'PENDIENTE'}
+          </span>
+        </div>
+        <div className="flex items-center justify-between px-2 py-0.5 bg-emerald-50/50 rounded-[4px]">
+          <span className="text-[7px] font-black text-emerald-800 uppercase">Verif:</span>
+          <span className="text-[8px] font-bold text-emerald-900">
+            {verificationDate ? formatDate(new Date(verificationDate)) : 'PENDIENTE'}
+          </span>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ForecastCluster = ({
   forecast,
@@ -449,23 +474,23 @@ export const FleetGridView = ({
                 className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
               >
                 <div className="flex items-center justify-center gap-1">
-                  UNIDAD
+                  UNIDAD / MODELO
                   <SortIndicator
                     active={sortConfig.field === 'unidad'}
                     direction={sortConfig.direction}
                   />
                 </div>
               </th>
-              <th className="opacity-40">IDENTIDAD</th>
-              <th className="opacity-40">ESTRATEGIA</th>
-              <th className="opacity-40">ODOMETRÍA</th>
-              <th className="opacity-40">CONFIGURACIÓN</th>
+              <th className="opacity-40">IDENTIDAD / SEDE</th>
+              <th className="opacity-40">FRECUENCIAS / TARIFA</th>
+              <th className="opacity-40">ODOMETRÍA (ACTUAL/ANT/OBJ)</th>
+              <th className="opacity-40">CONFIG / LEGAL</th>
               <th
                 onClick={(): void => handleSort('programacion')}
                 className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
               >
-                <div className="flex items-center justify-center gap-1">
-                  PROGRAMACIÓN
+                <div className="flex items-center justify-center gap-1 text-amber-600">
+                  KM RESTANTES
                   <SortIndicator
                     active={sortConfig.field === 'programacion'}
                     direction={sortConfig.direction}
@@ -477,7 +502,7 @@ export const FleetGridView = ({
                 className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
               >
                 <div className="flex items-center justify-center gap-1">
-                  PRONÓSTICO
+                  PRONÓSTICO (FECHA)
                   <SortIndicator
                     active={sortConfig.field === 'pronostico'}
                     direction={sortConfig.direction}
