@@ -134,9 +134,9 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
 };
 
 const OdometryCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
-  const odometer = unit.odometer || 0;
-  const lastReading = unit.lastServiceReading || 0;
-  const intervalKm = unit.usageLimitUnits || unit.maintIntervalKm || 10000;
+  const odometer = Number(unit.odometer) || 0;
+  const lastReading = Number(unit.lastServiceReading) || 0;
+  const intervalKm = Number(unit.usageLimitUnits || unit.maintIntervalKm || 10000);
   const targetKm = lastReading + intervalKm;
 
   let serviceDateStr = '---';
