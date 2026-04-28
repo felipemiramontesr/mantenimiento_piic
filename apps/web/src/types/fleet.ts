@@ -95,6 +95,8 @@ export interface FleetUnit {
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId?: number | null;
   maintenanceUsageFreqId?: number | null;
+  maintIntervalDays?: number;
+  maintIntervalKm?: number;
   lastServiceDate?: string | null;
   lastServiceReading?: number;
   currentReading?: number;

@@ -57,6 +57,8 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId: null,
   maintenanceUsageFreqId: null,
+  maintIntervalDays: 90,
+  maintIntervalKm: 5000,
   lastServiceDate: '',
   lastServiceReading: undefined,
   dailyUsageAvg: undefined,

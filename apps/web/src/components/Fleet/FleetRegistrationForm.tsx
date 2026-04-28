@@ -728,59 +728,56 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Ciclo Mto. (Fec.)" icon={Calendar}>
-                <ArchonSelect
-                  options={freqTime
-                    .sort((a, b) => {
-                      const map: Record<string, number> = {
-                        Diaria: 1,
-                        Semanal: 7,
-                        Mensual: 30,
-                        Bimestral: 60,
-                        Trimestral: 90,
-                        Semestral: 180,
-                        Anual: 365,
-                      };
-                      return (map[a.label] || 999) - (map[b.label] || 999);
-                    })
-                    .map((f: CatalogOption) => ({
-                      value: f.id.toString(),
-                      label: f.label,
-                    }))}
-                  value={formData.maintenanceTimeFreqId?.toString() || ''}
-                  onChange={(val: string): void =>
-                    setFormData({ ...formData, maintenanceTimeFreqId: parseInt(val, 10) })
-                  }
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type="number"
+                    placeholder="Ej: 90"
+                    className="archon-input font-mono text-navy-800 w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    value={formData.maintIntervalDays ?? ''}
+                    onChange={(
+                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                    ): void => {
+                      setFormData({
+                        ...formData,
+                        maintIntervalDays: e.target.value
+                          ? parseInt(e.target.value, 10)
+                          : undefined,
+                      });
+                    }}
+                  />
+                  <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                    DÍAS
+                  </span>
+                </div>
               </ArchonField>
 
               <ArchonField label="Ciclo Mto. (Uso)" icon={Activity}>
-                <ArchonSelect
-                  options={freqUsage
-                    .filter((u: CatalogOption, index, self) => {
-                      const selectedAsset = assetTypes.find((at) => at.id === formData.assetTypeId);
-                      const isVehicle =
-                        selectedAsset?.code === 'AT_VEH' || selectedAsset?.label === 'Vehículo';
-
-                      // 1. Dynamic Filtering by Asset Type
-                      const isMatch = isVehicle
-                        ? u.unit === 'km' || u.label.includes('KM')
-                        : u.unit === 'hrs' || u.label.includes('HRS');
-
-                      if (!isMatch) return false;
-
-                      // 2. De-duplication by Label
-                      return self.findIndex((t) => t.label === u.label) === index;
-                    })
-                    .sort((a, b) => (a.numeric_value || 0) - (b.numeric_value || 0))
-                    .map((u: CatalogOption) => ({
-                      value: u.id.toString(),
-                      label: u.label,
-                    }))}
-                  value={formData.maintenanceUsageFreqId?.toString() || ''}
-                  onChange={(val: string): void =>
-                    setFormData({ ...formData, maintenanceUsageFreqId: parseInt(val, 10) })
-                  }
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type="number"
+                    placeholder="Ej: 5000"
+                    className="archon-input font-mono text-navy-800 w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    value={formData.maintIntervalKm ?? ''}
+                    onChange={(
+                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                    ): void => {
+                      setFormData({
+                        ...formData,
+                        maintIntervalKm: e.target.value ? parseFloat(e.target.value) : undefined,
+                      });
+                    }}
+                  />
+                  <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                    {((): string => {
+                      const selected = controller.assetTypes.find(
+                        (at) => at.id === formData.assetTypeId
+                      );
+                      return selected?.code === 'AT_VEH' || selected?.label === 'Vehículo'
+                        ? 'KM'
+                        : 'HRS';
+                    })()}
+                  </span>
+                </div>
               </ArchonField>
             </div>
 

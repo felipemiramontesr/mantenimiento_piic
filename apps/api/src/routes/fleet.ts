@@ -49,6 +49,8 @@ const createFleetSchema = z.object({
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId: z.number().int().optional().nullable(),
   maintenanceUsageFreqId: z.number().int().optional().nullable(),
+  maintIntervalDays: z.number().int().min(0).default(90),
+  maintIntervalKm: z.number().min(0).default(5000),
   lastServiceDate: z.string().optional().nullable(),
   lastServiceReading: z.number().optional().default(0),
   dailyUsageAvg: z.number().min(0).optional().nullable(),
@@ -147,6 +149,8 @@ interface FleetUnit extends RowDataPacket {
   terrain_type_id: number | null;
   capacidad_carga: string | null;
   fuel_tank_capacity: number;
+  maint_interval_days: number;
+  maint_interval_km: number;
   odometer: number;
   sede: string | null;
   centro_mantenimiento: string;
@@ -237,17 +241,19 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger A: Time Based
   let timeProgress = 0;
-  if (lastServiceDate && unit.time_limit_days) {
+  const timeLimit = Number(unit.maint_interval_days || 0);
+  if (lastServiceDate && timeLimit > 0) {
     const diffMs = today.getTime() - lastServiceDate.getTime();
     const diffDays = diffMs / (1000 * 3600 * 24);
-    timeProgress = Math.max(0, diffDays / Number(unit.time_limit_days));
+    timeProgress = Math.max(0, diffDays / timeLimit);
   }
 
   // Trigger B: Usage Based (KM/HRS)
   let usageProgress = 0;
-  if (unit.usage_limit_units) {
+  const usageLimit = Number(unit.maint_interval_km || 0);
+  if (usageLimit > 0) {
     const diffUnits = currentReading - lastReading;
-    usageProgress = Math.max(0, diffUnits / Number(unit.usage_limit_units));
+    usageProgress = Math.max(0, diffUnits / usageLimit);
   }
 
   const maxProgress = Math.max(timeProgress, usageProgress);
@@ -357,11 +363,13 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_terrain.label AS tipo_terreno,
           c_owner.label AS owner,
           c_compl.label AS compliance_status,
-          ct.numeric_value AS time_limit_days,
-          ct.label AS time_freq_label,
-          cu.numeric_value AS usage_limit_units,
-          cu.label AS usage_freq_label,
-          cu.unit AS usage_unit_name
+          f.maint_interval_days AS time_limit_days,
+          f.maint_interval_km AS usage_limit_units,
+          'Días' AS time_freq_label,
+          CASE 
+            WHEN c_at.code = 'AT_MAQ' OR c_at.label = 'Maquinaria' THEN 'HRS'
+            ELSE 'KM'
+          END AS usage_unit_name
         FROM fleet_units f
         LEFT JOIN common_catalogs c_at ON f.asset_type_id = c_at.id
         LEFT JOIN common_catalogs c_brand ON f.brand_id = c_brand.id

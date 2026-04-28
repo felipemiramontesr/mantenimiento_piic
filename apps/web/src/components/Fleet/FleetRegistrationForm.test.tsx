@@ -44,6 +44,8 @@ describe('FleetRegistrationForm Component', () => {
       centroMantenimiento: 'PIIC' as CentroMantenimiento,
       status: 'Disponible' as FleetStatus,
       fuelTankCapacity: 80,
+      maintIntervalDays: 90,
+      maintIntervalKm: 5000,
     },
     error: null,
     resetError: mockResetError,

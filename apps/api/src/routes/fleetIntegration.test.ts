@@ -71,6 +71,8 @@ describe('Fleet Integration Endpoints', () => {
       odometer: 100,
       protocolStartDate: '2026-04-16',
       fuelTankCapacity: 80,
+      maintIntervalDays: 90,
+      maintIntervalKm: 5000,
     };
 
     it('should successfully register a new unit with all security fields', async (): Promise<void> => {
