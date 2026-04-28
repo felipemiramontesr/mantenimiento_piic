@@ -43,6 +43,7 @@ describe('FleetRegistrationForm Component', () => {
       maintenanceTimeFreqId: 1,
       centroMantenimiento: 'PIIC' as CentroMantenimiento,
       status: 'Disponible' as FleetStatus,
+      fuelTankCapacity: 80,
     },
     error: null,
     resetError: mockResetError,
