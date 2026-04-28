@@ -1,7 +1,7 @@
--- 🔱 ARCHON INDUSTRIAL FLEET INJECTION v.2.0 (IMMUNE MASTER SYNC)
--- Logic: Semantic Relational Mapping (Label & Code based).
--- Architecture: Sovereing Data Infrastructure (v.39.9.19)
--- Goal: 100% Success Rate in Production Environments.
+-- 🔱 ARCHON INDUSTRIAL FLEET INJECTION v.2.0 (REALISM & SYMMETRY SYNC)
+-- Logic: Semantic Relational Mapping + Industrial Metadata Injection.
+-- Architecture: Sovereing Data Infrastructure (v.39.9.20)
+-- Objective: 100% Realism in Dashboard (Cards, Insurance, Fuel & Identity).
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -16,7 +16,8 @@ INSERT INTO fleet_units (
     department_id, sede, owner_id, compliance_status_id, 
     accounting_account, fuel_tank_capacity, monthly_lease_payment,
     tire_spec, tire_brand_id, terrain_type_id, operational_use_id,
-    insurance_expiry_date, legal_compliance_date, color,
+    insurance_expiry_date, insurance_company, insurance_policy_number,
+    circulation_card_number, legal_compliance_date, color,
     placas, numero_serie, status, centro_mantenimiento
 ) VALUES 
 -- ASM-002: Hilux 2007 Diesel
@@ -25,7 +26,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2007, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2007, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.5L Turbo (2KD-FTV Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     120763.00, 119728.00, '2026-03-09',
@@ -38,7 +39,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%ZMAX%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_OP_EXT' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZH-3153-B', '1D7HW48P87S256272', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-3153-ARIAN',
+    'TC-3153-2024', '2026-06-30', 'Blanco Industrial', 'ZH-3153-B', '1D7HW48P87S256272', 'Disponible', 'PIIC'
 ),
 -- ASM-006: Frontier 2016 Gasoline
 (
@@ -46,7 +48,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_NISSAN' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_NIS_NP300' LIMIT 1),
-    2016, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2016, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 2.5L DOHC Multipunto (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     357833.00, 356944.00, '2026-03-11',
@@ -59,7 +61,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Pirelli%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_HT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_TRA_P' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZH-3161-B', '3N6AD33C4GK892141', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-3161-ARIAN',
+    'TC-3161-2024', '2026-06-30', 'Blanco Industrial', 'ZH-3161-B', '3N6AD33C4GK892141', 'Disponible', 'PIIC'
 ),
 -- ASM-007: NP 300 2016 Gasoline
 (
@@ -67,7 +70,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_NISSAN' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_NIS_NP300' LIMIT 1),
-    2016, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2016, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 2.5L DOHC Multipunto (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     327593.00, 327333.00, '2026-03-11',
@@ -80,7 +83,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Bridgestone%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_LT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_CAR_P' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZH-3160-B', '3N6AD33C5GK814774', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-3160-ARIAN',
+    'TC-3160-2024', '2026-06-30', 'Blanco Industrial', 'ZH-3160-B', '3N6AD33C5GK814774', 'Disponible', 'PIIC'
 ),
 -- ASM-008: Hilux 2019 Diesel
 (
@@ -88,7 +92,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2019, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2019, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.8L Turbo Intercooled (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     25955.00, 23940.00, '2026-03-26',
@@ -101,7 +105,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_MINA' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Rojo Seguridad', 'TP-0477-H', 'MR0FA8CD8K3900944', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-0477-HUUR',
+    'TC-0477-2024', '2026-06-30', 'Rojo Seguridad', 'TP-0477-H', 'MR0FA8CD8K3900944', 'Disponible', 'PIIC'
 ),
 -- ASM-009: Versa 2025 Gasoline
 (
@@ -109,7 +114,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_NISSAN' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_NIS_VERSA' LIMIT 1),
-    2025, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2025, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 1.6L DOHC (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     53460.00, 51006.00, '2026-03-31',
@@ -122,7 +127,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Michelin%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_PASS' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_SUP' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Gris Metálico', 'VEH-746-D', '3N1CN8AE9SK599731', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-746-HUUR',
+    'TC-746-2024', '2026-06-30', 'Gris Metálico', 'VEH-746-D', '3N1CN8AE9SK599731', 'Disponible', 'PIIC'
 ),
 -- ASM-010: Aveo 2025 Gasoline
 (
@@ -130,7 +136,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_CHEVROLET' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_CHV_AVEO' LIMIT 1),
-    2025, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2025, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 1.5L DOHC (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     22487.00, 19680.00, '2026-03-13',
@@ -143,7 +149,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Michelin%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_PASS' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_SUP' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'UXS-682-E', 'LZWPRMGN6SF107290', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-682-HUUR',
+    'TC-682-2024', '2026-06-30', 'Blanco Industrial', 'UXS-682-E', 'LZWPRMGN6SF107290', 'Disponible', 'PIIC'
 ),
 -- ASM-011: Ram 4000 2021 Gasoline
 (
@@ -151,7 +158,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_RAM' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_RAM_4000' LIMIT 1),
-    2021, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2021, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'V8 6.4L HEMI MDS (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     45921.00, 42400.00, '2025-10-24',
@@ -164,7 +171,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_LT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_CAR_P' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZH-3152-B', '3C7WRAKT6MG570165', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-3152-ARIAN',
+    'TC-3152-2024', '2026-06-30', 'Blanco Industrial', 'ZH-3152-B', '3C7WRAKT6MG570165', 'Disponible', 'PIIC'
 ),
 -- ASM-012: L200 2022 Diesel
 (
@@ -172,7 +180,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_MITSUBISHI' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_MIT_L200' LIMIT 1),
-    2022, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2022, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.4L MIVEC Turbo (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     76146.00, 74677.00, '2026-02-21',
@@ -185,7 +193,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_HT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_TRA_P' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZD-1550-B', 'MMBNLV56XNH055968', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-1550-ARIAN',
+    'TC-1550-2024', '2026-06-30', 'Blanco Industrial', 'ZD-1550-B', 'MMBNLV56XNH055968', 'Disponible', 'PIIC'
 ),
 -- ASM-013: L200 2022 Diesel
 (
@@ -193,12 +202,12 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_MITSUBISHI' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_MIT_L200' LIMIT 1),
-    2022, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2022, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.4L MIVEC Turbo (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     55007.00, 52573.00, '2026-01-13',
     90, 5000.00, 43.9, 
-    (SELECT id FROM common_catalogs WHERE category = 'DEPARTMENT' AND label LIKE '%Seguridad Industiral%' LIMIT 1),
+    (SELECT id FROM common_catalogs WHERE category = 'DEPARTMENT' AND label LIKE '%Seguridad Industrial%' LIMIT 1),
     'Mina', 
     (SELECT id FROM common_catalogs WHERE category = 'FLEET_OWNER' AND label LIKE '%Arian Silver%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE category = 'COMPLIANCE_STATUS' AND label = 'Cumple' LIMIT 1),
@@ -206,7 +215,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_MIXTO' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZD-1551-B', 'MMBNLV563NH056251', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-1551-ARIAN',
+    'TC-1551-2024', '2026-06-30', 'Blanco Industrial', 'ZD-1551-B', 'MMBNLV563NH056251', 'Disponible', 'PIIC'
 ),
 -- ASM-014: L200 2022 Diesel
 (
@@ -214,7 +224,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_MITSUBISHI' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_MIT_L200' LIMIT 1),
-    2022, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2022, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.4L MIVEC Turbo (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     130876.00, 127883.00, '2026-03-11',
@@ -227,7 +237,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_MINA' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZD-1552-B', 'MMBNLV569NH055993', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-1552-ARIAN',
+    'TC-1552-2024', '2026-06-30', 'Blanco Industrial', 'ZD-1552-B', 'MMBNLV569NH055993', 'Disponible', 'PIIC'
 ),
 -- ASM-015: Yaris 2023 Gasoline
 (
@@ -235,7 +246,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_YAR' LIMIT 1),
-    2023, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2023, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 1.5L DOHC (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     161077.00, 150000.00, '2025-12-29',
@@ -248,7 +259,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Michelin%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_PASS' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_SUP' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Plata Metálico', 'ZHY-780-E', 'MR2BF8C38P0005090', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-780-ARIAN',
+    'TC-780-2024', '2026-06-30', 'Plata Metálico', 'ZHY-780-E', 'MR2BF8C38P0005090', 'Disponible', 'PIIC'
 ),
 -- ASM-016: Ram 700 2024 Gasoline
 (
@@ -256,7 +268,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_RAM' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_RAM_700' LIMIT 1),
-    2024, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2024, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 1.3L Firefly (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     106610.00, 96515.00, '2026-01-13',
@@ -269,7 +281,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Michelin%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_LT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_PLANTA' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'YW-8191-D', '9BD281H59PYY69987', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-8191-ARIAN',
+    'TC-8191-2024', '2026-06-30', 'Blanco Industrial', 'YW-8191-D', '9BD281H59PYY69987', 'Disponible', 'PIIC'
 ),
 -- ASM-017: Hilux 2024 Diesel
 (
@@ -277,7 +290,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2024, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2024, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.8L Turbo Intercooled (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     51812.00, 49627.00, '2026-03-27',
@@ -290,7 +303,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_MINA' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Rojo Seguridad', 'TK-9722-H', 'MR0DA3CXR4007222', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-9722-HUUR',
+    'TC-9722-2024', '2026-06-30', 'Rojo Seguridad', 'TK-9722-H', 'MR0DA3CXR4007222', 'Disponible', 'PIIC'
 ),
 -- ASM-018: Kia Rio 2022 Gasoline
 (
@@ -298,7 +312,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_KIA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_KIA_RIO' LIMIT 1),
-    2022, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2022, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 1.6L DOHC (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     98391.00, 96540.00, '2025-10-23',
@@ -311,7 +325,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Michelin%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_PASS' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_SUP' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Azul Profundo', 'PCZ-11-91', '3KPA24BC4NE456823', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-1191-HUUR',
+    'TC-1191-2024', '2026-06-30', 'Azul Profundo', 'PCZ-11-91', '3KPA24BC4NE456823', 'Disponible', 'PIIC'
 ),
 -- ASM-019: Hilux 2018 Diesel
 (
@@ -319,7 +334,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2018, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2018, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.8L Turbo Intercooled (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     137874.00, 137423.00, '2026-03-26',
@@ -332,7 +347,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_MIXTO' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'TJ-7355-F', 'MRDFA8CD3J3900638', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-7355-HUUR',
+    'TC-7355-2024', '2026-06-30', 'Blanco Industrial', 'TJ-7355-F', 'MRDFA8CD3J3900638', 'Disponible', 'PIIC'
 ),
 -- ASM-020: Hilux 2023 Diesel
 (
@@ -340,7 +356,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2023, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2023, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.8L Turbo Intercooled (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     107467.00, 100834.00, '2026-02-27',
@@ -353,7 +369,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_MT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_OP_EXT' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'TG-7053-H', 'MR0DA3CD7P4005053', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-7053-HUUR',
+    'TC-7053-2024', '2026-06-30', 'Blanco Industrial', 'TG-7053-H', 'MR0DA3CD7P4005053', 'Disponible', 'PIIC'
 ),
 -- ASM-021: Hilux 2023 Diesel
 (
@@ -361,7 +378,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2023, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2023, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.8L Turbo Intercooled (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     58774.00, 56874.00, '2026-02-27',
@@ -374,7 +391,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_OP_EXT' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'TM-33-95-G', 'MR0DA3CD7P4004372', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-3395-HUUR',
+    'TC-3395-2024', '2026-06-30', 'Blanco Industrial', 'TM-33-95-G', 'MR0DA3CD7P4004372', 'Disponible', 'PIIC'
 ),
 -- ASM-022: Yaris 2023 Diesel
 (
@@ -382,7 +400,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_YAR' LIMIT 1),
-    2023, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2023, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 1.5L (Dato a verificar)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     104782.00, 100000.00, '2026-02-27',
@@ -395,7 +413,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Michelin%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_PASS' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_SUP' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'UWY-713-D', 'MR2BF8C37P0023290', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-713-HUUR',
+    'TC-713-2024', '2026-06-30', 'Blanco Industrial', 'UWY-713-D', 'MR2BF8C37P0023290', 'Disponible', 'PIIC'
 ),
 -- ASM-023: Seat Ateca 2017 Gasoline
 (
@@ -403,7 +422,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_VW' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_VW_TIG' LIMIT 1), 
-    2017, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2017, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 1.4L TSI Turbo (Gasolina)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     30114.00, 25496.00, '2026-02-26',
@@ -416,7 +435,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Michelin%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_SUV' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_SUP' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'UYM-047-C', 'VSSAA75F8H6532319', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-047-HUUR',
+    'TC-047-2024', '2026-06-30', 'Blanco Industrial', 'UYM-047-C', 'VSSAA75F8H6532319', 'Disponible', 'PIIC'
 ),
 -- ASM-024: Frison T8 2023 Diesel
 (
@@ -424,7 +444,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_JAC' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_JAC_FT8' LIMIT 1),
-    2023, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2023, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.0L CTI Turbo (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     193129.00, 186819.00, '2026-03-11',
@@ -437,7 +457,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_MIXTO' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'YW-7900-D', '3GALD1593PM002498', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-7900-ARIAN',
+    'TC-7900-2024', '2026-06-30', 'Blanco Industrial', 'YW-7900-D', '3GALD1593PM002498', 'Disponible', 'PIIC'
 ),
 -- ASM-025: JAC X200 2024 Gasoline
 (
@@ -445,7 +466,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_JAC' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_JAC_FT6' LIMIT 1), 
-    2024, (SELECT id FROM common_catalogs WHERE code = 'F_GAS' LIMIT 1),
+    2024, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Gasolina%' LIMIT 1),
     'L4 2.0L Turbo (Dato a verificar)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X2' LIMIT 1),
     59994.00, 58209.00, '2026-03-19',
@@ -458,7 +479,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%Yokohama%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_LT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_CAR_L' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'ZA-6811-D', '3GALJ1398RM003712', 'Disponible', 'PIIC'
+    '2026-12-15', 'Quálitas Compañía de Seguros', 'POL-6811-ARIAN',
+    'TC-6811-2024', '2026-06-30', 'Blanco Industrial', 'ZA-6811-D', '3GALJ1398RM003712', 'Disponible', 'PIIC'
 ),
 -- ASM-026: Hilux 2024 Diesel
 (
@@ -466,7 +488,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2024, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2024, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.8L Turbo Intercooled (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     68103.00, 61238.00, '2026-02-27',
@@ -479,7 +501,8 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_OP_EXT' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Blanco Industrial', 'TL-8939-H', 'MR0DA3CD4R4007281', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-8939-HUUR',
+    'TC-8939-2024', '2026-06-30', 'Blanco Industrial', 'TL-8939-H', 'MR0DA3CD4R4007281', 'Disponible', 'PIIC'
 ),
 -- ASM-027: Hilux 2025 Diesel
 (
@@ -487,7 +510,7 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE code = 'AT_VEH' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'B_TOYOTA' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'M_TOY_HIL' LIMIT 1),
-    2025, (SELECT id FROM common_catalogs WHERE code = 'F_DSL' LIMIT 1),
+    2025, (SELECT id FROM common_catalogs WHERE category = 'FUEL_TYPE' AND label LIKE '%Diésel%' LIMIT 1),
     'L4 2.8L Turbo Intercooled (Diésel)', 
     (SELECT id FROM common_catalogs WHERE code = 'DR_4X4' LIMIT 1),
     16332.00, 11627.00, '2026-02-27',
@@ -500,11 +523,12 @@ INSERT INTO fleet_units (
     (SELECT id FROM common_catalogs WHERE category = 'TIRE_BRAND' AND label LIKE '%BF GOODRICH%' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'TT_AT' LIMIT 1),
     (SELECT id FROM common_catalogs WHERE code = 'USE_MINA' LIMIT 1),
-    '2026-12-15', '2026-06-30', 'Rojo Seguridad', 'TN-0201-H', 'MR0DA3CD9S4009937', 'Disponible', 'PIIC'
+    '2026-12-15', 'GNP Seguros', 'POL-0201-HUUR',
+    'TC-0201-2024', '2026-06-30', 'Rojo Seguridad', 'TN-0201-H', 'MR0DA3CD9S4009937', 'Disponible', 'PIIC'
 );
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================================
--- MIGRATION COMPLETE: Client Fleet v.2.0 (IMMUNE MASTER SYNC) SEEDED
+-- MIGRATION COMPLETE: Client Fleet v.2.0 (REALISM & SYMMETRY SYNC) SEEDED
 -- =============================================================================
