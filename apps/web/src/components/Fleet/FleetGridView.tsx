@@ -449,9 +449,6 @@ export const FleetGridView = ({
     );
   }
 
-  // 🔱 Financial Intelligence Computation
-  const totalMonthlyLease = units.reduce((acc, u) => acc + (Number(u.monthlyLeasePayment) || 0), 0);
-
   return (
     <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
       {selectedGalleryUnit && (
@@ -461,39 +458,6 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-
-      {/* 🔱 Archon Financial Snapshot */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="glass-card-pro bg-white px-6 py-4 flex items-center gap-4 border-l-4 border-l-emerald-500 shadow-sm flex-1">
-          <div className="bg-emerald-50 p-2.5 rounded-full text-emerald-600">
-            <Activity size={20} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Inversión Mensual de Flota (Leasing)
-            </p>
-            <h3 className="text-2xl font-black text-slate-800">
-              ${totalMonthlyLease.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-              <span className="text-[10px] ml-2 opacity-30">MXN / MES</span>
-            </h3>
-          </div>
-        </div>
-
-        <div className="glass-card-pro bg-[#0f2a44] px-6 py-4 flex items-center gap-4 shadow-sm flex-1 text-white">
-          <div className="bg-white/10 p-2.5 rounded-full text-emerald-400">
-            <Truck size={20} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
-              Activos Registrados en Archon
-            </p>
-            <h3 className="text-2xl font-black italic">
-              {units.length}{' '}
-              <span className="text-sm not-italic opacity-40">Unidades Operativas</span>
-            </h3>
-          </div>
-        </div>
-      </div>
 
       <div className="glass-card-pro bg-white p-6">
         <table className="archon-registry-table w-full">
