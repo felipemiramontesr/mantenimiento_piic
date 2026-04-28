@@ -94,10 +94,12 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
     <div className="flex flex-col items-center space-y-2">
       {/* 🔱 Asset Type & Lease */}
       <div className="flex flex-col items-center mb-1">
-        <StrategyIcon size={14} className="text-[#0f2a44] opacity-80" />
-        <span className="text-[8px] font-black uppercase tracking-[0.1em] text-[#0f2a44] opacity-40">
-          {strategyLabel}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <StrategyIcon size={12} className="text-[#0f2a44] opacity-80" />
+          <span className="text-[8px] font-black uppercase tracking-[0.1em] text-[#0f2a44] opacity-40">
+            {strategyLabel}
+          </span>
+        </div>
         {lease > 0 && (
           <div className="mt-1 px-1.5 py-0.5 bg-gray-50 rounded-[3px] border border-gray-100">
             <span className="text-[8px] font-black text-gray-500">
