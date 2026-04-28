@@ -1,7 +1,7 @@
 # 🔱 Reporte de Auditoría: Sincronización de Flota Archon vs. Excel Cliente
 
-**Fecha:** 27 de Abril, 2026
-**Estado:** Finalizado (Sincronización al 100%)
+**Fecha:** 28 de Abril, 2026
+**Estado:** Auditoría de Ingeniería v.2.0 (Detección de Discrepancias Técnicas)
 
 ---
 
@@ -38,12 +38,23 @@ Es el hallazgo más relevante para demostrar la superioridad de Archon.
 - **Hallazgo:** La unidad **ASM-011** (RAM 4000) estaba registrada como "RAM 3500" debido a limitaciones en el catálogo previo del cliente.
 - **Solución Archon:** Se creó el nodo **M_RAM_4000** en el catálogo maestro y se vinculó correctamente, permitiendo una clasificación técnica precisa para el mantenimiento de planta.
 
----
-
 ### E. Evolución Estratégica: Capacidad de Combustible (Entrada Manual)
 
 - **Estado Previo (Excel):** El cliente no cuenta con un registro centralizado de la capacidad volumétrica de los tanques de sus unidades.
 - **Implementación Archon:** El sistema **obliga** la captura manual del campo **Capacidad de Tanque (Litros)** durante el registro. Esto garantiza que la analítica de rendimiento (KM/L) se base en datos técnicos reales del fabricante y no en proyecciones, asegurando una precisión absoluta en el cálculo del gasto operativo (OPEX).
+
+---
+
+### F. Discrepancias de Ingeniería en Motores (v.2.0)
+
+Durante la fase de normalización de intervalos numéricos y análisis de motores, se identificaron las siguientes inconsistencias adicionales:
+
+1.  **ASM-022 (Yaris):** El Excel registra combustible **Diésel**. Históricamente, el Toyota Yaris en México es un motor de gasolina (1.5L 2NR-VE). Se ha marcado para **Verificación Física**, ya que un error en el suministro de combustible sería catastrófico.
+2.  **ASM-025 (JAC X200):** El Excel registra combustible **Gasolina**. El arquetipo industrial de este modelo en México es motor **Diésel CTI 2.0L**. Se ha marcado para **Auditoría de Campo**.
+3.  **Vacío de Capacidades Críticas:** El 100% de la flota carece de registro de **Capacidad de Carga (KG)**, **Configuración de Motor**, **Tipo de Tracción** y **Transmisión**.
+4.  **Omisión Documental:** No se cuenta con **Pólizas de Seguro**, **Fechas de Vencimiento de Verificación** ni **Folios de Tarjetas de Circulación**.
+
+**Impacto:** El sistema se cargará inicialmente con valores estimados de fábrica y los datos del Excel (aunque sospechosos), pero requiere una auditoría técnica manual para completar los campos legales y de ingeniería de alta precisión.
 
 ---
 
@@ -57,4 +68,4 @@ Es el hallazgo más relevante para demostrar la superioridad de Archon.
 ---
 
 **Firmado:**
-_Archon Core Alpha Engine v.39.0.0_
+_Archon Core Alpha Engine v.39.9.12_

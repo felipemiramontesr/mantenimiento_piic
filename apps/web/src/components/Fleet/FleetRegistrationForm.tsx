@@ -553,14 +553,23 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Configuración de Motor" icon={Activity}>
-                <ArchonSelect
-                  options={engineTypes.map((e: CatalogOption) => ({
-                    value: e.label, // Engine types currently use the label as value in the DB string field
-                    label: e.label,
-                  }))}
-                  value={formData.motor ?? ''}
-                  onChange={(val: string): void => setFormData({ ...formData, motor: val })}
-                />
+                <div className="relative">
+                  <input
+                    list="engine-suggestions"
+                    type="text"
+                    placeholder="Ej: L4 2.8L Turbo (Diésel)"
+                    className="archon-input font-mono placeholder:text-slate-400/60 placeholder:font-normal"
+                    value={formData.motor ?? ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                      setFormData({ ...formData, motor: e.target.value })
+                    }
+                  />
+                  <datalist id="engine-suggestions">
+                    {engineTypes.map((e: CatalogOption) => (
+                      <option key={e.id} value={e.label} />
+                    ))}
+                  </datalist>
+                </div>
               </ArchonField>
               <ArchonField label="Combustible" icon={Zap}>
                 <ArchonSelect
