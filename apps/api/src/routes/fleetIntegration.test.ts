@@ -90,7 +90,7 @@ describe('Fleet Integration Endpoints', () => {
           numeroSerie: 'SN-100',
           placas: 'PL-100',
           motor: 'MOT-100',
-          tarjetaCirculacion: 'TC-100',
+          circulationCardNumber: 'TC-100',
           images: ['img1.jpg'],
         },
       });
@@ -238,7 +238,7 @@ describe('Fleet Integration Endpoints', () => {
           {
             id: 'ASM-001',
             motor: 'enc_MOT1',
-            tarjeta_circulacion: null,
+            circulation_card_number: null,
             numero_serie: 'enc_SN1',
             placas: 'enc_PL1',
             availability_index: 85.5,
@@ -249,7 +249,7 @@ describe('Fleet Integration Endpoints', () => {
           {
             id: 'ASM-002',
             motor: null,
-            tarjeta_circulacion: 'enc_TC2',
+            circulation_card_number: 'enc_TC2',
             numero_serie: null,
             placas: null,
           },
@@ -267,9 +267,9 @@ describe('Fleet Integration Endpoints', () => {
       expect(data[0].motor).toBe('MOT1');
       expect(data[0].numeroSerie).toBe('SN1');
       expect(data[0].placas).toBe('PL1');
-      expect(data[0].tarjetaCirculacion).toBeNull();
+      expect(data[0].circulationCardNumber).toBeNull();
       expect(data[1].motor).toBeNull();
-      expect(data[1].tarjetaCirculacion).toBe('TC2');
+      expect(data[1].circulationCardNumber).toBe('TC2');
     });
 
     it('should calculate complex health states for predictive maintenance', async (): Promise<void> => {
@@ -286,7 +286,7 @@ describe('Fleet Integration Endpoints', () => {
             last_service_date: pastDate.toISOString(),
             time_limit_days: 30,
             motor: null,
-            tarjeta_circulacion: null,
+            circulation_card_number: null,
             numero_serie: null,
             placas: null,
           },
@@ -298,7 +298,7 @@ describe('Fleet Integration Endpoints', () => {
             last_service_date: null,
             time_limit_days: null,
             motor: null,
-            tarjeta_circulacion: null,
+            circulation_card_number: null,
             numero_serie: null,
             placas: null,
           },
@@ -310,7 +310,7 @@ describe('Fleet Integration Endpoints', () => {
             last_service_date: new Date().toISOString(),
             time_limit_days: 30,
             motor: null,
-            tarjeta_circulacion: null,
+            circulation_card_number: null,
             numero_serie: null,
             placas: null,
           },
@@ -341,7 +341,7 @@ describe('Fleet Integration Endpoints', () => {
             id: 'IMG_JSON',
             images: JSON.stringify(['img1.jpg']),
             motor: null,
-            tarjeta_circulacion: null,
+            circulation_card_number: null,
             numero_serie: null,
             placas: null,
           },
@@ -349,7 +349,7 @@ describe('Fleet Integration Endpoints', () => {
             id: 'IMG_ARRAY',
             images: ['img2.jpg'],
             motor: null,
-            tarjeta_circulacion: null,
+            circulation_card_number: null,
             numero_serie: null,
             placas: null,
           },
@@ -357,7 +357,7 @@ describe('Fleet Integration Endpoints', () => {
             id: 'IMG_CORRUPT',
             images: 'invalid-json-{',
             motor: null,
-            tarjeta_circulacion: null,
+            circulation_card_number: null,
             numero_serie: null,
             placas: null,
           },
@@ -401,7 +401,7 @@ describe('Fleet Integration Endpoints', () => {
           motor: 'NEW-MOT',
           numeroSerie: 'NEW-SN',
           placas: 'NEW-PL',
-          tarjetaCirculacion: 'NEW-TC',
+          circulationCardNumber: 'NEW-TC',
           assetTypeId: 2, // Maquinaria
           year: 2025,
         },
