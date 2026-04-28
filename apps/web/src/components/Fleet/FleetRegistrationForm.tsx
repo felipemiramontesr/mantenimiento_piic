@@ -570,7 +570,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   }
                 />
               </ArchonField>
-              <div className="col-span-2">
+              <div className="grid grid-cols-2 gap-6">
                 <ArchonField label="Capacidad de Carga" icon={Truck}>
                   <div className="relative flex items-center">
                     <input
@@ -590,6 +590,28 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     />
                     <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                       KG
+                    </span>
+                  </div>
+                </ArchonField>
+                <ArchonField label="Capacidad Combustible" icon={Zap}>
+                  <div className="relative flex items-center">
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ej: 80.0"
+                      className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-amber-600 font-bold"
+                      value={formData.fuelTankCapacity ?? ''}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                      ): void =>
+                        setFormData({
+                          ...formData,
+                          fuelTankCapacity: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
+                    />
+                    <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                      LTS
                     </span>
                   </div>
                 </ArchonField>

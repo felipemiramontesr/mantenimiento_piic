@@ -40,11 +40,19 @@ Es el hallazgo más relevante para demostrar la superioridad de Archon.
 
 ---
 
+### E. Evolución Estratégica: Capacidad de Combustible
+
+- **Estado Previo (Excel):** El cliente no cuenta con un registro centralizado de la capacidad volumétrica de los tanques de sus unidades.
+- **Implementación Archon:** Se inyecta el campo **Capacidad de Tanque (Litros)**. Esto permitirá que en futuras fases, el sistema deduzca automáticamente el gasto en combustible basándose en el indicador de nivel en ruta y el odómetro real, transformando Archon en una herramienta de control de costos operativos (OPEX).
+
+---
+
 ## 3. Ventajas Estratégicas de Archon sobre Excel
 
 1.  **Detección Automática de Iconografía:** Archon diferencia visualmente entre Vehículos y Maquinaria, aplicando reglas de mantenimiento específicas para cada tipo.
 2.  **Cálculo de KM Restantes:** Proporciona una cuenta regresiva exacta basada en el desgaste diario real, no en una fecha fija de calendario.
 3.  **Paridad Legal:** Integra vencimientos de Seguros y Verificaciones en una sola vista, algo que el Excel del cliente maneja de forma aislada.
+4.  **Gestión de Consumos (Nueva):** El sistema está preparado para auditar el rendimiento de combustible (KM/L) de forma individualizada.
 
 ---
 

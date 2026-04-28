@@ -29,6 +29,7 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   tireBrandId: undefined,
   terrainTypeId: undefined,
   capacidadCarga: undefined,
+  fuelTankCapacity: undefined,
   odometer: undefined,
   sede: '',
   centroMantenimiento: 'PIIC',

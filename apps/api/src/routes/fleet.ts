@@ -32,6 +32,7 @@ const createFleetSchema = z.object({
   tireBrandId: z.number().int().optional().nullable(),
   terrainTypeId: z.number().int().optional().nullable(),
   capacidadCarga: z.number().min(0).optional(),
+  fuelTankCapacity: z.number().min(0).optional(),
   odometer: z.number().min(0).default(0),
   sede: z.string().max(150).optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
@@ -87,6 +88,7 @@ const updateFleetSchema = z.object({
   tireBrandId: z.number().int().optional().nullable(),
   terrainTypeId: z.number().int().optional().nullable(),
   capacidadCarga: z.number().min(0).optional(),
+  fuelTankCapacity: z.number().min(0).optional(),
   odometer: z.number().min(0).optional(),
   sede: z.string().max(150).optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).optional(),
@@ -144,6 +146,7 @@ interface FleetUnit extends RowDataPacket {
   tipo_terreno: string | null;
   terrain_type_id: number | null;
   capacidad_carga: string | null;
+  fuel_tank_capacity: number;
   odometer: number;
   sede: string | null;
   centro_mantenimiento: string;
