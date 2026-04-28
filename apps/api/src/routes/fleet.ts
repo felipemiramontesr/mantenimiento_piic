@@ -241,7 +241,7 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger A: Time Based
   let timeProgress = 0;
-  const timeLimit = Number(unit.maint_interval_days || 0);
+  const timeLimit = Number(unit.time_limit_days || 0);
   if (lastServiceDate && timeLimit > 0) {
     const diffMs = today.getTime() - lastServiceDate.getTime();
     const diffDays = diffMs / (1000 * 3600 * 24);
@@ -250,7 +250,7 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger B: Usage Based (KM/HRS)
   let usageProgress = 0;
-  const usageLimit = Number(unit.maint_interval_km || 0);
+  const usageLimit = Number(unit.usage_limit_units || 0);
   if (usageLimit > 0) {
     const diffUnits = currentReading - lastReading;
     usageProgress = Math.max(0, diffUnits / usageLimit);
