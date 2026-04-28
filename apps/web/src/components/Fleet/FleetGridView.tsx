@@ -16,7 +16,7 @@ import {
   ChevronDown,
   Compass,
   Truck,
-  Tractor,
+  Wrench,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -87,7 +87,7 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
 
   // 🔱 Dynamic Asset Type Mapping
   const isMaquinaria = unit.assetTypeId === 2 || unit.assetType === 'Maquinaria';
-  const StrategyIcon = isMaquinaria ? Tractor : Truck;
+  const StrategyIcon = isMaquinaria ? Wrench : Truck;
   const strategyLabel = isMaquinaria ? 'Maquinaria' : 'Vehículo';
 
   return (
