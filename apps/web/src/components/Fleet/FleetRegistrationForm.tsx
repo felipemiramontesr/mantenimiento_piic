@@ -453,7 +453,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                       type="number"
                       step="0.01"
                       placeholder="Ej: 15500.50"
-                      className="flex-1 w-full bg-transparent px-4 py-3 outline-none border-none focus:ring-0 font-mono text-emerald-700 font-bold"
+                      className="flex-1 w-full bg-transparent px-4 py-3 outline-none border-none focus:ring-0 font-mono text-emerald-700 font-bold placeholder:text-slate-400/60 placeholder:font-normal"
                       value={formData.monthlyLeasePayment ?? ''}
                       onChange={(
                         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -603,7 +603,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="number"
                     step="0.1"
                     placeholder="Ej: 80.0"
-                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-amber-600 font-bold"
+                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-amber-600 font-bold placeholder:text-slate-400/60 placeholder:font-normal"
                     value={formData.fuelTankCapacity ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -844,7 +844,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="number"
                   step="0.1"
                   placeholder="Ej: 50.5"
-                  className="archon-input font-mono text-emerald-700 font-bold w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="archon-input font-mono text-emerald-700 font-bold w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-slate-400/60 placeholder:font-normal"
                   value={formData.dailyUsageAvg ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({
