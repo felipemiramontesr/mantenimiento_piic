@@ -80,21 +80,39 @@ const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element 
 };
 
 const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
-  const intervalKm = unit.maintIntervalKm || 10000;
-  const intervalDays = unit.maintIntervalDays || 180;
+  const intervalKm = unit.usageLimitUnits || unit.maintIntervalKm || 10000;
+  const intervalDays = unit.timeLimitDays || unit.maintIntervalDays || 180;
   const avgDaily = unit.dailyUsageAvg || 0;
   return (
     <div className="flex flex-col items-center space-y-1.5">
-      <div className="flex items-center gap-1.5 opacity-60">
-        <RefreshCcw size={10} className="text-[#0f2a44]" />
-        <span className="text-[9px] font-black text-[#0f2a44]">
-          {intervalKm.toLocaleString()} KM
-        </span>
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-center gap-1.5 opacity-60">
+          <RefreshCcw size={10} className="text-[#0f2a44]" />
+          <span className="text-[9px] font-black text-[#0f2a44]">
+            {unit.usageFreqLabel || `${intervalKm.toLocaleString()} KM`}
+          </span>
+        </div>
+        {unit.usageFreqLabel && (
+          <span className="text-[7px] font-bold opacity-30 tracking-tighter">
+            ({intervalKm.toLocaleString()} KM)
+          </span>
+        )}
       </div>
-      <div className="flex items-center gap-1.5 opacity-40">
-        <CalendarDays size={10} />
-        <span className="text-[9px] font-bold">{intervalDays} DÍAS</span>
+
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-center gap-1.5 opacity-40">
+          <CalendarDays size={10} />
+          <span className="text-[9px] font-bold">
+            {unit.timeFreqLabel || `${intervalDays} DÍAS`}
+          </span>
+        </div>
+        {unit.timeFreqLabel && (
+          <span className="text-[7px] font-bold opacity-30 tracking-tighter">
+            ({intervalDays} DÍAS)
+          </span>
+        )}
       </div>
+
       <div className="flex items-center gap-1.5 bg-sky-50 px-1.5 py-0.5 rounded-[4px]">
         <Activity size={9} className="text-sky-600" />
         <span className="text-[9px] font-black text-sky-700">{avgDaily} KM/D</span>
@@ -210,8 +228,8 @@ const FleetRegistryRow = ({
   onSelectImage: (u: FleetUnit) => void;
 }): React.JSX.Element => {
   const forecast = calculateMaintForecast(
-    unit.maintIntervalDays || 180,
-    unit.maintIntervalKm || 10000,
+    unit.timeLimitDays || unit.maintIntervalDays || 180,
+    unit.usageLimitUnits || unit.maintIntervalKm || 10000,
     unit.dailyUsageAvg || 0,
     unit.odometer,
     unit.lastServiceReading || 0,
@@ -266,16 +284,26 @@ const FleetRegistryRow = ({
         <SpecCluster unit={unit} />
       </td>
       <td className="text-center px-4">
-        <div className="flex flex-col items-center space-y-1">
-          <div className="flex items-center gap-1.5">
-            <Zap size={10} className={zapClass} />
-            <span className={`text-[10px] font-black ${kmTextClass}`}>
-              {forecast ? forecast.kmParaServicio.toLocaleString() : '---'} KM
-            </span>
+        <div className="flex flex-col items-center space-y-2">
+          {/* KM Forecast */}
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-1.5">
+              <Zap size={10} className={zapClass} />
+              <span className={`text-[10px] font-black ${kmTextClass}`}>
+                {forecast ? forecast.kmParaServicio.toLocaleString() : '---'} KM
+              </span>
+            </div>
+            <div className="flex items-center opacity-40 bg-gray-50 px-2 py-0.5 rounded-[4px]">
+              <span className="text-[8px] font-black uppercase tracking-tighter">
+                KM: {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center opacity-50 bg-gray-50 px-2 py-0.5 rounded-[4px]">
-            <span className="text-[10px] font-black uppercase tracking-tighter">
-              EST: {forecast ? formatDate(forecast.serviceByKmDate) : '---'}
+          {/* Time Forecast */}
+          <div className="flex items-center opacity-70 bg-sky-50 px-2 py-0.5 rounded-[4px] border border-sky-100/50">
+            <CalendarDays size={9} className="text-sky-600 mr-1" />
+            <span className="text-[8.5px] font-black text-sky-800 uppercase tracking-tighter">
+              FECHA: {forecast ? formatDate(forecast.serviceByTimeDate) : '---'}
             </span>
           </div>
         </div>
@@ -292,6 +320,7 @@ const FleetRegistryRow = ({
             mtbf={unit.mtbfHours ?? 0}
             mttr={unit.mttrHours ?? 0}
             backlog={unit.backlogCount ?? 0}
+            healthScore={unit.healthScore}
           />
         </div>
       </td>
@@ -314,8 +343,8 @@ export const FleetGridView = ({
     const unitsMap = units.map((u) => ({
       unit: u,
       forecast: calculateMaintForecast(
-        u.maintIntervalDays || 180,
-        u.maintIntervalKm || 10000,
+        u.timeLimitDays || u.maintIntervalDays || 180,
+        u.usageLimitUnits || u.maintIntervalKm || 10000,
         u.dailyUsageAvg || 0,
         u.odometer,
         u.lastServiceReading || 0,

@@ -112,6 +112,12 @@ export interface FleetUnit {
   maintIntervalKm?: number;
   maintIntervalDays?: number;
   dailyUsageAvg?: number | null;
+  // 🔱 Dynamic Catalog Computed Fields (v.39.7.0)
+  timeLimitDays?: number | null;
+  usageLimitUnits?: number | null;
+  usageUnitName?: string | null;
+  timeFreqLabel?: string | null;
+  usageFreqLabel?: string | null;
 }
 
 export interface CreateFleetUnit {

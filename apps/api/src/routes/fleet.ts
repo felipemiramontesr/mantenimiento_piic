@@ -293,6 +293,8 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
     backlog_count: Number(unit.backlog_count || 0),
     time_limit_days: unit.time_limit_days ? Number(unit.time_limit_days) : null,
     usage_limit_units: unit.usage_limit_units ? Number(unit.usage_limit_units) : null,
+    time_freq_label: unit.time_freq_label,
+    usage_freq_label: unit.usage_freq_label,
   };
 
   const {
@@ -303,7 +305,7 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
     currentReading,
     lastReading,
     today,
-  } = computeUnitHealth(unit);
+  } = computeUnitHealth(decrypted as unknown as FleetUnit);
 
   return toCamelCase({
     ...decrypted,
@@ -353,7 +355,9 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_owner.label AS owner,
           c_compl.label AS compliance_status,
           ct.numeric_value AS time_limit_days,
+          ct.label AS time_freq_label,
           cu.numeric_value AS usage_limit_units,
+          cu.label AS usage_freq_label,
           cu.unit AS usage_unit_name
         FROM fleet_units f
         LEFT JOIN common_catalogs c_at ON f.asset_type_id = c_at.id

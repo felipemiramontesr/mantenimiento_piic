@@ -570,28 +570,30 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   }
                 />
               </ArchonField>
-              <ArchonField label="Capacidad de Carga" icon={Truck}>
-                <div className="relative flex items-center">
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Ej: 1500.0"
-                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    value={formData.capacidadCarga ?? ''}
-                    onChange={(
-                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-                    ): void =>
-                      setFormData({
-                        ...formData,
-                        capacidadCarga: e.target.value ? parseFloat(e.target.value) : undefined,
-                      })
-                    }
-                  />
-                  <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
-                    KG
-                  </span>
-                </div>
-              </ArchonField>
+              <div className="col-span-2">
+                <ArchonField label="Capacidad de Carga" icon={Truck}>
+                  <div className="relative flex items-center">
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ej: 1500.0"
+                      className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      value={formData.capacidadCarga ?? ''}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                      ): void =>
+                        setFormData({
+                          ...formData,
+                          capacidadCarga: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
+                    />
+                    <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                      KG
+                    </span>
+                  </div>
+                </ArchonField>
+              </div>
             </div>
 
             <div className="pt-4 border-t border-slate-100 space-y-6">
