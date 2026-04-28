@@ -58,7 +58,6 @@ export interface FleetUnit {
   // Legal & Compliance
   vigenciaSeguro: string | null; // ISO date
   vencimientoVerificacion: string | null; // ISO date
-  circulationCardNumber: string | null;
   lubeType: string | null;
   filterBrand: string | null;
   // 🔱 Sovereign Asset Management (v.39.0.0)
@@ -73,7 +72,7 @@ export interface FleetUnit {
   insuranceCompany?: string | null;
   lastEnvironmentalVerification?: string | null;
   lastMechanicalVerification?: string | null;
-  circulationCardNumber?: string | null;
+  circulationCardNumber: string | null;
   monthlyLeasePayment: number;
   // Status
   status: FleetStatus;
@@ -147,7 +146,6 @@ export interface CreateFleetUnit {
   protocolStartDate?: string;
   vigenciaSeguro?: string;
   vencimientoVerificacion?: string;
-  circulationCardNumber?: string;
   status?: FleetStatus;
   color?: string;
   description?: string;
