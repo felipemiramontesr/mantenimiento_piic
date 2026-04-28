@@ -501,10 +501,14 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="number"
                   min={1990}
                   max={2030}
+                  placeholder="Ej: 2024"
                   className="archon-input font-mono"
-                  value={formData.year}
+                  value={formData.year ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
-                    setFormData({ ...formData, year: parseInt(e.target.value, 10) })
+                    setFormData({
+                      ...formData,
+                      year: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                    })
                   }
                 />
               </ArchonField>

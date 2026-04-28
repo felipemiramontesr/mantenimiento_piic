@@ -129,7 +129,7 @@ export interface CreateFleetUnit {
   placas?: string;
   numeroSerie?: string;
   images?: string[];
-  year: number;
+  year?: number;
   departmentId?: number;
   operationalUseId?: number;
   motor?: string;
@@ -143,7 +143,7 @@ export interface CreateFleetUnit {
   fuelTankCapacity?: number;
   odometer?: number;
   sede?: string;
-  centroMantenimiento: CentroMantenimiento;
+  centroMantenimiento?: CentroMantenimiento | '';
   protocolStartDate?: string;
   vigenciaSeguro?: string;
   vencimientoVerificacion?: string;
