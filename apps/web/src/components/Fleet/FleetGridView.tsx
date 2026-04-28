@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Compass,
   Truck,
+  Tractor,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -83,8 +84,22 @@ const StrategyCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const intervalKm = unit.usageLimitUnits || unit.maintIntervalKm || 10000;
   const intervalDays = unit.timeLimitDays || unit.maintIntervalDays || 180;
   const avgDaily = unit.dailyUsageAvg || 0;
+
+  // 🔱 Dynamic Asset Type Mapping
+  const isMaquinaria = unit.assetTypeId === 2 || unit.assetType === 'Maquinaria';
+  const StrategyIcon = isMaquinaria ? Tractor : Truck;
+  const strategyLabel = isMaquinaria ? 'Maquinaria' : 'Vehículo';
+
   return (
-    <div className="flex flex-col items-center space-y-1.5">
+    <div className="flex flex-col items-center space-y-2">
+      {/* 🔱 Asset Type Header */}
+      <div className="flex flex-col items-center mb-1">
+        <StrategyIcon size={14} className="text-[#0f2a44] opacity-80" />
+        <span className="text-[8px] font-black uppercase tracking-[0.1em] text-[#0f2a44] opacity-40">
+          {strategyLabel}
+        </span>
+      </div>
+
       <div className="flex flex-col items-center gap-0.5">
         <div className="flex items-center gap-1.5 opacity-60">
           <RefreshCcw size={10} className="text-[#0f2a44]" />

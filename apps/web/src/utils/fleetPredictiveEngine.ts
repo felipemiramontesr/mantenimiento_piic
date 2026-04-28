@@ -84,7 +84,7 @@ export const calculateMaintForecast = (
   // A unit is overdue IF:
   // - Remaining KM is zero or negative
   // - OR the Time-based service date has passed
-  const isOverdue = kmParaServicio <= 0 || serviceByTimeDate < today;
+  const isOverdue = kmParaServicio <= 0 || serviceByTimeDate < today || forecastDate < today;
 
   // Calculate intensity based on how much it is overdue
   let overdueIntensity = 0;
