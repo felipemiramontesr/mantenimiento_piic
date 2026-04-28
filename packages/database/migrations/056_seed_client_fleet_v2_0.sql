@@ -1,14 +1,54 @@
--- 🔱 ARCHON INDUSTRIAL FLEET INJECTION v.2.0 (REALISM & SYMMETRY SYNC)
--- Logic: Semantic Relational Mapping + Industrial Metadata Injection.
--- Architecture: Sovereing Data Infrastructure (v.39.9.20)
--- Objective: 100% Realism in Dashboard (Cards, Insurance, Fuel & Identity).
+-- 🔱 ARCHON INDUSTRIAL FLEET INJECTION v.2.1 (IMMUNE INFRASTRUCTURE SYNC)
+-- Logic: Self-Healing Schema + Master Data Injection.
+-- Architecture: Sovereing Data Infrastructure (v.39.9.21)
+-- Goal: Fix Error #1054 and Inject 100% Realistic Fleet Data.
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. CLEANUP: Clear the deck for the 23 industrial assets
+-- 1. SELF-HEALING: Ensure missing columns exist before injection
+-- (Checking and adding columns to prevent #1054 error)
+SET @dbname = DATABASE();
+SET @tablename = 'fleet_units';
+
+-- Procedure to safely add columns if they don't exist
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS AddColumnIfMissing()
+BEGIN
+    -- Add insurance_company
+    IF NOT EXISTS (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = 'insurance_company') THEN
+        ALTER TABLE fleet_units ADD COLUMN insurance_company VARCHAR(100) DEFAULT NULL AFTER insurance_expiry_date;
+    END IF;
+
+    -- Add insurance_policy_number
+    IF NOT EXISTS (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = 'insurance_policy_number') THEN
+        ALTER TABLE fleet_units ADD COLUMN insurance_policy_number VARCHAR(100) DEFAULT NULL AFTER insurance_company;
+    END IF;
+
+    -- Add circulation_card_number
+    IF NOT EXISTS (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = 'circulation_card_number') THEN
+        ALTER TABLE fleet_units ADD COLUMN circulation_card_number VARCHAR(100) DEFAULT NULL AFTER placas;
+    END IF;
+    
+    -- Add last_environmental_verification
+    IF NOT EXISTS (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = 'last_environmental_verification') THEN
+        ALTER TABLE fleet_units ADD COLUMN last_environmental_verification DATE DEFAULT NULL AFTER legal_compliance_date;
+    END IF;
+
+    -- Add last_mechanical_verification
+    IF NOT EXISTS (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = 'last_mechanical_verification') THEN
+        ALTER TABLE fleet_units ADD COLUMN last_mechanical_verification DATE DEFAULT NULL AFTER last_environmental_verification;
+    END IF;
+END //
+DELIMITER ;
+
+-- Execute the self-healing procedure
+CALL AddColumnIfMissing();
+DROP PROCEDURE IF EXISTS AddColumnIfMissing;
+
+-- 2. CLEANUP: Clear the deck for the 23 industrial assets
 DELETE FROM fleet_units WHERE id LIKE 'ASM-%';
 
--- 2. MASTER INJECTION (The 23 Pillars of Archon)
+-- 3. MASTER INJECTION (The 2pillars of Archon)
 INSERT INTO fleet_units (
     uuid, id, asset_type_id, brand_id, model_id, year, fuel_type_id, 
     motor, traccion_id, odometer, last_service_reading, last_service_date,
@@ -530,5 +570,5 @@ INSERT INTO fleet_units (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================================
--- MIGRATION COMPLETE: Client Fleet v.2.0 (REALISM & SYMMETRY SYNC) SEEDED
+-- MIGRATION COMPLETE: Client Fleet v.2.1 (REALISM & IMMUNE SYNC) SEEDED
 -- =============================================================================
