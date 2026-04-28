@@ -593,9 +593,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     </span>
                   </div>
                 </ArchonField>
-                <ArchonField label="Capacidad Combustible" icon={Zap}>
+                <ArchonField label="Capacidad Combustible" icon={Zap} required>
                   <div className="relative flex items-center">
                     <input
+                      required
                       type="number"
                       step="0.1"
                       placeholder="Ej: 80.0"

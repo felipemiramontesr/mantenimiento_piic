@@ -40,10 +40,10 @@ Es el hallazgo más relevante para demostrar la superioridad de Archon.
 
 ---
 
-### E. Evolución Estratégica: Capacidad de Combustible
+### E. Evolución Estratégica: Capacidad de Combustible (Entrada Manual)
 
 - **Estado Previo (Excel):** El cliente no cuenta con un registro centralizado de la capacidad volumétrica de los tanques de sus unidades.
-- **Implementación Archon:** Se inyecta el campo **Capacidad de Tanque (Litros)**. Esto permitirá que en futuras fases, el sistema deduzca automáticamente el gasto en combustible basándose en el indicador de nivel en ruta y el odómetro real, transformando Archon en una herramienta de control de costos operativos (OPEX).
+- **Implementación Archon:** El sistema **obliga** la captura manual del campo **Capacidad de Tanque (Litros)** durante el registro. Esto garantiza que la analítica de rendimiento (KM/L) se base en datos técnicos reales del fabricante y no en proyecciones, asegurando una precisión absoluta en el cálculo del gasto operativo (OPEX).
 
 ---
 

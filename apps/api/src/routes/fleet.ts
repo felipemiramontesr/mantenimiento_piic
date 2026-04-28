@@ -32,7 +32,7 @@ const createFleetSchema = z.object({
   tireBrandId: z.number().int().optional().nullable(),
   terrainTypeId: z.number().int().optional().nullable(),
   capacidadCarga: z.number().min(0).optional(),
-  fuelTankCapacity: z.number().min(0).optional(),
+  fuelTankCapacity: z.number().min(0),
   odometer: z.number().min(0).default(0),
   sede: z.string().max(150).optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
