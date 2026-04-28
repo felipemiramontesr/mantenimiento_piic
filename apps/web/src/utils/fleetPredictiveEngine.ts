@@ -62,21 +62,29 @@ export const calculateMaintForecast = (
   const kmParaServicio = nextServiceKm - safeCurrentKm;
 
   // 2. Date Calculations
-  // Avoid division by zero and handle infinity
+  // 🔱 HIGH-PRECISION FORECAST (v.39.9.2.0)
+  // Calculate remaining days based on CURRENT KM deficit, starting from TODAY.
   const safeAvgDaily = defaultAvgDailyKm > 0 ? defaultAvgDailyKm : 1;
-  const daysByKm = Math.floor(defaultIntervalKm / safeAvgDaily);
-  const serviceByKmDate = addDays(lastDate, daysByKm);
+  const daysToKmTarget = Math.floor(kmParaServicio / safeAvgDaily);
+
+  // Service by KM is Today + days remaining
+  const serviceByKmDate = addDays(today, daysToKmTarget);
+
+  // Service by Time remains strictly tied to the last service date + interval
   const serviceByTimeDate = addDays(lastDate, defaultIntervalDays);
 
   // 3. Final Forecast (The limiting factor)
-  // 🔱 High-Precision Date Normalization (v.39.9.0)
+  // The forecast is the SOONER of the two dates
   const forecastDate =
     serviceByKmDate < serviceByTimeDate
       ? new Date(serviceByKmDate.setHours(0, 0, 0, 0))
       : new Date(serviceByTimeDate.setHours(0, 0, 0, 0));
 
   // 4. Overdue Logic
-  const isOverdue = kmParaServicio <= 0 || forecastDate < today;
+  // A unit is overdue IF:
+  // - Remaining KM is zero or negative
+  // - OR the Time-based service date has passed
+  const isOverdue = kmParaServicio <= 0 || serviceByTimeDate < today;
 
   // Calculate intensity based on how much it is overdue
   let overdueIntensity = 0;
