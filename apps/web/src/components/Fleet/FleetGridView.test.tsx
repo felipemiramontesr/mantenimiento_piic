@@ -20,9 +20,9 @@ describe('FleetGridView Component', () => {
   it('should display the core master labels in the table header', (): void => {
     renderComponent();
     expect(screen.getByText('ACTIVO')).toBeInTheDocument();
-    expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
-    expect(screen.getByText('ESTRATEGIA')).toBeInTheDocument();
-    expect(screen.getByText('ODOMETRÍA')).toBeInTheDocument();
-    expect(screen.getByText('CONFIGURACIÓN')).toBeInTheDocument();
+    expect(screen.getByText('IDENTIDAD / SEDE')).toBeInTheDocument();
+    expect(screen.getByText('FRECUENCIAS / TARIFA')).toBeInTheDocument();
+    expect(screen.getByText('ODOMETRÍA (ACTUAL/ANT/OBJ)')).toBeInTheDocument();
+    expect(screen.getByText('CONFIG / LEGAL')).toBeInTheDocument();
   });
 });
