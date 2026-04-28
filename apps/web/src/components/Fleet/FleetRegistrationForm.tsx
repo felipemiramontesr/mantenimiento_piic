@@ -280,7 +280,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="text"
                   placeholder="Ej: XX-1234-A"
                   className="archon-input uppercase font-mono"
-                  value={formData.placas}
+                  value={formData.placas ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, placas: e.target.value.toUpperCase() })
                   }
@@ -291,7 +291,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="text"
                   placeholder="Ej: 3VW... (17 caracteres)"
                   className="archon-input font-mono"
-                  value={formData.numeroSerie}
+                  value={formData.numeroSerie ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, numeroSerie: e.target.value })
                   }
@@ -631,7 +631,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="text"
                     placeholder="Ej: 265/65 R17"
                     className="archon-input font-mono"
-                    value={formData.tireSpec}
+                    value={formData.tireSpec ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
                     ): void => setFormData({ ...formData, tireSpec: e.target.value })}
@@ -668,7 +668,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <textarea
                 placeholder="Ingresar especificaciones críticas de este activo..."
                 className="archon-input min-h-[100px] p-4 resize-none leading-relaxed"
-                value={formData.description}
+                value={formData.description ?? ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                   setFormData({ ...formData, description: e.target.value })
                 }
@@ -791,7 +791,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   value: m.label,
                   label: m.label,
                 }))}
-                value={formData.centroMantenimiento}
+                value={formData.centroMantenimiento ?? ''}
                 onChange={(val: string): void =>
                   setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
                 }
