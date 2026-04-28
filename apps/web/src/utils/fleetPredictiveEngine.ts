@@ -69,7 +69,11 @@ export const calculateMaintForecast = (
   const serviceByTimeDate = addDays(lastDate, defaultIntervalDays);
 
   // 3. Final Forecast (The limiting factor)
-  const forecastDate = serviceByKmDate < serviceByTimeDate ? serviceByKmDate : serviceByTimeDate;
+  // 🔱 High-Precision Date Normalization (v.39.9.0)
+  const forecastDate =
+    serviceByKmDate < serviceByTimeDate
+      ? new Date(serviceByKmDate.setHours(0, 0, 0, 0))
+      : new Date(serviceByTimeDate.setHours(0, 0, 0, 0));
 
   // 4. Overdue Logic
   const isOverdue = kmParaServicio <= 0 || forecastDate < today;
