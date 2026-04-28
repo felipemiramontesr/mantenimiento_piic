@@ -112,8 +112,6 @@ export interface FleetUnit {
   mttrHours?: number;
   backlogCount?: number;
   // 🔱 Predictive Strategy (v.28.0.0)
-  maintIntervalKm?: number;
-  maintIntervalDays?: number;
   dailyUsageAvg?: number | null;
   // 🔱 Dynamic Catalog Computed Fields (v.39.7.0)
   timeLimitDays?: number | null;
