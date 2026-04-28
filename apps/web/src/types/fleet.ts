@@ -58,7 +58,7 @@ export interface FleetUnit {
   // Legal & Compliance
   vigenciaSeguro: string | null; // ISO date
   vencimientoVerificacion: string | null; // ISO date
-  tarjetaCirculacion: string | null;
+  circulationCardNumber: string | null;
   lubeType: string | null;
   filterBrand: string | null;
   // 🔱 Sovereign Asset Management (v.39.0.0)
@@ -69,11 +69,11 @@ export interface FleetUnit {
   accountingAccount: string | null;
   legalComplianceDate: string | null;
   insuranceExpiryDate: string | null;
-  insurance_policy_number?: string | null;
-  insurance_company?: string | null;
-  last_environmental_verification?: string | null;
-  last_mechanical_verification?: string | null;
-  circulation_card_number?: string | null;
+  insurancePolicyNumber?: string | null;
+  insuranceCompany?: string | null;
+  lastEnvironmentalVerification?: string | null;
+  lastMechanicalVerification?: string | null;
+  circulationCardNumber?: string | null;
   monthlyLeasePayment: number;
   // Status
   status: FleetStatus;
@@ -147,7 +147,7 @@ export interface CreateFleetUnit {
   protocolStartDate?: string;
   vigenciaSeguro?: string;
   vencimientoVerificacion?: string;
-  tarjetaCirculacion?: string;
+  circulationCardNumber?: string;
   status?: FleetStatus;
   color?: string;
   description?: string;
@@ -159,11 +159,11 @@ export interface CreateFleetUnit {
   accountingAccount?: string;
   legalComplianceDate?: string;
   insuranceExpiryDate?: string;
-  insurance_policy_number?: string;
-  insurance_company?: string;
-  last_environmental_verification?: string;
-  last_mechanical_verification?: string;
-  circulation_card_number?: string;
+  insurancePolicyNumber?: string;
+  insuranceCompany?: string;
+  lastEnvironmentalVerification?: string;
+  lastMechanicalVerification?: string;
+  circulationCardNumber?: string;
   monthlyLeasePayment?: number;
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId?: number | null;

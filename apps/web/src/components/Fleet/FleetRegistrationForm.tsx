@@ -360,9 +360,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="text"
                   placeholder="Ej: POL-2024-XXXX"
                   className="archon-input font-mono"
-                  value={formData.insurance_policy_number || ''}
+                  value={formData.insurancePolicyNumber || ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
-                    setFormData({ ...formData, insurance_policy_number: e.target.value })
+                    setFormData({ ...formData, insurancePolicyNumber: e.target.value })
                   }
                 />
               </ArchonField>
@@ -372,9 +372,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     value: c.label,
                     label: c.label,
                   }))}
-                  value={formData.insurance_company || ''}
+                  value={formData.insuranceCompany || ''}
                   onChange={(val: string): void =>
-                    setFormData({ ...formData, insurance_company: val })
+                    setFormData({ ...formData, insuranceCompany: val })
                   }
                 />
               </ArchonField>
@@ -394,9 +394,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="text"
                   placeholder="Ej: 123456789"
                   className="archon-input font-mono"
-                  value={formData.circulation_card_number || ''}
+                  value={formData.circulationCardNumber || ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
-                    setFormData({ ...formData, circulation_card_number: e.target.value })
+                    setFormData({ ...formData, circulationCardNumber: e.target.value })
                   }
                 />
               </ArchonField>
@@ -413,9 +413,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
               <ArchonField label="Verif. Ambiental" icon={Activity}>
                 <ArchonDatePicker
-                  value={formData.last_environmental_verification || ''}
+                  value={formData.lastEnvironmentalVerification || ''}
                   onChange={(val: string): void =>
-                    setFormData({ ...formData, last_environmental_verification: val })
+                    setFormData({ ...formData, lastEnvironmentalVerification: val })
                   }
                 />
               </ArchonField>
@@ -423,9 +423,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             <ArchonField label="Inspección Físico-Mecánica" icon={Settings}>
               <ArchonDatePicker
-                value={formData.last_mechanical_verification || ''}
+                value={formData.lastMechanicalVerification || ''}
                 onChange={(val: string): void =>
-                  setFormData({ ...formData, last_mechanical_verification: val })
+                  setFormData({ ...formData, lastMechanicalVerification: val })
                 }
               />
             </ArchonField>

@@ -53,7 +53,7 @@ const AssetUnitCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => (
 
 const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const plates = unit.placas || 'SIN PLACAS';
-  const card = unit.tarjetaCirculacion || 'SIN TARJETA';
+  const card = unit.circulationCardNumber || 'SIN TARJETA';
   const location = unit.sede || 'SEDE GENERAL';
   return (
     <div className="flex flex-col items-center gap-2">

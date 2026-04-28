@@ -37,9 +37,9 @@ const createFleetSchema = z.object({
   sede: z.string().max(150).optional(),
   centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
   protocolStartDate: z.string().optional().nullable(),
-  vigenciaSeguro: z.string().optional().nullable(),
-  vencimientoVerificacion: z.string().optional().nullable(),
   tarjetaCirculacion: z.string().max(100).optional(),
+  vencimientoVerificacion: z.string().optional().nullable(),
+  circulationCardNumber: z.string().max(100).optional(),
   status: z
     .enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'])
     .default('Disponible'),
@@ -97,7 +97,7 @@ const updateFleetSchema = z.object({
   protocolStartDate: z.string().optional().nullable(),
   vigenciaSeguro: z.string().optional().nullable(),
   vencimientoVerificacion: z.string().optional().nullable(),
-  tarjetaCirculacion: z.string().max(100).optional(),
+  circulationCardNumber: z.string().max(100).optional(),
   status: z.enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada']).optional(),
   assignedOperatorId: z.number().int().optional().nullable(),
   color: z.string().max(50).optional().nullable(),
@@ -128,24 +128,15 @@ interface FleetUnit extends RowDataPacket {
   placas_hash: string | null;
   numero_serie: string | null;
   numero_serie_hash: string | null;
-  marca: string | null;
   brand_id: number | null;
-  modelo: string | null;
   model_id: number | null;
   images: string | null;
   year: number;
-  departamento: string | null;
   department_id: number | null;
-  uso: string | null;
   operational_use_id: number | null;
   motor: string | null;
-  traccion: string;
-  transmision: string;
-  fuel_type: string;
   tire_spec: string | null;
-  tire_brand: string | null;
   tire_brand_id: number | null;
-  tipo_terreno: string | null;
   terrain_type_id: number | null;
   capacidad_carga: string | null;
   fuel_tank_capacity: number;
@@ -157,7 +148,7 @@ interface FleetUnit extends RowDataPacket {
   protocol_start_date: string | null;
   vigencia_seguro: string | null;
   vencimiento_verificacion: string | null;
-  tarjeta_circulacion: string | null;
+  circulation_card_number: string | null;
   status: string;
   assigned_operator_id: number | null;
   color: string | null;
@@ -292,9 +283,9 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
       ? EncryptionService.decrypt(unit.numero_serie)
       : unit.numero_serie,
     motor: unit.motor ? EncryptionService.decrypt(unit.motor) : unit.motor,
-    tarjeta_circulacion: unit.tarjeta_circulacion
-      ? EncryptionService.decrypt(unit.tarjeta_circulacion)
-      : unit.tarjeta_circulacion,
+    circulation_card_number: unit.circulation_card_number
+      ? EncryptionService.decrypt(unit.circulation_card_number)
+      : unit.circulation_card_number,
     // 🔱 Numeric Normalization (v.21.0.2)
     availability_index: Number(unit.availability_index || 0),
     mtbf_hours: Number(unit.mtbf_hours || 0),
@@ -440,9 +431,9 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
 
       const payload = { ...parse.data } as Record<string, unknown>;
       if (payload.motor) payload.motor = EncryptionService.encrypt(payload.motor as string);
-      if (payload.tarjetaCirculacion)
-        payload.tarjetaCirculacion = EncryptionService.encrypt(
-          payload.tarjetaCirculacion as string
+      if (payload.circulationCardNumber)
+        payload.circulationCardNumber = EncryptionService.encrypt(
+          payload.circulationCardNumber as string
         );
 
       // 🛡️ B.I.G (Blind Index Generation): Identity Fortification
@@ -512,8 +503,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
 
     // 🛡️ ALE (Application-Level Encryption): Secure identity during update
     if (updates.motor) updates.motor = EncryptionService.encrypt(updates.motor);
-    if (updates.tarjeta_circulacion)
-      updates.tarjeta_circulacion = EncryptionService.encrypt(updates.tarjeta_circulacion);
+    if (updates.circulation_card_number)
+      updates.circulation_card_number = EncryptionService.encrypt(updates.circulation_card_number);
 
     // 🛡️ B.I.G (Blind Index Update): Identity Fortification
     if (updates.numero_serie) {
