@@ -491,7 +491,7 @@ export const FleetGridView = ({
                 FRECUENCIAS / TARIFA
               </th>
               <th className="opacity-40 font-black tracking-widest text-[11px]">
-                ODOMETRÍA (ACT/ANT/OBJ)
+                ODOMETRÍA (ACTUAL/ANT/OBJ)
               </th>
               <th className="opacity-40 font-black tracking-widest text-[11px]">CONFIG / LEGAL</th>
               <th
