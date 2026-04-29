@@ -2,12 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, Mock, beforeEach } from 'vitest';
 import FleetRegistrationForm from './FleetRegistrationForm';
 import useFleetForm from '../../hooks/useFleetForm';
-import {
-  UseFleetFormReturn,
-  CatalogOption,
-  CentroMantenimiento,
-  FleetStatus,
-} from '../../types/fleet';
+import { UseFleetFormReturn, CatalogOption, FleetStatus } from '../../types/fleet';
 
 /**
  * 🔱 Archon Test Suite: FleetRegistrationForm
@@ -41,7 +36,7 @@ describe('FleetRegistrationForm Component', () => {
       fuelTypeId: null,
       odometer: 0,
       maintenanceTimeFreqId: 1,
-      centroMantenimiento: 'PIIC' as CentroMantenimiento,
+      maintenanceCenterId: 1,
       status: 'Disponible' as FleetStatus,
       fuelTankCapacity: 80,
       maintIntervalDays: 90,

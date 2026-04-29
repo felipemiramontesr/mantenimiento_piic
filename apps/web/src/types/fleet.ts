@@ -136,7 +136,6 @@ export interface CreateFleetUnit {
   year?: number;
   departmentId?: number;
   operationalUseId?: number;
-  motor?: string;
   traccionId: number | null;
   transmisionId: number | null;
   fuelTypeId: number | null;

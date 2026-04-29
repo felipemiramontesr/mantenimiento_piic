@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import FleetModule from './FleetModule';
 import { FleetProvider } from '../../context/FleetContext';
 import { UserProvider } from '../../context/UserContext';
-import { UseFleetFormReturn, CatalogOption, CentroMantenimiento } from '../../types/fleet';
+import { UseFleetFormReturn, CatalogOption } from '../../types/fleet';
 import useFleetForm from '../../hooks/useFleetForm';
 
 /**
@@ -34,11 +34,11 @@ vi.mock('../../hooks/useFleetForm', () => ({
       traccionId: null,
       transmisionId: null,
       fuelTypeId: null,
-      marca: '',
-      modelo: '',
+      brandId: 101,
+      modelId: 201,
       year: new Date().getFullYear(),
       maintenanceTimeFreqId: 1,
-      centroMantenimiento: 'PIIC' as CentroMantenimiento,
+      maintenanceCenterId: 1,
     },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),
@@ -86,11 +86,11 @@ describe('FleetModule Orchestrator', () => {
       traccionId: null,
       transmisionId: null,
       fuelTypeId: null,
-      marca: 'Toyota',
-      modelo: 'Hilux',
+      brandId: 101,
+      modelId: 201,
       year: 2024,
       maintenanceTimeFreqId: 1,
-      centroMantenimiento: 'PIIC' as CentroMantenimiento,
+      maintenanceCenterId: 1,
     },
     registrationSuccess: false,
     setRegistrationSuccess: vi.fn(),

@@ -18,7 +18,7 @@ describe('FleetSuccessView Component', () => {
     transmisionId: 2,
     fuelTypeId: 2,
     maintenanceTimeFreqId: 1,
-    centroMantenimiento: 'PIIC',
+    maintenanceCenterId: 1,
   };
 
   const mockProps = {
