@@ -1,4 +1,4 @@
-Unidad,Marca,Modelo,Año,Ubicacion,Propietario,Departamento,CuentaContable,Combustible,Placas,Serie,TireSpec,TerrainType,OperationalUse,TireBrand,IntDias,IntServicio,KmPromDiario,KmActuales,KmUltimoServicio,FechaUltimoServicio
+﻿Unidad,Marca,Modelo,Año,Ubicacion,Propietario,Departamento,CuentaContable,Combustible,Placas,Serie,TireSpec,TerrainType,OperationalUse,TireBrand,IntDias,IntServicio,KmPromDiario,KmActuales,KmUltimoServicio,FechaUltimoServicio
 ASM-002,Toyota,Hilux Medio Ambiente,2007,Mina,Arian Silver de México,Medio Ambiente,8019-548-901,Diésel,ZH-3153-B,1D7HW48P87S256272,255/70 R15,All-Terrain (A/T),Terracería leve,ZMAX,180,10000,35.9,120763,119728,2026-03-09
 ASM-006,Nissan,Frontier Medio Ambiente,2016,Mina,Arian Silver de México,Medio Ambiente,8019-400-922,Gasolina,ZH-3161-B,3N6AD33C4GK892141,255/60 R18,Mixta (H/T),Carretera/Ciudad,PIRELLI,180,10000,45.0,357833,356944,2026-03-11
 ASM-007,Nissan,NP 300 Laboratorio,2016,Planta,Arian Silver de México,Laboratorio,8012-548-390,Gasolina,ZH-3160-B,3N6AD33C5GK814774,205 R16,Carga (LT),Pesado/Planta,BRIDGESTONE,180,10000,15.0,327593,327333,2026-03-11
