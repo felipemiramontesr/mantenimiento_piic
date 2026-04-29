@@ -125,7 +125,6 @@ export interface FleetUnit {
   usageFreqLabel?: string | null;
   // 🔱 Dynamic Analytical Fields (v.45.6.0)
   color?: string | null;
-  motor?: string | null;
   nextServiceReading?: number | null;
 }
 
