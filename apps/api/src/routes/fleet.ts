@@ -24,7 +24,8 @@ const createFleetSchema = z.object({
     .max(new Date().getFullYear() + 1),
   departmentId: z.number().int().optional().nullable(),
   operationalUseId: z.number().int().optional().nullable(),
-  motor: z.string().max(150).optional(),
+  locationId: z.number().int().optional().nullable(),
+  engineTypeId: z.number().int().optional().nullable(),
   traccionId: z.number().int().optional().nullable(),
   transmisionId: z.number().int().optional().nullable(),
   fuelTypeId: z.number().int().optional().nullable(),
@@ -34,8 +35,7 @@ const createFleetSchema = z.object({
   capacidadCarga: z.number().min(0).optional(),
   fuelTankCapacity: z.number().min(0),
   odometer: z.number().min(0).default(0),
-  sede: z.string().max(150).optional(),
-  centroMantenimiento: z.enum(['PIIC', 'Archon Core']).default('PIIC'),
+  maintenanceCenterId: z.number().int().optional().nullable(),
   protocolStartDate: z.string().optional().nullable(),
   tarjetaCirculacion: z.string().max(100).optional(),
   vencimientoVerificacion: z.string().optional().nullable(),
@@ -44,7 +44,7 @@ const createFleetSchema = z.object({
     .enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'])
     .default('Disponible'),
   assignedOperatorId: z.number().int().optional().nullable(),
-  color: z.string().max(50).optional().nullable(),
+  colorId: z.number().int().optional().nullable(),
   description: z.string().optional().nullable(),
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId: z.number().int().optional().nullable(),
@@ -60,6 +60,7 @@ const createFleetSchema = z.object({
   accountingAccount: z.string().max(50).optional().nullable(),
   legalComplianceDate: z.string().optional().nullable(),
   insuranceExpiryDate: z.string().optional().nullable(),
+  insuranceCompanyId: z.number().int().optional().nullable(),
   monthlyLeasePayment: z.number().min(0).default(0),
 });
 
@@ -82,7 +83,8 @@ const updateFleetSchema = z.object({
     .optional(),
   departmentId: z.number().int().optional().nullable(),
   operationalUseId: z.number().int().optional().nullable(),
-  motor: z.string().max(150).optional(),
+  locationId: z.number().int().optional().nullable(),
+  engineTypeId: z.number().int().optional().nullable(),
   traccionId: z.number().int().optional().nullable(),
   transmisionId: z.number().int().optional().nullable(),
   fuelTypeId: z.number().int().optional().nullable(),
@@ -92,15 +94,14 @@ const updateFleetSchema = z.object({
   capacidadCarga: z.number().min(0).optional(),
   fuelTankCapacity: z.number().min(0).optional(),
   odometer: z.number().min(0).optional(),
-  sede: z.string().max(150).optional(),
-  centroMantenimiento: z.enum(['PIIC', 'Archon Core']).optional(),
+  maintenanceCenterId: z.number().int().optional().nullable(),
   protocolStartDate: z.string().optional().nullable(),
   vigenciaSeguro: z.string().optional().nullable(),
   vencimientoVerificacion: z.string().optional().nullable(),
   circulationCardNumber: z.string().max(100).optional(),
   status: z.enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada']).optional(),
   assignedOperatorId: z.number().int().optional().nullable(),
-  color: z.string().max(50).optional().nullable(),
+  colorId: z.number().int().optional().nullable(),
   description: z.string().optional().nullable(),
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId: z.number().int().optional().nullable(),
@@ -114,6 +115,7 @@ const updateFleetSchema = z.object({
   accountingAccount: z.string().max(50).optional().nullable(),
   legalComplianceDate: z.string().optional().nullable(),
   insuranceExpiryDate: z.string().optional().nullable(),
+  insuranceCompanyId: z.number().int().optional().nullable(),
   monthlyLeasePayment: z.number().min(0).optional(),
 });
 
@@ -134,7 +136,9 @@ interface FleetUnit extends RowDataPacket {
   year: number;
   department_id: number | null;
   operational_use_id: number | null;
-  motor: string | null;
+  location_id: number | null;
+  engine_type_id: number | null;
+  color_id: number | null;
   tire_spec: string | null;
   tire_brand_id: number | null;
   terrain_type_id: number | null;
@@ -144,7 +148,8 @@ interface FleetUnit extends RowDataPacket {
   maint_interval_km: number;
   odometer: number;
   sede: string | null;
-  centro_mantenimiento: string;
+  centro_mantenimiento: string | null;
+  maintenance_center_id: number | null;
   protocol_start_date: string | null;
   vigencia_seguro: string | null;
   vencimiento_verificacion: string | null;
@@ -152,31 +157,29 @@ interface FleetUnit extends RowDataPacket {
   status: string;
   assigned_operator_id: number | null;
   color: string | null;
+  motor: string | null;
+  insurance_company: string | null;
+  insurance_company_id: number | null;
   description: string | null;
   created_at: string;
   updated_at: string;
-  // 🔱 Archon Intelligence (v.18.0.0)
   maintenance_time_freq_id: number | null;
   maintenance_usage_freq_id: number | null;
   last_service_date: string | null;
   last_service_reading: number;
   current_reading: number;
-  // 🔱 Catalog Joint Data (for computation)
   time_limit_days: number | null;
   usage_limit_units: number | null;
   usage_unit_name: string | null;
-  // 🔱 Archon Analytical Engine (v.20.0.0)
   availability_index: number;
   mtbf_hours: number;
   mttr_hours: number;
   backlog_count: number;
-  // 🔱 Relational ID Fields (v.21.0.0)
   asset_type_id: number;
   fuel_type_id: number;
   traccion_id: number;
   transmision_id: number;
   daily_usage_avg: number | null;
-  // 🔱 Sovereign Asset Management (v.39.0.0)
   owner_id: number | null;
   owner: string | null;
   compliance_status_id: number | null;
@@ -282,7 +285,6 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
     numero_serie: unit.numero_serie
       ? EncryptionService.decrypt(unit.numero_serie)
       : unit.numero_serie,
-    motor: unit.motor ? EncryptionService.decrypt(unit.motor) : unit.motor,
     circulation_card_number: unit.circulation_card_number
       ? EncryptionService.decrypt(unit.circulation_card_number)
       : unit.circulation_card_number,
@@ -354,6 +356,11 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_terrain.label AS tipo_terreno,
           c_owner.label AS owner,
           c_compl.label AS compliance_status,
+          c_loc.label AS sede,
+          c_mc.label AS centro_mantenimiento,
+          c_color.label AS color,
+          c_eng.label AS motor,
+          c_ins.label AS insurance_company,
           f.maint_interval_days AS time_limit_days,
           f.maint_interval_km AS usage_limit_units,
           'Días' AS time_freq_label,
@@ -374,6 +381,11 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         LEFT JOIN common_catalogs c_terrain ON f.terrain_type_id = c_terrain.id
         LEFT JOIN common_catalogs c_owner ON f.owner_id = c_owner.id
         LEFT JOIN common_catalogs c_compl ON f.compliance_status_id = c_compl.id
+        LEFT JOIN common_catalogs c_loc ON f.location_id = c_loc.id
+        LEFT JOIN common_catalogs c_mc ON f.maintenance_center_id = c_mc.id
+        LEFT JOIN common_catalogs c_color ON f.color_id = c_color.id
+        LEFT JOIN common_catalogs c_eng ON f.engine_type_id = c_eng.id
+        LEFT JOIN common_catalogs c_ins ON f.insurance_company_id = c_ins.id
         LEFT JOIN common_catalogs ct ON f.maintenance_time_freq_id = ct.id
         LEFT JOIN common_catalogs cu ON f.maintenance_usage_freq_id = cu.id
         ORDER BY f.created_at DESC
@@ -430,7 +442,6 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const { id } = parse.data;
 
       const payload = { ...parse.data } as Record<string, unknown>;
-      if (payload.motor) payload.motor = EncryptionService.encrypt(payload.motor as string);
       if (payload.circulationCardNumber)
         payload.circulationCardNumber = EncryptionService.encrypt(
           payload.circulationCardNumber as string
@@ -502,7 +513,6 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
     const updates = toSnakeCase(parse.data) as Record<string, unknown>;
 
     // 🛡️ ALE (Application-Level Encryption): Secure identity during update
-    if (updates.motor) updates.motor = EncryptionService.encrypt(updates.motor);
     if (updates.circulation_card_number)
       updates.circulation_card_number = EncryptionService.encrypt(updates.circulation_card_number);
 

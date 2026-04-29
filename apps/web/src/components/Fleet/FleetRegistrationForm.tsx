@@ -22,12 +22,7 @@ import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
 import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
-import {
-  CentroMantenimiento,
-  UseFleetFormReturn,
-  CatalogOption,
-  CreateFleetUnit,
-} from '../../types/fleet';
+import { UseFleetFormReturn, CatalogOption, CreateFleetUnit } from '../../types/fleet';
 
 /**
  * 🔱 Archon Alpha v.37.2.0 - "2x2 AXIAL ARCHITECTURE"
@@ -369,12 +364,12 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonField label="Aseguradora" icon={ShieldCheck}>
                 <ArchonSelect
                   options={(controller.insuranceCompanies || []).map((c: CatalogOption) => ({
-                    value: c.label,
+                    value: c.id.toString(),
                     label: c.label,
                   }))}
-                  value={formData.insuranceCompany || ''}
+                  value={formData.insuranceCompanyId?.toString() || ''}
                   onChange={(val: string): void =>
-                    setFormData({ ...formData, insuranceCompany: val })
+                    setFormData({ ...formData, insuranceCompanyId: parseInt(val, 10) })
                   }
                 />
               </ArchonField>
@@ -515,11 +510,13 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <ArchonField label="Color Dominante" icon={Activity}>
                 <ArchonSelect
                   options={(controller.colors || []).map((c: CatalogOption) => ({
-                    value: c.label,
+                    value: c.id.toString(),
                     label: c.label,
                   }))}
-                  value={formData.color ?? ''}
-                  onChange={(val: string): void => setFormData({ ...formData, color: val })}
+                  value={formData.colorId?.toString() || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, colorId: parseInt(val, 10) })
+                  }
                 />
               </ArchonField>
             </div>
@@ -553,23 +550,16 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Configuración de Motor" icon={Activity}>
-                <div className="relative">
-                  <input
-                    list="engine-suggestions"
-                    type="text"
-                    placeholder="Ej: L4 2.8L Turbo (Diésel)"
-                    className="archon-input font-mono placeholder:text-slate-400/60 placeholder:font-normal"
-                    value={formData.motor ?? ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                      setFormData({ ...formData, motor: e.target.value })
-                    }
-                  />
-                  <datalist id="engine-suggestions">
-                    {engineTypes.map((e: CatalogOption) => (
-                      <option key={e.id} value={e.label} />
-                    ))}
-                  </datalist>
-                </div>
+                <ArchonSelect
+                  options={engineTypes.map((e: CatalogOption) => ({
+                    value: e.id.toString(),
+                    label: e.label,
+                  }))}
+                  value={formData.engineTypeId?.toString() || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, engineTypeId: parseInt(val, 10) })
+                  }
+                />
               </ArchonField>
               <ArchonField label="Combustible" icon={Zap}>
                 <ArchonSelect
@@ -702,9 +692,11 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Sede de Operación" icon={MapPin}>
                 <ArchonSelect
-                  options={locations.map((l) => ({ value: l.label, label: l.label }))}
-                  value={formData.sede ?? ''}
-                  onChange={(val: string): void => setFormData({ ...formData, sede: val })}
+                  options={locations.map((l) => ({ value: l.id.toString(), label: l.label }))}
+                  value={formData.locationId?.toString() || ''}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, locationId: parseInt(val, 10) })
+                  }
                 />
               </ArchonField>
 
@@ -797,12 +789,12 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Centro de Gestión Autorizado" icon={Settings}>
               <ArchonSelect
                 options={(controller.maintenanceCenters || []).map((m: CatalogOption) => ({
-                  value: m.label,
+                  value: m.id.toString(),
                   label: m.label,
                 }))}
-                value={formData.centroMantenimiento ?? ''}
+                value={formData.maintenanceCenterId?.toString() || ''}
                 onChange={(val: string): void =>
-                  setFormData({ ...formData, centroMantenimiento: val as CentroMantenimiento })
+                  setFormData({ ...formData, maintenanceCenterId: parseInt(val, 10) })
                 }
               />
             </ArchonField>

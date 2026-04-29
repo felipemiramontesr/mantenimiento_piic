@@ -40,6 +40,9 @@ export interface FleetUnit {
   departmentId: number | null;
   uso: string | null;
   operationalUseId: number | null;
+  locationId: number | null;
+  engineTypeId: number | null;
+  colorId: number | null;
   motor: string | null;
   // Tires
   tireSpec: string | null;
@@ -53,7 +56,8 @@ export interface FleetUnit {
   odometer: number; // km (Vehiculo) | hrs (Maquinaria)
   // Organization
   sede: string | null;
-  centroMantenimiento: CentroMantenimiento;
+  centroMantenimiento: string | null;
+  maintenanceCenterId: number | null;
   protocolStartDate: string | null; // ISO date
   // Legal & Compliance
   vigenciaSeguro: string | null; // ISO date
@@ -70,6 +74,7 @@ export interface FleetUnit {
   insuranceExpiryDate: string | null;
   insurancePolicyNumber?: string | null;
   insuranceCompany?: string | null;
+  insuranceCompanyId: number | null;
   lastEnvironmentalVerification?: string | null;
   lastMechanicalVerification?: string | null;
   circulationCardNumber: string | null;
@@ -141,13 +146,14 @@ export interface CreateFleetUnit {
   capacidadCarga?: number;
   fuelTankCapacity?: number;
   odometer?: number;
-  sede?: string;
-  centroMantenimiento?: CentroMantenimiento | '';
+  locationId?: number | null;
+  maintenanceCenterId?: number | null;
   protocolStartDate?: string;
   vigenciaSeguro?: string;
   vencimientoVerificacion?: string;
   status?: FleetStatus;
-  color?: string;
+  colorId?: number | null;
+  engineTypeId?: number | null;
   description?: string;
   lubeType?: string;
   filterBrand?: string;
@@ -158,7 +164,7 @@ export interface CreateFleetUnit {
   legalComplianceDate?: string;
   insuranceExpiryDate?: string;
   insurancePolicyNumber?: string;
-  insuranceCompany?: string;
+  insuranceCompanyId?: number | null;
   lastEnvironmentalVerification?: string;
   lastMechanicalVerification?: string;
   circulationCardNumber?: string;
