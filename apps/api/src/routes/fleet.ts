@@ -323,6 +323,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const query = `
         SELECT 
           f.*,
+          f.maint_interval_days AS maintIntervalDays,
+          f.maint_interval_km AS maintIntervalKm,
           c_at.label AS assetType,
           c_brand.label AS marca,
           c_model.label AS modelo,
@@ -342,8 +344,6 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_ins.label AS insuranceCompany,
           ct.label AS timeFreqLabel,
           cu.label AS usageFreqLabel,
-          ct.numeric_value AS maintIntervalDays,
-          cu.numeric_value AS maintIntervalKm,
           CASE 
             WHEN c_at.code = 'AT_MAQ' OR c_at.label = 'Maquinaria' THEN 'HRS'
             ELSE 'KM'
@@ -366,8 +366,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         LEFT JOIN common_catalogs c_color ON f.colorId = c_color.id AND c_color.category = 'VEHICLE_COLOR'
         LEFT JOIN common_catalogs c_eng ON f.engineTypeId = c_eng.id AND c_eng.category = 'ENGINE_TYPE'
         LEFT JOIN common_catalogs c_ins ON f.insuranceCompanyId = c_ins.id AND c_ins.category = 'INSURANCE_COMPANY'
-        LEFT JOIN common_catalogs ct ON f.maintenanceTimeFreqId = ct.id AND ct.category = 'FREQ_TIME'
-        LEFT JOIN common_catalogs cu ON f.maintenanceUsageFreqId = cu.id AND cu.category = 'FREQ_USAGE'
+        LEFT JOIN common_catalogs ct ON f.maintenanceTimeFreqId = ct.id AND ct.category = 'MAINTENANCE_TIME_FREQ'
+        LEFT JOIN common_catalogs cu ON f.maintenanceUsageFreqId = cu.id AND cu.category = 'MAINTENANCE_USAGE_FREQ'
         ORDER BY f.createdAt DESC
       `;
 
