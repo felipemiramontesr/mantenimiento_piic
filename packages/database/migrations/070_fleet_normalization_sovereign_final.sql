@@ -15,6 +15,7 @@ UPDATE `fleet_units` SET `departmentId` = 311 WHERE `departmentId` = 1025;
 DELETE FROM `common_catalogs` WHERE `id` IN (1014, 1025);
 
 -- 2. 🔱 CIRUGÍA ESTRUCTURAL: ELIMINAR REDUNDANCIA
+ALTER TABLE `fleet_units` DROP FOREIGN KEY IF EXISTS `fk_operator`;
 ALTER TABLE `fleet_units` DROP COLUMN IF EXISTS `assignedOperatorId`;
 
 -- 3. 🔱 INFUSIÓN DE REALISMO: SINCRONIZACIÓN TOTAL (23 UNIDADES MAESTRAS)
