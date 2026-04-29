@@ -322,10 +322,20 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
    * GET /api/v1/fleet
    */
   fastify.get('/fleet', async (_request, reply) => {
+    // 🔱 Archon Cache-Killer Protocol
+    reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    reply.header('Pragma', 'no-cache');
+    reply.header('Expires', '0');
+    reply.header('Surrogate-Control', 'no-store');
+
     try {
       const query = `
         SELECT 
           f.*,
+          f.lastServiceReading AS lastServiceReading,
+          f.currentReading AS currentReading,
+          f.maintIntervalKm AS maintIntervalKm,
+          f.maintIntervalDays AS maintIntervalDays,
           c_at.label AS assetType,
           c_brand.label AS marca,
           c_model.label AS modelo,
