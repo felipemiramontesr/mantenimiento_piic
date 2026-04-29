@@ -89,7 +89,7 @@ describe('Fleet Integration Endpoints', () => {
           ...validUnit,
           numeroSerie: 'SN-100',
           placas: 'PL-100',
-          motor: 'MOT-100',
+          engineTypeId: 1,
           circulationCardNumber: 'TC-100',
           images: ['img1.jpg'],
         },
@@ -237,7 +237,8 @@ describe('Fleet Integration Endpoints', () => {
         [
           {
             id: 'ASM-001',
-            motor: 'enc_MOT1',
+            motor: 'L4 2.8L Turbo',
+            engine_type_id: 1,
             circulation_card_number: null,
             numero_serie: 'enc_SN1',
             placas: 'enc_PL1',
@@ -249,6 +250,7 @@ describe('Fleet Integration Endpoints', () => {
           {
             id: 'ASM-002',
             motor: null,
+            engine_type_id: null,
             circulation_card_number: 'enc_TC2',
             numero_serie: null,
             placas: null,
@@ -264,7 +266,7 @@ describe('Fleet Integration Endpoints', () => {
 
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
-      expect(data[0].motor).toBe('MOT1');
+      expect(data[0].motor).toBe('L4 2.8L Turbo');
       expect(data[0].numeroSerie).toBe('SN1');
       expect(data[0].placas).toBe('PL1');
       expect(data[0].circulationCardNumber).toBeNull();
@@ -398,7 +400,7 @@ describe('Fleet Integration Endpoints', () => {
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
         payload: {
-          motor: 'NEW-MOT',
+          engineTypeId: 2,
           numeroSerie: 'NEW-SN',
           placas: 'NEW-PL',
           circulationCardNumber: 'NEW-TC',
