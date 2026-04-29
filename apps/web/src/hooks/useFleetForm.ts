@@ -10,8 +10,11 @@ import api from '../api/client';
  * Architecture: Database-First Deterministic Streams.
  */
 
-const extractCatalogData = (res: AxiosResponse): CatalogOption[] => {
-  const rawData = res.data?.data || res.data || [];
+const extractCatalogData = (
+  res: AxiosResponse<{ data?: CatalogOption[] } | CatalogOption[]>
+): CatalogOption[] => {
+  const { data } = res;
+  const rawData = (data as { data?: CatalogOption[] })?.data || (data as CatalogOption[]) || [];
   return Array.isArray(rawData) ? rawData : [];
 };
 
@@ -71,12 +74,14 @@ const useFleetForm = (): UseFleetFormReturn => {
       : `/catalogs/${category}?_cb=${ts}`;
 
     try {
-      const res = await api.get(url);
+      const res = await api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(url);
       const data = extractCatalogData(res);
 
       // If empty but strictly needed, we allow a global lookup ONLY for Brands if parent is missing
       if (data.length === 0 && pid && category === 'BRAND') {
-        const fallback = await api.get(`/catalogs/${category}?_cb=${ts}`);
+        const fallback = await api.get<
+          { success: boolean; data: CatalogOption[] } | CatalogOption[]
+        >(`/catalogs/${category}?_cb=${ts}`);
         return extractCatalogData(fallback);
       }
       return data;
@@ -118,26 +123,66 @@ const useFleetForm = (): UseFleetFormReturn => {
         insuranceRes,
         originsRes,
       ] = await Promise.all([
-        api.get(`/catalogs/ASSET_TYPE?_cb=${ts}`),
-        api.get(`/catalogs/FUEL?_cb=${ts}`),
-        api.get(`/catalogs/DRIVE_TYPE?_cb=${ts}`),
-        api.get(`/catalogs/TRANSMISSION?_cb=${ts}`),
-        api.get(`/catalogs/FREQ_TIME?_cb=${ts}`),
-        api.get(`/catalogs/FREQ_USAGE?_cb=${ts}`),
-        api.get(`/catalogs/DEPARTMENT?_cb=${ts}`),
-        api.get(`/catalogs/LOCATION?_cb=${ts}`),
-        api.get(`/catalogs/OPERATIONAL_USE?_cb=${ts}`),
-        api.get(`/catalogs/TIRE_BRAND?_cb=${ts}`),
-        api.get(`/catalogs/LUBE_BRAND?_cb=${ts}`),
-        api.get(`/catalogs/FILTER_BRAND?_cb=${ts}`),
-        api.get(`/catalogs/ENGINE_TYPE?_cb=${ts}`),
-        api.get(`/catalogs/TERRAIN_TYPE?_cb=${ts}`),
-        api.get(`/catalogs/FLEET_OWNER?_cb=${ts}`),
-        api.get(`/catalogs/COMPLIANCE_STATUS?_cb=${ts}`),
-        api.get(`/catalogs/VEHICLE_COLOR?_cb=${ts}`),
-        api.get(`/catalogs/MAINTENANCE_CENTER?_cb=${ts}`),
-        api.get(`/catalogs/INSURANCE_COMPANY?_cb=${ts}`),
-        api.get(`/catalogs/ROUTE_ORIGIN?_cb=${ts}`),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/ASSET_TYPE?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/FUEL?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/DRIVE_TYPE?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/TRANSMISSION?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/FREQ_TIME?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/FREQ_USAGE?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/DEPARTMENT?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/LOCATION?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/OPERATIONAL_USE?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/TIRE_BRAND?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/LUBE_BRAND?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/FILTER_BRAND?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/ENGINE_TYPE?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/TERRAIN_TYPE?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/FLEET_OWNER?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/COMPLIANCE_STATUS?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/VEHICLE_COLOR?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/MAINTENANCE_CENTER?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/INSURANCE_COMPANY?_cb=${ts}`
+        ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/ROUTE_ORIGIN?_cb=${ts}`
+        ),
       ]);
 
       const assetList = extractCatalogData(asset);
@@ -145,33 +190,38 @@ const useFleetForm = (): UseFleetFormReturn => {
       const brandsInitial = await fetchCategory('BRAND', assetList[0]?.id);
 
       if (isMountedRef.current) {
-        setCatalogs((prev) => ({
-          ...prev,
-          assetTypes: assetList,
-          fuelTypes: extractCatalogData(fuel),
-          driveTypes: extractCatalogData(drive),
-          transmissionTypes: extractCatalogData(trans),
-          freqTime: extractCatalogData(time),
-          freqUsage: extractCatalogData(usage),
-          departments: extractCatalogData(dept),
-          locations: extractCatalogData(loc),
-          useTypes: extractCatalogData(uses),
-          tireBrands: extractCatalogData(tires),
-          lubeBrands: extractCatalogData(lube),
-          filterBrands: extractCatalogData(filter),
-          engineTypes: extractCatalogData(engines),
-          terrainTypes: extractCatalogData(terrains),
-          owners: extractCatalogData(ownersRes),
-          complianceStatuses: extractCatalogData(complianceRes),
-          colors: extractCatalogData(colorsRes),
-          maintenanceCenters: extractCatalogData(maintCentersRes),
-          insuranceCompanies: extractCatalogData(insuranceRes),
-          routeOrigins: extractCatalogData(originsRes),
-          marcas: brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
-        }));
+        setCatalogs(
+          (prev: Record<string, CatalogOption[]>): Record<string, CatalogOption[]> => ({
+            ...prev,
+            assetTypes: assetList,
+            fuelTypes: extractCatalogData(fuel),
+            driveTypes: extractCatalogData(drive),
+            transmissionTypes: extractCatalogData(trans),
+            freqTime: extractCatalogData(time),
+            freqUsage: extractCatalogData(usage),
+            departments: extractCatalogData(dept),
+            locations: extractCatalogData(loc),
+            useTypes: extractCatalogData(uses),
+            tireBrands: extractCatalogData(tires),
+            lubeBrands: extractCatalogData(lube),
+            filterBrands: extractCatalogData(filter),
+            engineTypes: extractCatalogData(engines),
+            terrainTypes: extractCatalogData(terrains),
+            owners: extractCatalogData(ownersRes),
+            complianceStatuses: extractCatalogData(complianceRes),
+            colors: extractCatalogData(colorsRes),
+            maintenanceCenters: extractCatalogData(maintCentersRes),
+            insuranceCompanies: extractCatalogData(insuranceRes),
+            routeOrigins: extractCatalogData(originsRes),
+            marcas:
+              brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
+          })
+        );
 
         if (assetList.length > 0) {
-          setFormData((prev) => ({ ...prev, assetTypeId: assetList[0].id }));
+          setFormData(
+            (prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, assetTypeId: assetList[0].id })
+          );
         }
         hasHydratedRef.current = true;
       }
@@ -185,7 +235,7 @@ const useFleetForm = (): UseFleetFormReturn => {
 
   useEffect(() => {
     hydrate();
-    return () => {
+    return (): void => {
       isMountedRef.current = false;
     };
   }, [hydrate]);
@@ -195,37 +245,48 @@ const useFleetForm = (): UseFleetFormReturn => {
    */
   const handleAssetTypeChange = async (id: number): Promise<void> => {
     setIsLoading(true);
-    setFormData((prev) => ({
-      ...prev,
-      assetTypeId: id,
-      brandId: null,
-      modelId: null,
-    }));
+    setFormData(
+      (prev: CreateFleetUnit): CreateFleetUnit => ({
+        ...prev,
+        assetTypeId: id,
+        brandId: null,
+        modelId: null,
+      })
+    );
 
     const brands = await fetchCategory('BRAND', id);
-    setCatalogs((prev) => ({
-      ...prev,
-      marcas: brands.length > 0 ? brands : (EMERGENCY_BRANDS as CatalogOption[]),
-      modelos: [],
-    }));
+    setCatalogs(
+      (prev: Record<string, CatalogOption[]>): Record<string, CatalogOption[]> => ({
+        ...prev,
+        marcas: brands.length > 0 ? brands : (EMERGENCY_BRANDS as CatalogOption[]),
+        modelos: [],
+      })
+    );
     setIsLoading(false);
   };
 
   const handleMarcaChange = async (brandId: number): Promise<void> => {
     setIsLoading(true);
-    setFormData((prev) => ({
-      ...prev,
-      brandId,
-      modelId: null,
-    }));
+    setFormData(
+      (prev: CreateFleetUnit): CreateFleetUnit => ({
+        ...prev,
+        brandId,
+        modelId: null,
+      })
+    );
 
     const models = await fetchCategory('MODEL', brandId);
-    setCatalogs((prev) => ({ ...prev, modelos: models }));
+    setCatalogs(
+      (prev: Record<string, CatalogOption[]>): Record<string, CatalogOption[]> => ({
+        ...prev,
+        modelos: models,
+      })
+    );
     setIsLoading(false);
   };
 
   const handleModeloChange = (modelId: number): void => {
-    setFormData((prev) => ({ ...prev, modelId }));
+    setFormData((prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, modelId }));
   };
 
   const handleSubmit = async (
@@ -251,7 +312,7 @@ const useFleetForm = (): UseFleetFormReturn => {
 
     setIsSubmitting(true);
     try {
-      const res = await api.post('/fleet', formData);
+      const res = await api.post<{ success: boolean; error?: string }>('/fleet', formData);
       if (res.data.success) {
         if (onSuccess) await onSuccess();
         setRegistrationSuccess(true);

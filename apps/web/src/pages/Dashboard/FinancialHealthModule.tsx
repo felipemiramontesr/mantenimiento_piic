@@ -1,18 +1,22 @@
 import React from 'react';
-import { Wallet, TrendingUp, ArrowUpRight, Landmark, DollarSign, PieChart } from 'lucide-react';
+import { Wallet, TrendingUp, ArrowUpRight, DollarSign, PieChart } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 import { useFleet } from '../../context/FleetContext';
+import { FleetUnit } from '../../types/fleet';
 
 /**
  * 🔱 Archon Module: Financial Health
  * Implementation: Strictly Aligned with Sovereign UI Standard
  * Structure: Header | Body (Chassis) | Footer
  */
-const FinancialHealthModule: React.FC = () => {
+const FinancialHealthModule: React.FC = (): React.ReactElement => {
   const { units, stats, loading } = useFleet();
 
   // 🔱 Financial Intelligence Engine
-  const totalMonthlyLease = units.reduce((acc, u) => acc + (u.monthlyLeasePayment || 0), 0);
+  const totalMonthlyLease = units.reduce(
+    (acc: number, u: FleetUnit): number => acc + (u.monthlyLeasePayment || 0),
+    0
+  );
   const efficiency = stats.maintenanceIndex; // % of units ready for operation
 
   const renderFinancialKPI = (
@@ -92,7 +96,7 @@ const FinancialHealthModule: React.FC = () => {
 
       {/* 🔱 BODY: ARCHON CHASSIS */}
       <section className="archon-workspace-chassis">
-        <div className="archon-grid-3">
+        <div className="archon-grid-2">
           {renderFinancialKPI(
             'Compromiso de Arrendamiento',
             `$${totalMonthlyLease.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
@@ -109,14 +113,6 @@ const FinancialHealthModule: React.FC = () => {
             'Retorno operativo por unidad lista',
             'emerald'
           )}
-          {renderFinancialKPI(
-            'Presupuesto Maint',
-            '$0.00',
-            Landmark,
-            '#f2b705',
-            'Fondo asignado a mantenimiento (Base)',
-            'yellow'
-          )}
 
           {/* ANALYTICS PREVIEW CARD (WIDER) */}
           <div className="col-span-full glass-card-pro bg-white p-12 border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center">
@@ -130,13 +126,15 @@ const FinancialHealthModule: React.FC = () => {
               Sincronizado con 23 Activos Maestros en Tiempo Real
             </p>
             <div className="mt-8 flex gap-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="w-1.5 h-12 bg-slate-100 rounded-full animate-pulse"
-                  style={{ animationDelay: `${i * 0.1}s` }}
-                />
-              ))}
+              {[1, 2, 3, 4, 5, 6].map(
+                (i): React.ReactElement => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-12 bg-slate-100 rounded-full animate-pulse"
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                  />
+                )
+              )}
             </div>
           </div>
         </div>

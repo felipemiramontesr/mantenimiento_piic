@@ -14,7 +14,7 @@ dotenv.config({ path: '../../.env' });
  * 🔱 Archon API Factory: buildApp
  * Implementation: Silicon Valley Testable Architecture (v.17.0.0)
  */
-const buildApp = (opts = {}): FastifyInstance => {
+const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   const fastify = Fastify({
     logger: true,
     ...opts,
@@ -45,12 +45,15 @@ const buildApp = (opts = {}): FastifyInstance => {
   fastify.register(catalogRoutes, { prefix: '/v1/catalogs' });
 
   // Diagnostic Root V2 (Secure)
-  fastify.get('/', async () => ({
-    service: 'Archon API (Fleet Core)',
-    version: '2.0.1-PROD',
-    status: 'online',
-    uptime: process.uptime(),
-  }));
+  fastify.get(
+    '/',
+    async (): Promise<Record<string, string | number>> => ({
+      service: 'Archon API (Fleet Core)',
+      version: '2.0.1-PROD',
+      status: 'online',
+      uptime: process.uptime(),
+    })
+  );
 
   // Health Check
   fastify.get(

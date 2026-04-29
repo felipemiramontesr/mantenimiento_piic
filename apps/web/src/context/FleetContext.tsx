@@ -42,7 +42,7 @@ const FleetContext = createContext<FleetContextType | undefined>(undefined);
 
 export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [units, setUnits] = useState<FleetUnit[]>(
-    () =>
+    (): FleetUnit[] =>
       // ⚡ AGGRESSIVE HYDRATION: Immediate memory population from Archon Cache
       archonCache.get<FleetUnit[]>('fleet_units') || []
   );
@@ -59,7 +59,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const refreshUnits = async (): Promise<void> => {
     try {
-      const response = await api.get('/fleet');
+      const response = await api.get<{ success: boolean; data: FleetUnit[] }>('/fleet');
       if (isMountedRef.current && response.data.success) {
         const freshData = response.data.data;
         setUnits(freshData);
@@ -83,15 +83,21 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     refreshUnits();
   }, []);
 
-  const stats = useMemo(() => {
+  const stats = useMemo((): FleetStats => {
     const total = units.length;
-    const available = units.filter((u) => {
+    const available = units.filter((u: FleetUnit): boolean => {
       const s = (u.status || '').trim();
       return s === 'Disponible' || s === 'Asignada' || s === '';
     }).length;
-    const inRoute = units.filter((u) => (u.status || '').trim() === 'En Ruta').length;
-    const maintenance = units.filter((u) => (u.status || '').trim() === 'En Mantenimiento').length;
-    const discontinued = units.filter((u) => (u.status || '').trim() === 'Descontinuada').length;
+    const inRoute = units.filter(
+      (u: FleetUnit): boolean => (u.status || '').trim() === 'En Ruta'
+    ).length;
+    const maintenance = units.filter(
+      (u: FleetUnit): boolean => (u.status || '').trim() === 'En Mantenimiento'
+    ).length;
+    const discontinued = units.filter(
+      (u: FleetUnit): boolean => (u.status || '').trim() === 'Descontinuada'
+    ).length;
 
     const maintenanceIndex = total > 0 ? Math.round(((available + inRoute) / total) * 100) : 0;
 
@@ -99,32 +105,41 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
       const count = subset.length;
       const maintenanceCount = subset.filter(
-        (u) => (u.status || '').trim() === 'En Mantenimiento'
+        (u: FleetUnit): boolean => (u.status || '').trim() === 'En Mantenimiento'
       ).length;
-      const availableCount = subset.filter((u) => {
+      const availableCount = subset.filter((u: FleetUnit): boolean => {
         const s = (u.status || '').trim();
         return s === 'Disponible' || s === 'Asignada' || s === '';
       }).length;
       const availablePercent = count > 0 ? Math.round((availableCount / count) * 100) : 0;
 
-      const validMTBF = subset.filter((u) => (u.mtbfHours || 0) > 0);
-      const validMTTR = subset.filter((u) => (u.mttrHours || 0) > 0);
+      const validMTBF = subset.filter((u: FleetUnit): boolean => (u.mtbfHours || 0) > 0);
+      const validMTTR = subset.filter((u: FleetUnit): boolean => (u.mttrHours || 0) > 0);
 
       const avgMtbf =
         validMTBF.length > 0
-          ? Math.round(validMTBF.reduce((acc, u) => acc + (u.mtbfHours || 0), 0) / validMTBF.length)
+          ? Math.round(
+              validMTBF.reduce((acc: number, u: FleetUnit): number => acc + (u.mtbfHours || 0), 0) /
+                validMTBF.length
+            )
           : 0;
 
       const avgMttr =
         validMTTR.length > 0
           ? Number(
               (
-                validMTTR.reduce((acc, u) => acc + (u.mttrHours || 0), 0) / validMTTR.length
+                validMTTR.reduce(
+                  (acc: number, u: FleetUnit): number => acc + (u.mttrHours || 0),
+                  0
+                ) / validMTTR.length
               ).toFixed(1)
             )
           : 0;
 
-      const backlog = subset.reduce((acc, u) => acc + (u.backlogCount || 0), 0);
+      const backlog = subset.reduce(
+        (acc: number, u: FleetUnit): number => acc + (u.backlogCount || 0),
+        0
+      );
 
       return { count, availablePercent, maintenanceCount, avgMtbf, avgMttr, backlog };
     };
@@ -132,9 +147,9 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const globalMetrics = computeAverages(units);
 
     // Grouping by Asset Type (v.21.3.1 Relational Architecture - Using Catalog IDs)
-    const vehiculos = units.filter((u) => u.assetTypeId === 1);
-    const maquinaria = units.filter((u) => u.assetTypeId === 2);
-    const herramienta = units.filter((u) => u.assetTypeId === 3);
+    const vehiculos = units.filter((u: FleetUnit): boolean => u.assetTypeId === 1);
+    const maquinaria = units.filter((u: FleetUnit): boolean => u.assetTypeId === 2);
+    const herramienta = units.filter((u: FleetUnit): boolean => u.assetTypeId === 3);
 
     return {
       total,

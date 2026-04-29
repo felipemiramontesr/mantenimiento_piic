@@ -376,13 +376,23 @@ const FleetUnitRow = ({
       </td>
 
       <td className="text-center px-6">
-        <FleetKpiMatrix
-          availability={unit.availabilityIndex ?? 100}
-          mtbf={unit.mtbfHours ?? 0}
-          mttr={unit.mttrHours ?? 0}
-          backlog={unit.backlogCount ?? 0}
-          healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
-        />
+        <div className="flex flex-col gap-2">
+          {/* 🔱 Botón de Mantenimiento Desactivado para Pruebas de Registro 
+          <button
+            onClick={(): void => onRecordService(unit)}
+            className="flex items-center justify-center gap-2 bg-navy-900 text-white px-4 py-2 rounded font-black text-[10px] uppercase tracking-widest hover:bg-sky-900 transition-all shadow-md"
+          >
+            <Wrench size={12} /> Registrar Mto.
+          </button>
+          */}
+          <FleetKpiMatrix
+            availability={unit.availabilityIndex ?? 100}
+            mtbf={unit.mtbfHours ?? 0}
+            mttr={unit.mttrHours ?? 0}
+            backlog={unit.backlogCount ?? 0}
+            healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
+          />
+        </div>
       </td>
     </tr>
   );
@@ -401,33 +411,40 @@ export const FleetGridView = ({
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
-  const sortedUnits = React.useMemo(() => {
+  const sortedUnits = React.useMemo((): FleetUnit[] => {
     if (!sortConfig.field) return units;
 
-    const unitsWithForecast = units.map((u) => ({
-      unit: u,
-      forecast: getUnitForecast(u),
-    }));
+    const unitsWithForecast = units.map(
+      (u: FleetUnit): { unit: FleetUnit; forecast: MaintenanceForecast | null } => ({
+        unit: u,
+        forecast: getUnitForecast(u),
+      })
+    );
 
     return [...unitsWithForecast]
-      .sort((a, b) => {
-        let valA = 0;
-        let valB = 0;
+      .sort(
+        (
+          a: { unit: FleetUnit; forecast: MaintenanceForecast | null },
+          b: { unit: FleetUnit; forecast: MaintenanceForecast | null }
+        ): number => {
+          let valA = 0;
+          let valB = 0;
 
-        if (sortConfig.field === 'unidad') {
-          valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
-          valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
-        } else if (sortConfig.field === 'programacion') {
-          valA = a.forecast ? a.forecast.kmParaServicio : Infinity;
-          valB = b.forecast ? b.forecast.kmParaServicio : Infinity;
-        } else if (sortConfig.field === 'pronostico') {
-          valA = a.forecast ? a.forecast.forecastDate.getTime() : Infinity;
-          valB = b.forecast ? b.forecast.forecastDate.getTime() : Infinity;
+          if (sortConfig.field === 'unidad') {
+            valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
+            valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
+          } else if (sortConfig.field === 'programacion') {
+            valA = a.forecast ? a.forecast.kmParaServicio : Infinity;
+            valB = b.forecast ? b.forecast.kmParaServicio : Infinity;
+          } else if (sortConfig.field === 'pronostico') {
+            valA = a.forecast ? a.forecast.forecastDate.getTime() : Infinity;
+            valB = b.forecast ? b.forecast.forecastDate.getTime() : Infinity;
+          }
+
+          return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
         }
-
-        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-      })
-      .map((i) => i.unit);
+      )
+      .map((i: { unit: FleetUnit; forecast: MaintenanceForecast | null }): FleetUnit => i.unit);
   }, [units, sortConfig]);
 
   if (loading)
@@ -459,10 +476,18 @@ export const FleetGridView = ({
               <th className="py-6 opacity-40 font-black tracking-widest text-[11px]">ACTIVO</th>
               <th
                 onClick={(): void =>
-                  setSortConfig((p) => ({
-                    field: 'unidad',
-                    direction: p.field === 'unidad' && p.direction === 'asc' ? 'desc' : 'asc',
-                  }))
+                  setSortConfig(
+                    (p: {
+                      field: 'unidad' | 'programacion' | 'pronostico' | null;
+                      direction: 'asc' | 'desc';
+                    }): {
+                      field: 'unidad' | 'programacion' | 'pronostico' | null;
+                      direction: 'asc' | 'desc';
+                    } => ({
+                      field: 'unidad',
+                      direction: p.field === 'unidad' && p.direction === 'asc' ? 'desc' : 'asc',
+                    })
+                  )
                 }
                 className="cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6"
               >
@@ -493,10 +518,19 @@ export const FleetGridView = ({
               <th className="opacity-40 font-black tracking-widest text-[11px]">CONFIG / LEGAL</th>
               <th
                 onClick={(): void =>
-                  setSortConfig((p) => ({
-                    field: 'programacion',
-                    direction: p.field === 'programacion' && p.direction === 'asc' ? 'desc' : 'asc',
-                  }))
+                  setSortConfig(
+                    (p: {
+                      field: 'unidad' | 'programacion' | 'pronostico' | null;
+                      direction: 'asc' | 'desc';
+                    }): {
+                      field: 'unidad' | 'programacion' | 'pronostico' | null;
+                      direction: 'asc' | 'desc';
+                    } => ({
+                      field: 'programacion',
+                      direction:
+                        p.field === 'programacion' && p.direction === 'asc' ? 'desc' : 'asc',
+                    })
+                  )
                 }
                 className="cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors text-amber-600 py-6"
               >
@@ -519,10 +553,18 @@ export const FleetGridView = ({
               </th>
               <th
                 onClick={(): void =>
-                  setSortConfig((p) => ({
-                    field: 'pronostico',
-                    direction: p.field === 'pronostico' && p.direction === 'asc' ? 'desc' : 'asc',
-                  }))
+                  setSortConfig(
+                    (p: {
+                      field: 'unidad' | 'programacion' | 'pronostico' | null;
+                      direction: 'asc' | 'desc';
+                    }): {
+                      field: 'unidad' | 'programacion' | 'pronostico' | null;
+                      direction: 'asc' | 'desc';
+                    } => ({
+                      field: 'pronostico',
+                      direction: p.field === 'pronostico' && p.direction === 'asc' ? 'desc' : 'asc',
+                    })
+                  )
                 }
                 className="cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6"
               >
