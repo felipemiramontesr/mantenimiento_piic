@@ -112,5 +112,24 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
       expectedDate.setDate(expectedDate.getDate() + 10);
       expect(forecast?.toDateString()).toBe(expectedDate.toDateString());
     });
+
+    it('should forecast by time when it is sooner than usage limit', () => {
+      const lastDate = new Date(); // Today
+      const unit = {
+        lastServiceDate: lastDate.toISOString(),
+        maintIntervalDays: 5, // Very soon
+        maintIntervalKm: 10000,
+        lastServiceReading: 0,
+        currentReading: 0,
+        dailyUsageAvg: 1, // 10,000 days to reach limit
+      };
+
+      const forecast = FleetIntelligenceEngine.computeForecast(unit);
+      expect(forecast).not.toBeNull();
+
+      const expectedDate = new Date();
+      expectedDate.setDate(expectedDate.getDate() + 5);
+      expect(forecast?.toDateString()).toBe(expectedDate.toDateString());
+    });
   });
 });
