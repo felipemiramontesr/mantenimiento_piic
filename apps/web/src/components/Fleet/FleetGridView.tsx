@@ -384,7 +384,7 @@ const FleetUnitRow = ({
           mtbf={unit.mtbfHours ?? 0}
           mttr={unit.mttrHours ?? 0}
           backlog={unit.backlogCount ?? 0}
-          healthScore={unit.healthScore}
+          healthScore={forecast?.isOverdue ? 0 : unit.healthScore ?? 100}
         />
       </td>
     </tr>
