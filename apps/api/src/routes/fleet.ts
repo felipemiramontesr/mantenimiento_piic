@@ -84,7 +84,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.send({ success: true, count: units.length, data: units });
     } catch (error) {
       fastify.log.error(error);
-      return reply.code(500).send({ error: 'Failed to retrieve unit registry' });
+      return reply.code(500).send({ error: 'Internal Database Exception' });
     }
   });
 
@@ -104,9 +104,17 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(201).send({ success: true, ...result });
     } catch (error: unknown) {
       fastify.log.error(error as Error);
-      const { message } = error as Error;
-      const statusCode = message.includes('CONFLICT') ? 409 : 500;
-      return reply.code(statusCode).send({ error: message });
+      const err = error as Record<string, unknown>;
+      const message =
+        (err?.message as string) ||
+        (err?.sqlMessage as string) ||
+        (typeof err === 'string' ? err : 'Unknown DB Exception');
+
+      if (message.includes('CONFLICT')) {
+        return reply.code(409).send({ error: message });
+      }
+
+      return reply.code(500).send({ error: `Database Error: ${message}` });
     }
   });
 
@@ -120,6 +128,10 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply
         .code(400)
         .send({ error: 'Invalid update format', details: parse.error.format() });
+    }
+
+    if (Object.keys(parse.data).length === 0) {
+      return reply.code(400).send({ error: 'Empty update payload' });
     }
 
     try {
