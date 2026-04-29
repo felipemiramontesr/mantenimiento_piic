@@ -27,35 +27,12 @@ import {
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
-// Visual Impact Update: 25% taller rows & scaled typography.
+// Visual Impact Update: 100% Data Parity with Master Source
 
 interface FleetGridViewProps {
   units: FleetUnit[];
   loading?: boolean;
 }
-
-const getMockData = (
-  unitId: string,
-  field: string,
-  realValue: string | number | null | undefined
-): string | number => {
-  if (realValue != null && realValue !== '' && realValue !== 0) return realValue as string | number;
-  const hash = unitId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const mocks: Record<string, string | number> = {
-    numeroSerie: `3VW${hash}${unitId.replace(/[^0-9]/g, '')}Z${hash % 9}X${2024 - (hash % 10)}`,
-    insurancePolicyNumber: `POL-${2024 + (hash % 2)}-${hash}${hash}`,
-    circulationCardNumber: `TC-${hash}-${unitId.replace(/[^0-9]/g, '')}`,
-    accountingAccount: `8019-001-${100 + (hash % 900)}`,
-    year: 2018 + (hash % 7),
-    color: ['BLANCO', 'GRIS', 'PLATA', 'NEGRO', 'ROJO'][hash % 5],
-    motor: ['L4 2.5L DOHC', 'V6 3.5L VVT-i', 'L4 2.8L Turbo Diesel', 'V8 6.4L HEMI'][hash % 4],
-    capacidadCarga: [850, 1050, 1200, 1500, 3500][hash % 5],
-    fuelTankCapacity: [55, 65, 80, 110, 130][hash % 5],
-    tireBrand: ['MICHELIN', 'BF GOODRICH', 'BRIDGESTONE', 'PIRELLI', 'YOKOHAMA'][hash % 5],
-    lastMechanicalVerification: '2024-06-20',
-  };
-  return mocks[field] || '--';
-};
 
 const IdentityCluster = ({
   unit,
@@ -172,14 +149,10 @@ const OdometerCluster = ({
 
 const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const fuelType = unit.fuelType || 'S/D';
-  const motor = getMockData(unit.id, 'motor', unit.motor);
-  const poliza = getMockData(unit.id, 'insurancePolicyNumber', unit.insurancePolicyNumber);
-  const verifDate = unit.lastEnvironmentalVerification || '2025-06-20';
-  const mechDate = getMockData(
-    unit.id,
-    'lastMechanicalVerification',
-    unit.lastMechanicalVerification
-  );
+  const motor = unit.motor || 'S/D';
+  const poliza = unit.insurancePolicyNumber || '---';
+  const verifDate = unit.lastEnvironmentalVerification || '---';
+  const mechDate = unit.lastMechanicalVerification || '---';
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="grid grid-cols-2 gap-1.5 w-full">
@@ -201,9 +174,7 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
       </div>
       <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase">
         <Truck size={12} className="text-slate-300" /> {unit.tireSpec || '255/70 R16'} /{' '}
-        <span className="text-navy-600 font-black">
-          {getMockData(unit.id, 'tireBrand', unit.tireBrand)}
-        </span>
+        <span className="text-navy-600 font-black">{unit.tireBrand || '---'}</span>
       </div>
       <div className="flex flex-col gap-1.5 w-full border-t border-gray-100 pt-2 mt-1">
         <div className="flex items-center justify-between text-[9px] font-black uppercase">
@@ -324,11 +295,11 @@ const FleetUnitRow = ({
     unit.assetType?.toLowerCase().includes('veh') || unit.assetType === 'Vehiculo' ? 'KM' : 'HRS';
 
   const mockData = {
-    vin: getMockData(unit.id, 'numeroSerie', unit.numeroSerie),
-    tarjeta: getMockData(unit.id, 'circulationCardNumber', unit.circulationCardNumber),
-    cuenta: getMockData(unit.id, 'accountingAccount', unit.accountingAccount),
-    carga: getMockData(unit.id, 'capacidadCarga', unit.capacidadCarga),
-    tanque: getMockData(unit.id, 'fuelTankCapacity', unit.fuelTankCapacity),
+    vin: unit.numeroSerie || '---',
+    tarjeta: unit.circulationCardNumber || '---',
+    cuenta: unit.accountingAccount || '---',
+    carga: unit.capacidadCarga || 0,
+    tanque: unit.fuelTankCapacity || 0,
   };
 
   return (
@@ -362,8 +333,7 @@ const FleetUnitRow = ({
               {unit.marca} {unit.modelo}
             </span>
             <span className="text-[11px] font-bold text-slate-500 mt-0.5">
-              ({getMockData(unit.id, 'year', unit.year)}) •{' '}
-              {getMockData(unit.id, 'color', unit.color)}
+              ({unit.year || '---'}) • {unit.color || 'S/C'}
             </span>
           </div>
           <div className="flex flex-col items-center opacity-80 pt-1">
