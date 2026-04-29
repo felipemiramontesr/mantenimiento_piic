@@ -323,8 +323,6 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const query = `
         SELECT 
           f.*,
-          f.maint_interval_days AS maintIntervalDays,
-          f.maint_interval_km AS maintIntervalKm,
           c_at.label AS assetType,
           c_brand.label AS marca,
           c_model.label AS modelo,
