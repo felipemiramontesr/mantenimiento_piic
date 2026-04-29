@@ -119,51 +119,25 @@ const updateFleetSchema = z.object({
 });
 
 // ============================================================================
-// DB INTERFACE (v.7.2.3) - NATIVE CAMELCASE SMMETRY
+// ARCHON INTELLIGENCE CONFIGURATION (DRY)
+// ============================================================================
+const ARCHON_DEFAULTS = {
+  MAINT_INTERVAL_DAYS: 180,
+  MAINT_INTERVAL_KM: 10000,
+  AVAILABILITY: 100,
+};
+
+// ============================================================================
+// DOMAIN INTERFACES
 // ============================================================================
 interface FleetUnit extends RowDataPacket {
   id: string;
   uuid: string;
   assetType: string;
   placas: string | null;
-  placasHash: string | null;
   numeroSerie: string | null;
-  numeroSerieHash: string | null;
-  brandId: number | null;
-  modelId: number | null;
-  images: string | null;
-  year: number;
-  departmentId: number | null;
-  operationalUseId: number | null;
-  locationId: number | null;
-  engineTypeId: number | null;
-  colorId: number | null;
-  tireSpec: string | null;
-  tireBrandId: number | null;
-  terrainTypeId: number | null;
-  capacidadCarga: string | null;
-  fuelTankCapacity: number;
   maintIntervalDays: number;
   maintIntervalKm: number;
-  odometer: number;
-  sede: string | null;
-  centroMantenimiento: string | null;
-  maintenanceCenterId: number | null;
-  protocolStartDate: string | null;
-  insuranceExpiryDate: string | null;
-  vencimientoVerificacion: string | null;
-  circulationCardNumber: string | null;
-  status: string;
-  assignedOperatorId: number | null;
-  color: string | null;
-  motor: string | null;
-  insuranceCompany: string | null;
-  insuranceCompanyId: number | null;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-  maintenanceTimeFreqId: number | null;
-  maintenanceUsageFreqId: number | null;
   lastServiceDate: string | null;
   lastServiceReading: number;
   currentReading: number;
@@ -171,18 +145,7 @@ interface FleetUnit extends RowDataPacket {
   mtbfHours: number;
   mttrHours: number;
   backlogCount: number;
-  assetTypeId: number;
-  fuelTypeId: number;
-  traccionId: number;
-  transmisionId: number;
-  dailyUsageAvg: number | null;
-  ownerId: number | null;
-  owner: string | null;
-  complianceStatusId: number | null;
-  complianceStatus: string | null;
-  accountingAccount: string | null;
-  legalComplianceDate: string | null;
-  monthlyLeasePayment: number;
+  images: string | null;
 }
 
 interface UnitHealth {
@@ -193,115 +156,108 @@ interface UnitHealth {
   currentReading: number;
   lastReading: number;
   today: Date;
+  kmLimit: number;
 }
 
 /**
- * 🛡️ SENTINEL INTELLIGENCE HELPER
+ * 🔱 Archon Engine: FleetIntelligence (SOLID: SRP)
  */
-function parseUnitImages(
-  rawImages: string | null,
-  unitId: string,
-  logger: FastifyBaseLogger
-): string[] {
-  if (!rawImages) return [];
-  try {
-    return typeof rawImages === 'string'
-      ? JSON.parse(rawImages)
-      : (rawImages as unknown as string[]);
-  } catch (e) {
-    logger.warn(`Failed to parse images for unit ${unitId}: ${e}`);
-    return [];
-  }
-}
+class FleetIntelligenceEngine {
+  static computeHealth(unit: FleetUnit): UnitHealth {
+    const today = new Date();
+    const lastServiceDate = unit.lastServiceDate ? new Date(unit.lastServiceDate) : null;
+    const lastReading = Number(unit.lastServiceReading || 0);
+    const currentReading = Number(unit.currentReading || 0);
 
-function computeUnitHealth(unit: FleetUnit): UnitHealth {
-  const today = new Date();
-  const lastServiceDate = unit.lastServiceDate ? new Date(unit.lastServiceDate) : null;
-  const lastReading = Number(unit.lastServiceReading || 0);
-  const currentReading = Number(unit.currentReading || 0);
+    const timeLimit = Number(unit.maintIntervalDays || ARCHON_DEFAULTS.MAINT_INTERVAL_DAYS);
+    const usageLimit = Number(unit.maintIntervalKm || ARCHON_DEFAULTS.MAINT_INTERVAL_KM);
 
-  // 🔱 Unified Maintenance Limits (Catalog or Default)
-  const timeLimit = Number(unit.maintIntervalDays || 180);
-  const usageLimit = Number(unit.maintIntervalKm || 10000);
+    let timeProgress = 0;
+    if (lastServiceDate && timeLimit > 0) {
+      const diffDays = (today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24);
+      timeProgress = Math.max(0, diffDays / timeLimit);
+    }
 
-  // Trigger A: Time Based
-  let timeProgress = 0;
-  if (lastServiceDate && timeLimit > 0) {
-    const diffMs = today.getTime() - lastServiceDate.getTime();
-    const diffDays = diffMs / (1000 * 3600 * 24);
-    timeProgress = Math.max(0, diffDays / timeLimit);
-  }
+    let usageProgress = 0;
+    if (usageLimit > 0) {
+      usageProgress = Math.max(0, (currentReading - lastReading) / usageLimit);
+    }
 
-  // Trigger B: Usage Based (KM/HRS)
-  let usageProgress = 0;
-  if (usageLimit > 0) {
-    const diffUnits = currentReading - lastReading;
-    usageProgress = Math.max(0, diffUnits / usageLimit);
-  }
+    const maxProgress = Math.max(timeProgress, usageProgress);
 
-  const maxProgress = Math.max(timeProgress, usageProgress);
+    // 🔱 Binary Overdue Logic (SOLID: SRP - Isolated logic)
+    const isOverdue = maxProgress >= 1.0;
+    const healthScore = isOverdue ? 0 : Math.round(Math.max(0, (1 - maxProgress) * 100));
 
-  // 🔱 Archon Business Rule: If overdue, health is absolute ZERO.
-  const healthScore =
-    maxProgress >= 1.0 ? 0 : Math.round(Math.max(0, Math.min(100, (1 - maxProgress) * 100)));
+    let healthStatus = 'Healthy';
+    let healthColor = '#10b981';
 
-  let healthStatus = 'Healthy';
-  let healthColor = '#10b981';
+    if (isOverdue) {
+      healthStatus = 'Overdue';
+      healthColor = '#ef4444';
+    } else if (maxProgress >= 0.7) {
+      healthStatus = 'Caution';
+      healthColor = '#f2b705';
+    }
 
-  if (maxProgress >= 1.0) {
-    healthStatus = 'Overdue';
-    healthColor = '#ef4444';
-  } else if (maxProgress >= 0.7) {
-    healthStatus = 'Caution';
-    healthColor = '#f2b705';
+    return {
+      healthScore,
+      healthStatus,
+      healthColor,
+      lastServiceDate,
+      currentReading,
+      lastReading,
+      today,
+      kmLimit: usageLimit,
+    };
   }
 
-  return {
-    healthScore,
-    healthStatus,
-    healthColor,
-    lastServiceDate,
-    currentReading,
-    lastReading,
-    today,
-  };
-}
+  static processUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<string, unknown> {
+    const decrypted = this.decryptSensitiveData(unit);
+    const health = this.computeHealth(unit);
 
-/**
- * 🛡️ SENTINEL INTELLIGENCE HELPER: Main Processor
- */
-function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<string, unknown> {
-  const decrypted = {
-    ...unit,
-    placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
-    numeroSerie: unit.numeroSerie ? EncryptionService.decrypt(unit.numeroSerie) : unit.numeroSerie,
-    circulationCardNumber: unit.circulationCardNumber
-      ? EncryptionService.decrypt(unit.circulationCardNumber)
-      : unit.circulationCardNumber,
-    availabilityIndex: Number(unit.availabilityIndex || 0),
-    mtbfHours: Number(unit.mtbfHours || 0),
-    mttrHours: Number(unit.mttrHours || 0),
-    backlogCount: Number(unit.backlogCount || 0),
-  };
+    return {
+      ...(decrypted as Record<string, unknown>),
+      images: this.parseImages(unit.images, unit.id, logger),
+      healthScore: health.healthScore,
+      healthStatus: health.healthStatus,
+      healthColor: health.healthColor,
+      daysSinceService: health.lastServiceDate
+        ? Math.floor(
+            (health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24)
+          )
+        : null,
+      unitsSinceService: health.currentReading - health.lastReading,
+      nextServiceReading: health.lastReading + health.kmLimit,
+    };
+  }
 
-  const health = computeUnitHealth(decrypted as unknown as FleetUnit);
+  private static decryptSensitiveData(unit: FleetUnit): FleetUnit {
+    return {
+      ...unit,
+      placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
+      numeroSerie: unit.numeroSerie
+        ? EncryptionService.decrypt(unit.numeroSerie)
+        : unit.numeroSerie,
+      circulationCardNumber: unit.circulationCardNumber
+        ? EncryptionService.decrypt(unit.circulationCardNumber)
+        : unit.circulationCardNumber,
+      availabilityIndex: Number(unit.availabilityIndex || ARCHON_DEFAULTS.AVAILABILITY),
+      mtbfHours: Number(unit.mtbfHours || 0),
+      mttrHours: Number(unit.mttrHours || 0),
+      backlogCount: Number(unit.backlogCount || 0),
+    };
+  }
 
-  // 🔱 Unified Analytical Projection
-  const lastReading = Number(unit.lastServiceReading || 0);
-  const kmLimit = Number(unit.maintIntervalKm || 10000);
-
-  return {
-    ...decrypted,
-    images: parseUnitImages(unit.images, unit.id, logger),
-    healthScore: health.healthScore,
-    healthStatus: health.healthStatus,
-    healthColor: health.healthColor,
-    daysSinceService: health.lastServiceDate
-      ? Math.floor((health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24))
-      : null,
-    unitsSinceService: health.currentReading - health.lastReading,
-    nextServiceReading: lastReading + kmLimit,
-  } as Record<string, unknown>;
+  private static parseImages(raw: unknown, id: string, logger: FastifyBaseLogger): string[] {
+    if (!raw) return [];
+    try {
+      return typeof raw === 'string' ? JSON.parse(raw) : (raw as string[]);
+    } catch (e) {
+      logger.warn(`Failed to parse images for unit ${id}: ${e}`);
+      return [];
+    }
+  }
 }
 
 // ============================================================================
@@ -385,7 +341,9 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const [rows] = await db.execute<FleetUnit[]>(query);
 
       // 🛡️ SENTINEL INTELLIGENCE LAYER: Decryption + Predictive Computation
-      const processedRows = rows.map((unit) => processFleetUnit(unit, fastify.log));
+      const processedRows = rows.map((unit) =>
+        FleetIntelligenceEngine.processUnit(unit, fastify.log)
+      );
 
       return reply.send({ success: true, count: processedRows.length, data: processedRows });
     } catch (error) {

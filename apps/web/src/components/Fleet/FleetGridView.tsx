@@ -294,6 +294,22 @@ const HealthStatusCluster = ({
   );
 };
 
+// ============================================================================
+// ARCHON INTERNAL HELPERS (DRY & SRP)
+// ============================================================================
+const getUnitForecast = (unit: FleetUnit): MaintenanceForecast | null =>
+  calculateMaintForecast(
+    unit.maintIntervalDays,
+    unit.maintIntervalKm,
+    unit.dailyUsageAvg || 0,
+    unit.odometer,
+    unit.lastServiceReading || 0,
+    unit.lastServiceDate || null
+  );
+
+// ============================================================================
+// COMPONENT: FleetUnitRow (SOLID: SRP)
+// ============================================================================
 const FleetUnitRow = ({
   unit,
   onSelectImage,
@@ -301,26 +317,24 @@ const FleetUnitRow = ({
   unit: FleetUnit;
   onSelectImage: (u: FleetUnit) => void;
 }): React.JSX.Element => {
-  const forecast = calculateMaintForecast(
-    unit.timeLimitDays || unit.maintIntervalDays || 180,
-    unit.usageLimitUnits || unit.maintIntervalKm || 10000,
-    unit.dailyUsageAvg || 0,
-    unit.odometer,
-    unit.lastServiceReading || 0,
-    unit.lastServiceDate || null
-  );
+  const forecast = getUnitForecast(unit);
+  const isOverdue = !!forecast?.isOverdue;
+
   const usageUnit =
     unit.assetType?.toLowerCase().includes('veh') || unit.assetType === 'Vehiculo' ? 'KM' : 'HRS';
-  const vin = getMockData(unit.id, 'numeroSerie', unit.numeroSerie);
-  const tarjeta = getMockData(unit.id, 'circulationCardNumber', unit.circulationCardNumber);
-  const cuenta = getMockData(unit.id, 'accountingAccount', unit.accountingAccount);
-  const carga = getMockData(unit.id, 'capacidadCarga', unit.capacidadCarga);
-  const tanque = getMockData(unit.id, 'fuelTankCapacity', unit.fuelTankCapacity);
+
+  const mockData = {
+    vin: getMockData(unit.id, 'numeroSerie', unit.numeroSerie),
+    tarjeta: getMockData(unit.id, 'circulationCardNumber', unit.circulationCardNumber),
+    cuenta: getMockData(unit.id, 'accountingAccount', unit.accountingAccount),
+    carga: getMockData(unit.id, 'capacidadCarga', unit.capacidadCarga),
+    tanque: getMockData(unit.id, 'fuelTankCapacity', unit.fuelTankCapacity),
+  };
 
   return (
     <tr
       className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.025] border-b border-slate-100 ${
-        forecast?.isOverdue ? 'bg-red-50/40' : ''
+        isOverdue ? 'bg-red-50/40' : ''
       }`}
     >
       <td className="py-10 text-center">
@@ -337,6 +351,7 @@ const FleetUnitRow = ({
           </div>
         )}
       </td>
+
       <td className="text-center px-6">
         <div className="flex flex-col items-center gap-2">
           <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded shadow-lg tracking-[0.2em]">
@@ -356,41 +371,56 @@ const FleetUnitRow = ({
               <Wrench size={12} />
               {unit.departamento}
             </span>
-            <span className="text-[9px] font-mono text-slate-400 mt-1">VIN: {vin}</span>
+            <span className="text-[9px] font-mono text-slate-400 mt-1">VIN: {mockData.vin}</span>
           </div>
         </div>
       </td>
+
       <td className="text-center px-6">
-        <IdentityCluster unit={unit} tarjeta={tarjeta} />
+        <IdentityCluster unit={unit} tarjeta={mockData.tarjeta} />
       </td>
+
       <td className="text-center px-6 border-x border-slate-50/50">
-        <LogisticsCluster unit={unit} cuenta={cuenta} usageUnit={usageUnit} />
+        <LogisticsCluster unit={unit} cuenta={mockData.cuenta} usageUnit={usageUnit} />
       </td>
+
       <td className="py-10 px-6 min-w-[160px]">
-        <OdometerCluster unit={unit} usageUnit={usageUnit} carga={carga} tanque={tanque} />
+        <OdometerCluster
+          unit={unit}
+          usageUnit={usageUnit}
+          carga={mockData.carga}
+          tanque={mockData.tanque}
+        />
       </td>
+
       <td className="py-10 px-6 min-w-[200px]">
         <SpecCluster unit={unit} />
       </td>
+
       <td className="text-center px-6">
         <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
       </td>
+
       <td className="text-center px-6">
         <HealthStatusCluster forecast={forecast} />
       </td>
+
       <td className="text-center px-6">
         <FleetKpiMatrix
           availability={unit.availabilityIndex ?? 100}
           mtbf={unit.mtbfHours ?? 0}
           mttr={unit.mttrHours ?? 0}
           backlog={unit.backlogCount ?? 0}
-          healthScore={forecast?.isOverdue ? 0 : unit.healthScore ?? 100}
+          healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
         />
       </td>
     </tr>
   );
 };
 
+// ============================================================================
+// MAIN COMPONENT: FleetGridView
+// ============================================================================
 export const FleetGridView = ({
   units = [],
   loading = false,
@@ -401,23 +431,19 @@ export const FleetGridView = ({
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
-  const sortedUnits = React.useMemo((): FleetUnit[] => {
+  const sortedUnits = React.useMemo(() => {
     if (!sortConfig.field) return units;
+
     const unitsWithForecast = units.map((u) => ({
       unit: u,
-      forecast: calculateMaintForecast(
-        u.timeLimitDays || u.maintIntervalDays || 180,
-        u.usageLimitUnits || u.maintIntervalKm || 10000,
-        u.dailyUsageAvg || 0,
-        u.odometer,
-        u.lastServiceReading || 0,
-        u.lastServiceDate || null
-      ),
+      forecast: getUnitForecast(u),
     }));
+
     return [...unitsWithForecast]
-      .sort((a, b): number => {
+      .sort((a, b) => {
         let valA = 0;
         let valB = 0;
+
         if (sortConfig.field === 'unidad') {
           valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
           valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
@@ -428,6 +454,7 @@ export const FleetGridView = ({
           valA = a.forecast ? a.forecast.forecastDate.getTime() : Infinity;
           valB = b.forecast ? b.forecast.forecastDate.getTime() : Infinity;
         }
+
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
       })
       .map((i) => i.unit);
