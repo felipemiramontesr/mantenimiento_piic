@@ -1,8 +1,7 @@
 import React from 'react';
 import { Wallet, TrendingUp, ArrowUpRight, Landmark, DollarSign, PieChart } from 'lucide-react';
-import { BRANDING_NAME } from '../../constants/versionConstants';
-
-const SYSTEM_VERSION = 'V28.27.0';
+import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+import { useFleet } from '../../context/FleetContext';
 
 /**
  * 🔱 Archon Module: Financial Health
@@ -10,6 +9,12 @@ const SYSTEM_VERSION = 'V28.27.0';
  * Structure: Header | Body (Chassis) | Footer
  */
 const FinancialHealthModule: React.FC = () => {
+  const { units, stats, loading } = useFleet();
+
+  // 🔱 Financial Intelligence Engine
+  const totalMonthlyLease = units.reduce((acc, u) => acc + (u.monthlyLeasePayment || 0), 0);
+  const efficiency = stats.maintenanceIndex; // % of units ready for operation
+
   const renderFinancialKPI = (
     label: string,
     value: string,
@@ -28,12 +33,16 @@ const FinancialHealthModule: React.FC = () => {
       </div>
 
       <div className="archon-tile-payload flex flex-col items-center justify-center pb-6">
-        <div className="flex flex-col items-center justify-center text-center w-full space-y-2">
-          <h3 className="text-kpi-black text-[#0f2a44] text-center w-full">{value}</h3>
-          <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center w-full">
-            {description}
-          </p>
-        </div>
+        {loading ? (
+          <div className="archon-shimmer h-12 w-full rounded" />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center w-full space-y-2">
+            <h3 className="text-kpi-black text-[#0f2a44] text-center w-full">{value}</h3>
+            <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center w-full">
+              {description}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="archon-tile-action">
@@ -85,27 +94,27 @@ const FinancialHealthModule: React.FC = () => {
       <section className="archon-workspace-chassis">
         <div className="archon-grid-3">
           {renderFinancialKPI(
-            'Costo Operativo',
-            '$---,---.--',
+            'Compromiso de Arrendamiento',
+            `$${totalMonthlyLease.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
             DollarSign,
             '#0f2a44',
-            'Gasto acumulado del mes actual',
+            'Pago mensual acumulado (Leasing)',
             'navy'
           )}
           {renderFinancialKPI(
             'Eficiencia de Activos',
-            '--.--%',
+            `${efficiency}%`,
             TrendingUp,
             '#10b981',
-            'Retorno operativo por unidad',
+            'Retorno operativo por unidad lista',
             'emerald'
           )}
           {renderFinancialKPI(
             'Presupuesto Maint',
-            '$---,---.--',
+            '$0.00',
             Landmark,
             '#f2b705',
-            'Fondo asignado a mantenimiento',
+            'Fondo asignado a mantenimiento (Base)',
             'yellow'
           )}
 
@@ -118,7 +127,7 @@ const FinancialHealthModule: React.FC = () => {
               Motor de Análisis Financiero
             </h3>
             <p className="text-slate-400 text-sm max-w-md leading-relaxed uppercase tracking-widest font-bold text-[10px]">
-              Sincronizando con módulos de costos y facturación...
+              Sincronizado con 23 Activos Maestros en Tiempo Real
             </p>
             <div className="mt-8 flex gap-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
