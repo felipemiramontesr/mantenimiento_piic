@@ -29,6 +29,8 @@ import {
 } from '../../utils/fleetPredictiveEngine';
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
 
+// 🔱 Archon Pulse: v.42.0.1 - Forced Sync Event
+
 interface FleetGridViewProps {
   units: FleetUnit[];
   loading?: boolean;
