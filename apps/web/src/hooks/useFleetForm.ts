@@ -24,6 +24,31 @@ const EMERGENCY_BRANDS = [
   { id: 9003, code: 'B_MILWAUKEE', label: 'Milwaukee (Safe Mode)' },
 ];
 
+interface CatalogsState {
+  assetTypes: CatalogOption[];
+  fuelTypes: CatalogOption[];
+  driveTypes: CatalogOption[];
+  transmissionTypes: CatalogOption[];
+  marcas: CatalogOption[];
+  modelos: CatalogOption[];
+  freqTime: CatalogOption[];
+  freqUsage: CatalogOption[];
+  departments: CatalogOption[];
+  locations: CatalogOption[];
+  useTypes: CatalogOption[];
+  tireBrands: CatalogOption[];
+  lubeBrands: CatalogOption[];
+  filterBrands: CatalogOption[];
+  engineTypes: CatalogOption[];
+  terrainTypes: CatalogOption[];
+  owners: CatalogOption[];
+  complianceStatuses: CatalogOption[];
+  colors: CatalogOption[];
+  maintenanceCenters: CatalogOption[];
+  insuranceCompanies: CatalogOption[];
+  routeOrigins: CatalogOption[];
+}
+
 const useFleetForm = (): UseFleetFormReturn => {
   const [formData, setFormData] = useState<CreateFleetUnit>(getInitialFleetForm());
   const [error, setError] = useState<string | null>(null);
@@ -34,30 +59,29 @@ const useFleetForm = (): UseFleetFormReturn => {
   const isMountedRef = useRef(true);
   const hasHydratedRef = useRef(false);
 
-  const [catalogs, setCatalogs] = useState({
-    assetTypes: [] as CatalogOption[],
-    fuelTypes: [] as CatalogOption[],
-    driveTypes: [] as CatalogOption[],
-    transmissionTypes: [] as CatalogOption[],
-    marcas: [] as CatalogOption[],
-    modelos: [] as CatalogOption[],
-    freqTime: [] as CatalogOption[],
-    freqUsage: [] as CatalogOption[],
-    departments: [] as CatalogOption[],
-    locations: [] as CatalogOption[],
-    useTypes: [] as CatalogOption[],
-    tireBrands: [] as CatalogOption[],
-    lubeBrands: [] as CatalogOption[],
-    filterBrands: [] as CatalogOption[],
-    engineTypes: [] as CatalogOption[],
-    terrainTypes: [] as CatalogOption[],
-    // 🔱 Sovereign Asset Management Catalogs (v.39.0.0)
-    owners: [] as CatalogOption[],
-    complianceStatuses: [] as CatalogOption[],
-    colors: [] as CatalogOption[],
-    maintenanceCenters: [] as CatalogOption[],
-    insuranceCompanies: [] as CatalogOption[],
-    routeOrigins: [] as CatalogOption[],
+  const [catalogs, setCatalogs] = useState<CatalogsState>({
+    assetTypes: [],
+    fuelTypes: [],
+    driveTypes: [],
+    transmissionTypes: [],
+    marcas: [],
+    modelos: [],
+    freqTime: [],
+    freqUsage: [],
+    departments: [],
+    locations: [],
+    useTypes: [],
+    tireBrands: [],
+    lubeBrands: [],
+    filterBrands: [],
+    engineTypes: [],
+    terrainTypes: [],
+    owners: [],
+    complianceStatuses: [],
+    colors: [],
+    maintenanceCenters: [],
+    insuranceCompanies: [],
+    routeOrigins: [],
   });
 
   const resetError = useCallback(() => setError(null), []);
@@ -191,7 +215,7 @@ const useFleetForm = (): UseFleetFormReturn => {
 
       if (isMountedRef.current) {
         setCatalogs(
-          (prev: Record<string, CatalogOption[]>): Record<string, CatalogOption[]> => ({
+          (prev: CatalogsState): CatalogsState => ({
             ...prev,
             assetTypes: assetList,
             fuelTypes: extractCatalogData(fuel),
@@ -256,7 +280,7 @@ const useFleetForm = (): UseFleetFormReturn => {
 
     const brands = await fetchCategory('BRAND', id);
     setCatalogs(
-      (prev: Record<string, CatalogOption[]>): Record<string, CatalogOption[]> => ({
+      (prev: CatalogsState): CatalogsState => ({
         ...prev,
         marcas: brands.length > 0 ? brands : (EMERGENCY_BRANDS as CatalogOption[]),
         modelos: [],
@@ -277,7 +301,7 @@ const useFleetForm = (): UseFleetFormReturn => {
 
     const models = await fetchCategory('MODEL', brandId);
     setCatalogs(
-      (prev: Record<string, CatalogOption[]>): Record<string, CatalogOption[]> => ({
+      (prev: CatalogsState): CatalogsState => ({
         ...prev,
         modelos: models,
       })
