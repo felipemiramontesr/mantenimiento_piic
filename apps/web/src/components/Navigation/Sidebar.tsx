@@ -6,6 +6,7 @@ import {
   Settings,
   Users,
   Navigation,
+  Wallet,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -160,6 +161,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             label="Administrar Personal"
             path="/dashboard/users"
             active={location.pathname === '/dashboard/users'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem
+            icon={<Wallet size={20} />}
+            label="Salud Financiera"
+            path="/dashboard/financial"
+            active={location.pathname === '/dashboard/financial'}
             isCollapsed={isCollapsed}
           />
           <NavItem
