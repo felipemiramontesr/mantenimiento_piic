@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
-import { toSnakeCase, toCamelCase } from '../utils/mappers';
+import { toCamelCase } from '../utils/mappers';
 
 // ============================================================================
 // ZOD SCHEMA: CREATE
@@ -128,66 +128,65 @@ interface FleetUnit extends RowDataPacket {
   asset_type: string;
   placas: string | null;
   placas_hash: string | null;
-  numero_serie: string | null;
-  numero_serie_hash: string | null;
-  brand_id: number | null;
-  model_id: number | null;
+  numeroSerie: string | null;
+  numeroSerieHash: string | null;
+  brandId: number | null;
+  modelId: number | null;
   images: string | null;
   year: number;
-  department_id: number | null;
-  operational_use_id: number | null;
-  location_id: number | null;
-  engine_type_id: number | null;
-  color_id: number | null;
-  tire_spec: string | null;
-  tire_brand_id: number | null;
-  terrain_type_id: number | null;
-  capacidad_carga: string | null;
-  fuel_tank_capacity: number;
-  maint_interval_days: number;
-  maint_interval_km: number;
+  departmentId: number | null;
+  operationalUseId: number | null;
+  locationId: number | null;
+  engineTypeId: number | null;
+  colorId: number | null;
+  tireSpec: string | null;
+  tireBrandId: number | null;
+  terrainTypeId: number | null;
+  capacidadCarga: string | null;
+  fuelTankCapacity: number;
+  maintIntervalDays: number;
+  maintIntervalKm: number;
   odometer: number;
   sede: string | null;
   centro_mantenimiento: string | null;
-  maintenance_center_id: number | null;
-  protocol_start_date: string | null;
-  vigencia_seguro: string | null;
-  vencimiento_verificacion: string | null;
-  circulation_card_number: string | null;
+  maintenanceCenterId: number | null;
+  protocolStartDate: string | null;
+  insuranceExpiryDate: string | null;
+  vencimientoVerificacion: string | null;
+  circulationCardNumber: string | null;
   status: string;
-  assigned_operator_id: number | null;
+  assignedOperatorId: number | null;
   color: string | null;
   motor: string | null;
   insurance_company: string | null;
-  insurance_company_id: number | null;
+  insuranceCompanyId: number | null;
   description: string | null;
-  created_at: string;
-  updated_at: string;
-  maintenance_time_freq_id: number | null;
-  maintenance_usage_freq_id: number | null;
-  last_service_date: string | null;
-  last_service_reading: number;
-  current_reading: number;
+  createdAt: string;
+  updatedAt: string;
+  maintenanceTimeFreqId: number | null;
+  maintenanceUsageFreqId: number | null;
+  lastServiceDate: string | null;
+  lastServiceReading: number;
+  currentReading: number;
   time_limit_days: number | null;
   usage_limit_units: number | null;
   usage_unit_name: string | null;
-  availability_index: number;
-  mtbf_hours: number;
-  mttr_hours: number;
-  backlog_count: number;
-  asset_type_id: number;
-  fuel_type_id: number;
-  traccion_id: number;
-  transmision_id: number;
-  daily_usage_avg: number | null;
-  owner_id: number | null;
+  availabilityIndex: number;
+  mtbfHours: number;
+  mttrHours: number;
+  backlogCount: number;
+  assetTypeId: number;
+  fuelTypeId: number;
+  traccionId: number;
+  transmisionId: number;
+  dailyUsageAvg: number | null;
+  ownerId: number | null;
   owner: string | null;
-  compliance_status_id: number | null;
+  complianceStatusId: number | null;
   compliance_status: string | null;
-  accounting_account: string | null;
-  legal_compliance_date: string | null;
-  insurance_expiry_date: string | null;
-  monthly_lease_payment: number;
+  accountingAccount: string | null;
+  legalComplianceDate: string | null;
+  monthlyLeasePayment: number;
 }
 
 interface UnitHealth {
@@ -229,9 +228,9 @@ function parseUnitImages(
  */
 function computeUnitHealth(unit: FleetUnit): UnitHealth {
   const today = new Date();
-  const lastServiceDate = unit.last_service_date ? new Date(unit.last_service_date) : null;
-  const lastReading = Number(unit.last_service_reading || 0);
-  const currentReading = Number(unit.current_reading || 0);
+  const lastServiceDate = unit.lastServiceDate ? new Date(unit.lastServiceDate) : null;
+  const lastReading = Number(unit.lastServiceReading || 0);
+  const currentReading = Number(unit.currentReading || 0);
 
   // Trigger A: Time Based
   let timeProgress = 0;
@@ -282,21 +281,17 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
   const decrypted = {
     ...unit,
     placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
-    numero_serie: unit.numero_serie
-      ? EncryptionService.decrypt(unit.numero_serie)
-      : unit.numero_serie,
-    circulation_card_number: unit.circulation_card_number
-      ? EncryptionService.decrypt(unit.circulation_card_number)
-      : unit.circulation_card_number,
+    numeroSerie: unit.numeroSerie ? EncryptionService.decrypt(unit.numeroSerie) : unit.numeroSerie,
+    circulationCardNumber: unit.circulationCardNumber
+      ? EncryptionService.decrypt(unit.circulationCardNumber)
+      : unit.circulationCardNumber,
     // 🔱 Numeric Normalization (v.21.0.2)
-    availability_index: Number(unit.availability_index || 0),
-    mtbf_hours: Number(unit.mtbf_hours || 0),
-    mttr_hours: Number(unit.mttr_hours || 0),
-    backlog_count: Number(unit.backlog_count || 0),
+    availabilityIndex: Number(unit.availabilityIndex || 0),
+    mtbfHours: Number(unit.mtbfHours || 0),
+    mttrHours: Number(unit.mttrHours || 0),
+    backlogCount: Number(unit.backlogCount || 0),
     time_limit_days: unit.time_limit_days ? Number(unit.time_limit_days) : null,
     usage_limit_units: unit.usage_limit_units ? Number(unit.usage_limit_units) : null,
-    time_freq_label: unit.time_freq_label,
-    usage_freq_label: unit.usage_freq_label,
   };
 
   const {
@@ -361,34 +356,34 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_color.label AS color,
           c_eng.label AS motor,
           c_ins.label AS insurance_company,
-          f.maint_interval_days AS time_limit_days,
-          f.maint_interval_km AS usage_limit_units,
+          f.maintIntervalDays AS time_limit_days,
+          f.maintIntervalKm AS usage_limit_units,
           'Días' AS time_freq_label,
           CASE 
             WHEN c_at.code = 'AT_MAQ' OR c_at.label = 'Maquinaria' THEN 'HRS'
             ELSE 'KM'
           END AS usage_unit_name
         FROM fleet_units f
-        LEFT JOIN common_catalogs c_at ON f.asset_type_id = c_at.id
-        LEFT JOIN common_catalogs c_brand ON f.brand_id = c_brand.id
-        LEFT JOIN common_catalogs c_model ON f.model_id = c_model.id
-        LEFT JOIN common_catalogs c_dept ON f.department_id = c_dept.id
-        LEFT JOIN common_catalogs c_use ON f.operational_use_id = c_use.id
-        LEFT JOIN common_catalogs c_ft ON f.fuel_type_id = c_ft.id
-        LEFT JOIN common_catalogs c_tr ON f.traccion_id = c_tr.id
-        LEFT JOIN common_catalogs c_ts ON f.transmision_id = c_ts.id
-        LEFT JOIN common_catalogs c_tire_brand ON f.tire_brand_id = c_tire_brand.id
-        LEFT JOIN common_catalogs c_terrain ON f.terrain_type_id = c_terrain.id
-        LEFT JOIN common_catalogs c_owner ON f.owner_id = c_owner.id
-        LEFT JOIN common_catalogs c_compl ON f.compliance_status_id = c_compl.id
-        LEFT JOIN common_catalogs c_loc ON f.location_id = c_loc.id
-        LEFT JOIN common_catalogs c_mc ON f.maintenance_center_id = c_mc.id
-        LEFT JOIN common_catalogs c_color ON f.color_id = c_color.id
-        LEFT JOIN common_catalogs c_eng ON f.engine_type_id = c_eng.id
-        LEFT JOIN common_catalogs c_ins ON f.insurance_company_id = c_ins.id
-        LEFT JOIN common_catalogs ct ON f.maintenance_time_freq_id = ct.id
-        LEFT JOIN common_catalogs cu ON f.maintenance_usage_freq_id = cu.id
-        ORDER BY f.created_at DESC
+        LEFT JOIN common_catalogs c_at ON f.assetTypeId = c_at.id
+        LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id
+        LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id
+        LEFT JOIN common_catalogs c_dept ON f.departmentId = c_dept.id
+        LEFT JOIN common_catalogs c_use ON f.operationalUseId = c_use.id
+        LEFT JOIN common_catalogs c_ft ON f.fuelTypeId = c_ft.id
+        LEFT JOIN common_catalogs c_tr ON f.traccionId = c_tr.id
+        LEFT JOIN common_catalogs c_ts ON f.transmisionId = c_ts.id
+        LEFT JOIN common_catalogs c_tire_brand ON f.tireBrandId = c_tire_brand.id
+        LEFT JOIN common_catalogs c_terrain ON f.terrainTypeId = c_terrain.id
+        LEFT JOIN common_catalogs c_owner ON f.ownerId = c_owner.id
+        LEFT JOIN common_catalogs c_compl ON f.complianceStatusId = c_compl.id
+        LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id
+        LEFT JOIN common_catalogs c_mc ON f.maintenanceCenterId = c_mc.id
+        LEFT JOIN common_catalogs c_color ON f.colorId = c_color.id
+        LEFT JOIN common_catalogs c_eng ON f.engineTypeId = c_eng.id
+        LEFT JOIN common_catalogs c_ins ON f.insuranceCompanyId = c_ins.id
+        LEFT JOIN common_catalogs ct ON f.maintenanceTimeFreqId = ct.id
+        LEFT JOIN common_catalogs cu ON f.maintenanceUsageFreqId = cu.id
+        ORDER BY f.createdAt DESC
       `;
 
       const [rows] = await db.execute<FleetUnit[]>(query);
@@ -425,11 +420,11 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           .send({ error: `El identificador '${parse.data.id}' ya existe en el registro master` });
       }
 
-      // Check for duplicate numero_serie via Blind Index (Searchable Encryption)
+      // Check for duplicate numeroSerie via Blind Index (Searchable Encryption)
       if (parse.data.numeroSerie) {
         const serieHash = EncryptionService.generateBlindIndex(parse.data.numeroSerie);
         const [existingSerie] = await db.execute<FleetUnit[]>(
-          'SELECT id FROM fleet_units WHERE numero_serie_hash = ?',
+          'SELECT id FROM fleet_units WHERE numeroSerieHash = ?',
           [serieHash]
         );
         if (existingSerie.length > 0) {
@@ -468,11 +463,10 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         currentReading: parse.data.odometer || 0,
       };
 
-      const dbData = toSnakeCase(intelligencePayload);
-      const fields = Object.keys(dbData);
+      const fields = Object.keys(intelligencePayload);
       const placeholders = fields.map(() => '?').join(', ');
 
-      const values = Object.values(dbData).map((v) => {
+      const values = Object.values(intelligencePayload).map((v) => {
         if (v !== null && (Array.isArray(v) || typeof v === 'object')) {
           return JSON.stringify(v);
         }
@@ -510,21 +504,23 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       return reply.code(400).send({ error: 'Invalid update data', details: parse.error.format() });
     }
 
-    const updates = toSnakeCase(parse.data) as Record<string, unknown>;
+    const updates = { ...parse.data } as Record<string, unknown>;
 
     // 🛡️ ALE (Application-Level Encryption): Secure identity during update
-    if (updates.circulation_card_number)
-      updates.circulation_card_number = EncryptionService.encrypt(updates.circulation_card_number);
+    if (updates.circulationCardNumber)
+      updates.circulationCardNumber = EncryptionService.encrypt(
+        updates.circulationCardNumber as string
+      );
 
     // 🛡️ B.I.G (Blind Index Update): Identity Fortification
-    if (updates.numero_serie) {
-      updates.numero_serie_hash = EncryptionService.generateBlindIndex(updates.numero_serie);
-      updates.numero_serie = EncryptionService.encrypt(updates.numero_serie);
+    if (updates.numeroSerie) {
+      updates.numeroSerieHash = EncryptionService.generateBlindIndex(updates.numeroSerie as string);
+      updates.numeroSerie = EncryptionService.encrypt(updates.numeroSerie as string);
     }
 
     if (updates.placas) {
-      updates.placas_hash = EncryptionService.generateBlindIndex(updates.placas);
-      updates.placas = EncryptionService.encrypt(updates.placas);
+      updates.placasHash = EncryptionService.generateBlindIndex(updates.placas as string);
+      updates.placas = EncryptionService.encrypt(updates.placas as string);
     }
 
     const fields = Object.keys(updates);
