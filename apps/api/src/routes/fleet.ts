@@ -214,18 +214,18 @@ function parseUnitImages(
   }
 }
 
-/**
- * 🛡️ SENTINEL INTELLIGENCE HELPER: Health Computer
- */
 function computeUnitHealth(unit: FleetUnit): UnitHealth {
   const today = new Date();
   const lastServiceDate = unit.lastServiceDate ? new Date(unit.lastServiceDate) : null;
   const lastReading = Number(unit.lastServiceReading || 0);
   const currentReading = Number(unit.currentReading || 0);
 
+  // 🔱 Unified Maintenance Limits (Catalog or Default)
+  const timeLimit = Number(unit.maintIntervalDays || 180);
+  const usageLimit = Number(unit.maintIntervalKm || 10000);
+
   // Trigger A: Time Based
   let timeProgress = 0;
-  const timeLimit = Number(unit.maintIntervalDays || 180); // 🔱 Archon Default: 180 days
   if (lastServiceDate && timeLimit > 0) {
     const diffMs = today.getTime() - lastServiceDate.getTime();
     const diffDays = diffMs / (1000 * 3600 * 24);
@@ -234,7 +234,6 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger B: Usage Based (KM/HRS)
   let usageProgress = 0;
-  const usageLimit = Number(unit.maintIntervalKm || 10000); // 🔱 Archon Default: 10,000 units
   if (usageLimit > 0) {
     const diffUnits = currentReading - lastReading;
     usageProgress = Math.max(0, diffUnits / usageLimit);
@@ -276,34 +275,29 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
     circulationCardNumber: unit.circulationCardNumber
       ? EncryptionService.decrypt(unit.circulationCardNumber)
       : unit.circulationCardNumber,
-    // 🔱 Numeric Normalization (v.21.0.2)
     availabilityIndex: Number(unit.availabilityIndex || 0),
     mtbfHours: Number(unit.mtbfHours || 0),
     mttrHours: Number(unit.mttrHours || 0),
     backlogCount: Number(unit.backlogCount || 0),
   };
 
-  const {
-    healthScore,
-    healthStatus,
-    healthColor,
-    lastServiceDate,
-    currentReading,
-    lastReading,
-    today,
-  } = computeUnitHealth(decrypted as unknown as FleetUnit);
+  const health = computeUnitHealth(decrypted as unknown as FleetUnit);
+
+  // 🔱 Unified Analytical Projection
+  const lastReading = Number(unit.lastServiceReading || 0);
+  const kmLimit = Number(unit.maintIntervalKm || 10000);
 
   return {
     ...decrypted,
     images: parseUnitImages(unit.images, unit.id, logger),
-    healthScore,
-    healthStatus,
-    healthColor,
-    daysSinceService: lastServiceDate
-      ? Math.floor((today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24))
+    healthScore: health.healthScore,
+    healthStatus: health.healthStatus,
+    healthColor: health.healthColor,
+    daysSinceService: health.lastServiceDate
+      ? Math.floor((health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24))
       : null,
-    unitsSinceService: currentReading - lastReading,
-    nextServiceReading: Number(lastReading) + Number(unit.maintIntervalKm || 0),
+    unitsSinceService: health.currentReading - health.lastReading,
+    nextServiceReading: lastReading + kmLimit,
   } as Record<string, unknown>;
 }
 
