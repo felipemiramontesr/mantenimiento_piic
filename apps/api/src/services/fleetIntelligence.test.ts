@@ -74,4 +74,43 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
     const result = FleetIntelligenceEngine.computeHealth(unitWithNoInterval);
     expect(result.healthScore).toBe(0); // Overdue because 11,000 > 10,000
   });
+
+  describe('Predictive Forecasting (Archon Core)', () => {
+    it('should forecast by time when usage data is missing', () => {
+      const lastDate = new Date();
+      lastDate.setDate(lastDate.getDate() - 10); // 10 days ago
+
+      const unit = {
+        lastServiceDate: lastDate.toISOString(),
+        maintIntervalDays: 30,
+        dailyUsageAvg: 0, // No usage
+      };
+
+      const forecast = FleetIntelligenceEngine.computeForecast(unit);
+      expect(forecast).not.toBeNull();
+
+      const expectedDate = new Date(lastDate);
+      expectedDate.setDate(expectedDate.getDate() + 30);
+      expect(forecast?.toDateString()).toBe(expectedDate.toDateString());
+    });
+
+    it('should forecast by usage when it is sooner than time limit', () => {
+      const lastDate = new Date(); // Today
+      const unit = {
+        lastServiceDate: lastDate.toISOString(),
+        maintIntervalDays: 365, // 1 year
+        maintIntervalKm: 10000,
+        lastServiceReading: 0,
+        currentReading: 0,
+        dailyUsageAvg: 1000, // Very high usage: 10 days to reach 10,000
+      };
+
+      const forecast = FleetIntelligenceEngine.computeForecast(unit);
+      expect(forecast).not.toBeNull();
+
+      const expectedDate = new Date();
+      expectedDate.setDate(expectedDate.getDate() + 10);
+      expect(forecast?.toDateString()).toBe(expectedDate.toDateString());
+    });
+  });
 });

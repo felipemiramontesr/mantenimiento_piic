@@ -31,6 +31,7 @@ export interface FleetUnit extends RowDataPacket {
   backlogCount: number;
   images: string | null;
   circulationCardNumber?: string | null;
+  dailyUsageAvg?: number;
 }
 
 export interface UnitHealth {
@@ -115,7 +116,35 @@ export class FleetIntelligenceEngine {
         : null,
       unitsSinceService: health.currentReading - health.lastReading,
       nextServiceReading: health.lastReading + health.kmLimit,
+      forecastDate: this.computeForecast(decrypted),
     };
+  }
+
+  static computeForecast(unit: Partial<FleetUnit>): Date | null {
+    const lastDate = unit.lastServiceDate ? new Date(unit.lastServiceDate) : null;
+    if (!lastDate || !unit.maintIntervalDays) return null;
+
+    // 🔱 Forecast by Time
+    const timeForecast = new Date(lastDate);
+    timeForecast.setDate(timeForecast.getDate() + unit.maintIntervalDays);
+
+    // 🔱 Forecast by Usage (If metrics available)
+    const intServi = unit.maintIntervalKm || 0;
+    const dailyAvg = unit.dailyUsageAvg || 0;
+    const currentOdometer = unit.currentReading || 0;
+    const lastReading = unit.lastServiceReading || 0;
+
+    if (intServi > 0 && dailyAvg > 0) {
+      const unitsRemaining = intServi - (currentOdometer - lastReading);
+      const daysToService = Math.max(0, unitsRemaining / dailyAvg);
+      const usageForecast = new Date();
+      usageForecast.setDate(usageForecast.getDate() + daysToService);
+
+      // Return the soonest date (Sovereign Caution)
+      return usageForecast < timeForecast ? usageForecast : timeForecast;
+    }
+
+    return timeForecast;
   }
 
   private static decryptSensitiveData(unit: FleetUnit): FleetUnit {

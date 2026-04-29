@@ -62,7 +62,8 @@ describe('EncryptionService (ARCHON CORE)', () => {
 
     expect(index1).to.equal(index2);
     expect(index1).not.to.equal(text);
-    expect(index1).to.have.lengthOf(64); // Hex SHA-256
+    expect(index1).to.have.lengthOf(20); // 'SVR-' + 16 chars hex
+    expect(index1).to.match(/^SVR-/);
   });
 
   it('should return input string if decryption process fails (e.g. key mismatch or corruption)', () => {

@@ -73,6 +73,13 @@ describe('Fleet Integration Endpoints', () => {
       fuelTankCapacity: 80,
       maintIntervalDays: 90,
       maintIntervalKm: 5000,
+      dailyUsageAvg: 50,
+      monthlyLeasePayment: 15000,
+      tireSpec: '265/65R17',
+      tireBrandId: 1,
+      ownerId: 1,
+      complianceStatusId: 1,
+      insuranceCompanyId: 1,
     };
 
     it('should successfully register a new unit with all security fields', async (): Promise<void> => {
@@ -246,6 +253,9 @@ describe('Fleet Integration Endpoints', () => {
             mtbfHours: 50.0,
             mttrHours: 12.0,
             backlogCount: 2,
+            lastServiceDate: new Date().toISOString(),
+            maintIntervalDays: 30,
+            dailyUsageAvg: 50,
           },
           {
             id: 'ASM-002',
@@ -269,6 +279,7 @@ describe('Fleet Integration Endpoints', () => {
       expect(data[0].motor).toBe('L4 2.8L Turbo');
       expect(data[0].numeroSerie).toBe('SN1');
       expect(data[0].placas).toBe('PL1');
+      expect(data[0].forecastDate).not.toBeNull();
       expect(data[0].circulationCardNumber).toBeNull();
       expect(data[1].motor).toBeNull();
       expect(data[1].circulationCardNumber).toBe('TC2');
