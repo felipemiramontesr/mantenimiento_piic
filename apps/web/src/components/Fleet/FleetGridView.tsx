@@ -480,7 +480,7 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="opacity-40">IDENTIDAD / PROPIEDAD</th>
+              <th className="opacity-40">IDENTIDAD / PROPIEDAD / SEDE</th>
               <th className="opacity-40">FRECUENCIAS / TARIFA</th>
               <th className="opacity-40">ODOMETRÍA (ACTUAL/ANT/OBJ)</th>
               <th className="opacity-40">CONFIG / LEGAL</th>
