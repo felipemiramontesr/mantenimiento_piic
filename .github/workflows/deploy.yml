@@ -26,6 +26,13 @@ jobs:
         run: |
           npm run lint --workspace=@mantenimiento/api
           npm run test --workspace=@mantenimiento/api
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: always()
+        with:
+          report_paths: 'apps/api/test-results.xml'
+          detailed_summary: true
+          include_passed: true
 
   frontend-validation:
     name: 🎨 Frontend (Web) Verification
@@ -43,6 +50,13 @@ jobs:
         run: |
           npm run lint --workspace=@mantenimiento/web
           npm run test --workspace=@mantenimiento/web
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: always()
+        with:
+          report_paths: 'apps/web/test-results.xml'
+          detailed_summary: true
+          include_passed: true
 
   database-validation:
     name: 🏛️ Database (SQL) Verification

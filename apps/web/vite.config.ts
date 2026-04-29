@@ -8,7 +8,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     pool: 'forks',
-    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions'] : ['default'],
+    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
+    outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
     coverage: {
       provider: 'v8',

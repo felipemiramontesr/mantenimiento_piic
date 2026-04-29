@@ -5,7 +5,8 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     pool: 'forks',
-    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions'] : ['default'],
+    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
+    outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     env: {
       DB_ENCRYPTION_KEY: '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff',
       JWT_SECRET: 'test-secret-pinnacle-archon-2026',
