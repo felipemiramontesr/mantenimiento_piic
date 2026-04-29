@@ -348,6 +348,8 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_ins.label AS insuranceCompany,
           ct.label AS timeFreqLabel,
           cu.label AS usageFreqLabel,
+          ct.numeric_value AS maintIntervalDays,
+          cu.numeric_value AS maintIntervalKm,
           CASE 
             WHEN c_at.code = 'AT_MAQ' OR c_at.label = 'Maquinaria' THEN 'HRS'
             ELSE 'KM'
