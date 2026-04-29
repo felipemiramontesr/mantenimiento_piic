@@ -36,30 +36,8 @@ interface FleetRegistrationFormProps {
   onCancel: () => void;
 }
 
-const getDaysFromFreqId = (
-  freqId: number | null | undefined,
-  freqTime: CatalogOption[]
-): number => {
-  if (!freqId) return 0;
-  const timeLimitOption = freqTime.find((t) => t.id === freqId);
-  if (!timeLimitOption) return 0;
-
-  const intervalMap: Record<string, number> = {
-    Diaria: 1,
-    Semanal: 7,
-    Mensual: 30,
-    Bimestral: 60,
-    Trimestral: 90,
-    Semestral: 180,
-    Anual: 365,
-  };
-  return intervalMap[timeLimitOption.label] || 0;
-};
-
 const getPronosticoArchon = (
-  formData: CreateFleetUnit,
-  freqTime: CatalogOption[],
-  freqUsage: CatalogOption[]
+  formData: CreateFleetUnit
 ): {
   pronosticoText: string;
   pronosticoDateStr: string;
@@ -71,49 +49,40 @@ const getPronosticoArchon = (
     isPronosticoReady: false,
   };
 
-  if (!formData.lastServiceDate || !formData.maintenanceTimeFreqId) return result;
+  if (!formData.lastServiceDate || !formData.maintIntervalDays) return result;
 
-  const intDias = getDaysFromFreqId(formData.maintenanceTimeFreqId, freqTime);
-  if (intDias <= 0) return result;
+  const intDias = formData.maintIntervalDays;
+  const intServi = formData.maintIntervalKm || 0;
+  const dailyAvg = formData.dailyUsageAvg || 0;
+  const odometer = formData.odometer || 0;
+  const lastReading = formData.lastServiceReading || 0;
 
-  const hasUsageData =
-    formData.maintenanceUsageFreqId &&
-    formData.dailyUsageAvg &&
-    formData.dailyUsageAvg > 0 &&
-    formData.lastServiceReading !== undefined;
+  const hasUsageData = intServi > 0 && dailyAvg > 0 && lastReading !== undefined;
 
   if (hasUsageData) {
-    const usageLimitOption = freqUsage.find((u) => u.id === formData.maintenanceUsageFreqId);
-    const intServi = usageLimitOption
-      ? parseInt(usageLimitOption.label.replace(/[^0-9]/g, ''), 10)
-      : 0;
+    const forecast = calculateMaintForecast(
+      intDias,
+      intServi,
+      dailyAvg,
+      odometer,
+      lastReading,
+      formData.lastServiceDate
+    );
 
-    if (intServi > 0) {
-      const forecast = calculateMaintForecast(
-        intDias,
-        intServi,
-        formData.dailyUsageAvg || 0,
-        formData.odometer,
-        formData.lastServiceReading || 0,
-        formData.lastServiceDate
-      );
-
-      if (forecast) {
-        result.pronosticoDateStr = forecast.forecastDate.toLocaleDateString('es-MX', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-        const motivo =
-          forecast.serviceByKmDate < forecast.serviceByTimeDate ? 'Kilometraje' : 'Tiempo';
-        result.pronosticoText = `Vencimiento proyectado por límite de ${motivo}.`;
-        result.isPronosticoReady = true;
-        return result;
-      }
+    if (forecast) {
+      result.pronosticoDateStr = forecast.forecastDate.toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const motivo = forecast.serviceByKmDate < forecast.serviceByTimeDate ? 'Uso/KM' : 'Tiempo';
+      result.pronosticoText = `Vencimiento proyectado por límite de ${motivo}.`;
+      result.isPronosticoReady = true;
+      return result;
     }
   }
 
-  // 🔱 Fallback Soberano: Proyectar solo por tiempo si no hay uso o la previsión híbrida falla
+  // 🔱 Fallback Soberano: Proyectar solo por tiempo
   const lastDate = new Date(formData.lastServiceDate);
   const forecastDate = new Date(lastDate);
   forecastDate.setDate(forecastDate.getDate() + intDias);
@@ -123,7 +92,7 @@ const getPronosticoArchon = (
     month: '2-digit',
     year: 'numeric',
   });
-  result.pronosticoText = 'Vencimiento proyectado por límite de Tiempo. (Histórico pendiente)';
+  result.pronosticoText = 'Vencimiento proyectado por límite de Tiempo.';
   result.isPronosticoReady = true;
 
   return result;
@@ -151,8 +120,6 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
     handleMarcaChange,
     handleModeloChange,
     handleSubmit,
-    freqTime,
-    freqUsage,
     departments,
     locations,
     useTypes,
@@ -171,11 +138,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       formData.dailyUsageAvg > 0
   );
 
-  const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(
-    formData,
-    freqTime,
-    freqUsage
-  );
+  const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(formData);
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     try {
@@ -786,44 +749,32 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <ArchonField label="Centro de Gestión Autorizado" icon={Settings}>
-              <ArchonSelect
-                options={(controller.maintenanceCenters || []).map((m: CatalogOption) => ({
-                  value: m.id.toString(),
-                  label: m.label,
-                }))}
-                value={formData.maintenanceCenterId?.toString() || ''}
-                onChange={(val: string): void =>
-                  setFormData({ ...formData, maintenanceCenterId: parseInt(val, 10) })
-                }
-              />
-            </ArchonField>
-
             <div className="grid grid-cols-2 gap-6">
-              <ArchonField label="Fecha Último Servicio" icon={Calendar}>
+              <ArchonField label="Última Fecha de Servicio" icon={Calendar}>
                 <ArchonDatePicker
-                  value={formData.lastServiceDate ?? ''}
+                  value={formData.lastServiceDate || ''}
                   onChange={(val: string): void =>
                     setFormData({ ...formData, lastServiceDate: val })
                   }
                 />
               </ArchonField>
-              <ArchonField label="Lectura de Servicio" icon={Gauge}>
+
+              <ArchonField label="Lectura en Último Servicio" icon={Gauge}>
                 <div className="relative flex items-center">
                   <input
                     type="number"
                     step="0.1"
                     placeholder="Ej: 40000"
-                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="archon-input font-mono text-navy-800 w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.lastServiceReading ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-                    ): void => {
+                    ): void =>
                       setFormData({
                         ...formData,
                         lastServiceReading: e.target.value ? parseFloat(e.target.value) : undefined,
-                      });
-                    }}
+                      })
+                    }
                   />
                   <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                     {((): string => {
@@ -838,6 +789,19 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 </div>
               </ArchonField>
             </div>
+
+            <ArchonField label="Centro de Gestión Autorizado" icon={Settings}>
+              <ArchonSelect
+                options={(controller.maintenanceCenters || []).map((m: CatalogOption) => ({
+                  value: m.id.toString(),
+                  label: m.label,
+                }))}
+                value={formData.maintenanceCenterId?.toString() || ''}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, maintenanceCenterId: parseInt(val, 10) })
+                }
+              />
+            </ArchonField>
 
             <ArchonField label="Uso Promedio Diario (Km/Hr)" icon={Activity}>
               <div className="relative flex items-center">
