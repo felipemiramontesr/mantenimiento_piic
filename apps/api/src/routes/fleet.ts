@@ -225,7 +225,7 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger A: Time Based
   let timeProgress = 0;
-  const timeLimit = Number(unit.maintIntervalDays || 0);
+  const timeLimit = Number(unit.maintIntervalDays || 180); // 🔱 Archon Default: 180 days
   if (lastServiceDate && timeLimit > 0) {
     const diffMs = today.getTime() - lastServiceDate.getTime();
     const diffDays = diffMs / (1000 * 3600 * 24);
@@ -234,7 +234,7 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger B: Usage Based (KM/HRS)
   let usageProgress = 0;
-  const usageLimit = Number(unit.maintIntervalKm || 0);
+  const usageLimit = Number(unit.maintIntervalKm || 10000); // 🔱 Archon Default: 10,000 units
   if (usageLimit > 0) {
     const diffUnits = currentReading - lastReading;
     usageProgress = Math.max(0, diffUnits / usageLimit);
