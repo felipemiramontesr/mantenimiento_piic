@@ -1,86 +1,247 @@
--- 🔱 ARCHON MASTER MIGRATION: 060_fleet_units_sovereign_purification.sql
+-- 🔱 ARCHON MASTER MIGRATION: 060_fleet_units_purification_final.sql
 -- Role: Senior Database Manager (World-Class Excellence)
--- Logic: Consolidated Source of Truth Sync
+-- Logic: Consolidated Source of Truth Sync (v.4.2 Master ANSI)
 -- Target: fleet_units (100% Industrial Realism)
--- Version: 50.4.0
+-- Version: 60.1.0
 
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
 
 -- 1. 🔱 CIRUGÍA ESTRUCTURAL: ELIMINAR REDUNDANCIA
--- Eliminamos el operador asignado ya que la verdad reside en el módulo de Rutas
 ALTER TABLE `fleet_units` DROP FOREIGN KEY IF EXISTS `fk_operator`;
 ALTER TABLE `fleet_units` DROP COLUMN IF EXISTS `assignedOperatorId`;
 
--- 2. 🔱 SINCRONIZACIÓN DE ADN MECÁNICO Y CUMPLIMIENTO
--- Actualización masiva basada en la Fuente de Verdad Consolidada
+-- 2. 🔱 INFUSIÓN DE REALISMO: SINCRONIZACIÓN DE ADN (23 UNIDADES MAESTRAS)
 
--- ASM-002: Toyota Hilux Medio Ambiente
+-- ASM-002: Toyota Hilux (Medio Ambiente)
 UPDATE `fleet_units` SET 
     `brandId` = 253, `modelId` = 636, `year` = 2007, `fuelTypeId` = 10, `ownerId` = 711, 
     `accountingAccount` = '8019-548-901', `tireSpec` = '255/70 R15', `tireBrandId` = 264, 
     `terrainTypeId` = 170, `operationalUseId` = 241, `dailyUsageAvg` = 35.9, `odometer` = 120763.0,
     `lastServiceReading` = 119728.0, `lastServiceDate` = '2026-03-09', `maintenanceTimeFreqId` = 9,
-    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1036, `protocolStartDate` = '2026-04-28'
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1036, `description` = 'Hilux Medio Ambiente'
 WHERE `id` = 'ASM-002';
 
--- ASM-006: Nissan Frontier
+-- ASM-006: Nissan Frontier (Medio Ambiente)
 UPDATE `fleet_units` SET 
     `brandId` = 23, `modelId` = 525, `year` = 2016, `fuelTypeId` = 11, `ownerId` = 711, 
     `accountingAccount` = '8019-400-922', `tireSpec` = '255/60 R18', `tireBrandId` = 265, 
     `terrainTypeId` = 172, `operationalUseId` = 236, `dailyUsageAvg` = 45.0, `odometer` = 357833.0,
     `lastServiceReading` = 356944.0, `lastServiceDate` = '2026-03-11', `maintenanceTimeFreqId` = 9,
-    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1026, `protocolStartDate` = '2026-04-28'
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1026, `description` = 'Frontier Medio Ambiente'
 WHERE `id` = 'ASM-006';
 
--- ASM-007: Nissan NP 300
+-- ASM-007: Nissan NP 300 (Laboratorio)
 UPDATE `fleet_units` SET 
     `brandId` = 23, `modelId` = 525, `year` = 2016, `fuelTypeId` = 11, `ownerId` = 711, 
     `accountingAccount` = '8012-548-390', `tireSpec` = '205 R16', `tireBrandId` = 266, 
     `terrainTypeId` = 173, `operationalUseId` = 239, `dailyUsageAvg` = 15.0, `odometer` = 327593.0,
     `lastServiceReading` = 327333.0, `lastServiceDate` = '2026-03-11', `maintenanceTimeFreqId` = 9,
-    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1026, `protocolStartDate` = '2026-04-28'
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1026, `description` = 'NP 300 Laboratorio'
 WHERE `id` = 'ASM-007';
 
--- ASM-008: Toyota Hilux Operación Mina
+-- ASM-008: Toyota Hilux (Operación Mina)
 UPDATE `fleet_units` SET 
     `brandId` = 253, `modelId` = 636, `year` = 2019, `fuelTypeId` = 10, `ownerId` = 712, 
     `accountingAccount` = '8019-548-190', `tireSpec` = '265/65 R17', `tireBrandId` = 244, 
     `terrainTypeId` = 170, `operationalUseId` = 300, `dailyUsageAvg` = 110.0, `odometer` = 25955.0,
     `lastServiceReading` = 23940.0, `lastServiceDate` = '2026-03-26', `maintenanceTimeFreqId` = 4,
-    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1036, `protocolStartDate` = '2026-04-28'
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1036, `description` = 'Hilux Operación Mina'
 WHERE `id` = 'ASM-008';
 
--- ASM-009: Nissan Versa
+-- ASM-009: Nissan Versa (Flota)
 UPDATE `fleet_units` SET 
     `brandId` = 23, `modelId` = 528, `year` = 2025, `fuelTypeId` = 11, `ownerId` = 712, 
     `accountingAccount` = '8012-548-150', `tireSpec` = '205/55 R16', `tireBrandId` = 243, 
     `terrainTypeId` = 173, `operationalUseId` = 236, `dailyUsageAvg` = 181.3, `odometer` = 53460.0,
     `lastServiceReading` = 51006.0, `lastServiceDate` = '2026-03-31', `maintenanceTimeFreqId` = 9,
-    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1032, `protocolStartDate` = '2026-04-28'
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1032, `description` = 'Versa Flota'
 WHERE `id` = 'ASM-009';
 
--- [Se omiten por brevedad pero se incluyen todas las unidades ASM-010 a ASM-027 en el archivo real]
+-- ASM-010: Chevrolet Aveo (Flota)
+UPDATE `fleet_units` SET 
+    `brandId` = 32, `modelId` = 553, `year` = 2025, `fuelTypeId` = 11, `ownerId` = 712, 
+    `accountingAccount` = '8019-548-190', `tireSpec` = '185/60 R15', `tireBrandId` = 243, 
+    `terrainTypeId` = 173, `operationalUseId` = 236, `dailyUsageAvg` = 228.9, `odometer` = 22487.0,
+    `lastServiceReading` = 19680.0, `lastServiceDate` = '2026-03-13', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1033, `description` = 'Aveo Flota'
+WHERE `id` = 'ASM-010';
 
--- 3. 🔱 CIFRADO SOBERANO Y PLACEHOLDERS (Poblado masivo de vacíos restantes)
+-- ASM-011: Ram 4000 (Mantenimiento Planta)
+UPDATE `fleet_units` SET 
+    `brandId` = 33, `modelId` = 1023, `year` = 2021, `fuelTypeId` = 11, `ownerId` = 711, 
+    `accountingAccount` = '8019-548-390', `tireSpec` = '235/80 R17', `tireBrandId` = 244, 
+    `terrainTypeId` = 173, `operationalUseId` = 239, `dailyUsageAvg` = 56.4, `odometer` = 45921.0,
+    `lastServiceReading` = 42400.0, `lastServiceDate` = '2025-10-24', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1027, `description` = '4000 Mantenimiento Planta'
+WHERE `id` = 'ASM-011';
+
+-- ASM-012: Mitsubishi L200 (Gerencia General)
+UPDATE `fleet_units` SET 
+    `brandId` = 35, `modelId` = 572, `year` = 2022, `fuelTypeId` = 10, `ownerId` = 711, 
+    `accountingAccount` = '8019-548-901', `tireSpec` = '265/60 R18', `tireBrandId` = 244, 
+    `terrainTypeId` = 172, `operationalUseId` = 236, `dailyUsageAvg` = 144.9, `odometer` = 76146.0,
+    `lastServiceReading` = 74677.0, `lastServiceDate` = '2026-02-21', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1028, `description` = 'L200 Gerencia General'
+WHERE `id` = 'ASM-012';
+
+-- ASM-013: Mitsubishi L200 (Seguridad Industrial)
+UPDATE `fleet_units` SET 
+    `brandId` = 35, `modelId` = 572, `year` = 2022, `fuelTypeId` = 10, `ownerId` = 711, 
+    `accountingAccount` = '8019-548-914', `tireSpec` = '245/70 R16', `tireBrandId` = 244, 
+    `terrainTypeId` = 170, `operationalUseId` = 237, `dailyUsageAvg` = 43.9, `odometer` = 55007.0,
+    `lastServiceReading` = 52573.0, `lastServiceDate` = '2026-01-13', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1028, `description` = 'L200 Seguridad Industrial'
+WHERE `id` = 'ASM-013';
+
+-- ASM-014: Mitsubishi L200 (Geología)
+UPDATE `fleet_units` SET 
+    `brandId` = 35, `modelId` = 572, `year` = 2022, `fuelTypeId` = 10, `ownerId` = 711, 
+    `accountingAccount` = '8012-548-140', `tireSpec` = '245/70 R16', `tireBrandId` = 244, 
+    `terrainTypeId` = 170, `operationalUseId` = 242, `dailyUsageAvg` = 124.7, `odometer` = 130876.0,
+    `lastServiceReading` = 127883.0, `lastServiceDate` = '2026-03-11', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1028, `description` = 'L200 Geología'
+WHERE `id` = 'ASM-014';
+
+-- ASM-015: Toyota Yaris (Administración)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 642, `year` = 2023, `fuelTypeId` = 11, `ownerId` = 711, 
+    `accountingAccount` = '8019-548-901', `tireSpec` = '185/60 R15', `tireBrandId` = 243, 
+    `terrainTypeId` = 173, `operationalUseId` = 236, `dailyUsageAvg` = 210.3, `odometer` = 161077.0,
+    `lastServiceReading` = 150000.0, `lastServiceDate` = '2025-12-29', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1033, `description` = 'Yaris Administración'
+WHERE `id` = 'ASM-015';
+
+-- ASM-016: Ram 700 (Operación Planta)
+UPDATE `fleet_units` SET 
+    `brandId` = 33, `modelId` = 555, `year` = 2024, `fuelTypeId` = 11, `ownerId` = 711, 
+    `accountingAccount` = '8012-548-390', `tireSpec` = '185/60 R15', `tireBrandId` = 243, 
+    `terrainTypeId` = 173, `operationalUseId` = 239, `dailyUsageAvg` = 216.0, `odometer` = 106610.0,
+    `lastServiceReading` = 96515.0, `lastServiceDate` = '2026-01-13', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1031, `description` = '700 Operación Planta'
+WHERE `id` = 'ASM-016';
+
+-- ASM-017: Toyota Hilux (Mantenimiento Eléctrico)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 636, `year` = 2024, `fuelTypeId` = 10, `ownerId` = 712, 
+    `accountingAccount` = '8019-548-190', `tireSpec` = '265/65 R17', `tireBrandId` = 244, 
+    `terrainTypeId` = 170, `operationalUseId` = 300, `dailyUsageAvg` = 118.9, `odometer` = 51812.0,
+    `lastServiceReading` = 49627.0, `lastServiceDate` = '2026-03-27', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1036, `description` = 'Hilux Mantenimiento Eléctrico'
+WHERE `id` = 'ASM-017';
+
+-- ASM-018: Kia Rio (Flota)
+UPDATE `fleet_units` SET 
+    `brandId` = 37, `modelId` = 585, `year` = 2022, `fuelTypeId` = 11, `ownerId` = 712, 
+    `accountingAccount` = '8019-548-390', `tireSpec` = '185/65 R15', `tireBrandId` = 243, 
+    `terrainTypeId` = 173, `operationalUseId` = 236, `dailyUsageAvg` = 178.6, `odometer` = 98391.0,
+    `lastServiceReading` = 96540.0, `lastServiceDate` = '2025-10-23', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1032, `description` = 'Rio Flota'
+WHERE `id` = 'ASM-018';
+
+-- ASM-019: Toyota Hilux (Planeación)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 636, `year` = 2018, `fuelTypeId` = 10, `ownerId` = 712, 
+    `accountingAccount` = '8012-548-150', `tireSpec` = '265/65 R17', `tireBrandId` = 244, 
+    `terrainTypeId` = 170, `operationalUseId` = 237, `dailyUsageAvg` = 74.7, `odometer` = 137874.0,
+    `lastServiceReading` = 137423.0, `lastServiceDate` = '2026-03-26', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1036, `description` = 'Hilux Planeación'
+WHERE `id` = 'ASM-019';
+
+-- ASM-020: Toyota Hilux (Exploración)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 636, `year` = 2023, `fuelTypeId` = 10, `ownerId` = 712, 
+    `accountingAccount` = '8012-548-140', `tireSpec` = '265/65 R17', `tireBrandId` = 244, 
+    `terrainTypeId` = 171, `operationalUseId` = 242, `dailyUsageAvg` = 155.9, `odometer` = 107467.0,
+    `lastServiceReading` = 100834.0, `lastServiceDate` = '2026-02-27', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1036, `description` = 'Hilux Exploración'
+WHERE `id` = 'ASM-020';
+
+-- ASM-021: Toyota Hilux (Planeación)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 636, `year` = 2023, `fuelTypeId` = 10, `ownerId` = 712, 
+    `accountingAccount` = '8012-548-150', `tireSpec` = '265/65 R17', `tireBrandId` = 244, 
+    `terrainTypeId` = 170, `operationalUseId` = 242, `dailyUsageAvg` = 118.4, `odometer` = 58774.0,
+    `lastServiceReading` = 56874.0, `lastServiceDate` = '2026-02-27', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1036, `description` = 'Hilux Planeación'
+WHERE `id` = 'ASM-021';
+
+-- ASM-022: Toyota Yaris (Relaciones Comunitarias)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 642, `year` = 2023, `fuelTypeId` = 10, `ownerId` = 712, 
+    `accountingAccount` = '8019-548-901', `tireSpec` = '185/60 R15', `tireBrandId` = 243, 
+    `terrainTypeId` = 173, `operationalUseId` = 236, `dailyUsageAvg` = 131.3, `odometer` = 104782.0,
+    `lastServiceReading` = 100000.0, `lastServiceDate` = '2026-02-27', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1033, `description` = 'Yaris Relaciones Comunitarias'
+WHERE `id` = 'ASM-022';
+
+-- ASM-023: Seat Ateca (Flota)
+UPDATE `fleet_units` SET 
+    `brandId` = 852, `modelId` = 855, `year` = 2017, `fuelTypeId` = 11, `ownerId` = 712, 
+    `accountingAccount` = '8019-548-901', `tireSpec` = '215/55 R17', `tireBrandId` = 243, 
+    `terrainTypeId` = 172, `operationalUseId` = 236, `dailyUsageAvg` = 99.7, `odometer` = 30114.0,
+    `lastServiceReading` = 25496.0, `lastServiceDate` = '2026-02-26', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1030, `description` = 'Ateca Flota'
+WHERE `id` = 'ASM-023';
+
+-- ASM-024: JAC Frision T8 (Seguridad Patrimonial)
+UPDATE `fleet_units` SET 
+    `brandId` = 256, `modelId` = 654, `year` = 2023, `fuelTypeId` = 10, `ownerId` = 711, 
+    `accountingAccount` = '8019-548-902', `tireSpec` = '265/60 R18', `tireBrandId` = 244, 
+    `terrainTypeId` = 172, `operationalUseId` = 237, `dailyUsageAvg` = 244.7, `odometer` = 193129.0,
+    `lastServiceReading` = 186819.0, `lastServiceDate` = '2026-03-11', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1029, `description` = 'Frision T8 Seguridad Patrimonial'
+WHERE `id` = 'ASM-024';
+
+-- ASM-025: JAC X200 (Administración)
+UPDATE `fleet_units` SET 
+    `brandId` = 256, `modelId` = 856, `year` = 2024, `fuelTypeId` = 11, `ownerId` = 711, 
+    `accountingAccount` = '8019-548-901', `tireSpec` = '195/70 R15C', `tireBrandId` = 267, 
+    `terrainTypeId` = 173, `operationalUseId` = 238, `dailyUsageAvg` = 145.6, `odometer` = 59994.0,
+    `lastServiceReading` = 58209.0, `lastServiceDate` = '2026-03-19', `maintenanceTimeFreqId` = 9,
+    `maintenanceUsageFreqId` = 517, `engineTypeId` = 1036, `description` = 'X200 Administración'
+WHERE `id` = 'ASM-025';
+
+-- ASM-026: Toyota Hilux (Geología)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 636, `year` = 2024, `fuelTypeId` = 10, `ownerId` = 712, 
+    `accountingAccount` = '8012-548-140', `tireSpec` = '265/65 R17', `tireBrandId` = 244, 
+    `terrainTypeId` = 170, `operationalUseId` = 242, `dailyUsageAvg` = 212.1, `odometer` = 68103.0,
+    `lastServiceReading` = 61238.0, `lastServiceDate` = '2026-02-27', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1036, `description` = 'Hilux Geología'
+WHERE `id` = 'ASM-026';
+
+-- ASM-027: Toyota Hilux (Operación Mina)
+UPDATE `fleet_units` SET 
+    `brandId` = 253, `modelId` = 636, `year` = 2025, `fuelTypeId` = 10, `ownerId` = 712, 
+    `accountingAccount` = '8019-548-190', `tireSpec` = '265/65 R17', `tireBrandId` = 244, 
+    `terrainTypeId` = 170, `operationalUseId` = 300, `dailyUsageAvg` = 160.7, `odometer` = 16332.0,
+    `lastServiceReading` = 11627.0, `lastServiceDate` = '2026-02-27', `maintenanceTimeFreqId` = 4,
+    `maintenanceUsageFreqId` = 948, `engineTypeId` = 1036, `description` = 'Hilux Operación Mina'
+WHERE `id` = 'ASM-027';
+
+-- 3. 🔱 CIFRADO SOBERANO Y KPIs (Poblado masivo de vacíos)
 UPDATE `fleet_units` SET 
     `placasHash` = CONCAT('SVR-', UPPER(LEFT(SHA2(placas, 256), 16))),
     `numeroSerieHash` = CONCAT('SER-', UPPER(LEFT(SHA2(numeroSerie, 256), 16))),
     `images` = '[{"url": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=800", "type": "placeholder"}]',
-    `description` = 'Activo estratégico de PIIC sincronizado con fuente de verdad v.4.1',
     -- Reset de KPIs para emulación de carga inicial
     `mtbfHours` = 0.00,
     `mttrHours` = 0.00,
     `backlogCount` = 0,
     `avgDailyKm` = dailyUsageAvg;
 
--- 4. 🔱 CUMPLIMIENTO LEGAL (Fechas estimadas basadas en vigencia industrial)
+-- 4. 🔱 CUMPLIMIENTO LEGAL (Fechas proyectadas)
 UPDATE `fleet_units` SET 
     `insuranceExpiryDate` = DATE_ADD(CURDATE(), INTERVAL 250 DAY),
     `vencimientoVerificacion` = DATE_ADD(CURDATE(), INTERVAL 120 DAY),
     `lastEnvironmentalVerification` = DATE_SUB(CURDATE(), INTERVAL 180 DAY),
     `lastMechanicalVerification` = DATE_SUB(CURDATE(), INTERVAL 90 DAY)
 WHERE `lastEnvironmentalVerification` IS NULL;
+
+-- 5. 🔱 DETECCIÓN DE ACTIVOS HUÉRFANOS (UNIDAD 24)
+-- Este bloque identifica si hay unidades activas que no se actualizaron
+SELECT id, description FROM fleet_units WHERE lastServiceReading IS NULL;
 
 COMMIT;
 -- 🔱 FIN DE OPERACIÓN PURIFICACIÓN SOBERANA
