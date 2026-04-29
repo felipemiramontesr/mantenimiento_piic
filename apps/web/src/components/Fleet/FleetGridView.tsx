@@ -17,6 +17,7 @@ import {
   Truck,
   Wrench,
   Fuel,
+  Building2,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -56,8 +57,17 @@ const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element 
   const plates = unit.placas || 'SIN PLACAS';
   const card = unit.circulationCardNumber || 'SIN TARJETA';
   const location = unit.sede || 'SEDE GENERAL';
+  const owner = unit.owner || 'SIN PROPIETARIO';
   return (
     <div className="flex flex-col items-center gap-2">
+      {/* 🔱 Owner Badge */}
+      <div className="flex items-center gap-1.5 bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] border border-[#0f2a44]/10">
+        <Building2 size={9} className="text-[#0f2a44]" />
+        <span className="text-[8.5px] font-black text-[#0f2a44] uppercase tracking-tighter leading-none">
+          {owner}
+        </span>
+      </div>
+
       <div className="flex flex-col items-center gap-1">
         <div className="flex items-center gap-1.5 opacity-80 bg-emerald-50 px-2 py-0.5 rounded-[4px]">
           <Tag size={9} className="text-emerald-800" />
@@ -70,6 +80,7 @@ const AssetIdentityCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element 
           <span className="text-[9px] font-black uppercase tracking-tighter">{card}</span>
         </div>
       </div>
+
       <div className="flex items-center gap-1.5 bg-sky-50 px-2 py-0.5 rounded-[4px]">
         <MapPin size={9} className="text-sky-600" />
         <span className="text-[8.5px] font-black text-sky-800 uppercase tracking-tight leading-none">
@@ -487,7 +498,7 @@ export const FleetGridView = ({
                   />
                 </div>
               </th>
-              <th className="opacity-40">IDENTIDAD / SEDE</th>
+              <th className="opacity-40">IDENTIDAD / PROPIEDAD / SEDE</th>
               <th className="opacity-40">FRECUENCIAS / TARIFA</th>
               <th className="opacity-40">ODOMETRÍA (ACTUAL/ANT/OBJ)</th>
               <th className="opacity-40">CONFIG / LEGAL</th>

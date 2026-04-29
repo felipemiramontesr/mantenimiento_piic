@@ -126,7 +126,7 @@ const useFleetForm = (): UseFleetFormReturn => {
         api.get(`/catalogs/FREQ_USAGE?_cb=${ts}`),
         api.get(`/catalogs/DEPARTMENT?_cb=${ts}`),
         api.get(`/catalogs/LOCATION?_cb=${ts}`),
-        api.get(`/catalogs/USE_TYPE?_cb=${ts}`),
+        api.get(`/catalogs/OPERATIONAL_USE?_cb=${ts}`),
         api.get(`/catalogs/TIRE_BRAND?_cb=${ts}`),
         api.get(`/catalogs/LUBE_BRAND?_cb=${ts}`),
         api.get(`/catalogs/FILTER_BRAND?_cb=${ts}`),
