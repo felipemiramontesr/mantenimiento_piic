@@ -71,10 +71,11 @@ class EncryptionService {
 
   /**
    * Generates a deterministic one-way hash (Blind Index)
-   * used for secure search/lookup of encrypted fields.
+   * synchronized with the SQL standard: CONCAT('SVR-', UPPER(LEFT(SHA2(val, 256), 16)))
    */
   public static generateBlindIndex(text: string): string {
-    return crypto.createHmac('sha256', this.getKey()).update(text).digest('hex');
+    const hash = crypto.createHash('sha256').update(text).digest('hex');
+    return `SVR-${hash.substring(0, 16).toUpperCase()}`;
   }
 }
 

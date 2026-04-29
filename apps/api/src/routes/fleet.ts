@@ -44,7 +44,6 @@ const createFleetSchema = z.object({
   status: z
     .enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'])
     .default('Disponible'),
-  assignedOperatorId: z.number().int().optional().nullable(),
   colorId: z.number().int().optional().nullable(),
   description: z.string().optional().nullable(),
   // 🔱 Archon Intelligence (v.18.0.0)
@@ -101,7 +100,6 @@ const updateFleetSchema = z.object({
   vencimientoVerificacion: z.string().optional().nullable(),
   circulationCardNumber: z.string().max(100).optional(),
   status: z.enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada']).optional(),
-  assignedOperatorId: z.number().int().optional().nullable(),
   colorId: z.number().int().optional().nullable(),
   description: z.string().optional().nullable(),
   // 🔱 Archon Intelligence (v.18.0.0)
