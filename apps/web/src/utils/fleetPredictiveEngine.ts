@@ -36,16 +36,16 @@ export const calculateMaintForecast = (
   lastServiceDateStr: string | null | Date | undefined
 ): MaintenanceForecast | null => {
   // 🔱 Strict Type Casting (Database Parity)
-  const castIntervalDays = Number(intervalDays);
-  const castIntervalKm = Number(intervalKm);
-  const castAvgDailyKm = Number(avgDailyKm);
   const castCurrentKm = Number(currentKm);
   const castLastServiceKm = Number(lastServiceKm);
 
   // 🔱 Fallback Constants (Standard Parity)
-  const defaultIntervalDays = castIntervalDays || 180;
-  const defaultIntervalKm = castIntervalKm || 10000;
-  const defaultAvgDailyKm = castAvgDailyKm || 30;
+  const defaultIntervalDays =
+    intervalDays !== null && intervalDays !== undefined ? Number(intervalDays) : 180;
+  const defaultIntervalKm =
+    intervalKm !== null && intervalKm !== undefined ? Number(intervalKm) : 10000;
+  const defaultAvgDailyKm =
+    avgDailyKm !== null && avgDailyKm !== undefined ? Number(avgDailyKm) : 30;
   const safeCurrentKm = castCurrentKm || 0;
   const safeLastServiceKm = castLastServiceKm || 0;
 
