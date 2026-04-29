@@ -240,7 +240,10 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
   }
 
   const maxProgress = Math.max(timeProgress, usageProgress);
-  const healthScore = Math.round(Math.max(0, Math.min(100, (1 - maxProgress) * 100)));
+
+  // 🔱 Archon Business Rule: If overdue, health is absolute ZERO.
+  const healthScore =
+    maxProgress >= 1.0 ? 0 : Math.round(Math.max(0, Math.min(100, (1 - maxProgress) * 100)));
 
   let healthStatus = 'Healthy';
   let healthColor = '#10b981';
