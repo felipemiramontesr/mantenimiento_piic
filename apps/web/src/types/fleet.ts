@@ -123,6 +123,10 @@ export interface FleetUnit {
   usageUnitName?: string | null;
   timeFreqLabel?: string | null;
   usageFreqLabel?: string | null;
+  // 🔱 Dynamic Analytical Fields (v.45.6.0)
+  color?: string | null;
+  motor?: string | null;
+  nextServiceReading?: number | null;
 }
 
 export interface CreateFleetUnit {

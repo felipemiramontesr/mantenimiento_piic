@@ -303,6 +303,7 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
       ? Math.floor((today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24))
       : null,
     unitsSinceService: currentReading - lastReading,
+    nextServiceReading: lastReading + (unit.maintIntervalKm || 0),
   } as Record<string, unknown>;
 }
 
