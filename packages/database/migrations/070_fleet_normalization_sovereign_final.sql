@@ -80,7 +80,7 @@ UPDATE `fleet_units` SET
     `brandId` = 33, `modelId` = 1023, `year` = 2021, `locationId` = 1038, `ownerId` = 711, `departmentId` = 227,
     `accountingAccount` = '8019-548-390', `fuelTypeId` = 11, `tireSpec` = '235/80 R17', `tireBrandId` = 244, 
     `terrainTypeId` = 173, `operationalUseId` = 239, `maintIntervalDays` = 180, `maintIntervalKm` = 10000.0,
-    `dailyUsageAvg" = 56.4, `odometer` = 45921.0, `lastServiceReading` = 42400.0, `lastServiceDate` = '2025-10-24', 
+    `dailyUsageAvg` = 56.4, `odometer` = 45921.0, `lastServiceReading` = 42400.0, `lastServiceDate` = '2025-10-24', 
     `engineTypeId` = 1027, `description` = '4000 Mantenimiento Planta'
 WHERE `id` = 'ASM-011';
 
@@ -124,7 +124,7 @@ WHERE `id` = 'ASM-015';
 UPDATE `fleet_units` SET 
     `brandId` = 33, `modelId` = 555, `year` = 2024, `locationId` = 1038, `ownerId` = 711, `departmentId` = 230,
     `accountingAccount` = '8012-548-390', `fuelTypeId` = 11, `tireSpec` = '185/60 R15', `tireBrandId` = 243, 
-    `terrainTypeId` = 173, `operationalUseId" = 239, `maintIntervalDays` = 180, `maintIntervalKm` = 10000.0,
+    `terrainTypeId` = 173, `operationalUseId` = 239, `maintIntervalDays` = 180, `maintIntervalKm` = 10000.0,
     `dailyUsageAvg` = 216.0, `odometer` = 106610.0, `lastServiceReading` = 96515.0, `lastServiceDate` = '2026-01-13', 
     `engineTypeId` = 1031, `description` = '700 Operación Planta'
 WHERE `id` = 'ASM-016';
