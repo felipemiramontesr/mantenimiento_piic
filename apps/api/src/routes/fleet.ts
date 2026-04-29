@@ -345,31 +345,32 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
           c_color.label AS color,
           c_eng.label AS motor,
           c_ins.label AS insuranceCompany,
-          'Días' AS timeFreqLabel,
+          ct.label AS timeFreqLabel,
+          cu.label AS usageFreqLabel,
           CASE 
             WHEN c_at.code = 'AT_MAQ' OR c_at.label = 'Maquinaria' THEN 'HRS'
             ELSE 'KM'
           END AS usageUnitName
         FROM fleet_units f
-        LEFT JOIN common_catalogs c_at ON f.assetTypeId = c_at.id
-        LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id
-        LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id
-        LEFT JOIN common_catalogs c_dept ON f.departmentId = c_dept.id
-        LEFT JOIN common_catalogs c_use ON f.operationalUseId = c_use.id
-        LEFT JOIN common_catalogs c_ft ON f.fuelTypeId = c_ft.id
-        LEFT JOIN common_catalogs c_tr ON f.traccionId = c_tr.id
-        LEFT JOIN common_catalogs c_ts ON f.transmisionId = c_ts.id
-        LEFT JOIN common_catalogs c_tire_brand ON f.tireBrandId = c_tire_brand.id
-        LEFT JOIN common_catalogs c_terrain ON f.terrainTypeId = c_terrain.id
-        LEFT JOIN common_catalogs c_owner ON f.ownerId = c_owner.id
-        LEFT JOIN common_catalogs c_compl ON f.complianceStatusId = c_compl.id
-        LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id
-        LEFT JOIN common_catalogs c_mc ON f.maintenanceCenterId = c_mc.id
-        LEFT JOIN common_catalogs c_color ON f.colorId = c_color.id
-        LEFT JOIN common_catalogs c_eng ON f.engineTypeId = c_eng.id
-        LEFT JOIN common_catalogs c_ins ON f.insuranceCompanyId = c_ins.id
-        LEFT JOIN common_catalogs ct ON f.maintenanceTimeFreqId = ct.id
-        LEFT JOIN common_catalogs cu ON f.maintenanceUsageFreqId = cu.id
+        LEFT JOIN common_catalogs c_at ON f.assetTypeId = c_at.id AND c_at.category = 'ASSET_TYPE'
+        LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id AND c_brand.category = 'BRAND'
+        LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id AND c_model.category = 'MODEL'
+        LEFT JOIN common_catalogs c_dept ON f.departmentId = c_dept.id AND c_dept.category = 'DEPARTMENT'
+        LEFT JOIN common_catalogs c_use ON f.operationalUseId = c_use.id AND c_use.category = 'OPERATIONAL_USE'
+        LEFT JOIN common_catalogs c_ft ON f.fuelTypeId = c_ft.id AND c_ft.category = 'FUEL'
+        LEFT JOIN common_catalogs c_tr ON f.traccionId = c_tr.id AND c_tr.category = 'DRIVE_TYPE'
+        LEFT JOIN common_catalogs c_ts ON f.transmisionId = c_ts.id AND c_ts.category = 'TRANSMISSION'
+        LEFT JOIN common_catalogs c_tire_brand ON f.tireBrandId = c_tire_brand.id AND c_tire_brand.category = 'TIRE_BRAND'
+        LEFT JOIN common_catalogs c_terrain ON f.terrainTypeId = c_terrain.id AND c_terrain.category = 'TERRAIN_TYPE'
+        LEFT JOIN common_catalogs c_owner ON f.ownerId = c_owner.id AND c_owner.category = 'FLEET_OWNER'
+        LEFT JOIN common_catalogs c_compl ON f.complianceStatusId = c_compl.id AND c_compl.category = 'COMPLIANCE_STATUS'
+        LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id AND c_loc.category = 'LOCATION'
+        LEFT JOIN common_catalogs c_mc ON f.maintenanceCenterId = c_mc.id AND c_mc.category = 'MAINTENANCE_CENTER'
+        LEFT JOIN common_catalogs c_color ON f.colorId = c_color.id AND c_color.category = 'VEHICLE_COLOR'
+        LEFT JOIN common_catalogs c_eng ON f.engineTypeId = c_eng.id AND c_eng.category = 'ENGINE_TYPE'
+        LEFT JOIN common_catalogs c_ins ON f.insuranceCompanyId = c_ins.id AND c_ins.category = 'INSURANCE_COMPANY'
+        LEFT JOIN common_catalogs ct ON f.maintenanceTimeFreqId = ct.id AND ct.category = 'FREQ_TIME'
+        LEFT JOIN common_catalogs cu ON f.maintenanceUsageFreqId = cu.id AND cu.category = 'FREQ_USAGE'
         ORDER BY f.createdAt DESC
       `;
 
