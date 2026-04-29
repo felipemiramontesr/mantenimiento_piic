@@ -4,7 +4,6 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
-import { toCamelCase } from '../utils/mappers';
 
 // ============================================================================
 // ZOD SCHEMA: CREATE
@@ -120,14 +119,14 @@ const updateFleetSchema = z.object({
 });
 
 // ============================================================================
-// DB INTERFACE (v.7.2.3)
+// DB INTERFACE (v.7.2.3) - NATIVE CAMELCASE SMMETRY
 // ============================================================================
 interface FleetUnit extends RowDataPacket {
   id: string;
   uuid: string;
-  asset_type: string;
+  assetType: string;
   placas: string | null;
-  placas_hash: string | null;
+  placasHash: string | null;
   numeroSerie: string | null;
   numeroSerieHash: string | null;
   brandId: number | null;
@@ -148,7 +147,7 @@ interface FleetUnit extends RowDataPacket {
   maintIntervalKm: number;
   odometer: number;
   sede: string | null;
-  centro_mantenimiento: string | null;
+  centroMantenimiento: string | null;
   maintenanceCenterId: number | null;
   protocolStartDate: string | null;
   insuranceExpiryDate: string | null;
@@ -158,7 +157,7 @@ interface FleetUnit extends RowDataPacket {
   assignedOperatorId: number | null;
   color: string | null;
   motor: string | null;
-  insurance_company: string | null;
+  insuranceCompany: string | null;
   insuranceCompanyId: number | null;
   description: string | null;
   createdAt: string;
@@ -168,9 +167,6 @@ interface FleetUnit extends RowDataPacket {
   lastServiceDate: string | null;
   lastServiceReading: number;
   currentReading: number;
-  time_limit_days: number | null;
-  usage_limit_units: number | null;
-  usage_unit_name: string | null;
   availabilityIndex: number;
   mtbfHours: number;
   mttrHours: number;
@@ -183,7 +179,7 @@ interface FleetUnit extends RowDataPacket {
   ownerId: number | null;
   owner: string | null;
   complianceStatusId: number | null;
-  compliance_status: string | null;
+  complianceStatus: string | null;
   accountingAccount: string | null;
   legalComplianceDate: string | null;
   monthlyLeasePayment: number;
@@ -201,11 +197,6 @@ interface UnitHealth {
 
 /**
  * 🛡️ SENTINEL INTELLIGENCE HELPER
- * Purpose: Decrypt, Parse, and Compute Health Metrics for a single Fleet Unit.
- * Logic: Extracted to satisfy Cognitive Complexity limits (v.21.0.1)
- */
-/**
- * 🛡️ SENTINEL INTELLIGENCE HELPER: Image Parser
  */
 function parseUnitImages(
   rawImages: string | null,
@@ -234,7 +225,7 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger A: Time Based
   let timeProgress = 0;
-  const timeLimit = Number(unit.time_limit_days || 0);
+  const timeLimit = Number(unit.maintIntervalDays || 0);
   if (lastServiceDate && timeLimit > 0) {
     const diffMs = today.getTime() - lastServiceDate.getTime();
     const diffDays = diffMs / (1000 * 3600 * 24);
@@ -243,7 +234,7 @@ function computeUnitHealth(unit: FleetUnit): UnitHealth {
 
   // Trigger B: Usage Based (KM/HRS)
   let usageProgress = 0;
-  const usageLimit = Number(unit.usage_limit_units || 0);
+  const usageLimit = Number(unit.maintIntervalKm || 0);
   if (usageLimit > 0) {
     const diffUnits = currentReading - lastReading;
     usageProgress = Math.max(0, diffUnits / usageLimit);
@@ -290,8 +281,6 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
     mtbfHours: Number(unit.mtbfHours || 0),
     mttrHours: Number(unit.mttrHours || 0),
     backlogCount: Number(unit.backlogCount || 0),
-    time_limit_days: unit.time_limit_days ? Number(unit.time_limit_days) : null,
-    usage_limit_units: unit.usage_limit_units ? Number(unit.usage_limit_units) : null,
   };
 
   const {
@@ -304,17 +293,17 @@ function processFleetUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<st
     today,
   } = computeUnitHealth(decrypted as unknown as FleetUnit);
 
-  return toCamelCase({
+  return {
     ...decrypted,
     images: parseUnitImages(unit.images, unit.id, logger),
-    health_score: healthScore,
-    health_status: healthStatus,
-    health_color: healthColor,
-    days_since_service: lastServiceDate
+    healthScore,
+    healthStatus,
+    healthColor,
+    daysSinceService: lastServiceDate
       ? Math.floor((today.getTime() - lastServiceDate.getTime()) / (1000 * 3600 * 24))
       : null,
-    units_since_service: currentReading - lastReading,
-  }) as Record<string, unknown>;
+    unitsSinceService: currentReading - lastReading,
+  } as Record<string, unknown>;
 }
 
 // ============================================================================
@@ -339,30 +328,28 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const query = `
         SELECT 
           f.*,
-          c_at.label AS asset_type,
+          c_at.label AS assetType,
           c_brand.label AS marca,
           c_model.label AS modelo,
           c_dept.label AS departamento,
           c_use.label AS uso,
-          c_ft.label AS fuel_type,
+          c_ft.label AS fuelType,
           c_tr.label AS traccion,
           c_ts.label AS transmision,
-          c_tire_brand.label AS tire_brand,
-          c_terrain.label AS tipo_terreno,
+          c_tire_brand.label AS tireBrand,
+          c_terrain.label AS tipoTerreno,
           c_owner.label AS owner,
-          c_compl.label AS compliance_status,
+          c_compl.label AS complianceStatus,
           c_loc.label AS sede,
-          c_mc.label AS centro_mantenimiento,
+          c_mc.label AS centroMantenimiento,
           c_color.label AS color,
           c_eng.label AS motor,
-          c_ins.label AS insurance_company,
-          f.maintIntervalDays AS time_limit_days,
-          f.maintIntervalKm AS usage_limit_units,
-          'Días' AS time_freq_label,
+          c_ins.label AS insuranceCompany,
+          'Días' AS timeFreqLabel,
           CASE 
             WHEN c_at.code = 'AT_MAQ' OR c_at.label = 'Maquinaria' THEN 'HRS'
             ELSE 'KM'
-          END AS usage_unit_name
+          END AS usageUnitName
         FROM fleet_units f
         LEFT JOIN common_catalogs c_at ON f.assetTypeId = c_at.id
         LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id
