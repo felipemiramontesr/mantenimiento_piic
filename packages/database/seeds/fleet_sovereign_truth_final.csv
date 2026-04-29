@@ -1,0 +1,25 @@
+﻿sep=;
+Unidad;Marca;Modelo;Referencia;Año;Ubicacion;Propietario;Departamento;CuentaContable;Combustible;Placas;Serie;TireSpec;TerrainType;OperationalUse;TireBrand;IntDias;IntServicio;KmPromDiario;KmActuales;KmUltimoServicio;FechaUltimoServicio
+ASM-002;Toyota;Hilux;Medio Ambiente;2007;Mina;Arian Silver de México;Medio Ambiente;8019-548-901;Diésel;ZH-3153-B;1D7HW48P87S256272;255/70 R15;All-Terrain (A/T);Terracería leve;ZMAX;180;10000;35.9;120763;119728;2026-03-09
+ASM-006;Nissan;Frontier;Medio Ambiente;2016;Mina;Arian Silver de México;Medio Ambiente;8019-400-922;Gasolina;ZH-3161-B;3N6AD33C4GK892141;255/60 R18;Mixta (H/T);Carretera/Ciudad;PIRELLI;180;10000;45.0;357833;356944;2026-03-11
+ASM-007;Nissan;NP 300;Laboratorio;2016;Planta;Arian Silver de México;Laboratorio;8012-548-390;Gasolina;ZH-3160-B;3N6AD33C5GK814774;205 R16;Carga (LT);Pesado/Planta;BRIDGESTONE;180;10000;15.0;327593;327333;2026-03-11
+ASM-008;Toyota;Hilux;Operación Mina;2019;Mina;Huur;Operación Mina;8019-548-190;Diésel;ZH-3163-B;MR0FA8CD8K3900944;265/65 R17;All-Terrain (A/T);Mina/Roca;BF GOODRICH;90;5000;110.0;25955;23940;2026-03-26
+ASM-009;Nissan;Versa;Flota;2025;Mina;Huur;Planeación;8012-548-150;Gasolina;VEH-746-D;3N1CN8AE9SK599731;205/55 R16;Passenger;Ciudad;MICHELIN;180;10000;181.3;53460;51006;2026-03-31
+ASM-010;Chevrolet;Aveo;Flota;2025;Mina;Huur;Operación Mina;8019-548-190;Gasolina;UXS-682-E;LZWPRMGN6SF107290;185/60 R15;Passenger;Ciudad;MICHELIN;180;10000;228.9;22487;19680;2026-03-13
+ASM-011;Ram;4000;Mantenimiento Planta;2021;Planta;Arian Silver de México;Mantenimiento Planta;8019-548-390;Gasolina;ZH-3152-B;3C7WRAKT6MG570165;235/80 R17;Carga (Rango E);Carga Pesada;BF GOODRICH;180;10000;56.4;45921;42400;2025-10-24
+ASM-012;Mitsubishi;L200;Gerencia General;2022;Mina;Arian Silver de México;Administración;8019-548-901;Diésel;ZD-1550-B;MMBNLV56XNH055968;265/60 R18;High Terrain (H/T);Carretera;BF GOODRICH;90;5000;144.9;76146;74677;2026-02-21
+ASM-013;Mitsubishi;L200;Seguridad Industrial;2022;Mina;Arian Silver de México;Seguridad Industiral;8019-548-914;Diésel;ZD-1551-B;MMBNLV563NH056251;245/70 R16;All-Terrain (A/T);Mixto;BF GOODRICH;90;5000;43.9;55007;52573;2026-01-13
+ASM-014;Mitsubishi;L200;Geología;2022;Mina;Arian Silver de México;Geología;8012-548-140;Diésel;ZD-1552-B;MMBNLV569NH055993;245/70 R16;All-Terrain (A/T);Campo/Mina;BF GOODRICH;90;5000;124.7;130876;127883;2026-03-11
+ASM-015;Toyota;Yaris;Administración;2023;Mina;Arian Silver de México;Administración;8019-548-901;Gasolina;ZHY-780-E;MR2BF8C38P0005090;185/60 R15;Passenger;Ciudad;MICHELIN;180;10000;210.3;161077;150000;2025-12-29
+ASM-016;Ram;700;Operación Planta;2024;Planta;Arian Silver de México;Operación Planta;8012-548-390;Gasolina;YW-8191-D;9BD281H59PYY69987;185/60 R15;Carga Ligera;Planta;MICHELIN;180;10000;216.0;106610;96515;2026-01-13
+ASM-017;Toyota;Hilux;Mantenimiento Eléctrico;2024;Mina;Huur;Mantenimiento Mina;8019-548-190;Diésel;TK-9722-H;MR0DA3CXR4007222;265/65 R17;All-Terrain (A/T);Mina;BF GOODRICH;90;5000;118.9;51812;49627;2026-03-27
+ASM-018;Kia;Rio;Flota;2022;Planta;Huur;Mantenimiento Planta;8019-548-390;Gasolina;PCZ-11-91;3KPA24BC4NE456823;185/65 R15;Passenger;Ciudad;MICHELIN;180;10000;178.6;98391;96540;2025-10-23
+ASM-019;Toyota;Hilux;Planeación;2018;Mina;Huur;Planeación;8012-548-150;Diésel;TJ-7355-F;MRDFA8CD3J3900638;265/65 R17;All-Terrain (A/T);Mixto,BF GOODRICH,90,5000,74.7,137874,137423,2026-03-26
+ASM-020;Toyota;Hilux;Exploración;2023;Mina;Huur;Exploración;8012-548-140;Diésel;TG-7053-H;MR0DA3CD7P4005053;265/65 R17;Mud-Terrain (M/T);Extremo/Lodo;BF GOODRICH;180;10000;155.9;107467;100834;2026-02-27
+ASM-021;Toyota;Hilux;Planeación;2023;Mina;Huur;Planeación;8012-548-150;Diésel;TM-33-95-G;MR0DA3CD7P4004372;265/65 R17;All-Terrain (A/T);Campo;BF GOODRICH;90;5000;118.4;58774;56874;2026-02-27
+ASM-022;Toyota;Yaris;Relaciones Comunitarias;2023;Mina;Huur;Relaciones Comunitarias;8019-548-901;Diésel;UWY-713-D;MR2BF8C37P0023290;185/60 R15;Passenger;Ciudad;MICHELIN;180;10000;131.3;104782;100000;2026-02-27
+ASM-023;Seat;Ateca;Flota;2017;Mina;Huur;Administración;8019-548-901;Gasolina;UYM-047-C;VSSAA75F8H6532319;215/55 R17;SUV/Carretera;Ciudad;MICHELIN;180;10000;99.7;30114;25496;2026-02-26
+ASM-024,JAC;Frision T8;Seguridad Patrimonial;2023;Mina;Arian Silver de México;Seguridad Patrimonial;8019-548-902;Diésel;YW-7900-D;3GALD1593PM002498;265/60 R18;All-Terrain (A/T);Mixto;BF GOODRICH;180;5000;244.7;193129;186819;2026-03-11
+ASM-025,JAC;X200;Administración;2024,Mina;Arian Silver de México;Administración;8019-548-901;Gasolina;ZA-6811-D;3GALJ1398RM003712;195/70 R15C;Carga (Tipo C);Reparto;YOKOHAMA;180;10000;145.6;59994;58209;2026-03-19
+ASM-026;Toyota;Hilux;Geología;2024,Mina;Huur;Geología;8012-548-140;Diésel;TL-8939-H;MR0DA3CD4R4007281;265/65 R17;All-Terrain (A/T);Campo;BF GOODRICH;90;5000;212.1;68103;61238;2026-02-27
+ASM-027;Toyota;Hilux;Operación Mina;2025;Mina;Huur;Operación Mina;8019-548-190;Diésel;TN-0201-H;MR0DA3CD9S4009937;265/65 R17;All-Terrain (A/T);Mina;BF GOODRICH;90;5000;160.7;16332;11627;2026-02-27
