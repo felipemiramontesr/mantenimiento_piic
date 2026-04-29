@@ -116,9 +116,11 @@ export const calculateMaintForecast = (
   };
 };
 
-export const formatDate = (date: Date): string =>
-  date.toLocaleDateString('es-MX', {
+export const formatDate = (date: Date | null | undefined): string => {
+  if (!date || Number.isNaN(date.getTime())) return '---';
+  return date.toLocaleDateString('es-MX', {
     day: '2-digit',
     month: '2-digit',
     year: '2-digit',
   });
+};

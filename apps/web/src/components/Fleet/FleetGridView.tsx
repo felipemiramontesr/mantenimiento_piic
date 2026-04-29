@@ -151,8 +151,12 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const fuelType = unit.fuelType || 'S/D';
   const motor = unit.motor || 'S/D';
   const poliza = unit.insurancePolicyNumber || '---';
-  const verifDate = unit.lastEnvironmentalVerification || '---';
-  const mechDate = unit.lastMechanicalVerification || '---';
+  const verifDate = unit.lastEnvironmentalVerification
+    ? new Date(unit.lastEnvironmentalVerification)
+    : null;
+  const mechDate = unit.lastMechanicalVerification
+    ? new Date(unit.lastMechanicalVerification)
+    : null;
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="grid grid-cols-2 gap-1.5 w-full">
@@ -180,7 +184,7 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         <div className="flex items-center justify-between text-[9px] font-black uppercase">
           <span className="text-rose-500">Seguro</span>
           <span className="text-navy-800 text-[10px]">
-            {unit.insuranceExpiryDate ? formatDate(new Date(unit.insuranceExpiryDate)) : '--/--/--'}
+            {unit.insuranceExpiryDate ? formatDate(new Date(unit.insuranceExpiryDate)) : '---'}
           </span>
         </div>
         <span className="text-[9px] font-mono text-slate-400 text-right -mt-1 uppercase tracking-tighter">
@@ -188,11 +192,11 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         </span>
         <div className="flex items-center justify-between mt-1 text-[9px] font-black uppercase">
           <span className="text-emerald-600">Verif</span>
-          <span className="text-navy-800 text-[10px]">{formatDate(new Date(verifDate))}</span>
+          <span className="text-navy-800 text-[10px]">{formatDate(verifDate)}</span>
         </div>
         <div className="flex items-center justify-between text-[9px] font-black uppercase">
           <span className="text-sky-600">Mecánica</span>
-          <span className="text-navy-800 text-[10px]">{formatDate(new Date(mechDate))}</span>
+          <span className="text-navy-800 text-[10px]">{formatDate(mechDate)}</span>
         </div>
       </div>
     </div>
