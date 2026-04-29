@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     pool: 'forks',
+    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions'] : ['default'],
     setupFiles: './src/test/setup.ts',
     coverage: {
       provider: 'v8',
