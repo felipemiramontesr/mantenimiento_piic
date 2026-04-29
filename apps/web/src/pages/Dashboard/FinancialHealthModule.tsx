@@ -1,136 +1,147 @@
 import React from 'react';
-import { Wallet, TrendingUp, BarChart3, ArrowUpRight, Activity } from 'lucide-react';
+import { Wallet, TrendingUp, ArrowUpRight, Landmark, DollarSign, PieChart } from 'lucide-react';
+import { BRANDING_NAME } from '../../constants/versionConstants';
+
+const SYSTEM_VERSION = 'V28.27.0';
 
 /**
  * 🔱 Archon Module: Financial Health
- * Implementation: Sovereign Financial Intelligence Placeholder
- * v.1.0.0 - Premium Visual Skeleton
+ * Implementation: Strictly Aligned with Sovereign UI Standard
+ * Structure: Header | Body (Chassis) | Footer
  */
-const FinancialHealthModule: React.FC = () => (
-  <div className="space-y-8 animate-in fade-in duration-700">
-    {/* HEADER SECTION */}
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-2 h-2 bg-[#f2b705] rounded-full animate-pulse" />
-          <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em] opacity-60">
-            Módulo de Inteligencia
-          </span>
-        </div>
-        <h1 className="text-4xl font-black text-[#0f2a44] tracking-tighter">
-          Salud <span className="text-[#f2b705]">Financiera</span>
-        </h1>
-        <p className="text-slate-500 mt-2 max-w-xl text-sm leading-relaxed">
-          Monitoreo en tiempo real de flujos de capital, costos operativos y proyecciones de
-          inversión de activos.
-        </p>
+const FinancialHealthModule: React.FC = () => {
+  const renderFinancialKPI = (
+    label: string,
+    value: string,
+    Icon: React.ElementType,
+    color: string,
+    description: string,
+    variant: 'navy' | 'emerald' | 'yellow' | 'sky'
+  ): React.ReactElement => (
+    <div
+      className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-500`}
+      style={{ borderTop: `4px solid ${color}` }}
+    >
+      <div className="flex items-center justify-center gap-3 mb-5 w-full">
+        <Icon size={24} style={{ color }} />
+        <span className="text-instrument-header text-[#0f2a44] opacity-90">{label}</span>
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-2 rounded-xl shadow-sm border border-slate-100">
-        <div className="px-4 py-2 text-right">
-          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Balance Mensual
-          </span>
-          <span className="text-xl font-black text-[#0f2a44] tracking-tighter">$---,---.--</span>
-        </div>
-        <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-500">
-          <Activity size={20} />
+      <div className="archon-tile-payload flex flex-col items-center justify-center pb-6">
+        <div className="flex flex-col items-center justify-center text-center w-full space-y-2">
+          <h3 className="text-kpi-black text-[#0f2a44] text-center w-full">{value}</h3>
+          <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center w-full">
+            {description}
+          </p>
         </div>
       </div>
-    </div>
 
-    {/* KPI GRID */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {[
-        {
-          label: 'Costo por Kilómetro',
-          icon: <TrendingUp size={20} />,
-          color: 'text-blue-500',
-          bg: 'bg-blue-50',
-        },
-        {
-          label: 'Eficiencia de Combustible',
-          icon: <BarChart3 size={20} />,
-          color: 'text-[#f2b705]',
-          bg: 'bg-amber-50',
-        },
-        {
-          label: 'Presupuesto de Mantenimiento',
-          icon: <Wallet size={20} />,
-          color: 'text-emerald-500',
-          bg: 'bg-emerald-50',
-        },
-      ].map((kpi, idx) => (
-        <div
-          key={idx}
-          className="glass-card-pro bg-white p-6 relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-500"
+      <div className="archon-tile-action">
+        <button
+          className={`btn-sentinel-${variant} w-full text-[11px] font-black py-3 uppercase tracking-widest`}
         >
-          <div className="flex justify-between items-start mb-4">
-            <div className={`${kpi.bg} ${kpi.color} p-3 rounded-xl`}>{kpi.icon}</div>
-            <div className="flex items-center gap-1 text-emerald-500 font-bold text-xs">
-              <ArrowUpRight size={14} />
-              <span>+0.0%</span>
-            </div>
-          </div>
-          <span className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">
-            {kpi.label}
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-[#0f2a44] tracking-tighter">---.--</span>
-            <span className="text-xs font-bold text-slate-400 uppercase">MXN</span>
-          </div>
-
-          {/* SKELETON DECORATION */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-slate-50 overflow-hidden">
-            <div className="h-full bg-slate-200 w-1/3 animate-shimmer" />
-          </div>
-        </div>
-      ))}
-    </div>
-
-    {/* ANALYTICS PLACEHOLDER */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div className="glass-card-pro bg-[#0f2a44] p-8 text-white min-h-[400px] flex flex-col justify-center items-center text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
-        </div>
-        <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
-          <BarChart3 size={32} className="text-[#f2b705]" />
-        </div>
-        <h3 className="text-2xl font-black tracking-tighter mb-4">Motor de Proyecciones</h3>
-        <p className="text-white/60 text-sm max-w-xs leading-relaxed italic">
-          &quot;La inteligencia financiera de Archon está procesando modelos de datos históricos
-          para habilitar proyecciones predictivas.&quot;
-        </p>
-        <div className="mt-8 flex gap-2">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="w-2 h-8 bg-white/20 rounded-full animate-shimmer"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="glass-card-pro bg-white p-8 border border-dashed border-slate-200 flex flex-col justify-center items-center text-center">
-        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
-          <TrendingUp size={24} />
-        </div>
-        <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-[0.3em] opacity-30">
-          Área Reservada
-        </span>
-        <div className="space-y-3 mt-6 w-full max-w-xs">
-          <div className="h-4 bg-slate-100 rounded-full animate-pulse" />
-          <div className="h-4 bg-slate-100 rounded-full animate-pulse w-3/4 mx-auto" />
-          <div className="h-4 bg-slate-100 rounded-full animate-pulse w-1/2 mx-auto" />
-        </div>
-        <button className="mt-8 px-6 py-2 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg opacity-40 cursor-not-allowed">
-          Conectar ERP
+          Analizar Flujo <ArrowUpRight size={12} className="ml-2" />
         </button>
       </div>
     </div>
-  </div>
-);
+  );
+
+  return (
+    <main className="workspace-container-pro animate-in fade-in duration-700">
+      {/* 🔱 HEADER: SOVEREIGN STANDARD */}
+      <header className="workspace-header-pro">
+        <div className="flex flex-row items-center justify-between w-full">
+          <div className="flex flex-col items-start">
+            <div className="flex flex-row items-center gap-3 mb-2">
+              <Wallet size={28} className="text-[#f2b705]" />
+              <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-none">
+                Salud Financiera
+              </h2>
+            </div>
+            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+              Inteligencia Económica y Control de Costos Operativos
+            </p>
+          </div>
+
+          <div className="flex items-center gap-6 relative">
+            <h1 className="text-[26px] font-black tracking-tighter m-0 text-[#0f2a44] font-['Inter']">
+              Archon
+            </h1>
+            <div className="w-[44px] h-[44px] rounded-[4px] border-2 border-[#f2b705] bg-[#0f2a44] flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 100 100">
+                <path
+                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+                  stroke="#f2b705"
+                  strokeWidth="16"
+                  fill="none"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* 🔱 BODY: ARCHON CHASSIS */}
+      <section className="archon-workspace-chassis">
+        <div className="archon-grid-3">
+          {renderFinancialKPI(
+            'Costo Operativo',
+            '$---,---.--',
+            DollarSign,
+            '#0f2a44',
+            'Gasto acumulado del mes actual',
+            'navy'
+          )}
+          {renderFinancialKPI(
+            'Eficiencia de Activos',
+            '--.--%',
+            TrendingUp,
+            '#10b981',
+            'Retorno operativo por unidad',
+            'emerald'
+          )}
+          {renderFinancialKPI(
+            'Presupuesto Maint',
+            '$---,---.--',
+            Landmark,
+            '#f2b705',
+            'Fondo asignado a mantenimiento',
+            'yellow'
+          )}
+
+          {/* ANALYTICS PREVIEW CARD (WIDER) */}
+          <div className="col-span-full glass-card-pro bg-white p-12 border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 text-slate-200">
+              <PieChart size={40} />
+            </div>
+            <h3 className="text-xl font-black text-[#0f2a44] tracking-tight mb-2">
+              Motor de Análisis Financiero
+            </h3>
+            <p className="text-slate-400 text-sm max-w-md leading-relaxed uppercase tracking-widest font-bold text-[10px]">
+              Sincronizando con módulos de costos y facturación...
+            </p>
+            <div className="mt-8 flex gap-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="w-1.5 h-12 bg-slate-100 rounded-full animate-pulse"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 🔱 FOOTER: SYSTEM STANDARDIZATION */}
+      <footer className="workspace-footer-pro">
+        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+        <p className="text-[#0f2a44]">
+          {BRANDING_NAME} {SYSTEM_VERSION}
+        </p>
+      </footer>
+    </main>
+  );
+};
 
 export default FinancialHealthModule;
