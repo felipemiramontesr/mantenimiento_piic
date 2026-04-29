@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Truck,
   Wrench,
+  Fuel,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -189,10 +190,20 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
     <div className="flex flex-col items-center gap-2">
       {/* Energía & Rodado */}
       <div className="grid grid-cols-2 gap-1 w-full">
-        <div className="flex items-center gap-1 px-1.5 py-0.5 bg-yellow-50 rounded-[3px] border border-yellow-100/50 justify-center">
-          <Zap size={9} className="text-yellow-600" />
-          <span className="text-[8px] font-black text-yellow-800 uppercase tracking-tighter">
-            {unit.fuelType || 'GAS'}
+        <div
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] border justify-center ${
+            unit.fuelType?.toLowerCase().includes('diesel')
+              ? 'bg-emerald-50 border-emerald-100/50 text-emerald-800'
+              : 'bg-amber-50 border-amber-100/50 text-amber-800'
+          }`}
+        >
+          {unit.fuelType?.toLowerCase().includes('elect') ? (
+            <Zap size={9} className="text-blue-500" />
+          ) : (
+            <Fuel size={9} />
+          )}
+          <span className="text-[8px] font-black uppercase tracking-tighter">
+            {unit.fuelType || 'S/D'}
           </span>
         </div>
         <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 rounded-[3px] border border-slate-100 justify-center">
