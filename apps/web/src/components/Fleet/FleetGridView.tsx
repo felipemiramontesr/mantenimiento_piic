@@ -312,7 +312,7 @@ const FleetUnitRow = ({
         isOverdue ? 'bg-red-50/40' : ''
       }`}
     >
-      <td className="py-16 text-center pl-10 pr-4">
+      <td className="py-16 text-center">
         {unit.images?.[0] ? (
           <img
             src={unit.images[0]}
@@ -327,7 +327,7 @@ const FleetUnitRow = ({
         )}
       </td>
 
-      <td className="text-center px-4">
+      <td className="text-center px-6">
         <div className="flex flex-col items-center gap-2">
           <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded shadow-lg tracking-[0.2em]">
             {unit.id}
@@ -350,15 +350,15 @@ const FleetUnitRow = ({
         </div>
       </td>
 
-      <td className="text-center px-4">
+      <td className="text-center px-6">
         <IdentityCluster unit={unit} tarjeta={mockData.tarjeta} />
       </td>
 
-      <td className="text-center px-4 border-x border-slate-50/50">
+      <td className="text-center px-6 border-x border-slate-50/50">
         <LogisticsCluster unit={unit} cuenta={mockData.cuenta} usageUnit={usageUnit} />
       </td>
 
-      <td className="py-16 px-4 min-w-[160px]">
+      <td className="py-16 px-6 min-w-[160px]">
         <OdometerCluster
           unit={unit}
           usageUnit={usageUnit}
@@ -367,20 +367,28 @@ const FleetUnitRow = ({
         />
       </td>
 
-      <td className="py-16 px-4 min-w-[200px]">
+      <td className="py-16 px-6 min-w-[200px]">
         <SpecCluster unit={unit} />
       </td>
 
-      <td className="text-center px-4">
+      <td className="text-center px-6">
         <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
       </td>
 
-      <td className="text-center px-4">
+      <td className="text-center px-6">
         <HealthStatusCluster forecast={forecast} />
       </td>
 
-      <td className="text-center pl-4 pr-10">
+      <td className="text-center px-6">
         <div className="flex flex-col gap-2">
+          {/* 🔱 Botón de Mantenimiento Desactivado para Pruebas de Registro 
+          <button
+            onClick={(): void => onRecordService(unit)}
+            className="flex items-center justify-center gap-2 bg-navy-900 text-white px-4 py-2 rounded font-black text-[10px] uppercase tracking-widest hover:bg-sky-900 transition-all shadow-md"
+          >
+            <Wrench size={12} /> Registrar Mto.
+          </button>
+          */}
           <FleetKpiMatrix
             availability={unit.availabilityIndex ?? 100}
             mtbf={unit.mtbfHours ?? 0}
@@ -470,12 +478,12 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="bg-white pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl custom-scrollbar border-t border-slate-100 relative">
-        <table className="archon-registry-table w-full min-w-[1500px] border-separate border-spacing-0 !mt-0">
+      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl rounded-xl custom-scrollbar">
+        <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
-            <tr className="bg-[#0f2a44]">
-              <th className="sticky top-0 z-[100] bg-[#0f2a44] pt-12 pb-10 pl-10 pr-4 font-black tracking-widest text-[11px] text-white shadow-md border-none bg-clip-padding">
-                <div className="flex items-center justify-center">ACTIVO</div>
+            <tr>
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+                ACTIVO
               </th>
               <th
                 onClick={(): void =>
@@ -492,7 +500,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-[100] bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors pt-12 pb-10 px-4 shadow-md text-white border-none bg-clip-padding"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   UNIDAD / MODELO
@@ -509,17 +517,17 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-[100] bg-[#0f2a44] pt-12 pb-10 px-4 font-black tracking-widest text-[11px] text-white shadow-md border-none bg-clip-padding">
-                <div className="flex items-center justify-center">IDENTIDAD / PROPIEDAD / SEDE</div>
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+                IDENTIDAD / PROPIEDAD / SEDE
               </th>
-              <th className="sticky top-0 z-[100] bg-[#0f2a44] pt-12 pb-10 px-4 font-black tracking-widest text-[11px] text-white shadow-md border-none bg-clip-padding">
-                <div className="flex items-center justify-center">FRECUENCIAS / TARIFA</div>
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+                FRECUENCIAS / TARIFA
               </th>
-              <th className="sticky top-0 z-[100] bg-[#0f2a44] pt-12 pb-10 px-4 font-black tracking-widest text-[11px] text-white shadow-md border-none bg-clip-padding">
-                <div className="flex items-center justify-center">ODOMETRÍA (ACTUAL/ANT/OBJ)</div>
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+                ODOMETRÍA (ACTUAL/ANT/OBJ)
               </th>
-              <th className="sticky top-0 z-[100] bg-[#0f2a44] pt-12 pb-10 px-4 font-black tracking-widest text-[11px] text-white shadow-md border-none bg-clip-padding">
-                <div className="flex items-center justify-center">CONFIG / LEGAL</div>
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+                CONFIG / LEGAL
               </th>
               <th
                 onClick={(): void =>
@@ -537,7 +545,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-[100] bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors pt-12 pb-10 px-4 shadow-md text-white border-none bg-clip-padding"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   KM RESTANTES
@@ -569,7 +577,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-[100] bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors pt-12 pb-10 px-4 shadow-md text-white border-none bg-clip-padding"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   PRONÓSTICO (FECHA)
@@ -586,8 +594,8 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-[100] bg-[#0f2a44] pt-12 pb-10 pl-4 pr-10 font-black tracking-widest text-[11px] text-white shadow-md border-none bg-clip-padding">
-                <div className="flex items-center justify-center">SALUD</div>
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+                SALUD
               </th>
             </tr>
           </thead>
