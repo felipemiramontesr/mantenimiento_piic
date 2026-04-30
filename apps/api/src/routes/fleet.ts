@@ -54,6 +54,7 @@ const createFleetSchema = z.object({
   legalComplianceDate: z.string().optional().nullable(),
   insuranceExpiryDate: z.string().optional().nullable(),
   insuranceCompanyId: z.number().int().optional().nullable(),
+  environmentalHologram: z.string().max(10).optional().nullable(),
   monthlyLeasePayment: z.number().min(0).default(0),
 });
 

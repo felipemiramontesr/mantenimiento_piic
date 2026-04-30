@@ -31,6 +31,7 @@ export interface FleetUnit extends RowDataPacket {
   backlogCount: number;
   images: string | null;
   circulationCardNumber?: string | null;
+  environmentalHologram?: string | null;
   dailyUsageAvg?: number;
 }
 

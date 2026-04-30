@@ -388,6 +388,23 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               />
             </ArchonField>
 
+            <ArchonField label="Holograma Ambiental" icon={ShieldCheck}>
+              <ArchonSelect
+                options={[
+                  { value: '00', label: '00 - Excelencia' },
+                  { value: '0', label: '0 - Óptimo' },
+                  { value: '1', label: '1 - Limitado' },
+                  { value: '2', label: '2 - Restringido' },
+                  { value: 'Exento', label: 'Exento (Eléctrico/Híbrido)' },
+                  { value: 'Foráneo', label: 'Foráneo' },
+                ]}
+                value={formData.environmentalHologram || ''}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, environmentalHologram: val })
+                }
+              />
+            </ArchonField>
+
             {/* 💰 GESTIÓN FINANCIERA */}
             <div className="pt-4 border-t border-slate-100 space-y-6">
               <div className="grid grid-cols-2 gap-6">

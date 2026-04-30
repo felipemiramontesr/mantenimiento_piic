@@ -77,6 +77,7 @@ export interface FleetUnit {
   insuranceCompanyId: number | null;
   lastEnvironmentalVerification?: string | null;
   lastMechanicalVerification?: string | null;
+  environmentalHologram?: string | null;
   circulationCardNumber: string | null;
   monthlyLeasePayment: number;
   // Status
@@ -169,6 +170,7 @@ export interface CreateFleetUnit {
   insuranceCompanyId?: number | null;
   lastEnvironmentalVerification?: string;
   lastMechanicalVerification?: string;
+  environmentalHologram?: string;
   circulationCardNumber?: string;
   monthlyLeasePayment?: number;
   // 🔱 Archon Intelligence (v.18.0.0)

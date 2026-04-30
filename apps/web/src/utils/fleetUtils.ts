@@ -51,6 +51,7 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   insuranceCompanyId: null,
   lastEnvironmentalVerification: '',
   lastMechanicalVerification: '',
+  environmentalHologram: '',
   circulationCardNumber: '',
   monthlyLeasePayment: undefined,
   // 🔱 Archon Intelligence (v.18.0.0)

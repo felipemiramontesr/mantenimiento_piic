@@ -25,6 +25,7 @@ import {
   MaintenanceForecast,
 } from '../../utils/fleetPredictiveEngine';
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
+import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
 // Visual Impact Update: 100% Data Parity with Master Source
@@ -40,28 +41,45 @@ const IdentityCluster = ({
 }: {
   unit: FleetUnit;
   tarjeta: string | number;
-}): React.JSX.Element => (
-  <div className="flex flex-col items-center gap-2.5">
-    <span className="text-[10px] font-black text-navy-400 uppercase tracking-[0.2em]">
-      {unit.owner || 'ARIAN SILVER DE MÉXICO'}
-    </span>
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
-        <Tag size={11} className="text-slate-400" />
-        <span className="text-[12px] font-black text-navy-800 uppercase tracking-tight">
-          {unit.placas}
-        </span>
+}): React.JSX.Element => {
+  const restriction = checkHoyNoCircula(unit.environmentalHologram || null, unit.placas || null);
+
+  return (
+    <div className="flex flex-col items-center gap-2.5">
+      <span className="text-[10px] font-black text-navy-400 uppercase tracking-[0.2em]">
+        {unit.owner || 'ARIAN SILVER DE MÉXICO'}
+      </span>
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
+          <Tag size={11} className="text-slate-400" />
+          <span className="text-[12px] font-black text-navy-800 uppercase tracking-tight">
+            {unit.placas}
+          </span>
+          {restriction.isRestricted && (
+            <div
+              title={restriction.reason}
+              className="ml-1 bg-rose-500 text-white p-0.5 rounded-full animate-pulse cursor-help"
+            >
+              <ShieldAlert size={10} />
+            </div>
+          )}
+        </div>
+        <span className="text-[10px] font-mono text-slate-400 uppercase">TC: {tarjeta}</span>
       </div>
-      <span className="text-[10px] font-mono text-slate-400 uppercase">TC: {tarjeta}</span>
+      {restriction.isRestricted && (
+        <span className="text-[8px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 uppercase tracking-tighter">
+          {restriction.reason}
+        </span>
+      )}
+      <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50/50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-100/50">
+        <ShieldCheck size={12} /> {unit.complianceStatus || 'OPERATIVO'}
+      </span>
+      <span className="flex items-center gap-1.5 text-[10px] font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-100 uppercase tracking-widest shadow-sm">
+        <MapPin size={11} className="text-sky-500" /> {unit.sede || 'MINA'}
+      </span>
     </div>
-    <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50/50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-100/50">
-      <ShieldCheck size={12} /> {unit.complianceStatus || 'OPERATIVO'}
-    </span>
-    <span className="flex items-center gap-1.5 text-[10px] font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-100 uppercase tracking-widest shadow-sm">
-      <MapPin size={11} className="text-sky-500" /> {unit.sede || 'MINA'}
-    </span>
-  </div>
-);
+  );
+};
 
 const LogisticsCluster = ({
   unit,
@@ -147,6 +165,29 @@ const OdometerCluster = ({
   </div>
 );
 
+const HologramBadge = ({ hologram }: { hologram: string | null }): React.JSX.Element | null => {
+  if (!hologram) return null;
+
+  const styles: Record<string, string> = {
+    '00': 'bg-navy-900 text-yellow-400 border-yellow-500/50 shadow-sm',
+    '0': 'bg-emerald-600 text-white border-emerald-700',
+    '1': 'bg-amber-500 text-white border-amber-600',
+    '2': 'bg-rose-600 text-white border-rose-700',
+    Exento: 'bg-sky-500 text-white border-sky-600',
+    Foráneo: 'bg-slate-500 text-white border-slate-600',
+  };
+
+  const style = styles[hologram] || 'bg-slate-100 text-slate-600 border-slate-200';
+
+  return (
+    <div
+      className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[8px] font-black uppercase border ${style} tracking-tighter leading-none`}
+    >
+      H-{hologram}
+    </div>
+  );
+};
+
 const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   const fuelType = unit.fuelType || 'S/D';
   const motor = unit.motor || 'S/D';
@@ -191,7 +232,10 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           POL: {poliza}
         </span>
         <div className="flex items-center justify-between mt-1 text-[9px] font-black uppercase">
-          <span className="text-emerald-600">Verif</span>
+          <div className="flex items-center gap-2">
+            <span className="text-emerald-600">Verif</span>
+            <HologramBadge hologram={unit.environmentalHologram || null} />
+          </div>
           <span className="text-navy-800 text-[10px]">{formatDate(verifDate)}</span>
         </div>
         <div className="flex items-center justify-between text-[9px] font-black uppercase">
