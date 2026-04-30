@@ -18,7 +18,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
 
   // 🔱 Financial Intelligence Engine
   const totalMonthlyLease = units.reduce(
-    (acc: number, u: FleetUnit): number => acc + (u.monthlyLeasePayment || 0),
+    (acc: number, u: FleetUnit): number => acc + Number(u.monthlyLeasePayment || 0),
     0
   );
   const efficiency = stats.maintenanceIndex; // % of units ready for operation
