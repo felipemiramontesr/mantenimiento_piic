@@ -109,4 +109,19 @@ Para el sistema de mantenimiento, los inputs deben seguir esta lógica:
 
 ---
 
+## 🛡️ 8. Archon Operational Protocol: Commits & Versioning
+
+Para mantener la trazabilidad industrial del sistema Archon, todos los commits deben seguir este formato riguroso:
+
+**Estructura**: `V.[X.X.X]: _[Type]: _[Description_With_Underscores]`
+
+**Reglas**:
+
+- El prefijo de versión es obligatorio.
+- El tipo (Type) debe empezar con mayúscula (Style, Feat, Fix, Refactor, Docs, etc.).
+- La descripción debe usar guiones bajos (`_`) en lugar de espacios.
+- **Ejemplo Real**: `V.19.0.0: _Style: _Archon_Visual_Unification_Standardized_Table_Headers`
+
+---
+
 © 2026 **Powered by PIIC TECH System**. _Engineered for visual immortality._
