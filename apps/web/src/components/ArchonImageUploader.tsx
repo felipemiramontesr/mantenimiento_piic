@@ -8,12 +8,14 @@ interface ArchonImageUploaderProps {
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
+  onFileChange?: (files: File[]) => void;
 }
 
 const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   images,
   onChange,
   maxImages = 4,
+  onFileChange,
 }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,8 +23,10 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   const handleFiles = (files: FileList | File[]): void => {
     const newImages = [...images];
 
+    const selectedFiles: File[] = [];
     Array.from(files).forEach((file: File): void => {
       if (newImages.length < maxImages && file.type.startsWith('image/')) {
+        selectedFiles.push(file);
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>): void => {
           const result = e.target?.result as string;
@@ -34,6 +38,10 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
         reader.readAsDataURL(file);
       }
     });
+
+    if (onFileChange) {
+      onFileChange(selectedFiles);
+    }
   };
 
   const onDragOver = (e: React.DragEvent): void => {

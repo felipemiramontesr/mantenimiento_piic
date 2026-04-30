@@ -2,11 +2,19 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
 import catalogRoutes from './routes/catalogs';
+import userRoutes from './routes/users';
 
 dotenv.config({ path: '../../.env' });
 
@@ -38,11 +46,25 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     timeWindow: '1 minute',
   });
 
+  // 🔱 File Upload Protocol (Multipart)
+  fastify.register(multipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+  });
+
+  // 🔱 Static Assets Protocol (Serving Profile Pictures)
+  fastify.register(fastifyStatic, {
+    root: path.join(__dirname, '../uploads'),
+    prefix: '/uploads/', // URL prefix
+  });
+
   // Routes
   fastify.register(authRoutes, { prefix: '/v1/auth' });
   fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
   fastify.register(fleetRoutes, { prefix: '/v1' });
   fastify.register(catalogRoutes, { prefix: '/v1/catalogs' });
+  fastify.register(userRoutes, { prefix: '/v1' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(

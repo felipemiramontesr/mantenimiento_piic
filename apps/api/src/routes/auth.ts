@@ -121,12 +121,18 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       const encryptedEmail = EncryptionService.encrypt(email);
 
       // 4. Persist to Sovereign Vault
-      await db.execute(
-        'INSERT INTO users (username, email, password_hash, role_id, full_name, department, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [username, encryptedEmail, passwordHash, roleId, fullName, department, employeeNumber]
+      const [result] = await db.execute(
+        'INSERT INTO users (username, email, password_hash, role_id, full_name, department, employee_number, profile_picture_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [username, encryptedEmail, passwordHash, roleId, fullName, department, employeeNumber, null]
       );
 
-      return reply.code(201).send({ success: true, message: 'Usuario registrado exitosamente' });
+      const userId = (result as any).insertId;
+
+      return reply.code(201).send({ 
+        success: true, 
+        message: 'Usuario registrado exitosamente',
+        userId 
+      });
     } catch (err: unknown) {
       fastify.log.error(err);
       return reply.code(500).send({ error: 'Falla crítica durante el registro de identidad' });
@@ -180,7 +186,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       roleId: z.number().int().optional(),
       department: z.string().optional(),
       employeeNumber: z.string().optional(),
-      image_url: z.string().optional(),
+      profile_picture_url: z.string().optional(),
       is_active: z.boolean().optional(),
     });
 
@@ -234,9 +240,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         fields.push('employee_number = ?');
         values.push(updates.employeeNumber);
       }
-      if (updates.image_url !== undefined) {
-        fields.push('image_url = ?');
-        values.push(updates.image_url);
+      if (updates.profile_picture_url !== undefined) {
+        fields.push('profile_picture_url = ?');
+        values.push(updates.profile_picture_url);
       }
       if (updates.is_active !== undefined) {
         fields.push('is_active = ?');

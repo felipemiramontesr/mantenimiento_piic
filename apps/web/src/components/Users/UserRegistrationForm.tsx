@@ -85,6 +85,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -136,6 +137,13 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     });
 
     if (success) {
+      if (selectedFile && editingUser) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', selectedFile);
+        await api.post(`/users/${editingUser.id}/upload-profile`, formDataUpload, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
       setSuccessData({ isEdit: true });
     } else {
       setError('Error de sincronización. Verifique que la contraseña tenga al menos 8 caracteres.');
@@ -156,6 +164,14 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     });
 
     if (response.data.success) {
+      const userId = response.data.userId;
+      if (selectedFile && userId) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', selectedFile);
+        await api.post(`/users/${userId}/upload-profile`, formDataUpload, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
       setSuccessData({ tempPass });
       await fetchUsers();
     }
@@ -266,6 +282,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 onChange={(imgs: string[]): void =>
                   setFormData({ ...formData, imageUrl: imgs[0] || '' })
                 }
+                onFileChange={(files: File[]): void => setSelectedFile(files[0] || null)}
                 maxImages={1}
               />
             </ArchonField>
