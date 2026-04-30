@@ -5,6 +5,7 @@ import {
   ShieldAlert,
   Settings,
   Users,
+  Wrench,
   Navigation,
   Wallet,
   ChevronLeft,
@@ -168,6 +169,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             label="Administrar Personal"
             path="/dashboard/users"
             active={location.pathname === '/dashboard/users'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem
+            icon={<Wrench size={20} />}
+            label="Administrar Mantenimientos"
+            path="/dashboard/maintenance"
+            active={location.pathname === '/dashboard/maintenance'}
             isCollapsed={isCollapsed}
           />
           <NavItem
