@@ -1657,11 +1657,14 @@ body {
   border-collapse: separate;
   border-spacing: 0 4px;
   background: transparent;
-  margin-top: -8px;
+  margin-top: 0 !important;
 }
 
 .archon-registry-table th {
-  padding: 16px;
+  padding-top: 48px !important;
+  padding-bottom: 40px !important;
+  padding-left: 16px;
+  padding-right: 16px;
   text-align: center;
   font-size: 10px;
   font-weight: 900;
@@ -1669,7 +1672,8 @@ body {
   letter-spacing: 0.2em;
   color: #ffffff;
   opacity: 1;
-  border-bottom: 1px solid rgba(15, 42, 68, 0.05);
+  border: none !important;
+  vertical-align: middle;
 }
 
 .archon-registry-table td {
