@@ -478,11 +478,11 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="glass-card-pro bg-white p-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl rounded-xl custom-scrollbar">
+      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl rounded-xl custom-scrollbar">
         <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
             <tr>
-              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 ACTIVO
               </th>
               <th
@@ -500,7 +500,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-10 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   UNIDAD / MODELO
@@ -517,16 +517,16 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 IDENTIDAD / PROPIEDAD / SEDE
               </th>
-              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 FRECUENCIAS / TARIFA
               </th>
-              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 ODOMETRÍA (ACTUAL/ANT/OBJ)
               </th>
-              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 CONFIG / LEGAL
               </th>
               <th
@@ -545,7 +545,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-10 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   KM RESTANTES
@@ -577,7 +577,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-10 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   PRONÓSTICO (FECHA)
@@ -594,7 +594,7 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 SALUD
               </th>
             </tr>
