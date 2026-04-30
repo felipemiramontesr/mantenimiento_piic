@@ -312,7 +312,7 @@ const FleetUnitRow = ({
         isOverdue ? 'bg-red-50/40' : ''
       }`}
     >
-      <td className="py-16 text-center">
+      <td className="py-16 text-center pl-8 pr-4">
         {unit.images?.[0] ? (
           <img
             src={unit.images[0]}
@@ -327,7 +327,7 @@ const FleetUnitRow = ({
         )}
       </td>
 
-      <td className="text-center px-6">
+      <td className="text-center px-4">
         <div className="flex flex-col items-center gap-2">
           <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded shadow-lg tracking-[0.2em]">
             {unit.id}
@@ -350,15 +350,15 @@ const FleetUnitRow = ({
         </div>
       </td>
 
-      <td className="text-center px-6">
+      <td className="text-center px-4">
         <IdentityCluster unit={unit} tarjeta={mockData.tarjeta} />
       </td>
 
-      <td className="text-center px-6 border-x border-slate-50/50">
+      <td className="text-center px-4 border-x border-slate-50/50">
         <LogisticsCluster unit={unit} cuenta={mockData.cuenta} usageUnit={usageUnit} />
       </td>
 
-      <td className="py-16 px-6 min-w-[160px]">
+      <td className="py-16 px-4 min-w-[160px]">
         <OdometerCluster
           unit={unit}
           usageUnit={usageUnit}
@@ -367,28 +367,20 @@ const FleetUnitRow = ({
         />
       </td>
 
-      <td className="py-16 px-6 min-w-[200px]">
+      <td className="py-16 px-4 min-w-[200px]">
         <SpecCluster unit={unit} />
       </td>
 
-      <td className="text-center px-6">
+      <td className="text-center px-4">
         <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
       </td>
 
-      <td className="text-center px-6">
+      <td className="text-center px-4">
         <HealthStatusCluster forecast={forecast} />
       </td>
 
-      <td className="text-center px-6">
+      <td className="text-center pl-4 pr-8">
         <div className="flex flex-col gap-2">
-          {/* 🔱 Botón de Mantenimiento Desactivado para Pruebas de Registro 
-          <button
-            onClick={(): void => onRecordService(unit)}
-            className="flex items-center justify-center gap-2 bg-navy-900 text-white px-4 py-2 rounded font-black text-[10px] uppercase tracking-widest hover:bg-sky-900 transition-all shadow-md"
-          >
-            <Wrench size={12} /> Registrar Mto.
-          </button>
-          */}
           <FleetKpiMatrix
             availability={unit.availabilityIndex ?? 100}
             mtbf={unit.mtbfHours ?? 0}
@@ -478,12 +470,12 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl rounded-xl custom-scrollbar">
-        <table className="archon-registry-table w-full min-w-[1500px]">
+      <div className="glass-card-pro bg-white pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl rounded-xl custom-scrollbar">
+        <table className="archon-registry-table w-full min-w-[1500px] border-separate border-spacing-0">
           <thead>
-            <tr>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
-                ACTIVO
+            <tr className="bg-[#0f2a44]">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-8 pr-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+                <div className="flex items-center justify-center h-full">ACTIVO</div>
               </th>
               <th
                 onClick={(): void =>
@@ -500,9 +492,9 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24"
               >
-                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
+                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest h-full">
                   UNIDAD / MODELO
                   <span
                     className={`inline-flex ml-1 ${
@@ -517,17 +509,21 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
-                IDENTIDAD / PROPIEDAD / SEDE
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+                <div className="flex items-center justify-center h-full">
+                  IDENTIDAD / PROPIEDAD / SEDE
+                </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
-                FRECUENCIAS / TARIFA
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+                <div className="flex items-center justify-center h-full">FRECUENCIAS / TARIFA</div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
-                ODOMETRÍA (ACTUAL/ANT/OBJ)
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+                <div className="flex items-center justify-center h-full">
+                  ODOMETRÍA (ACTUAL/ANT/OBJ)
+                </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
-                CONFIG / LEGAL
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+                <div className="flex items-center justify-center h-full">CONFIG / LEGAL</div>
               </th>
               <th
                 onClick={(): void =>
@@ -545,9 +541,9 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24"
               >
-                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
+                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest h-full">
                   KM RESTANTES
                   <span
                     className={`inline-flex ml-1 ${
@@ -577,9 +573,9 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24"
               >
-                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
+                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest h-full">
                   PRONÓSTICO (FECHA)
                   <span
                     className={`inline-flex ml-1 ${
@@ -594,8 +590,8 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
-                SALUD
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-4 pr-8 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+                <div className="flex items-center justify-center h-full">SALUD</div>
               </th>
             </tr>
           </thead>
