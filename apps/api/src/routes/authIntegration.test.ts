@@ -71,6 +71,33 @@ describe('Auth Integration Endpoints', () => {
       expect(body.status).toBe('success');
       expect(body.token).toBeDefined();
       expect(body.user.email).toBe('admin@piic.mx');
+      expect(body.user.imageUrl).toBeNull();
+    });
+
+    it('should include profile image URL if it exists in DB', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          {
+            id: 1,
+            username: 'admin',
+            email: EncryptionService.encrypt('admin@piic.mx'),
+            passwordHash: 'hashed_password',
+            roleId: 1,
+            roleName: 'Administrador',
+            profile_picture_url: 'avatar.jpg',
+          },
+        ],
+      ]);
+      (argon2.verify as Mock).mockResolvedValueOnce(true);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/login',
+        payload: validCredentials,
+      });
+
+      const body = JSON.parse(response.body);
+      expect(body.user.imageUrl).toBe('/v1/users/1/profile-image');
     });
 
     it('should return 401 if user does not exist', async (): Promise<void> => {

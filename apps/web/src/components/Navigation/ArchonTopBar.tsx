@@ -60,7 +60,6 @@ const ArchonTopBar: React.FC = () => {
                 className="w-full h-full object-cover"
                 onError={(e): void => {
                   const target = e.target as HTMLImageElement;
-                  // eslint-disable-next-line no-param-reassign
                   target.src = ''; // Fallback logic
                 }}
               />
