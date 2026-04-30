@@ -157,17 +157,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             isCollapsed={isCollapsed}
           />
           <NavItem
-            icon={<Users size={20} />}
-            label="Administrar Personal"
-            path="/dashboard/users"
-            active={location.pathname === '/dashboard/users'}
-            isCollapsed={isCollapsed}
-          />
-          <NavItem
             icon={<Wallet size={20} />}
             label="Salud Financiera"
             path="/dashboard/financial"
             active={location.pathname === '/dashboard/financial'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem
+            icon={<Users size={20} />}
+            label="Administrar Personal"
+            path="/dashboard/users"
+            active={location.pathname === '/dashboard/users'}
             isCollapsed={isCollapsed}
           />
           <NavItem
