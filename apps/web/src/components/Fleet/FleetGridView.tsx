@@ -482,7 +482,7 @@ export const FleetGridView = ({
         <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
             <tr>
-              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 ACTIVO
               </th>
               <th
@@ -500,13 +500,13 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-10 bg-white/95 backdrop-blur-md cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6 shadow-sm"
+                className="sticky top-0 z-10 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   UNIDAD / MODELO
                   <span
                     className={`inline-flex ml-1 ${
-                      sortConfig.field === 'unidad' ? 'opacity-100 text-emerald-600' : 'opacity-40'
+                      sortConfig.field === 'unidad' ? 'text-amber-400' : 'opacity-40'
                     }`}
                   >
                     {sortConfig.field === 'unidad' && sortConfig.direction === 'desc' ? (
@@ -517,16 +517,16 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 IDENTIDAD / PROPIEDAD / SEDE
               </th>
-              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 FRECUENCIAS / TARIFA
               </th>
-              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 ODOMETRÍA (ACTUAL/ANT/OBJ)
               </th>
-              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 CONFIG / LEGAL
               </th>
               <th
@@ -545,15 +545,13 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-10 bg-white/95 backdrop-blur-md cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors text-amber-600 py-6 shadow-sm"
+                className="sticky top-0 z-10 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   KM RESTANTES
                   <span
                     className={`inline-flex ml-1 ${
-                      sortConfig.field === 'programacion'
-                        ? 'opacity-100 text-emerald-600'
-                        : 'opacity-40'
+                      sortConfig.field === 'programacion' ? 'text-amber-400' : 'opacity-40'
                     }`}
                   >
                     {sortConfig.field === 'programacion' && sortConfig.direction === 'desc' ? (
@@ -579,15 +577,13 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-10 bg-white/95 backdrop-blur-md cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6 shadow-sm"
+                className="sticky top-0 z-10 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   PRONÓSTICO (FECHA)
                   <span
                     className={`inline-flex ml-1 ${
-                      sortConfig.field === 'pronostico'
-                        ? 'opacity-100 text-emerald-600'
-                        : 'opacity-40'
+                      sortConfig.field === 'pronostico' ? 'text-amber-400' : 'opacity-40'
                     }`}
                   >
                     {sortConfig.field === 'pronostico' && sortConfig.direction === 'desc' ? (
@@ -598,7 +594,7 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+              <th className="sticky top-0 z-10 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
                 SALUD
               </th>
             </tr>
