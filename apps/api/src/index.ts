@@ -7,14 +7,16 @@ import fastifyStatic from '@fastify/static';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
 import catalogRoutes from './routes/catalogs';
 import userRoutes from './routes/users';
+
+/* eslint-disable no-underscore-dangle */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+/* eslint-enable no-underscore-dangle */
 
 dotenv.config({ path: '../../.env' });
 

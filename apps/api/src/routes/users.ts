@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
+import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 
 /**
@@ -26,8 +27,11 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
     const { id } = request.params as { id: string };
     
     // 🛡️ Pre-validation: Verify user existence before accepting bytes
-    const [existing] = await db.execute('SELECT id FROM users WHERE id = ?', [id]);
-    if ((existing as any[]).length === 0) {
+    const [existing] = await db.execute<RowDataPacket[]>(
+      'SELECT id FROM users WHERE id = ?',
+      [id]
+    );
+    if (existing.length === 0) {
       return reply.code(404).send({ error: 'Identity not found' });
     }
 
@@ -83,8 +87,11 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
     try {
       // 1. Fetch filename from Sovereign Registry
-      const [rows] = await db.execute('SELECT profile_picture_url FROM users WHERE id = ?', [id]);
-      const user = (rows as any[])[0];
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT profile_picture_url FROM users WHERE id = ?',
+        [id]
+      );
+      const user = rows[0];
 
       if (!user || !user.profile_picture_url) {
         return reply.code(404).send({ error: 'Image not found' });

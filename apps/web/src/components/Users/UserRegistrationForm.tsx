@@ -164,7 +164,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     });
 
     if (response.data.success) {
-      const userId = response.data.userId;
+      const { userId } = response.data;
       if (selectedFile && userId) {
         const formDataUpload = new FormData();
         formDataUpload.append('file', selectedFile);

@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { RowDataPacket } from 'mysql2';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import argon2 from 'argon2';
 import { z } from 'zod';
 import db from '../services/db';
@@ -96,7 +96,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       fullName: z.string().optional(),
       department: z.string().optional(),
       employeeNumber: z.string().optional(),
-      profile_picture_url: z.string().optional(),
+      profilePictureUrl: z.string().optional(),
     });
 
     const body = registerSchema.safeParse(request.body);
@@ -106,7 +106,16 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         .send({ error: 'Invalid registration data', details: body.error.format() });
     }
 
-    const { username, email, password, roleId, fullName, department, employeeNumber, profile_picture_url } = body.data;
+    const {
+      username,
+      email,
+      password,
+      roleId,
+      fullName,
+      department,
+      employeeNumber,
+      profilePictureUrl,
+    } = body.data;
 
     try {
       // 1. Check for duplicate identity
@@ -124,10 +133,19 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // 4. Persist to Sovereign Vault
       const [result] = await db.execute(
         'INSERT INTO users (username, email, password_hash, role_id, full_name, department, employee_number, profile_picture_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [username, encryptedEmail, passwordHash, roleId, fullName, department, employeeNumber, profile_picture_url || null]
+        [
+          username,
+          encryptedEmail,
+          passwordHash,
+          roleId,
+          fullName,
+          department,
+          employeeNumber,
+          profilePictureUrl || null,
+        ]
       );
 
-      const userId = (result as any).insertId;
+      const { insertId: userId } = result as ResultSetHeader;
 
       return reply.code(201).send({ 
         success: true, 
@@ -188,7 +206,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       roleId: z.number().int().optional(),
       department: z.string().optional(),
       employeeNumber: z.string().optional(),
-      profile_picture_url: z.string().optional(),
+      profilePictureUrl: z.string().optional(),
       is_active: z.boolean().optional(),
     });
 
@@ -242,9 +260,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         fields.push('employee_number = ?');
         values.push(updates.employeeNumber);
       }
-      if (updates.profile_picture_url !== undefined) {
+      if (updates.profilePictureUrl !== undefined) {
         fields.push('profile_picture_url = ?');
-        values.push(updates.profile_picture_url);
+        values.push(updates.profilePictureUrl);
       }
       if (updates.is_active !== undefined) {
         fields.push('is_active = ?');
