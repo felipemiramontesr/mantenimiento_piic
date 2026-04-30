@@ -2,16 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wrench, Settings, LogOut } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+import MaintenanceManagementCards, {
+  MaintenancePanel,
+} from '../../components/Maintenance/MaintenanceManagementCards';
 
 /**
- * 🛠️ ARCHON MAINTENANCE MODULE (v.1.1.0)
+ * 🛠️ ARCHON MAINTENANCE MODULE (v.1.2.0)
  * Architecture: Sovereign Instrumental Node
  * Principles: SOLID, DRY, DIP
- * Status: Homologated - Ready for logic implementation
+ * Status: Homologated - Cards Integrated
  */
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [activePanel, setActivePanel] = useState<MaintenancePanel>('HISTORY');
 
   const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
   const closeMenu = (): void => setIsMenuOpen(false);
@@ -19,6 +23,10 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
   const handleLogout = (): void => {
     localStorage.removeItem('archon_token');
     navigate('/login');
+  };
+
+  const handlePanelChange = (panel: MaintenancePanel): void => {
+    setActivePanel(panel);
   };
 
   return (
@@ -153,10 +161,19 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
       </header>
 
       {/* 📊 BODY MODULAR - HOMOLOGATED */}
-      <section className="archon-workspace-chassis flex items-center justify-center min-h-[60vh]">
-        <h3 className="text-[#0f2a44] text-xl font-black tracking-tight animate-in fade-in duration-1000">
-          Lista para recibir información-
-        </h3>
+      <section className="archon-workspace-chassis">
+        {/* 🔱 AXIAL SYNC CONTAINER */}
+        <div className="archon-axial-container flex flex-col gap-12">
+          <MaintenanceManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+
+          <div className="flex items-center justify-center min-h-[30vh]">
+            <h3 className="text-[#0f2a44] text-xl font-black tracking-tight animate-in fade-in duration-1000">
+              {activePanel === 'HISTORY'
+                ? 'Bitácora de Servicios lista para recibir información-'
+                : 'Módulo de Programación listo para recibir información-'}
+            </h3>
+          </div>
+        </div>
       </section>
 
       <footer className="workspace-footer-pro">
