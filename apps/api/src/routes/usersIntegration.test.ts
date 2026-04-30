@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import fs from 'node:fs';
-import { pipeline, PassThrough } from 'node:stream';
+import { PassThrough } from 'node:stream';
 import { pipeline as pipelinePromise } from 'node:stream/promises';
 import buildApp from '../index';
 import db from '../services/db';
