@@ -24,7 +24,7 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
   const mttr = Number(props.mttr ?? 0);
   const backlog = Number(props.backlog ?? 0);
   const healthScore = props.healthScore ?? 100;
-  const daysRemaining = props.daysRemaining;
+  const { daysRemaining } = props;
 
   // 🎨 COLOR ENGINE (Sovereign Thresholds)
   const getAvaColor = (val: number): string => {
