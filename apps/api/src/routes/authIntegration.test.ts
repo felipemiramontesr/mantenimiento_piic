@@ -368,13 +368,17 @@ describe('Auth Integration Endpoints', () => {
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/auth/users/1',
-        payload: { roleId: 3, image_url: 'https://cdn.piic.mx/profiles/ana.jpg' },
+        payload: { roleId: 3, profilePictureUrl: 'https://cdn.piic.mx/profiles/ana.jpg' },
       });
 
       expect(response.statusCode).toBe(200);
       expect(db.execute).toHaveBeenCalledWith(
         expect.stringContaining('role_id = ?'),
         expect.arrayContaining([3, 'https://cdn.piic.mx/profiles/ana.jpg', '1'])
+      );
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining('profile_picture_url = ?'),
+        expect.anything()
       );
     });
 
