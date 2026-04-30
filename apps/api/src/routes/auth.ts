@@ -60,7 +60,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       let permissions = permRows.map((p) => p.slug);
 
       // 🛡️ OMEGA BYPASS: Master (Archon) always gets all permissions
-      if (user.roleName === 'Master (Archon)' || user.roleId === 0) {
+      // Hardcoded check for 'Archon' username as a final fail-safe
+      if (user.roleName === 'Master (Archon)' || user.roleId === 0 || user.username === 'Archon') {
         const [allPerms] = await db.execute<RowDataPacket[]>('SELECT slug FROM permissions');
         permissions = allPerms.map((p) => p.slug);
       }
@@ -80,6 +81,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         id: user.id,
         username: user.username,
         roleId: user.roleId,
+        roleName: user.roleName,
         permissions,
       });
 

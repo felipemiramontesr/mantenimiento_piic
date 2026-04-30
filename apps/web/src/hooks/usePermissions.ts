@@ -19,8 +19,12 @@ export default function usePermissions(): {
     if (!currentUser) return false;
 
     // 🛡️ OMEGA BYPASS: Master (Archon) has absolute power
-    // We check both ID and Name to be resilient to DB mapping shifts
-    if (currentUser.roleId === 0 || currentUser.roleName === 'Master (Archon)') {
+    // We check ID, Name, and Username to be indestructible against DB issues
+    if (
+      currentUser.roleId === 0 ||
+      currentUser.roleName === 'Master (Archon)' ||
+      currentUser.username === 'Archon'
+    ) {
       return true;
     }
 
