@@ -18,13 +18,13 @@ export interface UserIndustrial {
   fullName: string;
   email: string;
   roleId: number;
+  roleName: string;
   department: string;
   employeeNumber: string;
   is_active: boolean;
   imageUrl?: string;
   permissions?: string[];
   password?: string;
-  role?: Role;
   created_at?: string;
   updated_at?: string;
 }

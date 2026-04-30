@@ -16,8 +16,8 @@ interface PersonnelRecord {
   id: number;
   username: string;
   email: string;
-  role_id: number;
-  role_name?: string;
+  roleId: number;
+  roleName?: string;
   is_active?: boolean;
 }
 
@@ -38,7 +38,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
     username: '',
     email: '',
     password: '',
-    role_id: 2, // Default: Operador
+    roleId: 2, // Default: Supervisor
   });
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -88,7 +88,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
 
       await fetchUsers();
       setView('list');
-      setFormData({ username: '', email: '', password: '', role_id: 2 });
+      setFormData({ username: '', email: '', password: '', roleId: 2 });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error de identidad';
       setError(msg);
@@ -120,7 +120,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
     const roles: Record<number, string> = {
       0: 'MASTER (ARCHON)',
       1: 'DIRECTOR DE FLOTILLA',
-      2: 'SUPERVISOR MANT.',
+      2: 'SUPERVISOR DE MANTENIMIENTO',
       3: 'TÉCNICO ESPECIALISTA',
       4: 'OPERADOR DE UNIDAD',
       5: 'AUDITOR OPERATIVO',
@@ -162,10 +162,10 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                   <h4 className="text-sm font-black text-[#0f2a44] uppercase">{u.username}</h4>
                   <div
                     className={`mt-1 inline-block px-2 py-0.5 rounded border text-[8px] font-black uppercase ${getRoleBadge(
-                      u.role_id
+                      u.roleId
                     )}`}
                   >
-                    {getRoleName(u.role_id)}
+                    {getRoleName(u.roleId)}
                   </div>
                 </div>
               </div>
@@ -301,9 +301,9 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                       <button
                         key={rId}
                         type="button"
-                        onClick={(): void => setFormData({ ...formData, role_id: rId })}
+                        onClick={(): void => setFormData({ ...formData, roleId: rId })}
                         className={`p-3 rounded border text-[8px] font-black uppercase transition-all text-center leading-tight ${
-                          formData.role_id === rId
+                          formData.roleId === rId
                             ? 'bg-[#0f2a44] text-white border-[#0f2a44] shadow-lg scale-[1.02]'
                             : 'bg-white border-gray-100 text-gray-400 hover:border-[#0f2a44]/20'
                         }`}

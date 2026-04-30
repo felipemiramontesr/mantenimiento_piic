@@ -100,7 +100,7 @@ const UserRegistryRow = ({
       </td>
       <td className="text-center px-4">
         <div className="flex flex-col items-center gap-1.5">
-          <RoleBadge roleName={user.role?.name || 'Usuario'} />
+          <RoleBadge roleName={user.roleName || 'Usuario'} />
           <div className="flex items-center gap-1 opacity-40">
             <Briefcase size={9} />
             <span className="text-[9px] font-bold uppercase">{user.department || 'GENERAL'}</span>

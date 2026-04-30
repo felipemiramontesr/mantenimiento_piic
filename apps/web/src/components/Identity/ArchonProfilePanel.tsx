@@ -278,7 +278,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                     Rol de Sistema
                   </p>
                   <p className="text-xs font-bold text-[#0f2a44]">
-                    {currentUser?.role?.name || 'Usuario'}
+                    {currentUser?.roleName || 'Usuario'}
                   </p>
                 </div>
                 <Shield size={20} className="text-[#0f2a44]/20" />
