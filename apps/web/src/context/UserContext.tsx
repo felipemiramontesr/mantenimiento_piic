@@ -23,6 +23,7 @@ interface RawUserResponse {
   employeeNumber?: string;
   is_active: number | boolean;
   image_url?: string;
+  profile_picture_url?: string;
 }
 
 interface CatalogOption {
@@ -82,7 +83,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             department: u.department,
             employeeNumber: u.employee_number || u.employeeNumber || '',
             is_active: Boolean(u.is_active),
-            imageUrl: u.image_url || '',
+            imageUrl: u.profile_picture_url || u.image_url || '',
             role: {
               id: u.roleId,
               name: u.roleName,
@@ -122,7 +123,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         roleId: data.roleId,
         department: data.department,
         employeeNumber: data.employeeNumber,
-        image_url: data.imageUrl,
+        profile_picture_url: data.imageUrl,
         password: data.password,
       };
 

@@ -96,6 +96,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       fullName: z.string().optional(),
       department: z.string().optional(),
       employeeNumber: z.string().optional(),
+      profile_picture_url: z.string().optional(),
     });
 
     const body = registerSchema.safeParse(request.body);
@@ -105,7 +106,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         .send({ error: 'Invalid registration data', details: body.error.format() });
     }
 
-    const { username, email, password, roleId, fullName, department, employeeNumber } = body.data;
+    const { username, email, password, roleId, fullName, department, employeeNumber, profile_picture_url } = body.data;
 
     try {
       // 1. Check for duplicate identity
@@ -123,7 +124,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // 4. Persist to Sovereign Vault
       const [result] = await db.execute(
         'INSERT INTO users (username, email, password_hash, role_id, full_name, department, employee_number, profile_picture_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [username, encryptedEmail, passwordHash, roleId, fullName, department, employeeNumber, null]
+        [username, encryptedEmail, passwordHash, roleId, fullName, department, employeeNumber, profile_picture_url || null]
       );
 
       const userId = (result as any).insertId;
@@ -149,7 +150,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     try {
       let query = `
         SELECT u.id, u.username, u.email, u.role_id as roleId, r.label as roleName,
-               u.full_name, u.department, u.employee_number, u.is_active
+               u.full_name, u.department, u.employee_number, u.is_active, u.profile_picture_url
         FROM users u
         JOIN common_catalogs r ON u.role_id = r.id
         WHERE 1=1
@@ -165,6 +166,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       const users = (rows as RowDataPacket[]).map((u) => ({
         ...u,
         email: EncryptionService.decrypt(u.email),
+        profile_picture_url: u.profile_picture_url ? `/v1/users/${u.id}/profile-image` : null,
       }));
 
       return reply.send({ success: true, count: users.length, data: users });

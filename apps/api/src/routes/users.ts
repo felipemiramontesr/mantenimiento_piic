@@ -54,9 +54,10 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       await pipeline(data.file, fs.createWriteStream(uploadPath));
 
       // 2. Update Sovereign Registry
+      // We store the physical path in DB, but the system will expose it via the logical route
       await db.execute(
         'UPDATE users SET profile_picture_url = ? WHERE id = ?',
-        [publicUrl, id]
+        [newFilename, id]
       );
 
       fastify.log.info(`✅ Profile picture updated for user ${id}: ${newFilename}`);
@@ -64,11 +65,49 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       return reply.send({ 
         success: true, 
         message: 'Profile identity updated',
-        url: publicUrl 
+        url: `/v1/users/${id}/profile-image` 
       });
     } catch (err) {
       fastify.log.error(err);
       return reply.code(500).send({ error: 'Infrastructure failure during file persistence' });
+    }
+  });
+
+  /**
+   * 🔱 GET /v1/users/:id/profile-image
+   * Secure Logic-Gated Asset Serving (Friendly URL)
+   * v.2.0.0 - Permission-based image delivery
+   */
+  fastify.get('/users/:id/profile-image', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      // 1. Fetch filename from Sovereign Registry
+      const [rows] = await db.execute('SELECT profile_picture_url FROM users WHERE id = ?', [id]);
+      const user = (rows as any[])[0];
+
+      if (!user || !user.profile_picture_url) {
+        return reply.code(404).send({ error: 'Image not found' });
+      }
+
+      const filename = user.profile_picture_url;
+      const filePath = path.join(process.cwd(), 'uploads/profiles', filename);
+
+      // 🛡️ Security Check: Verify file exists on disk
+      if (!fs.existsSync(filePath)) {
+        return reply.code(404).send({ error: 'Physical asset missing' });
+      }
+
+      // 🛡️ Mime-Type Recovery
+      const ext = path.extname(filename).toLowerCase();
+      const contentType = ext === '.png' ? 'image/png' : 'image/jpeg';
+
+      // 🔱 Logic-Gated Stream: Serving the file with authorization
+      const stream = fs.createReadStream(filePath);
+      return reply.type(contentType).send(stream);
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Storage access exception' });
     }
   });
 }

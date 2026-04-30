@@ -160,7 +160,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       department: formData.department,
       employeeNumber: formData.employeeNumber,
       password: formData.password || tempPass,
-      image_url: formData.imageUrl,
+      profile_picture_url: formData.imageUrl,
     });
 
     if (response.data.success) {
