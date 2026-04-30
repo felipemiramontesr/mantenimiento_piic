@@ -482,7 +482,7 @@ export const FleetGridView = ({
         <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
             <tr>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
                 ACTIVO
               </th>
               <th
@@ -500,7 +500,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   UNIDAD / MODELO
@@ -517,16 +517,16 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
                 IDENTIDAD / PROPIEDAD / SEDE
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
                 FRECUENCIAS / TARIFA
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
                 ODOMETRÍA (ACTUAL/ANT/OBJ)
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
                 CONFIG / LEGAL
               </th>
               <th
@@ -545,7 +545,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   KM RESTANTES
@@ -577,7 +577,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 shadow-sm text-white"
+                className="bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   PRONÓSTICO (FECHA)
@@ -594,7 +594,7 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white shadow-sm">
+              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
                 SALUD
               </th>
             </tr>
