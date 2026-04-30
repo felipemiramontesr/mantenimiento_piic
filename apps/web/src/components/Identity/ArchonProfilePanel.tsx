@@ -11,7 +11,6 @@ import {
   Key,
   Eye,
   EyeOff,
-  UserCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ArchonField from '../ArchonField';
@@ -116,21 +115,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
   const canSubmit = !formData.password || (passwordsMatch && formData.password.length >= 8);
 
   return (
-    <div className="workspace-container-pro animate-in fade-in duration-700">
-      <header className="workspace-header-pro mb-12">
-        <div className="flex flex-col items-start">
-          <div className="flex items-center gap-12 mb-8">
-            <UserCheck size={28} className="text-[#f2b705]" />
-            <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl uppercase">
-              Configuración de Identidad
-            </h2>
-          </div>
-          <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-            Gestión de Perfil, Seguridad de Acceso & Credenciales Archon
-          </p>
-        </div>
-      </header>
-
+    <div className="animate-in fade-in duration-700">
       <form onSubmit={handleFormSubmit} className="space-y-12 pb-20">
         {success && (
           <div className="bg-emerald-50 border-l-4 border-emerald-500 p-6 animate-in fade-in slide-in-from-top-4">
