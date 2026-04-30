@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../../components/Navigation/Sidebar';
+import ArchonTopBar from '../../components/Navigation/ArchonTopBar';
 import { FleetProvider } from '../../context/FleetContext';
 
 const DashboardLayout: React.FC = () => {
@@ -28,6 +29,7 @@ const DashboardLayout: React.FC = () => {
             position: 'relative',
           }}
         >
+          <ArchonTopBar />
           <Outlet />
         </main>
       </div>

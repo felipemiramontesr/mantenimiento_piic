@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Truck, Settings, LogOut } from 'lucide-react';
+import { Truck } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 
@@ -18,18 +17,13 @@ import useFleetForm from '../../hooks/useFleetForm';
  * Refinement: Dynamic Panel Orchestration with Axial Scroll
  */
 const FleetModule: React.FC = (): React.ReactElement => {
-  const navigate = useNavigate();
   const { refreshUnits, units, loading } = useFleet();
   const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
   const fleetController = useFleetForm();
   const { formData, registrationSuccess, setRegistrationSuccess } = fleetController;
-
-  const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = (): void => setIsMenuOpen(false);
 
   const handlePanelChange = (panel: ManagementPanel): void => {
     setActivePanel(panel);
@@ -47,11 +41,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const handleReturnToGrid = (): void => {
     setActivePanel('STRATEGY');
     setRegistrationSuccess(false);
-  };
-
-  const handleLogout = (): void => {
-    localStorage.removeItem('archon_token');
-    navigate('/login');
   };
 
   return (
@@ -91,96 +80,18 @@ const FleetModule: React.FC = (): React.ReactElement => {
             </p>
           </div>
 
-          {/* Right Panel: Identity & Access */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-            <h1
-              style={{
-                fontSize: '26px',
-                fontWeight: 900,
-                margin: 0,
-                letterSpacing: '-0.03em',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                color: '#0f2a44',
-              }}
-            >
-              Archon
-            </h1>
-
-            <button
-              onClick={toggleMenu}
-              aria-label="User Menu"
-              className="avatar-trigger-pro"
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '4px',
-                border: '2px solid #f2b705',
-                backgroundColor: '#0f2a44',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
-                transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
-                padding: 0,
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 100 100">
-                <path
-                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
-                  stroke="#f2b705"
-                  strokeWidth="16"
-                  fill="none"
-                />
-              </svg>
-            </button>
-
-            {isMenuOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '60px',
-                  right: '0',
-                  width: '180px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '4px',
-                  boxShadow: '0 10px 30px rgba(15, 42, 68, 0.15)',
-                  border: '1px solid rgba(15, 42, 68, 0.08)',
-                  zIndex: 100,
-                  padding: '4px 0',
-                  animation: 'fade-in 0.2s ease-out',
-                }}
-              >
-                <div
-                  style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}
-                >
-                  <span
-                    style={{
-                      fontSize: '9px',
-                      fontWeight: 900,
-                      color: '#f2b705',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                    }}
-                  >
-                    Sovereign Access
-                  </span>
-                </div>
-                <button className="dropdown-item-mock" onClick={closeMenu}>
-                  <Settings size={14} /> Ajustes
-                </button>
-                <div
-                  style={{ height: '1px', background: 'rgba(15,42,68,0.05)', margin: '4px 0' }}
-                />
-                <button
-                  className="dropdown-item-mock dropdown-item-mock-danger"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={14} /> Desconexión
-                </button>
-              </div>
-            )}
+          {/* Right Panel: Identity & Access - HANDLED BY GLOBAL TOPBAR */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '24px',
+              position: 'relative',
+              width: '44px',
+              height: '44px',
+            }}
+          >
+            {/* Placeholder to maintain header symmetry if needed, or leave empty */}
           </div>
         </div>
       </header>

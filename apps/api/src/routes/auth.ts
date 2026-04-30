@@ -17,6 +17,7 @@ const userDbSchema = z.object({
   passwordHash: z.string(),
   roleId: z.number(),
   roleName: z.string(),
+  profile_picture_url: z.string().nullable().optional(),
 });
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -33,7 +34,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // 1. Fetch user from DB
       const query = `
         SELECT u.id, u.username, u.email, u.password_hash as passwordHash, 
-               u.role_id as roleId, r.label as roleName 
+               u.role_id as roleId, r.label as roleName, u.profile_picture_url
         FROM users u
         JOIN common_catalogs r ON u.role_id = r.id
         WHERE u.username = ?
@@ -74,6 +75,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           email: decryptedEmail,
           roleId: user.roleId,
           roleName: user.roleName,
+          imageUrl: user.profile_picture_url ? `/v1/users/${user.id}/profile-image` : null,
         },
       });
     } catch (err: unknown) {
@@ -147,10 +149,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
       const { insertId: userId } = result as ResultSetHeader;
 
-      return reply.code(201).send({ 
-        success: true, 
+      return reply.code(201).send({
+        success: true,
         message: 'Usuario registrado exitosamente',
-        userId 
+        userId,
       });
     } catch (err: unknown) {
       fastify.log.error(err);

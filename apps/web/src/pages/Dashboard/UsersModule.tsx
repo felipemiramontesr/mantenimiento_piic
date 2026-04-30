@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Users, Settings, LogOut } from 'lucide-react';
+import React from 'react';
+import { Users } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
-import { BRANDING_NAME } from '../../constants/versionConstants';
+import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
 import UserManagementCards from '../../components/Users/UserManagementCards';
@@ -12,24 +11,19 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 /**
  * 🔱 Archon Component: UsersModule
  * Implementation: Sovereign Personnel Administration
- * v.28.25.0 - Identity Sync (Now consumes global UserProvider)
+ * v.20.0.0
  */
 const UsersModule: React.FC = (): React.JSX.Element => {
-  const navigate = useNavigate();
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
-  // 🔱 IDENTITY ANCHOR (v.28.31.1)
-  // Ensures the Master Table (DIRECTORY) is always the entry point upon module mounting.
-  // Eradicates "stuck" states from previous sessions or failed registrations.
+  // 🔱 IDENTITY ANCHOR
   React.useEffect(() => {
     setActivePanel('DIRECTORY');
     setEditingUser(null);
   }, [setActivePanel, setEditingUser]);
 
-  // 🚀 AXIAL SCROLL SYNC (v.28.28.1)
-  // Ensures parity with the Fleet module by escorting the user to the form upon activation.
+  // 🚀 AXIAL SCROLL SYNC
   React.useEffect(() => {
     if (activePanel === 'SIGNUP' && panelRef.current) {
       setTimeout(() => {
@@ -38,17 +32,9 @@ const UsersModule: React.FC = (): React.JSX.Element => {
     }
   }, [activePanel]);
 
-  const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = (): void => setIsMenuOpen(false);
-
-  const handleLogout = (): void => {
-    localStorage.removeItem('archon_token');
-    navigate('/login');
-  };
-
   return (
-    <main className="workspace-container-pro">
-      {/* 🚀 HEADER SOBERANO (Espejo de Flota) */}
+    <main className="workspace-container-pro animate-in fade-in duration-700">
+      {/* 🚀 HEADER SOBERANO */}
       <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
         <div
           style={{
@@ -83,102 +69,25 @@ const UsersModule: React.FC = (): React.JSX.Element => {
             </p>
           </div>
 
-          {/* Right Panel: Identity & Access */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-            <h1
-              style={{
-                fontSize: '26px',
-                fontWeight: 900,
-                margin: 0,
-                letterSpacing: '-0.03em',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                color: '#0f2a44',
-              }}
-            >
-              Archon
-            </h1>
-
-            <button
-              onClick={toggleMenu}
-              aria-label="User Menu"
-              className="avatar-trigger-pro"
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '4px',
-                border: '2px solid #f2b705',
-                backgroundColor: '#0f2a44',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                boxShadow: isMenuOpen ? '0 0 0 4px rgba(242, 183, 5, 0.2)' : 'none',
-                transform: isMenuOpen ? 'scale(0.95)' : 'scale(1)',
-                padding: 0,
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 100 100">
-                <path
-                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
-                  stroke="#f2b705"
-                  strokeWidth="16"
-                  fill="none"
-                />
-              </svg>
-            </button>
-
-            {isMenuOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '60px',
-                  right: '0',
-                  width: '180px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '4px',
-                  boxShadow: '0 10px 30px rgba(15, 42, 68, 0.15)',
-                  border: '1px solid rgba(15, 42, 68, 0.08)',
-                  zIndex: 100,
-                  padding: '4px 0',
-                }}
-              >
-                <div
-                  style={{ padding: '8px 16px', borderBottom: '1px solid rgba(15, 42, 68, 0.05)' }}
-                >
-                  <span
-                    style={{
-                      fontSize: '9px',
-                      fontWeight: 900,
-                      color: '#f2b705',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                    }}
-                  >
-                    Sovereign Access
-                  </span>
-                </div>
-                <button className="dropdown-item-mock" onClick={closeMenu}>
-                  <Settings size={14} /> Ajustes
-                </button>
-                <div
-                  style={{ height: '1px', background: 'rgba(15,42,68,0.05)', margin: '4px 0' }}
-                />
-                <button
-                  className="dropdown-item-mock dropdown-item-mock-danger"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={14} /> Desconexión
-                </button>
-              </div>
-            )}
+          {/* Right Panel: Identity & Access - HANDLED BY GLOBAL TOPBAR */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '24px',
+              position: 'relative',
+              width: '44px',
+              height: '44px',
+            }}
+          >
+            {/* Symmetrical placeholder */}
           </div>
         </div>
       </header>
 
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        {/* 🔱 AXIAL SYNC CONTAINER (v.28.37.0) */}
+        {/* 🔱 AXIAL SYNC CONTAINER */}
         <div className="archon-axial-container flex flex-col gap-12">
           <UserManagementCards />
 
@@ -189,8 +98,10 @@ const UsersModule: React.FC = (): React.JSX.Element => {
       </section>
 
       <footer className="workspace-footer-pro">
-        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} V.28.28.1</p>
+        <p>© Todos los derechos reservados por ArchonCore by PIIC GROUP.</p>
+        <p className="text-[#0f2a44]">
+          {BRANDING_NAME} {SYSTEM_VERSION}
+        </p>
       </footer>
     </main>
   );

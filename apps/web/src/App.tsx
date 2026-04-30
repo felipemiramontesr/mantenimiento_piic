@@ -11,6 +11,7 @@ import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import { UserProvider } from './context/UserContext';
+import { AuthProvider } from './context/AuthContext';
 import './index.css';
 
 /**
@@ -27,29 +28,31 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const App: React.FC = () => (
   <BrowserRouter>
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <UserProvider>
-              <DashboardLayout />
-            </UserProvider>
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<ArchonCenter />} />
-        <Route path="fleet" element={<FleetModule />} />
-        <Route path="maintenance" element={<MaintenanceModule />} />
-        <Route path="routes" element={<RoutesModule />} />
-        <Route path="users" element={<UsersModule />} />
-        <Route path="financial" element={<FinancialHealthModule />} />
-        <Route path="logs" element={<LogsModule />} />
-        <Route path="settings" element={<SettingsModule />} />
-      </Route>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <UserProvider>
+                <DashboardLayout />
+              </UserProvider>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ArchonCenter />} />
+          <Route path="fleet" element={<FleetModule />} />
+          <Route path="maintenance" element={<MaintenanceModule />} />
+          <Route path="routes" element={<RoutesModule />} />
+          <Route path="users" element={<UsersModule />} />
+          <Route path="financial" element={<FinancialHealthModule />} />
+          <Route path="logs" element={<LogsModule />} />
+          <Route path="settings" element={<SettingsModule />} />
+        </Route>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AuthProvider>
   </BrowserRouter>
 );
 

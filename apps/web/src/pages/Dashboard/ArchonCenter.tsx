@@ -227,20 +227,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </p>
           </div>
 
-          <div className="flex items-center gap-6 relative">
-            <h1 className="text-[26px] font-black tracking-tighter m-0 text-[#0f2a44] font-['Inter']">
-              Archon
-            </h1>
-            <div className="w-[44px] h-[44px] rounded-[4px] border-2 border-[#f2b705] bg-[#0f2a44] flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 100 100">
-                <path
-                  d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
-                  stroke="#f2b705"
-                  strokeWidth="16"
-                  fill="none"
-                />
-              </svg>
-            </div>
+          <div className="flex items-center gap-6 relative width-[44px] height-[44px]">
+            {/* Identity handled by global ArchonTopBar */}
           </div>
         </div>
       </header>
