@@ -470,11 +470,11 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="bg-white pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl custom-scrollbar border-t border-slate-100">
-        <table className="archon-registry-table w-full min-w-[1500px] border-separate border-spacing-0">
+      <div className="bg-white pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl custom-scrollbar border-t border-slate-100 relative">
+        <table className="archon-registry-table w-full min-w-[1500px] border-separate border-spacing-0 !mt-0">
           <thead>
             <tr className="bg-[#0f2a44]">
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-10 pr-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-[100] bg-[#0f2a44] py-8 pl-10 pr-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24 bg-clip-padding">
                 <div className="flex items-center justify-center h-full">ACTIVO</div>
               </th>
               <th
@@ -492,7 +492,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24"
+                className="sticky top-0 z-[100] bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24 bg-clip-padding"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest h-full">
                   UNIDAD / MODELO
@@ -509,20 +509,20 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-[100] bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24 bg-clip-padding">
                 <div className="flex items-center justify-center h-full">
                   IDENTIDAD / PROPIEDAD / SEDE
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-[100] bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24 bg-clip-padding">
                 <div className="flex items-center justify-center h-full">FRECUENCIAS / TARIFA</div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-[100] bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24 bg-clip-padding">
                 <div className="flex items-center justify-center h-full">
                   ODOMETRÍA (ACTUAL/ANT/OBJ)
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-[100] bg-[#0f2a44] py-8 px-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24 bg-clip-padding">
                 <div className="flex items-center justify-center h-full">CONFIG / LEGAL</div>
               </th>
               <th
@@ -541,7 +541,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24"
+                className="sticky top-0 z-[100] bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24 bg-clip-padding"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest h-full">
                   KM RESTANTES
@@ -573,7 +573,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="sticky top-0 z-50 bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24"
+                className="sticky top-0 z-[100] bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-8 px-4 shadow-sm text-white border-none h-24 bg-clip-padding"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest h-full">
                   PRONÓSTICO (FECHA)
@@ -590,7 +590,7 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-4 pr-10 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-[100] bg-[#0f2a44] py-8 pl-4 pr-10 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24 bg-clip-padding">
                 <div className="flex items-center justify-center h-full">SALUD</div>
               </th>
             </tr>
