@@ -43,7 +43,6 @@ describe('Auth Integration Endpoints', () => {
     };
 
     it('should successfully login and return a JWT token', async (): Promise<void> => {
-      // 1. Mock DB user fetch
       (db.execute as Mock).mockResolvedValueOnce([
         [
           {
@@ -51,10 +50,15 @@ describe('Auth Integration Endpoints', () => {
             username: 'admin',
             email: EncryptionService.encrypt('admin@piic.mx'),
             passwordHash: 'hashed_password',
-            roleId: 1,
-            roleName: 'Administrador',
+            roleId: 0, // Master (Archon)
+            roleName: 'Master (Archon)',
           },
         ],
+      ]);
+
+      // 1.1 Mock Permissions fetch (Second call in auth.ts)
+      (db.execute as Mock).mockResolvedValueOnce([
+        [{ slug: 'fleet:view' }, { slug: 'fleet:write' }, { slug: 'user:admin' }],
       ]);
 
       // 2. Mock Argon2 verification
@@ -83,11 +87,12 @@ describe('Auth Integration Endpoints', () => {
             email: EncryptionService.encrypt('admin@piic.mx'),
             passwordHash: 'hashed_password',
             roleId: 1,
-            roleName: 'Administrador',
+            roleName: 'Director de Flotilla',
             profile_picture_url: 'avatar.jpg',
           },
         ],
       ]);
+      (db.execute as Mock).mockResolvedValueOnce([[{ slug: 'fleet:view' }]]);
       (argon2.verify as Mock).mockResolvedValueOnce(true);
 
       const response = await app.inject({
@@ -121,10 +126,11 @@ describe('Auth Integration Endpoints', () => {
             email: 'encrypted',
             passwordHash: 'hashed',
             roleId: 1,
-            roleName: 'Administrador',
+            roleName: 'Director de Flotilla',
           },
         ],
       ]);
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
       (argon2.verify as Mock).mockResolvedValueOnce(false);
 
       const response = await app.inject({
@@ -155,10 +161,11 @@ describe('Auth Integration Endpoints', () => {
             email: 'encrypted',
             passwordHash: 'hashed',
             roleId: 1,
-            roleName: 'Administrador',
+            roleName: 'Director de Flotilla',
           },
         ],
       ]);
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
       (argon2.verify as Mock).mockRejectedValueOnce(new Error('ARGON_CRASH'));
 
       const response = await app.inject({
