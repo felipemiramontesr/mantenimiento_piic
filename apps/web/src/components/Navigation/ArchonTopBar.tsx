@@ -71,7 +71,7 @@ const ArchonTopBar: React.FC = () => {
             <div className="absolute top-[48px] right-0 w-[180px] bg-white rounded-[2px] shadow-[0_10px_40px_rgba(15,42,68,0.12)] py-4 animate-in fade-in slide-in-from-top-1 duration-200">
               <button
                 onClick={handleSettings}
-                className="w-full px-16 py-12 flex items-center gap-12 hover:bg-[#f2b705]/5 text-[#0f2a44] transition-colors text-left"
+                className="w-full px-16 py-12 flex items-center gap-12 hover:bg-[#f2b705]/5 text-[#0f2a44] transition-colors text-left border-0 bg-transparent"
               >
                 <Settings size={14} className="text-[#f2b705]" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Ajustes</span>
@@ -79,7 +79,7 @@ const ArchonTopBar: React.FC = () => {
 
               <button
                 onClick={logout}
-                className="w-full px-16 py-12 flex items-center gap-12 hover:bg-rose-50/50 text-rose-600 transition-colors text-left"
+                className="w-full px-16 py-12 flex items-center gap-12 hover:bg-rose-50/50 text-rose-600 transition-colors text-left border-0 bg-transparent"
               >
                 <LogOut size={14} />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Desconexión</span>
