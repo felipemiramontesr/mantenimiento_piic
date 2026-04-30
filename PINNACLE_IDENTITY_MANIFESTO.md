@@ -119,6 +119,7 @@ Para mantener la trazabilidad industrial del sistema Archon, todos los commits d
 
 - El prefijo de versión es obligatorio.
 - El tipo (Type) debe empezar con mayúscula (Style, Feat, Fix, Refactor, Docs, etc.).
+- La descripción debe estar **SIEMPRE EN INGLÉS**.
 - La descripción debe usar guiones bajos (`_`) en lugar de espacios.
 - **Ejemplo Real**: `V.19.0.0: _Style: _Archon_Visual_Unification_Standardized_Table_Headers`
 
