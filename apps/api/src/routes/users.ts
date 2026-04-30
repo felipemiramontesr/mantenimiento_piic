@@ -51,7 +51,6 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
     const newFilename = `profile_user_${id}_${Date.now()}${ext}`;
     const uploadDir = path.join(process.cwd(), 'uploads/profiles');
     const uploadPath = path.join(uploadDir, newFilename);
-    const publicUrl = `/uploads/profiles/${newFilename}`;
 
     try {
       // 1. Persist file to infrastructure
