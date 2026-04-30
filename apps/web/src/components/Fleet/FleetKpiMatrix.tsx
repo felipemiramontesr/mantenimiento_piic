@@ -7,6 +7,7 @@ interface FleetKPIMatrixProps {
   mttr: number;
   backlog: number;
   healthScore?: number;
+  daysRemaining?: number;
 }
 
 /**
@@ -23,6 +24,7 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
   const mttr = Number(props.mttr ?? 0);
   const backlog = Number(props.backlog ?? 0);
   const healthScore = props.healthScore ?? 100;
+  const daysRemaining = props.daysRemaining;
 
   // 🎨 COLOR ENGINE (Sovereign Thresholds)
   const getAvaColor = (val: number): string => {
@@ -105,7 +107,9 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
           <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">
             Health Index
           </span>
-          <span className="text-[8px] font-black text-slate-600">{healthScore}%</span>
+          <span className="text-[8px] font-black text-slate-600">
+            {healthScore}% {daysRemaining !== undefined && `/ ${daysRemaining} días`}
+          </span>
         </div>
         <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
           <div

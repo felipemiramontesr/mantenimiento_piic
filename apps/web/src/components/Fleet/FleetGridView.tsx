@@ -395,6 +395,14 @@ const FleetUnitRow = ({
             mttr={unit.mttrHours ?? 0}
             backlog={unit.backlogCount ?? 0}
             healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
+            daysRemaining={
+              forecast
+                ? Math.max(
+                    0,
+                    Math.ceil((forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                  )
+                : undefined
+            }
           />
         </div>
       </td>
