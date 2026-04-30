@@ -312,7 +312,7 @@ const FleetUnitRow = ({
         isOverdue ? 'bg-red-50/40' : ''
       }`}
     >
-      <td className="py-10 text-center">
+      <td className="py-16 text-center">
         {unit.images?.[0] ? (
           <img
             src={unit.images[0]}
@@ -358,7 +358,7 @@ const FleetUnitRow = ({
         <LogisticsCluster unit={unit} cuenta={mockData.cuenta} usageUnit={usageUnit} />
       </td>
 
-      <td className="py-10 px-6 min-w-[160px]">
+      <td className="py-16 px-6 min-w-[160px]">
         <OdometerCluster
           unit={unit}
           usageUnit={usageUnit}
@@ -367,7 +367,7 @@ const FleetUnitRow = ({
         />
       </td>
 
-      <td className="py-10 px-6 min-w-[200px]">
+      <td className="py-16 px-6 min-w-[200px]">
         <SpecCluster unit={unit} />
       </td>
 
@@ -399,7 +399,9 @@ const FleetUnitRow = ({
               forecast
                 ? Math.max(
                     0,
-                    Math.ceil((forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                    Math.ceil(
+                      (forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                    )
                   )
                 : undefined
             }
