@@ -544,7 +544,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 text-white"
+                className="bg-[#0f2a44] py-6 text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   UNIDAD / MODELO
@@ -589,7 +589,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 text-white"
+                className="bg-[#0f2a44] py-6 text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   KM RESTANTES
@@ -621,7 +621,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="bg-[#0f2a44] cursor-pointer hover:bg-white/10 transition-colors py-6 text-white"
+                className="bg-[#0f2a44] py-6 text-white"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   PRONÓSTICO (FECHA)
