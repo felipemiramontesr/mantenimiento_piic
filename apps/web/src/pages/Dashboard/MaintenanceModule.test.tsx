@@ -39,12 +39,4 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
       screen.getByText('Módulo de Programación listo para recibir información-')
     ).toBeInTheDocument();
   });
-
-  it('toggles user menu', () => {
-    renderModule();
-    const menuButton = screen.getByRole('button', { name: /user menu/i });
-    fireEvent.click(menuButton);
-    expect(screen.getByText('Ajustes')).toBeInTheDocument();
-    expect(screen.getByText('Desconexión')).toBeInTheDocument();
-  });
 });

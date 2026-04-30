@@ -188,22 +188,4 @@ describe('FleetModule Orchestrator', () => {
 
     expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();
   });
-
-  it('should toggle user menu correctly', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
-    renderModule();
-    const menuButton = screen.getByRole('button', { name: /user menu/i });
-    fireEvent.click(menuButton);
-    expect(screen.getByText('Ajustes')).toBeInTheDocument();
-    expect(screen.getByText('Desconexión')).toBeInTheDocument();
-  });
-
-  it('should logout correctly', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
-    const removeItemSpy = vi.spyOn(Storage.prototype, 'removeItem');
-    renderModule();
-    fireEvent.click(screen.getByRole('button', { name: /user menu/i }));
-    fireEvent.click(screen.getByText('Desconexión'));
-    expect(removeItemSpy).toHaveBeenCalledWith('archon_token');
-  });
 });

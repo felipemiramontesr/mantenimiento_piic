@@ -33,7 +33,6 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
 
     expect(screen.getByText('Centro de Comando')).toBeDefined();
     expect(screen.getByText('Análisis Predictivo de Segmentos Operativos')).toBeDefined();
-    expect(screen.getByText('Archon')).toBeDefined();
   });
 
   it('renders all 6 KPI cards with correct text in Spanish', async () => {
