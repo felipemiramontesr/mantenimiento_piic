@@ -312,7 +312,7 @@ const FleetUnitRow = ({
         isOverdue ? 'bg-red-50/40' : ''
       }`}
     >
-      <td className="py-16 text-center pl-8 pr-4">
+      <td className="py-16 text-center pl-10 pr-4">
         {unit.images?.[0] ? (
           <img
             src={unit.images[0]}
@@ -379,7 +379,7 @@ const FleetUnitRow = ({
         <HealthStatusCluster forecast={forecast} />
       </td>
 
-      <td className="text-center pl-4 pr-8">
+      <td className="text-center pl-4 pr-10">
         <div className="flex flex-col gap-2">
           <FleetKpiMatrix
             availability={unit.availabilityIndex ?? 100}
@@ -470,11 +470,11 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="glass-card-pro bg-white pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl rounded-xl custom-scrollbar">
+      <div className="bg-white pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl custom-scrollbar border-t border-slate-100">
         <table className="archon-registry-table w-full min-w-[1500px] border-separate border-spacing-0">
           <thead>
             <tr className="bg-[#0f2a44]">
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-8 pr-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-10 pr-4 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
                 <div className="flex items-center justify-center h-full">ACTIVO</div>
               </th>
               <th
@@ -590,7 +590,7 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-4 pr-8 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
+              <th className="sticky top-0 z-50 bg-[#0f2a44] py-8 pl-4 pr-10 font-black tracking-widest text-[11px] text-white shadow-sm border-none h-24">
                 <div className="flex items-center justify-center h-full">SALUD</div>
               </th>
             </tr>

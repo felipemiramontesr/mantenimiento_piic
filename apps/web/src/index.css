@@ -1429,7 +1429,7 @@ body {
 .archon-workspace-chassis {
   flex: 1 !important;
   display: block !important;
-  padding: 12px 40px 40px 40px !important; /* Vertical Compression v.28.27.1 */
+  padding: 12px 0 40px 0 !important; /* Vertical Only Expansion v.28.28.0 */
 
   overflow-y: auto;
   min-height: 0;

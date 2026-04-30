@@ -189,20 +189,26 @@ const FleetModule: React.FC = (): React.ReactElement => {
       <section className="archon-workspace-chassis">
         {/* 🔱 AXIAL SYNC CONTAINER (v.28.37.0) */}
         <div className="archon-axial-container flex flex-col gap-12">
-          <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+          <div className="px-10">
+            <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+          </div>
 
           <div ref={panelRef}>
             {registrationSuccess ? (
-              <FleetSuccessView formData={formData} />
+              <div className="px-10">
+                <FleetSuccessView formData={formData} />
+              </div>
             ) : (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 {activePanel === 'STRATEGY' && <FleetGridView units={units} loading={loading} />}
                 {activePanel === 'EXPANSION' && (
-                  <FleetRegistrationForm
-                    controller={fleetController}
-                    onSuccess={refreshUnits}
-                    onCancel={handleReturnToGrid}
-                  />
+                  <div className="px-10">
+                    <FleetRegistrationForm
+                      controller={fleetController}
+                      onSuccess={refreshUnits}
+                      onCancel={handleReturnToGrid}
+                    />
+                  </div>
                 )}
               </div>
             )}
