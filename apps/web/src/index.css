@@ -1661,15 +1661,16 @@ body {
 }
 
 .archon-registry-table th {
-  padding: 16px;
-  text-align: center;
-  font-size: 10px;
-  font-weight: 900;
+  background-color: #0f2a44;
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: #ffffff;
-  opacity: 1;
-  border-bottom: 1px solid rgba(15, 42, 68, 0.05);
+  letter-spacing: 0.1em !important;
+  color: #ffffff !important;
+  text-align: center;
+  border: none !important;
 }
 
 .archon-registry-table td {

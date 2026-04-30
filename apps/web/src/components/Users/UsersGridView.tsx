@@ -208,10 +208,10 @@ const UsersGridView = (): React.JSX.Element => {
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
-              <th className="py-4 opacity-40">ACTIVO</th>
+              <th>ACTIVO</th>
               <th
                 onClick={(): void => handleSort('username')}
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+                className="cursor-pointer hover:bg-sky-900 transition-colors"
               >
                 <div className="flex items-center justify-center gap-1">
                   EMPLEADO
@@ -223,7 +223,7 @@ const UsersGridView = (): React.JSX.Element => {
               </th>
               <th
                 onClick={(): void => handleSort('identity')}
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+                className="cursor-pointer hover:bg-sky-900 transition-colors"
               >
                 <div className="flex items-center justify-center gap-1">
                   IDENTIDAD
@@ -233,10 +233,10 @@ const UsersGridView = (): React.JSX.Element => {
                   />
                 </div>
               </th>
-              <th className="opacity-40">CANAL DE CONTACTO</th>
+              <th>CANAL DE CONTACTO</th>
               <th
                 onClick={(): void => handleSort('role')}
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+                className="cursor-pointer hover:bg-sky-900 transition-colors"
               >
                 <div className="flex items-center justify-center gap-1">
                   ROL Y DEPARTAMENTO
@@ -248,7 +248,7 @@ const UsersGridView = (): React.JSX.Element => {
               </th>
               <th
                 onClick={(): void => handleSort('status')}
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.02] transition-colors"
+                className="cursor-pointer hover:bg-sky-900 transition-colors"
               >
                 <div className="flex items-center justify-center gap-1">
                   ESTATUS OPERATIVO
@@ -258,7 +258,7 @@ const UsersGridView = (): React.JSX.Element => {
                   />
                 </div>
               </th>
-              <th className="opacity-40">AJUSTES</th>
+              <th>AJUSTES</th>
             </tr>
           </thead>
           <tbody>

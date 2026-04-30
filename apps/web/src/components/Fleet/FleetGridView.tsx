@@ -526,9 +526,7 @@ export const FleetGridView = ({
         <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
             <tr>
-              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
-                ACTIVO
-              </th>
+              <th>ACTIVO</th>
               <th
                 onClick={(): void =>
                   setSortConfig(
@@ -544,9 +542,9 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="bg-[#0f2a44] py-6 text-white"
+                className="cursor-pointer hover:bg-sky-900 transition-colors"
               >
-                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
+                <div className="flex items-center justify-center gap-2">
                   UNIDAD / MODELO
                   <span
                     className={`inline-flex ml-1 ${
@@ -561,18 +559,10 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
-                IDENTIDAD / PROPIEDAD / SEDE
-              </th>
-              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
-                FRECUENCIAS / TARIFA
-              </th>
-              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
-                ODOMETRÍA (ACTUAL/ANT/OBJ)
-              </th>
-              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
-                CONFIG / LEGAL
-              </th>
+              <th>IDENTIDAD / PROPIEDAD / SEDE</th>
+              <th>FRECUENCIAS / TARIFA</th>
+              <th>ODOMETRÍA (ACTUAL/ANT/OBJ)</th>
+              <th>CONFIG / LEGAL</th>
               <th
                 onClick={(): void =>
                   setSortConfig(
@@ -589,9 +579,9 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="bg-[#0f2a44] py-6 text-white"
+                className="cursor-pointer hover:bg-sky-900 transition-colors"
               >
-                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
+                <div className="flex items-center justify-center gap-2">
                   KM RESTANTES
                   <span
                     className={`inline-flex ml-1 ${
@@ -621,9 +611,9 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="bg-[#0f2a44] py-6 text-white"
+                className="cursor-pointer hover:bg-sky-900 transition-colors"
               >
-                <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
+                <div className="flex items-center justify-center gap-2">
                   PRONÓSTICO (FECHA)
                   <span
                     className={`inline-flex ml-1 ${
@@ -638,9 +628,7 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="bg-[#0f2a44] py-6 font-black tracking-widest text-[11px] text-white">
-                SALUD
-              </th>
+              <th>SALUD</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
