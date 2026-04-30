@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ArchonLogo from '../Logo/ArchonLogo';
+import usePermissions from '../../hooks/usePermissions';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -69,6 +70,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasPermission } = usePermissions();
+
   const goToSettings = (): void => {
     navigate('/dashboard/settings');
   };
@@ -143,48 +146,60 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             active={location.pathname === '/dashboard'}
             isCollapsed={isCollapsed}
           />
-          <NavItem
-            icon={<Truck size={20} />}
-            label="Administrar Unidades"
-            path="/dashboard/fleet"
-            active={location.pathname === '/dashboard/fleet'}
-            isCollapsed={isCollapsed}
-          />
-          <NavItem
-            icon={<Wrench size={20} />}
-            label="Administrar Mantenimientos"
-            path="/dashboard/maintenance"
-            active={location.pathname === '/dashboard/maintenance'}
-            isCollapsed={isCollapsed}
-          />
-          <NavItem
-            icon={<Navigation size={20} />}
-            label="Administrar Rutas"
-            path="/dashboard/routes"
-            active={location.pathname === '/dashboard/routes'}
-            isCollapsed={isCollapsed}
-          />
-          <NavItem
-            icon={<Wallet size={20} />}
-            label="Salud Financiera"
-            path="/dashboard/financial"
-            active={location.pathname === '/dashboard/financial'}
-            isCollapsed={isCollapsed}
-          />
-          <NavItem
-            icon={<Users size={20} />}
-            label="Administrar Personal"
-            path="/dashboard/users"
-            active={location.pathname === '/dashboard/users'}
-            isCollapsed={isCollapsed}
-          />
-          <NavItem
-            icon={<ShieldAlert size={20} />}
-            label="Logs de Seguridad"
-            path="/dashboard/logs"
-            active={location.pathname === '/dashboard/logs'}
-            isCollapsed={isCollapsed}
-          />
+          {hasPermission('fleet:view') && (
+            <NavItem
+              icon={<Truck size={20} />}
+              label="Administrar Unidades"
+              path="/dashboard/fleet"
+              active={location.pathname === '/dashboard/fleet'}
+              isCollapsed={isCollapsed}
+            />
+          )}
+          {hasPermission('maint:view') && (
+            <NavItem
+              icon={<Wrench size={20} />}
+              label="Administrar Mantenimientos"
+              path="/dashboard/maintenance"
+              active={location.pathname === '/dashboard/maintenance'}
+              isCollapsed={isCollapsed}
+            />
+          )}
+          {hasPermission('fleet:view') && (
+            <NavItem
+              icon={<Navigation size={20} />}
+              label="Administrar Rutas"
+              path="/dashboard/routes"
+              active={location.pathname === '/dashboard/routes'}
+              isCollapsed={isCollapsed}
+            />
+          )}
+          {hasPermission('financial:view') && (
+            <NavItem
+              icon={<Wallet size={20} />}
+              label="Salud Financiera"
+              path="/dashboard/financial"
+              active={location.pathname === '/dashboard/financial'}
+              isCollapsed={isCollapsed}
+            />
+          )}
+          {hasPermission('user:admin') && (
+            <NavItem
+              icon={<Users size={20} />}
+              label="Administrar Personal"
+              path="/dashboard/users"
+              active={location.pathname === '/dashboard/users'}
+              isCollapsed={isCollapsed}
+            />
+          )}
+          {hasPermission('user:admin') && (
+            <NavItem
+              icon={<ShieldAlert size={20} />}
+              label="Logs de Seguridad"
+              path="/dashboard/logs"
+              active={location.pathname === '/dashboard/logs'}
+              isCollapsed={isCollapsed}
+            />
+          )}
         </nav>
       </div>
 
@@ -199,31 +214,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           borderTop: '1px solid rgba(255,255,255,0.05)',
         }}
       >
-        <button
-          onClick={goToSettings}
-          style={{
-            backgroundColor: location.pathname === '/dashboard/settings' ? '#ffffff' : '#f2b705',
-            color: '#0f2a44',
-            width: '100%',
-            padding: '10px',
-            borderRadius: '4px',
-            fontWeight: 700,
-            fontSize: '11px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          title="Configuración de Sistema"
-        >
-          <Settings size={14} />
-          {!isCollapsed && <span>Configuración</span>}
-        </button>
+        {hasPermission('user:admin') && (
+          <button
+            onClick={goToSettings}
+            style={{
+              backgroundColor: location.pathname === '/dashboard/settings' ? '#ffffff' : '#f2b705',
+              color: '#0f2a44',
+              width: '100%',
+              padding: '10px',
+              borderRadius: '4px',
+              fontWeight: 700,
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            title="Configuración de Sistema"
+          >
+            <Settings size={14} />
+            {!isCollapsed && <span>Configuración</span>}
+          </button>
+        )}
       </div>
     </aside>
   );

@@ -1,0 +1,92 @@
+
+> @mantenimiento/web@1.0.0 test
+> vitest --coverage
+
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/felip/OneDrive/Documentos/felipe/03_Desarrollo_Web/mantenimiento.piic.com.mx/apps/web[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/utils/fleetPredictiveEngine.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+[90mstdout[2m | src/api/client.test.ts
+[22m[39m🚀 [Archon API Client V2] Active Gateway: http://localhost:3001/v1
+
+ [32m✓[39m src/utils/fleetCompliance.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/api/client.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+[90mstdout[2m | src/hooks/useFleetForm.test.ts
+[22m[39m🚀 [Archon API Client V2] Active Gateway: http://localhost:3001/v1
+
+ [32m✓[39m src/App.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 527[2mms[22m[39m
+   [33m[2m✓[22m[39m PIIC ARCHON - Authentication Interface[2m > [22mshould render the login page correctly [33m 494[2mms[22m[39m
+[90mstdout[2m | src/pages/Auth/Login.test.tsx[2m > [22m[2mLoginPage Component (ARCHON CORE)[2m > [22m[2mhandles successful login and redirects to /dashboard
+[22m[39m🚀 [Archon API Client V2] Active Gateway: https://apiv1.piic.com.mx/v1
+🔍 Identifying: admin
+
+[90mstdout[2m | src/pages/Auth/Login.test.tsx[2m > [22m[2mLoginPage Component (ARCHON CORE)[2m > [22m[2mhandles successful login and redirects to /dashboard
+[22m[39m✅ [Archon Auth] Response Received: [90mundefined[39m
+🔑 [Archon Auth] Token Verification Successful
+
+[90mstdout[2m | src/pages/Auth/Login.test.tsx[2m > [22m[2mLoginPage Component (ARCHON CORE)[2m > [22m[2mdisplays generic error on 401 Unauthorized
+[22m[39m🚀 [Archon API Client V2] Active Gateway: https://apiv1.piic.com.mx/v1
+🔍 Identifying: 
+
+[90mstdout[2m | src/pages/Auth/Login.test.tsx[2m > [22m[2mLoginPage Component (ARCHON CORE)[2m > [22m[2mdisplays connection error on 500 or network failure
+[22m[39m🚀 [Archon API Client V2] Active Gateway: https://apiv1.piic.com.mx/v1
+🔍 Identifying: user
+
+ [32m✓[39m src/pages/Auth/Login.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1163[2mms[22m[39m
+   [33m[2m✓[22m[39m LoginPage Component (ARCHON CORE)[2m > [22mrenders login form and inputs correctly [33m 499[2mms[22m[39m
+[90mstdout[2m | src/components/Users/UsersGridView.test.tsx
+[22m[39m🚀 [Archon API Client V2] Active Gateway: http://localhost:3001/v1
+
+ [31m❯[39m src/components/Users/UsersGridView.test.tsx [2m([22m[2m7 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[32m 15[2mms[22m[39m
+[31m   [31m×[31m UsersGridView Component[2m > [22mshould render the users table correctly with all identity clusters[39m[32m 5[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'Provider')[39m
+[31m   [31m×[31m UsersGridView Component[2m > [22mshould show loading state with Archon skeleton[39m[32m 1[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'Provider')[39m
+[31m   [31m×[31m UsersGridView Component[2m > [22mshould toggle user status when clicking the status button[39m[32m 1[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'Provider')[39m
+[31m   [31m×[31m UsersGridView Component[2m > [22mshould trigger editing flow when clicking the edit button[39m[32m 0[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'Provider')[39m
+[31m   [31m×[31m UsersGridView Component[2m > [22mshould perform sorting by identity[39m[32m 0[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'Provider')[39m
+[31m   [31m×[31m UsersGridView Component[2m > [22mshould perform sorting by status[39m[32m 0[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'Provider')[39m
+[31m   [31m×[31m UsersGridView Component[2m > [22mshould perform sorting by role[39m[32m 0[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'Provider')[39m
+ [32m✓[39m src/hooks/useFleetForm.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1578[2mms[22m[39m
+ [32m✓[39m src/components/Navigation/Sidebar.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 395[2mms[22m[39m
+[90mstdout[2m | src/pages/Dashboard/FinancialHealthModule.test.tsx
+[22m[39m🚀 [Archon API Client V2] Active Gateway: http://localhost:3001/v1
+
+ [32m✓[39m src/components/Fleet/FleetSuccessView.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 99[2mms[22m[39m
+[90mstdout[2m | src/pages/Dashboard/UsersModule.test.tsx
+[22m[39m🚀 [Archon API Client V2] Active Gateway: http://localhost:3001/v1
+
+[90mstdout[2m | src/pages/Dashboard/FleetModule.test.tsx
+[22m[39m🚀 [Archon API Client V2] Active Gateway: http://localhost:3001/v1
+
+[90mstdout[2m | src/components/Fleet/FleetRegistrationForm.test.tsx
+[22m[39m🚀 [Archon API Client V2] Active Gateway: http://localhost:3001/v1
+
+ [32m✓[39m src/components/ArchonImageUploader.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 328[2mms[22m[39m
+ [32m✓[39m src/components/Fleet/ArchonGalleryOverlay.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 270[2mms[22m[39m
+ [32m✓[39m src/components/Fleet/FleetGridView.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 117[2mms[22m[39m
+ [32m✓[39m src/pages/Dashboard/MaintenanceModule.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 795[2mms[22m[39m
+   [33m[2m✓[22m[39m MaintenanceModule (Sovereign Maintenance)[2m > [22mtoggles user menu [33m 465[2mms[22m[39m
+ [32m✓[39m src/pages/Dashboard/FinancialHealthModule.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 535[2mms[22m[39m
+ [32m✓[39m src/pages/Dashboard/ArchonCenter.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1222[2mms[22m[39m
+   [33m[2m✓[22m[39m ArchonCenter Component (Sovereign Dashboard)[2m > [22mrenders branding name and command titles [33m 461[2mms[22m[39m
+   [33m[2m✓[22m[39m ArchonCenter Component (Sovereign Dashboard)[2m > [22mrenders all 6 KPI cards with correct text in Spanish [33m 628[2mms[22m[39m
+ [32m✓[39m src/pages/Dashboard/UsersModule.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 462[2mms[22m[39m
+   [33m[2m✓[22m[39m UsersModule Component[2m > [22mshould render the correct administrative context [33m 328[2mms[22m[39m
+ [32m✓[39m src/components/Fleet/FleetRegistrationForm.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 880[2mms[22m[39m
+   [33m[2m✓[22m[39m FleetRegistrationForm Component[2m > [22mshould render all form sections [33m 465[2mms[22m[39m
+ [32m✓[39m src/pages/Dashboard/FleetModule.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1518[2mms[22m[39m
+   [33m[2m✓[22m[39m FleetModule Orchestrator[2m > [22mshould start in the GRID view [33m 325[2mms[22m[39m
+   [33m[2m✓[22m[39m FleetModule Orchestrator[2m > [22mshould toggle user menu correctly [33m 330[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m17 passed[39m[22m[90m (18)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m77 passed[39m[22m[90m (84)[39m
+[2m   Start at [22m 15:24:15
+[2m   Duration [22m 12.52s[2m (transform 2.14s, setup 17.85s, collect 41.71s, tests 9.98s, environment 75.25s, prepare 7.02s)[22m
+

@@ -1,0 +1,34 @@
+import { useAuth } from '../context/AuthContext';
+
+/**
+ * 🔱 Archon Hook: usePermissions
+ * Implementation: Sovereign Authorization Sensor
+ * v.1.0.0 - Logic-based UI visibility control
+ */
+export default function usePermissions(): {
+  hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
+} {
+  const { currentUser } = useAuth();
+
+  /**
+   * Checks if the user has a specific permission slug.
+   * Master (Archon) has ID 0 and always returns true.
+   */
+  const hasPermission = (permission: string): boolean => {
+    if (!currentUser) return false;
+
+    // 🛡️ ARCHON BYPASS: God-mode check
+    if (currentUser.roleId === 0) return true;
+
+    return currentUser.permissions?.includes(permission) || false;
+  };
+
+  /**
+   * Checks if the user has ANY of the provided permissions.
+   */
+  const hasAnyPermission = (permissions: string[]): boolean =>
+    permissions.some((p) => hasPermission(p));
+
+  return { hasPermission, hasAnyPermission };
+}

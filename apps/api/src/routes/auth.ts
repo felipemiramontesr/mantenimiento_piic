@@ -31,12 +31,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     const { username, password } = body.data;
 
     try {
-      // 1. Fetch user from DB
+      // 1. Fetch user from DB with Roles and Permissions
       const query = `
         SELECT u.id, u.username, u.email, u.password_hash as passwordHash, 
-               u.role_id as roleId, r.label as roleName, u.profile_picture_url
+               u.role_id as roleId, r.name as roleName, u.profile_picture_url
         FROM users u
-        JOIN common_catalogs r ON u.role_id = r.id
+        JOIN roles r ON u.role_id = r.id
         WHERE u.username = ?
       `;
       const [rows] = await db.execute(query, [username]);
@@ -49,6 +49,18 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         return reply.code(401).send({ error: 'Unauthorized credentials' });
       }
 
+      // 2. Fetch Permissions for the role
+      const [permRows] = await db.execute<RowDataPacket[]>(
+        `SELECT p.slug 
+         FROM permissions p
+         JOIN role_permissions rp ON p.id = rp.permission_id
+         WHERE rp.role_id = ?`,
+        [user.roleId]
+      );
+      const permissions = permRows.map((p) => p.slug);
+
+      // Archon Bypass: If role is 0, they get all permissions conceptually
+
       // 2. Verify Password
       const validPassword = await argon2.verify(user.passwordHash, password);
       if (!validPassword) {
@@ -59,11 +71,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // 3. Decrypt Sensitive Data (Email)
       const decryptedEmail = EncryptionService.decrypt(user.email);
 
-      // 4. Generate Token
+      // 4. Generate Token (Including Permissions in Payload)
       const token = fastify.jwt.sign({
         id: user.id,
         username: user.username,
         roleId: user.roleId,
+        permissions,
       });
 
       return reply.send({
@@ -75,6 +88,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           email: decryptedEmail,
           roleId: user.roleId,
           roleName: user.roleName,
+          permissions,
           imageUrl: user.profile_picture_url ? `/v1/users/${user.id}/profile-image` : null,
         },
       });
@@ -169,10 +183,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
     try {
       let query = `
-        SELECT u.id, u.username, u.email, u.role_id as roleId, r.label as roleName,
+        SELECT u.id, u.username, u.email, u.role_id as roleId, r.name as roleName,
                u.full_name, u.department, u.employee_number, u.is_active, u.profile_picture_url
         FROM users u
-        JOIN common_catalogs r ON u.role_id = r.id
+        JOIN roles r ON u.role_id = r.id
         WHERE 1=1
       `;
       const params: (string | number)[] = [];

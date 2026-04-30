@@ -99,14 +99,18 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
 
   const getRoleBadge = (roleId: number): string => {
     switch (roleId) {
-      case 0:
+      case 0: // MASTER
         return 'bg-[#0f2a44] text-[#f2b705] border-[#f2b705]/30';
-      case 1:
-        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-      case 2:
-        return 'bg-sky-50 text-sky-700 border-sky-100';
-      case 3:
-        return 'bg-violet-50 text-violet-700 border-violet-100';
+      case 1: // DIRECTOR
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 2: // SUPERVISOR
+        return 'bg-sky-50 text-sky-700 border-sky-200';
+      case 3: // TECNICO
+        return 'bg-violet-50 text-violet-700 border-violet-200';
+      case 4: // OPERADOR
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 5: // AUDITOR
+        return 'bg-slate-50 text-slate-500 border-slate-200';
       default:
         return 'bg-gray-50 text-gray-400 border-gray-100';
     }
@@ -114,10 +118,12 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
 
   const getRoleName = (roleId: number): string => {
     const roles: Record<number, string> = {
-      0: 'ARCHON',
-      1: 'ADMINISTRADOR',
-      2: 'OPERADOR',
-      3: 'TÉCNICO',
+      0: 'MASTER (ARCHON)',
+      1: 'DIRECTOR DE FLOTILLA',
+      2: 'SUPERVISOR MANT.',
+      3: 'TÉCNICO ESPECIALISTA',
+      4: 'OPERADOR DE UNIDAD',
+      5: 'AUDITOR OPERATIVO',
     };
     return roles[roleId] || 'DESCONOCIDO';
   };
@@ -289,17 +295,17 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                 <label className="text-[10px] font-black uppercase opacity-40 flex items-center gap-2">
                   <ShieldCheck size={12} /> Nivel de Autorización (Rol)
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[1, 2, 3].map(
+                <div className="grid grid-cols-2 gap-2">
+                  {[1, 2, 3, 4, 5].map(
                     (rId): React.ReactElement => (
                       <button
                         key={rId}
                         type="button"
                         onClick={(): void => setFormData({ ...formData, role_id: rId })}
-                        className={`p-3 rounded border text-[9px] font-black uppercase transition-all ${
+                        className={`p-3 rounded border text-[8px] font-black uppercase transition-all text-center leading-tight ${
                           formData.role_id === rId
-                            ? 'bg-[#0f2a44] text-white border-[#0f2a44]'
-                            : 'bg-white border-gray-100 text-gray-400 hover:border-[#0f2a44]/3'
+                            ? 'bg-[#0f2a44] text-white border-[#0f2a44] shadow-lg scale-[1.02]'
+                            : 'bg-white border-gray-100 text-gray-400 hover:border-[#0f2a44]/20'
                         }`}
                       >
                         {getRoleName(rId)}
@@ -307,6 +313,9 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                     )
                   )}
                 </div>
+                <p className="text-[9px] text-gray-400 italic mt-2">
+                  * El rol Master (Archon) está restringido a nivel de infraestructura.
+                </p>
               </div>
 
               <div className="pt-8">
