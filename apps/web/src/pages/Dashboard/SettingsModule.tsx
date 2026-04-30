@@ -10,7 +10,7 @@ import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants'
 
 const SettingsModule: React.FC = (): React.ReactElement => (
   <div className="workspace-container-pro animate-in fade-in duration-700">
-    <div className="max-w-4xl mx-auto py-12 px-6">
+    <div className="max-w-6xl mx-auto py-12 px-6">
       <ArchonProfilePanel />
     </div>
 

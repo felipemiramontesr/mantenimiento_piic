@@ -154,8 +154,8 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           </div>
         )}
 
-        {/* 🔱 SINGLE COLUMN FLOW (Standalone Aesthetic) */}
-        <div className="space-y-12">
+        {/* 🔱 TWO COLUMN GRID (Sovereign Information Density) */}
+        <div className="archon-grid-2 items-start">
           {/* Personal Data Panel */}
           <div className="glass-card-pro bg-white p-12 space-y-10">
             <div className="archon-card-header-pro">
