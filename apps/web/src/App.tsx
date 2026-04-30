@@ -9,6 +9,7 @@ import UsersModule from './pages/Dashboard/UsersModule';
 import FinancialHealthModule from './pages/Dashboard/FinancialHealthModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
+import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import { UserProvider } from './context/UserContext';
 import './index.css';
 
@@ -40,6 +41,7 @@ const App: React.FC = () => (
       >
         <Route index element={<ArchonCenter />} />
         <Route path="fleet" element={<FleetModule />} />
+        <Route path="maintenance" element={<MaintenanceModule />} />
         <Route path="routes" element={<RoutesModule />} />
         <Route path="users" element={<UsersModule />} />
         <Route path="financial" element={<FinancialHealthModule />} />

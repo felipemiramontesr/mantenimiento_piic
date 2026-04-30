@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   Gauge,
@@ -20,6 +21,7 @@ import AccessControlSlideOver from '../../components/Identity/AccessControlSlide
 const SYSTEM_VERSION = 'V28.27.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
+  const navigate = useNavigate();
   const { stats, loading } = useFleet();
   const { users } = useUsers();
   const [isAccessControlOpen, setIsAccessControlOpen] = useState<boolean>(false);
@@ -36,7 +38,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     Icon: React.ElementType,
     color: string,
     description: string,
-    variant: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red'
+    variant: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red',
+    path?: string
   ): React.ReactElement => (
     <div
       className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-500`}
@@ -70,7 +73,12 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       </div>
 
       <div className="archon-tile-action">
-        <button className={`btn-sentinel-${variant} w-full text-[11px] font-black py-3`}>
+        <button
+          onClick={(): void => {
+            if (path) navigate(path);
+          }}
+          className={`btn-sentinel-${variant} w-full text-[11px] font-black py-3`}
+        >
           VER REPORTE <ArrowRight size={12} className="text-white ml-2" />
         </button>
       </div>
