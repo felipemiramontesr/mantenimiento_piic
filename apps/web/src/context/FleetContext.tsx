@@ -38,7 +38,7 @@ interface FleetContextType {
   refreshUnits: () => Promise<void>;
 }
 
-const FleetContext = createContext<FleetContextType | undefined>(undefined);
+export const FleetContext = createContext<FleetContextType | undefined>(undefined);
 
 export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [units, setUnits] = useState<FleetUnit[]>(
