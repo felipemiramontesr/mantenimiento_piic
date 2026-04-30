@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
+import fs from 'node:fs';
+import { PassThrough } from 'node:stream';
 import buildApp from '../index';
 import db from '../services/db';
 
@@ -21,6 +23,21 @@ vi.mock('../services/encryption', () => ({
     decrypt: vi.fn((v) => (v && typeof v === 'string' ? v.replace('enc_', '') : v)),
     generateBlindIndex: vi.fn((v) => `hash_${v}`),
   },
+}));
+
+vi.mock('node:fs', () => ({
+  default: {
+    existsSync: vi.fn(),
+    createReadStream: vi.fn(),
+    createWriteStream: vi.fn(),
+    promises: {
+      rename: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('node:stream/promises', () => ({
+  pipeline: vi.fn(),
 }));
 
 describe('Fleet Integration Endpoints', () => {
@@ -351,8 +368,12 @@ describe('Fleet Integration Endpoints', () => {
       (db.execute as Mock).mockResolvedValueOnce([
         [
           {
-            id: 'IMG_JSON',
-            images: JSON.stringify(['img1.jpg']),
+            id: 'IMG_VARIANTS',
+            images: JSON.stringify([
+              'img1.jpg',
+              'http://ext.com/img.png',
+              'data:image/png;base64,abc',
+            ]),
             motor: null,
             circulationCardNumber: null,
             numeroSerie: null,
@@ -385,8 +406,12 @@ describe('Fleet Integration Endpoints', () => {
 
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
-      expect(data[0].images).toEqual(['img1.jpg']);
-      expect(data[1].images).toEqual(['img2.jpg']);
+      expect(data[0].images).toEqual([
+        '/v1/fleet/asset/img1.jpg',
+        'http://ext.com/img.png',
+        'data:image/png;base64,abc',
+      ]);
+      expect(data[1].images).toEqual(['/v1/fleet/asset/img2.jpg']);
       expect(data[2].images).toEqual([]);
     });
 
@@ -495,6 +520,111 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
       });
       expect(response.statusCode).toBe(500);
+    });
+  });
+
+  describe('Asset Management Endpoints', () => {
+    it('should successfully upload multiple fleet assets (including extensionless)', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]); // Update call
+      (fs.promises.rename as Mock).mockResolvedValueOnce(undefined);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet/ASM-001/assets',
+        headers: {
+          ...authHeader(),
+          'content-type': 'multipart/form-data; boundary=boundary',
+        },
+        payload:
+          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="side"\r\nContent-Type: image/jpeg\r\n\r\nfake-data\r\n--boundary--\r\n',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('should handle asset orchestration failure', async () => {
+      (fs.promises.rename as Mock).mockRejectedValueOnce(new Error('DISK_FULL'));
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet/ASM-001/assets',
+        headers: {
+          ...authHeader(),
+          'content-type': 'multipart/form-data; boundary=boundary',
+        },
+        payload:
+          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="side.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-data\r\n--boundary--\r\n',
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toContain('orchestration');
+    });
+
+    it('should return 400 if no assets are provided', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet/ASM-001/assets',
+        headers: {
+          ...authHeader(),
+          'content-type': 'multipart/form-data; boundary=boundary',
+        },
+        payload: '--boundary--',
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should securely serve a fleet asset', async () => {
+      (fs.existsSync as Mock).mockReturnValue(true);
+
+      const mockStream = new PassThrough();
+      (fs.createReadStream as Mock).mockReturnValue(mockStream);
+
+      setTimeout(() => {
+        mockStream.end('fake-image');
+      }, 0);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet/asset/unit_ASM-001_img.jpg',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('image/jpeg');
+    });
+
+    it('should securely serve a PNG fleet asset', async () => {
+      (fs.existsSync as Mock).mockReturnValue(true);
+
+      const mockStream = new PassThrough();
+      (fs.createReadStream as Mock).mockReturnValue(mockStream);
+
+      setTimeout(() => {
+        mockStream.end('fake-png');
+      }, 0);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet/asset/unit_ASM-001_side.png',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('image/png');
+    });
+
+    it('should return 404 for missing asset', async () => {
+      (fs.existsSync as Mock).mockReturnValue(false);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet/asset/missing.jpg',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(404);
     });
   });
 });

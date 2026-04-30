@@ -168,7 +168,11 @@ export class FleetIntelligenceEngine {
   private static parseImages(raw: unknown, id: string, logger: FastifyBaseLogger): string[] {
     if (!raw) return [];
     try {
-      return typeof raw === 'string' ? JSON.parse(raw) : (raw as string[]);
+      const filenames = typeof raw === 'string' ? JSON.parse(raw) : (raw as string[]);
+      // 🔱 Logic-Gated Asset URL Transformation
+      return filenames.map((f: string) =>
+        f.startsWith('http') || f.startsWith('data:') ? f : `/v1/fleet/asset/${f}`
+      );
     } catch (e) {
       logger.warn(`Failed to parse images for unit ${id}: ${e}`);
       return [];

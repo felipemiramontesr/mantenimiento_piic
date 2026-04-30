@@ -1,4 +1,6 @@
 import { FastifyInstance } from 'fastify';
+import fs from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 import FleetService from '../services/fleetService';
 
@@ -158,5 +160,65 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       fastify.log.error(error);
       return reply.code(500).send({ error: 'System error during deletion' });
     }
+  });
+
+  /**
+   * 🔱 POST /v1/fleet/:id/assets
+   * Multi-part bulk asset upload for industrial units.
+   * v.2.0.0 - Support for registration & evidence photos.
+   */
+  fastify.post('/fleet/:id/assets', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      const files = await request.saveRequestFiles();
+
+      const uploadedFiles = await Promise.all(
+        files.map(async (file) => {
+          const ext = path.extname(file.filename) || '.jpg';
+          const newFilename = `unit_${id}_${Date.now()}_${Math.floor(Math.random() * 1000)}${ext}`;
+          const uploadPath = path.join(process.cwd(), 'uploads/fleet', newFilename);
+
+          // Move from temp to permanent storage
+          await fs.promises.rename(file.filepath, uploadPath);
+          return newFilename;
+        })
+      );
+
+      if (uploadedFiles.length === 0) {
+        return reply.code(400).send({ error: 'No files uploaded' });
+      }
+
+      // Update unit registry with new assets
+      await FleetService.updateUnit(id, { images: uploadedFiles });
+
+      return reply.send({
+        success: true,
+        message: `${uploadedFiles.length} assets registered successfully`,
+        filenames: uploadedFiles,
+      });
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Failure during asset orchestration' });
+    }
+  });
+
+  /**
+   * 🔱 GET /v1/fleet/asset/:filename
+   * Secure Asset Delivery Protocol
+   * logic-gated access to industrial evidence.
+   */
+  fastify.get('/fleet/asset/:filename', async (request, reply) => {
+    const { filename } = request.params as { filename: string };
+    const filePath = path.join(process.cwd(), 'uploads/fleet', filename);
+
+    if (!fs.existsSync(filePath)) {
+      return reply.code(404).send({ error: 'Asset not found' });
+    }
+
+    const ext = path.extname(filename).toLowerCase();
+    const contentType = ext === '.png' ? 'image/png' : 'image/jpeg';
+
+    return reply.type(contentType).send(fs.createReadStream(filePath));
   });
 }

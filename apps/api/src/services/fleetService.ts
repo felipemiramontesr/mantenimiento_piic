@@ -137,7 +137,12 @@ export default class FleetService {
     if (fields.length === 0) return false;
 
     const setClause = fields.map((f) => `${f} = ?`).join(', ');
-    const values = [...Object.values(updates), id];
+    const values = [
+      ...Object.values(updates).map((v) =>
+        v !== null && (Array.isArray(v) || typeof v === 'object') ? JSON.stringify(v) : v
+      ),
+      id,
+    ];
 
     const [result] = await db.execute<ResultSetHeader>(
       `UPDATE fleet_units SET ${setClause} WHERE id = ?`,

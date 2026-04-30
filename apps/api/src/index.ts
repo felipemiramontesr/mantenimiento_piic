@@ -91,6 +91,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   return fastify;
 };
 
+// v8 ignore start
 // Auto-start for production execution
 if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   const server = buildApp();
@@ -107,5 +108,6 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
   };
   start();
 }
+// v8 ignore stop
 
 export default buildApp;
