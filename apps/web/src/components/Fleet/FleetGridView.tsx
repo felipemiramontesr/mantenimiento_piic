@@ -482,7 +482,9 @@ export const FleetGridView = ({
         <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
             <tr>
-              <th className="py-6 opacity-40 font-black tracking-widest text-[11px]">ACTIVO</th>
+              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+                ACTIVO
+              </th>
               <th
                 onClick={(): void =>
                   setSortConfig(
@@ -498,7 +500,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6"
+                className="sticky top-0 z-10 bg-white/95 backdrop-blur-md cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6 shadow-sm"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   UNIDAD / MODELO
@@ -515,16 +517,18 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="opacity-40 font-black tracking-widest text-[11px]">
+              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
                 IDENTIDAD / PROPIEDAD / SEDE
               </th>
-              <th className="opacity-40 font-black tracking-widest text-[11px]">
+              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
                 FRECUENCIAS / TARIFA
               </th>
-              <th className="opacity-40 font-black tracking-widest text-[11px]">
+              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
                 ODOMETRÍA (ACTUAL/ANT/OBJ)
               </th>
-              <th className="opacity-40 font-black tracking-widest text-[11px]">CONFIG / LEGAL</th>
+              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+                CONFIG / LEGAL
+              </th>
               <th
                 onClick={(): void =>
                   setSortConfig(
@@ -541,7 +545,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors text-amber-600 py-6"
+                className="sticky top-0 z-10 bg-white/95 backdrop-blur-md cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors text-amber-600 py-6 shadow-sm"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   KM RESTANTES
@@ -575,7 +579,7 @@ export const FleetGridView = ({
                     })
                   )
                 }
-                className="cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6"
+                className="sticky top-0 z-10 bg-white/95 backdrop-blur-md cursor-pointer hover:bg-[#0f2a44]/[0.05] transition-colors py-6 shadow-sm"
               >
                 <div className="flex items-center justify-center gap-2 font-black text-[11px] tracking-widest">
                   PRONÓSTICO (FECHA)
@@ -594,7 +598,9 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th className="opacity-40 font-black tracking-widest text-[11px]">SALUD</th>
+              <th className="sticky top-0 z-10 bg-white/95 backdrop-blur-md py-6 opacity-40 font-black tracking-widest text-[11px] shadow-sm">
+                SALUD
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
