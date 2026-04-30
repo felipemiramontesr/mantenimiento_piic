@@ -57,9 +57,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
          WHERE rp.role_id = ?`,
         [user.roleId]
       );
-      const permissions = permRows.map((p) => p.slug);
+      let permissions = permRows.map((p) => p.slug);
 
-      // Archon Bypass: If role is 0, they get all permissions conceptually
+      // 🛡️ OMEGA BYPASS: Master (Archon) always gets all permissions
+      if (user.roleName === 'Master (Archon)' || user.roleId === 0) {
+        const [allPerms] = await db.execute<RowDataPacket[]>('SELECT slug FROM permissions');
+        permissions = allPerms.map((p) => p.slug);
+      }
 
       // 2. Verify Password
       const validPassword = await argon2.verify(user.passwordHash, password);

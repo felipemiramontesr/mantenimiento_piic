@@ -18,8 +18,11 @@ export default function usePermissions(): {
   const hasPermission = (permission: string): boolean => {
     if (!currentUser) return false;
 
-    // 🛡️ ARCHON BYPASS: God-mode check
-    if (currentUser.roleId === 0) return true;
+    // 🛡️ OMEGA BYPASS: Master (Archon) has absolute power
+    // We check both ID and Name to be resilient to DB mapping shifts
+    if (currentUser.roleId === 0 || currentUser.roleName === 'Master (Archon)') {
+      return true;
+    }
 
     return currentUser.permissions?.includes(permission) || false;
   };
