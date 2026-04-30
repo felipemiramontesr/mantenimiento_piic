@@ -151,6 +151,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             isCollapsed={isCollapsed}
           />
           <NavItem
+            icon={<Wrench size={20} />}
+            label="Administrar Mantenimientos"
+            path="/dashboard/maintenance"
+            active={location.pathname === '/dashboard/maintenance'}
+            isCollapsed={isCollapsed}
+          />
+          <NavItem
             icon={<Navigation size={20} />}
             label="Administrar Rutas"
             path="/dashboard/routes"
@@ -169,13 +176,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             label="Administrar Personal"
             path="/dashboard/users"
             active={location.pathname === '/dashboard/users'}
-            isCollapsed={isCollapsed}
-          />
-          <NavItem
-            icon={<Wrench size={20} />}
-            label="Administrar Mantenimientos"
-            path="/dashboard/maintenance"
-            active={location.pathname === '/dashboard/maintenance'}
             isCollapsed={isCollapsed}
           />
           <NavItem
