@@ -107,13 +107,21 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
           <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">
             Health Index
           </span>
-          <span className="text-[8px] font-black text-slate-600">
+          <span
+            className={`text-[8px] font-black ${
+              daysRemaining !== undefined && daysRemaining < 0 ? 'text-rose-600' : 'text-slate-600'
+            }`}
+          >
             {healthScore}% {daysRemaining !== undefined && `/ ${daysRemaining} días`}
           </span>
         </div>
         <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
           <div
-            className={`h-full transition-all duration-1000 ${getHealthColor(healthScore)}`}
+            className={`h-full transition-all duration-1000 ${
+              daysRemaining !== undefined && daysRemaining < 0
+                ? 'bg-rose-500 animate-pulse'
+                : getHealthColor(healthScore)
+            }`}
             style={{ width: `${healthScore}%` }}
           />
         </div>
