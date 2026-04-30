@@ -12,6 +12,16 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('../../hooks/usePermissions', () => ({
+  default: (): {
+    hasPermission: (permission: string) => boolean;
+    hasAnyPermission: (permissions: string[]) => boolean;
+  } => ({
+    hasPermission: (): boolean => true,
+    hasAnyPermission: (): boolean => true,
+  }),
+}));
+
 describe('Sidebar Component (Archon Core)', () => {
   const navigateMock = vi.fn();
 

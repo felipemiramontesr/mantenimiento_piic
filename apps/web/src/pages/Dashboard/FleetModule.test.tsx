@@ -25,6 +25,16 @@ vi.mock('../../context/FleetContext', async () => {
   };
 });
 
+vi.mock('../../hooks/usePermissions', () => ({
+  default: (): {
+    hasPermission: (permission: string) => boolean;
+    hasAnyPermission: (permissions: string[]) => boolean;
+  } => ({
+    hasPermission: (): boolean => true,
+    hasAnyPermission: (): boolean => true,
+  }),
+}));
+
 // 🔱 Mock the hook to control transitions and state
 vi.mock('../../hooks/useFleetForm', () => ({
   default: vi.fn(() => ({
