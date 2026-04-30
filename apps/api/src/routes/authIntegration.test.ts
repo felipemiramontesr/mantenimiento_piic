@@ -233,6 +233,7 @@ describe('Auth Integration Endpoints', () => {
           email: EncryptionService.encrypt('t@piic.mx'),
           roleId: 3,
           roleName: 'TÉCNICO',
+          profile_picture_url: 'profile_user_2.jpg',
         },
       ];
       (db.execute as Mock).mockResolvedValueOnce([mockUsers]);
