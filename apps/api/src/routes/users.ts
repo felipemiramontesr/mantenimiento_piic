@@ -26,6 +26,13 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
   fastify.post('/users/:id/upload-profile', async (request, reply) => {
     const { id } = request.params as { id: string };
 
+    // 🛡️ Identity Lock: Ensure the user can only modify their own profile assets
+    // v.2.0.2 - Cross-Identity Prevention
+    const tokenData = request.user as { id: string | number };
+    if (String(tokenData.id) !== String(id)) {
+      return reply.code(403).send({ error: 'Archon Sovereignty: Unauthorized Identity Access' });
+    }
+
     // 🛡️ Pre-validation: Verify user existence before accepting bytes
     const [existing] = await db.execute<RowDataPacket[]>('SELECT id FROM users WHERE id = ?', [id]);
     if (existing.length === 0) {

@@ -109,12 +109,11 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           try {
             const formDataUpload = new FormData();
             formDataUpload.append('file', selectedFile);
+
+            // 🔱 Absolute Protocol: Use explicit v1 path and let Axios handle boundaries
             const uploadRes = await api.post(
-              `users/${currentUser.id}/upload-profile`,
-              formDataUpload,
-              {
-                headers: { 'Content-Type': 'multipart/form-data' },
-              }
+              `/v1/users/${String(currentUser.id)}/upload-profile`,
+              formDataUpload
             );
 
             if (uploadRes.data.success || uploadRes.data.url) {
