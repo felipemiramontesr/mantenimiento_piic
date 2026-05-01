@@ -22,19 +22,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     !!localStorage.getItem('auth_token')
   );
 
-  useEffect(() => {
-    const userData = localStorage.getItem('user_data');
-    if (userData) {
-      try {
-        setCurrentUser(JSON.parse(userData));
-      } catch (err) {
-        localStorage.removeItem('user_data');
-        localStorage.removeItem('auth_token');
-        setIsAuthenticated(false);
-      }
-    }
-  }, []);
-
   const logout = (): void => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
@@ -42,6 +29,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated(false);
     window.location.href = '/login';
   };
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user_data');
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        // 🛡️ Integrity Check: If session is legacy (shallow), purge it
+        if (!parsed.roleName || !parsed.username) {
+          // eslint-disable-next-line no-console
+          console.warn('⚠️ [Archon Auth] Shallow session detected. Purging for restoration.');
+          logout();
+          return;
+        }
+        setCurrentUser(parsed);
+      } catch (err) {
+        logout();
+      }
+    }
+  }, []);
 
   const updateCurrentUser = (data: Partial<UserIndustrial>): void => {
     if (currentUser) {
