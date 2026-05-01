@@ -45,11 +45,22 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
     if (currentUser) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = currentUser as any;
+
+      // 🔱 Asset Resolution Engine: Ensure filename is converted to Sovereign URL
+      let resolvedImageUrl = user.imageUrl || user.image_url || user.profile_picture_url || '';
+      if (
+        resolvedImageUrl &&
+        !resolvedImageUrl.startsWith('http') &&
+        !resolvedImageUrl.startsWith('blob:')
+      ) {
+        resolvedImageUrl = `${api.defaults.baseURL}/users/${user.id}/profile-image`;
+      }
+
       setFormData({
         fullName: user.fullName || user.full_name || '',
         email: user.email || '',
         employeeNumber: user.employeeNumber || user.employee_number || '',
-        imageUrl: user.imageUrl || user.image_url || user.profile_picture_url || '',
+        imageUrl: resolvedImageUrl,
         password: '',
         confirmPassword: '',
       });
@@ -69,8 +80,12 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
         fullName: formData.fullName,
         email: formData.email.toLowerCase(),
         employeeNumber: formData.employeeNumber,
-        profile_picture_url: formData.imageUrl,
       };
+
+      // 🛡️ Data Integrity: Only send profile_picture_url if it's a persisted string (not a local blob)
+      if (!selectedFile && formData.imageUrl && !formData.imageUrl.startsWith('blob:')) {
+        payload.profile_picture_url = formData.imageUrl;
+      }
 
       if (formData.password) {
         payload.password = formData.password;
@@ -78,36 +93,46 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
 
       const response = await api.patch(`/auth/users/${currentUser.id}`, payload);
 
+      // 🏆 Stage 1: Basic Data Synchronization
       if (response.data.success || response.status === 200) {
-        let finalImageUrl = formData.imageUrl;
-
-        if (selectedFile) {
-          const formDataUpload = new FormData();
-          formDataUpload.append('file', selectedFile);
-          const uploadRes = await api.post(
-            `/users/${currentUser.id}/upload-profile`,
-            formDataUpload,
-            {
-              headers: { 'Content-Type': 'multipart/form-data' },
-            }
-          );
-          if (uploadRes.data.success) {
-            finalImageUrl = uploadRes.data.imageUrl;
-          }
-        }
-
         updateCurrentUser({
           fullName: formData.fullName,
           email: formData.email,
           employeeNumber: formData.employeeNumber,
-          imageUrl: finalImageUrl,
         });
 
         setSuccess(true);
-        setTimeout(() => setSuccess(false), 5000);
+        setTimeout(() => setSuccess(false), 6000);
+
+        // 🏆 Stage 2: Secondary Asset Persistence (Non-blocking)
+        if (selectedFile) {
+          try {
+            const formDataUpload = new FormData();
+            formDataUpload.append('file', selectedFile);
+            const uploadRes = await api.post(
+              `/users/${currentUser.id}/upload-profile`,
+              formDataUpload,
+              {
+                headers: { 'Content-Type': 'multipart/form-data' },
+              }
+            );
+
+            if (uploadRes.data.success || uploadRes.data.url) {
+              const finalUrl =
+                uploadRes.data.url ||
+                `${api.defaults.baseURL}/users/${currentUser.id}/profile-image`;
+              updateCurrentUser({ imageUrl: finalUrl });
+              setSelectedFile(null);
+            }
+          } catch (uploadErr) {
+            // eslint-disable-next-line no-console
+            console.error('⚠️ [Archon] Profile picture persistence failed:', uploadErr);
+            setError('Datos guardados, pero hubo un error al procesar la imagen.');
+          }
+        }
       }
     } catch (err: unknown) {
-      setError('Falla crítica al actualizar el perfil. Verifique su conexión.');
+      setError('Falla crítica al sincronizar la identidad. Verifique su conexión.');
     } finally {
       setIsSubmitting(false);
     }
