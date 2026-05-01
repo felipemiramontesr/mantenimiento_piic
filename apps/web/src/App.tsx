@@ -12,6 +12,7 @@ import SettingsModule from './pages/Dashboard/SettingsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider } from './context/AuthContext';
+import AuthDebugPage from './pages/Debug/AuthDebug';
 import './index.css';
 
 /**
@@ -50,6 +51,7 @@ const App: React.FC = () => (
           <Route path="logs" element={<LogsModule />} />
           <Route path="settings" element={<SettingsModule />} />
         </Route>
+        <Route path="/debug/auth" element={<AuthDebugPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AuthProvider>
