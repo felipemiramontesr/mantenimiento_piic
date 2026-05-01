@@ -36,7 +36,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         SELECT u.id, u.username, u.email, u.password_hash as passwordHash, 
                u.role_id as roleId, r.name as roleName, u.profile_picture_url
         FROM users u
-        JOIN roles r ON u.role_id = r.id
+        LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.username = ?
       `;
       const [rows] = await db.execute(query, [username]);
@@ -72,8 +72,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
 
       // 🛡️ OMEGA BYPASS: Master (Archon) always gets all permissions
-      // Hardcoded check for 'Archon' username as a final fail-safe
-      if (user.roleName === 'Master (Archon)' || user.roleId === 0 || user.username === 'Archon') {
+      // Hardcoded check for 'archon' username as a final fail-safe
+      if (
+        user.roleName === 'Master (Archon)' ||
+        Number(user.roleId) === 0 ||
+        user.username.toLowerCase() === 'archon'
+      ) {
         const [allPerms] = await db.execute<RowDataPacket[]>('SELECT slug FROM permissions');
         if (allPerms && Array.isArray(allPerms)) {
           permissions = allPerms.map((p) => p.slug);
