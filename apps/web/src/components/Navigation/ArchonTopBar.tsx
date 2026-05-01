@@ -38,7 +38,7 @@ const ArchonTopBar: React.FC = () => {
     <div className="fixed top-0 right-0 p-24 z-[100] flex items-center gap-24 pointer-events-none">
       <div className="flex items-center gap-24 pointer-events-auto" ref={menuRef}>
         <h1 className="text-[#0f2a44] font-black text-2xl tracking-tighter hidden md:block opacity-90">
-          Archon
+          {currentUser?.username || 'Soberano'}
         </h1>
 
         <div className="relative">

@@ -43,11 +43,13 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
 
   useEffect(() => {
     if (currentUser) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user = currentUser as any;
       setFormData({
-        fullName: currentUser.fullName,
-        email: currentUser.email,
-        employeeNumber: currentUser.employeeNumber || '',
-        imageUrl: currentUser.imageUrl || '',
+        fullName: user.fullName || user.full_name || '',
+        email: user.email || '',
+        employeeNumber: user.employeeNumber || user.employee_number || '',
+        imageUrl: user.imageUrl || user.image_url || user.profile_picture_url || '',
         password: '',
         confirmPassword: '',
       });
