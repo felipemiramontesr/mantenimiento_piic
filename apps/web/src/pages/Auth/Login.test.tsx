@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import LoginPage from './Login';
 import api from '../../api/client';
+import { AuthProvider } from '../../context/AuthContext';
 
 vi.mock('../../api/client', () => ({
   default: {
@@ -28,11 +29,14 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     localStorage.clear();
   });
 
-  const renderComponent = (): ReturnType<typeof render> => render(
-    <BrowserRouter>
-      <LoginPage />
-    </BrowserRouter>
-  );
+  const renderComponent = (): ReturnType<typeof render> =>
+    render(
+      <AuthProvider>
+        <BrowserRouter>
+          <LoginPage />
+        </BrowserRouter>
+      </AuthProvider>
+    );
 
   it('renders login form and inputs correctly', () => {
     renderComponent();
@@ -82,7 +86,10 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
 
-    expect(api.post).toHaveBeenCalledWith('/auth/login', { username: 'admin', password: 'password123' });
+    expect(api.post).toHaveBeenCalledWith('/auth/login', {
+      username: 'admin',
+      password: 'password123',
+    });
     expect(screen.getByRole('button', { name: /autenticando archon/i })).toBeDisabled();
 
     await waitFor(() => {
@@ -101,7 +108,9 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     fireEvent.submit(screen.getByRole('button', { name: /acceder al sistema/i })); // Alternatively submit form
 
     await waitFor(() => {
-      expect(screen.getByText(/Credenciales inválidas. Verifique su ID de Archon./i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Credenciales inválidas. Verifique su ID de Archon./i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -111,16 +120,18 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     });
 
     renderComponent();
-    
+
     // Simulate user typing values
     fireEvent.change(screen.getByPlaceholderText('ID de Archon'), { target: { value: 'user' } });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'pass' } });
     fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Error de conexión. Intente de nuevo más tarde/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Error de conexión. Intente de nuevo más tarde/i)
+      ).toBeInTheDocument();
     });
-    
+
     // Verify loaders disable after request
     expect(screen.getByPlaceholderText('ID de Archon')).not.toBeDisabled();
     expect(screen.getByPlaceholderText('••••••••')).not.toBeDisabled();

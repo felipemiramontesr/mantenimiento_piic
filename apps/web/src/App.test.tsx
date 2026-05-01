@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import LoginPage from './pages/Auth/Login';
+import { AuthProvider } from './context/AuthContext';
 
 vi.mock('./api/client', () => ({
   default: {
@@ -15,22 +16,24 @@ vi.mock('./api/client', () => ({
 describe('PIIC ARCHON - Authentication Interface', () => {
   const renderLogin = (): void => {
     render(
-      <BrowserRouter>
-        <LoginPage />
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <LoginPage />
+        </BrowserRouter>
+      </AuthProvider>
     );
   };
 
   it('should render the login page correctly', () => {
     renderLogin();
 
-    // Check main title
-    const heading = screen.getByText(/Acceso Archon/i);
+    // Check main title (Auth Card)
+    const heading = screen.getByText(/Acceso Restringido/i);
     expect(heading).toBeInTheDocument();
 
-    // Check identity subtitle
-    const subtitle = screen.getByText(/Control de Flotas/i);
-    expect(subtitle).toBeInTheDocument();
+    // Check hero title
+    const heroTitle = screen.getByText(/Suministro industrial/i);
+    expect(heroTitle).toBeInTheDocument();
 
     // Check action buttons
     const loginButton = screen.getByRole('button', { name: /Acceder al Sistema/i });
