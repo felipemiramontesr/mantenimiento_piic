@@ -110,7 +110,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
             const formDataUpload = new FormData();
             formDataUpload.append('file', selectedFile);
             const uploadRes = await api.post(
-              `/users/${currentUser.id}/upload-profile`,
+              `users/${currentUser.id}/upload-profile`,
               formDataUpload,
               {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -127,7 +127,9 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           } catch (uploadErr) {
             // eslint-disable-next-line no-console
             console.error('⚠️ [Archon] Profile picture persistence failed:', uploadErr);
-            setError('Datos guardados, pero hubo un error al procesar la imagen.');
+            setError(
+              `Datos guardados, pero error al procesar la imagen (ID Ref: ${currentUser.id}).`
+            );
           }
         }
       }
