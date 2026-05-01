@@ -151,7 +151,17 @@ describe('Auth Endpoints Sovereignty', () => {
 
   it('Edge: Validation & Atomic Fallbacks', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
-      [{ id: 9, username: 'GrayMan', email: 'e', password_hash: 'h', role_id: 0 }],
+      [
+        {
+          id: 9,
+          username: 'GrayMan',
+          email: 'e',
+          password_hash: 'h',
+          role_id: 0,
+          is_active: 0,
+          employeeNumber: 'E-001',
+        },
+      ],
     ]);
     const r1 = await app.inject({
       method: 'POST',
@@ -159,6 +169,9 @@ describe('Auth Endpoints Sovereignty', () => {
       payload: { username: 'GrayMan', password: 'p' },
     });
     expect(r1.statusCode).toBe(200);
+    const body1 = JSON.parse(r1.body);
+    expect(body1.user.is_active).toBe(false);
+    expect(body1.user.employeeNumber).toBe('E-001');
 
     (db.execute as Mock).mockResolvedValueOnce(null);
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
