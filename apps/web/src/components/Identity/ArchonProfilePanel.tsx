@@ -118,7 +118,10 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
 
   return (
     <div className="animate-in fade-in duration-700">
-      <form onSubmit={handleFormSubmit} className="space-y-12 pb-20">
+      <form
+        onSubmit={handleFormSubmit}
+        className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-40 space-y-8"
+      >
         {success && (
           <div className="bg-emerald-50 border-l-4 border-emerald-500 p-6 animate-in fade-in slide-in-from-top-4">
             <div className="flex items-center gap-4">
@@ -194,7 +197,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                     title="Arrastra tu fotografía de perfil"
                     allowedFormats="JPG, PNG"
                     accept="image/jpeg, image/png"
-                    variant="circle"
+                    variant="square"
                   />
                 </ArchonField>
               </div>
