@@ -36,7 +36,7 @@ api.interceptors.response.use(
       data: error.response?.data,
       config: error.config?.url,
     });
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       // 🕵️ Forensic Log: Catch the culprit before redirect
       // eslint-disable-next-line no-console
       console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
