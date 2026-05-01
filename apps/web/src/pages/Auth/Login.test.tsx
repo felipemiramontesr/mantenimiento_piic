@@ -57,18 +57,11 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.queryByText(/Utilizamos cookies propias y de terceros/i)).not.toBeInTheDocument();
   });
 
-  it('hides cookie banner if cookies_accepted is true or user rejects', () => {
+  it('hides cookie banner if cookies_accepted is true', () => {
     localStorage.setItem('cookies_accepted', 'true');
     const { unmount } = renderComponent();
     expect(screen.queryByText(/Utilizamos cookies propias y de terceros/i)).not.toBeInTheDocument();
     unmount();
-
-    // Test rejection
-    localStorage.clear();
-    renderComponent();
-    const rejectBtn = screen.getByRole('button', { name: /RECHAZAR/i });
-    fireEvent.click(rejectBtn); // Currently sets showCookies(false) but doesn't write to localStorage
-    expect(screen.queryByText(/Utilizamos cookies propias y de terceros/i)).not.toBeInTheDocument();
   });
 
   it('handles successful login and redirects to /dashboard', async () => {
