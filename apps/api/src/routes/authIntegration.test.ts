@@ -451,4 +451,38 @@ describe('Auth Integration Endpoints', () => {
       expect(response.statusCode).toBe(500);
     });
   });
+
+  describe('GET /v1/auth/roles', () => {
+    it('should return the sovereign role hierarchy', async (): Promise<void> => {
+      const mockRoles = [
+        { id: 0, label: 'Master (Archon)' },
+        { id: 1, label: 'Director' },
+      ];
+      (db.execute as Mock).mockResolvedValueOnce([mockRoles]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/auth/roles',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toHaveLength(2);
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT id, name as label FROM roles'),
+        []
+      );
+    });
+
+    it('should handle failure when listing roles', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('ROLES_DB_FAIL'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/auth/roles',
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).error).toContain('Falla al listar');
+    });
+  });
 });
