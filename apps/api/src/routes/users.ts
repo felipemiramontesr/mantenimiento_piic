@@ -20,10 +20,10 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
   });
 
   /**
-   * 🔱 POST /v1/users/:id/upload-profile
+   * 🔱 POST /v1/users/:id/identity-asset
    * Handles multipart image uploads (JPG/PNG) for user profiles.
    */
-  fastify.post('/users/:id/upload-profile', async (request, reply) => {
+  fastify.post('/users/:id/identity-asset', async (request, reply) => {
     const { id } = request.params as { id: string };
 
     // 🛡️ Identity Lock: Ensure the user can only modify their own profile assets

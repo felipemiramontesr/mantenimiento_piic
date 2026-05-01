@@ -32,7 +32,18 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 
   // Plugins Setup
   fastify.register(cors, {
-    origin: true,
+    origin: (origin, cb) => {
+      // 🛡️ Sovereign Domain Protection: Allow main domain and all subdomains
+      if (
+        !origin ||
+        /mantenimiento\.piic\.com\.mx$/.test(origin) ||
+        origin === 'https://mantenimiento.piic.com.mx'
+      ) {
+        cb(null, true);
+        return;
+      }
+      cb(new Error('Archon CORS Restriction'), false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     exposedHeaders: ['Authorization'],

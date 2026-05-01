@@ -111,8 +111,9 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
             formDataUpload.append('file', selectedFile);
 
             // 🔱 Absolute Protocol: Use explicit v1 path and let Axios handle boundaries
+            // v.2.0.3 - Cache-Buster & Endpoint Rename
             const uploadRes = await api.post(
-              `/v1/users/${String(currentUser.id)}/upload-profile`,
+              `/v1/users/${String(currentUser.id)}/identity-asset?v=20.5.4`,
               formDataUpload
             );
 
