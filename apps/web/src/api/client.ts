@@ -37,6 +37,13 @@ api.interceptors.response.use(
       config: error.config?.url,
     });
     if (error.response?.status === 401) {
+      // 🕵️ Forensic Log: Catch the culprit before redirect
+      // eslint-disable-next-line no-console
+      console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
+        url: error.config?.url,
+        method: error.config?.method,
+        token_present: !!localStorage.getItem('auth_token'),
+      });
       localStorage.removeItem('auth_token');
       window.location.href = '/login';
     }
