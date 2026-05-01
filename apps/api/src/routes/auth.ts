@@ -19,6 +19,8 @@ function mapUserResponse(user: RowDataPacket): {
   roleName: string;
   department: string;
   imageUrl: string | null;
+  employeeNumber: string | null;
+  is_active: boolean;
 } {
   let rid = user.role_id;
   if (rid === undefined) {
@@ -45,6 +47,8 @@ function mapUserResponse(user: RowDataPacket): {
     roleName: rname,
     department: user.department_name || user.department,
     imageUrl: pic,
+    employeeNumber: user.employee_number || user.employeeNumber || null,
+    is_active: user.is_active !== undefined ? Boolean(user.is_active) : true,
   };
 }
 
