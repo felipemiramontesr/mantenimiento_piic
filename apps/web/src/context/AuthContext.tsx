@@ -48,10 +48,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsed = JSON.parse(userData);
         runAuthDoctor('Hydration (useEffect)', parsed);
 
-        // 🛡️ Integrity Check: If session is legacy (shallow), purge it
-        if (!parsed.roleName || !parsed.username) {
-          console.warn('⚠️ [Archon Auth] Shallow session detected. Purging for restoration.');
-          localStorage.setItem('debug_user_data', userData); // 🕵️ Forensic Trap: Capture the evidence
+        // 🛡️ Integrity Check: More tolerant during restoration
+        if (!parsed.username) {
+          console.warn('⚠️ [Archon Auth] Shallow session (missing username). Purging.');
           logout();
           return;
         }
