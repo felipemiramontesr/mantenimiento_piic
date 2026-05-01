@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 🛡️ Integrity Check: If session is legacy (shallow), purge it
         if (!parsed.roleName || !parsed.username) {
           console.warn('⚠️ [Archon Auth] Shallow session detected. Purging for restoration.');
+          localStorage.setItem('debug_user_data', userData); // 🕵️ Forensic Trap: Save the evidence
           logout();
           return;
         }
