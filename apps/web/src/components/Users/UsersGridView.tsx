@@ -192,8 +192,8 @@ const UsersGridView = (): React.JSX.Element => {
       valA = a.fullName || a.username;
       valB = b.fullName || b.username;
     } else if (sortConfig.field === 'role') {
-      valA = a.role?.name || '';
-      valB = b.role?.name || '';
+      valA = a.roleName || '';
+      valB = b.roleName || '';
     } else if (sortConfig.field === 'status') {
       valA = a.is_active ? '1' : '0';
       valB = b.is_active ? '1' : '0';

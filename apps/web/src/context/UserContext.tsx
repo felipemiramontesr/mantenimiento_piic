@@ -84,10 +84,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             employeeNumber: u.employee_number || u.employeeNumber || '',
             is_active: Boolean(u.is_active),
             imageUrl: u.profile_picture_url || u.image_url || '',
-            role: {
-              id: u.roleId,
-              name: u.roleName,
-            },
+            roleName: u.roleName,
           })
         );
         setUsers(mappedUsers);
@@ -155,16 +152,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchRoles = useCallback(async (): Promise<void> => {
     try {
-      const response = await api.get('/catalogs/USER_ROLE');
+      const response = await api.get('/auth/roles');
       if (response.data?.length) {
-        // 🔱 ARCHON PRIORITY SORTING: Archon must always be at the zenith of the hierarchy
-        const sortedRoles = [...response.data].sort((a: CatalogOption, b: CatalogOption) => {
-          if (a.label === 'Archon') return -1;
-          if (b.label === 'Archon') return 1;
-          return a.label.localeCompare(b.label);
-        });
-        setRoles(sortedRoles);
-        archonCache.set('system_roles', sortedRoles);
+        setRoles(response.data);
+        archonCache.set('system_roles', response.data);
       }
     } catch (err) {
       // Slient fallback

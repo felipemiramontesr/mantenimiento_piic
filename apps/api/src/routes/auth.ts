@@ -307,4 +307,18 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       return reply.code(500).send({ error: 'Falla crítica durante la actualización de identidad' });
     }
   });
+
+  /**
+   * 🔱 GET /v1/auth/roles
+   * Purpose: Fetch the sovereign role hierarchy for industrial selection.
+   */
+  fastify.get('/roles', async (_request, reply) => {
+    try {
+      const [rows] = await db.execute('SELECT id, name as label FROM roles ORDER BY id ASC');
+      return reply.send(rows);
+    } catch (err: unknown) {
+      fastify.log.error(err);
+      return reply.code(500).send({ error: 'Falla al listar los niveles de autoridad' });
+    }
+  });
 }
