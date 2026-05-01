@@ -16,7 +16,7 @@ const userDbSchema = z.object({
   email: z.string(),
   passwordHash: z.string(),
   roleId: z.number(),
-  roleName: z.string(),
+  roleName: z.string().nullable().optional(),
   profile_picture_url: z.string().nullable().optional(),
 });
 
