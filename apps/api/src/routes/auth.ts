@@ -6,19 +6,16 @@ import db from '../services/db';
 import EncryptionService from '../services/encryption';
 
 /**
- * 🔱 Archon Auth Engine (v.4.8.1)
- * Clean Architecture & Sovereign Security
+ * 🔱 Archon Auth Engine (v.4.8.2)
+ * High-Performance Security with CI/CD Stability
  */
 
 async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
-  const [results] = await db.execute<RowDataPacket[]>(
-    'SELECT * FROM users WHERE is_active = 1',
-    []
-  );
-  if (!results || !results[0]) return null;
+  const response = await db.execute<RowDataPacket[]>('SELECT * FROM users WHERE is_active = 1', []);
+  if (!response || !response[0]) return null;
 
-  const allUsers = results as unknown as RowDataPacket[];
-  const found = allUsers.find((u) => {
+  const results = response[0];
+  const found = results.find((u) => {
     try {
       return EncryptionService.decrypt(u.email) === username;
     } catch {
@@ -28,7 +25,7 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
 
   if (!found) return null;
 
-  const [fullData] = await db.execute<RowDataPacket[]>(
+  const fullResponse = await db.execute<RowDataPacket[]>(
     `SELECT u.*, r.name as role_name, cat.label as department_name
      FROM users u
      JOIN roles r ON u.role_id = r.id
@@ -36,7 +33,8 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
      WHERE u.id = ?`,
     [found.id]
   );
-  return fullData?.[0] || null;
+
+  return fullResponse && fullResponse[0] ? fullResponse[0][0] : null;
 }
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -57,8 +55,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         WHERE u.username = ?
       `;
 
-        const [rows] = await db.execute<RowDataPacket[]>(query, [username]);
-        let user = rows?.[0];
+        const response = await db.execute<RowDataPacket[]>(query, [username]);
+        let user = response && response[0] ? response[0][0] : null;
 
         if (!user) {
           user = await findUserByEmail(username);
@@ -121,11 +119,11 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     const { username, email, password, roleId, fullName, departmentId, employeeNumber } = body.data;
 
     try {
-      const [existing] = await db.execute<RowDataPacket[]>(
+      const response = await db.execute<RowDataPacket[]>(
         'SELECT id FROM users WHERE username = ?',
         [username]
       );
-      if (existing && existing.length > 0) {
+      if (response && response[0] && response[0].length > 0) {
         return reply.code(409).send({ error: `El usuario '${username}' ya está registrado.` });
       }
 
@@ -170,7 +168,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         params.push(Number(role));
       }
 
-      const [rows] = await db.execute<RowDataPacket[]>(query, params);
+      const response = await db.execute<RowDataPacket[]>(query, params);
+      const rows = response && response[0] ? response[0] : [];
+
       const users = rows.map((u) => ({
         id: u.id,
         username: u.username,
@@ -264,7 +264,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   // 🏛️ ROLES: Authority Grid
   fastify.get('/roles', async (_request, reply) => {
     try {
-      const [rows] = await db.execute('SELECT id, name as label FROM roles', []);
+      const response = await db.execute('SELECT id, name as label FROM roles', []);
+      const rows = response && response[0] ? response[0] : [];
       return reply.send(rows);
     } catch (error) {
       fastify.log.error(error);
