@@ -4,7 +4,7 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Nucleus Saturation (v.41.0.0)
+ * 🔱 Archon Integration Test: Nucleus Saturation (v.43.0.0)
  * Absolute Branch/Line/Statement/Function Coverage Strike
  */
 
@@ -40,11 +40,13 @@ describe('Auth Endpoints Sovereignty', () => {
           password_hash: 'h',
           role_id: 1,
           role_name: 'Admin',
+          profile_picture_url: 'avatar.png',
         },
       ],
     ]);
     const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
     expect(r1.statusCode).toBe(200);
+    expect(JSON.parse(r1.body).user.imageUrl).toContain('/profile-image');
 
     const email = 'target@piic.mx';
     (db.execute as Mock)
@@ -59,6 +61,7 @@ describe('Auth Endpoints Sovereignty', () => {
             passwordHash: 'h',
             roleId: 2,
             roleName: 'U',
+            imageUrl: 'pic.jpg',
           },
         ],
       ]);
@@ -68,6 +71,7 @@ describe('Auth Endpoints Sovereignty', () => {
       payload: { username: email, password: 'p' },
     });
     expect(r2.statusCode).toBe(200);
+    expect(JSON.parse(r2.body).user.imageUrl).toContain('/profile-image');
   });
 
   it('Path: Register & Conflict Sovereign Logic', async () => {
@@ -124,7 +128,6 @@ describe('Auth Endpoints Sovereignty', () => {
   });
 
   it('Resilience: Catch Block Nucleus (Aggressive Rejection)', async () => {
-    // Usar mockImplementation para asegurar que la excepción sea capturada por el bloque try/catch asíncrono
     (db.execute as Mock).mockImplementation(() => {
       throw new Error('FATAL');
     });
@@ -173,14 +176,80 @@ describe('Auth Endpoints Sovereignty', () => {
       payload: { username: 'any', password: 'p' },
     });
 
+    // Login fail password
+    (argon2.verify as Mock).mockResolvedValueOnce(false);
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ id: 1, username: 'u', password_hash: 'h', role_id: 2 }],
+    ]);
+    const rFailPass = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: validCreds,
+    });
+    expect(rFailPass.statusCode).toBe(401);
+    expect(JSON.parse(rFailPass.body)).toEqual({ error: 'L4' });
+
+    // Validation rejection paths
+    const rV1 = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: { username: 'a', email: 'not-an-email', password: '1' },
+    });
+    expect(rV1.statusCode).toBe(400);
+
+    const rV2 = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      payload: { email: 'not-an-email' },
+    });
+    expect(rV2.statusCode).toBe(400);
+  });
+
+  it('Deep: findUserByEmail Resilience Matrix', async () => {
+    // 53-54: response is null
+    (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce(null);
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'e@e.com', password: 'p' },
+    });
+
+    // 57-58: results is null
+    (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([null]);
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'e@e.com', password: 'p' },
+    });
+
+    // 70-71: !found
+    (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([[{ email: 'not-me' }]]);
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'target@t.com', password: 'p' },
+    });
+
+    // 77-78: fullResponse is null
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
-      .mockResolvedValueOnce([[{ id: 4, email: 'enc_e', is_active: 1 }]])
+      .mockResolvedValueOnce([[{ id: 5, email: 'e@e.com', is_active: 1 }]])
       .mockResolvedValueOnce(null);
     await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
-      payload: { username: 'e', password: 'p' },
+      payload: { username: 'e@e.com', password: 'p' },
+    });
+
+    // 81-83: !fullRows[0]
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[]])
+      .mockResolvedValueOnce([[{ id: 6, email: 'e@e.com', is_active: 1 }]])
+      .mockResolvedValueOnce([[]]);
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'e@e.com', password: 'p' },
     });
   });
 });
