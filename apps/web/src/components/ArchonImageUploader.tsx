@@ -176,7 +176,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                       e.stopPropagation();
                       removeImage(idx);
                     }}
-                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
+                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
                   >
                     <X size={18} strokeWidth={1} />
                   </button>
@@ -187,7 +187,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                       e.stopPropagation();
                       removeImage(idx);
                     }}
-                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
+                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
                   >
                     <X size={18} strokeWidth={1} />
                   </button>
