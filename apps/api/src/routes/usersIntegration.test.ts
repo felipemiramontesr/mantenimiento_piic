@@ -46,22 +46,35 @@ describe('User Integration Endpoints', () => {
     vi.resetAllMocks();
   });
 
-  describe('POST /v1/users/:id/upload-profile', () => {
+  describe('POST /v1/users/:id/identity-asset', () => {
     it('should return 401 if no session is provided', async () => {
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/upload-profile',
+        url: '/v1/users/1/identity-asset',
       });
       expect(response.statusCode).toBe(401);
     });
 
+    it('should return 403 if trying to upload to another user (Identity Lock)', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/users/2/identity-asset', // Token is for ID 1
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).error).toContain('Unauthorized Identity Access');
+    });
+
     it('should return 404 if identity is not found', async () => {
+      // Identity Lock passed (ID match), but DB check fails
+      const customToken = app.jwt.sign({ id: 999, username: 'ghost', roleId: 2 });
       (db.execute as Mock).mockResolvedValueOnce([[]]);
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/999/upload-profile',
-        headers: { authorization: `Bearer ${token}` },
+        url: '/v1/users/999/identity-asset',
+        headers: { authorization: `Bearer ${customToken}` },
       });
 
       expect(response.statusCode).toBe(404);
@@ -73,12 +86,12 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: { 
+        url: '/v1/users/1/identity-asset',
+        headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=---' 
+          'content-type': 'multipart/form-data; boundary=---',
         },
-        payload: '-----' // Invalid empty multipart
+        payload: '-----', // Invalid empty multipart
       });
 
       expect(response.statusCode).toBe(400);
@@ -90,12 +103,13 @@ describe('User Integration Endpoints', () => {
       // Using a trick to simulate multipart with specific mimetype
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: { 
+        url: '/v1/users/1/identity-asset',
+        headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary'
+          'content-type': 'multipart/form-data; boundary=boundary',
         },
-        payload: '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.txt"\r\nContent-Type: text/plain\r\n\r\ncontent\r\n--boundary--'
+        payload:
+          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.txt"\r\nContent-Type: text/plain\r\n\r\ncontent\r\n--boundary--',
       });
 
       expect(response.statusCode).toBe(400);
@@ -112,12 +126,13 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: { 
+        url: '/v1/users/1/identity-asset',
+        headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary'
+          'content-type': 'multipart/form-data; boundary=boundary',
         },
-        payload: '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test"\r\nContent-Type: image/png\r\n\r\nfake-binary-data\r\n--boundary--'
+        payload:
+          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test"\r\nContent-Type: image/png\r\n\r\nfake-binary-data\r\n--boundary--',
       });
 
       expect(response.statusCode).toBe(200);
@@ -133,12 +148,13 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: { 
+        url: '/v1/users/1/identity-asset',
+        headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary'
+          'content-type': 'multipart/form-data; boundary=boundary',
         },
-        payload: '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--'
+        payload:
+          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--',
       });
 
       expect(response.statusCode).toBe(200);
@@ -154,12 +170,13 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: { 
+        url: '/v1/users/1/identity-asset',
+        headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary'
+          'content-type': 'multipart/form-data; boundary=boundary',
         },
-        payload: '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--'
+        payload:
+          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--',
       });
 
       expect(response.statusCode).toBe(200);
@@ -176,12 +193,13 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: { 
+        url: '/v1/users/1/identity-asset',
+        headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary'
+          'content-type': 'multipart/form-data; boundary=boundary',
         },
-        payload: '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--'
+        payload:
+          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--',
       });
 
       expect(response.statusCode).toBe(500);
@@ -228,10 +246,10 @@ describe('User Integration Endpoints', () => {
     it('should serve the image with correct content type', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[{ profile_picture_url: 'user1.png' }]]);
       (fs.existsSync as Mock).mockReturnValue(true);
-      
+
       const mockStream = new PassThrough();
       (fs.createReadStream as Mock).mockReturnValue(mockStream);
-      
+
       // We need to end the stream so inject can complete
       setTimeout(() => {
         mockStream.end('fake-image-data');
@@ -250,10 +268,10 @@ describe('User Integration Endpoints', () => {
     it('should serve JPG images with correct content type', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[{ profile_picture_url: 'user1.jpg' }]]);
       (fs.existsSync as Mock).mockReturnValue(true);
-      
+
       const mockStream = new PassThrough();
       (fs.createReadStream as Mock).mockReturnValue(mockStream);
-      
+
       setTimeout(() => {
         mockStream.end('fake-image-data');
       }, 0);
