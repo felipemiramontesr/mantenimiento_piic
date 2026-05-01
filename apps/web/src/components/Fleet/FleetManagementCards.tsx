@@ -18,8 +18,8 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
   return (
     <div className="archon-central-axis animate-in fade-in slide-in-from-top-4 duration-700">
       <div
-        className={`grid gap-8 mb-8 ${
-          hasPermission('fleet:write') ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
+        className={`archon-grid-2 gap-8 mb-8 ${
+          !hasPermission('fleet:write') ? '!grid-cols-1' : ''
         }`}
       >
         {/* Card 1: Estrategia Operativa (NAVY) */}

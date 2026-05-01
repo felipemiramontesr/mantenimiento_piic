@@ -72,18 +72,18 @@ const MaintenanceManagementCards: React.FC<MaintenanceManagementCardsProps> = ({
         </div>
       </div>
 
-      {/* ── CARD 02: Programar Mantenimiento (YELLOW) ────────────────────── */}
+      {/* ── CARD 02: Programar Mantenimiento (EMERALD) ────────────────────── */}
       <div
         onClick={(): void => onPanelChange('SCHEDULE')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'SCHEDULE'
-            ? 'ring-2 ring-[#f2b705] shadow-lg transform scale-[1.02]'
-            : 'card-hover-yellow opacity-80 hover:opacity-100'
+            ? 'ring-2 ring-emerald-500 shadow-lg transform scale-[1.02]'
+            : 'card-hover-emerald opacity-80 hover:opacity-100'
         }`}
-        style={{ borderTop: '4px solid #f2b705' }}
+        style={{ borderTop: '4px solid #10b981' }}
       >
         <div className="flex items-center justify-center gap-3 mb-4 w-full">
-          <Wrench size={20} className="text-[#f2b705]" />
+          <Wrench size={20} className="text-emerald-500" />
           <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-widest">
             Gestión de Servicios
           </span>
@@ -95,14 +95,14 @@ const MaintenanceManagementCards: React.FC<MaintenanceManagementCardsProps> = ({
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(242, 183, 5, 0.1)',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px solid rgba(242, 183, 5, 0.4)',
+              border: '2px solid rgba(16, 185, 129, 0.4)',
             }}
           >
-            <Wrench size={40} className="text-[#f2b705]" />
+            <Wrench size={40} className="text-emerald-500" />
           </div>
           <div className="flex flex-col items-center space-y-1 mb-12">
             <h3 className="text-[#0f2a44] font-black uppercase tracking-[0.15em] text-[14px]">
@@ -116,8 +116,8 @@ const MaintenanceManagementCards: React.FC<MaintenanceManagementCardsProps> = ({
 
         <div className="archon-tile-action">
           <button
-            className={`btn-sentinel-yellow w-full ${
-              activePanel === 'SCHEDULE' ? 'bg-[#f2b705] text-[#0f2a44]' : ''
+            className={`btn-sentinel-emerald w-full ${
+              activePanel === 'SCHEDULE' ? 'bg-emerald-600 text-white' : ''
             }`}
           >
             Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
