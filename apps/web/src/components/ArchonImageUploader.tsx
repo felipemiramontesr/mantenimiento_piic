@@ -176,9 +176,9 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                       e.stopPropagation();
                       removeImage(idx);
                     }}
-                    className="absolute top-[5%] right-[5%] p-2 bg-[#f2b705] text-[#0f2a44] rounded-full opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 shadow-lg"
+                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
                   >
-                    <X size={16} strokeWidth={3} />
+                    <X size={18} strokeWidth={1} />
                   </button>
                 ) : (
                   <button
@@ -187,9 +187,9 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                       e.stopPropagation();
                       removeImage(idx);
                     }}
-                    className="absolute top-4 right-4 p-2 bg-[#f2b705] text-[#0f2a44] rounded-full opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 shadow-lg"
+                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110"
                   >
-                    <X size={12} strokeWidth={3} />
+                    <X size={18} strokeWidth={1} />
                   </button>
                 )}
                 {variant === 'square' && (
