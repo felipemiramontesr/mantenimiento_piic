@@ -23,7 +23,7 @@ export default function usePermissions(): {
     if (
       Number(currentUser.roleId) === 0 ||
       currentUser.roleName === 'Master (Archon)' ||
-      currentUser.username.toLowerCase() === 'archon'
+      ['archon', 'greyman'].includes(currentUser.username.toLowerCase())
     ) {
       return true;
     }
