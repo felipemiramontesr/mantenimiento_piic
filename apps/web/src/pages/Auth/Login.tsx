@@ -140,32 +140,44 @@ const LoginPage: React.FC = () => {
         </footer>
       </section>
 
-      {/* 🔮 AUTHENTICATION LAYER */}
-      <section className="auth-section">
-        <div className="auth-card animate-in zoom-in duration-700">
-          {/* 🏔️ 10% HEADER */}
+      {/* 🛡️ LOGIN PANEL (Top priority on mobile) */}
+      <section className="login-panel">
+        <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
+          {/* 📱 10% HEADER */}
           <header className="auth-card-header">
-            <div className="auth-status-dot"></div>
-            <h2 className="auth-card-title">Acceso Restringido</h2>
+            <div className="login-card-logo animate-in fade-in duration-1000">
+              <PiicLogo />
+            </div>
           </header>
 
-          {/* ⚙️ 80% BODY */}
+          {/* 🏙️ 80% BODY */}
           <main className="auth-card-body">
-            <div className="auth-instruction">
-              Por favor, ingrese sus credenciales de Archon para acceder al sistema.
+            <div className="auth-header-titles">
+              <h2 className="font-black tracking-tighter">Acceso Archon</h2>
+              <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+                Control de Flotas
+              </p>
             </div>
 
-            {error && (
-              <div className="error-message-pro animate-in slide-in-from-top-2 duration-300">
-                <span className="error-dot"></span>
-                {error}
+            <form onSubmit={handleLogin} className="login-form">
+              <div
+                style={{
+                  minHeight: error ? '80px' : '0px',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: error ? 1 : 0,
+                }}
+                className="mb-4 flex items-center overflow-hidden"
+              >
+                {error && (
+                  <div className="w-full p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
+                    Error de Sistema: {error}
+                  </div>
+                )}
               </div>
-            )}
 
-            <form onSubmit={handleLogin} className="auth-form-pro">
               <div className="form-group">
                 <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
-                  ID de Archon
+                  Identidad de Usuario
                 </label>
                 <input
                   type="text"
@@ -237,9 +249,14 @@ const LoginPage: React.FC = () => {
               política de uso, tratamiento de información y cookies.
             </a>
           </p>
-          <button onClick={acceptCookies} className="cookie-accept-btn">
-            Aceptar y continuar
-          </button>
+          <div className="cookie-actions">
+            <button onClick={(): void => setShowCookies(false)} className="cookie-btn-secondary">
+              RECHAZAR
+            </button>
+            <button onClick={acceptCookies} className="cookie-btn">
+              ACEPTAR
+            </button>
+          </div>
         </div>
       )}
     </div>

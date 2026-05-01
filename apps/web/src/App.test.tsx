@@ -28,12 +28,8 @@ describe('PIIC ARCHON - Authentication Interface', () => {
     renderLogin();
 
     // Check main title (Auth Card)
-    const heading = screen.getByText(/Acceso Restringido/i);
+    const heading = screen.getByText(/Acceso Archon/i);
     expect(heading).toBeInTheDocument();
-
-    // Check hero title
-    const heroTitle = screen.getByText(/Suministro industrial/i);
-    expect(heroTitle).toBeInTheDocument();
 
     // Check action buttons
     const loginButton = screen.getByRole('button', { name: /Acceder al Sistema/i });

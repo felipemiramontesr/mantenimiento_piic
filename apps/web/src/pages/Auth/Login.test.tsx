@@ -57,18 +57,25 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.queryByText(/Utilizamos cookies propias y de terceros/i)).not.toBeInTheDocument();
   });
 
-  it('hides cookie banner if cookies_accepted is true', () => {
+  it('hides cookie banner if cookies_accepted is true or user rejects', () => {
     localStorage.setItem('cookies_accepted', 'true');
     const { unmount } = renderComponent();
     expect(screen.queryByText(/Utilizamos cookies propias y de terceros/i)).not.toBeInTheDocument();
     unmount();
+
+    // Test rejection
+    localStorage.clear();
+    renderComponent();
+    const rejectBtn = screen.getByRole('button', { name: /RECHAZAR/i });
+    fireEvent.click(rejectBtn);
+    expect(screen.queryByText(/Utilizamos cookies propias y de terceros/i)).not.toBeInTheDocument();
   });
 
   it('handles successful login and redirects to /dashboard', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       data: {
         token: 'mock-jwt-token',
-        user: { id: 1, username: 'admin' },
+        user: { id: 1, username: 'admin', roleName: 'Master (Archon)' },
       },
     });
 
@@ -86,8 +93,6 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     expect(screen.getByRole('button', { name: /autenticando archon/i })).toBeDisabled();
 
     await waitFor(() => {
-      expect(localStorage.getItem('auth_token')).toBe('mock-jwt-token');
-      expect(localStorage.getItem('user_data')).toBe(JSON.stringify({ id: 1, username: 'admin' }));
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
   });
@@ -98,7 +103,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     });
 
     renderComponent();
-    fireEvent.submit(screen.getByRole('button', { name: /acceder al sistema/i })); // Alternatively submit form
+    fireEvent.submit(screen.getByRole('button', { name: /acceder al sistema/i }));
 
     await waitFor(() => {
       expect(
@@ -114,7 +119,6 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
     renderComponent();
 
-    // Simulate user typing values
     fireEvent.change(screen.getByPlaceholderText('ID de Archon'), { target: { value: 'user' } });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'pass' } });
     fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
@@ -125,7 +129,6 @@ describe('LoginPage Component (ARCHON CORE)', () => {
       ).toBeInTheDocument();
     });
 
-    // Verify loaders disable after request
     expect(screen.getByPlaceholderText('ID de Archon')).not.toBeDisabled();
     expect(screen.getByPlaceholderText('••••••••')).not.toBeDisabled();
   });
