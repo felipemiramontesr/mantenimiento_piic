@@ -6,9 +6,40 @@ import db from '../services/db';
 import EncryptionService from '../services/encryption';
 
 /**
- * 🔱 Archon Auth Engine (v.8.3.0)
- * Absolute Sovereign Status: 100% Comprehensive Coverage
+ * 🔱 Archon Auth Engine (v.8.5.0)
+ * Absolute Sovereign Status: Purified Complexity & 100% Coverage
  */
+
+function mapUserResponse(user: RowDataPacket): {
+  id: number;
+  username: string;
+  fullName: string;
+  email: string;
+  roleId: number;
+  roleName: string;
+  department: string;
+  imageUrl: string | null;
+} {
+  let rid = user.role_id;
+  if (rid === undefined) rid = user.roleId;
+
+  let rname = user.role_name;
+  if (!rname) rname = user.roleName;
+
+  const img = user.profile_picture_url || user.imageUrl;
+  const pic = img ? `/v1/users/${user.id}/profile-image` : null;
+
+  return {
+    id: user.id,
+    username: user.username,
+    fullName: user.full_name || user.fullName,
+    email: EncryptionService.decrypt(user.email),
+    roleId: rid,
+    roleName: rname,
+    department: user.department_name || user.department,
+    imageUrl: pic,
+  };
+}
 
 async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
   const response = await db.execute<RowDataPacket[]>('SELECT * FROM users WHERE is_active = 1', []);
@@ -19,7 +50,7 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
   const found = results.find((u) => {
     try {
       return EncryptionService.decrypt(u.email) === username;
-    } catch {
+    } catch (e) {
       return false;
     }
   });
@@ -33,11 +64,9 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
 
   if (!fullResponse) return null;
   const [fullRows] = fullResponse;
-  if (!fullRows) return null;
-  const [firstFullRow] = fullRows;
-  if (!firstFullRow) return null;
+  if (!fullRows || !fullRows[0]) return null;
 
-  return firstFullRow;
+  return fullRows[0];
 }
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -57,7 +86,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         let user: RowDataPacket | null = null;
         if (response) {
           const [results] = response;
-          if (results) [user] = results;
+          if (results && results.length > 0) [user] = results;
           if (!user) user = await findUserByEmail(username);
         }
 
@@ -67,38 +96,17 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         if (!hash || !(await argon2.verify(hash, password)))
           return reply.code(401).send({ error: 'L4' });
 
-        let rid = user.role_id;
-        if (rid === undefined) rid = user.roleId;
-
-        let rname = user.role_name;
-        if (!rname) rname = user.roleName;
-
-        const isMaster = rid === 0 || rid === 1 || user.username === 'GrayMan';
+        const mapped = mapUserResponse(user);
+        const isMaster = mapped.roleId === 0 || mapped.roleId === 1 || user.username === 'GrayMan';
         const token = fastify.jwt.sign({
           id: user.id,
           username: user.username,
-          roleId: rid,
-          roleName: rname,
+          roleId: mapped.roleId,
+          roleName: mapped.roleName,
           permissions: isMaster ? ['*'] : [],
         });
 
-        const img = user.profile_picture_url || user.imageUrl;
-        const pic = img ? `/v1/users/${user.id}/profile-image` : null;
-
-        return reply.send({
-          status: 'success',
-          token,
-          user: {
-            id: user.id,
-            username: user.username,
-            fullName: user.full_name || user.fullName,
-            email: EncryptionService.decrypt(user.email),
-            roleId: rid,
-            roleName: rname,
-            department: user.department_name || user.department,
-            imageUrl: pic,
-          },
-        });
+        return reply.send({ status: 'success', token, user: mapped });
       } catch (e) {
         fastify.log.error(e);
         return reply.code(500).send({ error: 'LOGIN_FAIL' });
@@ -159,22 +167,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         const [results] = res;
         if (results) rows = results as RowDataPacket[];
       }
-      const list = rows.map((u) => {
-        let rid = u.role_id;
-        if (rid === undefined) rid = u.roleId;
-        const img = u.profile_picture_url || u.imageUrl;
-        return {
-          id: u.id,
-          username: u.username,
-          fullName: u.full_name || u.fullName,
-          email: EncryptionService.decrypt(u.email),
-          roleId: rid,
-          roleName: u.role_name || u.roleName,
-          department: u.department_name || u.department,
-          imageUrl: img ? `/v1/users/${u.id}/profile-image` : null,
-        };
-      });
-      return reply.send({ success: true, data: list });
+      return reply.send({ success: true, data: rows.map(mapUserResponse) });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ error: 'USER_FAIL' });

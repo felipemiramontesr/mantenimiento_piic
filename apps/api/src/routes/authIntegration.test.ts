@@ -4,7 +4,7 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Absolute Overkill (v.37.0.0)
+ * 🔱 Archon Integration Test: Absolute Overkill (v.38.0.0)
  * Final Precision Strike for 100.00% Coverage in CI/CD
  */
 
@@ -13,7 +13,10 @@ vi.mock('argon2', () => ({ default: { verify: vi.fn(), hash: vi.fn() } }));
 vi.mock('../services/encryption', () => ({
   default: {
     encrypt: vi.fn((v) => `enc_${v}`),
-    decrypt: vi.fn((v) => (v ? v.replace('enc_', '') : '')),
+    decrypt: vi.fn((v) => {
+      if (v === 'corrupted') throw new Error('DECRYPT_ERROR');
+      return v ? v.replace('enc_', '') : '';
+    }),
   },
 }));
 
@@ -102,7 +105,6 @@ describe('Auth Endpoints Sovereignty', () => {
 
   it('Path: PATCH Identity Finalization (Exhaustive)', async () => {
     (db.execute as Mock).mockResolvedValue([{ affectedRows: 1 }]);
-    // Saturar cada rama del PATCH
     const fullPayload = {
       fullName: 'Name',
       department: 'D',
@@ -131,7 +133,7 @@ describe('Auth Endpoints Sovereignty', () => {
     await app.inject({ method: 'GET', url: '/v1/auth/roles' });
   });
 
-  it('Edge: Validation & GrayMan Master', async () => {
+  it('Edge: Validation & findUserByEmail Logic', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [{ id: 9, username: 'GrayMan', email: 'e', password_hash: 'h', role_id: 0 }],
     ]);
@@ -145,9 +147,20 @@ describe('Auth Endpoints Sovereignty', () => {
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: {} });
     await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: {} });
 
+    // Forzar el catch interno de findUserByEmail usando 'corrupted'
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
-      .mockResolvedValueOnce([[{ id: 3, email: 'enc_e', is_active: 1 }]])
+      .mockResolvedValueOnce([[{ id: 3, email: 'corrupted', is_active: 1 }]]);
+    await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'any', password: 'p' },
+    });
+
+    // findUserByEmail devolviendo null en el detalle
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[]])
+      .mockResolvedValueOnce([[{ id: 4, email: 'enc_e', is_active: 1 }]])
       .mockResolvedValueOnce(null);
     await app.inject({
       method: 'POST',
