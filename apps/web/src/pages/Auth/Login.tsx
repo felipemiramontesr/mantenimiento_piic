@@ -5,6 +5,7 @@ import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
 import serviceBackground from '../../assets/service-bg.png';
 import { useAuth } from '../../context/AuthContext';
+import runAuthDoctor from '../../utils/authDoctor';
 
 /**
  * LoginPage Component - ARCHON System
@@ -69,6 +70,7 @@ const LoginPage: React.FC = () => {
       if (response.data.token) {
         // eslint-disable-next-line no-console
         console.log('🔑 [Archon Auth] Token Verification Successful');
+        runAuthDoctor('Login (API Response)', response.data.user);
         login(response.data.token, response.data.user);
         navigate('/dashboard');
       } else {

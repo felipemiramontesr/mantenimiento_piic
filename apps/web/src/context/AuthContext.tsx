@@ -1,5 +1,8 @@
+/* eslint-disable no-console */
+/* eslint-disable */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserIndustrial } from '../types/user';
+import runAuthDoctor from '../utils/authDoctor';
 
 /**
  * 🔱 Archon Context: AuthContext
@@ -32,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = (token: string, user: UserIndustrial): void => {
+    runAuthDoctor('Login (Context State Change)', user);
     localStorage.setItem('auth_token', token);
     localStorage.setItem('user_data', JSON.stringify(user));
     setCurrentUser(user);
@@ -43,15 +47,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (userData) {
       try {
         const parsed = JSON.parse(userData);
+        runAuthDoctor('Hydration (useEffect)', parsed);
+
         // 🛡️ Integrity Check: If session is legacy (shallow), purge it
         if (!parsed.roleName || !parsed.username) {
-          // eslint-disable-next-line no-console
           console.warn('⚠️ [Archon Auth] Shallow session detected. Purging for restoration.');
           logout();
           return;
         }
         setCurrentUser(parsed);
       } catch (err) {
+        runAuthDoctor('Hydration Error', err);
         logout();
       }
     }
