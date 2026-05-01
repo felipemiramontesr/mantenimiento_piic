@@ -4,21 +4,23 @@ import { AxiosError } from 'axios';
 import PiicLogo from '../../components/Logo/PiicLogo';
 import api from '../../api/client';
 import serviceBackground from '../../assets/service-bg.png';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * LoginPage Component - ARCHON System
- * 
+ *
  * @remarks
  * This is the primary entry point for the Archon UI. It implements a fully responsive,
- * dual-panel layout supporting mobile (10/80/10 vertical split) and tablet/desktop 
- * symmetry logic. 
- * 
- * Contains logical boundaries for managing authentication state, token storage securely 
+ * dual-panel layout supporting mobile (10/80/10 vertical split) and tablet/desktop
+ * symmetry logic.
+ *
+ * Contains logical boundaries for managing authentication state, token storage securely
  * in localStorage, and routing upon successful Archon API verification.
- * 
+ *
  * @returns React Functional Component rendering the Archon Login View.
  */
 const LoginPage: React.FC = () => {
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,9 +47,9 @@ const LoginPage: React.FC = () => {
   /**
    * Handles the secure form submission to the Archon Auth Router.
    * If successful, parses the JWT and redirects to the internal Dashboard.
-   * Catches `401 Unauthorized` specifically to display a generic fallback message 
+   * Catches `401 Unauthorized` specifically to display a generic fallback message
    * (Zero-Trust policy restricts specific UI error details).
-   * 
+   *
    * @param e - Prevented default native form event
    */
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
@@ -67,8 +69,7 @@ const LoginPage: React.FC = () => {
       if (response.data.token) {
         // eslint-disable-next-line no-console
         console.log('🔑 [Archon Auth] Token Verification Successful');
-        localStorage.setItem('auth_token', response.data.token);
-        localStorage.setItem('user_data', JSON.stringify(response.data.user));
+        login(response.data.token, response.data.user);
         navigate('/dashboard');
       } else {
         // eslint-disable-next-line no-console
@@ -139,44 +140,32 @@ const LoginPage: React.FC = () => {
         </footer>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (Top priority on mobile) */}
-      <section className="login-panel">
-        <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
-          {/* 📱 10% HEADER */}
+      {/* 🔮 AUTHENTICATION LAYER */}
+      <section className="auth-section">
+        <div className="auth-card animate-in zoom-in duration-700">
+          {/* 🏔️ 10% HEADER */}
           <header className="auth-card-header">
-            <div className="login-card-logo animate-in fade-in duration-1000">
-              <PiicLogo />
-            </div>
+            <div className="auth-status-dot"></div>
+            <h2 className="auth-card-title">Acceso Restringido</h2>
           </header>
 
-          {/* 🏙️ 80% BODY */}
+          {/* ⚙️ 80% BODY */}
           <main className="auth-card-body">
-            <div className="auth-header-titles">
-              <h2 className="font-black tracking-tighter">Acceso Archon</h2>
-              <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
-                Control de Flotas
-              </p>
+            <div className="auth-instruction">
+              Por favor, ingrese sus credenciales de Archon para acceder al sistema.
             </div>
 
-            <form onSubmit={handleLogin} className="login-form">
-              <div 
-                style={{ 
-                  minHeight: error ? '80px' : '0px', 
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  opacity: error ? 1 : 0
-                }} 
-                className="mb-4 flex items-center overflow-hidden"
-              >
-                {error && (
-                  <div className="w-full p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
-                    Error de Sistema: {error}
-                  </div>
-                )}
+            {error && (
+              <div className="error-message-pro animate-in slide-in-from-top-2 duration-300">
+                <span className="error-dot"></span>
+                {error}
               </div>
+            )}
 
+            <form onSubmit={handleLogin} className="auth-form-pro">
               <div className="form-group">
                 <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
-                  Identidad de Usuario
+                  ID de Archon
                 </label>
                 <input
                   type="text"
@@ -248,14 +237,9 @@ const LoginPage: React.FC = () => {
               política de uso, tratamiento de información y cookies.
             </a>
           </p>
-          <div className="cookie-actions">
-            <button onClick={(): void => setShowCookies(false)} className="cookie-btn-secondary">
-              RECHAZAR
-            </button>
-            <button onClick={acceptCookies} className="cookie-btn">
-              ACEPTAR
-            </button>
-          </div>
+          <button onClick={acceptCookies} className="cookie-accept-btn">
+            Aceptar y continuar
+          </button>
         </div>
       )}
     </div>

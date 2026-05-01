@@ -4,11 +4,12 @@ import { UserIndustrial } from '../types/user';
 /**
  * 🔱 Archon Context: AuthContext
  * Implementation: Sovereign Session Orchestration
- * v.1.0.0 - Centralized Identity & Access Management
+ * v.2.0.0 - Hardened Identity & Guarded Hydration
  */
 
 interface AuthContextType {
   currentUser: UserIndustrial | null;
+  login: (token: string, user: UserIndustrial) => void;
   logout: () => void;
   updateCurrentUser: (data: Partial<UserIndustrial>) => void;
   isAuthenticated: boolean;
@@ -28,6 +29,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
     setIsAuthenticated(false);
     window.location.href = '/login';
+  };
+
+  const login = (token: string, user: UserIndustrial): void => {
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('user_data', JSON.stringify(user));
+    setCurrentUser(user);
+    setIsAuthenticated(true);
   };
 
   useEffect(() => {
@@ -58,7 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, logout, updateCurrentUser, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{ currentUser, login, logout, updateCurrentUser, isAuthenticated }}
+    >
       {children}
     </AuthContext.Provider>
   );
