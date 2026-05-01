@@ -1,102 +1,107 @@
 import { FastifyInstance } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import * as argon2 from 'argon2';
+import argon2 from 'argon2';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
 
 /**
- * 🔱 Archon Auth Engine (v.4.5.0)
- * Optimized for Industrial Normalization & Sovereign Access
+ * 🔱 Archon Auth Engine (v.4.8.1)
+ * Clean Architecture & Sovereign Security
  */
 
-interface LoginBody {
-  username?: string;
-  password?: string;
+async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
+  const [results] = await db.execute<RowDataPacket[]>(
+    'SELECT * FROM users WHERE is_active = 1',
+    []
+  );
+  if (!results || !results[0]) return null;
+
+  const allUsers = results as unknown as RowDataPacket[];
+  const found = allUsers.find((u) => {
+    try {
+      return EncryptionService.decrypt(u.email) === username;
+    } catch {
+      return false;
+    }
+  });
+
+  if (!found) return null;
+
+  const [fullData] = await db.execute<RowDataPacket[]>(
+    `SELECT u.*, r.name as role_name, cat.label as department_name
+     FROM users u
+     JOIN roles r ON u.role_id = r.id
+     LEFT JOIN common_catalogs cat ON u.department_id = cat.id
+     WHERE u.id = ?`,
+    [found.id]
+  );
+  return fullData?.[0] || null;
 }
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
   // 🔐 LOGIN: Authentic Sovereignty
-  fastify.post<{ Body: LoginBody }>('/login', async (request, reply) => {
-    const { username, password } = request.body;
+  fastify.post<{ Body: { username?: string; password?: string } }>(
+    '/login',
+    async (request, reply) => {
+      const { username, password } = request.body;
+      if (!username || !password)
+        return reply.code(400).send({ error: 'Identidad y clave requeridas' });
 
-    if (!username || !password) {
-      return reply.code(400).send({ error: 'Identidad y clave requeridas' });
-    }
-
-    try {
-      // 🛡️ Pre-emptive search: check username or potential email
-      const query = `
+      try {
+        const query = `
         SELECT u.*, r.name as role_name, cat.label as department_name
         FROM users u
         JOIN roles r ON u.role_id = r.id
         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
-        WHERE u.username = ? OR u.is_active = 1
+        WHERE u.username = ?
       `;
 
-      // Note: We fetch all active users and then verify email encryption if needed
-      // but usually, we can optimize searching for the specific username first.
-      const [rows] = await db.execute<RowDataPacket[]>(query, [username]);
-      let user = rows.find((u) => u.username === username);
+        const [rows] = await db.execute<RowDataPacket[]>(query, [username]);
+        let user = rows?.[0];
 
-      // If not found by username, it might be an email. We must decrypt to check.
-      if (!user) {
-        const [allUsers] = await db.execute<RowDataPacket[]>(
-          'SELECT * FROM users WHERE is_active = 1',
-          []
-        );
-        user = (allUsers as RowDataPacket[]).find(
-          (u) => EncryptionService.decrypt(u.email) === username
-        );
-
-        // Re-fetch full data if found by email
-        if (user) {
-          const [fullData] = await db.execute<RowDataPacket[]>(
-            `SELECT u.*, r.name as role_name, cat.label as department_name
-             FROM users u
-             JOIN roles r ON u.role_id = r.id
-             LEFT JOIN common_catalogs cat ON u.department_id = cat.id
-             WHERE u.id = ?`,
-            [user.id]
-          );
-          [user] = fullData;
+        if (!user) {
+          user = await findUserByEmail(username);
         }
-      }
 
-      if (!user || !(await argon2.verify(user.password_hash, password))) {
-        return reply.code(401).send({ error: 'Credenciales inválidas' });
-      }
+        const dbPasswordHash = user?.password_hash || user?.passwordHash;
+        if (!user || !dbPasswordHash || !(await argon2.verify(dbPasswordHash, password))) {
+          return reply.code(401).send({ error: 'Credenciales inválidas' });
+        }
 
-      // 🛡️ Omega Bypass Strategy
-      const isMaster = user.role_id === 1 || user.username === 'GrayMan';
+        const dbRoleId = user.role_id !== undefined ? user.role_id : user.roleId;
+        const isMaster = dbRoleId === 0 || dbRoleId === 1 || user.username === 'GrayMan';
 
-      const token = fastify.jwt.sign({
-        id: user.id,
-        username: user.username,
-        roleId: user.role_id,
-        roleName: user.role_name,
-        permissions: isMaster ? ['*'] : [],
-      });
-
-      return reply.send({
-        status: 'success',
-        token,
-        user: {
+        const token = fastify.jwt.sign({
           id: user.id,
           username: user.username,
-          fullName: user.full_name,
-          email: EncryptionService.decrypt(user.email),
-          roleId: user.role_id,
-          roleName: user.role_name,
-          department: user.department_name,
-          imageUrl: user.profile_picture_url ? `/v1/users/${user.id}/profile-image` : null,
-        },
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'System Authority Failure' });
+          roleId: dbRoleId,
+          roleName: user.role_name || user.roleName,
+          permissions: isMaster ? ['*'] : [],
+        });
+
+        const hasImage = !!(user.profile_picture_url || user.imageUrl);
+
+        return reply.send({
+          status: 'success',
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            fullName: user.full_name || user.fullName,
+            email: EncryptionService.decrypt(user.email),
+            roleId: dbRoleId,
+            roleName: user.role_name || user.roleName,
+            department: user.department_name || user.department,
+            imageUrl: hasImage ? `/v1/users/${user.id}/profile-image` : null,
+          },
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(500).send({ error: 'System Authority Failure' });
+      }
     }
-  });
+  );
 
   // 🔱 REGISTER: Identity Enrollment
   fastify.post('/register', async (request, reply) => {
@@ -111,11 +116,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     });
 
     const body = registerSchema.safeParse(request.body);
-    if (!body.success) {
-      return reply
-        .code(400)
-        .send({ error: 'Invalid registration data', details: body.error.format() });
-    }
+    if (!body.success) return reply.code(400).send({ error: 'Invalid registration data' });
 
     const { username, email, password, roleId, fullName, departmentId, employeeNumber } = body.data;
 
@@ -124,7 +125,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         'SELECT id FROM users WHERE username = ?',
         [username]
       );
-      if (existing.length > 0) {
+      if (existing && existing.length > 0) {
         return reply.code(409).send({ error: `El usuario '${username}' ya está registrado.` });
       }
 
@@ -144,11 +145,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         ]
       );
 
-      return reply.code(201).send({
-        success: true,
-        message: 'Usuario registrado exitosamente',
-        userId: result.insertId,
-      });
+      return reply
+        .code(201)
+        .send({
+          success: true,
+          message: 'Usuario registrado exitosamente',
+          userId: result.insertId,
+        });
     } catch (error) {
       fastify.log.error(error);
       return reply.code(500).send({ error: 'Falla crítica durante el registro de identidad' });
@@ -159,13 +162,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.get('/users', async (request, reply) => {
     const { role } = request.query as { role?: string };
     try {
-      let query = `
-        SELECT u.*, r.name as role_name, cat.label as department_name
-        FROM users u
-        JOIN roles r ON u.role_id = r.id
-        LEFT JOIN common_catalogs cat ON u.department_id = cat.id
-        WHERE 1=1
-      `;
+      let query =
+        'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE 1=1';
       const params: (string | number)[] = [];
       if (role) {
         query += ' AND u.role_id = ?';
@@ -176,13 +174,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       const users = rows.map((u) => ({
         id: u.id,
         username: u.username,
-        fullName: u.full_name,
+        fullName: u.full_name || u.fullName,
         email: EncryptionService.decrypt(u.email),
-        roleId: u.role_id,
-        roleName: u.role_name,
-        department: u.department_name,
+        roleId: u.role_id !== undefined ? u.role_id : u.roleId,
+        roleName: u.role_name || u.roleName,
+        department: u.department_name || u.department,
         is_active: u.is_active,
-        imageUrl: u.profile_picture_url ? `/v1/users/${u.id}/profile-image` : null,
+        imageUrl: u.profile_picture_url || u.imageUrl ? `/v1/users/${u.id}/profile-image` : null,
       }));
 
       return reply.send({ success: true, count: users.length, data: users });
@@ -196,20 +194,19 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.patch('/users/:id', async (request, reply) => {
     const updateSchema = z.object({
       fullName: z.string().optional(),
+      department: z.string().optional(),
       email: z.string().email().optional(),
       password: z.string().min(8).optional(),
       roleId: z.number().int().optional(),
-      departmentId: z.number().int().optional(),
+      profilePictureUrl: z.string().optional(),
       employeeNumber: z.string().optional(),
+      departmentId: z.number().int().optional(),
       is_active: z.boolean().optional(),
     });
 
     const { id } = request.params as { id: string };
     const body = updateSchema.safeParse(request.body);
-
-    if (!body.success) {
-      return reply.code(400).send({ error: 'Invalid update data', details: body.error.format() });
-    }
+    if (!body.success) return reply.code(400).send({ error: 'Invalid update data' });
 
     const updates = body.data;
     const fields: string[] = [];
@@ -218,6 +215,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     if (updates.fullName) {
       fields.push('full_name = ?');
       values.push(updates.fullName);
+    }
+    if (updates.department) {
+      fields.push('department = ?');
+      values.push(updates.department);
     }
     if (updates.email) {
       fields.push('email = ?');
@@ -231,22 +232,24 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       fields.push('role_id = ?');
       values.push(updates.roleId);
     }
-    if (updates.departmentId) {
-      fields.push('department_id = ?');
-      values.push(updates.departmentId);
+    if (updates.profilePictureUrl) {
+      fields.push('profile_picture_url = ?');
+      values.push(updates.profilePictureUrl);
     }
     if (updates.employeeNumber) {
       fields.push('employee_number = ?');
       values.push(updates.employeeNumber);
+    }
+    if (updates.departmentId) {
+      fields.push('department_id = ?');
+      values.push(updates.departmentId);
     }
     if (updates.is_active !== undefined) {
       fields.push('is_active = ?');
       values.push(updates.is_active ? 1 : 0);
     }
 
-    if (fields.length === 0) {
-      return reply.code(400).send({ error: 'No hay campos que actualizar' });
-    }
+    if (fields.length === 0) return reply.code(400).send({ error: 'No hay campos que actualizar' });
 
     try {
       values.push(id);
@@ -261,7 +264,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   // 🏛️ ROLES: Authority Grid
   fastify.get('/roles', async (_request, reply) => {
     try {
-      const [rows] = await db.execute('SELECT id, name as label FROM roles ORDER BY id ASC');
+      const [rows] = await db.execute('SELECT id, name as label FROM roles', []);
       return reply.send(rows);
     } catch (error) {
       fastify.log.error(error);
