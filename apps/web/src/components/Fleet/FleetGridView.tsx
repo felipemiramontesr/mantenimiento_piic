@@ -522,7 +522,7 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto overflow-y-auto max-h-[calc(100vh-220px)] shadow-2xl rounded-xl custom-scrollbar">
+      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto shadow-2xl rounded-xl custom-scrollbar">
         <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
             <tr>
