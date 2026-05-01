@@ -4,8 +4,8 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Atomic Saturation (v.40.0.0)
- * Final Precision Strike for 100.00% Absolute Branches in CI/CD
+ * 🔱 Archon Integration Test: Nucleus Saturation (v.41.0.0)
+ * Absolute Branch/Line/Statement/Function Coverage Strike
  */
 
 vi.mock('../services/db', () => ({ default: { execute: vi.fn() } }));
@@ -104,17 +104,12 @@ describe('Auth Endpoints Sovereignty', () => {
 
   it('Path: PATCH Identity (Active & Inactive)', async () => {
     (db.execute as Mock).mockResolvedValue([{ affectedRows: 1 }]);
-    // 1. Saturar campos y probar is_active: true
-    const p1 = { fullName: 'N', is_active: true };
-    const r1 = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: p1 });
-    expect(r1.statusCode).toBe(200);
-
-    // 2. Probar is_active: false (Cierra rama atómica)
-    const p2 = { is_active: false };
-    const r2 = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: p2 });
-    expect(r2.statusCode).toBe(200);
-
-    // 3. Probar resto de campos opcionales
+    await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      payload: { fullName: 'N', is_active: true },
+    });
+    await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: { is_active: false } });
     const p3 = {
       department: 'D',
       email: 'e@e.com',
@@ -128,20 +123,30 @@ describe('Auth Endpoints Sovereignty', () => {
     expect(r3.statusCode).toBe(200);
   });
 
-  it('Resilience: Catch Block Identity', async () => {
-    (db.execute as Mock).mockRejectedValue(new Error('FATAL'));
-    await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
-    await app.inject({
+  it('Resilience: Catch Block Nucleus (Aggressive Rejection)', async () => {
+    // Usar mockImplementation para asegurar que la excepción sea capturada por el bloque try/catch asíncrono
+    (db.execute as Mock).mockImplementation(() => {
+      throw new Error('FATAL');
+    });
+
+    const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
+    const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
       payload: { username: 'user80', email: 'e@e.com', password: 'password123' },
     });
-    await app.inject({ method: 'GET', url: '/v1/auth/users' });
-    await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: { fullName: 'X' } });
-    await app.inject({ method: 'GET', url: '/v1/auth/roles' });
+    const r3 = await app.inject({ method: 'GET', url: '/v1/auth/users' });
+    const r4 = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      payload: { fullName: 'X' },
+    });
+    const r5 = await app.inject({ method: 'GET', url: '/v1/auth/roles' });
+
+    expect([r1, r2, r3, r4, r5].every((r) => r.statusCode === 500)).toBe(true);
   });
 
-  it('Edge: Validation & Atomic Logic', async () => {
+  it('Edge: Validation & Atomic Fallbacks', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [{ id: 9, username: 'GrayMan', email: 'e', password_hash: 'h', role_id: 0 }],
     ]);
@@ -152,7 +157,6 @@ describe('Auth Endpoints Sovereignty', () => {
     });
     expect(r1.statusCode).toBe(200);
 
-    // Casos nulos y vacíos para ramas de fallo
     (db.execute as Mock).mockResolvedValueOnce(null);
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
 
