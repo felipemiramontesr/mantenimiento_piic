@@ -30,7 +30,7 @@ const SettingsModule: React.FC = (): React.ReactElement => (
 
     {/* 📊 BODY MODULAR */}
     <section className="archon-workspace-chassis">
-      <div className="archon-axial-container max-w-6xl mx-auto">
+      <div className="archon-axial-container">
         <ArchonProfilePanel />
       </div>
     </section>

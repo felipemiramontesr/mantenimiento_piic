@@ -39,41 +39,18 @@ const LogsModule: React.FC = (): React.ReactElement => (
           </p>
         </div>
 
-        {/* Right Panel: Identity (Sync with ArchonCenter) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative' }}>
-          <h1
-            style={{
-              fontSize: '26px',
-              fontWeight: 900,
-              margin: 0,
-              letterSpacing: '-0.03em',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              color: '#0f2a44',
-            }}
-          >
-            Archon
-          </h1>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '4px',
-              border: '2px solid #f2b705',
-              backgroundColor: '#0f2a44',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 100 100">
-              <path
-                d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
-                stroke="#f2b705"
-                strokeWidth="16"
-                fill="none"
-              />
-            </svg>
-          </div>
+        {/* Right Panel: Identity - HANDLED BY GLOBAL TOPBAR */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '24px',
+            position: 'relative',
+            width: '44px',
+            height: '44px',
+          }}
+        >
+          {/* Symmetrical placeholder */}
         </div>
       </div>
     </header>
