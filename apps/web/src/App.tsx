@@ -12,7 +12,6 @@ import SettingsModule from './pages/Dashboard/SettingsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider } from './context/AuthContext';
-import AuthDebugPage from './pages/Debug/AuthDebug';
 import './index.css';
 
 /**
@@ -30,9 +29,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const App: React.FC = () => (
   <BrowserRouter>
     <Routes>
-      {/* 🔬 Forensic Terminal (Outside Auth Protection) */}
-      <Route path="/debug/auth" element={<AuthDebugPage />} />
-
       {/* 🛡️ Protected Sovereign Grid */}
       <Route
         path="*"
