@@ -32,26 +32,13 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 
   // Plugins Setup
   fastify.register(cors, {
-    origin: true, // Reflect request origin
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     exposedHeaders: ['Authorization'],
     credentials: true,
-    maxAge: 86400, // 24 hours cache for preflight
-  });
-
-  // 🛡️ Manual Preflight Handler (Double-Lock)
-  fastify.options('*', (request, reply) => {
-    reply
-      .header('Access-Control-Allow-Origin', request.headers.origin || '*')
-      .header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-      .header(
-        'Access-Control-Allow-Headers',
-        'Content-Type, Authorization, X-Requested-With, Accept, Origin'
-      )
-      .header('Access-Control-Max-Age', '86400')
-      .code(204)
-      .send();
+    maxAge: 86400,
+    preflight: true,
   });
 
   fastify.register(jwt, {
