@@ -29,7 +29,12 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = (files: FileList | File[]): void => {
-    const newImages = [...images];
+    let newImages = [...images];
+
+    // If maxImages is 1, auto-replace the existing image
+    if (maxImages === 1 && files.length > 0) {
+      newImages = [];
+    }
 
     const selectedFiles: File[] = [];
     Array.from(files).forEach((file: File): void => {
@@ -50,19 +55,28 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
     if (onFileChange) {
       onFileChange(selectedFiles);
     }
+
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const onDragOver = (e: React.DragEvent): void => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
   };
 
-  const onDragLeave = (): void => {
+  const onDragLeave = (e: React.DragEvent): void => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
   };
 
   const onDrop = (e: React.DragEvent): void => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files) {
       handleFiles(e.dataTransfer.files);
@@ -94,7 +108,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
       >
         <input
           type="file"
-          multiple
+          multiple={maxImages > 1}
           accept={accept}
           className="hidden"
           ref={fileInputRef}
