@@ -69,7 +69,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
         fullName: formData.fullName,
         email: formData.email.toLowerCase(),
         employeeNumber: formData.employeeNumber,
-        profilePictureUrl: formData.imageUrl,
+        profile_picture_url: formData.imageUrl,
       };
 
       if (formData.password) {
@@ -78,7 +78,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
 
       const response = await api.patch(`/auth/users/${currentUser.id}`, payload);
 
-      if (response.data.success) {
+      if (response.data.success || response.status === 200) {
         let finalImageUrl = formData.imageUrl;
 
         if (selectedFile) {
