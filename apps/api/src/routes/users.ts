@@ -25,12 +25,9 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
    */
   fastify.post('/users/:id/upload-profile', async (request, reply) => {
     const { id } = request.params as { id: string };
-    
+
     // 🛡️ Pre-validation: Verify user existence before accepting bytes
-    const [existing] = await db.execute<RowDataPacket[]>(
-      'SELECT id FROM users WHERE id = ?',
-      [id]
-    );
+    const [existing] = await db.execute<RowDataPacket[]>('SELECT id FROM users WHERE id = ?', [id]);
     if (existing.length === 0) {
       return reply.code(404).send({ error: 'Identity not found' });
     }
@@ -46,10 +43,12 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       return reply.code(400).send({ error: 'Sovereign standard: Only JPG and PNG are accepted' });
     }
 
-    // 🏗️ Path construction: managed within /uploads/profiles
+    // 🏗️ Path construction: managed within /uploads/profiles (v.2.0.1 Relative Sync)
     const ext = path.extname(data.filename) || (data.mimetype === 'image/png' ? '.png' : '.jpg');
     const newFilename = `profile_user_${id}_${Date.now()}${ext}`;
-    const uploadDir = path.join(process.cwd(), 'uploads/profiles');
+
+    // We use file-relative paths to ensure infrastructure stability across different environments
+    const uploadDir = path.join(__dirname, '../../uploads/profiles');
     const uploadPath = path.join(uploadDir, newFilename);
 
     try {
@@ -58,17 +57,14 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
       // 2. Update Sovereign Registry
       // We store the physical path in DB, but the system will expose it via the logical route
-      await db.execute(
-        'UPDATE users SET profile_picture_url = ? WHERE id = ?',
-        [newFilename, id]
-      );
+      await db.execute('UPDATE users SET profile_picture_url = ? WHERE id = ?', [newFilename, id]);
 
       fastify.log.info(`✅ Profile picture updated for user ${id}: ${newFilename}`);
 
-      return reply.send({ 
-        success: true, 
+      return reply.send({
+        success: true,
         message: 'Profile identity updated',
-        url: `/v1/users/${id}/profile-image` 
+        url: `/v1/users/${id}/profile-image`,
       });
     } catch (err) {
       fastify.log.error(err);
@@ -97,7 +93,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       }
 
       const filename = user.profile_picture_url;
-      const filePath = path.join(process.cwd(), 'uploads/profiles', filename);
+      const filePath = path.join(__dirname, '../../uploads/profiles', filename);
 
       // 🛡️ Security Check: Verify file exists on disk
       if (!fs.existsSync(filePath)) {
