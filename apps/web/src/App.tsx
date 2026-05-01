@@ -18,7 +18,7 @@ import './index.css';
 /**
  * 🔱 Archon Root: App
  * Implementation: Sovereign Identity Orchestration
- * v.28.25.0 - Elevated UserProvider for Cross-Module Identity Sync
+ * v.28.26.0 - Forensic Independence for AuthDebug
  */
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -29,32 +29,43 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const App: React.FC = () => (
   <BrowserRouter>
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <UserProvider>
-                <DashboardLayout />
-              </UserProvider>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<ArchonCenter />} />
-          <Route path="fleet" element={<FleetModule />} />
-          <Route path="maintenance" element={<MaintenanceModule />} />
-          <Route path="routes" element={<RoutesModule />} />
-          <Route path="users" element={<UsersModule />} />
-          <Route path="financial" element={<FinancialHealthModule />} />
-          <Route path="logs" element={<LogsModule />} />
-          <Route path="settings" element={<SettingsModule />} />
-        </Route>
-        <Route path="/debug/auth" element={<AuthDebugPage />} />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </AuthProvider>
+    <Routes>
+      {/* 🔬 Forensic Terminal (Outside Auth Protection) */}
+      <Route path="/debug/auth" element={<AuthDebugPage />} />
+
+      {/* 🛡️ Protected Sovereign Grid */}
+      <Route
+        path="*"
+        element={
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <UserProvider>
+                      <DashboardLayout />
+                    </UserProvider>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<ArchonCenter />} />
+                <Route path="fleet" element={<FleetModule />} />
+                <Route path="maintenance" element={<MaintenanceModule />} />
+                <Route path="routes" element={<RoutesModule />} />
+                <Route path="users" element={<UsersModule />} />
+                <Route path="financial" element={<FinancialHealthModule />} />
+                <Route path="logs" element={<LogsModule />} />
+                <Route path="settings" element={<SettingsModule />} />
+              </Route>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </AuthProvider>
+        }
+      />
+    </Routes>
   </BrowserRouter>
 );
 
