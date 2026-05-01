@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-/* eslint-disable */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserIndustrial } from '../types/user';
 import runAuthDoctor from '../utils/authDoctor';
