@@ -30,15 +30,20 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
 
   const handleFiles = (files: FileList | File[]): void => {
     let newImages = [...images];
+    let filesArray = Array.from(files);
 
-    // If maxImages is 1, auto-replace the existing image
-    if (maxImages === 1 && files.length > 0) {
+    // If maxImages is 1, auto-replace the existing image and strictly pick only the first file
+    if (maxImages === 1 && filesArray.length > 0) {
       newImages = [];
+      filesArray = [filesArray[0]];
     }
 
+    let currentImageCount = newImages.length;
     const selectedFiles: File[] = [];
-    Array.from(files).forEach((file: File): void => {
-      if (newImages.length < maxImages && file.type.startsWith('image/')) {
+
+    filesArray.forEach((file: File): void => {
+      if (currentImageCount < maxImages && file.type.startsWith('image/')) {
+        currentImageCount += 1;
         selectedFiles.push(file);
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>): void => {

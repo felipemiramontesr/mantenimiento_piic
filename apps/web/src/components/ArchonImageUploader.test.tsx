@@ -86,7 +86,7 @@ describe('ArchonImageUploader Component', () => {
     });
   });
 
-  it('should respect maxImages limit', async () => {
+  it('should auto-replace image if maxImages is 1', async () => {
     const file1 = new File(['1'], '1.png', { type: 'image/png' });
     const file2 = new File(['2'], '2.png', { type: 'image/png' });
 
@@ -102,8 +102,28 @@ describe('ArchonImageUploader Component', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file1, file2] } });
 
-    // Should only have picked files up to limit (none since limit was 1 and already had 1)
-    expect(mockOnFileChange).toHaveBeenCalledWith([]);
+    // Since maxImages=1, it should clear the existing and strictly pick only the first file
+    expect(mockOnFileChange).toHaveBeenCalledWith([file1]);
+  });
+
+  it('should respect maxImages limit for multiple images', async () => {
+    const file1 = new File(['1'], '1.png', { type: 'image/png' });
+    const file2 = new File(['2'], '2.png', { type: 'image/png' });
+
+    render(
+      <ArchonImageUploader
+        images={['img1', 'img2', 'img3']} // Already has 3
+        onChange={mockOnChange}
+        onFileChange={mockOnFileChange}
+        maxImages={4}
+      />
+    );
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file1, file2] } });
+
+    // Limit is 4, already have 3, so only 1 more can be added
+    expect(mockOnFileChange).toHaveBeenCalledWith([file1]);
   });
 
   it('should remove an image when clicking the remove button', () => {
