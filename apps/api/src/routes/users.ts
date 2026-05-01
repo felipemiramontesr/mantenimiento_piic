@@ -1,9 +1,16 @@
 import { FastifyInstance } from 'fastify';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
+
+// 🔱 ESM Compatibility: __dirname is not available in ES modules
+/* eslint-disable no-underscore-dangle */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+/* eslint-enable no-underscore-dangle */
 
 /**
  * 🔱 Archon User Management Routes
@@ -59,6 +66,9 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
     const uploadPath = path.join(uploadDir, newFilename);
 
     try {
+      // 🏗️ Ensure upload directory exists
+      fs.mkdirSync(uploadDir, { recursive: true });
+
       // 1. Persist file to infrastructure
       await pipeline(data.file, fs.createWriteStream(uploadPath));
 
