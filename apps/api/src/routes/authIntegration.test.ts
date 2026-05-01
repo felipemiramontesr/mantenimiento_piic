@@ -4,8 +4,8 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Absolute Overkill (v.39.0.0)
- * Final Precision Strike for 100.00% Coverage in CI/CD
+ * 🔱 Archon Integration Test: Atomic Saturation (v.40.0.0)
+ * Final Precision Strike for 100.00% Absolute Branches in CI/CD
  */
 
 vi.mock('../services/db', () => ({ default: { execute: vi.fn() } }));
@@ -89,37 +89,43 @@ describe('Auth Endpoints Sovereignty', () => {
   });
 
   it('Path: Users (Filtered & Unfiltered) & Roles', async () => {
-    // Listado sin filtro
     (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, email: 'e', role_id: 1 }]]);
     const r1 = await app.inject({ method: 'GET', url: '/v1/auth/users' });
     expect(r1.statusCode).toBe(200);
 
-    // Listado CON filtro de rol (Cierra líneas 161-163)
     (db.execute as Mock).mockResolvedValueOnce([[{ id: 2, email: 'e2', role_id: 2 }]]);
     const r1b = await app.inject({ method: 'GET', url: '/v1/auth/users?role=2' });
     expect(r1b.statusCode).toBe(200);
 
-    // Listado de Roles
     (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, name: 'Admin' }]]);
     const r2 = await app.inject({ method: 'GET', url: '/v1/auth/roles' });
     expect(r2.statusCode).toBe(200);
   });
 
-  it('Path: PATCH Identity Finalization (Exhaustive)', async () => {
+  it('Path: PATCH Identity (Active & Inactive)', async () => {
     (db.execute as Mock).mockResolvedValue([{ affectedRows: 1 }]);
-    const fullPayload = {
-      fullName: 'Name',
+    // 1. Saturar campos y probar is_active: true
+    const p1 = { fullName: 'N', is_active: true };
+    const r1 = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: p1 });
+    expect(r1.statusCode).toBe(200);
+
+    // 2. Probar is_active: false (Cierra rama atómica)
+    const p2 = { is_active: false };
+    const r2 = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: p2 });
+    expect(r2.statusCode).toBe(200);
+
+    // 3. Probar resto de campos opcionales
+    const p3 = {
       department: 'D',
       email: 'e@e.com',
       password: 'password123',
-      roleId: 1,
+      roleId: 2,
       profilePictureUrl: 'p.jpg',
       employeeNumber: 'E1',
-      departmentId: 2,
-      is_active: false,
+      departmentId: 5,
     };
-    const r = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: fullPayload });
-    expect(r.statusCode).toBe(200);
+    const r3 = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: p3 });
+    expect(r3.statusCode).toBe(200);
   });
 
   it('Resilience: Catch Block Identity', async () => {
@@ -135,7 +141,7 @@ describe('Auth Endpoints Sovereignty', () => {
     await app.inject({ method: 'GET', url: '/v1/auth/roles' });
   });
 
-  it('Edge: Validation & findUserByEmail Logic', async () => {
+  it('Edge: Validation & Atomic Logic', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [{ id: 9, username: 'GrayMan', email: 'e', password_hash: 'h', role_id: 0 }],
     ]);
@@ -146,7 +152,12 @@ describe('Auth Endpoints Sovereignty', () => {
     });
     expect(r1.statusCode).toBe(200);
 
+    // Casos nulos y vacíos para ramas de fallo
+    (db.execute as Mock).mockResolvedValueOnce(null);
+    await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
+
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: {} });
+    await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { username: 'u' } });
     await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: {} });
 
     (db.execute as Mock)
