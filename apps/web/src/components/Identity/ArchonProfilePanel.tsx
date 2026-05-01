@@ -191,6 +191,10 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                     onChange={(imgs): void => setFormData({ ...formData, imageUrl: imgs[0] || '' })}
                     onFileChange={(files): void => setSelectedFile(files[0] || null)}
                     maxImages={1}
+                    title="Arrastra tu fotografía de perfil"
+                    allowedFormats="JPG, PNG"
+                    accept="image/jpeg, image/png"
+                    variant="circle"
                   />
                 </ArchonField>
               </div>

@@ -9,6 +9,10 @@ interface ArchonImageUploaderProps {
   onChange: (images: string[]) => void;
   maxImages?: number;
   onFileChange?: (files: File[]) => void;
+  title?: string;
+  allowedFormats?: string;
+  accept?: string;
+  variant?: 'square' | 'circle';
 }
 
 const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
@@ -16,6 +20,10 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   onChange,
   maxImages = 4,
   onFileChange,
+  title = 'Arrastra imágenes de la unidad',
+  allowedFormats = 'JPG, PNG, WEBP',
+  accept = 'image/*',
+  variant = 'square',
 }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,7 +95,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
         <input
           type="file"
           multiple
-          accept="image/*"
+          accept={accept}
           className="hidden"
           ref={fileInputRef}
           onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -110,10 +118,10 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
 
         <div className="text-center">
           <p className="text-[#0f2a44] font-bold text-sm">
-            {isDragging ? '¡Suelta para capturar!' : 'Arrastra imágenes de la unidad'}
+            {isDragging ? '¡Suelta para capturar!' : title}
           </p>
           <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4">
-            Máximo {maxImages} fotos • JPG, PNG, WEBP
+            Máximo {maxImages} fotos • {allowedFormats}
           </p>
         </div>
       </div>
@@ -125,28 +133,53 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
             (src, idx): React.ReactElement => (
               <div
                 key={idx}
-                className="relative aspect-square rounded-md overflow-hidden border border-[#0f2a44]/10 group animate-in fade-in zoom-in duration-300"
+                className={`relative group animate-in fade-in zoom-in duration-300 ${
+                  variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
+                }`}
               >
-                <img
-                  src={src}
-                  alt={`Vista ${idx + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                <button
-                  onClick={(e: React.MouseEvent): void => {
-                    e.stopPropagation();
-                    removeImage(idx);
-                  }}
-                  className="absolute top-4 right-4 p-4 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 shadow-lg"
+                <div
+                  className={`w-full h-full overflow-hidden border border-[#0f2a44]/10 ${
+                    variant === 'circle' ? 'rounded-full' : 'rounded-md'
+                  }`}
                 >
-                  <X size={10} />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-4">
-                  <span className="text-[8px] text-white font-black uppercase tracking-tighter shadow-sm">
-                    Slot 0{idx + 1}
-                  </span>
+                  <img
+                    src={src}
+                    alt={`Vista ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
                 </div>
+
+                {variant === 'circle' ? (
+                  <button
+                    type="button"
+                    onClick={(e: React.MouseEvent): void => {
+                      e.stopPropagation();
+                      removeImage(idx);
+                    }}
+                    className="absolute top-[5%] right-[5%] p-2 bg-[#f2b705] text-[#0f2a44] rounded-full opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 shadow-lg"
+                  >
+                    <X size={16} strokeWidth={3} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e: React.MouseEvent): void => {
+                      e.stopPropagation();
+                      removeImage(idx);
+                    }}
+                    className="absolute top-4 right-4 p-2 bg-[#f2b705] text-[#0f2a44] rounded-full opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 shadow-lg"
+                  >
+                    <X size={12} strokeWidth={3} />
+                  </button>
+                )}
+                {variant === 'square' && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-4 pointer-events-none">
+                    <span className="text-[8px] text-white font-black uppercase tracking-tighter shadow-sm">
+                      Slot 0{idx + 1}
+                    </span>
+                  </div>
+                )}
               </div>
             )
           )}
@@ -156,7 +189,11 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
             (_, i): React.ReactElement => (
               <div
                 key={`empty-${i}`}
-                className="aspect-square rounded-md border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10"
+                className={`${
+                  variant === 'circle'
+                    ? 'w-48 h-48 rounded-full mx-auto'
+                    : 'aspect-square rounded-md'
+                } border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10`}
               >
                 <ImageIcon size={16} />
               </div>

@@ -284,6 +284,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 }
                 onFileChange={(files: File[]): void => setSelectedFile(files[0] || null)}
                 maxImages={1}
+                title="Arrastra tu fotografía de perfil"
+                allowedFormats="JPG, PNG"
+                accept="image/jpeg, image/png"
+                variant="circle"
               />
             </ArchonField>
             <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4 text-center">
