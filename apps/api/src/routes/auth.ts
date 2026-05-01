@@ -49,7 +49,14 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         return reply.code(401).send({ error: 'Unauthorized credentials' });
       }
 
-      // 2. Fetch Permissions for the role
+      // 2. Verify Password (Sovereign First)
+      const validPassword = await argon2.verify(user.passwordHash, password);
+      if (!validPassword) {
+        fastify.log.warn(`Invalid password for user: ${username}`);
+        return reply.code(401).send({ error: 'Unauthorized credentials' });
+      }
+
+      // 3. Fetch Permissions for the role
       const [permRows] = await db.execute<RowDataPacket[]>(
         `SELECT p.slug 
          FROM permissions p
@@ -63,14 +70,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // Hardcoded check for 'Archon' username as a final fail-safe
       if (user.roleName === 'Master (Archon)' || user.roleId === 0 || user.username === 'Archon') {
         const [allPerms] = await db.execute<RowDataPacket[]>('SELECT slug FROM permissions');
-        permissions = allPerms.map((p) => p.slug);
-      }
-
-      // 2. Verify Password
-      const validPassword = await argon2.verify(user.passwordHash, password);
-      if (!validPassword) {
-        fastify.log.warn(`Invalid password for user: ${username}`);
-        return reply.code(401).send({ error: 'Unauthorized credentials' });
+        if (allPerms && Array.isArray(allPerms)) {
+          permissions = allPerms.map((p) => p.slug);
+        }
       }
 
       // 3. Decrypt Sensitive Data (Email)

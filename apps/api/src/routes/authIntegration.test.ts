@@ -57,6 +57,9 @@ describe('Auth Integration Endpoints', () => {
       ]);
 
       // 1.1 Mock Permissions fetch (Second call in auth.ts)
+      (db.execute as Mock).mockResolvedValueOnce([[{ slug: 'fleet:view' }]]);
+
+      // 1.2 Mock ALL Permissions fetch (Third call for Omega Bypass in auth.ts)
       (db.execute as Mock).mockResolvedValueOnce([
         [{ slug: 'fleet:view' }, { slug: 'fleet:write' }, { slug: 'user:admin' }],
       ]);
@@ -130,7 +133,6 @@ describe('Auth Integration Endpoints', () => {
           },
         ],
       ]);
-      (db.execute as Mock).mockResolvedValueOnce([[]]);
       (argon2.verify as Mock).mockResolvedValueOnce(false);
 
       const response = await app.inject({
@@ -165,7 +167,6 @@ describe('Auth Integration Endpoints', () => {
           },
         ],
       ]);
-      (db.execute as Mock).mockResolvedValueOnce([[]]);
       (argon2.verify as Mock).mockRejectedValueOnce(new Error('ARGON_CRASH'));
 
       const response = await app.inject({
