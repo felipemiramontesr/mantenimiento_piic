@@ -4,7 +4,7 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Absolute Overkill (v.38.0.0)
+ * 🔱 Archon Integration Test: Absolute Overkill (v.39.0.0)
  * Final Precision Strike for 100.00% Coverage in CI/CD
  */
 
@@ -88,16 +88,18 @@ describe('Auth Endpoints Sovereignty', () => {
     expect(r2.statusCode).toBe(409);
   });
 
-  it('Path: Users & Roles Data Integrity', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([
-      [
-        { id: 1, email: 'e', role_id: 1 },
-        { id: 2, email: 'e2', roleId: 2 },
-      ],
-    ]);
+  it('Path: Users (Filtered & Unfiltered) & Roles', async () => {
+    // Listado sin filtro
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, email: 'e', role_id: 1 }]]);
     const r1 = await app.inject({ method: 'GET', url: '/v1/auth/users' });
     expect(r1.statusCode).toBe(200);
 
+    // Listado CON filtro de rol (Cierra líneas 161-163)
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 2, email: 'e2', role_id: 2 }]]);
+    const r1b = await app.inject({ method: 'GET', url: '/v1/auth/users?role=2' });
+    expect(r1b.statusCode).toBe(200);
+
+    // Listado de Roles
     (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, name: 'Admin' }]]);
     const r2 = await app.inject({ method: 'GET', url: '/v1/auth/roles' });
     expect(r2.statusCode).toBe(200);
@@ -147,7 +149,6 @@ describe('Auth Endpoints Sovereignty', () => {
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: {} });
     await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: {} });
 
-    // Forzar el catch interno de findUserByEmail usando 'corrupted'
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
       .mockResolvedValueOnce([[{ id: 3, email: 'corrupted', is_active: 1 }]]);
@@ -157,7 +158,6 @@ describe('Auth Endpoints Sovereignty', () => {
       payload: { username: 'any', password: 'p' },
     });
 
-    // findUserByEmail devolviendo null en el detalle
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
       .mockResolvedValueOnce([[{ id: 4, email: 'enc_e', is_active: 1 }]])
