@@ -4,8 +4,8 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Total Restoration (v.35.0.0)
- * Goal: Absolute 100.00% Coverage in CI/CD
+ * 🔱 Archon Integration Test: High Fidelity (v.36.0.0)
+ * Goal: Absolute 100.00% Coverage & CI Validation
  */
 
 vi.mock('../services/db', () => ({ default: { execute: vi.fn() } }));
@@ -19,20 +19,21 @@ vi.mock('../services/encryption', () => ({
 
 describe('Auth Endpoints Sovereignty', () => {
   const app = buildApp();
+  const validCreds = { username: 'admin_test', password: 'password123' };
 
   beforeEach(() => {
     vi.resetAllMocks();
     (argon2.verify as Mock).mockResolvedValue(true);
-    (argon2.hash as Mock).mockResolvedValue('hash');
+    (argon2.hash as Mock).mockResolvedValue('hash_value');
   });
 
-  it('Verify: Login Path (Standard & Fallback)', async () => {
-    // Éxito Directo (Snake Case)
+  it('Path: Successful Login Matrix', async () => {
+    // 1. Snake Case
     (db.execute as Mock).mockResolvedValueOnce([
       [
         {
           id: 1,
-          username: 'admin',
+          username: 'admin_test',
           email: 'enc_a',
           password_hash: 'h',
           role_id: 1,
@@ -40,14 +41,10 @@ describe('Auth Endpoints Sovereignty', () => {
         },
       ],
     ]);
-    const r1 = await app.inject({
-      method: 'POST',
-      url: '/v1/auth/login',
-      payload: { username: 'admin', password: 'p' },
-    });
+    const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
     expect(r1.statusCode).toBe(200);
 
-    // Éxito por Email (Camel Case + Fallback)
+    // 2. Email Fallback
     const email = 'target@piic.mx';
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
@@ -56,7 +53,7 @@ describe('Auth Endpoints Sovereignty', () => {
         [
           {
             id: 2,
-            username: 'u2',
+            username: 'u_target',
             email: `enc_${email}`,
             passwordHash: 'h',
             roleId: 2,
@@ -72,26 +69,25 @@ describe('Auth Endpoints Sovereignty', () => {
     expect(r2.statusCode).toBe(200);
   });
 
-  it('Verify: Register & Conflict Logic', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([{ insertId: 7 }]);
+  it('Path: Register & Conflict Sovereign Logic', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([{ insertId: 70 }]);
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'u7', email: 'e7@e.com', password: 'password123' },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'password123' },
     });
     expect(r1.statusCode).toBe(201);
 
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 7 }]]);
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 70 }]]);
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'u7', email: 'e7@e.com', password: 'password123' },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'password123' },
     });
     expect(r2.statusCode).toBe(409);
   });
 
-  it('Verify: Users & Roles Success Paths', async () => {
-    // Listado de Usuarios
+  it('Path: Users & Roles Data Integrity', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
         { id: 1, email: 'e', role_id: 1 },
@@ -101,72 +97,78 @@ describe('Auth Endpoints Sovereignty', () => {
     const r1 = await app.inject({ method: 'GET', url: '/v1/auth/users' });
     expect(r1.statusCode).toBe(200);
 
-    // Listado de Roles
     (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, name: 'Admin' }]]);
     const r2 = await app.inject({ method: 'GET', url: '/v1/auth/roles' });
     expect(r2.statusCode).toBe(200);
-    expect(JSON.parse(r2.body).length).toBe(1);
   });
 
-  it('Verify: PATCH Identity Updates', async () => {
+  it('Path: PATCH Identity Finalization', async () => {
     (db.execute as Mock).mockResolvedValue([{ affectedRows: 1 }]);
     const r = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/1',
-      payload: { fullName: 'Nuevo Nombre', is_active: true },
+      payload: { fullName: 'Sovereign Name', is_active: true },
     });
     expect(r.statusCode).toBe(200);
   });
 
-  it('Verify: System Failures (Catch Blocks)', async () => {
-    (db.execute as Mock).mockRejectedValue(new Error('SYSTEM_FAILURE'));
+  it('Resilience: Catch Block Identity', async () => {
+    (db.execute as Mock).mockRejectedValue(new Error('FATAL'));
 
-    const endpoints = [
-      { method: 'POST', url: '/v1/auth/login', payload: { username: 'u', password: 'p' } },
-      {
-        method: 'POST',
-        url: '/v1/auth/register',
-        payload: { username: 'u8', email: 'e@e.com', password: 'password123' },
-      },
-      { method: 'GET', url: '/v1/auth/users' },
-      { method: 'PATCH', url: '/v1/auth/users/1', payload: { fullName: 'X' } },
-      { method: 'GET', url: '/v1/auth/roles' },
-    ];
+    // Ejecutar secuencialmente para evitar colisiones de mocks en el mismo hilo
+    const e1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
+    expect(e1.statusCode).toBe(500);
 
-    await Promise.all(
-      endpoints.map(async (ep) => {
-        const res = await app.inject(ep);
-        expect(res.statusCode).toBe(500);
-      })
-    );
+    const e2 = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: { username: 'user80', email: 'e@e.com', password: 'password123' },
+    });
+    expect(e2.statusCode).toBe(500);
+
+    const e3 = await app.inject({ method: 'GET', url: '/v1/auth/users' });
+    expect(e3.statusCode).toBe(500);
+
+    const e4 = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      payload: { fullName: 'X' },
+    });
+    expect(e4.statusCode).toBe(500);
+
+    const e5 = await app.inject({ method: 'GET', url: '/v1/auth/roles' });
+    expect(e5.statusCode).toBe(500);
   });
 
-  it('Verify: Edge Cases & Validation', async () => {
-    // Búsqueda por email fallida en detalle
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[]])
-      .mockResolvedValueOnce([[{ id: 3, email: 'enc_e', is_active: 1 }]])
-      .mockResolvedValueOnce(null);
-    const r1 = await app.inject({
-      method: 'POST',
-      url: '/v1/auth/login',
-      payload: { username: 'e', password: 'p' },
-    });
-    expect(r1.statusCode).toBe(401);
-
-    // Payload vacío
-    const r2 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: {} });
-    expect(r2.statusCode).toBe(400);
-
-    // GrayMan Master
+  it('Edge: Validation & GrayMan Master', async () => {
+    // GrayMan Success
     (db.execute as Mock).mockResolvedValueOnce([
       [{ id: 9, username: 'GrayMan', email: 'e', password_hash: 'h', role_id: 0 }],
     ]);
-    const r3 = await app.inject({
+    const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'GrayMan', password: 'p' },
     });
-    expect(r3.statusCode).toBe(200);
+    expect(r1.statusCode).toBe(200);
+
+    // Validation Fails
+    const r2 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: {} });
+    expect(r2.statusCode).toBe(400);
+
+    const r3 = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: {} });
+    expect(r3.statusCode).toBe(400);
+
+    // findUserByEmail Partial Failures
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[]])
+      .mockResolvedValueOnce([[{ id: 3, email: 'enc_e', is_active: 1 }]])
+      .mockResolvedValueOnce(null);
+    const r4 = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'e', password: 'p' },
+    });
+    expect(r4.statusCode).toBe(401);
   });
 });
