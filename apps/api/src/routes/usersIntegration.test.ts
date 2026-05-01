@@ -46,11 +46,11 @@ describe('User Integration Endpoints', () => {
     vi.resetAllMocks();
   });
 
-  describe('POST /v1/users/:id/identity-asset', () => {
+  describe('POST /v1/users/:id/upload-profile', () => {
     it('should return 401 if no session is provided', async () => {
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/identity-asset',
+        url: '/v1/users/1/upload-profile',
       });
       expect(response.statusCode).toBe(401);
     });
@@ -58,7 +58,7 @@ describe('User Integration Endpoints', () => {
     it('should return 403 if trying to upload to another user (Identity Lock)', async () => {
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/2/identity-asset', // Token is for ID 1
+        url: '/v1/users/2/upload-profile', // Token is for ID 1
         headers: { authorization: `Bearer ${token}` },
       });
 
@@ -73,7 +73,7 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/999/identity-asset',
+        url: '/v1/users/999/upload-profile',
         headers: { authorization: `Bearer ${customToken}` },
       });
 
@@ -86,7 +86,7 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/identity-asset',
+        url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
           'content-type': 'multipart/form-data; boundary=---',
@@ -103,7 +103,7 @@ describe('User Integration Endpoints', () => {
       // Using a trick to simulate multipart with specific mimetype
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/identity-asset',
+        url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
           'content-type': 'multipart/form-data; boundary=boundary',
@@ -126,7 +126,7 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/identity-asset',
+        url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
           'content-type': 'multipart/form-data; boundary=boundary',
@@ -148,7 +148,7 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/identity-asset',
+        url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
           'content-type': 'multipart/form-data; boundary=boundary',
@@ -170,7 +170,7 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/identity-asset',
+        url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
           'content-type': 'multipart/form-data; boundary=boundary',
@@ -193,7 +193,7 @@ describe('User Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/users/1/identity-asset',
+        url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
           'content-type': 'multipart/form-data; boundary=boundary',
