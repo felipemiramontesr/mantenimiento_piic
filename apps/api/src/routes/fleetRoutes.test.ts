@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
