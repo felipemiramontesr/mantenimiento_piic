@@ -222,6 +222,5 @@ export interface UseFleetFormReturn {
   handleModeloChange: (modelId: number) => void;
   handleSubmit: (e: React.FormEvent, onSuccess?: () => Promise<void>) => Promise<void>;
   resetForm: () => void;
-  selectedFiles: File[];
-  setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  setSelectedFiles: (files: File[]) => Promise<void>;
 }

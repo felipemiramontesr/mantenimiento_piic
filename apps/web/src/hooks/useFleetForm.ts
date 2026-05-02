@@ -55,7 +55,6 @@ const useFleetForm = (): UseFleetFormReturn => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<boolean>(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const isMountedRef = useRef(true);
   const hasHydratedRef = useRef(false);
@@ -342,17 +341,6 @@ const useFleetForm = (): UseFleetFormReturn => {
         formData
       );
       if (res.data.success) {
-        const unitId = res.data.id;
-
-        // 🔱 ASSET ORCHESTRATION: Bulk Upload Evidence
-        if (selectedFiles.length > 0) {
-          const uploadData = new FormData();
-          selectedFiles.forEach((file) => uploadData.append('files', file));
-          await api.post(`/fleet/${unitId}/assets`, uploadData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-        }
-
         if (onSuccess) await onSuccess();
         setRegistrationSuccess(true);
       } else {
@@ -400,8 +388,19 @@ const useFleetForm = (): UseFleetFormReturn => {
     handleSubmit,
     resetError,
     resetForm,
-    selectedFiles,
-    setSelectedFiles,
+    setSelectedFiles: async (files: File[]): Promise<void> => {
+      const base64Files = await Promise.all(
+        files.map(
+          (file: File): Promise<string> =>
+            new Promise<string>((resolve: (value: string) => void): void => {
+              const reader = new FileReader();
+              reader.onloadend = (): void => resolve(reader.result as string);
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+      setFormData((prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, images: base64Files }));
+    },
   };
 };
 
