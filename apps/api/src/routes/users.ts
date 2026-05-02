@@ -81,9 +81,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       const ext = mime === 'image/png' ? '.png' : '.jpg';
       const newFilename = `profile_user_${id}_${Date.now()}${ext}`;
 
-      /* eslint-disable no-underscore-dangle */
       const uploadDir = path.join(__dirname, '../../uploads/profiles');
-      /* eslint-enable no-underscore-dangle */
       const uploadPath = path.join(uploadDir, newFilename);
 
       try {
@@ -135,9 +133,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
       const filename = user.profile_picture_url;
 
-      /* eslint-disable no-underscore-dangle */
       const filePath = path.join(__dirname, '../../uploads/profiles', filename);
-      /* eslint-enable no-underscore-dangle */
 
       // 🛡️ Security Check: Verify file exists on disk
       if (!fs.existsSync(filePath)) {
