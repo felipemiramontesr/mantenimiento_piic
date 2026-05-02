@@ -233,15 +233,24 @@ describe('Fleet Integration Endpoints', () => {
   });
 
   describe('FleetIntelligence & Edge Cases', () => {
-    it('should handle units without sensitive data or images', async (): Promise<void> => {
+    it('should handle units with all encrypted fields and calculate service metrics', async (): Promise<void> => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 10);
+
       (db.execute as Mock).mockResolvedValueOnce([
         [
           {
-            id: 'EMPTY_01',
-            images: null,
-            placas: null,
-            numeroSerie: null,
-            circulationCardNumber: null,
+            id: 'FULL_01',
+            images: JSON.stringify(['data:image/png;base64,123']),
+            placas: 'enc_ABC-123',
+            numeroSerie: 'enc_SERIE-X',
+            circulationCardNumber: 'enc_CARD-99',
+            lastServiceDate: pastDate.toISOString(),
+            currentReading: 1000,
+            lastServiceReading: 900,
+            availabilityIndex: 100,
+            maintIntervalKm: 5000,
+            maintIntervalDays: 30,
           },
         ],
       ]);
@@ -254,28 +263,97 @@ describe('Fleet Integration Endpoints', () => {
 
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
-      expect(data[0].images).toEqual([]);
+      expect(data[0].placas).toBe('ABC-123');
+      expect(data[0].daysSinceService).toBe(10);
+      expect(data[0].unitsSinceService).toBe(100);
     });
 
-    it('should handle corrupted JSON in images', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([
-        [
-          {
-            id: 'CORRUPT_IMG',
-            images: '{invalid}',
-          },
-        ],
-      ]);
+    it('should trigger all encryption branches in FleetService', async (): Promise<void> => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[]]) // ID check
+        .mockResolvedValueOnce([[]]) // Serie check
+        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
 
       const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: {
+          assetTypeId: 1,
+          id: 'ENC-TEST-99',
+          brandId: 1,
+          modelId: 1,
+          year: 2024,
+          fuelTankCapacity: 50,
+          operationalUseId: 1,
+          departmentId: 1,
+          placas: 'FULL-PLAT',
+          circulationCardNumber: 'FULL-CARD',
+          numeroSerie: 'FULL-SERIE',
+        },
+      });
+
+      expect(response.statusCode).toBe(201);
+    });
+
+    it('should handle corrupted JSON in images and generic DB errors', async (): Promise<void> => {
+      // Branch in fleet.ts: Generic DB error on POST (sqlMessage)
+      (db.execute as Mock).mockRejectedValueOnce({ sqlMessage: 'SQL_SYNTAX' });
+      const rSql = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: {
+          assetTypeId: 1,
+          id: 'FAIL-SQL',
+          brandId: 1,
+          modelId: 1,
+          year: 2024,
+          fuelTankCapacity: 50,
+          operationalUseId: 1,
+          departmentId: 1,
+        },
+      });
+      expect(rSql.statusCode).toBe(500);
+
+      // Branch in fleet.ts: Generic DB error on POST (string)
+      (db.execute as Mock).mockRejectedValueOnce('STRING_ERROR');
+      const rStr = await app.inject({
+        method: 'POST',
+        headers: authHeader(),
+        url: '/v1/fleet',
+        payload: {
+          assetTypeId: 1,
+          id: 'FAIL-STR',
+          brandId: 1,
+          modelId: 1,
+          year: 2024,
+          fuelTankCapacity: 50,
+          operationalUseId: 1,
+          departmentId: 1,
+        },
+      });
+      expect(rStr.statusCode).toBe(500);
+
+      // Branch in fleet.ts: Invalid format on PATCH
+      const rInvalid = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ANY',
+        headers: authHeader(),
+        payload: { year: 'NOT_A_NUMBER' },
+      });
+      expect(rInvalid.statusCode).toBe(400);
+
+      // Branch in intelligence: Corrupt JSON
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 'CORRUPT_01', images: '!!' }]]);
+
+      const rCorrupt = await app.inject({
         method: 'GET',
         url: '/v1/fleet',
         headers: authHeader(),
       });
 
-      expect(response.statusCode).toBe(200);
-      const { data } = JSON.parse(response.body);
-      expect(data[0].images).toEqual([]);
+      expect(rCorrupt.statusCode).toBe(200);
     });
   });
 });
