@@ -113,9 +113,12 @@ export default class FleetService {
 
     const fields = Object.keys(intelligencePayload);
     const placeholders = fields.map(() => '?').join(', ');
-    const values = Object.values(intelligencePayload).map((v) =>
-      v !== null && (Array.isArray(v) || typeof v === 'object') ? JSON.stringify(v) : v
-    );
+    const values = Object.values(intelligencePayload).map((v) => {
+      if (v && typeof v === 'object') {
+        return JSON.stringify(v);
+      }
+      return v;
+    });
 
     await db.execute(
       `INSERT INTO fleet_units (${fields.join(', ')}) VALUES (${placeholders})`,
@@ -138,9 +141,12 @@ export default class FleetService {
 
     const setClause = fields.map((f) => `${f} = ?`).join(', ');
     const values = [
-      ...Object.values(updates).map((v) =>
-        v !== null && (Array.isArray(v) || typeof v === 'object') ? JSON.stringify(v) : v
-      ),
+      ...Object.values(updates).map((v) => {
+        if (v && typeof v === 'object') {
+          return JSON.stringify(v);
+        }
+        return v;
+      }),
       id,
     ];
 

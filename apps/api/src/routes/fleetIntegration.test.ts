@@ -154,14 +154,19 @@ describe('Fleet Integration Endpoints', () => {
   });
 
   describe('PATCH /v1/fleet/:id', () => {
-    it('should update unit successfully', async (): Promise<void> => {
+    it('should update unit successfully with falsy values for branch coverage', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
-        payload: { year: 2025 },
+        payload: {
+          year: 2025,
+          operationalUseId: null, // 🔱 Trigger Falsy branch
+          odometer: 0, // 🔱 Trigger Falsy branch
+          images: ['data:image/png;base64,patch'], // 🔱 Trigger Array branch
+        },
       });
 
       expect(response.statusCode).toBe(200);
@@ -280,16 +285,17 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
         payload: {
           assetTypeId: 1,
-          id: 'ENC-TEST-99',
+          id: 'ENC-TEST-100',
           brandId: 1,
           modelId: 1,
           year: 2024,
           fuelTankCapacity: 50,
           operationalUseId: 1,
           departmentId: 1,
-          placas: 'FULL-PLAT',
-          circulationCardNumber: 'FULL-CARD',
-          numeroSerie: 'FULL-SERIE',
+          placas: 'PLAT-100',
+          circulationCardNumber: 'CARD-100',
+          numeroSerie: 'SERIE-100',
+          images: ['data:image/png;base64,123'],
         },
       });
 
@@ -297,6 +303,7 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should handle corrupted JSON in images and generic DB errors', async (): Promise<void> => {
+      (db.execute as Mock).mockReset();
       // Branch in fleet.ts: Generic DB error on POST (sqlMessage)
       (db.execute as Mock).mockRejectedValueOnce({ sqlMessage: 'SQL_SYNTAX' });
       const rSql = await app.inject({
@@ -335,6 +342,26 @@ describe('Fleet Integration Endpoints', () => {
       });
       expect(rStr.statusCode).toBe(500);
 
+      // Branch in fleet.ts: Generic DB error on POST (Empty Object fallback)
+      (db.execute as Mock).mockRejectedValueOnce({});
+      const rEmpty = await app.inject({
+        method: 'POST',
+        headers: authHeader(),
+        url: '/v1/fleet',
+        payload: {
+          assetTypeId: 1,
+          id: 'FAIL-EMPTY',
+          brandId: 1,
+          modelId: 1,
+          year: 2024,
+          fuelTankCapacity: 50,
+          operationalUseId: 1,
+          departmentId: 1,
+        },
+      });
+      expect(rEmpty.statusCode).toBe(500);
+      expect(JSON.parse(rEmpty.body).error).toContain('Unknown DB Exception');
+
       // Branch in fleet.ts: Invalid format on PATCH
       const rInvalid = await app.inject({
         method: 'PATCH',
@@ -344,16 +371,25 @@ describe('Fleet Integration Endpoints', () => {
       });
       expect(rInvalid.statusCode).toBe(400);
 
-      // Branch in intelligence: Corrupt JSON
-      (db.execute as Mock).mockResolvedValueOnce([[{ id: 'CORRUPT_01', images: '!!' }]]);
+      // Branch in intelligence: Corrupt JSON & Legacy filenames & Direct Arrays
+      (db.execute as Mock).mockReset();
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 'CORRUPT_01', images: '!!' }]])
+        .mockResolvedValueOnce([[{ id: 'LEGACY_01', images: JSON.stringify(['foto_vieja.jpg']) }]])
+        .mockResolvedValueOnce([[{ id: 'ARRAY_01', images: ['direct_array.jpg'] }]]);
 
-      const rCorrupt = await app.inject({
-        method: 'GET',
-        url: '/v1/fleet',
-        headers: authHeader(),
-      });
+      // Test Corrupt
+      await app.inject({ method: 'GET', url: '/v1/fleet', headers: authHeader() });
 
-      expect(rCorrupt.statusCode).toBe(200);
+      // Test Legacy
+      const rLegacy = await app.inject({ method: 'GET', url: '/v1/fleet', headers: authHeader() });
+      const legacyData = JSON.parse(rLegacy.body).data;
+      expect(legacyData[0].images[0]).toContain('/v1/fleet/asset/foto_vieja.jpg');
+
+      // Test Direct Array
+      const rArray = await app.inject({ method: 'GET', url: '/v1/fleet', headers: authHeader() });
+      const arrayData = JSON.parse(rArray.body).data;
+      expect(arrayData[0].images[0]).toContain('/v1/fleet/asset/direct_array.jpg');
     });
   });
 });
