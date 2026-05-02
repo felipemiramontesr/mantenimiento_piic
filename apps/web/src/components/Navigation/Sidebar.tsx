@@ -102,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           color: '#0f2a44',
           width: '28px',
           height: '48px',
-          borderRadius: '0 8px 8px 0',
+          borderRadius: '0 4px 4px 0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

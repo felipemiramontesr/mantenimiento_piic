@@ -115,7 +115,7 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
             {healthScore}% {daysRemaining !== undefined && `/ ${daysRemaining} días`}
           </span>
         </div>
-        <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-1 w-full bg-slate-100 rounded-[4px] overflow-hidden">
           <div
             className={`h-full transition-all duration-1000 ${
               daysRemaining !== undefined && daysRemaining < 0

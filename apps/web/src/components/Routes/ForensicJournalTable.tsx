@@ -119,7 +119,7 @@ const ForensicJournalTable: React.FC = () => {
                 {/* Activo */}
                 <td className="py-4">
                   <div className="flex flex-col items-center">
-                    <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[3px] text-[#0f2a44]">
+                    <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-[#0f2a44]">
                       {log.unit_id}
                     </span>
                     <span className="text-[9px] font-bold opacity-40 uppercase">
@@ -131,7 +131,7 @@ const ForensicJournalTable: React.FC = () => {
                 {/* Evento */}
                 <td className="py-4">
                   <div className="flex items-center justify-center gap-2">
-                    <div className={`p-1.5 rounded-full ${style.bg}`}>
+                    <div className={`p-1.5 rounded-[4px] ${style.bg}`}>
                       <EventIcon size={12} className={style.color} />
                     </div>
                     <span

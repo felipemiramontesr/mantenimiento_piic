@@ -48,7 +48,7 @@ const ArchonFeedbackBanner: React.FC<ArchonFeedbackBannerProps> = ({
   return (
     <div
       className={`
-        flex items-center justify-between p-5 mb-8 rounded-lg border-l-4 shadow-md 
+        flex items-center justify-between p-5 mb-8 rounded-[4px] border-l-4 shadow-md 
         animate-in slide-in-from-top-4 duration-300
         ${currentStyle.bg} ${currentStyle.border}
       `}
@@ -67,7 +67,7 @@ const ArchonFeedbackBanner: React.FC<ArchonFeedbackBannerProps> = ({
 
       <button
         onClick={onClear}
-        className="p-2 hover:bg-black/5 rounded-full transition-colors group"
+        className="p-2 hover:bg-black/5 rounded-[4px] transition-colors group"
         aria-label="Cerrar notificación"
       >
         <X size={18} className="opacity-40 group-hover:opacity-100 transition-opacity" />

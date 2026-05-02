@@ -62,7 +62,7 @@ const LogsModule: React.FC = (): React.ReactElement => (
           width: '100%',
           height: '60vh',
           border: '1px dashed rgba(15, 42, 68, 0.1)',
-          borderRadius: '8px',
+          borderRadius: '4px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

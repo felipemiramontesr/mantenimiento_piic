@@ -7,6 +7,7 @@ import { useUsers } from '../../context/UserContext';
 
 export interface RouteLog {
   id: string;
+  uuid: string; // Atomic Identifier
   unit_id: string;
   operator_id: string;
   origin: string;
@@ -17,6 +18,8 @@ export interface RouteLog {
   end_time: string | null;
   start_km: number;
   end_km: number | null;
+  fuel_liters_loaded?: number;
+  fuel_ticket_image?: string;
 }
 
 interface RouteLogTableProps {
@@ -95,7 +98,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                 <td className="py-6">
                   <div className="flex items-center justify-center gap-3">
                     <div className="relative">
-                      <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-gray-100">
+                      <div className="w-10 h-10 rounded-[4px] border-2 border-white shadow-sm overflow-hidden bg-gray-100">
                         <img
                           src={
                             operator?.imageUrl ||
@@ -105,7 +108,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white shadow-xs flex items-center justify-center">
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-[4px] border-2 border-white shadow-xs flex items-center justify-center">
                         <User size={8} className="text-white" />
                       </div>
                     </div>
@@ -201,12 +204,24 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                   <div className="flex justify-center">
                     <button
                       onClick={(): void => onEdit?.(log)}
-                      className="flex items-center justify-center w-10 h-10 text-[#059669] bg-emerald-50/30 hover:bg-emerald-100/50 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+                      title={!log.end_time ? 'Finalizar Misión' : 'Consultar Detalles'}
+                      className={`flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none ${
+                        !log.end_time
+                          ? 'text-[#f2b705] bg-amber-50/30 hover:bg-amber-100/50'
+                          : 'text-[#0f2a44] bg-gray-50 hover:bg-gray-100'
+                      }`}
                     >
-                      <Pencil
-                        size={18}
-                        className="transition-transform duration-300 group-hover:rotate-12"
-                      />
+                      {!log.end_time ? (
+                        <CheckCircle2
+                          size={18}
+                          className="transition-transform duration-300 group-hover:scale-110"
+                        />
+                      ) : (
+                        <Pencil
+                          size={18}
+                          className="transition-transform duration-300 group-hover:rotate-12"
+                        />
+                      )}
                     </button>
                   </div>
                 </td>

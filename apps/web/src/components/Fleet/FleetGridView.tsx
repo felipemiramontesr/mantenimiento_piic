@@ -58,7 +58,7 @@ const IdentityCluster = ({
           {restriction.isRestricted && (
             <div
               title={restriction.reason}
-              className="ml-1 bg-rose-500 text-white p-0.5 rounded-full animate-pulse cursor-help"
+              className="ml-1 bg-rose-500 text-white p-0.5 rounded-[4px] animate-pulse cursor-help"
             >
               <ShieldAlert size={10} />
             </div>
@@ -71,10 +71,10 @@ const IdentityCluster = ({
           {restriction.reason}
         </span>
       )}
-      <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50/50 px-2.5 py-1 rounded-full uppercase tracking-widest border border-emerald-100/50">
+      <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50/50 px-2.5 py-1 rounded-[4px] uppercase tracking-widest border border-emerald-100/50">
         <ShieldCheck size={12} /> {unit.complianceStatus || 'OPERATIVO'}
       </span>
-      <span className="flex items-center gap-1.5 text-[10px] font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-100 uppercase tracking-widest shadow-sm">
+      <span className="flex items-center gap-1.5 text-[10px] font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-[4px] border border-sky-100 uppercase tracking-widest shadow-sm">
         <MapPin size={11} className="text-sky-500" /> {unit.sede || 'MINA'}
       </span>
     </div>
@@ -282,7 +282,7 @@ const HealthStatusCluster = ({
   const isOverdue = !!forecast?.isOverdue;
   return (
     <div
-      className={`flex flex-col items-center p-3.5 rounded-lg shadow-md transition-all duration-500 min-w-[110px] ${
+      className={`flex flex-col items-center p-3.5 rounded-[4px] shadow-md transition-all duration-500 min-w-[110px] ${
         isOverdue
           ? 'bg-red-500 scale-105 shadow-red-200'
           : 'bg-emerald-50 border border-emerald-100'
@@ -360,12 +360,12 @@ const FleetUnitRow = ({
         {unit.images?.[0] ? (
           <img
             src={unit.images[0]}
-            className="w-48 h-48 rounded-lg shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
+            className="w-48 h-48 rounded-[4px] shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
             onClick={(): void => onSelectImage(unit)}
             alt={unit.id}
           />
         ) : (
-          <div className="w-48 h-48 rounded-lg bg-gray-50 flex items-center justify-center text-gray-300 border border-dashed border-gray-200">
+          <div className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center text-gray-300 border border-dashed border-gray-200">
             <ImageIcon size={48} />
           </div>
         )}
@@ -504,7 +504,7 @@ export const FleetGridView = ({
     return (
       <div className="glass-card-pro bg-white p-6 space-y-6">
         <div className="flex items-center gap-3 opacity-40 animate-pulse">
-          <div className="w-4 h-4 bg-[#f2b705] rounded-full" />
+          <div className="w-4 h-4 bg-[#f2b705] rounded-[4px]" />
           <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
             Sincronizando Activos...
           </span>
@@ -522,7 +522,7 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto shadow-2xl rounded-xl custom-scrollbar">
+      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
         <table className="archon-registry-table w-full min-w-[1500px]">
           <thead>
             <tr>

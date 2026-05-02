@@ -38,7 +38,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
             style={{
               width: '80px',
               height: '80px',
-              borderRadius: '50%',
+              borderRadius: '4px',
               backgroundColor: 'rgba(15, 42, 68, 0.1)',
               display: 'flex',
               alignItems: 'center',
@@ -96,7 +96,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
             style={{
               width: '80px',
               height: '80px',
-              borderRadius: '50%',
+              borderRadius: '4px',
               backgroundColor: 'rgba(16, 185, 129, 0.1)',
               display: 'flex',
               alignItems: 'center',
@@ -154,7 +154,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
             style={{
               width: '80px',
               height: '80px',
-              borderRadius: '50%',
+              borderRadius: '4px',
               backgroundColor: 'rgba(245, 158, 11, 0.1)',
               display: 'flex',
               alignItems: 'center',

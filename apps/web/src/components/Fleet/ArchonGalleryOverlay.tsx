@@ -70,7 +70,7 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
           onClick={(e: React.MouseEvent): void => e.stopPropagation()}
         >
           {/* Main Image Container */}
-          <div className="relative overflow-hidden rounded-lg shadow-2xl border border-white/10 bg-black/20">
+          <div className="relative overflow-hidden rounded-[4px] shadow-2xl border border-white/10 bg-black/20">
             <motion.img
               key={currentIndex}
               initial={{ opacity: 0, x: 20 }}
@@ -85,13 +85,13 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
             {images.length > 1 && (
               <>
                 <button
-                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors border border-white/10"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-[4px] bg-black/40 text-white hover:bg-black/60 transition-colors border border-white/10"
                   onClick={handlePrev}
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors border border-white/10"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-[4px] bg-black/40 text-white hover:bg-black/60 transition-colors border border-white/10"
                   onClick={handleNext}
                 >
                   <ChevronRight size={24} />
@@ -109,7 +109,7 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
               {images.map((_, idx) => (
                 <div
                   key={idx}
-                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  className={`w-1.5 h-1.5 rounded-[4px] transition-all duration-300 ${
                     currentIndex === idx ? 'bg-[#f2b705] w-6' : 'bg-white/30'
                   }`}
                 />

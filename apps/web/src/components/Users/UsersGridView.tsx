@@ -147,7 +147,7 @@ const UsersGridView = (): React.JSX.Element => {
     return (
       <div className="glass-card-pro bg-white p-6 space-y-6">
         <div className="flex items-center gap-3 opacity-40 animate-pulse">
-          <div className="w-4 h-4 bg-[#0f2a44] rounded-full" />
+          <div className="w-4 h-4 bg-[#0f2a44] rounded-[4px]" />
           <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
             Sincronizando Identidades...
           </span>

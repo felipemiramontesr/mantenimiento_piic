@@ -105,7 +105,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
         onDrop={onDrop}
         onClick={(): void => fileInputRef.current?.click()}
         className={`
-          relative border-2 border-dashed rounded-lg p-24 transition-all duration-300 cursor-pointer
+          relative border-2 border-dashed rounded-[4px] p-24 transition-all duration-300 cursor-pointer
           flex flex-col items-center justify-center gap-12 group
           ${
             isDragging
@@ -127,7 +127,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
 
         <div
           className={`
-          p-12 rounded-full transition-transform duration-500
+          p-12 rounded-[4px] transition-transform duration-500
           ${
             isDragging
               ? 'bg-[#f2b705] text-[#0f2a44] scale-110'
@@ -159,11 +159,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                   variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
                 }`}
               >
-                <div
-                  className={`w-full h-full overflow-hidden border border-[#0f2a44]/10 ${
-                    variant === 'circle' ? 'rounded-full' : 'rounded-md'
-                  }`}
-                >
+                <div className="w-full h-full overflow-hidden border border-[#0f2a44]/10 rounded-[4px]">
                   <img
                     src={src}
                     alt={`Vista ${idx + 1}`}
@@ -212,10 +208,8 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
               <div
                 key={`empty-${i}`}
                 className={`${
-                  variant === 'circle'
-                    ? 'w-48 h-48 rounded-full mx-auto'
-                    : 'aspect-square rounded-md'
-                } border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10`}
+                  variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
+                } rounded-[4px] border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10`}
               >
                 <ImageIcon size={16} />
               </div>

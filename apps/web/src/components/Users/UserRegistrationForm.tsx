@@ -222,7 +222,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 p-6 animate-in fade-in slide-in-from-top-4">
           <div className="flex items-center gap-4">
-            <div className="bg-red-100 p-2 rounded">
+            <div className="bg-red-100 p-2 rounded-[4px]">
               <Shield size={18} className="text-red-500" />
             </div>
             <p className="text-[11px] uppercase font-black tracking-widest text-[#0f2a44]">
@@ -358,7 +358,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 <button
                   type="button"
                   onClick={(): void => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full text-[#0f2a44]/20 hover:text-[#f2b705] hover:bg-[#f2b705]/10 transition-all duration-300 flex items-center justify-center border-0 bg-transparent outline-none focus:outline-none"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-[4px] text-[#0f2a44]/20 hover:text-[#f2b705] hover:bg-[#f2b705]/10 transition-all duration-300 flex items-center justify-center border-0 bg-transparent outline-none focus:outline-none"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>

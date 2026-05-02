@@ -152,10 +152,10 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
           (u): React.ReactElement => (
             <div
               key={u.id}
-              className="p-4 border border-gray-100 rounded-lg flex items-center justify-between hover:border-[#0f2a44]/20 transition-all group"
+              className="p-4 border border-gray-100 rounded-[4px] flex items-center justify-between hover:border-[#0f2a44]/20 transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded bg-gray-50 flex items-center justify-center text-[#0f2a44]">
+                <div className="w-10 h-10 rounded-[4px] bg-gray-50 flex items-center justify-center text-[#0f2a44]">
                   <User size={18} />
                 </div>
                 <div>
@@ -198,7 +198,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 hover:bg-white/10 rounded-[4px] transition-colors"
           >
             <X size={20} />
           </button>
@@ -321,7 +321,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
               <div className="pt-8">
                 <button
                   disabled={isLoading}
-                  className="w-full p-5 bg-[#0f2a44] text-white rounded-lg font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#071626] transition-all shadow-xl disabled:opacity-50"
+                  className="w-full p-5 bg-[#0f2a44] text-white rounded-[4px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#071626] transition-all shadow-xl disabled:opacity-50"
                 >
                   {isLoading ? (
                     'Registrando...'

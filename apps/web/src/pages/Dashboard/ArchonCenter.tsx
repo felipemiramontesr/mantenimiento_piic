@@ -18,7 +18,7 @@ import { useUsers } from '../../context/UserContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V28.27.0';
+const SYSTEM_VERSION = 'V40.0.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
@@ -126,7 +126,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             style={{
               width: '56px',
               height: '56px',
-              borderRadius: '50%',
+              borderRadius: '4px',
               backgroundColor: `${accentColor}15`,
               display: 'flex',
               alignItems: 'center',
@@ -166,7 +166,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             </span>
             <div className="flex items-center justify-center gap-2 w-full">
               <span className="text-2xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
-              <div className={`w-2 h-2 rounded-full transition-all duration-500 ${dotColor}`} />
+              <div className={`w-2 h-2 rounded-[4px] transition-all duration-500 ${dotColor}`} />
             </div>
           </div>
           <div

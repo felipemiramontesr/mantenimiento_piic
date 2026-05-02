@@ -27,7 +27,7 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(15, 42, 68, 0.1);
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -76,7 +76,7 @@ body {
   width: 100%;
   height: 100%;
   background: linear-gradient(rgba(15, 42, 68, 0.8), rgba(15, 42, 68, 0.95)),
-    radial-gradient(circle at 50% 50%, rgba(242, 183, 5, 0.05), transparent 70%);
+    radial-gradient(ellipse at 50% 50%, rgba(242, 183, 5, 0.05), transparent 70%);
   z-index: -1;
 }
 
@@ -1546,7 +1546,7 @@ body {
   z-index: 300;
   background: #ffffff;
   border: 1px solid rgba(15, 42, 68, 0.1);
-  border-radius: 10px;
+  border-radius: 4px;
   box-shadow: 0 4px 6px -1px rgba(15, 42, 68, 0.05), 0 20px 50px -10px rgba(15, 42, 68, 0.18);
   padding: 16px;
   min-width: 272px;
@@ -1569,7 +1569,7 @@ body {
   align-items: center;
   justify-content: space-between;
   background: #0f2a44;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 10px 12px;
   margin-bottom: 12px;
 }
@@ -1764,7 +1764,7 @@ body {
 }
 
 .strategy-viewfinder {
-  border-radius: 12px;
+  border-radius: 4px;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1778,7 +1778,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  border-radius: 9999px;
+  border-radius: 4px;
 }
 
 .analytics-grid-pro {
@@ -1796,14 +1796,14 @@ body {
 
 .global-instrument-cluster {
   background: rgba(15, 42, 68, 0.02);
-  border-radius: 12px;
+  border-radius: 4px;
   border: 1px solid rgba(15, 42, 68, 0.05);
 }
 
 /* 📊 ANALYTICAL VANGUARD SYSTEM (v.18.6.0.8) */
 .analytics-card-column {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 32px;
   border: 1px solid rgba(15, 42, 68, 0.06);
   box-shadow: 0 10px 30px -10px rgba(15, 42, 68, 0.05);
@@ -1826,7 +1826,7 @@ body {
 .accent-icon-box {
   width: 48px;
   height: 48px;
-  border-radius: 8px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
