@@ -1,29 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 
-// 🔱 ESM Compatibility: We resolve the project root once
-/* eslint-disable no-underscore-dangle */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-/* eslint-enable no-underscore-dangle */
-
-// 🏗️ Sovereign Path Resolution
-const findProjectRoot = (startDir: string): string => {
-  let current = startDir;
-  // Iterate upwards until package.json is found
-  while (current !== path.parse(current).root) {
-    if (fs.existsSync(path.join(current, 'package.json'))) return current;
-    current = path.dirname(current);
-  }
-  return startDir;
-};
-
-const PROJECT_ROOT = findProjectRoot(__dirname);
-const UPLOAD_DIR = path.join(PROJECT_ROOT, 'uploads/profiles');
+/**
+ * 🏗️ Sovereign Path Resolution (Standardized for Hostinger/Cloud)
+ * We use process.cwd() to ensure we stay at the app entry point.
+ */
+const UPLOAD_BASE = path.join(process.cwd(), 'uploads/profiles');
 
 /** Max decoded image size: 2MB */
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
@@ -36,7 +21,6 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
   /**
    * 🔱 POST /v1/users/:id/upload-profile
    * Base64 JSON transport for profile images.
-   * PROTECTED: Requires valid JWT session.
    */
   fastify.post(
     '/users/:id/upload-profile',
@@ -82,16 +66,18 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       const buffer = Buffer.from(base64Clean, 'base64');
 
       if (buffer.length > MAX_IMAGE_BYTES) {
-        return reply.code(400).send({ error: 'Image exceeds 2MB limit after decoding' });
+        return reply.code(400).send({ error: 'Image exceeds 2MB limit' });
       }
 
       const ext = mime === 'image/png' ? '.png' : '.jpg';
       const newFilename = `profile_user_${id}_${Date.now()}${ext}`;
-      const uploadPath = path.join(UPLOAD_DIR, newFilename);
+      const uploadPath = path.join(UPLOAD_BASE, newFilename);
 
       try {
-        // 🏗️ Ensure upload directory exists at project root
-        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+        // 🏗️ Ensure upload directory exists
+        if (!fs.existsSync(UPLOAD_BASE)) {
+          fs.mkdirSync(UPLOAD_BASE, { recursive: true });
+        }
 
         // 1. Write file
         fs.writeFileSync(uploadPath, buffer);
@@ -102,7 +88,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
           id,
         ]);
 
-        fastify.log.info(`✅ Profile picture updated for user ${id}: ${newFilename}`);
+        fastify.log.info(`✅ Profile picture updated: ${uploadPath}`);
 
         return reply.send({
           success: true,
@@ -111,7 +97,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
         });
       } catch (err) {
         fastify.log.error(err);
-        return reply.code(500).send({ error: 'Infrastructure failure during file persistence' });
+        return reply.code(500).send({ error: 'Infrastructure failure' });
       }
     }
   );
@@ -131,19 +117,18 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       const user = rows[0];
 
       if (!user || !user.profile_picture_url) {
-        return reply.code(404).send({ error: 'Image not found in registry' });
+        return reply.code(404).send({ error: 'Image not found' });
       }
 
       const filename = user.profile_picture_url;
-      const filePath = path.join(UPLOAD_DIR, filename);
+      const filePath = path.join(UPLOAD_BASE, filename);
 
       if (!fs.existsSync(filePath)) {
-        fastify.log.error(`❌ Missing asset at: ${filePath}`);
-        const responsePayload: Record<string, string> = { error: 'Physical asset missing' };
-        if (process.env.NODE_ENV === 'development') {
-          responsePayload.debug_path = filePath;
-        }
-        return reply.code(404).send(responsePayload);
+        // Debugging for Hostinger (Visible in 404 response temporarily)
+        return reply.code(404).send({
+          error: 'Physical asset missing',
+          path_attempted: filePath,
+        });
       }
 
       const fileExt = path.extname(filename).toLowerCase();
