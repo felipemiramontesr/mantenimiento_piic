@@ -124,11 +124,13 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         SELECT 
           l.*,
           u.full_name as operatorName,
-          f.marca,
-          f.modelo
+          c_brand.label as marca,
+          c_model.label as modelo
         FROM unit_activity_logs l
         LEFT JOIN users u ON l.created_by = u.id
         LEFT JOIN fleet_units f ON l.unit_id = f.id
+        LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id AND c_brand.category = 'BRAND'
+        LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id AND c_model.category = 'MODEL'
         ORDER BY l.created_at DESC
       `;
       const [rows] = await db.execute<RowDataPacket[]>(query);

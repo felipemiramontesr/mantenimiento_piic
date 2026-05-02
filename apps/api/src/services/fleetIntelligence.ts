@@ -118,6 +118,7 @@ export class FleetIntelligenceEngine {
       unitsSinceService: health.currentReading - health.lastReading,
       nextServiceReading: health.lastReading + health.kmLimit,
       forecastDate: this.computeForecast(decrypted),
+      odometer: health.currentReading,
     };
   }
 
