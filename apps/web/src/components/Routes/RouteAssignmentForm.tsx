@@ -435,9 +435,10 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             Ticket de Combustible (Evidencia)
           </label>
           <ArchonImageUploader
-            value={formData.fuelTicketImage}
-            onChange={(img): void => setFormData({ ...formData, fuelTicketImage: img })}
-            label="Capturar Ticket"
+            images={formData.fuelTicketImage ? [formData.fuelTicketImage] : []}
+            onChange={(imgs): void => setFormData({ ...formData, fuelTicketImage: imgs[0] || '' })}
+            title="Capturar Ticket"
+            maxImages={1}
             disabled={isFinished}
           />
         </div>

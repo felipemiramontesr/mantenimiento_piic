@@ -13,6 +13,7 @@ interface ArchonImageUploaderProps {
   allowedFormats?: string;
   accept?: string;
   variant?: 'square' | 'circle';
+  disabled?: boolean;
 }
 
 const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
@@ -24,6 +25,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   allowedFormats = 'JPG, PNG, WEBP',
   accept = 'image/*',
   variant = 'square',
+  disabled = false,
 }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,12 +102,13 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
     <div className="space-y-4">
       {/* Drag & Drop Zone */}
       <div
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        onDrop={onDrop}
-        onClick={(): void => fileInputRef.current?.click()}
+        onDragOver={disabled ? undefined : onDragOver}
+        onDragLeave={disabled ? undefined : onDragLeave}
+        onDrop={disabled ? undefined : onDrop}
+        onClick={disabled ? undefined : (): void => fileInputRef.current?.click()}
         className={`
-          relative border-2 border-dashed rounded-[4px] p-24 transition-all duration-300 cursor-pointer
+          relative border-2 border-dashed rounded-[4px] p-24 transition-all duration-300
+          ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
           flex flex-col items-center justify-center gap-12 group
           ${
             isDragging
@@ -120,6 +123,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
           accept={accept}
           className="hidden"
           ref={fileInputRef}
+          disabled={disabled}
           onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
             if (e.target.files) handleFiles(e.target.files);
           }}
@@ -168,28 +172,32 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                   />
                 </div>
 
-                {variant === 'circle' ? (
-                  <button
-                    type="button"
-                    onClick={(e: React.MouseEvent): void => {
-                      e.stopPropagation();
-                      removeImage(idx);
-                    }}
-                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
-                  >
-                    <X size={18} strokeWidth={1} />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e: React.MouseEvent): void => {
-                      e.stopPropagation();
-                      removeImage(idx);
-                    }}
-                    className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
-                  >
-                    <X size={18} strokeWidth={1} />
-                  </button>
+                {!disabled && (
+                  <>
+                    {variant === 'circle' ? (
+                      <button
+                        type="button"
+                        onClick={(e: React.MouseEvent): void => {
+                          e.stopPropagation();
+                          removeImage(idx);
+                        }}
+                        className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
+                      >
+                        <X size={18} strokeWidth={1} />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e: React.MouseEvent): void => {
+                          e.stopPropagation();
+                          removeImage(idx);
+                        }}
+                        className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
+                      >
+                        <X size={18} strokeWidth={1} />
+                      </button>
+                    )}
+                  </>
                 )}
                 {variant === 'square' && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-4 pointer-events-none">
