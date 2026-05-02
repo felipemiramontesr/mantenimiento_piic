@@ -241,7 +241,10 @@ describe('User Integration Endpoints', () => {
       expect(JSON.parse(response.body).error).toContain('Image not found');
     });
 
-    it('should return 404 if physical asset is missing on disk', async () => {
+    it('should return 404 with debug_path in development mode', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+
       (db.execute as Mock).mockResolvedValueOnce([[{ profile_picture_url: 'missing.jpg' }]]);
       (fs.existsSync as Mock).mockReturnValue(false);
 
@@ -251,7 +254,10 @@ describe('User Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(404);
-      expect(JSON.parse(response.body).error).toContain('Physical asset missing');
+      const body = JSON.parse(response.body);
+      expect(body.debug_path).toBeDefined();
+
+      process.env.NODE_ENV = originalEnv;
     });
 
     it('should serve the image with correct content type', async () => {

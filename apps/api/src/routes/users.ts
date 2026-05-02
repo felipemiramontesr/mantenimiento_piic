@@ -11,17 +11,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 /* eslint-enable no-underscore-dangle */
 
-// 🏗️ Sovereign Path Resolution: Ensure we are at the API root regardless of dist/src
-// We look for 'package.json' upward to find the true root
+// 🏗️ Sovereign Path Resolution
 const findProjectRoot = (startDir: string): string => {
   let current = startDir;
-  while (
-    !fs.existsSync(path.join(current, 'package.json')) &&
-    current !== path.parse(current).root
-  ) {
+  // Iterate upwards until package.json is found
+  while (current !== path.parse(current).root) {
+    if (fs.existsSync(path.join(current, 'package.json'))) return current;
     current = path.dirname(current);
   }
-  return current;
+  return startDir;
 };
 
 const PROJECT_ROOT = findProjectRoot(__dirname);
@@ -141,10 +139,11 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
       if (!fs.existsSync(filePath)) {
         fastify.log.error(`❌ Missing asset at: ${filePath}`);
-        return reply.code(404).send({
-          error: 'Physical asset missing',
-          debug_path: process.env.NODE_ENV === 'development' ? filePath : undefined,
-        });
+        const responsePayload: Record<string, string> = { error: 'Physical asset missing' };
+        if (process.env.NODE_ENV === 'development') {
+          responsePayload.debug_path = filePath;
+        }
+        return reply.code(404).send(responsePayload);
       }
 
       const fileExt = path.extname(filename).toLowerCase();
