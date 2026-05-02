@@ -155,12 +155,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               isCollapsed={isCollapsed}
             />
           )}
-          {hasPermission('maint:view') && (
+          {hasPermission('financial:view') && (
             <NavItem
-              icon={<Wrench size={20} />}
-              label="Administrar Mantenimientos"
-              path="/dashboard/maintenance"
-              active={location.pathname === '/dashboard/maintenance'}
+              icon={<Wallet size={20} />}
+              label="Administrar Finanzas"
+              path="/dashboard/financial"
+              active={location.pathname === '/dashboard/financial'}
               isCollapsed={isCollapsed}
             />
           )}
@@ -173,12 +173,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               isCollapsed={isCollapsed}
             />
           )}
-          {hasPermission('financial:view') && (
+          {hasPermission('maint:view') && (
             <NavItem
-              icon={<Wallet size={20} />}
-              label="Salud Financiera"
-              path="/dashboard/financial"
-              active={location.pathname === '/dashboard/financial'}
+              icon={<Wrench size={20} />}
+              label="Administrar Mantenimientos"
+              path="/dashboard/maintenance"
+              active={location.pathname === '/dashboard/maintenance'}
               isCollapsed={isCollapsed}
             />
           )}
