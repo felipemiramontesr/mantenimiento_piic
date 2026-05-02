@@ -189,6 +189,16 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
   const passwordsMatch = formData.password === formData.confirmPassword;
   const canSubmit = !formData.password || (passwordsMatch && formData.password.length >= 8);
 
+  // 🔱 Resolve Full Image Path
+  const resolveImageUrl = (url: string | null | undefined): string => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    const baseUrl = (api.defaults.baseURL || '').replace(/\/+$/, '');
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const currentPreviewUrl = resolveImageUrl(formData.imageUrl);
+
   return (
     <div className="animate-in fade-in duration-700">
       <form
@@ -263,7 +273,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
               <div className="pt-8 border-t border-[#0f2a44]/5">
                 <ArchonField label="Fotografía de Perfil" icon={ImageIcon}>
                   <ArchonImageUploader
-                    images={formData.imageUrl ? [formData.imageUrl] : []}
+                    images={currentPreviewUrl ? [currentPreviewUrl] : []}
                     onChange={(imgs): void => setFormData({ ...formData, imageUrl: imgs[0] || '' })}
                     onFileChange={(files): void => setSelectedFile(files[0] || null)}
                     maxImages={1}
