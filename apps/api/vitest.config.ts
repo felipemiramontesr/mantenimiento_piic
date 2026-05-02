@@ -19,9 +19,12 @@ export default defineConfig({
         'src/index.ts' /* Bootstrap puro, inaccesible unitariamente sin lanzar puerto */,
         'src/scripts/**' /* Scripts de utilidad CLI que se prueban mediante bash */,
         'src/types/**' /* Declaraciones de tipado */,
+        '**/*.test.ts',
         '**/*.config.ts',
         '**/*.config.js',
         'node_modules/**',
+        'dist/**',
+        'coverage/**',
       ],
       thresholds: {
         lines: 100,

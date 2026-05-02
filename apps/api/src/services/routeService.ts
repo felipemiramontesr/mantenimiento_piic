@@ -47,7 +47,7 @@ export default class RouteService {
         [unitId]
       );
 
-      if (!units || units.length === 0) throw new Error(`Unit ${unitId} not found`);
+      if (units.length === 0) throw new Error(`Unit ${unitId} not found`);
       if (units[0].status === 'En Ruta') throw new Error(`Unit ${unitId} is already in transit`);
 
       // 2. Create the Route
@@ -70,12 +70,12 @@ export default class RouteService {
       );
 
       await connection.commit();
-      return routeUuid;
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
       connection.release();
+      return routeUuid;
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      throw e;
     }
   }
 
@@ -99,7 +99,7 @@ export default class RouteService {
         [routeUuid]
       );
 
-      if (!routes || routes.length === 0) throw new Error('Route not found');
+      if (routes.length === 0) throw new Error('Route not found');
       const route = routes[0];
       if (route.status !== 'ACTIVE') throw new Error('Route is not active');
       if (endReading < route.start_reading) {
@@ -130,11 +130,11 @@ export default class RouteService {
       );
 
       await connection.commit();
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
       connection.release();
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      throw e;
     }
   }
 

@@ -44,13 +44,10 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         message: 'Route started successfully',
         routeUuid,
       });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Error starting route';
+    } catch (error) {
       fastify.log.error(error);
-      return reply.code(400).send({
-        success: false,
-        message,
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return reply.code(400).send({ success: false, message: (error as any).message });
     }
   });
 
@@ -74,13 +71,10 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         success: true,
         message: 'Route completed successfully. Unit updated.',
       });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Error finishing route';
+    } catch (error) {
       fastify.log.error(error);
-      return reply.code(400).send({
-        success: false,
-        message,
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return reply.code(400).send({ success: false, message: (error as any).message });
     }
   });
 
@@ -97,11 +91,8 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         success: true,
         activeRoute,
       });
-    } catch (error: unknown) {
-      return reply.code(400).send({
-        success: false,
-        message: 'Error fetching active route',
-      });
+    } catch (error) {
+      return reply.code(400).send({ success: false, message: 'Error fetching active route' });
     }
   });
 
@@ -118,11 +109,8 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         success: true,
         data: rows,
       });
-    } catch (error: unknown) {
-      return reply.code(400).send({
-        success: false,
-        message: 'Error fetching routes',
-      });
+    } catch (error) {
+      return reply.code(400).send({ success: false, message: 'Error fetching routes' });
     }
   });
 
@@ -148,12 +136,9 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         success: true,
         data: rows,
       });
-    } catch (error: unknown) {
+    } catch (error) {
       fastify.log.error(error);
-      return reply.code(400).send({
-        success: false,
-        message: 'Error fetching activity logs',
-      });
+      return reply.code(400).send({ success: false, message: 'Error fetching activity logs' });
     }
   });
 }
