@@ -279,7 +279,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
   fastify.get('/roles', async (_request, reply) => {
     try {
-      const res = await db.execute('SELECT id, name as label FROM roles', []);
+      const res = await db.execute(
+        "SELECT id, name as label FROM roles ORDER BY (name = 'Master (Archon)') DESC, name ASC",
+        []
+      );
       let rows: RowDataPacket[] = [];
       if (res) {
         const [results] = res;
