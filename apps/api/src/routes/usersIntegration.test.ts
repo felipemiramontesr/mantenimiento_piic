@@ -229,21 +229,12 @@ describe('User Integration Endpoints', () => {
   });
 
   describe('GET /v1/users/:id/profile-image', () => {
-    it('should return 401 if no session is provided', async () => {
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/users/1/profile-image',
-      });
-      expect(response.statusCode).toBe(401);
-    });
-
-    it('should return 404 if image is not found in registry', async () => {
+    it('should return 404 if image is not found in registry (No Token Required)', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[]]);
 
       const response = await app.inject({
         method: 'GET',
         url: '/v1/users/1/profile-image',
-        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(404);
@@ -257,7 +248,6 @@ describe('User Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/users/1/profile-image',
-        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(404);
@@ -278,7 +268,6 @@ describe('User Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/users/1/profile-image',
-        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -299,7 +288,6 @@ describe('User Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/users/1/profile-image',
-        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -312,7 +300,6 @@ describe('User Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/users/1/profile-image',
-        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(500);
