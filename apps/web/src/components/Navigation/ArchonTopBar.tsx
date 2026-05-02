@@ -56,7 +56,7 @@ const ArchonTopBar: React.FC = () => {
           <button
             onClick={toggleMenu}
             className={`
-              w-[38px] h-[38px] rounded-[4px] flex items-center justify-center transition-all duration-300 overflow-hidden border-transparent
+              w-[57px] h-[57px] rounded-[4px] flex items-center justify-center transition-all duration-300 overflow-hidden border-transparent
               ${isMenuOpen ? 'border-[#f2b705]' : 'hover:border-[#f2b705]'}
             `}
             style={{ borderWidth: '1px' }}

@@ -48,6 +48,24 @@ describe('Auth Endpoints Sovereignty', () => {
     expect(r1.statusCode).toBe(200);
     expect(JSON.parse(r1.body).user.imageUrl).toContain('/profile-image');
 
+    // Plan Omega: data URI should pass through directly
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 3,
+          username: 'omega_test',
+          email: 'enc_omega',
+          password_hash: 'h',
+          role_id: 1,
+          role_name: 'Admin',
+          profile_picture_url: 'data:image/jpeg;base64,/9j/test',
+        },
+      ],
+    ]);
+    const r1b = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
+    expect(r1b.statusCode).toBe(200);
+    expect(JSON.parse(r1b.body).user.imageUrl).toContain('data:image/jpeg;base64,');
+
     const email = 'target@piic.mx';
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
