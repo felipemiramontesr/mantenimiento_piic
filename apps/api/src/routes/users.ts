@@ -5,11 +5,27 @@ import { fileURLToPath } from 'node:url';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 
-// 🔱 ESM Compatibility
+// 🔱 ESM Compatibility: We resolve the project root once
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 /* eslint-enable no-underscore-dangle */
+
+// 🏗️ Sovereign Path Resolution: Ensure we are at the API root regardless of dist/src
+// We look for 'package.json' upward to find the true root
+const findProjectRoot = (startDir: string): string => {
+  let current = startDir;
+  while (
+    !fs.existsSync(path.join(current, 'package.json')) &&
+    current !== path.parse(current).root
+  ) {
+    current = path.dirname(current);
+  }
+  return current;
+};
+
+const PROJECT_ROOT = findProjectRoot(__dirname);
+const UPLOAD_DIR = path.join(PROJECT_ROOT, 'uploads/profiles');
 
 /** Max decoded image size: 2MB */
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
@@ -30,7 +46,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       bodyLimit: 3 * 1024 * 1024,
     },
     async (request, reply) => {
-      // 🛡️ Manual verification to avoid global hook side-effects
+      // 🛡️ Manual verification
       try {
         await request.jwtVerify();
       } catch {
@@ -39,13 +55,13 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
       const { id } = request.params as { id: string };
 
-      // 🛡️ Identity Lock: Ensure the user can only modify their own profile assets
+      // 🛡️ Identity Lock
       const tokenData = request.user as { id: string | number };
       if (String(tokenData.id) !== String(id)) {
         return reply.code(403).send({ error: 'Archon Sovereignty: Unauthorized Identity Access' });
       }
 
-      // 🛡️ Pre-validation: Verify user existence
+      // 🛡️ Pre-validation
       const [existing] = await db.execute<RowDataPacket[]>('SELECT id FROM users WHERE id = ?', [
         id,
       ]);
@@ -73,13 +89,16 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
       const ext = mime === 'image/png' ? '.png' : '.jpg';
       const newFilename = `profile_user_${id}_${Date.now()}${ext}`;
-
-      const uploadDir = path.join(__dirname, '../../uploads/profiles');
-      const uploadPath = path.join(uploadDir, newFilename);
+      const uploadPath = path.join(UPLOAD_DIR, newFilename);
 
       try {
-        fs.mkdirSync(uploadDir, { recursive: true });
+        // 🏗️ Ensure upload directory exists at project root
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+        // 1. Write file
         fs.writeFileSync(uploadPath, buffer);
+
+        // 2. Update DB
         await db.execute('UPDATE users SET profile_picture_url = ? WHERE id = ?', [
           newFilename,
           id,
@@ -101,8 +120,7 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
 
   /**
    * 🔱 GET /v1/users/:id/profile-image
-   * Public-facing Asset Serving (Impenetrable by filename timestamp)
-   * v.3.1.0 - Unprotected GET to allow native <img> tag rendering
+   * Public-facing Asset Serving
    */
   fastify.get('/users/:id/profile-image', async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -115,14 +133,18 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       const user = rows[0];
 
       if (!user || !user.profile_picture_url) {
-        return reply.code(404).send({ error: 'Image not found' });
+        return reply.code(404).send({ error: 'Image not found in registry' });
       }
 
       const filename = user.profile_picture_url;
-      const filePath = path.join(__dirname, '../../uploads/profiles', filename);
+      const filePath = path.join(UPLOAD_DIR, filename);
 
       if (!fs.existsSync(filePath)) {
-        return reply.code(404).send({ error: 'Physical asset missing' });
+        fastify.log.error(`❌ Missing asset at: ${filePath}`);
+        return reply.code(404).send({
+          error: 'Physical asset missing',
+          debug_path: process.env.NODE_ENV === 'development' ? filePath : undefined,
+        });
       }
 
       const fileExt = path.extname(filename).toLowerCase();
