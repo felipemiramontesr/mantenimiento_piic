@@ -451,7 +451,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonImageUploader
               images={formData.images ?? []}
               onChange={(imgs: string[]): void => setFormData({ ...formData, images: imgs })}
-              onFileChange={(files: File[]): void => controller.setSelectedFiles(files)}
+              onFileChange={(files: File[]): Promise<void> => controller.setSelectedFiles(files)}
               maxImages={4}
             />
           </ArchonField>

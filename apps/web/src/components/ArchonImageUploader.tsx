@@ -8,7 +8,7 @@ interface ArchonImageUploaderProps {
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
-  onFileChange?: (files: File[]) => void;
+  onFileChange?: (files: File[]) => void | Promise<void>;
   title?: string;
   allowedFormats?: string;
   accept?: string;
@@ -58,7 +58,10 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
     });
 
     if (onFileChange) {
-      onFileChange(selectedFiles);
+      const result = onFileChange(selectedFiles);
+      if (result instanceof Promise) {
+        result.catch(() => undefined);
+      }
     }
 
     // Reset input so same file can be selected again
