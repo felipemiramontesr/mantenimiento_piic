@@ -75,13 +75,15 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       const uploadPath = path.join(UPLOAD_BASE, newFilename);
 
       try {
-        // 🏗️ Ensure upload directory exists
+        // 🏗️ Ensure upload directory exists with explicit permissions
         if (!fs.existsSync(UPLOAD_BASE)) {
-          fs.mkdirSync(UPLOAD_BASE, { recursive: true });
+          fastify.log.info(`🏗️ Creating persistent vault at: ${UPLOAD_BASE}`);
+          fs.mkdirSync(UPLOAD_BASE, { recursive: true, mode: 0o777 });
         }
 
         // 1. Write file
         fs.writeFileSync(uploadPath, buffer);
+        fastify.log.info(`✅ Physical asset locked: ${newFilename}`);
 
         // 2. Update DB
         await db.execute('UPDATE users SET profile_picture_url = ? WHERE id = ?', [
@@ -89,16 +91,19 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
           id,
         ]);
 
-        fastify.log.info(`✅ Profile picture updated: ${uploadPath}`);
-
         return reply.send({
           success: true,
           message: 'Profile identity updated',
           url: `/v1/users/${id}/profile-image`,
         });
-      } catch (err) {
-        fastify.log.error(err);
-        return reply.code(500).send({ error: 'Infrastructure failure' });
+      } catch (err: unknown) {
+        const error = err as Error;
+        fastify.log.error(`❌ Infrastructure Failure: ${error.message}`);
+        return reply.code(500).send({
+          error: 'Infrastructure failure',
+          details: error.message,
+          path_attempted: uploadPath,
+        });
       }
     }
   );
