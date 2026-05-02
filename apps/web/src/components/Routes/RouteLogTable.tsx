@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Clock, ArrowRight, Gauge, Pencil, CheckCircle2, Navigation } from 'lucide-react';
+import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 
@@ -31,35 +32,20 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { units } = useFleet();
   const { users } = useUsers();
 
-  // MOCK DATA (based on the provided JSON dump)
-  const [logs] = React.useState<RouteLog[]>([
-    {
-      id: '63',
-      unit_id: 'ASM-002',
-      operator_id: '1',
-      origin: 'Base Arian',
-      destination: 'Test Route - Day Zero Baseline',
-      description: 'Prueba de sistema inicial',
-      fuelLevel: 100,
-      start_time: '2026-03-09 00:00:00',
-      end_time: '2026-04-01 00:00:00',
-      start_km: 119728,
-      end_km: 120568,
-    },
-    {
-      id: '64',
-      unit_id: 'ASM-006',
-      operator_id: '1',
-      origin: 'Base Arian',
-      destination: 'Mina Nivel 200',
-      description: 'Extracción rutinaria',
-      fuelLevel: 75,
-      start_time: '2026-03-11 00:00:00',
-      end_time: null, // Active
-      start_km: 356944,
-      end_km: null,
-    },
-  ]);
+  const [logs, setLogs] = React.useState<RouteLog[]>([]);
+
+  const fetchRoutes = async (): Promise<void> => {
+    try {
+      const res = await api.get('/routes');
+      setLogs(res.data?.data || []);
+    } catch (err) {
+      // Quiet fail to maintain Sovereign silence
+    }
+  };
+
+  React.useEffect(() => {
+    fetchRoutes();
+  }, []);
 
   const getStatus = (
     log: RouteLog

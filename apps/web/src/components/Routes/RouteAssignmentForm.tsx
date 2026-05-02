@@ -121,11 +121,68 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     label: `${u.fullName} (${u.employeeNumber || 'S/N'})`,
   }));
 
-  const handleSubmit = (e: React.FormEvent): void => {
+  const { startRoute, finishRoute } = useFleet();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    // Logic for dispatch will be implemented in next phase
-    onClose();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      if (isEdit && routeToEdit) {
+        // Finishing Logic (simplified for this UI block)
+        // In a real scenario, we might need a dedicated "Finish" form or modal
+        // but we'll use the unit's current reading + a small delta for simulation
+        // or ask user for it if we add the field.
+      } else {
+        await startRoute({
+          unitId: formData.unitId,
+          driverId: Number(formData.operatorId),
+          startReading: selectedUnitData?.currentReading || 0,
+          destination: formData.destination,
+          originId: origins.find((o) => o.label === formData.origin)?.id,
+        });
+      }
+      onClose();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error en la operación';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const handleFinishRoute = async (): Promise<void> => {
+    if (!routeToEdit) return;
+    setSubmitting(true);
+    try {
+      // eslint-disable-next-line no-alert
+      const endReadingStr = window.prompt(
+        `Ingrese kilometraje final (Actual: ${selectedUnitData?.currentReading}):`,
+        String(selectedUnitData?.currentReading || 0)
+      );
+
+      if (endReadingStr) {
+        await finishRoute(routeToEdit.id, {
+          endReading: Number(endReadingStr),
+        });
+        onClose();
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al cerrar ruta';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  let leftButtonText = isEdit ? 'Terminar Ruta' : 'Cancelar';
+  if (submitting) leftButtonText = 'Procesando...';
+
+  let rightButtonText = isEdit ? 'Guardar Cambios' : 'Autorizar Despacho';
+  if (submitting) rightButtonText = 'Guardando...';
 
   return (
     <motion.div
@@ -345,25 +402,35 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="px-6 py-2 bg-rose-50 border-l-4 border-rose-500 text-rose-800 text-[10px] font-bold flex items-center gap-2">
+            <AlertCircle size={14} /> {error}
+          </div>
+        )}
+
         {/* Footer Integrado - Senior Block Alignment */}
-        <div className="pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-8 px-6 pb-6">
           <button
             type="button"
-            onClick={onClose}
-            className="w-full px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all rounded-[4px] border-none outline-none"
+            onClick={isEdit ? handleFinishRoute : onClose}
+            className="w-full px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-all rounded-[4px] border-none outline-none disabled:opacity-50"
+            disabled={submitting}
           >
-            Terminar Ruta
+            {leftButtonText}
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!formData.unitId || !formData.operatorId || !formData.destination}
+            disabled={
+              submitting || !formData.unitId || !formData.operatorId || !formData.destination
+            }
             className={`w-full px-6 py-4 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] border-none outline-none ${
               isEdit
                 ? 'bg-[#0f2a44] hover:bg-[#1a3a5a] shadow-blue-900/20'
                 : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
             }`}
           >
-            {isEdit ? 'Guardar Cambios' : 'Autorizar Despacho'} <ChevronRight size={14} />
+            {rightButtonText} <ChevronRight size={14} />
           </button>
         </div>
       </form>

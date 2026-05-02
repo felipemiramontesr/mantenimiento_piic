@@ -36,6 +36,11 @@ interface FleetContextType {
   stats: FleetStats;
   loading: boolean;
   refreshUnits: () => Promise<void>;
+  startRoute: (payload: import('../types/route').StartRoutePayload) => Promise<void>;
+  finishRoute: (
+    uuid: string,
+    payload: import('../types/route').FinishRoutePayload
+  ) => Promise<void>;
 }
 
 export const FleetContext = createContext<FleetContextType | undefined>(undefined);
@@ -170,8 +175,21 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [units]);
 
+  const startRoute = async (payload: import('../types/route').StartRoutePayload): Promise<void> => {
+    await api.post('/routes/start', payload);
+    await refreshUnits(); // Automatic sync of unit status to "En Ruta"
+  };
+
+  const finishRoute = async (
+    uuid: string,
+    payload: import('../types/route').FinishRoutePayload
+  ): Promise<void> => {
+    await api.patch(`/routes/${uuid}/finish`, payload);
+    await refreshUnits(); // Automatic sync of unit status to "Disponible" and new reading
+  };
+
   return (
-    <FleetContext.Provider value={{ units, stats, loading, refreshUnits }}>
+    <FleetContext.Provider value={{ units, stats, loading, refreshUnits, startRoute, finishRoute }}>
       {children}
     </FleetContext.Provider>
   );

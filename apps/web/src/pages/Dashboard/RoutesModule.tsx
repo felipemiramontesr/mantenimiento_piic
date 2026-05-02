@@ -4,12 +4,12 @@ import { BRANDING_NAME } from '../../constants/versionConstants';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
 import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
+import ForensicJournalTable from '../../components/Routes/ForensicJournalTable';
 
 /**
  * 🚀 ARCHON ROUTES MODULE (v.36.6.2)
- * Version: 37.1.2 - Sovereign Senior Standard
+ * Version: 38.1.0 - Sovereign Forensic Standard
  * Purpose: Central command for Route Dispatch & Logistics.
- * Update: Integrated Form Architecture for Design Cohesion.
  */
 const RoutesModule: React.FC = (): React.JSX.Element => {
   const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
@@ -20,14 +20,10 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
     const element = panelRef.current;
     if (element) {
       setTimeout(() => {
-        // Geometric Phase-Transition Scroll (v.38.7.0)
         const chassis = element.closest('.archon-workspace-chassis') as HTMLElement;
-
         if (chassis) {
           const chassisRect = chassis.getBoundingClientRect();
           const elementRect = element.getBoundingClientRect();
-
-          // Calibration (v.38.7.0): -12px offset to perfectly eliminate card fragments
           const relativeTop = elementRect.top - chassisRect.top + chassis.scrollTop;
           const targetPosition = relativeTop - 12;
 
@@ -40,10 +36,13 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
     }
   };
 
-  const handleAction = (action: 'DESPACHO' | 'BITACORA'): void => {
+  const handleAction = (action: 'DESPACHO' | 'BITACORA' | 'FORENSE'): void => {
     if (action === 'DESPACHO') {
       setEditingRoute(null);
       setActivePanel('DISPATCH');
+      scrollToPanel();
+    } else if (action === 'FORENSE') {
+      setActivePanel('JOURNAL');
       scrollToPanel();
     } else {
       setActivePanel('LOGS');
@@ -95,7 +94,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Despacho Logístico, Control de Tránsito & Histórico de Operaciones
+              Despacho Logístico, Control de Tránsito & Auditoría Forense
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -123,6 +122,8 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
             {activePanel === 'DISPATCH' && (
               <RouteAssignmentForm onClose={handleReturnToLogs} routeToEdit={editingRoute} />
             )}
+
+            {activePanel === 'JOURNAL' && <ForensicJournalTable />}
           </div>
         </div>
       </section>

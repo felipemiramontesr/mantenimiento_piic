@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
+import journeyRoutes from './routes/fleetRoutes';
 import catalogRoutes from './routes/catalogs';
 import userRoutes from './routes/users';
 
@@ -67,6 +68,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(authRoutes, { prefix: '/v1/auth' });
   fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
   fastify.register(fleetRoutes, { prefix: '/v1' });
+  fastify.register(journeyRoutes, { prefix: '/v1' });
   fastify.register(catalogRoutes, { prefix: '/v1/catalogs' });
   fastify.register(userRoutes, { prefix: '/v1' });
 
