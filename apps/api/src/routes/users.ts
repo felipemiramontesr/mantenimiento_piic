@@ -5,10 +5,11 @@ import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 
 /**
- * 🏗️ Sovereign Path Resolution (Standardized for Hostinger/Cloud)
- * We use process.cwd() to ensure we stay at the app entry point.
+ * 🏗️ Sovereign Path Resolution (Persistent Storage)
+ * We move the uploads OUTSIDE the Node.js deployment folder so Hostinger's
+ * Git auto-deploy doesn't wipe untracked files during repository syncs.
  */
-const UPLOAD_BASE = path.join(process.cwd(), 'uploads/profiles');
+const UPLOAD_BASE = path.join(process.cwd(), '../archon_assets/profiles');
 
 /** Max decoded image size: 2MB */
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
