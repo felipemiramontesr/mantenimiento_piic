@@ -94,10 +94,12 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
 
       // 🔱 Asset Resolution Engine: Ensure filename is converted to Sovereign URL
       let resolvedImageUrl = user.imageUrl || user.image_url || user.profile_picture_url || '';
+      // 🔱 Asset Resolution: data URIs (Plan Omega) pass through directly
       if (
         resolvedImageUrl &&
         !resolvedImageUrl.startsWith('http') &&
-        !resolvedImageUrl.startsWith('blob:')
+        !resolvedImageUrl.startsWith('blob:') &&
+        !resolvedImageUrl.startsWith('data:')
       ) {
         resolvedImageUrl = `${api.defaults.baseURL}/users/${user.id}/profile-image`;
       }
