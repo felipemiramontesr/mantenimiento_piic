@@ -124,11 +124,28 @@ export default async function userRoutes(fastify: FastifyInstance): Promise<void
       const filePath = path.join(UPLOAD_BASE, filename);
 
       if (!fs.existsSync(filePath)) {
-        // Debugging for Hostinger (Visible in 404 response temporarily)
-        return reply.code(404).send({
+        fastify.log.error(`❌ Missing asset at: ${filePath}`);
+
+        let dirContents: string[] = [];
+        try {
+          if (fs.existsSync(UPLOAD_BASE)) {
+            dirContents = fs.readdirSync(UPLOAD_BASE);
+          }
+        } catch (e) {
+          // Ignore read errors for debug payload
+        }
+
+        const responsePayload: Record<string, string | string[]> = {
           error: 'Physical asset missing',
-          path_attempted: filePath,
-        });
+        };
+        if (process.env.NODE_ENV === 'development') {
+          responsePayload.debug_path = filePath;
+        } else {
+          // Forensic payload for production to diagnose Hostinger volatile FS
+          responsePayload.path_attempted = filePath;
+          responsePayload.dir_contents = dirContents;
+        }
+        return reply.code(404).send(responsePayload);
       }
 
       const fileExt = path.extname(filename).toLowerCase();

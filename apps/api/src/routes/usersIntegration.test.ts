@@ -252,7 +252,7 @@ describe('User Integration Endpoints', () => {
 
       expect(response.statusCode).toBe(404);
       const body = JSON.parse(response.body);
-      expect(body.path_attempted).toBeDefined();
+      expect(body.error).toContain('Physical asset missing');
     });
 
     it('should serve the image with correct content type', async () => {
