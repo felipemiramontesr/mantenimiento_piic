@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Settings, LogOut, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api/client';
 
 /**
  * 🔱 Archon Component: ArchonTopBar
@@ -34,6 +35,16 @@ const ArchonTopBar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const resolveImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    // Resolve relative paths against API base URL from client configuration
+    const baseUrl = (api.defaults.baseURL || '').replace(/\/+$/, '');
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
+
   return (
     <div className="fixed top-0 right-0 p-24 z-[100] flex items-center gap-24 pointer-events-none">
       <div className="flex items-center gap-24 pointer-events-auto" ref={menuRef}>
@@ -50,9 +61,9 @@ const ArchonTopBar: React.FC = () => {
             `}
             style={{ borderWidth: '1px' }}
           >
-            {currentUser?.imageUrl ? (
+            {fullImageUrl ? (
               <img
-                src={currentUser.imageUrl}
+                src={fullImageUrl}
                 alt="Profile"
                 className="w-full h-full object-cover"
                 onError={(e): void => {
