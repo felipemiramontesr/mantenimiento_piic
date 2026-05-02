@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import fs from 'node:fs';
 import { PassThrough } from 'node:stream';
-import { pipeline as pipelinePromise } from 'node:stream/promises';
 import buildApp from '../index';
 import db from '../services/db';
 
 /**
  * 🔱 Archon Integration Test: User Routes
  * Implementation: 100% Path Coverage (Sovereign Quality)
+ * v.3.0.0 - Base64 JSON Transport Tests
  */
 
 vi.mock('../services/db', () => ({
@@ -22,19 +22,25 @@ vi.mock('node:fs', async () => {
     ...actual,
     default: {
       ...actual.default,
-      createWriteStream: vi.fn(),
+      mkdirSync: vi.fn(),
+      writeFileSync: vi.fn(),
       createReadStream: vi.fn(),
       existsSync: vi.fn(),
     },
-    createWriteStream: vi.fn(),
+    mkdirSync: vi.fn(),
+    writeFileSync: vi.fn(),
     createReadStream: vi.fn(),
     existsSync: vi.fn(),
   };
 });
 
-vi.mock('node:stream/promises', () => ({
-  pipeline: vi.fn(),
-}));
+// Minimal 1x1 white JPEG in Base64
+const VALID_BASE64_JPEG =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAFBABAAAAAAAAAAAAAAAAAAAACf/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKkA/9k=';
+
+// Minimal 1x1 white PNG in Base64
+const VALID_BASE64_PNG =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
 
 describe('User Integration Endpoints', () => {
   const app = buildApp();
@@ -67,21 +73,24 @@ describe('User Integration Endpoints', () => {
     });
 
     it('should return 404 if identity is not found', async () => {
-      // Identity Lock passed (ID match), but DB check fails
       const customToken = app.jwt.sign({ id: 999, username: 'ghost', roleId: 2 });
       (db.execute as Mock).mockResolvedValueOnce([[]]);
 
       const response = await app.inject({
         method: 'POST',
         url: '/v1/users/999/upload-profile',
-        headers: { authorization: `Bearer ${customToken}` },
+        headers: {
+          authorization: `Bearer ${customToken}`,
+          'content-type': 'application/json',
+        },
+        payload: JSON.stringify({ image: VALID_BASE64_JPEG, mime: 'image/jpeg' }),
       });
 
       expect(response.statusCode).toBe(404);
       expect(JSON.parse(response.body).error).toContain('Identity not found');
     });
 
-    it('should return 400 if no file is received', async () => {
+    it('should return 400 if no image data is received', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]);
 
       const response = await app.inject({
@@ -89,117 +98,129 @@ describe('User Integration Endpoints', () => {
         url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=---',
+          'content-type': 'application/json',
         },
-        payload: '-----', // Invalid empty multipart
+        payload: JSON.stringify({}),
       });
 
       expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).error).toContain('No image data received');
     });
 
     it('should return 400 for invalid mime-types', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]);
 
-      // Using a trick to simulate multipart with specific mimetype
       const response = await app.inject({
         method: 'POST',
         url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary',
+          'content-type': 'application/json',
         },
-        payload:
-          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.txt"\r\nContent-Type: text/plain\r\n\r\ncontent\r\n--boundary--',
+        payload: JSON.stringify({ image: 'data:text/plain;base64,aGVsbG8=', mime: 'text/plain' }),
       });
 
       expect(response.statusCode).toBe(400);
       expect(JSON.parse(response.body).error).toContain('Only JPG and PNG');
     });
 
-    it('should handle extensionless PNG files', async () => {
+    it('should return 400 if image exceeds 2MB', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]);
+
+      // Create a Base64 string that decodes to >2MB
+      const bigBuffer = Buffer.alloc(2.1 * 1024 * 1024, 'A');
+      const bigBase64 = bigBuffer.toString('base64');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/users/1/upload-profile',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+        payload: JSON.stringify({ image: bigBase64, mime: 'image/jpeg' }),
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).error).toContain('2MB');
+    });
+
+    it('should successfully upload JPEG profile picture', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ id: 1 }]])
         .mockResolvedValueOnce([{ affectedRows: 1 }]);
 
-      (pipelinePromise as Mock).mockResolvedValueOnce(undefined);
-      (fs.createWriteStream as Mock).mockReturnValue(new PassThrough());
-
       const response = await app.inject({
         method: 'POST',
         url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary',
+          'content-type': 'application/json',
         },
-        payload:
-          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test"\r\nContent-Type: image/png\r\n\r\nfake-binary-data\r\n--boundary--',
-      });
-
-      expect(response.statusCode).toBe(200);
-    });
-
-    it('should handle extensionless JPG files', async () => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[{ id: 1 }]])
-        .mockResolvedValueOnce([{ affectedRows: 1 }]);
-
-      (pipelinePromise as Mock).mockResolvedValueOnce(undefined);
-      (fs.createWriteStream as Mock).mockReturnValue(new PassThrough());
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: {
-          authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary',
-        },
-        payload:
-          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--',
-      });
-
-      expect(response.statusCode).toBe(200);
-    });
-
-    it('should successfully upload and persist profile picture', async () => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[{ id: 1 }]]) // Check existence
-        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Update DB
-
-      (pipelinePromise as Mock).mockResolvedValueOnce(undefined);
-      (fs.createWriteStream as Mock).mockReturnValue(new PassThrough());
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/users/1/upload-profile',
-        headers: {
-          authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary',
-        },
-        payload:
-          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--',
+        payload: JSON.stringify({ image: VALID_BASE64_JPEG, mime: 'image/jpeg' }),
       });
 
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body).success).toBe(true);
+      expect(fs.mkdirSync).toHaveBeenCalled();
+      expect(fs.writeFileSync).toHaveBeenCalled();
       expect(db.execute).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE users SET profile_picture_url'),
         expect.any(Array)
       );
     });
 
-    it('should handle infrastructure failure during persistence', async () => {
-      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]);
-      (pipelinePromise as Mock).mockRejectedValueOnce(new Error('DISK_FULL'));
+    it('should successfully upload PNG profile picture', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 1 }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const response = await app.inject({
         method: 'POST',
         url: '/v1/users/1/upload-profile',
         headers: {
           authorization: `Bearer ${token}`,
-          'content-type': 'multipart/form-data; boundary=boundary',
+          'content-type': 'application/json',
         },
-        payload:
-          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="test.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-binary-data\r\n--boundary--',
+        payload: JSON.stringify({ image: VALID_BASE64_PNG, mime: 'image/png' }),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('should default to image/jpeg if no mime is provided', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 1 }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/users/1/upload-profile',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+        payload: JSON.stringify({ image: VALID_BASE64_JPEG }),
+      });
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('should handle infrastructure failure during persistence', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1 }]]);
+      (fs.writeFileSync as Mock).mockImplementation(() => {
+        throw new Error('DISK_FULL');
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/users/1/upload-profile',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+        payload: JSON.stringify({ image: VALID_BASE64_JPEG, mime: 'image/jpeg' }),
       });
 
       expect(response.statusCode).toBe(500);
@@ -250,7 +271,6 @@ describe('User Integration Endpoints', () => {
       const mockStream = new PassThrough();
       (fs.createReadStream as Mock).mockReturnValue(mockStream);
 
-      // We need to end the stream so inject can complete
       setTimeout(() => {
         mockStream.end('fake-image-data');
       }, 0);
