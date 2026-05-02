@@ -241,7 +241,51 @@ describe('User Integration Endpoints', () => {
       expect(JSON.parse(response.body).error).toContain('Image not found');
     });
 
-    it('should return 404 with path_attempted when asset is missing', async () => {
+    it('should return 404 with path_attempted and dir_contents when asset is missing', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ profile_picture_url: 'missing.jpg' }]]);
+      (fs.existsSync as Mock).mockImplementation(
+        (pathStr: string) =>
+          // Return true only for the base directory, false for the actual file
+          pathStr.includes('profiles') && !pathStr.includes('missing.jpg')
+      );
+      (fs.readdirSync as Mock).mockReturnValueOnce(['old_image.jpg']);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/users/1/profile-image',
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain('Physical asset missing');
+      expect(body.path_attempted).toBeDefined();
+      expect(body.dir_contents).toEqual(['old_image.jpg']);
+    });
+
+    it('should ignore read errors for debug payload', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ profile_picture_url: 'missing.jpg' }]]);
+      (fs.existsSync as Mock).mockImplementation(
+        (pathStr: string) => pathStr.includes('profiles') && !pathStr.includes('missing.jpg')
+      );
+      (fs.readdirSync as Mock).mockImplementationOnce(() => {
+        throw new Error('EACCES');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/users/1/profile-image',
+      });
+
+      expect(response.statusCode).toBe(404);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain('Physical asset missing');
+      expect(body.dir_contents).toEqual([]);
+    });
+
+    it('should return debug_path instead of path_attempted in development mode', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+
       (db.execute as Mock).mockResolvedValueOnce([[{ profile_picture_url: 'missing.jpg' }]]);
       (fs.existsSync as Mock).mockReturnValue(false);
 
@@ -252,7 +296,10 @@ describe('User Integration Endpoints', () => {
 
       expect(response.statusCode).toBe(404);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain('Physical asset missing');
+      expect(body.debug_path).toBeDefined();
+      expect(body.path_attempted).toBeUndefined();
+
+      process.env.NODE_ENV = originalEnv;
     });
 
     it('should serve the image with correct content type', async () => {
