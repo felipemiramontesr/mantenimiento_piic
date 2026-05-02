@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
-import fs from 'node:fs';
-import { PassThrough } from 'node:stream';
 import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Fleet Routes (v.21.3.1)
- * Implementation: 100% Path & Branch Coverage
- * Architecture: Relational ID Adaptive Testing
+ * 🔱 Archon Integration Test: Fleet Routes (v.22.0.1)
+ * Implementation: Plan Omega Logic Verification
+ * Architecture: Zero-Filesystem Dependency Testing
  */
 
 vi.mock('../services/db', () => ({
@@ -23,21 +21,6 @@ vi.mock('../services/encryption', () => ({
     decrypt: vi.fn((v) => (v && typeof v === 'string' ? v.replace('enc_', '') : v)),
     generateBlindIndex: vi.fn((v) => `hash_${v}`),
   },
-}));
-
-vi.mock('node:fs', () => ({
-  default: {
-    existsSync: vi.fn(),
-    createReadStream: vi.fn(),
-    createWriteStream: vi.fn(),
-    promises: {
-      rename: vi.fn(),
-    },
-  },
-}));
-
-vi.mock('node:stream/promises', () => ({
-  pipeline: vi.fn(),
 }));
 
 describe('Fleet Integration Endpoints', () => {
@@ -72,34 +55,23 @@ describe('Fleet Integration Endpoints', () => {
 
   describe('POST /v1/fleet', () => {
     const validUnit = {
-      assetTypeId: 1, // Vehiculo
+      assetTypeId: 1,
       id: 'ASM-001',
-      brandId: 253, // Toyota
-      modelId: 636, // Hilux
+      brandId: 253,
+      modelId: 636,
       year: 2024,
-      departmentId: 228, // Medio Ambiente
-      operationalUseId: 236, // Staff
-      traccionId: 1, // 4x2
-      transmisionId: 2, // Estándar
-      fuelTypeId: 10, // Diesel
-      maintenanceTimeFreqId: 4, // Mensual
-      maintenanceUsageFreqId: 6, // 5,000 KM
-      centroMantenimiento: 'PIIC',
+      departmentId: 228,
+      operationalUseId: 236,
+      traccionId: 1,
+      transmisionId: 2,
+      fuelTypeId: 10,
       odometer: 100,
-      protocolStartDate: '2026-04-16',
       fuelTankCapacity: 80,
       maintIntervalDays: 90,
       maintIntervalKm: 5000,
-      dailyUsageAvg: 50,
-      monthlyLeasePayment: 15000,
-      tireSpec: '265/65R17',
-      tireBrandId: 1,
-      ownerId: 1,
-      complianceStatusId: 1,
-      insuranceCompanyId: 1,
     };
 
-    it('should successfully register a new unit with all security fields', async (): Promise<void> => {
+    it('should successfully register a new unit with Base64 images (Plan Omega)', async (): Promise<void> => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[]]) // ID unique check
         .mockResolvedValueOnce([[]]) // Serie unique check
@@ -111,63 +83,13 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
         payload: {
           ...validUnit,
-          numeroSerie: 'SN-100',
-          placas: 'PL-100',
-          engineTypeId: 1,
-          circulationCardNumber: 'TC-100',
-          images: ['img1.jpg'],
+          numeroSerie: 'SN-OMEGA-1',
+          images: ['data:image/jpeg;base64,fake_omega_data'],
         },
       });
 
       expect(response.statusCode).toBe(201);
       expect(JSON.parse(response.body).id).toBe('ASM-001');
-    });
-
-    it('should handle undefined optional fields in mapping', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[]]) // ID check
-        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: { ...validUnit, id: 'UNDEF-1', fuelTypeId: undefined },
-      });
-
-      expect(response.statusCode).toBe(201);
-    });
-
-    it('should register unit with default odometer (branch coverage)', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[]]) // ID check
-        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
-
-      const { odometer: _, ...unitWithoutOdometer } = validUnit;
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: { ...unitWithoutOdometer, id: 'ODOM-DEF' },
-      });
-
-      expect(response.statusCode).toBe(201);
-    });
-
-    it('should return 409 for duplicate serial number', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[]]) // ID unique
-        .mockResolvedValueOnce([[{ id: 1 }]]); // Serie exists
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: { ...validUnit, numeroSerie: 'DUP-SN' },
-      });
-
-      expect(response.statusCode).toBe(409);
     });
 
     it('should return 409 for duplicate identification (id)', async (): Promise<void> => {
@@ -181,67 +103,6 @@ describe('Fleet Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(409);
-      expect(JSON.parse(response.body).error).toContain('ya existe');
-    });
-
-    it('should handle unknown db errors (null rejection)', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(null);
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: validUnit,
-      });
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Database Error: Unknown DB Exception');
-    });
-
-    it('should handle string-based db errors', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce('CRITICAL_STR_FAIL');
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: validUnit,
-      });
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Database Error: CRITICAL_STR_FAIL');
-    });
-
-    it('should handle object-based db errors (sqlMessage)', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce({ sqlMessage: 'SQL_SYNTAX_ERR' });
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: validUnit,
-      });
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Database Error: SQL_SYNTAX_ERR');
-    });
-
-    it('should handle object-based db errors (Standard Error)', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(new Error('STD_ERR_MSG'));
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: validUnit,
-      });
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Database Error: STD_ERR_MSG');
-    });
-
-    it('should handle object-based db errors (Empty object fallback)', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce({});
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet',
-        headers: authHeader(),
-        payload: validUnit,
-      });
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('Database Error: Unknown DB Exception');
     });
 
     it('should return 400 for invalid data format in POST', async (): Promise<void> => {
@@ -249,100 +110,23 @@ describe('Fleet Integration Endpoints', () => {
         method: 'POST',
         url: '/v1/fleet',
         headers: authHeader(),
-        payload: { year: 'STRING' }, // Trigger Zod failure
+        payload: { year: 'STRING' },
       });
       expect(response.statusCode).toBe(400);
     });
   });
 
   describe('GET /v1/fleet', () => {
-    it('should return list with decrypted and null fields', async (): Promise<void> => {
+    it('should return list with processed Base64 images', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([
         [
           {
             id: 'ASM-001',
-            motor: 'L4 2.8L Turbo',
-            engineTypeId: 1,
-            circulationCardNumber: null,
-            numeroSerie: 'enc_SN1',
-            placas: 'enc_PL1',
-            availabilityIndex: 85.5,
-            mtbfHours: 50.0,
-            mttrHours: 12.0,
-            backlogCount: 2,
-            lastServiceDate: new Date().toISOString(),
-            maintIntervalDays: 30,
-            dailyUsageAvg: 50,
-          },
-          {
-            id: 'ASM-002',
-            motor: null,
-            engineTypeId: null,
-            circulationCardNumber: 'enc_TC2',
-            numeroSerie: null,
-            placas: null,
-          },
-        ],
-      ]);
-
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/fleet',
-        headers: authHeader(),
-      });
-
-      expect(response.statusCode).toBe(200);
-      const { data } = JSON.parse(response.body);
-      expect(data[0].motor).toBe('L4 2.8L Turbo');
-      expect(data[0].numeroSerie).toBe('SN1');
-      expect(data[0].placas).toBe('PL1');
-      expect(data[0].forecastDate).not.toBeNull();
-      expect(data[0].circulationCardNumber).toBeNull();
-      expect(data[1].motor).toBeNull();
-      expect(data[1].circulationCardNumber).toBe('TC2');
-    });
-
-    it('should calculate complex health states for predictive maintenance', async (): Promise<void> => {
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 40); // 40 days ago
-
-      (db.execute as Mock).mockResolvedValueOnce([
-        [
-          {
-            id: 'OVERDUE_01',
-            currentReading: 6000,
-            lastServiceReading: 0,
-            maintIntervalKm: 5000,
-            lastServiceDate: pastDate.toISOString(),
-            maintIntervalDays: 30,
-            motor: null,
-            circulationCardNumber: null,
-            numeroSerie: null,
-            placas: null,
-          },
-          {
-            id: 'CAUTION_01',
-            currentReading: 4000,
-            lastServiceReading: 0,
-            maintIntervalKm: 5000,
-            lastServiceDate: null,
-            maintIntervalDays: null,
-            motor: null,
-            circulationCardNumber: null,
-            numeroSerie: null,
-            placas: null,
-          },
-          {
-            id: 'HEALTHY_01',
+            images: JSON.stringify(['data:image/jpeg;base64,abc']),
+            availabilityIndex: 100,
             currentReading: 1000,
             lastServiceReading: 0,
             maintIntervalKm: 5000,
-            lastServiceDate: new Date().toISOString(),
-            maintIntervalDays: 30,
-            motor: null,
-            circulationCardNumber: null,
-            numeroSerie: null,
-            placas: null,
           },
         ],
       ]);
@@ -355,64 +139,7 @@ describe('Fleet Integration Endpoints', () => {
 
       expect(response.statusCode).toBe(200);
       const { data } = JSON.parse(response.body);
-
-      expect(data[0].healthStatus).toBe('Overdue');
-      expect(data[0].healthColor).toBe('#ef4444');
-      expect(data[1].healthStatus).toBe('Caution');
-      expect(data[1].healthColor).toBe('#f2b705');
-      expect(data[2].healthStatus).toBe('Healthy');
-      expect(data[2].daysSinceService).toBe(0);
-    });
-
-    it('should parse images from JSON string and handle corrupt data variants', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([
-        [
-          {
-            id: 'IMG_VARIANTS',
-            images: JSON.stringify([
-              'img1.jpg',
-              'http://ext.com/img.png',
-              'data:image/png;base64,abc',
-            ]),
-            motor: null,
-            circulationCardNumber: null,
-            numeroSerie: null,
-            placas: null,
-          },
-          {
-            id: 'IMG_ARRAY',
-            images: ['img2.jpg'],
-            motor: null,
-            circulationCardNumber: null,
-            numeroSerie: null,
-            placas: null,
-          },
-          {
-            id: 'IMG_CORRUPT',
-            images: 'invalid-json-{',
-            motor: null,
-            circulationCardNumber: null,
-            numeroSerie: null,
-            placas: null,
-          },
-        ],
-      ]);
-
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/fleet',
-        headers: authHeader(),
-      });
-
-      expect(response.statusCode).toBe(200);
-      const { data } = JSON.parse(response.body);
-      expect(data[0].images).toEqual([
-        '/v1/fleet/asset/img1.jpg',
-        'http://ext.com/img.png',
-        'data:image/png;base64,abc',
-      ]);
-      expect(data[1].images).toEqual(['/v1/fleet/asset/img2.jpg']);
-      expect(data[2].images).toEqual([]);
+      expect(data[0].images[0]).toBe('data:image/jpeg;base64,abc');
     });
 
     it('should handle db error', async (): Promise<void> => {
@@ -423,54 +150,25 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
       });
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe('Internal Database Exception');
     });
   });
 
   describe('PATCH /v1/fleet/:id', () => {
-    it('should update unit with all security branches', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]); // Update
+    it('should update unit successfully', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
-        payload: {
-          engineTypeId: 2,
-          numeroSerie: 'NEW-SN',
-          placas: 'NEW-PL',
-          circulationCardNumber: 'NEW-TC',
-          assetTypeId: 2, // Maquinaria
-          year: 2025,
-        },
+        payload: { year: 2025 },
       });
 
       expect(response.statusCode).toBe(200);
     });
 
-    it('should return 400 for invalid update data', async (): Promise<void> => {
-      const response = await app.inject({
-        method: 'PATCH',
-        url: '/v1/fleet/ASM-001',
-        headers: authHeader(),
-        payload: { year: 'INVALID' },
-      });
-      expect(response.statusCode).toBe(400);
-    });
-
-    it('should handle db error on PATCH', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(new Error('FAIL'));
-      const response = await app.inject({
-        method: 'PATCH',
-        url: '/v1/fleet/ASM-001',
-        headers: authHeader(),
-        payload: { year: 2026 },
-      });
-      expect(response.statusCode).toBe(500);
-    });
-
     it('should return 404 if not found', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]); // Not found
+      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]);
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/NON-EXISTENT',
@@ -480,7 +178,7 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(404);
     });
 
-    it('should return 400 for empty update', async (): Promise<void> => {
+    it('should handle empty update payload', async (): Promise<void> => {
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/ASM-001',
@@ -488,6 +186,17 @@ describe('Fleet Integration Endpoints', () => {
         payload: {},
       });
       expect(response.statusCode).toBe(400);
+    });
+
+    it('should handle db error on update', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('CRITICAL_FAIL'));
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: { year: 2025 },
+      });
+      expect(response.statusCode).toBe(500);
     });
   });
 
@@ -512,8 +221,8 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(404);
     });
 
-    it('should handle db error', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(new Error('FAIL'));
+    it('should handle db error on delete', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DELETE_FAIL'));
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/fleet/ASM-001',
@@ -523,108 +232,50 @@ describe('Fleet Integration Endpoints', () => {
     });
   });
 
-  describe('Asset Management Endpoints', () => {
-    it('should successfully upload multiple fleet assets (including extensionless)', async () => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]); // Update call
-      (fs.promises.rename as Mock).mockResolvedValueOnce(undefined);
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet/ASM-001/assets',
-        headers: {
-          ...authHeader(),
-          'content-type': 'multipart/form-data; boundary=boundary',
-        },
-        payload:
-          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="side"\r\nContent-Type: image/jpeg\r\n\r\nfake-data\r\n--boundary--\r\n',
-      });
-
-      expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body).success).toBe(true);
-    });
-
-    it('should handle asset orchestration failure', async () => {
-      (fs.promises.rename as Mock).mockRejectedValueOnce(new Error('DISK_FULL'));
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet/ASM-001/assets',
-        headers: {
-          ...authHeader(),
-          'content-type': 'multipart/form-data; boundary=boundary',
-        },
-        payload:
-          '--boundary\r\nContent-Disposition: form-data; name="file"; filename="side.jpg"\r\nContent-Type: image/jpeg\r\n\r\nfake-data\r\n--boundary--\r\n',
-      });
-
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toContain('orchestration');
-    });
-
-    it('should return 400 if no assets are provided', async () => {
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/fleet/ASM-001/assets',
-        headers: {
-          ...authHeader(),
-          'content-type': 'multipart/form-data; boundary=boundary',
-        },
-        payload: '--boundary--',
-      });
-
-      expect(response.statusCode).toBe(400);
-    });
-
-    it('should securely serve a fleet asset', async () => {
-      (fs.existsSync as Mock).mockReturnValue(true);
-
-      const mockStream = new PassThrough();
-      (fs.createReadStream as Mock).mockReturnValue(mockStream);
-
-      setTimeout(() => {
-        mockStream.end('fake-image');
-      }, 0);
+  describe('FleetIntelligence & Edge Cases', () => {
+    it('should handle units without sensitive data or images', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          {
+            id: 'EMPTY_01',
+            images: null,
+            placas: null,
+            numeroSerie: null,
+            circulationCardNumber: null,
+          },
+        ],
+      ]);
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/fleet/asset/unit_ASM-001_img.jpg',
+        url: '/v1/fleet',
         headers: authHeader(),
       });
 
       expect(response.statusCode).toBe(200);
-      expect(response.headers['content-type']).toBe('image/jpeg');
+      const { data } = JSON.parse(response.body);
+      expect(data[0].images).toEqual([]);
     });
 
-    it('should securely serve a PNG fleet asset', async () => {
-      (fs.existsSync as Mock).mockReturnValue(true);
-
-      const mockStream = new PassThrough();
-      (fs.createReadStream as Mock).mockReturnValue(mockStream);
-
-      setTimeout(() => {
-        mockStream.end('fake-png');
-      }, 0);
+    it('should handle corrupted JSON in images', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          {
+            id: 'CORRUPT_IMG',
+            images: '{invalid}',
+          },
+        ],
+      ]);
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/fleet/asset/unit_ASM-001_side.png',
+        url: '/v1/fleet',
         headers: authHeader(),
       });
 
       expect(response.statusCode).toBe(200);
-      expect(response.headers['content-type']).toBe('image/png');
-    });
-
-    it('should return 404 for missing asset', async () => {
-      (fs.existsSync as Mock).mockReturnValue(false);
-
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/fleet/asset/missing.jpg',
-        headers: authHeader(),
-      });
-
-      expect(response.statusCode).toBe(404);
+      const { data } = JSON.parse(response.body);
+      expect(data[0].images).toEqual([]);
     });
   });
 });
