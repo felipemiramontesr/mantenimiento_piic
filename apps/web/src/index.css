@@ -888,6 +888,12 @@ body {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
+/* 🟠 Amber-accent card hover */
+.glass-card-pro.card-hover-amber:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.95);
+}
+
 /* 🏛️ SOVEREIGN WORKSPACE CHASSIS (V4.5.0) - 10/80/10 ENGINE */
 .workspace-container-pro {
   display: flex;
@@ -1378,6 +1384,28 @@ body {
 
 .btn-sentinel-red:hover {
   background-color: #dc2626;
+}
+
+.btn-sentinel-amber {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #f59e0b;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-sentinel-amber:hover {
+  background-color: #d97706;
 }
 
 .btn-sentinel-navy {
