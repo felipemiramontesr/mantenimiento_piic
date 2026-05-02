@@ -26,11 +26,13 @@ vi.mock('node:fs', async () => {
       writeFileSync: vi.fn(),
       createReadStream: vi.fn(),
       existsSync: vi.fn(),
+      readdirSync: vi.fn(),
     },
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
     createReadStream: vi.fn(),
     existsSync: vi.fn(),
+    readdirSync: vi.fn(),
   };
 });
 
