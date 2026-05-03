@@ -1,5 +1,5 @@
 import { render, screen, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, Mock } from 'vitest';
 import ForensicJournalTable from './ForensicJournalTable';
 import { FleetProvider } from '../../context/FleetContext';
 import { UserProvider } from '../../context/UserContext';
@@ -25,7 +25,7 @@ describe('ForensicJournalTable (Audit Standard)', () => {
   ];
 
   it('renders forensic logs correctly', async () => {
-    (api.get as vi.Mock).mockResolvedValueOnce({ data: { success: true, data: mockLogs } });
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: mockLogs } });
 
     await act(async () => {
       render(

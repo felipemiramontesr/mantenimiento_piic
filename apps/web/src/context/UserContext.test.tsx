@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, waitFor, act, RenderResult } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { UserProvider, useUsers } from './UserContext';
 import api from '../api/client';
 
@@ -65,7 +65,7 @@ describe('UserContext (Identity Infrastructure)', () => {
   });
 
   it('hydrates users and roles from API', async () => {
-    (api.get as vi.Mock).mockImplementation((url: string) => {
+    (api.get as Mock).mockImplementation((url: string) => {
       if (url === '/auth/users')
         return Promise.resolve({
           data: {
@@ -105,7 +105,7 @@ describe('UserContext (Identity Infrastructure)', () => {
   });
 
   it('handles fetchUsers correctly', async () => {
-    (api.get as vi.Mock).mockResolvedValue({ data: { success: true, data: [] } });
+    (api.get as Mock).mockResolvedValue({ data: { success: true, data: [] } });
 
     let renderResult: RenderResult | undefined;
     await act(async () => {
@@ -126,8 +126,8 @@ describe('UserContext (Identity Infrastructure)', () => {
   });
 
   it('handles toggleUserStatus correctly', async () => {
-    (api.get as vi.Mock).mockResolvedValue({ data: { success: true, data: [] } });
-    (api.patch as vi.Mock).mockResolvedValue({ data: { success: true } });
+    (api.get as Mock).mockResolvedValue({ data: { success: true, data: [] } });
+    (api.patch as Mock).mockResolvedValue({ data: { success: true } });
 
     let renderResult: RenderResult | undefined;
     await act(async () => {
@@ -148,8 +148,8 @@ describe('UserContext (Identity Infrastructure)', () => {
   });
 
   it('handles updateUser correctly', async () => {
-    (api.get as vi.Mock).mockResolvedValue({ data: { success: true, data: [] } });
-    (api.patch as vi.Mock).mockResolvedValue({ data: { success: true } });
+    (api.get as Mock).mockResolvedValue({ data: { success: true, data: [] } });
+    (api.patch as Mock).mockResolvedValue({ data: { success: true } });
 
     let renderResult: RenderResult | undefined;
     await act(async () => {
@@ -168,8 +168,8 @@ describe('UserContext (Identity Infrastructure)', () => {
   });
 
   it('handles updateUser failure correctly', async () => {
-    (api.get as vi.Mock).mockResolvedValue({ data: { success: true, data: [] } });
-    (api.patch as vi.Mock).mockResolvedValue({ data: { success: false } });
+    (api.get as Mock).mockResolvedValue({ data: { success: true, data: [] } });
+    (api.patch as Mock).mockResolvedValue({ data: { success: false } });
 
     let renderResult: RenderResult | undefined;
     await act(async () => {

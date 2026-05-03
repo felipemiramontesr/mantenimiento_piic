@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, Mock } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import RouteLogTable from './RouteLogTable';
 import { FleetProvider } from '../../context/FleetContext';
@@ -29,7 +29,7 @@ describe('RouteLogTable (Operational Dispatch)', () => {
   ];
 
   it('renders the active routes correctly', async () => {
-    (api.get as vi.Mock).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
 
     await act(async () => {
       render(
@@ -51,7 +51,7 @@ describe('RouteLogTable (Operational Dispatch)', () => {
   });
 
   it('opens the Sentinel Alert form when clicking the alert button', async () => {
-    (api.get as vi.Mock).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
 
     await act(async () => {
       render(

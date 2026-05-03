@@ -12,19 +12,47 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     units: [],
     stats: {
       total: 0,
-      disponibles: 0,
-      enMantenimiento: 0,
-      enRuta: 0,
-      conIncidencias: 0,
-      performance: 0,
-      mtbf: 0,
-      mttr: 0,
+      available: 0,
+      inRoute: 0,
+      maintenance: 0,
+      discontinued: 0,
+      totalInactive: 0,
+      maintenanceIndex: 0,
       openIncidents: 0,
+      globalMTBF: 0,
+      globalMTTR: 0,
+      globalAvailability: 0,
+      categories: {
+        vehiculo: {
+          count: 0,
+          availablePercent: 0,
+          maintenanceCount: 0,
+          avgMtbf: 0,
+          avgMttr: 0,
+          backlog: 0,
+        },
+        maquinaria: {
+          count: 0,
+          availablePercent: 0,
+          maintenanceCount: 0,
+          avgMtbf: 0,
+          avgMttr: 0,
+          backlog: 0,
+        },
+        herramienta: {
+          count: 0,
+          availablePercent: 0,
+          maintenanceCount: 0,
+          avgMtbf: 0,
+          avgMttr: 0,
+          backlog: 0,
+        },
+      },
     },
     loading: false,
-    refreshUnits: vi.fn(),
-    startRoute: vi.fn(),
-    finishRoute: vi.fn(),
+    refreshUnits: vi.fn().mockResolvedValue(undefined),
+    startRoute: vi.fn().mockResolvedValue(undefined),
+    finishRoute: vi.fn().mockResolvedValue(undefined),
     reportIncident: mockReportIncident,
   };
 
@@ -36,10 +64,10 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     render(
       <FleetContext.Provider value={fleetContextValue}>
         <IncidentReportForm
-          isOpen={true}
           onClose={mockOnClose}
           onSuccess={mockOnSuccess}
           routeUuid="test-uuid"
+          unitId="ASM-001"
         />
       </FleetContext.Provider>
     );
@@ -55,7 +83,6 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     render(
       <FleetContext.Provider value={fleetContextValue}>
         <IncidentReportForm
-          isOpen={true}
           onClose={mockOnClose}
           onSuccess={mockOnSuccess}
           routeUuid="test-uuid"
@@ -73,7 +100,6 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     render(
       <FleetContext.Provider value={fleetContextValue}>
         <IncidentReportForm
-          isOpen={true}
           onClose={mockOnClose}
           onSuccess={mockOnSuccess}
           routeUuid="test-uuid"
