@@ -294,6 +294,15 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Unidades fuera de servicio',
             'red'
           )}
+          {renderKPI(
+            'Incidencias en Ruta',
+            stats.openIncidents,
+            ShieldAlert,
+            '#f97316',
+            'Alertas Sentinel sin resolver',
+            'yellow',
+            '/routes'
+          )}
         </div>
       </section>
 

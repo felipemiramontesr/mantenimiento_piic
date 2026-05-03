@@ -179,13 +179,37 @@ export default class RouteService {
         [routeUuid, category, description, severity, evidenceImage || null]
       );
 
-      // 3. Log the incident in the forensic journal
+      // 3. Determine if unit status needs to change (Industrial Safety Protocol)
+      let nextStatus = route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible';
+      if (severity === 'CRITICAL') {
+        nextStatus = 'En Mantenimiento';
+      } else if (category === 'SINIESTRO') {
+        nextStatus = 'Descontinuada';
+      }
+
+      // 4. Log the incident in the forensic journal
       await connection.execute(
         `INSERT INTO unit_activity_logs 
-        (unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by) 
-        VALUES (?, 'ROUTE_INCIDENT', ?, ?, ?, ?, ?)`,
-        [route.unit_id, routeUuid, route.start_reading, route.status, route.status, route.driver_id]
+        (unit_id, event_type, reference_id, reading_before, status_before, status_after, description, created_by) 
+        VALUES (?, 'ROUTE_INCIDENT', ?, ?, ?, ?, ?, ?)`,
+        [
+          route.unit_id,
+          routeUuid,
+          route.start_reading,
+          route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible',
+          nextStatus,
+          `${category}: ${description.substring(0, 100)}`,
+          route.driver_id,
+        ]
       );
+
+      // 5. Apply unit status impact if necessary
+      if (nextStatus !== (route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible')) {
+        await connection.execute('UPDATE fleet_units SET status = ? WHERE id = ?', [
+          nextStatus,
+          route.unit_id,
+        ]);
+      }
 
       await connection.commit();
       connection.release();

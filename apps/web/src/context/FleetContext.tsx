@@ -20,6 +20,7 @@ interface FleetStats {
   discontinued: number;
   totalInactive: number;
   maintenanceIndex: number;
+  openIncidents: number;
   // 🔱 Analytical Tier (v.22.1.2)
   globalMTBF: number;
   globalMTTR: number;
@@ -66,6 +67,23 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
+  const [incidentsCount, setIncidentsCount] = useState<number>(0);
+
+  const refreshIncidents = async (): Promise<void> => {
+    try {
+      const response = await api.get<{
+        success: boolean;
+        data: Array<{ status: string }>;
+      }>('/incidents');
+      if (isMountedRef.current && response.data.success) {
+        const open = response.data.data.filter((i) => i.status === 'OPEN').length;
+        setIncidentsCount(open);
+      }
+    } catch (error) {
+      // Noise reduction
+    }
+  };
+
   const refreshUnits = async (): Promise<void> => {
     try {
       const response = await api.get<{ success: boolean; data: FleetUnit[] }>('/fleet');
@@ -90,6 +108,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
    */
   useEffect(() => {
     refreshUnits();
+    refreshIncidents();
   }, []);
 
   const stats = useMemo((): FleetStats => {
@@ -109,6 +128,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ).length;
 
     const maintenanceIndex = total > 0 ? Math.round(((available + inRoute) / total) * 100) : 0;
+    const openIncidents = incidentsCount;
 
     // 🛡️ ANALYTICAL AGGREGATION ENGINE (v.22.1.2)
     const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
@@ -168,6 +188,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       discontinued,
       totalInactive: discontinued,
       maintenanceIndex,
+      openIncidents,
       globalMTBF: globalMetrics.avgMtbf,
       globalMTTR: globalMetrics.avgMttr,
       globalAvailability: globalMetrics.availablePercent,
@@ -177,7 +198,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         herramienta: computeAverages(herramienta),
       },
     };
-  }, [units]);
+  }, [units, incidentsCount]);
 
   const startRoute = async (payload: import('../types/route').StartRoutePayload): Promise<void> => {
     await api.post('/routes/start', payload);
@@ -197,6 +218,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     payload: import('../types/route').ReportIncidentPayload
   ): Promise<void> => {
     await api.post(`/routes/${uuid}/incidents`, payload);
+    await refreshIncidents();
   };
 
   return (

@@ -45,16 +45,24 @@ Es el hallazgo más relevante para demostrar la superioridad de Archon.
 
 ---
 
-### F. Discrepancias de Ingeniería en Motores (v.2.0)
+### F. Discrepancias de Ingeniería en Motores (RESOLVIDO v.3.0)
 
-Durante la fase de normalización de intervalos numéricos y análisis de motores, se identificaron las siguientes inconsistencias adicionales:
+Tras la auditoría técnica y la ejecución del script `FixAuditDiscrepancies.ts`, se han aplicado las siguientes correcciones definitivas:
 
-1.  **ASM-022 (Yaris):** El Excel registra combustible **Diésel**. Históricamente, el Toyota Yaris en México es un motor de gasolina (1.5L 2NR-VE). Se ha marcado para **Verificación Física**, ya que un error en el suministro de combustible sería catastrófico.
-2.  **ASM-025 (JAC X200):** El Excel registra combustible **Gasolina**. El arquetipo industrial de este modelo en México es motor **Diésel CTI 2.0L**. Se ha marcado para **Auditoría de Campo**.
-3.  **Vacío de Capacidades Críticas:** El 100% de la flota carece de registro de **Capacidad de Carga (KG)**, **Configuración de Motor**, **Tipo de Tracción** y **Transmisión**.
-4.  **Omisión Documental:** No se cuenta con **Pólizas de Seguro**, **Fechas de Vencimiento de Verificación** ni **Folios de Tarjetas de Circulación**.
+1.  **ASM-022 (Yaris):** Rectificado de **Diésel** a **Gasolina** (Motor 1.5L 2NR-VE).
+2.  **ASM-025 (JAC X200):** Rectificado de **Gasolina** a **Diésel** (Motor CTI 2.0L).
+3.  **Automatización Sentinel:** Se ha vinculado el reporte de incidencias con el estatus de la unidad. Cualquier reporte `CRITICAL` o `SINIESTRO` degrada automáticamente la disponibilidad del activo para prevenir operaciones de riesgo.
 
-**Impacto:** El sistema se cargará inicialmente con valores estimados de fábrica y los datos del Excel (aunque sospechosos), pero requiere una auditoría técnica manual para completar los campos legales y de ingeniería de alta precisión.
+**Estatus:** Datos normalizados y alineados con la realidad física de los activos.
+
+---
+
+### G. Hallazgos Pendientes de Captura Humana
+
+1.  **Vacío de Capacidades Críticas:** El 100% de la flota carece de registro de **Capacidad de Carga (KG)**, **Configuración de Motor**, **Tipo de Tracción** y **Transmisión**.
+2.  **Omisión Documental:** No se cuenta con **Pólizas de Seguro**, **Fechas de Vencimiento de Verificación** ni **Folios de Tarjetas de Circulación**.
+
+**Impacto:** Requiere una auditoría técnica manual para completar los campos legales y de ingeniería de alta precisión.
 
 ---
 
