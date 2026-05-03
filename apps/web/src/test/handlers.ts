@@ -76,6 +76,36 @@ const handlers = [
 
     return HttpResponse.json([]);
   }),
+
+  // 🔱 Sentinel Incidents Handlers
+  http.get('*/incidents', () =>
+    HttpResponse.json({
+      success: true,
+      data: [],
+    })
+  ),
+
+  http.post('*/routes/:uuid/incidents', () =>
+    HttpResponse.json({
+      success: true,
+      message: 'Incident reported',
+    })
+  ),
+
+  // 🛡️ Identity Handlers
+  http.get('*/auth/users', () =>
+    HttpResponse.json({
+      success: true,
+      data: [],
+    })
+  ),
+
+  http.get('*/auth/roles', () =>
+    HttpResponse.json({
+      success: true,
+      data: [],
+    })
+  ),
 ];
 
 export default handlers;

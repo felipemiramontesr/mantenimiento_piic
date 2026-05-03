@@ -16,6 +16,9 @@ vi.mock('../services/routeService', () => ({
     startRoute: vi.fn(),
     finishRoute: vi.fn(),
     getActiveRoute: vi.fn(),
+    reportIncident: vi.fn(),
+    getIncidents: vi.fn(),
+    getAllIncidents: vi.fn(),
   },
 }));
 
@@ -173,6 +176,83 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
 
       expect(response.statusCode).toBe(400);
       expect(JSON.parse(response.body).message).toBe('Error fetching activity logs');
+    });
+  });
+
+  describe('Incident Endpoints', () => {
+    it('POST /v1/routes/:uuid/incidents should record an incident', async () => {
+      (RouteService.reportIncident as Mock).mockResolvedValue(undefined);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/routes/UUID-123/incidents',
+        payload: {
+          category: 'MECANICA',
+          description: 'Falla de prueba',
+          severity: 'LOW',
+        },
+      });
+
+      expect(response.statusCode).toBe(201);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('POST /v1/routes/:uuid/incidents should return 400 if validation fails', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/routes/UUID-123/incidents',
+        payload: {
+          category: 'INVALID', // Not in Zod enum
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('GET /v1/routes/:uuid/incidents should list incidents for route', async () => {
+      (RouteService.getIncidents as Mock).mockResolvedValue([{ id: 1 }]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/routes/UUID-123/incidents',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).data.length).toBe(1);
+    });
+
+    it('GET /v1/incidents should list all incidents', async () => {
+      (RouteService.getAllIncidents as Mock).mockResolvedValue([{ id: 10 }]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/incidents',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).data.length).toBe(1);
+    });
+
+    it('GET /v1/incidents should return 400 on error', async () => {
+      (RouteService.getAllIncidents as Mock).mockRejectedValue(new Error('DB Fail'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/incidents',
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('GET /v1/routes/:uuid/incidents should return 400 on error', async () => {
+      (RouteService.getIncidents as Mock).mockRejectedValue(new Error('Fetch Fail'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/routes/UUID-123/incidents',
+      });
+
+      expect(response.statusCode).toBe(400);
     });
   });
 });

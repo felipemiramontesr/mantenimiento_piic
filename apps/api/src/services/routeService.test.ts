@@ -133,4 +133,115 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('reportIncident', () => {
+    it('should successfully report an incident and log it', async () => {
+      const mockRoute = {
+        unit_id: 'UNIT-001',
+        start_reading: 1000,
+        status: 'ACTIVE',
+        driver_id: 1,
+      };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
+
+      await RouteService.reportIncident('UUID-123', 'MECANICA', 'Test', 'LOW');
+
+      expect(mockConnection.commit).toHaveBeenCalled();
+      expect(mockConnection.execute).toHaveBeenCalledTimes(3);
+    });
+
+    it('should trigger unit status change to En Mantenimiento for CRITICAL severity', async () => {
+      const mockRoute = {
+        unit_id: 'UNIT-001',
+        start_reading: 1000,
+        status: 'ACTIVE',
+        driver_id: 1,
+      };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Unit Status
+
+      await RouteService.reportIncident('UUID-123', 'MECANICA', 'Critical Fail', 'CRITICAL');
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET status = ? WHERE id = ?'),
+        ['En Mantenimiento', 'UNIT-001']
+      );
+    });
+
+    it('should trigger unit status change to Descontinuada for SINIESTRO category', async () => {
+      const mockRoute = {
+        unit_id: 'UNIT-001',
+        start_reading: 1000,
+        status: 'ACTIVE',
+        driver_id: 1,
+      };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Unit Status
+
+      await RouteService.reportIncident('UUID-123', 'SINIESTRO', 'Total Loss', 'HIGH');
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET status = ? WHERE id = ?'),
+        ['Descontinuada', 'UNIT-001']
+      );
+    });
+
+    it('should handle incident for non-active route (e.g. COMPLETED)', async () => {
+      const mockRoute = {
+        unit_id: 'UNIT-001',
+        start_reading: 1000,
+        status: 'COMPLETED',
+        driver_id: 1,
+      };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
+
+      await RouteService.reportIncident('UUID-123', 'OTRA', 'Completed Route Issue', 'LOW');
+
+      // status_before should be 'Disponible' because route is COMPLETED
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO unit_activity_logs'),
+        expect.arrayContaining(['Disponible', 'Disponible'])
+      );
+    });
+
+    it('should throw error if route for incident is not found', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[]]);
+
+      await expect(
+        RouteService.reportIncident('MISSING', 'OTRA', 'Desc', 'LOW')
+      ).rejects.toThrow(/Route not found/);
+    });
+  });
+
+  describe('Incident Retrieval', () => {
+    it('should fetch incidents for a route', async () => {
+      const mockIncidents = [{ id: 1, description: 'Test' }];
+      (db.execute as any).mockResolvedValueOnce([mockIncidents]);
+
+      const result = await RouteService.getIncidents('UUID-123');
+      expect(result).toHaveLength(1);
+      expect(result[0].description).toBe('Test');
+    });
+
+    it('should fetch all incidents across fleet', async () => {
+      const mockAll = [{ id: 1, unit_id: 'ASM-001' }];
+      (db.execute as any).mockResolvedValueOnce([mockAll]);
+
+      const result = await RouteService.getAllIncidents();
+      expect(result).toHaveLength(1);
+      expect(result[0].unit_id).toBe('ASM-001');
+    });
+  });
 });

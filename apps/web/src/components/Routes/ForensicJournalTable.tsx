@@ -93,6 +93,7 @@ const ForensicJournalTable: React.FC = () => {
             <th>FECHA / HORA</th>
             <th>ACTIVO</th>
             <th>EVENTO / IMPACTO</th>
+            <th>DESCRIPCIÓN / NOTA</th>
             <th>TELEMETRÍA (SNAPSHOT)</th>
             <th>DELTA</th>
             <th>RESPONSABLE</th>
@@ -147,6 +148,13 @@ const ForensicJournalTable: React.FC = () => {
                       {style.label}
                     </span>
                   </div>
+                </td>
+
+                {/* Descripción */}
+                <td className="py-4 px-4 max-w-xs">
+                  <p className="text-[10px] font-bold text-[#0f2a44] opacity-70 line-clamp-2 italic leading-tight">
+                    {log.description || 'Sin descripción forense'}
+                  </p>
                 </td>
 
                 {/* Snapshot Telemetría */}

@@ -153,9 +153,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchRoles = useCallback(async (): Promise<void> => {
     try {
       const response = await api.get('/auth/roles');
-      if (response.data?.length) {
-        setRoles(response.data);
-        archonCache.set('system_roles', response.data);
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setRoles(response.data.data);
+        archonCache.set('system_roles', response.data.data);
       }
     } catch (err) {
       // Slient fallback
