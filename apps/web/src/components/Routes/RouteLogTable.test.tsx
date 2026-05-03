@@ -24,12 +24,12 @@ describe('RouteLogTable (Operational Dispatch)', () => {
       start_reading: 1000,
       start_time: new Date().toISOString(),
       start_km: 1000,
-      operator_id: 'OP-1'
-    }
+      operator_id: 'OP-1',
+    },
   ];
 
   it('renders the active routes correctly', async () => {
-    (api.get as any).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
+    (api.get as vi.Mock).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
 
     await act(async () => {
       render(
@@ -51,7 +51,7 @@ describe('RouteLogTable (Operational Dispatch)', () => {
   });
 
   it('opens the Sentinel Alert form when clicking the alert button', async () => {
-    (api.get as any).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
+    (api.get as vi.Mock).mockResolvedValueOnce({ data: { success: true, data: mockRoutes } });
 
     await act(async () => {
       render(

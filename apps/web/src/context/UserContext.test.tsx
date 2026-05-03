@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, waitFor, act, RenderResult } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserProvider, useUsers } from './UserContext';
@@ -19,7 +20,15 @@ const TestComponent = (): React.JSX.Element => {
       <div data-testid="loading">{isLoading ? 'true' : 'false'}</div>
       <div data-testid="users-count">{users.length}</div>
       <div data-testid="roles-count">{roles.length}</div>
-      <button onClick={(): void => { fetchUsers().catch(() => {}); }}>Refresh</button>
+      <button
+        onClick={(): void => {
+          fetchUsers().catch(() => {
+            /* ignore */
+          });
+        }}
+      >
+        Refresh
+      </button>
     </div>
   );
 };
@@ -28,8 +37,24 @@ const TestComponentWithActions = (): React.JSX.Element => {
   const { toggleUserStatus, updateUser } = useUsers();
   return (
     <div>
-      <button onClick={(): void => { toggleUserStatus('1', true).catch(() => {}); }}>Toggle</button>
-      <button onClick={(): void => { updateUser('1', { fullName: 'New Name' }).catch(() => {}); }}>Update</button>
+      <button
+        onClick={(): void => {
+          toggleUserStatus('1', true).catch(() => {
+            /* ignore */
+          });
+        }}
+      >
+        Toggle
+      </button>
+      <button
+        onClick={(): void => {
+          updateUser('1', { fullName: 'New Name' }).catch(() => {
+            /* ignore */
+          });
+        }}
+      >
+        Update
+      </button>
     </div>
   );
 };
@@ -41,9 +66,27 @@ describe('UserContext (Identity Infrastructure)', () => {
 
   it('hydrates users and roles from API', async () => {
     (api.get as vi.Mock).mockImplementation((url: string) => {
-      if (url === '/auth/users') return Promise.resolve({ data: { success: true, data: [{ id: 1, full_name: 'Test User', email: 't@t.com', roleId: 1, department: 'TI', is_active: 1, roleName: 'Admin' }] } });
-      if (url === '/auth/roles') return Promise.resolve({ data: { success: true, data: [{ id: 1, label: 'Admin' }] } });
-      if (url === '/catalogs/DEPARTMENT') return Promise.resolve({ data: [{ id: 1, label: 'TI' }] });
+      if (url === '/auth/users')
+        return Promise.resolve({
+          data: {
+            success: true,
+            data: [
+              {
+                id: 1,
+                full_name: 'Test User',
+                email: 't@t.com',
+                roleId: 1,
+                department: 'TI',
+                is_active: 1,
+                roleName: 'Admin',
+              },
+            ],
+          },
+        });
+      if (url === '/auth/roles')
+        return Promise.resolve({ data: { success: true, data: [{ id: 1, label: 'Admin' }] } });
+      if (url === '/catalogs/DEPARTMENT')
+        return Promise.resolve({ data: [{ id: 1, label: 'TI' }] });
       return Promise.reject(new Error('Unknown URL'));
     });
 
@@ -99,7 +142,9 @@ describe('UserContext (Identity Infrastructure)', () => {
       renderResult!.getByText('Toggle').click();
     });
 
-    await waitFor(() => expect(api.patch).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/auth/users/1', { is_active: false })
+    );
   });
 
   it('handles updateUser correctly', async () => {
@@ -143,7 +188,9 @@ describe('UserContext (Identity Infrastructure)', () => {
   });
 
   it('throws error when useUsers is used outside provider', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation((): void => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation((): void => {
+      /* ignore */
+    });
     expect(() => render(<TestComponent />)).toThrow('useUsers must be used within a UserProvider');
     consoleSpy.mockRestore();
   });

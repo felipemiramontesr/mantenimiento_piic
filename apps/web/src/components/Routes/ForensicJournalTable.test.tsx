@@ -20,12 +20,12 @@ describe('ForensicJournalTable (Audit Standard)', () => {
       status_before: 'En Ruta',
       status_after: 'En Mantenimiento',
       description: 'MECANICA: Falla motor',
-      created_at: new Date().toISOString()
-    }
+      created_at: new Date().toISOString(),
+    },
   ];
 
   it('renders forensic logs correctly', async () => {
-    (api.get as any).mockResolvedValueOnce({ data: { success: true, data: mockLogs } });
+    (api.get as vi.Mock).mockResolvedValueOnce({ data: { success: true, data: mockLogs } });
 
     await act(async () => {
       render(

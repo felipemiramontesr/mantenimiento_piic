@@ -10,7 +10,17 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
 
   const fleetContextValue = {
     units: [],
-    stats: {} as any,
+    stats: {
+      total: 0,
+      disponibles: 0,
+      enMantenimiento: 0,
+      enRuta: 0,
+      conIncidencias: 0,
+      performance: 0,
+      mtbf: 0,
+      mttr: 0,
+      openIncidents: 0,
+    },
     loading: false,
     refreshUnits: vi.fn(),
     startRoute: vi.fn(),
@@ -25,28 +35,30 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
   it('renders the form correctly with industrial aesthetics', () => {
     render(
       <FleetContext.Provider value={fleetContextValue}>
-        <IncidentReportForm 
-          isOpen={true} 
-          onClose={mockOnClose} 
-          onSuccess={mockOnSuccess} 
-          routeUuid="test-uuid" 
+        <IncidentReportForm
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          routeUuid="test-uuid"
         />
       </FleetContext.Provider>
     );
 
     expect(screen.getByText(/Protocolo Sentinel: Alerta de Incidencia/i)).toBeDefined();
-    expect(screen.getByPlaceholderText(/Describa el evento, ubicación y estado de la unidad/i)).toBeDefined();
+    expect(
+      screen.getByPlaceholderText(/Describa el evento, ubicación y estado de la unidad/i)
+    ).toBeDefined();
     expect(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i })).toBeDefined();
   });
 
   it('validates required fields before submission', async () => {
     render(
       <FleetContext.Provider value={fleetContextValue}>
-        <IncidentReportForm 
-          isOpen={true} 
-          onClose={mockOnClose} 
-          onSuccess={mockOnSuccess} 
-          routeUuid="test-uuid" 
+        <IncidentReportForm
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          routeUuid="test-uuid"
           unitId="ASM-001"
         />
       </FleetContext.Provider>
@@ -60,34 +72,39 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
   it('submits correctly when fields are filled', async () => {
     render(
       <FleetContext.Provider value={fleetContextValue}>
-        <IncidentReportForm 
-          isOpen={true} 
-          onClose={mockOnClose} 
-          onSuccess={mockOnSuccess} 
-          routeUuid="test-uuid" 
+        <IncidentReportForm
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          routeUuid="test-uuid"
           unitId="ASM-001"
         />
       </FleetContext.Provider>
     );
 
     // Fill description
-    const desc = screen.getByPlaceholderText(/Describa el evento, ubicación y estado de la unidad/i);
+    const desc = screen.getByPlaceholderText(
+      /Describa el evento, ubicación y estado de la unidad/i
+    );
     fireEvent.change(desc, { target: { value: 'Falla en motor de arranque' } });
 
     // Click submit
     const submitBtn = screen.getByRole('button', { name: /Emitir Alerta Sentinel/i });
     expect(submitBtn).not.toBeDisabled();
-    
+
     await act(async () => {
       fireEvent.click(submitBtn);
     });
 
     await waitFor(() => {
-      expect(mockReportIncident).toHaveBeenCalledWith('test-uuid', expect.objectContaining({
-        category: 'MECANICA',
-        description: 'Falla en motor de arranque',
-        severity: 'MEDIUM' // Default in component
-      }));
+      expect(mockReportIncident).toHaveBeenCalledWith(
+        'test-uuid',
+        expect.objectContaining({
+          category: 'MECANICA',
+          description: 'Falla en motor de arranque',
+          severity: 'MEDIUM', // Default in component
+        })
+      );
     });
 
     expect(mockOnSuccess).toHaveBeenCalled();
@@ -95,6 +112,6 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
   });
 
   it('handles image upload via Base64 integration', async () => {
-     // This would test the ArchonImageUploader interaction if mocked or just the state
+    // This would test the ArchonImageUploader interaction if mocked or just the state
   });
 });

@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, waitFor, act, RenderResult } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FleetProvider, useFleet } from './FleetContext';
@@ -19,14 +20,46 @@ const TestComponent = (): React.JSX.Element => {
     <div>
       <div data-testid="total">{stats.total}</div>
       <div data-testid="incidents">{stats.openIncidents}</div>
-      <button onClick={(): void => { refreshUnits().catch(() => {}); }}>Refresh</button>
-      <button onClick={(): void => { reportIncident('uuid', { category: 'MECANICA', description: 'Test', severity: 'LOW' }).catch(() => {}); }}>
+      <button
+        onClick={(): void => {
+          refreshUnits().catch(() => {
+            /* ignore */
+          });
+        }}
+      >
+        Refresh
+      </button>
+      <button
+        onClick={(): void => {
+          reportIncident('uuid', {
+            category: 'MECANICA',
+            description: 'Test',
+            severity: 'LOW',
+          }).catch(() => {
+            /* ignore */
+          });
+        }}
+      >
         Report
       </button>
-      <button onClick={(): void => { startRoute({ unitId: 'U1', driverId: 1, startReading: 10, destination: 'D' }).catch(() => {}); }}>
+      <button
+        onClick={(): void => {
+          startRoute({ unitId: 'U1', driverId: 1, startReading: 10, destination: 'D' }).catch(
+            () => {
+              /* ignore */
+            }
+          );
+        }}
+      >
         Start
       </button>
-      <button onClick={(): void => { finishRoute('uuid', { endReading: 20 }).catch(() => {}); }}>
+      <button
+        onClick={(): void => {
+          finishRoute('uuid', { endReading: 20 }).catch(() => {
+            /* ignore */
+          });
+        }}
+      >
         Finish
       </button>
     </div>
@@ -99,10 +132,11 @@ describe('FleetContext (Sovereign State Engine)', () => {
     });
 
     const { getByText } = renderResult!;
-    
+
     // Mock the second call for incidents after report
     (api.get as vi.Mock).mockImplementation((url: string) => {
-      if (url === '/incidents') return Promise.resolve({ data: { success: true, data: [{ status: 'OPEN' }] } });
+      if (url === '/incidents')
+        return Promise.resolve({ data: { success: true, data: [{ status: 'OPEN' }] } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
@@ -138,15 +172,19 @@ describe('FleetContext (Sovereign State Engine)', () => {
     await act(async () => {
       getByText('Finish').click();
     });
-    await waitFor(() => expect(api.patch).toHaveBeenCalledWith('/routes/uuid/finish', expect.any(Object)));
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/routes/uuid/finish', expect.any(Object))
+    );
   });
 
   it('throws error when useFleet is used outside provider', () => {
     // Silence console.error for this test to keep logs clean
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation((): void => {});
-    
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation((): void => {
+      /* ignore */
+    });
+
     expect(() => render(<TestComponent />)).toThrow('useFleet must be used within a FleetProvider');
-    
+
     consoleSpy.mockRestore();
   });
 });
