@@ -41,6 +41,10 @@ interface FleetContextType {
     uuid: string,
     payload: import('../types/route').FinishRoutePayload
   ) => Promise<void>;
+  reportIncident: (
+    uuid: string,
+    payload: import('../types/route').ReportIncidentPayload
+  ) => Promise<void>;
 }
 
 export const FleetContext = createContext<FleetContextType | undefined>(undefined);
@@ -188,8 +192,17 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await refreshUnits(); // Automatic sync of unit status to "Disponible" and new reading
   };
 
+  const reportIncident = async (
+    uuid: string,
+    payload: import('../types/route').ReportIncidentPayload
+  ): Promise<void> => {
+    await api.post(`/routes/${uuid}/incidents`, payload);
+  };
+
   return (
-    <FleetContext.Provider value={{ units, stats, loading, refreshUnits, startRoute, finishRoute }}>
+    <FleetContext.Provider
+      value={{ units, stats, loading, refreshUnits, startRoute, finishRoute, reportIncident }}
+    >
       {children}
     </FleetContext.Provider>
   );

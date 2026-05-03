@@ -23,6 +23,13 @@ const finishRouteSchema = z.object({
   fuelTicketImage: z.string().optional(), // Base64
 });
 
+const reportIncidentSchema = z.object({
+  category: z.enum(['MECANICA', 'SINIESTRO', 'LEGAL', 'OPERATIVA', 'OTRA']),
+  description: z.string().min(5),
+  severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+  evidenceImage: z.string().optional(), // Base64
+});
+
 async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   /**
    * START ROUTE
@@ -141,6 +148,61 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       fastify.log.error(error);
       return reply.code(400).send({ success: false, message: 'Error fetching activity logs' });
+    }
+  });
+
+  /**
+   * REPORT INCIDENT
+   * POST /v1/routes/:uuid/incidents
+   */
+  fastify.post('/routes/:uuid/incidents', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const data = reportIncidentSchema.parse(request.body);
+
+      await RouteService.reportIncident(
+        uuid,
+        data.category,
+        data.description,
+        data.severity,
+        data.evidenceImage
+      );
+
+      return reply.code(201).send({
+        success: true,
+        message: 'Incident reported successfully. Logged in forensic journal.',
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return reply.code(400).send({ success: false, message: (error as any).message });
+    }
+  });
+
+  /**
+   * LIST INCIDENTS FOR A ROUTE
+   * GET /v1/routes/:uuid/incidents
+   */
+  fastify.get('/routes/:uuid/incidents', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const incidents = await RouteService.getIncidents(uuid);
+      return reply.send({ success: true, data: incidents });
+    } catch (error) {
+      return reply.code(400).send({ success: false, message: 'Error fetching incidents' });
+    }
+  });
+
+  /**
+   * LIST ALL INCIDENTS
+   * GET /v1/incidents
+   */
+  fastify.get('/incidents', async (_request, reply) => {
+    try {
+      const incidents = await RouteService.getAllIncidents();
+      return reply.send({ success: true, data: incidents });
+    } catch (error) {
+      return reply.code(400).send({ success: false, message: 'Error fetching global incidents' });
     }
   });
 }

@@ -146,6 +146,81 @@ export default class RouteService {
       'SELECT * FROM fleet_routes WHERE unit_id = ? AND status = "ACTIVE" LIMIT 1',
       [unitId]
     );
-    return rows.length > 0 ? rows[0] : null;
+    return rows.length > 0 ? (rows[0] as RouteEntry) : null;
+  }
+
+  /**
+   * Records an incident during a journey
+   */
+  static async reportIncident(
+    routeUuid: string,
+    category: string,
+    description: string,
+    severity: string,
+    evidenceImage?: string
+  ): Promise<void> {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Get Route context
+      const [routes] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM fleet_routes WHERE uuid = ?',
+        [routeUuid]
+      );
+      if (routes.length === 0) throw new Error('Route not found');
+      const route = routes[0];
+
+      // 2. Insert Incident
+      await connection.execute(
+        `INSERT INTO route_incidents 
+        (route_uuid, category, description, severity, evidence_image, status) 
+        VALUES (?, ?, ?, ?, ?, 'OPEN')`,
+        [routeUuid, category, description, severity, evidenceImage || null]
+      );
+
+      // 3. Log the incident in the forensic journal
+      await connection.execute(
+        `INSERT INTO unit_activity_logs 
+        (unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by) 
+        VALUES (?, 'ROUTE_INCIDENT', ?, ?, ?, ?, ?)`,
+        [route.unit_id, routeUuid, route.start_reading, route.status, route.status, route.driver_id]
+      );
+
+      await connection.commit();
+      connection.release();
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      throw e;
+    }
+  }
+
+  /**
+   * Fetches incidents for a specific route
+   */
+  static async getIncidents(routeUuid: string): Promise<RowDataPacket[]> {
+    const [rows] = await db.execute<RowDataPacket[]>(
+      'SELECT * FROM route_incidents WHERE route_uuid = ? ORDER BY reported_at DESC',
+      [routeUuid]
+    );
+    return rows;
+  }
+
+  /**
+   * Fetches all incidents across the fleet
+   */
+  static async getAllIncidents(): Promise<RowDataPacket[]> {
+    const [rows] = await db.execute<RowDataPacket[]>(
+      `SELECT 
+        i.*, 
+        r.unit_id, 
+        u.full_name as driver_name 
+      FROM route_incidents i 
+      JOIN fleet_routes r ON i.route_uuid = r.uuid 
+      JOIN users u ON r.driver_id = u.id 
+      ORDER BY i.reported_at DESC`
+    );
+    return rows;
   }
 }

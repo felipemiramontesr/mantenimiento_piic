@@ -1,9 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { User, Clock, ArrowRight, Gauge, Pencil, CheckCircle2, Navigation } from 'lucide-react';
+import {
+  User,
+  Clock,
+  ArrowRight,
+  Gauge,
+  Pencil,
+  CheckCircle2,
+  Navigation,
+  AlertTriangle,
+} from 'lucide-react';
 import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
+import IncidentReportForm from './IncidentReportForm';
 
 export interface RouteLog {
   id: string;
@@ -36,6 +46,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { users } = useUsers();
 
   const [logs, setLogs] = React.useState<RouteLog[]>([]);
+  const [reportingRoute, setReportingRoute] = React.useState<RouteLog | null>(null);
 
   const fetchRoutes = async (): Promise<void> => {
     try {
@@ -201,7 +212,19 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
 
                 {/* Ajustes - ESTILO ADMINISTRACIÓN */}
                 <td className="py-6 px-4">
-                  <div className="flex justify-center">
+                  <div className="flex justify-center gap-2">
+                    {!log.end_time && (
+                      <button
+                        onClick={(): void => setReportingRoute(log)}
+                        title="Reportar Incidencia"
+                        className="flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none text-rose-600 bg-rose-50 hover:bg-rose-100"
+                      >
+                        <AlertTriangle
+                          size={18}
+                          className="transition-transform duration-300 group-hover:scale-110"
+                        />
+                      </button>
+                    )}
                     <button
                       onClick={(): void => onEdit?.(log)}
                       title={!log.end_time ? 'Finalizar Misión' : 'Consultar Detalles'}
@@ -230,6 +253,20 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
           })}
         </tbody>
       </table>
+
+      {reportingRoute && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <IncidentReportForm
+            routeUuid={reportingRoute.uuid}
+            unitId={reportingRoute.unit_id}
+            onClose={(): void => setReportingRoute(null)}
+            onSuccess={(): void => {
+              setReportingRoute(null);
+              fetchRoutes();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

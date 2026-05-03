@@ -31,3 +31,25 @@ export interface FinishRoutePayload {
   fuelLitersLoaded?: number;
   fuelTicketImage?: string;
 }
+
+export type IncidentCategory = 'MECANICA' | 'SINIESTRO' | 'LEGAL' | 'OPERATIVA' | 'OTRA';
+export type IncidentSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type IncidentStatus = 'OPEN' | 'RESOLVED' | 'DISMISSED';
+
+export interface RouteIncident {
+  id: number;
+  route_uuid: string;
+  category: IncidentCategory;
+  description: string;
+  severity: IncidentSeverity;
+  evidence_image?: string;
+  reported_at: string;
+  status: IncidentStatus;
+}
+
+export interface ReportIncidentPayload {
+  category: IncidentCategory;
+  description: string;
+  severity: IncidentSeverity;
+  evidenceImage?: string;
+}

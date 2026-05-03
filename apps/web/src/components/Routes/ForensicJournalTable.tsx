@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Clock, ArrowRight, Activity, TrendingUp } from 'lucide-react';
+import { Shield, Clock, ArrowRight, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 import api from '../../api/client';
 
 interface ActivityLog {
@@ -51,6 +51,13 @@ const ForensicJournalTable: React.FC = () => {
         return { label: 'SALIDA', color: 'text-emerald-500', bg: 'bg-emerald-50', icon: Activity };
       case 'ROUTE_FINISH':
         return { label: 'ENTRADA', color: 'text-blue-500', bg: 'bg-blue-50', icon: Shield };
+      case 'ROUTE_INCIDENT':
+        return {
+          label: 'INCIDENCIA',
+          color: 'text-rose-600',
+          bg: 'bg-rose-50',
+          icon: AlertTriangle,
+        };
       default:
         return { label: 'EVENTO', color: 'text-gray-500', bg: 'bg-gray-50', icon: Clock };
     }
