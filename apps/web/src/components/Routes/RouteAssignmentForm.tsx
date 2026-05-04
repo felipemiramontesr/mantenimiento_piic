@@ -22,6 +22,7 @@ import { archonCache } from '../../utils/archonCache';
 import api from '../../api/client';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFuelSensor from './ArchonFuelSensor';
+import FuelVolumeChart from './FuelVolumeChart';
 
 interface RouteAssignmentFormProps {
   onClose: () => void;
@@ -318,18 +319,36 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     </div>
   );
 
+  const selectedUnit = units.find((u) => u.id === formData.unitId);
+  const tankCapacity = selectedUnit?.fuelTankCapacity || 0;
+
+  const getFuelColor = (level: number): string => {
+    if (level >= 87.5) return '#22c55e';
+    if (level >= 62.5) return '#facc15';
+    if (level >= 37.5) return '#f97316';
+    if (level >= 12.5) return '#ef4444';
+    return '#a855f7';
+  };
+
   const renderTelemetrySection = (): React.ReactElement => (
     <div className="space-y-4">
       {/* 1. TEXTO: Sección III: Telemetría de Salida */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2">
         <Gauge size={14} className="text-[#0f2a44]" />
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
           Sección III: Telemetría de Salida
         </span>
       </div>
 
+      {/* 2. TEXTO (SUBTITULO): PARAMETRÍA DE SENSORES */}
+      <div className="pl-6">
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#0f2a44] opacity-80">
+          PARAMETRÍA DE SENSORES
+        </p>
+      </div>
+
       <div className="bg-[#0f2a44]/5 p-6 rounded-[4px] space-y-6">
-        {/* 🚀 ODOMETRY SNAPSHOT */}
+        {/* 🚀 ODOMETRY SNAPSHOT (KEEP IT) */}
         <div className="flex items-center justify-between border-b border-[#0f2a44]/10 pb-4">
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44] mb-1">
@@ -347,7 +366,6 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
         {/* ⛽ FUEL SENSOR SECTION */}
         <div className="space-y-2">
-          {/* 2. TEXTO (SUBTITULO): Nivel de combustible */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Droplets size={16} className="text-emerald-500" />
@@ -360,7 +378,6 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             </p>
           </div>
 
-          {/* 3. COMPONENTE ArchonFuelSensor */}
           <div className="pt-2">
             <ArchonFuelSensor
               value={formData.fuelLevel}
@@ -368,6 +385,17 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               disabled={isFinished}
             />
           </div>
+
+          {/* 📊 DYNAMIC VOLUMETRIC CHART */}
+          {tankCapacity > 0 && (
+            <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-500">
+              <FuelVolumeChart
+                currentLevel={formData.fuelLevel}
+                totalCapacity={tankCapacity}
+                color={getFuelColor(formData.fuelLevel)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

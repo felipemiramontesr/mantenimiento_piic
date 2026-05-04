@@ -2,8 +2,8 @@ import React from 'react';
 
 /**
  * 🔱 Archon Component: ArchonFuelSensor
- * Implementation: Sovereign Fuel Telemetry Gauge
- * Standard: Industrial precision with discrete snap points
+ * Implementation: Sovereign Fuel Telemetry Gauge (Rectified v.2.0.0)
+ * Standard: Linear absolute positioning for forensic precision
  */
 
 interface ArchonFuelSensorProps {
@@ -26,91 +26,76 @@ const FUEL_STEPS = [
 ];
 
 const ArchonFuelSensor: React.FC<ArchonFuelSensorProps> = ({ value, onChange, disabled }) => (
-  <div className="w-full space-y-6 py-4 select-none">
-    <div className="relative h-12 w-full">
-      {/* ⛽ SENSOR CHASSIS (THE BAR) */}
+  <div className="w-full space-y-8 py-6 select-none relative">
+    {/* 📐 GAUGE CHASSIS */}
+    <div className="relative h-14 w-full">
+      {/* ⛽ THE SOLID BAR (NO TEXTURE) */}
       <div
-        className="absolute inset-0 rounded-[4px] overflow-hidden shadow-inner border border-[#0f2a44]/10"
+        className="absolute inset-0 rounded-[4px] shadow-inner border border-[#0f2a44]/15"
         style={{
           background:
             'linear-gradient(to right, #a855f7 0%, #ef4444 25%, #f97316 50%, #facc15 75%, #22c55e 100%)',
         }}
       >
-        {/* 📏 HORIZONTAL TEXTURE LINES (INDUSTRIAL LOOK) */}
+        {/* 📍 CURRENT LEVEL INDICATOR (GLOW OVERLAY) */}
         <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(0deg, transparent, transparent 4px, #000 4px, #000 5px)',
-            backgroundSize: '100% 100%',
-          }}
-        />
-
-        {/* 📐 SEGMENT DIVIDERS (VERTICAL TICKS) */}
-        <div className="absolute inset-0 flex justify-between px-[1px]">
-          {FUEL_STEPS.map((step) => (
-            <div
-              key={step.value}
-              className="h-full border-r border-white/20"
-              style={{ width: '1px' }}
-            />
-          ))}
-        </div>
-
-        {/* 📍 CURRENT LEVEL INDICATOR (GLOW) */}
-        <div
-          className="absolute top-0 bottom-0 right-0 bg-[#0f2a44]/20 backdrop-blur-[1px] transition-all duration-500"
+          className="absolute top-0 bottom-0 right-0 bg-[#0f2a44]/15 backdrop-blur-[1px] transition-all duration-700"
           style={{ left: `${value}%` }}
         />
       </div>
 
-      {/* 🕹️ INTERACTIVE LAYER (VISIBLE TICKS & CLICK AREAS) */}
-      <div className="absolute inset-0 flex justify-between items-center z-10">
-        {FUEL_STEPS.slice()
-          .reverse()
-          .map((step) => (
+      {/* 🕹️ INTERACTIVE TICKS (ABSOLUTE POSITIONING) */}
+      <div className="absolute inset-0 z-10">
+        {FUEL_STEPS.map((step) => (
+          <div
+            key={step.value}
+            className="absolute top-0 bottom-0"
+            style={{ left: `${step.value}%`, transform: 'translateX(-50%)' }}
+          >
             <button
-              key={step.value}
               disabled={disabled}
               onClick={(): void => onChange(step.value)}
-              className={`flex-1 h-full flex flex-col items-center justify-end pb-1 group transition-all outline-none border-none bg-transparent cursor-pointer`}
+              className="group relative h-full w-8 flex flex-col items-center justify-center border-none bg-transparent outline-none cursor-pointer"
               title={`${step.label} (${step.value}%)`}
             >
-              {/* SNAP INDICATOR */}
+              {/* Visual Tick */}
               <div
-                className={`w-1 transition-all duration-300 ${
-                  Math.abs(value - step.value) < 1
-                    ? 'h-4 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] scale-y-125'
-                    : 'h-1.5 bg-white/40 group-hover:bg-white/60'
+                className={`w-0.5 transition-all duration-300 ${
+                  Math.abs(value - step.value) < 0.1
+                    ? 'h-full bg-white shadow-[0_0_12px_rgba(255,255,255,1)] opacity-100'
+                    : 'h-6 bg-white/40 group-hover:bg-white/70'
                 }`}
                 style={{ borderRadius: '1px' }}
               />
             </button>
-          ))}
+          </div>
+        ))}
       </div>
     </div>
 
-    {/* 🏷️ LABELS (HORIZONTAL ALIGNMENT) */}
-    <div className="flex justify-between px-1">
-      {FUEL_STEPS.slice()
-        .reverse()
-        .map((step) => (
-          <div
-            key={step.value}
-            className="flex flex-col items-center"
-            style={{ width: `${100 / FUEL_STEPS.length}%` }}
+    {/* 🏷️ LABELS (ABSOLUTE POSITIONING) */}
+    <div className="relative h-4 w-full">
+      {FUEL_STEPS.map((step) => (
+        <div
+          key={step.value}
+          className="absolute top-0 flex flex-col items-center"
+          style={{
+            left: `${step.value}%`,
+            transform: 'translateX(-50%)',
+            width: '40px',
+          }}
+        >
+          <span
+            className={`text-[9px] font-black uppercase tracking-tighter transition-all duration-500 text-center ${
+              Math.abs(value - step.value) < 0.1
+                ? 'text-[#0f2a44] scale-110 opacity-100'
+                : 'text-[#0f2a44]/30 opacity-60'
+            }`}
           >
-            <span
-              className={`text-[8px] font-black uppercase tracking-tighter transition-all duration-300 ${
-                Math.abs(value - step.value) < 1
-                  ? 'text-[#0f2a44] scale-110 opacity-100'
-                  : 'text-[#0f2a44]/30 opacity-60'
-              }`}
-            >
-              {step.label}
-            </span>
-          </div>
-        ))}
+            {step.label}
+          </span>
+        </div>
+      ))}
     </div>
   </div>
 );
