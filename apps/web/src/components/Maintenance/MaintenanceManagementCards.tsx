@@ -24,7 +24,7 @@ const MaintenanceManagementCards: React.FC<MaintenanceManagementCardsProps> = ({
         onClick={(): void => onPanelChange('HISTORY')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'HISTORY'
-            ? 'ring-2 ring-[#0f2a44] shadow-lg transform scale-[1.02]'
+            ? 'border-2 border-[#0f2a44] shadow-lg'
             : 'card-hover-navy opacity-80 hover:opacity-100'
         }`}
         style={{ borderTop: '4px solid #0f2a44' }}
@@ -77,7 +77,7 @@ const MaintenanceManagementCards: React.FC<MaintenanceManagementCardsProps> = ({
         onClick={(): void => onPanelChange('SCHEDULE')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'SCHEDULE'
-            ? 'ring-2 ring-emerald-500 shadow-lg transform scale-[1.02]'
+            ? 'border-2 border-emerald-500 shadow-lg'
             : 'card-hover-emerald opacity-80 hover:opacity-100'
         }`}
         style={{ borderTop: '4px solid #10b981' }}

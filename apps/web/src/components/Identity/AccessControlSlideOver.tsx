@@ -304,7 +304,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                         onClick={(): void => setFormData({ ...formData, roleId: rId })}
                         className={`p-3 rounded border text-[8px] font-black uppercase transition-all text-center leading-tight ${
                           formData.roleId === rId
-                            ? 'bg-[#0f2a44] text-white border-[#0f2a44] shadow-lg scale-[1.02]'
+                            ? 'bg-[#0f2a44] text-white border-[#0f2a44] shadow-lg'
                             : 'bg-white border-gray-100 text-gray-400 hover:border-[#0f2a44]/20'
                         }`}
                       >
