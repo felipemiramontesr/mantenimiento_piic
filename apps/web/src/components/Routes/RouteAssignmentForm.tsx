@@ -226,28 +226,41 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         />
         {selectedUnitData && (
           <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#0f2a44]/5 p-2 rounded-[4px] border-l-4 border-emerald-500 flex items-center justify-between"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#0f2a44]/5 p-3 rounded-[4px] border-l-4 border-emerald-500 flex items-center gap-4"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white rounded-[4px] border flex items-center justify-center overflow-hidden">
+            <div className="w-20 h-20 bg-white rounded-[4px] border-2 border-[#0f2a44]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+              {selectedUnitData.images?.[0] ? (
                 <img
-                  src={
-                    selectedUnitData.images?.[0] || 'https://via.placeholder.com/100x100?text=UNIT'
-                  }
+                  src={selectedUnitData.images[0]}
                   alt="Unit"
                   className="w-full h-full object-cover"
                 />
+              ) : (
+                <div className="flex flex-col items-center justify-center opacity-20">
+                  <Truck size={32} className="text-[#0f2a44]" />
+                  <span className="text-[7px] font-black uppercase tracking-tighter mt-1">
+                    No Media
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-black text-[#0f2a44] truncate leading-tight">
+                {selectedUnitData.marca} {selectedUnitData.modelo}
+              </p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/50 px-1.5 rounded uppercase">
+                  {selectedUnitData.id}
+                </span>
+                <span className="text-[10px] font-bold opacity-60 text-[#0f2a44]">
+                  {selectedUnitData.placas}
+                </span>
               </div>
-              <div>
-                <p className="text-[11px] font-black text-[#0f2a44]">
-                  {selectedUnitData.marca} {selectedUnitData.modelo}
-                </p>
-                <p className="text-[9px] font-bold opacity-50">
-                  {selectedUnitData.placas} • {selectedUnitData.departamento}
-                </p>
-              </div>
+              <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1">
+                {selectedUnitData.departamento}
+              </p>
             </div>
           </motion.div>
         )}
@@ -316,6 +329,42 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           disabled={isEdit}
         />
       </div>
+
+      {/* 🟢 RELOCATED VALIDATION HINT (Now immediately after description) */}
+      {!isFinished && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`flex gap-3 p-3 rounded-[4px] border ${
+            isEdit ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'
+          }`}
+        >
+          <AlertCircle
+            size={16}
+            className={`${isEdit ? 'text-amber-600' : 'text-emerald-600'} shrink-0 mt-0.5`}
+          />
+          <p
+            className={`text-[10px] font-bold ${
+              isEdit ? 'text-amber-800' : 'text-emerald-800'
+            } leading-relaxed`}
+          >
+            {isEdit ? (
+              <>
+                Al finalizar, el kilometraje de la unidad se actualizará a{' '}
+                <span className="font-black text-amber-900">
+                  {Number(formData.endReading).toLocaleString()} KM
+                </span>{' '}
+                y quedará disponible para despacho.
+              </>
+            ) : (
+              <>
+                Al confirmar el despacho, el estatus de la unidad cambiará automáticamente a{' '}
+                <span className="font-black underline text-emerald-900">EN RUTA</span>.
+              </>
+            )}
+          </p>
+        </motion.div>
+      )}
     </div>
   );
 
@@ -412,10 +461,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 />
               </div>
 
-              {/* 📊 DYNAMIC VOLUMETRIC CHART (CIRCULAR) */}
+              {/* 📊 DYNAMIC VOLUMETRIC CHART (CIRCULAR + RE-ANIMATION KEY) */}
               {tankCapacity > 0 && (
-                <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                <div className="pt-4">
                   <FuelVolumeChart
+                    key={`${formData.unitId}-${formData.fuelLevel}`}
                     currentLevel={formData.fuelLevel}
                     totalCapacity={tankCapacity}
                     color={getFuelColor(formData.fuelLevel)}
@@ -508,7 +558,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full !p-0 mb-10 flex flex-col"
+      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full !p-0 mb-4 flex flex-col"
     >
       {/* Header Integrado */}
       <header
@@ -526,7 +576,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
       {/* Body Integrado */}
       <form onSubmit={handleSubmit} className="py-5 px-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
           <div className="space-y-6">
             {renderIdentitySection()}
@@ -537,40 +587,6 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             {renderTelemetrySection()}
             {isEdit && renderClosureSection()}
           </div>
-
-          {/* Validation Hint */}
-          {!isFinished && (
-            <div
-              className={`flex gap-2 p-3 rounded-[4px] border ${
-                isEdit ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'
-              }`}
-            >
-              <AlertCircle
-                size={14}
-                className={`${isEdit ? 'text-amber-600' : 'text-emerald-600'} shrink-0`}
-              />
-              <p
-                className={`text-[9px] font-bold ${
-                  isEdit ? 'text-amber-800' : 'text-emerald-800'
-                } leading-relaxed`}
-              >
-                {isEdit ? (
-                  <>
-                    Al finalizar, el kilometraje de la unidad se actualizará a{' '}
-                    <span className="font-black">
-                      {Number(formData.endReading).toLocaleString()} KM
-                    </span>{' '}
-                    y quedará disponible para despacho.
-                  </>
-                ) : (
-                  <>
-                    Al confirmar, el estatus de la unidad cambiará automáticamente a{' '}
-                    <span className="font-black underline">EN RUTA</span>.
-                  </>
-                )}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Error Display */}
@@ -580,12 +596,12 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
         )}
 
-        {/* Footer Integrado - Senior Block Alignment */}
-        <div className="pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-8 px-6 pb-6">
+        {/* Footer Integrado - Compacted Alignment */}
+        <div className="pt-2 border-t grid grid-cols-1 md:grid-cols-2 gap-8 px-6 pb-4">
           <button
             type="button"
             onClick={onClose}
-            className="w-full px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#0f2a44] bg-gray-100 hover:bg-gray-200 transition-all rounded-[4px] border-none outline-none disabled:opacity-50"
+            className="w-full px-6 py-3 text-[10px] font-black uppercase tracking-widest text-[#0f2a44] bg-gray-100 hover:bg-gray-200 transition-all rounded-[4px] border-none outline-none disabled:opacity-50"
             disabled={submitting}
           >
             {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
@@ -600,7 +616,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                   !formData.destination ||
                   (isEdit && !formData.endReading)))
             }
-            className={`w-full px-6 py-4 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] border-none outline-none ${submitButtonClass}`}
+            className={`w-full px-6 py-3 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] border-none outline-none ${submitButtonClass}`}
           >
             {submitting && 'Procesando...'}
             {!submitting && isFinished && (
