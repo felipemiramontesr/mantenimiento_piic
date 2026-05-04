@@ -330,76 +330,100 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     return '#a855f7';
   };
 
-  const renderTelemetrySection = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* 1. TEXTO: Sección III: Telemetría de Salida */}
-      <div className="flex items-center gap-2">
-        <Gauge size={14} className="text-[#0f2a44]" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-          Sección III: Telemetría de Salida
-        </span>
-      </div>
-
-      {/* 2. TEXTO (SUBTITULO): PARAMETRÍA DE SENSORES */}
-      <div className="pl-6">
-        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#0f2a44] opacity-80">
-          PARAMETRÍA DE SENSORES
-        </p>
-      </div>
-
-      <div className="bg-[#0f2a44]/5 p-6 rounded-[4px] space-y-6">
-        {/* 🚀 ODOMETRY SNAPSHOT (KEEP IT) */}
-        <div className="flex items-center justify-between border-b border-[#0f2a44]/10 pb-4">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44] mb-1">
-              Lectura de Odómetro
+  const renderTelemetrySection = (): React.ReactElement => {
+    if (!formData.unitId) {
+      return (
+        <div className="space-y-4 opacity-50">
+          <div className="flex items-center gap-2">
+            <Gauge size={14} className="text-[#0f2a44]" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
+              Sección III: Telemetría de Salida
             </span>
-            <div className="flex items-center gap-3">
-              <Gauge size={20} className="text-[#0f2a44]/40" />
-              <p className="text-3xl font-black text-[#0f2a44] tracking-tighter">
-                {startReadingDisplay}{' '}
-                <span className="text-[10px] opacity-40 font-bold ml-1">KM</span>
-              </p>
-            </div>
           </div>
-        </div>
-
-        {/* ⛽ FUEL SENSOR SECTION */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Droplets size={16} className="text-emerald-500" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]">
-                Nivel de Combustible:
-              </p>
-            </div>
-            <p className="text-xl font-black text-[#0f2a44] tracking-tighter">
-              {formData.fuelLevel}%
+          <div className="bg-[#0f2a44]/5 p-8 rounded-[4px] border-2 border-dashed border-[#0f2a44]/10 flex flex-col items-center justify-center text-center">
+            <AlertCircle size={24} className="text-[#0f2a44]/20 mb-2" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/40">
+              SISTEMA DESCONECTADO
+            </p>
+            <p className="text-[8px] font-bold text-[#0f2a44]/30 mt-1">
+              SELECCIONE UNA UNIDAD PARA ACTIVAR PARAMETRÍA
             </p>
           </div>
+        </div>
+      );
+    }
 
-          <div className="pt-2">
-            <ArchonFuelSensor
-              value={formData.fuelLevel}
-              onChange={(val: number): void => setFormData({ ...formData, fuelLevel: val })}
-              disabled={isFinished}
-            />
+    return (
+      <div className="space-y-4">
+        {/* 1. TEXTO: Sección III: Telemetría de Salida */}
+        <div className="flex items-center gap-2">
+          <Gauge size={14} className="text-[#0f2a44]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
+            Sección III: Telemetría de Salida
+          </span>
+        </div>
+
+        {/* 2. TEXTO (SUBTITULO): PARAMETRÍA DE SENSORES (HOMOLOGADO) */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+            PARAMETRÍA DE SENSORES
+          </label>
+        </div>
+
+        <div className="bg-[#0f2a44]/5 p-6 rounded-[4px] space-y-6">
+          {/* 🚀 ODOMETRY SNAPSHOT (KEEP IT) */}
+          <div className="flex items-center justify-between border-b border-[#0f2a44]/10 pb-4">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44] mb-1">
+                Lectura de Odómetro
+              </span>
+              <div className="flex items-center gap-3">
+                <Gauge size={20} className="text-[#0f2a44]/40" />
+                <p className="text-3xl font-black text-[#0f2a44] tracking-tighter">
+                  {startReadingDisplay}{' '}
+                  <span className="text-[10px] opacity-40 font-bold ml-1">KM</span>
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* 📊 DYNAMIC VOLUMETRIC CHART */}
-          {tankCapacity > 0 && (
-            <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-500">
-              <FuelVolumeChart
-                currentLevel={formData.fuelLevel}
-                totalCapacity={tankCapacity}
-                color={getFuelColor(formData.fuelLevel)}
+          {/* ⛽ FUEL SENSOR SECTION */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Droplets size={16} className="text-emerald-500" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]">
+                  Nivel de Combustible:
+                </p>
+              </div>
+              <p className="text-xl font-black text-[#0f2a44] tracking-tighter">
+                {formData.fuelLevel}%
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <ArchonFuelSensor
+                value={formData.fuelLevel}
+                onChange={(val: number): void => setFormData({ ...formData, fuelLevel: val })}
+                disabled={isFinished}
               />
             </div>
-          )}
+
+            {/* 📊 DYNAMIC VOLUMETRIC CHART (CIRCULAR) */}
+            {tankCapacity > 0 && (
+              <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                <FuelVolumeChart
+                  currentLevel={formData.fuelLevel}
+                  totalCapacity={tankCapacity}
+                  color={getFuelColor(formData.fuelLevel)}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderClosureSection = (): React.ReactElement => (
     <motion.div
