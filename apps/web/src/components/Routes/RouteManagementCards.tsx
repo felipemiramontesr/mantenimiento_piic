@@ -21,7 +21,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
         onClick={(): void => onPanelChange('LOGS')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'LOGS'
-            ? 'ring-2 ring-[#0f2a44] shadow-lg transform scale-[1.02]'
+            ? 'border-2 border-[#0f2a44] shadow-lg'
             : 'card-hover-navy opacity-80 hover:opacity-100'
         }`}
         style={{ borderTop: '4px solid #0f2a44' }}
@@ -79,7 +79,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
         onClick={(): void => onPanelChange('DISPATCH')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'DISPATCH'
-            ? 'ring-2 ring-emerald-500 shadow-lg transform scale-[1.02]'
+            ? 'border-2 border-emerald-500 shadow-lg'
             : 'card-hover-emerald opacity-80 hover:opacity-100'
         }`}
         style={{ borderTop: '4px solid #10b981' }}
@@ -137,7 +137,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
         onClick={(): void => onPanelChange('JOURNAL')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'JOURNAL'
-            ? 'ring-2 ring-amber-500 shadow-lg transform scale-[1.02]'
+            ? 'border-2 border-amber-500 shadow-lg'
             : 'card-hover-amber opacity-80 hover:opacity-100'
         }`}
         style={{ borderTop: '4px solid #f59e0b' }}

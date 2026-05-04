@@ -19,7 +19,7 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
           onClick={(): void => setActivePanel('DIRECTORY')}
           className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
             activePanel === 'DIRECTORY'
-              ? 'ring-2 ring-[#0f2a44] shadow-lg transform scale-[1.02]'
+              ? 'border-2 border-[#0f2a44] shadow-lg'
               : 'card-hover-navy opacity-80 hover:opacity-100'
           }`}
           style={{ borderTop: '4px solid #0f2a44' }}
@@ -41,6 +41,7 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                border: '2px solid rgba(15, 42, 68, 0.4)',
               }}
             >
               <Shield size={40} className="text-[#0f2a44]" />
@@ -73,7 +74,7 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
           }}
           className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
             activePanel === 'SIGNUP'
-              ? 'ring-2 ring-[#10b981] shadow-lg transform scale-[1.02]'
+              ? 'border-2 border-[#10b981] shadow-lg'
               : 'card-hover-emerald opacity-80 hover:opacity-100'
           }`}
           style={{ borderTop: '4px solid #10b981' }}
@@ -95,6 +96,7 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                border: '2px solid rgba(16, 185, 129, 0.4)',
               }}
             >
               <Users size={40} className="text-[#10b981]" />

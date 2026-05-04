@@ -24,7 +24,7 @@ const FinancialManagementCards: React.FC<FinancialManagementCardsProps> = ({
         onClick={(): void => onPanelChange('AUDIT')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'AUDIT'
-            ? 'ring-2 ring-[#0f2a44] shadow-lg transform scale-[1.02]'
+            ? 'border-2 border-[#0f2a44] shadow-lg'
             : 'card-hover-navy opacity-80 hover:opacity-100'
         }`}
         style={{ borderTop: '4px solid #0f2a44' }}
@@ -77,7 +77,7 @@ const FinancialManagementCards: React.FC<FinancialManagementCardsProps> = ({
         onClick={(): void => onPanelChange('OPTIMIZATION')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'OPTIMIZATION'
-            ? 'ring-2 ring-[#10b981] shadow-lg transform scale-[1.02]'
+            ? 'border-2 border-[#10b981] shadow-lg'
             : 'card-hover-emerald opacity-80 hover:opacity-100'
         }`}
         style={{ borderTop: '4px solid #10b981' }}

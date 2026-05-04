@@ -298,9 +298,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Incidencias en Ruta',
             stats.openIncidents,
             ShieldAlert,
-            '#f97316',
+            '#ef4444',
             'Alertas Sentinel sin resolver',
-            'yellow',
+            'red',
             '/routes'
           )}
         </div>

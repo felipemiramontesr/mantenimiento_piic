@@ -27,7 +27,7 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
           onClick={(): void => onPanelChange('STRATEGY')}
           className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
             activePanel === 'STRATEGY'
-              ? 'ring-2 ring-[#0f2a44] shadow-lg transform scale-[1.02]'
+              ? 'border-2 border-[#0f2a44] shadow-lg'
               : 'card-hover-navy opacity-80 hover:opacity-100'
           }`}
           style={{ borderTop: '4px solid #0f2a44' }}
@@ -81,7 +81,7 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
             onClick={(): void => onPanelChange('EXPANSION')}
             className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
               activePanel === 'EXPANSION'
-                ? 'ring-2 ring-emerald-500 shadow-lg transform scale-[1.02]'
+                ? 'border-2 border-emerald-500 shadow-lg'
                 : 'card-hover-emerald opacity-80 hover:opacity-100'
             }`}
             style={{ borderTop: '4px solid #10b981' }}
@@ -98,7 +98,7 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
                 style={{
                   width: '80px',
                   height: '80px',
-                  borderRadius: '50%',
+                  borderRadius: '4px',
                   backgroundColor: 'rgba(16, 185, 129, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
