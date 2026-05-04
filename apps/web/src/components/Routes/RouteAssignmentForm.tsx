@@ -21,6 +21,7 @@ import { CatalogOption } from '../../types/fleet';
 import { archonCache } from '../../utils/archonCache';
 import api from '../../api/client';
 import ArchonImageUploader from '../ArchonImageUploader';
+import ArchonFuelSensor from './ArchonFuelSensor';
 
 interface RouteAssignmentFormProps {
   onClose: () => void;
@@ -318,7 +319,8 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   );
 
   const renderTelemetrySection = (): React.ReactElement => (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* 1. TEXTO: Sección III: Telemetría de Salida */}
       <div className="flex items-center gap-2 mb-2">
         <Gauge size={14} className="text-[#0f2a44]" />
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
@@ -326,45 +328,45 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         </span>
       </div>
 
-      <div className="space-y-2">
-        <div className="bg-[#0f2a44]/5 p-4 rounded-[4px] space-y-4">
-          <div className="flex items-center justify-between">
+      <div className="bg-[#0f2a44]/5 p-6 rounded-[4px] space-y-6">
+        {/* 🚀 ODOMETRY SNAPSHOT */}
+        <div className="flex items-center justify-between border-b border-[#0f2a44]/10 pb-4">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44] mb-1">
+              Lectura de Odómetro
+            </span>
             <div className="flex items-center gap-3">
               <Gauge size={20} className="text-[#0f2a44]/40" />
-              <p className="text-2xl font-black text-[#0f2a44] tracking-tighter">
+              <p className="text-3xl font-black text-[#0f2a44] tracking-tighter">
                 {startReadingDisplay}{' '}
                 <span className="text-[10px] opacity-40 font-bold ml-1">KM</span>
               </p>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Droplets size={20} className="text-emerald-500" />
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-tighter text-[#0f2a44]">
-                    Nivel de Combustible
-                  </p>
-                </div>
-              </div>
-              <p className="text-xl font-black text-emerald-600 tracking-tighter">
-                {formData.fuelLevel}%
+        {/* ⛽ FUEL SENSOR SECTION */}
+        <div className="space-y-2">
+          {/* 2. TEXTO (SUBTITULO): Nivel de combustible */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Droplets size={16} className="text-emerald-500" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]">
+                Nivel de Combustible:
               </p>
             </div>
-            {!isEdit && (
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="25"
-                value={formData.fuelLevel}
-                onChange={(e): void =>
-                  setFormData({ ...formData, fuelLevel: Number(e.target.value) })
-                }
-                className="w-full accent-emerald-500"
-              />
-            )}
+            <p className="text-xl font-black text-[#0f2a44] tracking-tighter">
+              {formData.fuelLevel}%
+            </p>
+          </div>
+
+          {/* 3. COMPONENTE ArchonFuelSensor */}
+          <div className="pt-2">
+            <ArchonFuelSensor
+              value={formData.fuelLevel}
+              onChange={(val: number): void => setFormData({ ...formData, fuelLevel: val })}
+              disabled={isFinished}
+            />
           </div>
         </div>
       </div>
