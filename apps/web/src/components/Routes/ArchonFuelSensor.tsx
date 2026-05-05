@@ -53,6 +53,7 @@ const ArchonFuelSensor: React.FC<ArchonFuelSensorProps> = ({ value, onChange, di
             style={{ left: `${step.value}%`, transform: 'translateX(-50%)' }}
           >
             <button
+              type="button"
               disabled={disabled}
               onClick={(): void => onChange(step.value)}
               className="group relative h-full w-8 flex flex-col items-center justify-center border-none bg-transparent outline-none cursor-pointer"
