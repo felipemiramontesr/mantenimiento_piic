@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Navigation,
@@ -140,19 +140,56 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     }
   }, [formData.unitId, units, isEdit]);
 
-  // Filter only available units (allow current unit if editing)
-  const availableUnits = units
-    .filter((u) => u.status === 'Disponible' || (isEdit && u.id === routeToEdit?.unit_id))
-    .map((u) => ({
-      value: u.id,
-      label: `${u.id} - ${u.marca} ${u.modelo}`,
-    }));
+  // 🔱 Forensic Availability Engine: Tracking Busy Operators & Units
+  const [activeRoutes, setActiveRoutes] = useState<RouteLog[]>([]);
 
-  // Map users for selection
-  const operatorOptions = users.map((u) => ({
-    value: u.id,
-    label: `${u.fullName} (${u.employeeNumber || 'S/N'})`,
-  }));
+  useEffect(() => {
+    const fetchActiveRoutes = async (): Promise<void> => {
+      try {
+        const res = await api.get('/routes');
+        const active = (res.data?.data || []).filter((r: RouteLog) => !r.end_time);
+        setActiveRoutes(active);
+      } catch (err) {
+        // Silent fail
+      }
+    };
+    fetchActiveRoutes();
+  }, []);
+
+  // 📐 Natural Sort Helper (Cockpit Standard)
+  const naturalCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+  // ⛽ Refined Available Units Selection (v.22.2.0)
+  const availableUnits = useMemo(
+    () =>
+      units
+        .filter((u) => u.status === 'Disponible' || (isEdit && u.id === routeToEdit?.unit_id))
+        .sort((a, b) => naturalCollator.compare(a.id, b.id))
+        .map((u) => ({
+          value: u.id,
+          label: `${u.id} - ${u.marca} ${u.modelo}`,
+          secondaryLabel: `ODO: ${Number(u.odometer || 0).toLocaleString()} KM | ${u.placas}`,
+          searchTerms: `${u.marca} ${u.modelo} ${u.placas} ${u.departamento}`,
+        })),
+    [units, isEdit, routeToEdit]
+  );
+
+  // 👤 Universal Pilot Access: All users, filtered by active mission occupancy
+  const operatorOptions = useMemo(() => {
+    const busyUserIds = activeRoutes.map((r) => r.operator_id);
+
+    return users
+      .filter((u) => !busyUserIds.includes(u.id) || (isEdit && u.id === routeToEdit?.operator_id))
+      .sort((a, b) => a.fullName.localeCompare(b.fullName))
+      .map((u) => ({
+        value: u.id,
+        label: u.fullName,
+        secondaryLabel: `${u.role?.toUpperCase() || 'USUARIO'} | NÓMINA: ${
+          u.employeeNumber || 'S/N'
+        }`,
+        searchTerms: `${u.employeeNumber || ''} ${u.role || ''} ${u.email || ''}`,
+      }));
+  }, [users, activeRoutes, isEdit, routeToEdit]);
 
   const { startRoute, finishRoute } = useFleet();
   const [submitting, setSubmitting] = useState(false);
