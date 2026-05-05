@@ -141,7 +141,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                 {/* Unidad - CENTRADO */}
                 <td className="py-6">
                   <div className="flex flex-col items-center justify-center gap-1.5">
-                    <div className="w-12 h-12 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-white flex items-center justify-center mb-1 shadow-sm">
+                    <div className="w-16 h-16 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center mb-1 shadow-sm">
                       {unit?.images?.[0] ? (
                         <img
                           src={unit.images[0]}
@@ -149,9 +149,9 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center opacity-20">
-                          <Truck size={24} className="text-[#0f2a44]" />
-                          <span className="text-[6px] font-black uppercase tracking-widest mt-0.5">
+                        <div className="flex flex-col items-center justify-center opacity-20 gap-1">
+                          <Truck size={32} className="text-[#0f2a44]" />
+                          <span className="text-[6px] font-black uppercase tracking-[0.2em]">
                             NO MEDIA
                           </span>
                         </div>
