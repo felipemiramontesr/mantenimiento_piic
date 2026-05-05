@@ -8,10 +8,20 @@ import db from '../services/db';
  * Architecture: Zero-Filesystem Dependency Testing
  */
 
+const mockConnection = {
+  beginTransaction: vi.fn(),
+  commit: vi.fn(),
+  rollback: vi.fn(),
+  release: vi.fn(),
+  execute: vi.fn().mockResolvedValue([[], undefined]),
+  query: vi.fn().mockResolvedValue([[], undefined]),
+};
+
 vi.mock('../services/db', () => ({
   default: {
-    execute: vi.fn(),
-    query: vi.fn(),
+    execute: vi.fn().mockResolvedValue([[], undefined]),
+    query: vi.fn().mockResolvedValue([[], undefined]),
+    getConnection: vi.fn(() => Promise.resolve(mockConnection)),
   },
 }));
 
@@ -36,6 +46,11 @@ describe('Fleet Integration Endpoints', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (db.execute as Mock).mockReset();
+    mockConnection.execute.mockReset();
+    // Restore default for security hooks etc
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
+    mockConnection.execute.mockResolvedValue([[], undefined]);
   });
 
   const authHeader = (token = mockToken): Record<string, string> => ({
@@ -73,9 +88,9 @@ describe('Fleet Integration Endpoints', () => {
 
     it('should successfully register a new unit with Base64 images (Plan Omega)', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[]]) // ID unique check
-        .mockResolvedValueOnce([[]]) // Serie unique check
-        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
+        .mockResolvedValueOnce([[], undefined]) // ID unique check
+        .mockResolvedValueOnce([[], undefined]) // Serie unique check
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // Insert
 
       const response = await app.inject({
         method: 'POST',
@@ -122,13 +137,16 @@ describe('Fleet Integration Endpoints', () => {
         [
           {
             id: 'ASM-001',
+            uuid: 'some-uuid',
+            assetType: 'Vehículo',
             images: JSON.stringify(['data:image/jpeg;base64,abc']),
             availabilityIndex: 100,
             currentReading: 1000,
-            lastServiceReading: 0,
-            maintIntervalKm: 5000,
+            nextServiceReading: 5000,
+            lastServiceDate: '2024-01-01',
           },
         ],
+        undefined,
       ]);
 
       const response = await app.inject({
@@ -155,30 +173,37 @@ describe('Fleet Integration Endpoints', () => {
 
   describe('PATCH /v1/fleet/:id', () => {
     it('should update unit successfully with falsy values for branch coverage', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]); // Snapshot After
 
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
         payload: {
-          year: 2025,
-          operationalUseId: null, // 🔱 Trigger Falsy branch
-          odometer: 0, // 🔱 Trigger Falsy branch
-          images: ['data:image/png;base64,patch'], // 🔱 Trigger Array branch
+          data: {
+            year: 2025,
+            operationalUseId: null, // 🔱 Trigger Falsy branch
+            odometer: 0, // 🔱 Trigger Falsy branch
+            images: ['data:image/png;base64,patch'], // 🔱 Trigger Array branch
+          },
+          reason: 'Update for branch coverage',
         },
       });
 
+      if (response.statusCode !== 200) throw new Error(`DEBUG AUTH BODY: ${response.body}`);
       expect(response.statusCode).toBe(200);
     });
 
     it('should return 404 if not found', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]);
+      mockConnection.execute.mockResolvedValueOnce([[], undefined]);
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/NON-EXISTENT',
         headers: authHeader(),
-        payload: { year: 2025 },
+        payload: { data: { year: 2025 }, reason: 'Test 404' },
       });
       expect(response.statusCode).toBe(404);
     });
@@ -194,12 +219,14 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should handle db error on update', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(new Error('CRITICAL_FAIL'));
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockRejectedValueOnce(new Error('CRITICAL_FAIL')); // Update fail
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
-        payload: { year: 2025 },
+        payload: { data: { odometer: 2000 }, reason: 'Rectification for DB Error' },
       });
       expect(response.statusCode).toBe(500);
     });
@@ -207,31 +234,39 @@ describe('Fleet Integration Endpoints', () => {
 
   describe('DELETE /v1/fleet/:id', () => {
     it('should delete successfully', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // Delete
+
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
+        payload: { reason: 'Test delete' },
       });
       expect(response.statusCode).toBe(200);
     });
 
     it('should return 404 if missing in registry', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 0 }]);
+      mockConnection.execute.mockResolvedValueOnce([[], undefined]);
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
+        payload: { reason: 'Test 404' },
       });
       expect(response.statusCode).toBe(404);
     });
 
     it('should handle db error on delete', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(new Error('DELETE_FAIL'));
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockRejectedValueOnce(new Error('CRITICAL_DELETE_FAIL')); // Delete fail
       const response = await app.inject({
         method: 'DELETE',
         url: '/v1/fleet/ASM-001',
         headers: authHeader(),
+        payload: { reason: 'Test DB error' },
       });
       expect(response.statusCode).toBe(500);
     });
@@ -246,11 +281,14 @@ describe('Fleet Integration Endpoints', () => {
         [
           {
             id: 'FULL_01',
+            uuid: 'forensic-uuid-test',
+            assetType: 'Vehículo',
             images: JSON.stringify(['data:image/png;base64,123']),
             placas: 'enc_ABC-123',
-            numeroSerie: 'enc_SERIE-X',
-            circulationCardNumber: 'enc_CARD-99',
             lastServiceDate: pastDate.toISOString(),
+            circulationCardNumber: 'CARD-100',
+            numeroSerie: 'SERIE-100',
+            nextServiceReading: 5000,
             currentReading: 1000,
             lastServiceReading: 900,
             availabilityIndex: 100,
@@ -258,6 +296,7 @@ describe('Fleet Integration Endpoints', () => {
             maintIntervalDays: 30,
           },
         ],
+        undefined,
       ]);
 
       const response = await app.inject({
@@ -267,6 +306,7 @@ describe('Fleet Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(200);
+
       const { data } = JSON.parse(response.body);
       expect(data[0].placas).toBe('ABC-123');
       expect(data[0].daysSinceService).toBe(10);
@@ -274,10 +314,15 @@ describe('Fleet Integration Endpoints', () => {
     });
 
     it('should trigger all encryption branches in FleetService', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[]]) // ID check
-        .mockResolvedValueOnce([[]]) // Serie check
-        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert
+      (db.execute as Mock).mockImplementation((q: string) => {
+        if (q.includes('SELECT id FROM fleet_units WHERE id = ?'))
+          return Promise.resolve([[], undefined]);
+        if (q.includes('SELECT id FROM fleet_units WHERE numeroSerieHash = ?'))
+          return Promise.resolve([[], undefined]);
+        if (q.includes('INSERT INTO fleet_units'))
+          return Promise.resolve([{ affectedRows: 1 }, undefined]);
+        throw new Error(`🔱 MOCK_MISMATCH: ${q}`);
+      });
 
       const response = await app.inject({
         method: 'POST',

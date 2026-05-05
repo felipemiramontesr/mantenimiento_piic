@@ -21,6 +21,7 @@ export default class FleetService {
       SELECT 
         f.*,
         f.lastServiceReading AS lastServiceReading,
+        f.lastServiceDate AS lastServiceDate,
         f.currentReading AS currentReading,
         f.maintIntervalKm AS maintIntervalKm,
         f.maintIntervalDays AS maintIntervalDays,
@@ -84,11 +85,10 @@ export default class FleetService {
     const { id } = data;
     const uuid = randomUUID();
 
-    // 🛡️ Security Check: Prevent Duplicate ID
     const [existing] = await db.execute<FleetUnit[]>('SELECT id FROM fleet_units WHERE id = ?', [
       id,
     ]);
-    if (existing.length > 0) {
+    if (existing && existing.length > 0) {
       throw new Error(`CONFLICT: El identificador '${id}' ya existe.`);
     }
 
@@ -125,7 +125,6 @@ export default class FleetService {
       `INSERT INTO fleet_units (${fields.join(', ')}) VALUES (${placeholders})`,
       values
     );
-
     return { id, uuid };
   }
 
@@ -138,8 +137,9 @@ export default class FleetService {
     reason: string,
     adminId: number
   ): Promise<boolean> {
-    const connection = await db.getConnection();
+    let connection;
     try {
+      connection = await db.getConnection();
       await connection.beginTransaction();
 
       // 1. Snapshot Before
@@ -148,7 +148,7 @@ export default class FleetService {
         [id]
       );
       if (rows.length === 0) {
-        await connection.release();
+        connection.release();
         return false;
       }
       const snapshotBefore = rows[0];
@@ -157,7 +157,7 @@ export default class FleetService {
       const updates = this.preparePayload(data);
       const fields = Object.keys(updates);
       if (fields.length === 0) {
-        await connection.release();
+        connection.release();
         return false;
       }
 
@@ -197,8 +197,10 @@ export default class FleetService {
       connection.release();
       return true;
     } catch (e) {
-      await connection.rollback();
-      connection.release();
+      if (connection) {
+        await connection.rollback();
+        connection.release();
+      }
       throw e;
     }
   }
@@ -207,8 +209,9 @@ export default class FleetService {
    * Removes a unit from the system with forensic audit.
    */
   static async deleteUnit(id: string, reason: string, adminId: number): Promise<boolean> {
-    const connection = await db.getConnection();
+    let connection;
     try {
+      connection = await db.getConnection();
       await connection.beginTransaction();
 
       // 1. Snapshot Before
@@ -217,7 +220,7 @@ export default class FleetService {
         [id]
       );
       if (rows.length === 0) {
-        await connection.release();
+        connection.release();
         return false;
       }
       const snapshotBefore = rows[0];
@@ -239,8 +242,10 @@ export default class FleetService {
       connection.release();
       return true;
     } catch (e) {
-      await connection.rollback();
-      connection.release();
+      if (connection) {
+        await connection.rollback();
+        connection.release();
+      }
       throw e;
     }
   }

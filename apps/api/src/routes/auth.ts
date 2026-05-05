@@ -185,6 +185,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   });
 
   fastify.get('/users', async (request, reply) => {
+    await request.jwtVerify();
     const { role } = request.query as { role?: string };
     try {
       let q =
@@ -230,10 +231,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       return reply.code(400).send({ error: 'U1', details: body.error.format() });
     }
     const { data: updates, reason } = body.data;
+    await request.jwtVerify();
     const admin = request.user as { id: number };
 
-    const connection = await db.getConnection();
+    let connection;
     try {
+      connection = await db.getConnection();
       await connection.beginTransaction();
 
       // 1. Snapshot Before
@@ -302,7 +305,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // 4. Audit
       await recordAuditLog({
         entity_type: 'user',
-        entity_id: id,
+        entity_id: String(id),
         action: 'UPDATE',
         snapshot_before: snapshotBefore,
         snapshot_after: snapshotAfter,
@@ -314,8 +317,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       connection.release();
       return reply.send({ success: true });
     } catch (e) {
-      await connection.rollback();
-      connection.release();
+      if (connection) {
+        await connection.rollback();
+        connection.release();
+      }
       fastify.log.error(e);
       return reply.code(500).send({ error: 'UPDATE_FAIL' });
     }
@@ -331,10 +336,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       return reply.code(400).send({ error: 'D1', details: parse.error.format() });
     }
     const { reason } = parse.data;
+    await request.jwtVerify();
     const admin = request.user as { id: number };
 
-    const connection = await db.getConnection();
+    let connection;
     try {
+      connection = await db.getConnection();
       await connection.beginTransaction();
 
       // 1. Snapshot Before
@@ -354,7 +361,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       // 3. Audit
       await recordAuditLog({
         entity_type: 'user',
-        entity_id: id,
+        entity_id: String(id),
         action: 'DELETE',
         snapshot_before: snapshotBefore,
         reason,
@@ -365,14 +372,17 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       connection.release();
       return reply.send({ success: true });
     } catch (e) {
-      await connection.rollback();
-      connection.release();
+      if (connection) {
+        await connection.rollback();
+        connection.release();
+      }
       fastify.log.error(e);
       return reply.code(500).send({ error: 'DELETE_FAIL' });
     }
   });
 
-  fastify.get('/roles', async (_request, reply) => {
+  fastify.get('/roles', async (request, reply) => {
+    await request.jwtVerify();
     try {
       const res = await db.execute(
         "SELECT id, name as label FROM roles ORDER BY (name = 'Master (Archon)') DESC, name ASC",

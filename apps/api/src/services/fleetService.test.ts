@@ -4,9 +4,20 @@ import FleetService from './fleetService';
 import db from './db';
 
 // 🔱 Mock Database Interface
+const mockConnection = {
+  beginTransaction: vi.fn(),
+  commit: vi.fn(),
+  rollback: vi.fn(),
+  release: vi.fn(),
+  execute: vi.fn().mockResolvedValue([[]]),
+  query: vi.fn().mockResolvedValue([[]]),
+};
+
 vi.mock('./db', () => ({
   default: {
-    execute: vi.fn(),
+    execute: vi.fn().mockResolvedValue([[]]),
+    query: vi.fn().mockResolvedValue([[]]),
+    getConnection: vi.fn(() => Promise.resolve(mockConnection)),
   },
 }));
 
@@ -74,18 +85,27 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
 
   describe('updateUnit (Boundary Control)', () => {
     it('should return false for empty update payload (Coverage: Line 137)', async () => {
-      const result = await FleetService.updateUnit('ASM-001', {});
+      const result = await FleetService.updateUnit('ASM-001', {}, 'Reason', 1);
       expect(result).toBe(false);
       expect(db.execute).not.toHaveBeenCalled();
     });
 
     it('should execute update if payload is valid', async () => {
-      (db.execute as any).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }]) // Update
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]); // Snapshot After
 
-      const result = await FleetService.updateUnit('ASM-001', { lastServiceReading: 7000 });
+      const result = await FleetService.updateUnit(
+        'ASM-001',
+        { lastServiceReading: 7000 },
+        'Reason',
+        1
+      );
 
       expect(result).toBe(true);
-      expect(db.execute).toHaveBeenCalledWith(
+      expect(mockConn.execute).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE fleet_units SET'),
         expect.arrayContaining([7000, 'ASM-001'])
       );
@@ -94,12 +114,15 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
 
   describe('deleteUnit', () => {
     it('should remove unit from registry', async () => {
-      (db.execute as any).mockResolvedValueOnce([{ affectedRows: 1 }]);
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }]); // Delete
 
-      const result = await FleetService.deleteUnit('ASM-001');
+      const result = await FleetService.deleteUnit('ASM-001', 'Reason', 1);
 
       expect(result).toBe(true);
-      expect(db.execute).toHaveBeenCalledWith(
+      expect(mockConn.execute).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM fleet_units WHERE id = ?'),
         ['ASM-001']
       );

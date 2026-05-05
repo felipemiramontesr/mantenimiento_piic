@@ -101,8 +101,11 @@ export class FleetIntelligenceEngine {
   }
 
   static processUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<string, unknown> {
+    process.stderr.write(`🔱 [processUnit] ID: ${unit.id}\n`);
     const decrypted = this.decryptSensitiveData(unit);
+    process.stderr.write(`🔱 [processUnit] Decryption done\n`);
     const health = this.computeHealth(decrypted);
+    process.stderr.write(`🔱 [processUnit] Health computed: ${JSON.stringify(health)}\n`);
 
     return {
       ...(decrypted as unknown as Record<string, unknown>),

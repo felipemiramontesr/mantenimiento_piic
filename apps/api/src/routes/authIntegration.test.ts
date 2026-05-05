@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import argon2 from 'argon2';
 import buildApp from '../index';
 import db from '../services/db';
@@ -8,7 +8,20 @@ import db from '../services/db';
  * Absolute Branch/Line/Statement/Function Coverage Strike
  */
 
-vi.mock('../services/db', () => ({ default: { execute: vi.fn() } }));
+const mockConnection = {
+  beginTransaction: vi.fn(),
+  commit: vi.fn(),
+  rollback: vi.fn(),
+  release: vi.fn(),
+  execute: vi.fn().mockResolvedValue([[], undefined]),
+};
+
+vi.mock('../services/db', () => ({
+  default: {
+    execute: vi.fn().mockResolvedValue([[], undefined]),
+    getConnection: vi.fn(() => Promise.resolve(mockConnection)),
+  },
+}));
 vi.mock('argon2', () => ({ default: { verify: vi.fn(), hash: vi.fn() } }));
 vi.mock('../services/encryption', () => ({
   default: {
@@ -20,14 +33,26 @@ vi.mock('../services/encryption', () => ({
   },
 }));
 
-describe('Auth Endpoints Sovereignty', () => {
+describe('authIntegration.test', () => {
   const app = buildApp();
   const validCreds = { username: 'admin_test', password: 'password123' };
+  let mockToken: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    mockToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx' });
+  });
 
   beforeEach(() => {
     vi.resetAllMocks();
     (argon2.verify as Mock).mockResolvedValue(true);
     (argon2.hash as Mock).mockResolvedValue('hash_value');
+  });
+
+  const authHeader = (): Record<string, string> => ({
+    Authorization: `Bearer ${mockToken}`,
   });
 
   it('Path: Successful Login Matrix', async () => {
@@ -43,6 +68,7 @@ describe('Auth Endpoints Sovereignty', () => {
           profile_picture_url: 'avatar.png',
         },
       ],
+      undefined,
     ]);
     const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
     expect(r1.statusCode).toBe(200);
@@ -61,6 +87,7 @@ describe('Auth Endpoints Sovereignty', () => {
           profile_picture_url: 'data:image/jpeg;base64,/9j/test',
         },
       ],
+      undefined,
     ]);
     const r1b = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
     expect(r1b.statusCode).toBe(200);
@@ -68,8 +95,8 @@ describe('Auth Endpoints Sovereignty', () => {
 
     const email = 'target@piic.mx';
     (db.execute as Mock)
-      .mockResolvedValueOnce([[]])
-      .mockResolvedValueOnce([[{ id: 2, email: `enc_${email}`, is_active: 1 }]])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ id: 2, email: `enc_${email}`, is_active: 1 }], undefined])
       .mockResolvedValueOnce([
         [
           {
@@ -82,6 +109,7 @@ describe('Auth Endpoints Sovereignty', () => {
             imageUrl: 'pic.jpg',
           },
         ],
+        undefined,
       ]);
     const r2 = await app.inject({
       method: 'POST',
@@ -93,7 +121,9 @@ describe('Auth Endpoints Sovereignty', () => {
   });
 
   it('Path: Register & Conflict Sovereign Logic', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([{ insertId: 70 }]);
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([{ insertId: 70 }, undefined]);
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
@@ -101,7 +131,7 @@ describe('Auth Endpoints Sovereignty', () => {
     });
     expect(r1.statusCode).toBe(201);
 
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 70 }]]);
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 70 }], undefined]);
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
@@ -111,27 +141,46 @@ describe('Auth Endpoints Sovereignty', () => {
   });
 
   it('Path: Users (Filtered & Unfiltered) & Roles', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, email: 'e', role_id: 1 }]]);
-    const r1 = await app.inject({ method: 'GET', url: '/v1/auth/users' });
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, email: 'e', role_id: 1 }], undefined]);
+    const r1 = await app.inject({ method: 'GET', url: '/v1/auth/users', headers: authHeader() });
     expect(r1.statusCode).toBe(200);
 
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 2, email: 'e2', role_id: 2 }]]);
-    const r1b = await app.inject({ method: 'GET', url: '/v1/auth/users?role=2' });
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 2, email: 'e2', role_id: 2 }], undefined]);
+    const r1b = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users?role=2',
+      headers: authHeader(),
+    });
     expect(r1b.statusCode).toBe(200);
 
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, name: 'Admin' }]]);
-    const r2 = await app.inject({ method: 'GET', url: '/v1/auth/roles' });
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, name: 'Admin' }], undefined]);
+    const r2 = await app.inject({ method: 'GET', url: '/v1/auth/roles', headers: authHeader() });
     expect(r2.statusCode).toBe(200);
   });
 
   it('Path: PATCH Identity (Active & Inactive)', async () => {
-    (db.execute as Mock).mockResolvedValue([{ affectedRows: 1 }]);
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before 1
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update 1
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot After 1
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before 2
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update 2
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot After 2
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before 3
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update 3
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]); // Snapshot After 3
     await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/1',
-      payload: { fullName: 'N', is_active: true },
+      headers: authHeader(),
+      payload: { data: { fullName: 'N', is_active: true }, reason: 'Rectification A' },
     });
-    await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: { is_active: false } });
+    await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      headers: authHeader(),
+      payload: { data: { is_active: false }, reason: 'Rectification B' },
+    });
     const p3 = {
       department: 'D',
       email: 'e@e.com',
@@ -141,13 +190,21 @@ describe('Auth Endpoints Sovereignty', () => {
       employeeNumber: 'E1',
       departmentId: 5,
     };
-    const r3 = await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: p3 });
+    const r3 = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      headers: authHeader(),
+      payload: { data: p3, reason: 'Rectification C' },
+    });
     expect(r3.statusCode).toBe(200);
   });
 
   it('Resilience: Catch Block Nucleus (Aggressive Rejection)', async () => {
     (db.execute as Mock).mockImplementation(() => {
       throw new Error('FATAL');
+    });
+    (db.getConnection as Mock).mockImplementation(() => {
+      throw new Error('FATAL_CONN');
     });
 
     const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
@@ -156,13 +213,18 @@ describe('Auth Endpoints Sovereignty', () => {
       url: '/v1/auth/register',
       payload: { username: 'user80', email: 'e@e.com', password: 'password123' },
     });
-    const r3 = await app.inject({ method: 'GET', url: '/v1/auth/users' });
+    const r3 = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users',
+      headers: authHeader(),
+    });
     const r4 = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/1',
-      payload: { fullName: 'X' },
+      headers: authHeader(),
+      payload: { data: { fullName: 'X' }, reason: 'FATAL_REASON' },
     });
-    const r5 = await app.inject({ method: 'GET', url: '/v1/auth/roles' });
+    const r5 = await app.inject({ method: 'GET', url: '/v1/auth/roles', headers: authHeader() });
 
     expect([r1, r2, r3, r4, r5].every((r) => r.statusCode === 500)).toBe(true);
   });
@@ -196,7 +258,11 @@ describe('Auth Endpoints Sovereignty', () => {
 
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: {} });
     await app.inject({ method: 'POST', url: '/v1/auth/login', payload: { username: 'u' } });
-    await app.inject({ method: 'PATCH', url: '/v1/auth/users/1', payload: {} });
+    await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      payload: { data: {}, reason: 'R' },
+    });
 
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
@@ -231,7 +297,7 @@ describe('Auth Endpoints Sovereignty', () => {
     const rV2 = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/1',
-      payload: { email: 'not-an-email' },
+      payload: { data: { email: 'not-an-email' }, reason: 'VALIDATION_FAIL' },
     });
     expect(rV2.statusCode).toBe(400);
   });
