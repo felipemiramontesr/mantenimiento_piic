@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Navigation,
   AlertTriangle,
+  Truck,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
@@ -109,15 +110,18 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                 <td className="py-6">
                   <div className="flex items-center justify-center gap-3">
                     <div className="relative">
-                      <div className="w-10 h-10 rounded-[4px] border-2 border-white shadow-sm overflow-hidden bg-gray-100">
-                        <img
-                          src={
-                            operator?.imageUrl ||
-                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${log.operator_id}`
-                          }
-                          alt="Operator"
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="w-10 h-10 rounded-[4px] border-2 border-white shadow-sm overflow-hidden bg-[#0f2a44]/5 flex items-center justify-center">
+                        {operator?.imageUrl ? (
+                          <img
+                            src={operator.imageUrl}
+                            alt="Operator"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-[#0f2a44] text-white text-[14px] font-black uppercase">
+                            {operator?.fullName?.charAt(0) || '?'}
+                          </div>
+                        )}
                       </div>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-[4px] border-2 border-white shadow-xs flex items-center justify-center">
                         <User size={8} className="text-white" />
@@ -137,12 +141,21 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                 {/* Unidad - CENTRADO */}
                 <td className="py-6">
                   <div className="flex flex-col items-center justify-center gap-1.5">
-                    <div className="w-12 h-12 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center mb-1">
-                      <img
-                        src={unit?.images?.[0] || 'https://via.placeholder.com/100x100?text=UNIT'}
-                        alt="Unit"
-                        className="w-full h-full object-cover opacity-80"
-                      />
+                    <div className="w-12 h-12 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-white flex items-center justify-center mb-1 shadow-sm">
+                      {unit?.images?.[0] ? (
+                        <img
+                          src={unit.images[0]}
+                          alt="Unit"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center opacity-20">
+                          <Truck size={24} className="text-[#0f2a44]" />
+                          <span className="text-[6px] font-black uppercase tracking-tighter mt-0.5">
+                            No Media
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-center">
                       <p className="text-[12px] font-black text-[#0f2a44] leading-tight tracking-tighter bg-[#0f2a44]/5 px-2 py-0.5 rounded-[3px] inline-block mb-1">
