@@ -27,10 +27,10 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const offset = circumference - (currentLevel / 100) * circumference;
 
   return (
-    <div className="flex flex-col gap-6 bg-white/40 p-5 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
-      <div className="flex items-center justify-between gap-8">
-        {/* 🥧 CIRCULAR PIE CHART (SVG) */}
-        <div className="relative flex items-center justify-center w-28 h-28 shrink-0">
+    <div className="flex flex-col gap-4 bg-white/40 p-4 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
+      <div className="flex items-center justify-between gap-6">
+        {/* 🥧 CIRCULAR PIE CHART (SVG) - COMPACT SCALE */}
+        <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
             {/* Background Track */}
             <circle
@@ -60,7 +60,7 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
 
           {/* CENTER METRIC (NO OVERLAP) */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-black text-[#0f2a44] leading-none tracking-tighter">
+            <span className="text-xl font-black text-[#0f2a44] leading-none tracking-tighter">
               {currentLiters}
             </span>
             <span className="text-[7px] font-black opacity-40 text-[#0f2a44] uppercase tracking-widest">
@@ -70,20 +70,20 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
         </div>
 
         {/* 📋 ANALYTICAL LEGEND (SIDE-ALIGNED) */}
-        <div className="flex flex-col justify-center gap-4 flex-1">
+        <div className="flex flex-col justify-center gap-3 flex-1">
           <div className="space-y-1">
             <p className="text-[8px] font-black opacity-30 text-[#0f2a44] uppercase tracking-widest">
               Estado de Carga
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-black text-[#0f2a44]">{currentLevel}%</span>
+              <span className="text-lg font-black text-[#0f2a44]">{currentLevel}%</span>
               <span className="text-[8px] font-bold opacity-40 text-[#0f2a44]">VOL</span>
             </div>
           </div>
 
           <div className="h-px bg-[#0f2a44]/10 w-full" />
 
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-1.5">
             <div className="flex items-center justify-between text-[10px]">
               <span className="font-bold opacity-50 text-[#0f2a44]">Total Tanque:</span>
               <span className="font-black text-[#0f2a44]">{totalCapacity}L</span>
