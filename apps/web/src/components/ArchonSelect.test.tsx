@@ -61,13 +61,15 @@ describe('ArchonSelect', () => {
     });
   });
 
-  it('calls onChange and closes when an option is clicked', () => {
+  it('calls onChange and closes when an option is clicked', async () => {
     render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
     fireEvent.click(screen.getByText('Seleccionar...'));
     fireEvent.click(screen.getByText('ASM-01'));
 
     expect(mockOnChange).toHaveBeenCalledWith('ASM-01');
-    expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+    });
   });
 
   it('displays empty state message when no matches found', async () => {
