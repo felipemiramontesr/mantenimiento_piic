@@ -150,20 +150,63 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
   });
 
   describe('🛡️ Identity Forensic Certification', () => {
-    it('should update user forensically (auth.ts)', async () => {
+    it('should return 400 on invalid payload for user patch (auth.ts)', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        headers: authHeader(),
+        payload: { data: { email: 'invalid' }, reason: 'Bad Data' },
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should return 404 when user not found on patch (auth.ts)', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[], undefined]);
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/999',
+        headers: authHeader(),
+        payload: { data: { fullName: 'X' }, reason: 'Search Fail' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('should cover all update fields in user patch (branch coverage)', async () => {
       mockConnection.execute
-        .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Before
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update
-        .mockResolvedValueOnce([[{ id: 1 }], undefined]); // Snapshot After
+        .mockResolvedValueOnce([[{ id: 1 }], undefined]); // After
+
+      const payload = {
+        fullName: 'N',
+        department: 'D',
+        email: 'e@e.com',
+        password: 'password123',
+        roleId: 2,
+        profilePictureUrl: 'p.jpg',
+        employeeNumber: 'E1',
+        departmentId: 5,
+        is_active: true,
+      };
 
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/auth/users/1',
         headers: authHeader(),
-        payload: { data: { fullName: 'Forensic Change' }, reason: 'Audit Trial' },
+        payload: { data: payload, reason: 'Full Sync' },
       });
-
       expect(response.statusCode).toBe(200);
+    });
+
+    it('should return 500 when update fails (catch block)', async () => {
+      mockConnection.execute.mockRejectedValueOnce(new Error('FATAL_UPDATE'));
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/auth/users/1',
+        headers: authHeader(),
+        payload: { data: { fullName: 'Fail' }, reason: 'Fatal Update Fail' },
+      });
+      expect(response.statusCode).toBe(500);
     });
 
     it('should delete user forensically (auth.ts)', async () => {
@@ -179,6 +222,16 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
       });
 
       expect(response.statusCode).toBe(200);
+    });
+
+    it('should return 400 when reason is missing on delete (auth.ts)', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/v1/auth/users/1',
+        headers: authHeader(),
+        payload: { reason: 'sh' }, // Too short
+      });
+      expect(response.statusCode).toBe(400);
     });
 
     it('should return 404 when user not found on delete', async () => {
