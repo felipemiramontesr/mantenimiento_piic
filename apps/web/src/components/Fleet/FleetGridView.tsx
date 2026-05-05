@@ -428,32 +428,29 @@ const FleetUnitRow = ({
       </td>
 
       <td className="text-center px-6">
-        <div className="flex flex-col gap-4 items-center">
-          <FleetKpiMatrix
-            availability={unit.availabilityIndex ?? 100}
-            mtbf={unit.mtbfHours ?? 0}
-            mttr={unit.mttrHours ?? 0}
-            backlog={unit.backlogCount ?? 0}
-            healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
-            daysRemaining={
-              forecast
-                ? Math.ceil((forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                : undefined
-            }
-          />
+        <FleetKpiMatrix
+          availability={unit.availabilityIndex ?? 100}
+          mtbf={unit.mtbfHours ?? 0}
+          mttr={unit.mttrHours ?? 0}
+          backlog={unit.backlogCount ?? 0}
+          healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
+          daysRemaining={
+            forecast
+              ? Math.ceil((forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+              : undefined
+          }
+        />
+      </td>
 
-          <div className="flex gap-2 pt-4 border-t border-slate-100 w-full justify-center">
-            <button
-              onClick={(): void => onEdit(unit)}
-              title="Editar Activo (Auditado)"
-              className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
-            >
-              <Pencil
-                size={18}
-                className="transition-transform duration-300 group-hover:rotate-12"
-              />
-            </button>
-          </div>
+      <td className="text-center px-6">
+        <div className="flex gap-2 justify-center">
+          <button
+            onClick={(): void => onEdit(unit)}
+            title="Editar Activo (Auditado)"
+            className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+          >
+            <Pencil size={18} className="transition-transform duration-300 group-hover:rotate-12" />
+          </button>
         </div>
       </td>
     </tr>
@@ -532,8 +529,8 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
-        <table className="archon-registry-table w-full min-w-max">
+      <div className="glass-card-pro bg-white !px-0 pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
+        <table className="archon-registry-table w-full">
           <thead>
             <tr>
               <th>ACTIVO</th>
@@ -569,10 +566,10 @@ export const FleetGridView = ({
                   </span>
                 </div>
               </th>
-              <th>IDENTIDAD / PROPIEDAD / SEDE</th>
-              <th>FRECUENCIAS / TARIFA</th>
-              <th>ODOMETRÍA (ACTUAL/ANT/OBJ)</th>
-              <th>CONFIG / LEGAL</th>
+              <th>IDENTIDAD</th>
+              <th>LOGÍSTICA</th>
+              <th>ODOMETRÍA</th>
+              <th>CONFIG</th>
               <th
                 onClick={(): void =>
                   setSortConfig(
@@ -639,7 +636,7 @@ export const FleetGridView = ({
                 </div>
               </th>
               <th>SALUD</th>
-              <th>AJUSTES</th>
+              <th>ACCIONES</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
