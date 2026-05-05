@@ -38,3 +38,7 @@ apps/web/public/uploads/
 
 # Archon Dev Lore
 checkpoints.md
+
+# 📜 INTERNAL PROTOCOLS
+datosCliente/hallazgos/PROTOCOLO_L.md
+datosCliente/hallazgos/COMMIT_PROTOCOL.md
