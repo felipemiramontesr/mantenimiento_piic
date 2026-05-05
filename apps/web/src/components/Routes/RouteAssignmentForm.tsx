@@ -184,10 +184,10 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
       .map((u) => ({
         value: u.id,
         label: u.fullName,
-        secondaryLabel: `${u.role?.toUpperCase() || 'USUARIO'} | NÓMINA: ${
+        secondaryLabel: `${u.roleName?.toUpperCase() || 'USUARIO'} | NÓMINA: ${
           u.employeeNumber || 'S/N'
         }`,
-        searchTerms: `${u.employeeNumber || ''} ${u.role || ''} ${u.email || ''}`,
+        searchTerms: `${u.employeeNumber || ''} ${u.roleName || ''} ${u.email || ''}`,
       }));
   }, [users, activeRoutes, isEdit, routeToEdit]);
 
