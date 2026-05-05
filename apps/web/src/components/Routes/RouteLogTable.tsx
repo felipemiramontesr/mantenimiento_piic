@@ -94,7 +94,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
         </thead>
         <tbody>
           {logs.map((log, index): React.JSX.Element => {
-            const operator = users.find((u) => u.id === log.operator_id);
+            const operator = users.find((u) => u.id === String(log.operator_id));
             const unit = units.find((u) => u.id === log.unit_id);
             const status = getStatus(log);
 
