@@ -461,11 +461,10 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 />
               </div>
 
-              {/* 📊 DYNAMIC VOLUMETRIC CHART (CIRCULAR + RE-ANIMATION KEY) */}
+              {/* 📊 DYNAMIC VOLUMETRIC CHART (CIRCULAR - INTERNAL ANIMATION) */}
               {tankCapacity > 0 && (
                 <div className="pt-4">
                   <FuelVolumeChart
-                    key={`${formData.unitId}-${formData.fuelLevel}`}
                     currentLevel={formData.fuelLevel}
                     totalCapacity={tankCapacity}
                     color={getFuelColor(formData.fuelLevel)}
