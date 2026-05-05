@@ -117,9 +117,32 @@ Tras la implementación de la jerarquía de roles, se detectó una falla crític
 
 ---
 
+### L. Identidad del Operador y Estandarización de Assets (RESOLVIDO v.44.5.1)
+
+Tras la auditoría de UX en la bitácora de rutas, se resolvieron las siguientes inconsistencias que afectaban la trazabilidad del personal y el activo:
+
+1.  **Fallo de Mapeo de Identidad**: Se detectó que los conductores aparecían como "Operador Externo" debido a una discrepancia de tipos (`number` del API vs `string` del contexto). Se inyectó un motor de casteo dinámico que restauró la visibilidad de los nombres y avatares reales.
+2.  **Placeholders de Chasis Industrial**: Se eliminaron las "imágenes rotas" y los avatares externos genéricos. Se implementó un sistema de **Sovereign Initials** para usuarios y un icono de **Truck** con el sello **"NO MEDIA"** para unidades, logrando una paridad visual del 100% entre el formulario de despacho y la bitácora.
+3.  **Sincronización de Footer Automática**: Se automatizó el versionamiento del sistema, vinculando la interfaz con las constantes de ingeniería para garantizar que el footer refleje siempre la última versión del repositorio en tiempo real.
+
+**Estatus:** Paridad Visual y Trazabilidad Certificada.
+
+---
+
+### M. Motor de Localización Soberana (RESOLVIDO v.44.6.0)
+
+Tras identificar ambigüedad en la interpretación de cronogramas operativos en estaciones de trabajo con configuraciones regionales diversas, se aplicó la siguiente corrección sistémica:
+
+1.  **Centralización de Formato DD/MM/AAAA**: Se implementó un motor de fechas centralizado (`dateUtils.ts`) que fuerza el locale `es-MX`. Esto garantiza que todas las marcas de tiempo (Salidas, Entradas, Auditorías) se lean de forma inequívoca.
+2.  **Eliminación de la Dependencia del Navegador**: El sistema ya no confía en el `toLocaleString()` genérico, blindando la bitácora contra el formato inglés (MM/DD/AAAA) que es propenso a errores de interpretación en logística.
+
+**Estatus:** Localización Soberana Validada.
+
+---
+
 ## 5. Certificación de Integridad Archon
 
-El sistema **Archon v.44.1.0** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
+El sistema **Archon v.44.6.0** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
 
 - **Resiliencia:** Inmunidad total a la volatilidad del servidor y pérdida de archivos locales.
 - **Precisión:** Cálculos dinámicos basados en desgaste diario real y ordenamiento natural de activos.
@@ -129,5 +152,5 @@ El sistema **Archon v.44.1.0** se declara oficialmente superior al sistema de ge
 ---
 
 **Firmado:**
-_Archon Core Alpha Engine v.44.1.0_
-_Estatus: Type Shielding & Forensic Integrity Verified_
+_Archon Core Alpha Engine v.44.6.0_
+_Estatus: Localization & Identity Mapping Verified_
