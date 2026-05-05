@@ -24,8 +24,20 @@ import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFuelSensor from './ArchonFuelSensor';
 import FuelVolumeChart from './FuelVolumeChart';
 
+/**
+ * 🔱 Archon Component: RouteAssignmentForm
+ * Implementation: Sovereign Asset Dispatch Command Center (v.42.7.0)
+ *
+ * CORE ARCHITECTURE:
+ * - Mission Control: Orchestrates unit identity, operator assignment, and mission objectives.
+ * - Telemetry Integration: Real-time synchronization with volumetric and odometry sensors.
+ * - Single-Screen UX: Compact, high-density layout designed for industrial control environments.
+ * - Security: Implements strict validation to prevent unauthorized network requests (Anti-Ghost 400).
+ */
 interface RouteAssignmentFormProps {
+  /** Modal closure handler */
   onClose: () => void;
+  /** Route record used for rectification or mission closure */
   routeToEdit?: RouteLog | null;
 }
 

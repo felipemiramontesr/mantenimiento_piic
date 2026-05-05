@@ -2,13 +2,19 @@ import React from 'react';
 
 /**
  * 🔱 Archon Component: ArchonFuelSensor
- * Implementation: Sovereign Fuel Telemetry Gauge (Rectified v.2.0.0)
- * Standard: Linear absolute positioning for forensic precision
+ * Implementation: Sovereign Fuel Telemetry Gauge (v.2.1.0)
+ *
+ * DESIGN RATIONALE:
+ * - Minimalist Interface: Uses 'F' (Full) and 'E' (Empty) for cockpit-standard readability.
+ * - Precision: Uses absolute positioning (%) for labels and ticks to ensure forensic
+ *   alignment regardless of container width.
  */
-
 interface ArchonFuelSensorProps {
+  /** Current percentage value (0-100) */
   value: number;
+  /** Callback triggered on user interaction with the gauge */
   onChange: (value: number) => void;
+  /** Disables interaction for read-only mission reviews */
   disabled?: boolean;
 }
 

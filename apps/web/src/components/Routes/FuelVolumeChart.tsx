@@ -3,13 +3,20 @@ import { motion } from 'framer-motion';
 
 /**
  * 🔱 Archon Component: FuelVolumeChart
- * Implementation: Circular Volumetric Pie Chart (Rectified v.3.0.0)
- * Purpose: Real-time visualization of liters with zero-overlap layout
+ * Implementation: Sovereign Circular Volumetric Gauge (v.3.5.0)
+ *
+ * DESIGN RATIONALE:
+ * - Scale: Fixed w-20 (80px) to prevent layout overlap in high-density dashboards.
+ * - Geometry: Radius 40 inside 100x100 viewBox provides a 10-unit safety margin,
+ *   preventing SVG clipping (clipping) in high-DPI displays.
+ * - Precision: Real-time liter calculation based on unit capacity.
  */
-
 interface FuelVolumeChartProps {
-  currentLevel: number; // 0-100
-  totalCapacity: number; // Liters
+  /** 0-100 percentage value representing the current load state */
+  currentLevel: number;
+  /** Total nominal capacity of the tank in Liters */
+  totalCapacity: number;
+  /** Contextual status color (Sovereign Semantic Palette) */
   color: string;
 }
 
@@ -18,6 +25,10 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   totalCapacity,
   color,
 }) => {
+  /**
+   * Volumetric Logic:
+   * Translates percentage into absolute forensic liters.
+   */
   const currentLiters = Number(((currentLevel / 100) * totalCapacity).toFixed(1));
   const remainingLiters = Number((totalCapacity - currentLiters).toFixed(1));
 

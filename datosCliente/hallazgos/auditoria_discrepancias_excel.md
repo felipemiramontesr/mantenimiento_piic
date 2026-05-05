@@ -53,11 +53,24 @@ Tras la auditoría técnica y la ejecución del script `FixAuditDiscrepancies.ts
 2.  **ASM-025 (JAC X200):** Rectificado de **Gasolina** a **Diésel** (Motor CTI 2.0L).
 3.  **Automatización Sentinel:** Se ha vinculado el reporte de incidencias con el estatus de la unidad. Cualquier reporte `CRITICAL` o `SINIESTRO` degrada automáticamente la disponibilidad del activo para prevenir operaciones de riesgo.
 
-**Estatus:** Datos normalizados y alineados con la realidad física de los activos.
+**Estatus:** Discrepancias técnicas de motor y flujos críticos de seguridad resueltas y validadas en el entorno de producción.
 
 ---
 
-### G. Hallazgos Pendientes de Captura Humana
+### H. Estabilización de Telemetría y Despacho Sentinel (RESOLVIDO v.42.7)
+
+Tras la fase de implementación intensiva del módulo de despacho, se han resuelto las siguientes discrepancias técnicas que afectaban la integridad de la red y la UX:
+
+1.  **Neutralización del Ghost Error 400:** Se identificó que elementos interactivos en el sensor de combustible disparaban peticiones `POST` accidentales. Se inyectó `type="button"` y blindaje de eventos, asegurando que **solo** el botón "Autorizar Despacho" pueda iniciar una persistencia en base de datos.
+2.  **Calibración Geométrica de Telemetría:** Se resolvió el hallazgo de la "gráfica invisible" mediante el ajuste del radio de seguridad (`40`) y la implementación de dimensiones atómicas en el SVG, eliminando recortes por bordes en pantallas de alta densidad.
+3.  **Protocolo Cache-Busting:** Se implementó una invalidación de cache dinámica para los componentes de telemetría, garantizando que el operador siempre visualice la última versión del chasis de sensores sin necesidad de refrescos manuales.
+4.  **Optimización de Ergonomía Vertical:** Se compactó el layout para cumplir con el estándar "Single-Screen UI", permitiendo la visibilidad total de los controles de autorización sin scroll en estaciones de monitoreo industrial.
+
+**Estatus:** Módulo Sentinel estabilizado, auditado y listo para operación forense.
+
+---
+
+### I. Hallagazgos Pendientes de Captura Humana (v.4.0)
 
 1.  **Vacío de Capacidades Críticas:** El 100% de la flota carece de registro de **Capacidad de Carga (KG)**, **Configuración de Motor**, **Tipo de Tracción** y **Transmisión**.
 2.  **Omisión Documental:** No se cuenta con **Pólizas de Seguro**, **Fechas de Vencimiento de Verificación** ni **Folios de Tarjetas de Circulación**.
