@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Clock, ArrowRight, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 import api from '../../api/client';
+import { formatDate } from '../../utils/dateUtils';
 
 interface ActivityLog {
   id: number;
@@ -116,10 +117,10 @@ const ForensicJournalTable: React.FC = () => {
                 <td className="py-4">
                   <div className="flex flex-col">
                     <span className="text-[11px] font-black text-[#0f2a44]">
-                      {new Date(log.created_at).toLocaleDateString()}
+                      {formatDate(log.created_at)}
                     </span>
                     <span className="text-[9px] font-bold opacity-40 uppercase">
-                      {new Date(log.created_at).toLocaleTimeString()}
+                      {new Date(log.created_at).toLocaleTimeString('es-MX')}
                     </span>
                   </div>
                 </td>

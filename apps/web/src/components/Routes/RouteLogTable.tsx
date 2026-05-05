@@ -14,6 +14,7 @@ import {
 import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
+import { formatDate } from '../../utils/dateUtils';
 import IncidentReportForm from './IncidentReportForm';
 
 export interface RouteLog {
@@ -181,7 +182,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                       <div className="flex items-center gap-1">
                         <Clock size={10} />
                         <span className="text-[9px] font-bold uppercase">
-                          {new Date(log.start_time).toLocaleDateString()}
+                          {formatDate(log.start_time)}
                         </span>
                       </div>
                       <ArrowRight size={8} />
