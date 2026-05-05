@@ -141,7 +141,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                 {/* Unidad - CENTRADO */}
                 <td className="py-6">
                   <div className="flex flex-col items-center justify-center gap-1.5">
-                    <div className="w-16 h-16 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center mb-1 shadow-sm">
+                    <div className="w-20 h-20 rounded-[4px] border border-[rgba(15,42,68,0.1)] overflow-hidden bg-gray-50 flex items-center justify-center mb-1 shadow-sm">
                       {unit?.images?.[0] ? (
                         <img
                           src={unit.images[0]}
