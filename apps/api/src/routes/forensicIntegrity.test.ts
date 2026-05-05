@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
-import { getEntityAuditHistory } from '../services/auditService';
+import { getEntityAuditHistory, recordAuditLog } from '../services/auditService';
 import runMigration073 from '../services/runMigration073';
 
 /**
@@ -56,6 +56,17 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
       const history = await getEntityAuditHistory('user', '1');
       expect(history).toEqual(mockHistory);
     });
+
+    it('should record audit log without snapshot_before (branch coverage)', async () => {
+      await recordAuditLog({
+        entity_type: 'catalog',
+        entity_id: '1',
+        action: 'CREATE',
+        reason: 'New Seed',
+        user_id: 1,
+      });
+      expect(db.query).toHaveBeenCalled();
+    });
   });
 
   describe('🛡️ Route Forensic Certification', () => {
@@ -76,6 +87,18 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
       expect(JSON.parse(response.body).success).toBe(true);
     });
 
+    it('should return 400 when route not found on update', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[], undefined]);
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/v1/routes/r1',
+        headers: authHeader(),
+        payload: { data: { destination: 'New' }, reason: 'Correction' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).message).toBe('Route not found');
+    });
+
     it('should delete route forensically', async () => {
       mockConnection.execute
         .mockResolvedValueOnce([[{ id: 1, uuid: 'r1' }], undefined]) // Snapshot Before
@@ -89,6 +112,18 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
       });
 
       expect(response.statusCode).toBe(200);
+    });
+
+    it('should return 400 when route not found on delete', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[], undefined]);
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/v1/routes/r1',
+        headers: authHeader(),
+        payload: { reason: 'Decommissioning' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).message).toBe('Route not found');
     });
 
     it('should handle errors in route forensic updates', async () => {
@@ -145,11 +180,32 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
 
       expect(response.statusCode).toBe(200);
     });
+
+    it('should return 404 when user not found on delete', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[], undefined]);
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/v1/auth/users/999',
+        headers: authHeader(),
+        payload: { reason: 'Not Found' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('should return 500 when delete fails (catch block)', async () => {
+      mockConnection.execute.mockRejectedValueOnce(new Error('FATAL_DELETE'));
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/v1/auth/users/1',
+        headers: authHeader(),
+        payload: { reason: 'Fatal Fail' },
+      });
+      expect(response.statusCode).toBe(500);
+    });
   });
 
   describe('🛡️ Fleet Service Edge Cases', () => {
     it('should handle empty update payload in FleetService', async () => {
-      // Hits lines 160-162 in fleetService.ts by sending unknown fields
       mockConnection.execute.mockResolvedValueOnce([[{ id: 'UNIT-1' }], undefined]);
       const response = await app.inject({
         method: 'PATCH',
@@ -157,18 +213,39 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
         headers: authHeader(),
         payload: { data: { unknownField: 123 }, reason: 'No Valid Changes' },
       });
-      expect(response.statusCode).toBe(404); // F3 error in fleet.ts when service returns false
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('should return 400 when reason is missing on delete', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/v1/fleet/UNIT-1',
+        headers: authHeader(),
+        payload: { reason: 'sh' },
+      });
+      expect(response.statusCode).toBe(400);
     });
   });
 
   describe('🛡️ Infrastructure: Migration Certification', () => {
     it('should execute migration 073 correctly', async () => {
-      // Force migration execution for coverage
       const mockResult = [{ affectedRows: 1 }, undefined];
       (db.execute as Mock).mockResolvedValue(mockResult);
-
       await runMigration073();
       expect(db.execute).toHaveBeenCalled();
+    });
+
+    it('should handle missing migration file (branch coverage)', async () => {
+      const fs = await import('fs');
+      const spy = vi.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
+      await runMigration073();
+      expect(spy).toHaveBeenCalled();
+      spy.mockRestore();
+    });
+
+    it('should handle migration failure (catch block)', async () => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('MIGRATION_FAIL'));
+      await expect(runMigration073()).rejects.toThrow('MIGRATION_FAIL');
     });
   });
 });
