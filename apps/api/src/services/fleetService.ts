@@ -1,8 +1,9 @@
-import { ResultSetHeader } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import EncryptionService from './encryption';
 import { FleetIntelligenceEngine, FleetUnit } from './fleetIntelligence';
+import { recordAuditLog } from './auditService';
 
 /**
  * 🔱 Archon FleetService (SOLID: SRP & High Cohesion)
@@ -129,41 +130,119 @@ export default class FleetService {
   }
 
   /**
-   * Updates an existing unit.
+   * Updates an existing unit with forensic audit.
    */
   static async updateUnit(
     id: string,
-    data: Record<string, string | number | null | string[]>
+    data: Record<string, string | number | null | string[]>,
+    reason: string,
+    adminId: number
   ): Promise<boolean> {
-    const updates = this.preparePayload(data);
-    const fields = Object.keys(updates);
-    if (fields.length === 0) return false;
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
 
-    const setClause = fields.map((f) => `${f} = ?`).join(', ');
-    const values = [
-      ...Object.values(updates).map((v) => {
-        if (v && typeof v === 'object') {
-          return JSON.stringify(v);
-        }
-        return v;
-      }),
-      id,
-    ];
+      // 1. Snapshot Before
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM fleet_units WHERE id = ? FOR UPDATE',
+        [id]
+      );
+      if (rows.length === 0) {
+        await connection.release();
+        return false;
+      }
+      const snapshotBefore = rows[0];
 
-    const [result] = await db.execute<ResultSetHeader>(
-      `UPDATE fleet_units SET ${setClause} WHERE id = ?`,
-      values
-    );
+      // 2. Prepare Updates
+      const updates = this.preparePayload(data);
+      const fields = Object.keys(updates);
+      if (fields.length === 0) {
+        await connection.release();
+        return false;
+      }
 
-    return result.affectedRows > 0;
+      const setClause = fields.map((f) => `${f} = ?`).join(', ');
+      const values = [
+        ...Object.values(updates).map((v) => {
+          if (v && typeof v === 'object') {
+            return JSON.stringify(v);
+          }
+          return v;
+        }),
+        id,
+      ];
+
+      // 3. Perform Update
+      await connection.execute(`UPDATE fleet_units SET ${setClause} WHERE id = ?`, values);
+
+      // 4. Snapshot After
+      const [rowsAfter] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM fleet_units WHERE id = ?',
+        [id]
+      );
+      const snapshotAfter = rowsAfter[0];
+
+      // 5. Record Audit
+      await recordAuditLog({
+        entity_type: 'fleet_unit',
+        entity_id: id,
+        action: 'UPDATE',
+        snapshot_before: snapshotBefore,
+        snapshot_after: snapshotAfter,
+        reason,
+        user_id: adminId,
+      });
+
+      await connection.commit();
+      connection.release();
+      return true;
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      throw e;
+    }
   }
 
   /**
-   * Removes a unit from the system.
+   * Removes a unit from the system with forensic audit.
    */
-  static async deleteUnit(id: string): Promise<boolean> {
-    const [result] = await db.execute('DELETE FROM fleet_units WHERE id = ?', [id]);
-    return (result as ResultSetHeader).affectedRows > 0;
+  static async deleteUnit(id: string, reason: string, adminId: number): Promise<boolean> {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Snapshot Before
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM fleet_units WHERE id = ? FOR UPDATE',
+        [id]
+      );
+      if (rows.length === 0) {
+        await connection.release();
+        return false;
+      }
+      const snapshotBefore = rows[0];
+
+      // 2. Perform Delete
+      await connection.execute('DELETE FROM fleet_units WHERE id = ?', [id]);
+
+      // 3. Record Audit
+      await recordAuditLog({
+        entity_type: 'fleet_unit',
+        entity_id: id,
+        action: 'DELETE',
+        snapshot_before: snapshotBefore,
+        reason,
+        user_id: adminId,
+      });
+
+      await connection.commit();
+      connection.release();
+      return true;
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      throw e;
+    }
   }
 
   /**

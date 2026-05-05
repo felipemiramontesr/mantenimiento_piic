@@ -211,6 +211,50 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.code(400).send({ success: false, message: 'Error fetching global incidents' });
     }
   });
+  /**
+   * UPDATE ROUTE (FORENSIC)
+   * PUT /v1/routes/:uuid
+   */
+  fastify.put('/routes/:uuid', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const schema = z.object({
+        data: z.record(z.any()),
+        reason: z.string().min(5),
+      });
+      const { data, reason } = schema.parse(request.body);
+      const user = request.user as { id: number };
+
+      await RouteService.updateRoute(uuid, data, reason, user.id);
+
+      return reply.send({ success: true, message: 'Route updated forensically' });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(400).send({ success: false, message: (error as any).message });
+    }
+  });
+
+  /**
+   * DELETE ROUTE (FORENSIC)
+   * DELETE /v1/routes/:uuid
+   */
+  fastify.delete('/routes/:uuid', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const schema = z.object({
+        reason: z.string().min(5),
+      });
+      const { reason } = schema.parse(request.body);
+      const user = request.user as { id: number };
+
+      await RouteService.deleteRoute(uuid, reason, user.id);
+
+      return reply.send({ success: true, message: 'Route deleted forensically' });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(400).send({ success: false, message: (error as any).message });
+    }
+  });
 }
 
 export default fleetRoutes;

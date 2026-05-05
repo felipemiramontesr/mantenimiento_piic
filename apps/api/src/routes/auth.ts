@@ -4,6 +4,7 @@ import argon2 from 'argon2';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
+import { recordAuditLog } from '../services/auditService';
 
 /**
  * 🔱 Archon Auth Engine (v.8.7.0) - THE NUCLEUS
@@ -210,70 +211,164 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
   fastify.patch('/users/:id', async (request, reply) => {
     const schema = z.object({
-      fullName: z.string().optional(),
-      department: z.string().optional(),
-      email: z.string().email().optional(),
-      password: z.string().min(8).optional(),
-      roleId: z.number().int().optional(),
-      profilePictureUrl: z.string().optional(),
-      employeeNumber: z.string().optional(),
-      departmentId: z.number().int().optional(),
-      is_active: z.boolean().optional(),
+      data: z.object({
+        fullName: z.string().optional(),
+        department: z.string().optional(),
+        email: z.string().email().optional(),
+        password: z.string().min(8).optional(),
+        roleId: z.number().int().optional(),
+        profilePictureUrl: z.string().optional(),
+        employeeNumber: z.string().optional(),
+        departmentId: z.number().int().optional(),
+        is_active: z.boolean().optional(),
+      }),
+      reason: z.string().min(5),
     });
     const { id } = request.params as { id: string };
     const body = schema.safeParse(request.body);
     if (!body.success) {
-      return reply.code(400).send({ error: 'U1' });
+      return reply.code(400).send({ error: 'U1', details: body.error.format() });
     }
-    const updates = body.data;
-    const fields: string[] = [];
-    const values: (string | number | boolean)[] = [];
-    if (updates.fullName) {
-      fields.push('full_name = ?');
-      values.push(updates.fullName);
-    }
-    if (updates.department) {
-      fields.push('department = ?');
-      values.push(updates.department);
-    }
-    if (updates.email) {
-      fields.push('email = ?');
-      values.push(EncryptionService.encrypt(updates.email));
-    }
-    if (updates.password) {
-      fields.push('password_hash = ?');
-      values.push(await argon2.hash(updates.password));
-    }
-    if (updates.roleId) {
-      fields.push('role_id = ?');
-      values.push(updates.roleId);
-    }
-    if (updates.profilePictureUrl) {
-      fields.push('profile_picture_url = ?');
-      values.push(updates.profilePictureUrl);
-    }
-    if (updates.employeeNumber) {
-      fields.push('employee_number = ?');
-      values.push(updates.employeeNumber);
-    }
-    if (updates.departmentId) {
-      fields.push('department_id = ?');
-      values.push(updates.departmentId);
-    }
-    if (updates.is_active !== undefined) {
-      fields.push('is_active = ?');
-      values.push(updates.is_active ? 1 : 0);
-    }
-    if (fields.length === 0) {
-      return reply.code(400).send({ error: 'U2' });
-    }
+    const { data: updates, reason } = body.data;
+    const admin = request.user as { id: number };
+
+    const connection = await db.getConnection();
     try {
-      values.push(id);
-      await db.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+      await connection.beginTransaction();
+
+      // 1. Snapshot Before
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM users WHERE id = ? FOR UPDATE',
+        [id]
+      );
+      if (rows.length === 0) {
+        connection.release();
+        return reply.code(404).send({ error: 'U3' });
+      }
+      const snapshotBefore = rows[0];
+
+      // 2. Build Updates
+      const fields: string[] = [];
+      const values: (string | number | boolean)[] = [];
+      if (updates.fullName) {
+        fields.push('full_name = ?');
+        values.push(updates.fullName);
+      }
+      if (updates.department) {
+        fields.push('department = ?');
+        values.push(updates.department);
+      }
+      if (updates.email) {
+        fields.push('email = ?');
+        values.push(EncryptionService.encrypt(updates.email));
+      }
+      if (updates.password) {
+        fields.push('password_hash = ?');
+        values.push(await argon2.hash(updates.password));
+      }
+      if (updates.roleId) {
+        fields.push('role_id = ?');
+        values.push(updates.roleId);
+      }
+      if (updates.profilePictureUrl) {
+        fields.push('profile_picture_url = ?');
+        values.push(updates.profilePictureUrl);
+      }
+      if (updates.employeeNumber) {
+        fields.push('employee_number = ?');
+        values.push(updates.employeeNumber);
+      }
+      if (updates.departmentId) {
+        fields.push('department_id = ?');
+        values.push(updates.departmentId);
+      }
+      if (updates.is_active !== undefined) {
+        fields.push('is_active = ?');
+        values.push(updates.is_active ? 1 : 0);
+      }
+
+      if (fields.length > 0) {
+        values.push(id);
+        await connection.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+      }
+
+      // 3. Snapshot After
+      const [rowsAfter] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM users WHERE id = ?',
+        [id]
+      );
+      const snapshotAfter = rowsAfter[0];
+
+      // 4. Audit
+      await recordAuditLog({
+        entity_type: 'user',
+        entity_id: id,
+        action: 'UPDATE',
+        snapshot_before: snapshotBefore,
+        snapshot_after: snapshotAfter,
+        reason,
+        user_id: admin.id,
+      });
+
+      await connection.commit();
+      connection.release();
       return reply.send({ success: true });
     } catch (e) {
+      await connection.rollback();
+      connection.release();
       fastify.log.error(e);
       return reply.code(500).send({ error: 'UPDATE_FAIL' });
+    }
+  });
+
+  fastify.delete('/users/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const schema = z.object({
+      reason: z.string().min(5),
+    });
+    const parse = schema.safeParse(request.body);
+    if (!parse.success) {
+      return reply.code(400).send({ error: 'D1', details: parse.error.format() });
+    }
+    const { reason } = parse.data;
+    const admin = request.user as { id: number };
+
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Snapshot Before
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM users WHERE id = ? FOR UPDATE',
+        [id]
+      );
+      if (rows.length === 0) {
+        connection.release();
+        return reply.code(404).send({ error: 'D3' });
+      }
+      const snapshotBefore = rows[0];
+
+      // 2. Perform Delete
+      await connection.execute('DELETE FROM users WHERE id = ?', [id]);
+
+      // 3. Audit
+      await recordAuditLog({
+        entity_type: 'user',
+        entity_id: id,
+        action: 'DELETE',
+        snapshot_before: snapshotBefore,
+        reason,
+        user_id: admin.id,
+      });
+
+      await connection.commit();
+      connection.release();
+      return reply.send({ success: true });
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      fastify.log.error(e);
+      return reply.code(500).send({ error: 'DELETE_FAIL' });
     }
   });
 

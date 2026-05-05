@@ -38,12 +38,13 @@ interface UserContextType {
   setActivePanel: (panel: UserPanel) => void;
   fetchUsers: () => Promise<void>;
   toggleUserStatus: (id: string, currentStatus: boolean) => Promise<void>;
-  updateUser: (id: string, data: Partial<UserIndustrial>) => Promise<boolean>;
-  editingUser: UserIndustrial | null;
-  setEditingUser: (user: UserIndustrial | null) => void;
-  departments: string[];
-  roles: CatalogOption[];
-}
+   updateUser: (id: string, data: Partial<UserIndustrial>, reason: string) => Promise<boolean>;
+   deleteUser: (id: string, reason: string) => Promise<boolean>;
+   editingUser: UserIndustrial | null;
+   setEditingUser: (user: UserIndustrial | null) => void;
+   departments: string[];
+   roles: CatalogOption[];
+ }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
 
@@ -98,43 +99,68 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
-    try {
-      // Use the standard PATCH protocol for state modification
-      const response = await api.patch(`/auth/users/${id}`, { is_active: !currentStatus });
-
-      if (response.data.success) {
-        await fetchUsers();
-      }
-    } catch (err: unknown) {
-      // Silently handle error
-    }
-  };
-
-  const updateUser = async (id: string, data: Partial<UserIndustrial>): Promise<boolean> => {
-    try {
-      // Map frontend update to backend schema (CamelCase Sync v.28.40.0)
-      const backendData = {
-        fullName: data.fullName,
-        email: data.email,
-        roleId: data.roleId,
-        department: data.department,
-        employeeNumber: data.employeeNumber,
-        profile_picture_url: data.imageUrl,
-        password: data.password,
-      };
-
-      const response = await api.patch(`/auth/users/${id}`, backendData);
-
-      if (response.data.success) {
-        await fetchUsers();
-        return true;
-      }
-      return false;
-    } catch (err: unknown) {
-      return false;
-    }
-  };
+   const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
+     try {
+       // Use the standard PATCH protocol for state modification
+       const response = await api.patch(`/auth/users/${id}`, {
+         data: { is_active: !currentStatus },
+         reason: 'Modificación de estatus operativo vía Directorio',
+       });
+ 
+       if (response.data.success) {
+         await fetchUsers();
+       }
+     } catch (err: unknown) {
+       // Silently handle error
+     }
+   };
+ 
+   const updateUser = async (
+     id: string,
+     data: Partial<UserIndustrial>,
+     reason: string
+   ): Promise<boolean> => {
+     try {
+       // Map frontend update to backend schema (CamelCase Sync v.28.40.0)
+       const backendData = {
+         fullName: data.fullName,
+         email: data.email,
+         roleId: data.roleId,
+         department: data.department,
+         employeeNumber: data.employeeNumber,
+         profilePictureUrl: data.imageUrl,
+         password: data.password,
+       };
+ 
+       const response = await api.patch(`/auth/users/${id}`, {
+         data: backendData,
+         reason,
+       });
+ 
+       if (response.data.success) {
+         await fetchUsers();
+         return true;
+       }
+       return false;
+     } catch (err: unknown) {
+       return false;
+     }
+   };
+ 
+   const deleteUser = async (id: string, reason: string): Promise<boolean> => {
+     try {
+       const response = await api.delete(`/auth/users/${id}`, {
+         data: { reason },
+       });
+       if (response.data.success) {
+         await fetchUsers();
+         return true;
+       }
+       return false;
+     } catch (err) {
+       return false;
+     }
+   };
 
   const fetchDepartments = useCallback(async (): Promise<void> => {
     try {
@@ -177,12 +203,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         setActivePanel,
         fetchUsers,
         toggleUserStatus,
-        updateUser,
-        editingUser,
-        setEditingUser,
-        departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
-        roles,
-      }}
+         updateUser,
+         deleteUser,
+         editingUser,
+         setEditingUser,
+         departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
+         roles,
+       }}
     >
       {children}
     </UserContext.Provider>

@@ -16,6 +16,7 @@ import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import { formatDate } from '../../utils/dateUtils';
 import IncidentReportForm from './IncidentReportForm';
+import RouteEditModal from './RouteEditModal';
 
 export interface RouteLog {
   id: string;
@@ -49,6 +50,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
 
   const [logs, setLogs] = React.useState<RouteLog[]>([]);
   const [reportingRoute, setReportingRoute] = React.useState<RouteLog | null>(null);
+  const [editingLog, setEditingLog] = React.useState<RouteLog | null>(null);
 
   const fetchRoutes = async (): Promise<void> => {
     try {
@@ -242,26 +244,27 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                       </button>
                     )}
                     <button
-                      onClick={(): void => onEdit?.(log)}
-                      title={!log.end_time ? 'Finalizar Misión' : 'Consultar Detalles'}
-                      className={`flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none ${
-                        !log.end_time
-                          ? 'text-[#f2b705] bg-amber-50/30 hover:bg-amber-100/50'
-                          : 'text-[#0f2a44] bg-gray-50 hover:bg-gray-100'
-                      }`}
+                      onClick={(): void => setEditingLog(log)}
+                      title="Editar Registro (Auditado)"
+                      className="flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none text-[#0f2a44] bg-gray-50 hover:bg-gray-100"
                     >
-                      {!log.end_time ? (
+                      <Pencil
+                        size={18}
+                        className="transition-transform duration-300 group-hover:rotate-12"
+                      />
+                    </button>
+                    {!log.end_time && (
+                      <button
+                        onClick={(): void => onEdit?.(log)}
+                        title="Finalizar Misión"
+                        className="flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none text-[#f2b705] bg-amber-50/30 hover:bg-amber-100/50"
+                      >
                         <CheckCircle2
                           size={18}
                           className="transition-transform duration-300 group-hover:scale-110"
                         />
-                      ) : (
-                        <Pencil
-                          size={18}
-                          className="transition-transform duration-300 group-hover:rotate-12"
-                        />
-                      )}
-                    </button>
+                      </button>
+                    )}
                   </div>
                 </td>
               </motion.tr>
@@ -282,6 +285,17 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
             }}
           />
         </div>
+      )}
+
+      {editingLog && (
+        <RouteEditModal
+          log={editingLog}
+           onClose={(): void => setEditingLog(null)}
+           onSuccess={(): void => {
+             setEditingLog(null);
+             fetchRoutes();
+           }}
+        />
       )}
     </div>
   );

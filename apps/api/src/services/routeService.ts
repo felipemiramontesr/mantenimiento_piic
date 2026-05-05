@@ -1,6 +1,7 @@
 import { RowDataPacket } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from './db';
+import { recordAuditLog } from './auditService';
 
 /**
  * 🔱 Archon RouteService
@@ -246,5 +247,104 @@ export default class RouteService {
       ORDER BY i.reported_at DESC`
     );
     return rows;
+  }
+
+  /**
+   * Updates a route entry with forensic audit.
+   */
+  static async updateRoute(
+    uuid: string,
+    data: Partial<RouteEntry>,
+    reason: string,
+    adminId: number
+  ): Promise<void> {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Get snapshot before
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM fleet_routes WHERE uuid = ? FOR UPDATE',
+        [uuid]
+      );
+      if (rows.length === 0) throw new Error('Route not found');
+      const snapshotBefore = rows[0];
+
+      // 2. Perform Update
+      const fields = Object.keys(data)
+        .map((key) => `${key} = ?`)
+        .join(', ');
+      const values = Object.values(data);
+
+      if (fields.length > 0) {
+        await connection.execute(`UPDATE fleet_routes SET ${fields} WHERE uuid = ?`, [
+          ...values,
+          uuid,
+        ]);
+      }
+
+      // 3. Get snapshot after
+      const [rowsAfter] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM fleet_routes WHERE uuid = ?',
+        [uuid]
+      );
+      const snapshotAfter = rowsAfter[0];
+
+      // 4. Record Audit Log
+      await recordAuditLog({
+        entity_type: 'route_log',
+        entity_id: uuid,
+        action: 'UPDATE',
+        snapshot_before: snapshotBefore,
+        snapshot_after: snapshotAfter,
+        reason,
+        user_id: adminId,
+      });
+
+      await connection.commit();
+      connection.release();
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      throw e;
+    }
+  }
+
+  /**
+   * Deletes a route entry with forensic audit.
+   */
+  static async deleteRoute(uuid: string, reason: string, adminId: number): Promise<void> {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Get snapshot before
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM fleet_routes WHERE uuid = ? FOR UPDATE',
+        [uuid]
+      );
+      if (rows.length === 0) throw new Error('Route not found');
+      const snapshotBefore = rows[0];
+
+      // 2. Perform Delete
+      await connection.execute('DELETE FROM fleet_routes WHERE uuid = ?', [uuid]);
+
+      // 3. Record Audit Log
+      await recordAuditLog({
+        entity_type: 'route_log',
+        entity_id: uuid,
+        action: 'DELETE',
+        snapshot_before: snapshotBefore,
+        reason,
+        user_id: adminId,
+      });
+
+      await connection.commit();
+      connection.release();
+    } catch (e) {
+      await connection.rollback();
+      connection.release();
+      throw e;
+    }
   }
 }
