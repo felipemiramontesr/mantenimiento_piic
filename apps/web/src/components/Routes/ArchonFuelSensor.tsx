@@ -13,7 +13,7 @@ interface ArchonFuelSensorProps {
 }
 
 const FUEL_STEPS = [
-  { label: 'Full', value: 100 },
+  { label: 'F', value: 100 },
   { label: '7/8', value: 87.5 },
   { label: '3/4', value: 75 },
   { label: '5/8', value: 62.5 },
@@ -22,7 +22,7 @@ const FUEL_STEPS = [
   { label: '1/4', value: 25 },
   { label: '1/8', value: 12.5 },
   { label: '1/16', value: 6.25 },
-  { label: 'Empty', value: 0 },
+  { label: 'E', value: 0 },
 ];
 
 const ArchonFuelSensor: React.FC<ArchonFuelSensorProps> = ({ value, onChange, disabled }) => (
