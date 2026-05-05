@@ -228,9 +228,9 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#0f2a44]/5 p-2.5 rounded-[4px] border-l-4 border-emerald-500 flex items-center gap-4"
+            className="bg-[#0f2a44]/5 p-2 rounded-[4px] border-l-4 border-emerald-500 flex items-center gap-4"
           >
-            <div className="w-16 h-16 bg-white rounded-[4px] border-2 border-[#0f2a44]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+            <div className="w-20 h-20 bg-white rounded-[4px] border-2 border-[#0f2a44]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               {selectedUnitData.images?.[0] ? (
                 <img
                   src={selectedUnitData.images[0]}
@@ -239,26 +239,26 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center opacity-20">
-                  <Truck size={24} className="text-[#0f2a44]" />
-                  <span className="text-[6px] font-black uppercase tracking-tighter mt-0.5">
+                  <Truck size={32} className="text-[#0f2a44]" />
+                  <span className="text-[7px] font-black uppercase tracking-tighter mt-1">
                     No Media
                   </span>
                 </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-black text-[#0f2a44] truncate leading-tight">
+              <p className="text-[14px] font-black text-[#0f2a44] truncate leading-tight">
                 {selectedUnitData.marca} {selectedUnitData.modelo}
               </p>
-              <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/50 px-1 rounded uppercase">
+              <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/50 px-1.5 rounded uppercase">
                   {selectedUnitData.id}
                 </span>
-                <span className="text-[9px] font-bold opacity-60 text-[#0f2a44]">
+                <span className="text-[10px] font-bold opacity-60 text-[#0f2a44]">
                   {selectedUnitData.placas}
                 </span>
               </div>
-              <p className="text-[8px] font-bold opacity-40 uppercase tracking-widest mt-0.5">
+              <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1">
                 {selectedUnitData.departamento}
               </p>
             </div>
