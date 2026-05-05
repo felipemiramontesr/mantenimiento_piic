@@ -151,6 +151,16 @@ El sistema **Archon v.44.6.0** se declara oficialmente superior al sistema de ge
 
 ---
 
+## 6. Hitos Estratégicos por Alcanzar (Roadmap v.5.0)
+
+Con la base de datos purificada y la interfaz estabilizada, Archon se prepara para la siguiente fase de dominancia tecnológica:
+
+1.  **Arquitectura i18n (Internacionalización)**: Implementación de soporte multi-idioma y multi-región, permitiendo que la flota sea administrada en cualquier mercado global sin perder la coherencia de los datos centrales.
+2.  **Blindaje Forense de Incidencias**: Integración del motor de localización soberana en todos los reportes de campo y siniestros, garantizando que el rastro legal de cada evento sea inmutable y regionalmente preciso.
+3.  **Inteligencia Predictiva Avanzada**: Automatización de alertas preventivas basadas en el análisis de telemetría y desgaste auditado, reduciendo el MTBF (Mean Time Between Failures) mediante algoritmos de regresión.
+
+---
+
 **Firmado:**
-_Archon Core Alpha Engine v.44.6.0_
-_Estatus: Localization & Identity Mapping Verified_
+_Archon Core Alpha Engine v.44.6.3_
+_Estatus: Roadmap v.5.0 Projected & Validated_
