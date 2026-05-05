@@ -140,9 +140,21 @@ Tras identificar ambigüedad en la interpretación de cronogramas operativos en 
 
 ---
 
+### N. Bóveda Forense y Protocolo L (RESOLVIDO v.50.0.0)
+
+Tras la auditoría de integridad administrativa, se ha desplegado la capa de inmutabilidad definitiva para blindar el sistema contra mutaciones no justificadas:
+
+1.  **Caja Negra Administrativa**: Implementación de la tabla `administrative_audit_logs`. Ahora, cada `UPDATE` o `DELETE` en Flota, Rutas o Usuarios captura un snapshot binario (`BEFORE/AFTER`) y una justificación obligatoria del administrador.
+2.  **Lápiz de Gestión (Protocolo L)**: Se integró la interfaz industrial de edición en las vistas `FleetGridView` y `UsersGridView`. Esto garantiza que cualquier cambio de metadatos (Placas, Pólizas, Perfiles) sea un acto administrativo consciente y rastreable.
+3.  **Atomicidad Forense**: Se habilitaron transacciones SQL en el backend. Si el registro de auditoría falla, la modificación de datos se revierte automáticamente mediante `ROLLBACK`, protegiendo la soberanía de la información central.
+
+**Estatus:** Integridad Administrativa Blindada.
+
+---
+
 ## 5. Certificación de Integridad Archon
 
-El sistema **Archon v.44.6.0** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
+El sistema **Archon v.50.0.0** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
 
 - **Resiliencia:** Inmunidad total a la volatilidad del servidor y pérdida de archivos locales.
 - **Precisión:** Cálculos dinámicos basados en desgaste diario real y ordenamiento natural de activos.
@@ -155,12 +167,12 @@ El sistema **Archon v.44.6.0** se declara oficialmente superior al sistema de ge
 
 Con la base de datos purificada y la interfaz estabilizada, Archon se prepara para la siguiente fase de dominancia tecnológica:
 
-1.  **Arquitectura i18n (Internacionalización)**: Implementación de soporte multi-idioma y multi-región, permitiendo que la flota sea administrada en cualquier mercado global sin perder la coherencia de los datos centrales.
-2.  **Blindaje Forense de Incidencias**: Integración del motor de localización soberana en todos los reportes de campo y siniestros, garantizando que el rastro legal de cada evento sea inmutable y regionalmente preciso.
-3.  **Inteligencia Predictiva Avanzada**: Automatización de alertas preventivas basadas en el análisis de telemetría y desgaste auditado, reduciendo el MTBF (Mean Time Between Failures) mediante algoritmos de regresión.
+1.  **Forensic Hub (Visualización de Logs)**: Desarrollo de la interfaz de consulta para que el rol de Auditor pueda reconstruir la cronología de cualquier activo, visualizando los cambios exactos realizados en el tiempo.
+2.  **Arquitectura i18n v.2.0**: Implementación de soporte multi-región para unidades de medida (KM vs Millas) y conversión dinámica de divisas para el gasto operativo.
+3.  **Gestión de Órdenes de Servicio**: Integración del motor de mantenimiento correctivo vinculado a la auditoría, permitiendo trazar cada centavo invertido en reparaciones industriales.
 
 ---
 
 **Firmado:**
-_Archon Core Alpha Engine v.44.6.3_
-_Estatus: Roadmap v.5.0 Projected & Validated_
+_Archon Core Alpha Engine v.50.0.0_
+_Estatus: Bóveda Forense Activa & Roadmap v.6.0 Validated_
