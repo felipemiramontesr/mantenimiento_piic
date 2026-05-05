@@ -1,15 +1,18 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import db from './db';
 
 /* eslint-disable no-console */
 export default async function runMigration073(): Promise<void> {
   try {
     console.log('🔱 ARCHON EMERGENCY MIGRATION SYSTEM');
-    // In production, the file will be at this location relative to the built JS
-    const migrationPath = path.join(
-      process.cwd(),
-      'packages/database/migrations/073_sovereign_administrative_audit_vault.sql'
+    const modulePath = fileURLToPath(import.meta.url);
+    const moduleDir = path.dirname(modulePath);
+
+    const migrationPath = path.resolve(
+      moduleDir,
+      '../../../../packages/database/migrations/073_sovereign_administrative_audit_vault.sql'
     );
 
     if (!fs.existsSync(migrationPath)) {

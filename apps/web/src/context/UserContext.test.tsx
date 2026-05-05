@@ -143,7 +143,10 @@ describe('UserContext (Identity Infrastructure)', () => {
     });
 
     await waitFor(() =>
-      expect(api.patch).toHaveBeenCalledWith('/auth/users/1', { is_active: false })
+      expect(api.patch).toHaveBeenCalledWith('/auth/users/1', {
+        data: { is_active: false },
+        reason: 'Modificación de estatus operativo vía Directorio',
+      })
     );
   });
 
