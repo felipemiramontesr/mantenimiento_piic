@@ -533,7 +533,7 @@ export const FleetGridView = ({
         />
       )}
       <div className="glass-card-pro bg-white px-8 pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
-        <table className="archon-registry-table w-full min-w-[1800px]">
+        <table className="archon-registry-table w-full min-w-max">
           <thead>
             <tr>
               <th>ACTIVO</th>
