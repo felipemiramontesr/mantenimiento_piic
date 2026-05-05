@@ -217,9 +217,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         await startRoute({
           unitId: formData.unitId,
           driverId: Number(formData.operatorId),
-          startReading: selectedUnitData?.currentReading || 0,
+          startReading: Number(selectedUnitData?.odometer || 0),
           destination: formData.destination,
-          originId: origins.find((o) => o.label === formData.origin)?.id,
+          originId: origins.find((o) => o.label === formData.origin)?.id
+            ? Number(origins.find((o) => o.label === formData.origin)?.id)
+            : undefined,
         });
       }
       onClose();
