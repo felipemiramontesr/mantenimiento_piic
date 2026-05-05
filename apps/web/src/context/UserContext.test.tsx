@@ -48,7 +48,7 @@ const TestComponentWithActions = (): React.JSX.Element => {
       </button>
       <button
         onClick={(): void => {
-          updateUser('1', { fullName: 'New Name' }).catch(() => {
+          updateUser('1', { fullName: 'New Name' }, 'Audit Test Reason').catch(() => {
             /* ignore */
           });
         }}

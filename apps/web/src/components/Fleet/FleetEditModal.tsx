@@ -1,10 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Trash2, ShieldAlert } from 'lucide-react';
-import { FleetUnit } from '../../types/fleet';
+import { FleetUnit, CreateFleetUnit } from '../../types/fleet';
 import api from '../../api/client';
 import AuditJustificationModal from '../Common/AuditJustificationModal';
 import useFleetForm from '../../hooks/useFleetForm';
 import FleetRegistrationForm from './FleetRegistrationForm';
+
+/**
+ * 🔱 ARCHON FLEET DATA MAPPER
+ * Converts API unit to Form Data format.
+ */
+const mapBaseIds = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
+  assetTypeId: unit.assetTypeId || 0,
+  brandId: unit.brandId || 0,
+  modelId: unit.modelId || 0,
+  departmentId: unit.departmentId || undefined,
+  operationalUseId: unit.operationalUseId || undefined,
+  locationId: unit.locationId || undefined,
+  engineTypeId: unit.engineTypeId || undefined,
+  traccionId: unit.traccionId || 0,
+  transmisionId: unit.transmisionId || 0,
+  fuelTypeId: unit.fuelTypeId || 0,
+  colorId: unit.colorId || undefined,
+  maintenanceCenterId: unit.maintenanceCenterId || undefined,
+});
+
+const mapOperationalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
+  placas: unit.placas || undefined,
+  numeroSerie: unit.numeroSerie || undefined,
+  year: unit.year || 2024,
+  tireSpec: unit.tireSpec || undefined,
+  tireBrandId: unit.tireBrandId || undefined,
+  terrainTypeId: unit.terrainTypeId || undefined,
+  capacidadCarga: unit.capacidadCarga || undefined,
+  fuelTankCapacity: unit.fuelTankCapacity || 0,
+  odometer: unit.odometer || 0,
+  protocolStartDate: unit.protocolStartDate || undefined,
+  maintIntervalDays: unit.maintIntervalDays || 90,
+  maintIntervalKm: unit.maintIntervalKm || 5000,
+  lastServiceDate: unit.lastServiceDate || undefined,
+  lastServiceReading: unit.lastServiceReading || 0,
+  dailyUsageAvg: unit.dailyUsageAvg || undefined,
+});
+
+const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
+  vencimientoVerificacion: unit.vencimientoVerificacion || undefined,
+  circulationCardNumber: unit.circulationCardNumber || undefined,
+  accountingAccount: unit.accountingAccount || undefined,
+  legalComplianceDate: unit.legalComplianceDate || undefined,
+  insuranceExpiryDate: unit.insuranceExpiryDate || undefined,
+  insuranceCompanyId: unit.insuranceCompanyId || undefined,
+  environmentalHologram: unit.environmentalHologram || undefined,
+  monthlyLeasePayment: unit.monthlyLeasePayment || 0,
+  ownerId: unit.ownerId || undefined,
+  complianceStatusId: unit.complianceStatusId || undefined,
+});
+
+const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
+  ({
+    id: unit.id,
+    images: unit.images || [],
+    status: unit.status,
+    description: unit.routeDescription || undefined,
+    ...mapBaseIds(unit),
+    ...mapOperationalData(unit),
+    ...mapLegalData(unit),
+  } as CreateFleetUnit);
 
 interface FleetEditModalProps {
   unit: FleetUnit;
@@ -29,51 +90,7 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({
   // Hydrate form with unit data
   useEffect(() => {
     if (unit) {
-      controller.setFormData({
-        assetTypeId: unit.assetTypeId || 0,
-        id: unit.id,
-        placas: unit.placas,
-        numeroSerie: unit.numeroSerie,
-        images: unit.images || [],
-        brandId: unit.brandId || 0,
-        modelId: unit.modelId || 0,
-        year: unit.year || 2024,
-        departmentId: unit.departmentId,
-        operationalUseId: unit.operationalUseId,
-        locationId: unit.locationId,
-        engineTypeId: unit.engineTypeId,
-        traccionId: unit.traccionId,
-        transmisionId: unit.transmisionId,
-        fuelTypeId: unit.fuelTypeId,
-        tireSpec: unit.tireSpec,
-        tireBrandId: unit.tireBrandId,
-        terrainTypeId: unit.terrainTypeId,
-        capacidadCarga: unit.capacidadCarga,
-        fuelTankCapacity: unit.fuelTankCapacity || 0,
-        odometer: unit.odometer || 0,
-        maintenanceCenterId: unit.maintenanceCenterId,
-        protocolStartDate: unit.protocolStartDate,
-        tarjetaCirculacion: unit.tarjetaCirculacion,
-        vencimientoVerificacion: unit.vencimientoVerificacion,
-        circulationCardNumber: unit.circulationCardNumber,
-        status: unit.status as string,
-        colorId: unit.colorId,
-        description: unit.description,
-        maintIntervalDays: unit.maintIntervalDays || 90,
-        maintIntervalKm: unit.maintIntervalKm || 5000,
-        lastServiceDate: unit.lastServiceDate,
-        lastServiceReading: unit.lastServiceReading || 0,
-        dailyUsageAvg: unit.dailyUsageAvg,
-        ownerId: unit.ownerId,
-        complianceStatusId: unit.complianceStatusId,
-        accountingAccount: unit.accountingAccount,
-        legalComplianceDate: unit.legalComplianceDate,
-        insuranceExpiryDate: unit.insuranceExpiryDate,
-        insuranceCompanyId: unit.insuranceCompanyId,
-        environmentalHologram: unit.environmentalHologram,
-        monthlyLeasePayment: unit.monthlyLeasePayment || 0,
-      });
-
+      controller.setFormData(mapUnitToFormData(unit));
       // We also need to trigger the cascade for catalogs
       if (unit.assetTypeId) controller.handleAssetTypeChange(unit.assetTypeId);
       if (unit.brandId) controller.handleMarcaChange(unit.brandId);
