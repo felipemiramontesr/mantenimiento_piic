@@ -21,18 +21,26 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const currentLiters = Number(((currentLevel / 100) * totalCapacity).toFixed(1));
   const remainingLiters = Number((totalCapacity - currentLiters).toFixed(1));
 
-  // SVG Pie/Donut Calculation - Calibrated with safety margins
+  // SVG Pie/Donut Calculation - Diagnostic/Cache-Buster Mode
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (currentLevel / 100) * circumference;
+  const cacheBuster = `svg-${Math.random().toString(36).substr(2, 9)}`;
 
   return (
     <div className="flex flex-col gap-4 bg-white/40 p-4 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
       <div className="flex items-center justify-between gap-6">
-        {/* 🥧 CIRCULAR PIE CHART (SVG) - ATOMIC RENDER */}
-        <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
-          <svg width="96" height="96" className="-rotate-90" viewBox="0 0 100 100">
-            {/* Background Track (Atomic Stroke) */}
+        {/* 🥧 CIRCULAR PIE CHART (SVG) - DIAGNOSTIC MODE */}
+        <div className="relative flex items-center justify-center w-24 h-24 shrink-0 z-10">
+          <svg
+            id={cacheBuster}
+            width="96"
+            height="96"
+            className="-rotate-90 block"
+            viewBox="0 0 100 100"
+            style={{ minWidth: '96px', minHeight: '96px', display: 'block' }}
+          >
+            {/* Background Track (Diagnostic Solid) */}
             <circle
               cx="50"
               cy="50"
@@ -40,10 +48,11 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
               fill="transparent"
               stroke="#0f2a44"
               strokeWidth="8"
-              strokeOpacity="0.15"
+              strokeOpacity="0.2"
+              style={{ stroke: '#0f2a44', strokeOpacity: 0.2 }}
             />
-            {/* Progress Segment */}
-            <motion.circle
+            {/* Progress Segment (Diagnostic Native Circle) */}
+            <circle
               cx="50"
               cy="50"
               r={radius}
@@ -51,14 +60,17 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
               stroke={color}
               strokeWidth="8"
               strokeDasharray={circumference}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset: offset }}
-              transition={{ duration: 1.5, ease: 'easeOut' }}
+              strokeDashoffset={offset}
+              style={{
+                stroke: color,
+                transition: 'stroke-dashoffset 1.5s ease-out',
+                strokeLinecap: 'round',
+              }}
             />
           </svg>
 
-          {/* CENTER METRIC (NO OVERLAP) */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+          {/* CENTER METRIC (FLOATING) */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
             <span className="text-xl font-black text-[#0f2a44] leading-none tracking-tighter">
               {currentLiters}
             </span>
