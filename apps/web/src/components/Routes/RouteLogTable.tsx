@@ -185,14 +185,16 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                     <div className="flex items-center gap-2">
                       <Gauge size={12} className="text-[#0f2a44]/30" />
                       <p className="text-[11px] font-black text-[#0f2a44]">
-                        {log.start_km.toLocaleString()} <span className="opacity-40">KM</span>
+                        {(log.start_km ?? 0).toLocaleString()}{' '}
+                        <span className="opacity-40">KM</span>
                       </p>
                     </div>
                     {log.end_km && (
                       <div className="flex items-center gap-2">
                         <CheckCircle2 size={12} className="text-emerald-500" />
                         <p className="text-[11px] font-black text-[#0f2a44]">
-                          {log.end_km.toLocaleString()} <span className="opacity-40">KM</span>
+                          {(log.end_km ?? 0).toLocaleString()}{' '}
+                          <span className="opacity-40">KM</span>
                         </p>
                       </div>
                     )}

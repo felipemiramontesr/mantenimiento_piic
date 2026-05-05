@@ -110,7 +110,13 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/routes', async (_request, reply) => {
     try {
       const [rows] = await db.execute<RowDataPacket[]>(
-        'SELECT * FROM fleet_routes ORDER BY created_at DESC'
+        `SELECT 
+          id, uuid, unit_id, driver_id as operator_id, origin_id, destination, status,
+          start_reading as start_km, end_reading as end_km,
+          start_at as start_time, end_at as end_time,
+          fuel_liters_loaded, fuel_ticket_image, created_at
+        FROM fleet_routes 
+        ORDER BY created_at DESC`
       );
       return reply.send({
         success: true,
