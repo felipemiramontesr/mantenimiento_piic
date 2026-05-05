@@ -1,4 +1,4 @@
-import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { RowDataPacket } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import EncryptionService from './encryption';

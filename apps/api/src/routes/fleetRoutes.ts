@@ -54,7 +54,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       fastify.log.error(error);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return reply.code(400).send({ success: false, message: (error as any).message });
+      return reply.code(400).send({ success: false, message: (error as Error).message });
     }
   });
 
@@ -81,7 +81,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       fastify.log.error(error);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return reply.code(400).send({ success: false, message: (error as any).message });
+      return reply.code(400).send({ success: false, message: (error as Error).message });
     }
   });
 
@@ -181,7 +181,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       fastify.log.error(error);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return reply.code(400).send({ success: false, message: (error as any).message });
+      return reply.code(400).send({ success: false, message: (error as Error).message });
     }
   });
 
@@ -230,7 +230,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({ success: true, message: 'Route updated forensically' });
     } catch (error) {
       fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as any).message });
+      return reply.code(400).send({ success: false, message: (error as Error).message });
     }
   });
 
@@ -252,7 +252,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.send({ success: true, message: 'Route deleted forensically' });
     } catch (error) {
       fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as any).message });
+      return reply.code(400).send({ success: false, message: (error as Error).message });
     }
   });
 }

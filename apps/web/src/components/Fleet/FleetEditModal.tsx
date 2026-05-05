@@ -8,15 +8,19 @@ import FleetRegistrationForm from './FleetRegistrationForm';
 
 interface FleetEditModalProps {
   unit: FleetUnit;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose(): void;
+  onSuccess(): void;
 }
 
 /**
  * 🔱 ARCHON FLEET EDIT MODAL
  * Administrative interface for asset rectification.
  */
-const FleetEditModal: React.FC<FleetEditModalProps> = ({ unit, onClose, onSuccess }) => {
+const FleetEditModal: React.FC<FleetEditModalProps> = ({
+  unit,
+  onClose,
+  onSuccess,
+}): React.JSX.Element => {
   const controller = useFleetForm();
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
@@ -52,7 +56,7 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({ unit, onClose, onSucces
         tarjetaCirculacion: unit.tarjetaCirculacion,
         vencimientoVerificacion: unit.vencimientoVerificacion,
         circulationCardNumber: unit.circulationCardNumber,
-        status: unit.status as any,
+        status: unit.status as string,
         colorId: unit.colorId,
         description: unit.description,
         maintIntervalDays: unit.maintIntervalDays || 90,
@@ -69,25 +73,25 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({ unit, onClose, onSucces
         environmentalHologram: unit.environmentalHologram,
         monthlyLeasePayment: unit.monthlyLeasePayment || 0,
       });
-      
+
       // We also need to trigger the cascade for catalogs
       if (unit.assetTypeId) controller.handleAssetTypeChange(unit.assetTypeId);
       if (unit.brandId) controller.handleMarcaChange(unit.brandId);
     }
   }, [unit]);
 
-  const handleUpdateClick = (e: React.FormEvent) => {
+  const handleUpdateClick = (e: React.FormEvent): void => {
     e.preventDefault();
     setAuditAction('UPDATE');
     setIsAuditModalOpen(true);
   };
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = (): void => {
     setAuditAction('DELETE');
     setIsAuditModalOpen(true);
   };
 
-  const handleConfirmAudit = async (reason: string) => {
+  const handleConfirmAudit = async (reason: string): Promise<void> => {
     setIsProcessing(true);
     try {
       if (auditAction === 'UPDATE') {
@@ -103,6 +107,7 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({ unit, onClose, onSucces
       onSuccess();
       onClose();
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('🔱 [Fleet Audit Error]:', err);
     } finally {
       setIsProcessing(false);
@@ -119,8 +124,12 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({ unit, onClose, onSucces
             <ShieldAlert className="text-[#0f2a44]" size={24} />
           </div>
           <div>
-            <h2 className="text-white font-black text-xl tracking-tighter uppercase">Rectificación de Activo: {unit.id}</h2>
-            <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">Protocolo de Gestión Forense Archon</p>
+            <h2 className="text-white font-black text-xl tracking-tighter uppercase">
+              Rectificación de Activo: {unit.id}
+            </h2>
+            <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">
+              Protocolo de Gestión Forense Archon
+            </p>
           </div>
         </div>
         <div className="flex gap-4">
@@ -145,7 +154,7 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({ unit, onClose, onSucces
           <FleetRegistrationForm
             controller={controller}
             onCancel={onClose}
-            onSuccess={async () => {}} // Not used here as we intercept with Audit modal
+            onSuccess={(): Promise<void> => Promise.resolve()} // Not used here as we intercept with Audit modal
           />
         </div>
       </div>
@@ -163,9 +172,13 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({ unit, onClose, onSucces
 
       <AuditJustificationModal
         isOpen={isAuditModalOpen}
-        onClose={() => setIsAuditModalOpen(false)}
-        onConfirm={handleConfirmAudit}
-        title={auditAction === 'UPDATE' ? `Actualización técnica para el activo ${unit.id}` : `Baja definitiva del activo ${unit.id} del inventario industrial`}
+        onClose={(): void => setIsAuditModalOpen(false)}
+        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
+        title={
+          auditAction === 'UPDATE'
+            ? `Actualización técnica para el activo ${unit.id}`
+            : `Baja definitiva del activo ${unit.id} del inventario industrial`
+        }
         actionType={auditAction}
       />
     </div>

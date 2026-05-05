@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 interface AuditJustificationModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (reason: string) => void;
+  onClose(): void;
+  onConfirm(reason: string): void;
   title: string;
   actionType: 'UPDATE' | 'DELETE';
 }
@@ -52,7 +52,9 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
                 className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors min-h-[100px] resize-none"
                 placeholder="Ej: Corrección de error en kilometraje inicial..."
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
+                  setReason(e.target.value)
+                }
               />
             </div>
           </div>
@@ -65,7 +67,7 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
               Cancelar
             </button>
             <button
-              onClick={() => onConfirm(reason)}
+              onClick={(): void => onConfirm(reason)}
               disabled={reason.length < 5}
               className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
                 isDelete
