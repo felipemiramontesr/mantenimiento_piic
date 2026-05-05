@@ -6,15 +6,19 @@ import AuditJustificationModal from '../Common/AuditJustificationModal';
 
 interface RouteEditModalProps {
   log: RouteLog;
-   onClose: (): void => void;
-   onSuccess: (): void => void;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 /**
  * 🔱 ARCHON ROUTE EDIT MODAL
  * Administrative tool for forensic data correction.
  */
- const RouteEditModal: React.FC<RouteEditModalProps> = ({ log, onClose, onSuccess }): React.JSX.Element => {
+const RouteEditModal: React.FC<RouteEditModalProps> = ({
+  log,
+  onClose,
+  onSuccess,
+}): React.JSX.Element => {
   const [formData, setFormData] = useState({
     destination: log.destination,
     start_km: log.start_km,
@@ -25,17 +29,17 @@ interface RouteEditModalProps {
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
   const [isLoading, setIsLoading] = useState(false);
 
-   const handleSaveClick = (): void => {
+  const handleSaveClick = (): void => {
     setAuditAction('UPDATE');
     setIsAuditModalOpen(true);
   };
 
-   const handleDeleteClick = (): void => {
+  const handleDeleteClick = (): void => {
     setAuditAction('DELETE');
     setIsAuditModalOpen(true);
   };
 
-   const handleConfirmAudit = async (reason: string): Promise<void> => {
+  const handleConfirmAudit = async (reason: string): Promise<void> => {
     setIsLoading(true);
     try {
       if (auditAction === 'UPDATE') {
@@ -50,9 +54,9 @@ interface RouteEditModalProps {
       }
       onSuccess();
       onClose();
-     } catch (err) {
-       // Audit failure logic
-     } finally {
+    } catch (err) {
+      // Audit failure logic
+    } finally {
       setIsLoading(false);
       setIsAuditModalOpen(false);
     }
@@ -64,8 +68,12 @@ interface RouteEditModalProps {
         {/* Header */}
         <div className="bg-[#0f2a44] p-4 flex justify-between items-center">
           <div>
-            <h2 className="text-white font-black text-lg tracking-tighter">EDITAR MISIÓN LOGÍSTICA</h2>
-            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Protocolo de Rectificación Administrativa</p>
+            <h2 className="text-white font-black text-lg tracking-tighter">
+              EDITAR MISIÓN LOGÍSTICA
+            </h2>
+            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">
+              Protocolo de Rectificación Administrativa
+            </p>
           </div>
           <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
             <X size={20} />
@@ -75,30 +83,42 @@ interface RouteEditModalProps {
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-[10px] font-black text-[#0f2a44]/40 uppercase mb-1">Destino</label>
+              <label className="block text-[10px] font-black text-[#0f2a44]/40 uppercase mb-1">
+                Destino
+              </label>
               <input
                 type="text"
                 className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-[#0f2a44] font-bold text-sm focus:outline-none focus:border-blue-500"
                 value={formData.destination}
-                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setFormData({ ...formData, destination: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, destination: e.target.value })
+                }
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-[#0f2a44]/40 uppercase mb-1">KM Inicial</label>
+              <label className="block text-[10px] font-black text-[#0f2a44]/40 uppercase mb-1">
+                KM Inicial
+              </label>
               <input
                 type="number"
                 className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-[#0f2a44] font-bold text-sm focus:outline-none focus:border-blue-500"
                 value={formData.start_km}
-                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setFormData({ ...formData, start_km: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, start_km: Number(e.target.value) })
+                }
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-[#0f2a44]/40 uppercase mb-1">KM Final</label>
+              <label className="block text-[10px] font-black text-[#0f2a44]/40 uppercase mb-1">
+                KM Final
+              </label>
               <input
                 type="number"
                 className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-[#0f2a44] font-bold text-sm focus:outline-none focus:border-blue-500"
                 value={formData.end_km}
-                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setFormData({ ...formData, end_km: Number(e.target.value) })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, end_km: Number(e.target.value) })
+                }
               />
             </div>
           </div>
@@ -131,9 +151,13 @@ interface RouteEditModalProps {
 
       <AuditJustificationModal
         isOpen={isAuditModalOpen}
-         onClose={(): void => setIsAuditModalOpen(false)}
-         onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
-        title={auditAction === 'UPDATE' ? 'Actualización de datos de ruta' : 'Eliminación permanente de registro logístico'}
+        onClose={(): void => setIsAuditModalOpen(false)}
+        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
+        title={
+          auditAction === 'UPDATE'
+            ? 'Actualización de datos de ruta'
+            : 'Eliminación permanente de registro logístico'
+        }
         actionType={auditAction}
       />
     </div>

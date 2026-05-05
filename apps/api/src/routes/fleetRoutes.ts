@@ -220,6 +220,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         reason: z.string().min(5),
       });
       const { data, reason } = schema.parse(request.body);
+      await request.jwtVerify();
       const user = request.user as { id: number };
 
       await RouteService.updateRoute(uuid, data, reason, user.id);
@@ -242,6 +243,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         reason: z.string().min(5),
       });
       const { reason } = schema.parse(request.body);
+      await request.jwtVerify();
       const user = request.user as { id: number };
 
       await RouteService.deleteRoute(uuid, reason, user.id);
