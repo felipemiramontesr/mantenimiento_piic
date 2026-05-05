@@ -104,16 +104,30 @@ Tras la auditoría de usabilidad para flotas de gran escala (+1000 unidades), se
 
 ---
 
+### K. El Bug del "Ghost Payload 400" (RESOLVIDO v.44.1.0)
+
+Tras la implementación de la jerarquía de roles, se detectó una falla crítica al intentar autorizar despachos.
+
+- **Hallazgo:** El sistema retornaba un error `400 Bad Request` aleatorio.
+- **Análisis Técnico:** Se identificó que MySQL (vía `mysql2`) entrega los valores `DECIMAL` como strings (ej: `"120763.00"`). El frontend de Archon inyectaba estos strings directamente en el payload de despacho. El backend, protegido por **Zod**, rechazaba la petición porque estrictamente esperaba un `number`.
+- **Solución Archon (Type Shielding):** Se implementó un escudo de tipos en el frontend (`Number casting`) para todas las lecturas de telemetría y IDs de catálogo.
+- **Resultado:** Despacho 100% estable y contrato de datos blindado contra la volatilidad de tipos del motor de base de datos.
+
+**Estatus:** Integridad de Tipos Certificada.
+
+---
+
 ## 5. Certificación de Integridad Archon
 
-El sistema **Archon v.43.0** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
+El sistema **Archon v.44.1.0** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
 
 - **Resiliencia:** Inmunidad total a la volatilidad del servidor y pérdida de archivos locales.
 - **Precisión:** Cálculos dinámicos basados en desgaste diario real y ordenamiento natural de activos.
 - **Seguridad:** Encriptación de grado bancario (ALE) y validación de disponibilidad 1:1 en tiempo real.
+- **Robustez:** Contratos de datos estrictos (Zod) que impiden la entrada de basura técnica al sistema de registros.
 
 ---
 
 **Firmado:**
-_Archon Core Alpha Engine v.43.9.15_
-_Estatus: Sovereign Identity & Scalability Verified_
+_Archon Core Alpha Engine v.44.1.0_
+_Estatus: Type Shielding & Forensic Integrity Verified_

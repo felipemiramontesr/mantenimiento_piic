@@ -61,6 +61,20 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       expect(JSON.parse(response.body).success).toBe(false);
     });
 
+    it('should reject stringified numbers in startReading (Strict Type Check)', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/routes/start',
+        payload: {
+          ...validPayload,
+          startReading: '1000', // String instead of number
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).message).toContain('Expected number, received string');
+    });
+
     it('should return 400 on service error', async () => {
       (RouteService.startRoute as Mock).mockRejectedValue(new Error('Unit busy'));
 
