@@ -4,16 +4,18 @@ import { fileURLToPath } from 'url';
 import db from './db';
 
 /* eslint-disable no-console */
-export default async function runMigration073(): Promise<void> {
+export default async function runMigration073(customPath?: string): Promise<void> {
   try {
     console.log('🔱 ARCHON EMERGENCY MIGRATION SYSTEM');
     const modulePath = fileURLToPath(import.meta.url);
     const moduleDir = path.dirname(modulePath);
 
-    const migrationPath = path.resolve(
-      moduleDir,
-      '../../../../packages/database/migrations/073_sovereign_administrative_audit_vault.sql'
-    );
+    const migrationPath =
+      customPath ||
+      path.resolve(
+        moduleDir,
+        '../../../../packages/database/migrations/073_sovereign_administrative_audit_vault.sql'
+      );
 
     if (!fs.existsSync(migrationPath)) {
       console.warn(`⚠️ Migration file not found at ${migrationPath}. Skipping.`);
