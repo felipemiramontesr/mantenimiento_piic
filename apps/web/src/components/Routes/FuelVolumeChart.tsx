@@ -21,22 +21,18 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const currentLiters = Number(((currentLevel / 100) * totalCapacity).toFixed(1));
   const remainingLiters = Number((totalCapacity - currentLiters).toFixed(1));
 
-  // SVG Pie/Donut Calculation - Calibrated for w-24
-  const radius = 44;
+  // SVG Pie/Donut Calculation - Calibrated with safety margins
+  const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (currentLevel / 100) * circumference;
 
   return (
     <div className="flex flex-col gap-4 bg-white/40 p-4 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
       <div className="flex items-center justify-between gap-6">
-        {/* 🥧 CIRCULAR PIE CHART (SVG) - RECALIBRATED VISIBILITY */}
+        {/* 🥧 CIRCULAR PIE CHART (SVG) - ATOMIC RENDER */}
         <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
-          <svg
-            className="w-full h-full -rotate-90 overflow-visible"
-            viewBox="0 0 100 100"
-            style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.05))' }}
-          >
-            {/* Background Track (Always visible) */}
+          <svg width="96" height="96" className="-rotate-90" viewBox="0 0 100 100">
+            {/* Background Track (Atomic Stroke) */}
             <circle
               cx="50"
               cy="50"
@@ -44,7 +40,7 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
               fill="transparent"
               stroke="#0f2a44"
               strokeWidth="8"
-              strokeOpacity="0.1"
+              strokeOpacity="0.15"
             />
             {/* Progress Segment */}
             <motion.circle
@@ -57,13 +53,12 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
               animate={{ strokeDashoffset: offset }}
-              transition={{ duration: 1.5, ease: 'circOut' }}
-              strokeLinecap="round"
+              transition={{ duration: 1.5, ease: 'easeOut' }}
             />
           </svg>
 
           {/* CENTER METRIC (NO OVERLAP) */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
             <span className="text-xl font-black text-[#0f2a44] leading-none tracking-tighter">
               {currentLiters}
             </span>
