@@ -149,10 +149,10 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center opacity-20">
-                          <Truck size={24} className="text-[#0f2a44]" />
-                          <span className="text-[6px] font-black uppercase tracking-tighter mt-0.5">
-                            No Media
+                        <div className="flex flex-col items-center justify-center opacity-10">
+                          <Truck size={28} className="text-[#0f2a44]" />
+                          <span className="text-[5px] font-black uppercase tracking-widest mt-0.5">
+                            NO MEDIA
                           </span>
                         </div>
                       )}

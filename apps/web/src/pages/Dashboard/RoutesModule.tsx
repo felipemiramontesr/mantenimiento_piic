@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigation } from 'lucide-react';
-import { BRANDING_NAME } from '../../constants/versionConstants';
+import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
 import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
@@ -131,7 +131,9 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
         <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">{BRANDING_NAME} ArchonCore Alpha Engine 38.9.0</p>
+        <p className="text-[#0f2a44]">
+          {BRANDING_NAME} {SYSTEM_VERSION}
+        </p>
       </footer>
     </main>
   );
