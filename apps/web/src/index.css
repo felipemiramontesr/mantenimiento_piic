@@ -1723,12 +1723,8 @@ body {
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.03);
 }
 
-.archon-registry-table th:first-child {
-  background-color: #0f2a44 !important;
-}
-
-.archon-registry-table td:first-child {
-  background-color: #ffffff !important;
+.archon-registry-table th:last-child {
+  border-top-right-radius: 4px;
 }
 
 .archon-registry-table td:last-child {
