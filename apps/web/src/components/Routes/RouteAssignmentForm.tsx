@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Navigation,
   User,
   Truck,
   MapPin,
@@ -11,7 +10,8 @@ import {
   ShieldCheck,
   AlertCircle,
   Camera,
-  CheckCircle2,
+  Trash2,
+  Save,
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
@@ -23,6 +23,7 @@ import api from '../../api/client';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFuelSensor from './ArchonFuelSensor';
 import FuelVolumeChart from './FuelVolumeChart';
+import AuditJustificationModal from '../Common/AuditJustificationModal';
 
 /**
  * 🔱 Archon Component: RouteAssignmentForm
@@ -194,11 +195,37 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   const { startRoute, finishRoute } = useFleet();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
+
+  const handleConfirmAudit = async (reason: string): Promise<void> => {
+    setSubmitting(true);
+    try {
+      if (auditAction === 'UPDATE') {
+        await api.put(`/routes/${routeToEdit?.uuid}`, {
+          data: formData,
+          reason,
+        });
+      } else {
+        await api.delete(`/routes/${routeToEdit?.uuid}`, {
+          data: { reason },
+        });
+      }
+      onClose();
+    } catch (err) {
+      setError('Error en el protocolo de auditoría');
+    } finally {
+      setSubmitting(false);
+      setIsAuditModalOpen(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (isFinished) {
-      onClose();
+      // Infinished routes need audit to be modified
+      setAuditAction('UPDATE');
+      setIsAuditModalOpen(true);
       return;
     }
 
@@ -255,12 +282,19 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   }
 
   const renderIdentitySection = (): React.ReactElement => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 h-4">
-        <ShieldCheck size={14} className="text-[#0f2a44]" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-          Sección I: Identidad del Servicio
-        </span>
+    <div className="glass-card-pro p-10 space-y-8">
+      <div className="flex items-center gap-3">
+        <div className="bg-[#0f2a44] p-2 rounded-[4px]">
+          <ShieldCheck size={20} className="text-white" />
+        </div>
+        <div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+            Fase I
+          </span>
+          <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+            Identidad del Servicio
+          </h3>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -381,12 +415,19 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   };
 
   const renderMissionSection = (): React.ReactElement => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 h-4">
-        <MapPin size={14} className="text-[#0f2a44]" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-          Sección II: Misión y Destino
-        </span>
+    <div className="glass-card-pro p-10 space-y-8">
+      <div className="flex items-center gap-3">
+        <div className="bg-emerald-600 p-2 rounded-[4px]">
+          <MapPin size={20} className="text-white" />
+        </div>
+        <div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 opacity-50">
+            Fase II
+          </span>
+          <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+            Misión y Destino
+          </h3>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -459,13 +500,19 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     }
 
     return (
-      <div className="space-y-4">
-        {/* 1. TEXTO: Sección III: Telemetría de Salida */}
-        <div className="flex items-center gap-2 h-4">
-          <Gauge size={14} className="text-[#0f2a44]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-            Sección III: Telemetría de Salida
-          </span>
+      <div className="glass-card-pro p-10 space-y-8">
+        <div className="flex items-center gap-3">
+          <div className="bg-sky-600 p-2 rounded-[4px]">
+            <Gauge size={20} className="text-white" />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-600 opacity-50">
+              Fase III
+            </span>
+            <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+              Telemetría de Salida
+            </h3>
+          </div>
         </div>
 
         {/* 2. TEXTO (SUBTITULO): PARAMETRÍA DE SENSORES (HOMOLOGADO) */}
@@ -533,13 +580,20 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="space-y-3"
+      className="glass-card-pro p-10 space-y-8 border-l-4 border-amber-500"
     >
-      <div className="flex items-center gap-2 mb-1">
-        <Camera size={14} className="text-amber-500" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-          Sección IV: Evidencia y Cierre de Misión
-        </span>
+      <div className="flex items-center gap-3">
+        <div className="bg-amber-500 p-2 rounded-[4px]">
+          <Camera size={20} className="text-white" />
+        </div>
+        <div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 opacity-50">
+            Fase IV
+          </span>
+          <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+            Evidencia y Cierre
+          </h3>
+        </div>
       </div>
 
       <div className="bg-amber-50/30 border border-amber-200/50 p-3 rounded-[4px] space-y-3">
@@ -605,35 +659,17 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass-card-pro bg-white overflow-hidden border border-[rgba(15,42,68,0.1)] shadow-xl rounded-[4px] w-full !p-0 mb-2 flex flex-col"
-    >
-      {/* Header Integrado */}
-      <header
-        className={`py-2.5 px-6 text-white flex items-center justify-between rounded-t-[4px] border ${
-          isEdit ? 'bg-[#0f2a44] border-[#0f2a44]' : 'bg-emerald-600 border-emerald-600'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <Navigation className="text-white shrink-0" size={18} />
-          <h2 className="text-base font-black uppercase tracking-tighter leading-none">
-            {isEdit ? 'Rectificación y Cierre de Misión' : 'Control de Salida de Activos'}
-          </h2>
-        </div>
-      </header>
-
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* Body Integrado */}
-      <form onSubmit={handleSubmit} className="py-3 px-6 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-12">
+        <div className="archon-grid-2 gap-12">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
-          <div className="space-y-4">
+          <div className="space-y-12">
             {renderIdentitySection()}
             {renderMissionSection()}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-12">
             {renderTelemetrySection()}
             {isEdit && renderClosureSection()}
           </div>
@@ -641,48 +677,77 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
         {/* Error Display */}
         {error && (
-          <div className="px-6 py-1.5 bg-rose-50 border-l-4 border-rose-500 text-rose-800 text-[9px] font-bold flex items-center gap-2">
-            <AlertCircle size={12} /> {error}
+          <div className="px-6 py-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 text-[11px] font-bold flex items-center gap-3 rounded-[4px] shadow-sm">
+            <AlertCircle size={16} /> {error}
           </div>
         )}
 
-        {/* Footer Integrado - Optimized Vertical Space */}
-        <div className="pt-2 border-t grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-[#0f2a44] bg-gray-100 hover:bg-gray-200 transition-all rounded-[4px] border-none outline-none disabled:opacity-50"
-            disabled={submitting}
-          >
-            {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
-          </button>
-          <button
-            type="submit"
-            disabled={
-              submitting ||
-              (!isFinished &&
-                (!formData.unitId ||
-                  !formData.operatorId ||
-                  !formData.destination ||
-                  (isEdit && !formData.endReading)))
-            }
-            className={`w-full px-6 py-2.5 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg rounded-[4px] border-none outline-none ${submitButtonClass}`}
-          >
-            {submitting && 'Procesando...'}
-            {!submitting && isFinished && (
-              <>
-                Misión Completada <CheckCircle2 size={14} />
-              </>
+        {/* Footer Integrado Soberano */}
+        <div className="flex justify-between items-center gap-8 mt-12 pt-12 border-t border-slate-100">
+          <div>
+            {isEdit && (
+              <button
+                type="button"
+                onClick={(): void => {
+                  setAuditAction('DELETE');
+                  setIsAuditModalOpen(true);
+                }}
+                className="px-8 py-4 bg-rose-600/10 text-rose-600 border border-rose-600/20 rounded-[4px] font-black text-xs uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center gap-3 active:scale-95 shadow-lg"
+              >
+                <Trash2 size={18} className="shrink-0" /> Eliminar Registro
+              </button>
             )}
-            {!submitting && !isFinished && (
-              <>
-                {rightButtonText} <ChevronRight size={14} />
-              </>
-            )}
-          </button>
+          </div>
+          <div className="flex gap-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-12 py-4 bg-[#0f2a44] text-white rounded-[4px] font-black text-[11px] uppercase tracking-widest hover:bg-sky-900 transition-all shadow-xl active:scale-95"
+            >
+              {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
+            </button>
+            <button
+              type="submit"
+              disabled={
+                submitting ||
+                (!isFinished &&
+                  (!formData.unitId ||
+                    !formData.operatorId ||
+                    !formData.destination ||
+                    (isEdit && !formData.endReading)))
+              }
+              className={`px-16 py-4 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 shadow-xl active:scale-95 rounded-[4px] border-none outline-none ${submitButtonClass} ${
+                submitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
+              }`}
+            >
+              {submitting && 'Procesando...'}
+              {!submitting && isFinished && (
+                <>
+                  Sincronizar Cambios <Save size={18} />
+                </>
+              )}
+              {!submitting && !isFinished && (
+                <>
+                  {rightButtonText} <ChevronRight size={18} />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </form>
-    </motion.div>
+
+      <AuditJustificationModal
+        isOpen={isAuditModalOpen}
+        onClose={(): void => setIsAuditModalOpen(false)}
+        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
+        title={
+          auditAction === 'UPDATE'
+            ? `Rectificación administrativa del trayecto ${routeToEdit?.id}`
+            : `Eliminación forense del registro ${routeToEdit?.id}`
+        }
+        actionType={auditAction}
+      />
+    </div>
   );
 };
 

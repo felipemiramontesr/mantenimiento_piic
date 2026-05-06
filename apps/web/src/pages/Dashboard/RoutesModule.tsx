@@ -90,11 +90,15 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
                 className="text-[#0f2a44] tracking-tighter font-black text-2xl"
                 style={{ margin: 0, padding: 0, lineHeight: 1 }}
               >
-                Administrar Rutas
+                {editingRoute
+                  ? `Rectificación de Trayecto: ${editingRoute.id}`
+                  : 'Administrar Rutas'}
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Despacho Logístico, Control de Tránsito & Auditoría Forense
+              {editingRoute
+                ? 'Protocolo de Rectificación Logística Archon'
+                : 'Despacho Logístico, Control de Tránsito & Auditoría Forense'}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -130,7 +134,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
 
       {/* 📜 FOOTER (Sovereign Standards) */}
       <footer className="workspace-footer-pro">
-        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+        <p>© Todos los derechos reservados por ArchonCore by PIIC GROUP.</p>
         <p className="text-[#0f2a44]">
           {BRANDING_NAME} {SYSTEM_VERSION}
         </p>
