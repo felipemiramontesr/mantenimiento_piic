@@ -178,9 +178,9 @@ const FleetModule: React.FC = (): React.ReactElement => {
       </header>
 
       {/* 📊 BODY MODULAR */}
-      <section className="archon-workspace-chassis">
+      <section className="archon-workspace-chassis w-full max-w-full overflow-hidden">
         {/* 🔱 AXIAL SYNC CONTAINER (v.28.37.0) */}
-        <div className="archon-axial-container flex flex-col gap-12">
+        <div className="archon-axial-container flex flex-col gap-12 w-full max-w-full">
           <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
 
           <div ref={panelRef}>

@@ -12,7 +12,7 @@ const DashboardLayout: React.FC = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isCollapsed ? '80px 1fr' : '20% 1fr',
+          gridTemplateColumns: isCollapsed ? '80px minmax(0, 1fr)' : '20% minmax(0, 1fr)',
           height: '100vh',
           width: '100vw',
           overflow: 'hidden',
