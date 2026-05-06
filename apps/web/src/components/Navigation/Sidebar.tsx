@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <nav style={{ display: 'flex', flexDirection: 'column' }}>
           <NavItem
             icon={<LayoutDashboard size={20} />}
-            label="Centro de Comando"
+            label="Comando"
             path="/dashboard"
             active={location.pathname === '/dashboard'}
             isCollapsed={isCollapsed}
@@ -149,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           {hasPermission('fleet:view') && (
             <NavItem
               icon={<Truck size={20} />}
-              label="Administrar Unidades"
+              label="Unidades"
               path="/dashboard/fleet"
               active={location.pathname === '/dashboard/fleet'}
               isCollapsed={isCollapsed}
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           {hasPermission('financial:view') && (
             <NavItem
               icon={<Wallet size={20} />}
-              label="Administrar Finanzas"
+              label="Finanzas"
               path="/dashboard/financial"
               active={location.pathname === '/dashboard/financial'}
               isCollapsed={isCollapsed}
@@ -167,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           {hasPermission('fleet:view') && (
             <NavItem
               icon={<Navigation size={20} />}
-              label="Administrar Rutas"
+              label="Rutas"
               path="/dashboard/routes"
               active={location.pathname === '/dashboard/routes'}
               isCollapsed={isCollapsed}
@@ -176,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           {hasPermission('maint:view') && (
             <NavItem
               icon={<Wrench size={20} />}
-              label="Administrar Mantenimientos"
+              label="Mantenimiento"
               path="/dashboard/maintenance"
               active={location.pathname === '/dashboard/maintenance'}
               isCollapsed={isCollapsed}
@@ -185,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           {hasPermission('user:admin') && (
             <NavItem
               icon={<Users size={20} />}
-              label="Administrar Personal"
+              label="Personal"
               path="/dashboard/users"
               active={location.pathname === '/dashboard/users'}
               isCollapsed={isCollapsed}
@@ -194,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           {hasPermission('user:admin') && (
             <NavItem
               icon={<ShieldAlert size={20} />}
-              label="Logs de Seguridad"
+              label="Seguridad"
               path="/dashboard/logs"
               active={location.pathname === '/dashboard/logs'}
               isCollapsed={isCollapsed}
