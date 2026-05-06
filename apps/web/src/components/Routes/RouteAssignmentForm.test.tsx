@@ -101,7 +101,7 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
     fireEvent.change(destinationInput, { target: { value: 'Base Norte' } });
 
     // Verify button is enabled and click
-    const submitBtn = screen.getByRole('button', { name: /Confirmar Despacho/i });
+    const submitBtn = screen.getByRole('button', { name: /Autorizar Despacho/i });
     expect(submitBtn).not.toBeDisabled();
 
     vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true } });
@@ -115,7 +115,7 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
         '/routes/start',
         expect.objectContaining({
           unitId: 'ASM-001',
-          operatorId: 1,
+          driverId: 1,
           destination: 'Base Norte',
         })
       );
