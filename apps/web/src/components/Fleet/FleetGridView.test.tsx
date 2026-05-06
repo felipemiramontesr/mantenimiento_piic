@@ -9,7 +9,7 @@ import { FleetUnit } from '../../types/fleet';
  */
 describe('FleetGridView Component', () => {
   const mockProps = {
-    onRegister: vi.fn((): void => {
+    onEdit: vi.fn((): void => {
       /* No-op */
     }),
     units: [] as FleetUnit[],
