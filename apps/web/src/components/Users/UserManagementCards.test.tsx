@@ -10,7 +10,8 @@ describe('UserManagementCards (Operational Dashboard)', () => {
     { id: '2', username: 'op1', fullName: 'Operator 1', is_active: false, roleName: 'Operator' },
   ];
 
-  const contextValue = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const contextValue: any = {
     users: mockUsers,
     isLoading: false,
     activePanel: 'DIRECTORY',
@@ -27,7 +28,7 @@ describe('UserManagementCards (Operational Dashboard)', () => {
 
   it('renders correctly', () => {
     render(
-      <UserContext.Provider value={contextValue as any}>
+      <UserContext.Provider value={contextValue}>
         <UserManagementCards />
       </UserContext.Provider>
     );
@@ -38,7 +39,7 @@ describe('UserManagementCards (Operational Dashboard)', () => {
 
   it('navigates to SIGNUP when button is clicked', () => {
     render(
-      <UserContext.Provider value={contextValue as any}>
+      <UserContext.Provider value={contextValue}>
         <UserManagementCards />
       </UserContext.Provider>
     );
@@ -51,7 +52,7 @@ describe('UserManagementCards (Operational Dashboard)', () => {
 
   it('navigates to DIRECTORY when first card is clicked', () => {
     render(
-      <UserContext.Provider value={contextValue as any}>
+      <UserContext.Provider value={contextValue}>
         <UserManagementCards />
       </UserContext.Provider>
     );

@@ -1,5 +1,5 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, Mock } from 'vitest';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RouteLogTable from './RouteLogTable';
 import { FleetProvider } from '../../context/FleetContext';
 import { UserProvider } from '../../context/UserContext';
@@ -27,17 +27,34 @@ describe('RouteLogTable (Logistics Standard)', () => {
   ];
 
   const mockUsers = [
-    { id: 1, username: 'jperez', full_name: 'Juan Perez', email: 'j@p.com', roleId: 1, roleName: 'Admin', department: 'Sistemas', is_active: true }
+    {
+      id: 1,
+      username: 'jperez',
+      full_name: 'Juan Perez',
+      email: 'j@p.com',
+      roleId: 1,
+      roleName: 'Admin',
+      department: 'Sistemas',
+      is_active: true,
+    },
   ];
   const mockUnits = [
-    { id: 'ASM-001', marca: 'Nissan', modelo: 'March', status: 'En Ruta', odometer: 50000, placas: 'ABC-123' }
+    {
+      id: 'ASM-001',
+      marca: 'Nissan',
+      modelo: 'March',
+      status: 'En Ruta',
+      odometer: 50000,
+      placas: 'ABC-123',
+    },
   ];
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (api.get as any).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: mockRoutes } });
-      if (url === '/auth/users') return Promise.resolve({ data: { success: true, data: mockUsers } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
@@ -46,9 +63,10 @@ describe('RouteLogTable (Logistics Standard)', () => {
   it('renders route logs correctly and handles NO MEDIA branch', async () => {
     // Unit without images
     const unitNoMedia = [{ ...mockUnits[0], images: [] }];
-    (api.get as Mock).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: mockRoutes } });
-      if (url === '/auth/users') return Promise.resolve({ data: { success: true, data: mockUsers } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: unitNoMedia } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
@@ -72,9 +90,10 @@ describe('RouteLogTable (Logistics Standard)', () => {
   });
 
   it('handles empty route list', async () => {
-    (api.get as Mock).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: [] } });
-      if (url === '/auth/users') return Promise.resolve({ data: { success: true, data: mockUsers } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
@@ -99,9 +118,10 @@ describe('RouteLogTable (Logistics Standard)', () => {
   it('handles operator without image and onEdit call', async () => {
     const onEdit = vi.fn();
     const userNoImage = [{ ...mockUsers[0], profile_picture_url: null, image_url: null }];
-    (api.get as Mock).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: mockRoutes } });
-      if (url === '/auth/users') return Promise.resolve({ data: { success: true, data: userNoImage } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: userNoImage } });
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
@@ -125,7 +145,7 @@ describe('RouteLogTable (Logistics Standard)', () => {
   });
 
   it('handles API errors in fetchRoutes', async () => {
-    (api.get as Mock).mockRejectedValueOnce(new Error('Fetch Error'));
+    vi.mocked(api.get).mockRejectedValueOnce(new Error('Fetch Error'));
 
     await act(async () => {
       render(
@@ -142,9 +162,10 @@ describe('RouteLogTable (Logistics Standard)', () => {
   });
 
   it('allows opening incident report form', async () => {
-    (api.get as Mock).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: mockRoutes } });
-      if (url === '/auth/users') return Promise.resolve({ data: { success: true, data: mockUsers } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
@@ -164,7 +185,7 @@ describe('RouteLogTable (Logistics Standard)', () => {
     });
 
     fireEvent.click(screen.getByTitle(/Reportar Incidencia/i));
-    
+
     // Check if IncidentReportForm is visible (Protocolo Sentinel text)
     expect(screen.getByText(/Protocolo Sentinel/i)).toBeDefined();
   });
