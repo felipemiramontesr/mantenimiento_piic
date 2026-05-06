@@ -128,13 +128,18 @@ INSERT INTO common_catalogs (id, category, parent_id, code, label, is_active) VA
 
 -- CATEGORIES: ENGINE_TYPE
 INSERT INTO common_catalogs (id, category, code, label, is_active) VALUES 
-(1024, 'ENGINE_TYPE', 'ENG_L4_28_DSL', 'L4 2.8L Turbo (Diésel)', 1),
-(1026, 'ENGINE_TYPE', 'ENG_L4_25_GAS', 'L4 2.5L DOHC (Gasolina)', 1),
-(1027, 'ENGINE_TYPE', 'ENG_V8_64_GAS', 'V8 6.4L HEMI (Gasolina)', 1),
-(1028, 'ENGINE_TYPE', 'ENG_L4_24_DSL', 'L4 2.4L MIVEC (Diésel)', 1),
-(1032, 'ENGINE_TYPE', 'ENG_L4_16_GAS', 'L4 1.6L DOHC (Gasolina)', 1),
-(1033, 'ENGINE_TYPE', 'ENG_L4_15_GAS', 'L4 1.5L DOHC (Gasolina)', 1),
-(1036, 'ENGINE_TYPE', 'ENG_L4_25_DSL', 'L4 2.5L Turbo (Diésel)', 1);
+(1024, 'ENGINE_TYPE', 'ENG_L4_28_DSL', 'L4 2.8L Turbo Intercooled', 1),
+(1026, 'ENGINE_TYPE', 'ENG_L4_25_GAS', 'L4 2.5L DOHC Multipunto', 1),
+(1027, 'ENGINE_TYPE', 'ENG_V8_64_GAS', 'V8 6.4L HEMI MDS', 1),
+(1028, 'ENGINE_TYPE', 'ENG_L4_24_DSL', 'L4 2.4L MIVEC Turbo', 1),
+(1029, 'ENGINE_TYPE', 'ENG_L4_20_DSL', 'L4 2.0L CTI Turbo', 1),
+(1030, 'ENGINE_TYPE', 'ENG_L4_14_GAS', 'L4 1.4L TSI Turbo', 1),
+(1031, 'ENGINE_TYPE', 'ENG_L4_13_GAS', 'L4 1.3L Firefly', 1),
+(1032, 'ENGINE_TYPE', 'ENG_L4_16_GAS', 'L4 1.6L DOHC', 1),
+(1033, 'ENGINE_TYPE', 'ENG_L4_15_GAS', 'L4 1.5L DOHC', 1),
+(1034, 'ENGINE_TYPE', 'ENG_L6_67_DSL', 'L6 6.7L Cummins Turbo', 1),
+(1035, 'ENGINE_TYPE', 'ENG_BEV_DUAL', 'Electric Dual-Motor', 1),
+(1036, 'ENGINE_TYPE', 'ENG_L4_25_DSL', 'L4 2.5L Turbo (2KD-FTV)', 1);
 
 -- CATEGORIES: DRIVE_TYPE & TRANSMISSION
 INSERT INTO common_catalogs (id, category, code, label, is_active) VALUES 

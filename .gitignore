@@ -35,6 +35,7 @@ Thumbs.db
 uploads/
 apps/api/uploads/
 apps/web/public/uploads/
+*.sql
 
 # Archon Dev Lore
 checkpoints.md
