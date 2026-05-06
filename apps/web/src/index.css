@@ -1690,6 +1690,20 @@ body {
   table-layout: auto !important;
 }
 
+.archon-registry-table th,
+.archon-registry-table td,
+table th,
+table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+table td > div,
+table th > div {
+  justify-content: center !important;
+  align-items: center !important;
+}
+
 .archon-registry-table th {
   background-color: #0f2a44;
   padding: 16px 8px !important;
@@ -1698,15 +1712,12 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em !important;
   color: #ffffff !important;
-  text-align: center;
   border: none !important;
   white-space: nowrap !important;
 }
 
 .archon-registry-table td {
   padding: 10px 8px !important;
-  text-align: center;
-  vertical-align: middle;
   background: white;
   font-size: 13px;
   color: #0f2a44;
