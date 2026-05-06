@@ -84,7 +84,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   };
 
   return (
-    <div className="glass-card-pro bg-white p-6 animate-in fade-in duration-700">
+    <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700">
       <table className="archon-registry-table w-full">
         <thead>
           <tr>
@@ -290,11 +290,11 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
       {editingLog && (
         <RouteEditModal
           log={editingLog}
-           onClose={(): void => setEditingLog(null)}
-           onSuccess={(): void => {
-             setEditingLog(null);
-             fetchRoutes();
-           }}
+          onClose={(): void => setEditingLog(null)}
+          onSuccess={(): void => {
+            setEditingLog(null);
+            fetchRoutes();
+          }}
         />
       )}
     </div>

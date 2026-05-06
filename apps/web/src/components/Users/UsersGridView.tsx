@@ -204,7 +204,7 @@ const UsersGridView = (): React.JSX.Element => {
 
   return (
     <div className="space-y-[20px] text-[#0f2a44]">
-      <div className="glass-card-pro bg-white p-6">
+      <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
         <table className="archon-registry-table w-full">
           <thead>
             <tr>
