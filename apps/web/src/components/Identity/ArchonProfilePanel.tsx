@@ -385,7 +385,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           <button
             type="submit"
             disabled={isSubmitting || !canSubmit}
-            className={`btn-sentinel-navy w-full md:w-auto px-32 py-5 uppercase font-black text-[11px] tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
+            className={`btn-sentinel-emerald w-full md:w-auto uppercase font-black text-[11px] tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
               !canSubmit ? 'opacity-30 grayscale cursor-not-allowed' : 'shadow-xl'
             }`}
           >

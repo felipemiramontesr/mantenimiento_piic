@@ -321,7 +321,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
               <div className="pt-8">
                 <button
                   disabled={isLoading}
-                  className="w-full p-5 bg-[#0f2a44] text-white rounded-[4px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#071626] transition-all shadow-xl disabled:opacity-50"
+                  className="btn-sentinel-emerald flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isLoading ? (
                     'Registrando...'

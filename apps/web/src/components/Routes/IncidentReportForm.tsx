@@ -198,18 +198,14 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
         )}
 
         {/* Footer Actions */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
-          >
+        <div className="archon-button-group pt-4 border-t border-gray-100">
+          <button type="button" onClick={onClose} className="btn-sentinel-red">
             Cancelar
           </button>
           <button
             type="submit"
             disabled={submitting || !formData.description}
-            className="w-full py-4 bg-rose-700 hover:bg-rose-800 text-white text-[10px] font-black uppercase tracking-widest rounded-[4px] shadow-lg shadow-rose-900/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+            className="btn-sentinel-emerald flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
           >
             {submitting ? 'Emitiendo Alerta...' : 'Emitir Alerta Sentinel'}
             <ChevronRight size={14} />

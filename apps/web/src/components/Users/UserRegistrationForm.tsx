@@ -62,10 +62,7 @@ const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
       </div>
     )}
 
-    <button
-      onClick={onClose}
-      className="btn-sentinel-navy px-12 py-4 uppercase font-black tracking-widest text-[11px] rounded-[4px]"
-    >
+    <button onClick={onClose} className="btn-sentinel-red">
       Volver al Directorio
     </button>
   </div>

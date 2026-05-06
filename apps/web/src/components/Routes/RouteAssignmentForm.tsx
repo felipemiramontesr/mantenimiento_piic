@@ -699,12 +699,8 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               </button>
             )}
           </div>
-          <div className="flex gap-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-12 py-4 bg-[#0f2a44] text-white rounded-[4px] font-black text-[11px] uppercase tracking-widest hover:bg-sky-900 transition-all shadow-xl active:scale-95"
-            >
+          <div className="archon-button-group">
+            <button type="button" onClick={onClose} className="btn-sentinel-red">
               {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
             </button>
             <button
@@ -717,7 +713,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                     !formData.destination ||
                     (isEdit && !formData.endReading)))
               }
-              className={`px-16 py-4 text-white text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 shadow-xl active:scale-95 rounded-[4px] border-none outline-none ${submitButtonClass} ${
+              className={`btn-sentinel-emerald ${submitButtonClass} ${
                 submitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
               }`}
             >
