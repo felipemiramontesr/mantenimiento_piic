@@ -120,9 +120,6 @@ const ForensicJournalTable: React.FC = () => {
                       <span className="text-[11px] font-black text-[#0f2a44]">
                         {formatDate(log.created_at)}
                       </span>
-                      <span className="text-[9px] font-bold opacity-40 uppercase">
-                        {new Date(log.created_at).toLocaleTimeString('es-MX')}
-                      </span>
                     </div>
                   </td>
 

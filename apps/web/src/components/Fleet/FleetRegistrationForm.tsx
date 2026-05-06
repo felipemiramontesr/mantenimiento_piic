@@ -18,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import ArchonField from '../ArchonField';
+import { formatDate } from '../../utils/dateUtils';
 import ArchonSelect from '../ArchonSelect';
 import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
@@ -75,11 +76,7 @@ const getPronosticoArchon = (
     );
 
     if (forecast) {
-      result.pronosticoDateStr = forecast.forecastDate.toLocaleDateString('es-MX', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
+      result.pronosticoDateStr = formatDate(forecast.forecastDate);
       const motivo = forecast.serviceByKmDate < forecast.serviceByTimeDate ? 'Uso/KM' : 'Tiempo';
       result.pronosticoText = `Vencimiento proyectado por límite de ${motivo}.`;
       result.isPronosticoReady = true;
@@ -92,11 +89,7 @@ const getPronosticoArchon = (
   const forecastDate = new Date(lastDate);
   forecastDate.setDate(forecastDate.getDate() + intDias);
 
-  result.pronosticoDateStr = forecastDate.toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  result.pronosticoDateStr = formatDate(forecastDate);
   result.pronosticoText = 'Vencimiento proyectado por límite de Tiempo.';
   result.isPronosticoReady = true;
 
