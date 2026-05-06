@@ -356,7 +356,7 @@ const FleetUnitRow = ({
 
   return (
     <tr
-      className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.025] border-b border-slate-100 ${
+      className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.025] ${
         isOverdue ? 'bg-red-50/40' : ''
       }`}
     >
