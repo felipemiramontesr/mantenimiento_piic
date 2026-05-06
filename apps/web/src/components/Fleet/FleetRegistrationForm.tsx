@@ -931,24 +931,24 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 setAuditAction('DELETE');
                 setIsAuditModalOpen(true);
               }}
-              className="px-8 py-4 bg-rose-600/10 text-rose-600 border border-rose-600/20 rounded-[4px] font-black text-xs uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center gap-3 active:scale-95 shadow-lg"
+              className="btn-sentinel-red px-8 flex items-center justify-center gap-3 active:scale-95 shadow-lg"
             >
               <Trash2 size={18} /> Eliminar Activo
             </button>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="archon-button-group">
           <button
             type="button"
             onClick={onCancel}
-            className="btn-sentinel-navy w-full uppercase font-black text-[11px] tracking-widest rounded-[4px] shadow-xl active:scale-95 py-4"
+            className="btn-sentinel-red uppercase font-black text-[11px] tracking-widest rounded-[4px] shadow-xl active:scale-95"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting || isProcessing || !canSubmit}
-            className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-3 rounded-[4px] transition-all duration-300 shadow-xl active:scale-95 py-4 ${
+            className={`btn-sentinel-emerald uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-3 rounded-[4px] transition-all duration-300 shadow-xl active:scale-95 ${
               !canSubmit || isSubmitting || isProcessing
                 ? 'opacity-50 grayscale cursor-not-allowed'
                 : ''

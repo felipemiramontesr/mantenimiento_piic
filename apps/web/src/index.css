@@ -1282,7 +1282,8 @@ body {
     gap: 12px;
     background-color: #f2b705;
     color: #0f2a44;
-    padding: 14px 28px;
+    height: 57px !important;
+    padding: 0 28px !important;
     border-radius: 4px;
     font-weight: 900;
     font-size: 12px;
@@ -1306,7 +1307,8 @@ body {
   gap: 12px;
   background-color: #8b5cf6;
   color: white;
-  padding: 14px 28px;
+  height: 57px !important;
+  padding: 0 28px !important;
   border-radius: 4px;
   font-weight: 900;
   font-size: 12px;
@@ -1328,7 +1330,8 @@ body {
   gap: 12px;
   background-color: #10b981;
   color: white;
-  padding: 14px 28px;
+  height: 57px !important;
+  padding: 0 28px !important;
   border-radius: 4px;
   font-weight: 900;
   font-size: 12px;
@@ -1350,7 +1353,8 @@ body {
   gap: 12px;
   background-color: #0ea5e9;
   color: white;
-  padding: 14px 28px;
+  height: 57px !important;
+  padding: 0 28px !important;
   border-radius: 4px;
   font-weight: 900;
   font-size: 12px;
@@ -1372,7 +1376,8 @@ body {
   gap: 12px;
   background-color: #ef4444;
   color: white;
-  padding: 14px 28px;
+  height: 57px !important;
+  padding: 0 28px !important;
   border-radius: 4px;
   font-weight: 900;
   font-size: 12px;
@@ -1394,7 +1399,8 @@ body {
   gap: 12px;
   background-color: #f59e0b;
   color: white;
-  padding: 14px 28px;
+  height: 57px !important;
+  padding: 0 28px !important;
   border-radius: 4px;
   font-weight: 900;
   font-size: 12px;
@@ -1416,7 +1422,8 @@ body {
   gap: 12px;
   background-color: #0f2a44;
   color: white;
-  padding: 14px 28px;
+  height: 57px !important;
+  padding: 0 28px !important;
   border-radius: 4px;
   font-weight: 900;
   font-size: 12px;
@@ -1437,6 +1444,17 @@ body {
   grid-template-columns: repeat(2, 1fr);
   gap: 40px;
   transition: all 0.3s ease-in-out;
+}
+
+/* 💠 SOVEREIGN BUTTON GROUP */
+.archon-button-group {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+}
+
+.archon-button-group > button {
+  flex: 1;
 }
 
 .archon-grid-3 {

@@ -59,23 +59,18 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-3 mt-8">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors"
-            >
+          <div className="archon-button-group mt-8">
+            <button onClick={onClose} className="btn-sentinel-red text-sm">
               Cancelar
             </button>
             <button
               onClick={(): void => onConfirm(reason)}
               disabled={reason.length < 5}
-              className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                isDelete
-                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-900/20'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-900/20'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`${
+                isDelete ? 'btn-sentinel-red' : 'btn-sentinel-emerald'
+              } text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              {isDelete ? 'Eliminar Registro' : 'Guardar Cambios'}
+              {isDelete ? 'Confirmar Baja' : 'Sincronizar'}
             </button>
           </div>
         </div>

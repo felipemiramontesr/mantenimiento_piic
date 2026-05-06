@@ -77,24 +77,24 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     fetchUsers,
     editingUser,
     setEditingUser,
-     updateUser,
-     deleteUser,
-     departments,
-     roles,
-   } = useUsers();
+    updateUser,
+    deleteUser,
+    departments,
+    roles,
+  } = useUsers();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [successData, setSuccessData] = useState<{ tempPass?: string; isEdit?: boolean } | null>(
     null
   );
-   const [error, setError] = useState<string | null>(null);
-   const [selectedFile, setSelectedFile] = useState<File | null>(null);
- 
-   // 🛡️ Audit State
-   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
-   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
- 
-   const [formData, setFormData] = useState({
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // 🛡️ Audit State
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
+
+  const [formData, setFormData] = useState({
     username: '',
     fullName: '',
     email: '',
@@ -131,45 +131,45 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     return retVal;
   };
 
-   const handleUpdate = async (reason: string): Promise<void> => {
-     if (!editingUser) return;
-     const success = await updateUser(
-       editingUser.id,
-       {
-         fullName: formData.fullName,
-         email: formData.email.toLowerCase(),
-         roleId: parseInt(formData.roleId, 10),
-         department: formData.department,
-         employeeNumber: formData.employeeNumber,
-         imageUrl: formData.imageUrl,
-         password: formData.password || undefined,
-       },
-       reason
-     );
- 
-     if (success) {
-       if (selectedFile && editingUser) {
-         const formDataUpload = new FormData();
-         formDataUpload.append('file', selectedFile);
-         await api.post(`/users/${editingUser.id}/upload-profile`, formDataUpload, {
-           headers: { 'Content-Type': 'multipart/form-data' },
-         });
-       }
-       setSuccessData({ isEdit: true });
-     } else {
-       setError('Error de sincronización. Verifique que la contraseña tenga al menos 8 caracteres.');
-     }
-   };
- 
-   const handleDelete = async (reason: string): Promise<void> => {
-     if (!editingUser) return;
-     const success = await deleteUser(editingUser.id, reason);
-     if (success) {
-       setSuccessData({ isEdit: true });
-     } else {
-       setError('Error al intentar eliminar la identidad del sistema.');
-     }
-   };
+  const handleUpdate = async (reason: string): Promise<void> => {
+    if (!editingUser) return;
+    const success = await updateUser(
+      editingUser.id,
+      {
+        fullName: formData.fullName,
+        email: formData.email.toLowerCase(),
+        roleId: parseInt(formData.roleId, 10),
+        department: formData.department,
+        employeeNumber: formData.employeeNumber,
+        imageUrl: formData.imageUrl,
+        password: formData.password || undefined,
+      },
+      reason
+    );
+
+    if (success) {
+      if (selectedFile && editingUser) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', selectedFile);
+        await api.post(`/users/${editingUser.id}/upload-profile`, formDataUpload, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+      setSuccessData({ isEdit: true });
+    } else {
+      setError('Error de sincronización. Verifique que la contraseña tenga al menos 8 caracteres.');
+    }
+  };
+
+  const handleDelete = async (reason: string): Promise<void> => {
+    if (!editingUser) return;
+    const success = await deleteUser(editingUser.id, reason);
+    if (success) {
+      setSuccessData({ isEdit: true });
+    } else {
+      setError('Error al intentar eliminar la identidad del sistema.');
+    }
+  };
 
   const handleCreate = async (): Promise<void> => {
     const tempPass = generateTempPassword();
@@ -198,38 +198,38 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     }
   };
 
-   const handleConfirmAudit = async (reason: string): Promise<void> => {
-     setIsSubmitting(true);
-     try {
-       if (auditAction === 'UPDATE') {
-         await handleUpdate(reason);
-       } else if (auditAction === 'DELETE' && editingUser) {
-         await handleDelete(reason);
-       }
-     } catch (err) {
-       setError('Falla crítica en el protocolo de auditoría.');
-     } finally {
-       setIsSubmitting(false);
-       setIsAuditModalOpen(false);
-     }
-   };
- 
-   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
-     e.preventDefault();
-     if (editingUser) {
-       setAuditAction('UPDATE');
-       setIsAuditModalOpen(true);
-     } else {
-       setIsSubmitting(true);
-       try {
-         await handleCreate();
-       } catch (err) {
-         setSuccessData({ tempPass: `TEMP-${Math.random().toString(36).slice(-8)}` });
-       } finally {
-         setIsSubmitting(false);
-       }
-     }
-   };
+  const handleConfirmAudit = async (reason: string): Promise<void> => {
+    setIsSubmitting(true);
+    try {
+      if (auditAction === 'UPDATE') {
+        await handleUpdate(reason);
+      } else if (auditAction === 'DELETE' && editingUser) {
+        await handleDelete(reason);
+      }
+    } catch (err) {
+      setError('Falla crítica en el protocolo de auditoría.');
+    } finally {
+      setIsSubmitting(false);
+      setIsAuditModalOpen(false);
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (editingUser) {
+      setAuditAction('UPDATE');
+      setIsAuditModalOpen(true);
+    } else {
+      setIsSubmitting(true);
+      try {
+        await handleCreate();
+      } catch (err) {
+        setSuccessData({ tempPass: `TEMP-${Math.random().toString(36).slice(-8)}` });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
 
   const passwordsMatch = formData.password === formData.confirmPassword;
   const canSubmit = !formData.password || (passwordsMatch && formData.password.length >= 8);
@@ -433,58 +433,58 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         </div>
       </div>
 
-       <div className="archon-grid-2">
-         <div className="flex gap-4">
-           {editingUser && (
-             <button
-               type="button"
-               onClick={(): void => {
-                 setAuditAction('DELETE');
-                 setIsAuditModalOpen(true);
-               }}
-               className="btn-sentinel-red px-8 flex items-center justify-center gap-2 uppercase font-black text-[11px] tracking-widest rounded-[4px]"
-             >
-               <Trash2 size={16} /> Eliminar Personal
-             </button>
-           )}
-         </div>
-         <div className="grid grid-cols-2 gap-6">
-           <button
-             type="button"
-             onClick={(): void => {
-               setEditingUser(null);
-               setActivePanel('DIRECTORY');
-             }}
-             className="btn-sentinel-navy w-full uppercase font-black text-[11px] tracking-widest rounded-[4px]"
-           >
-             Cancelar
-           </button>
-           <button
-             type="submit"
-             disabled={isSubmitting || !canSubmit}
-             className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
-               !canSubmit ? 'opacity-50 grayscale cursor-not-allowed' : ''
-             }`}
-           >
-             {isSubmitting && 'Transmitiendo...'}
-             {!isSubmitting && (editingUser ? 'Sincronizar Cambios' : 'Confirmar Alta')}
-             <Save size={16} />
-           </button>
-         </div>
-       </div>
- 
-       <AuditJustificationModal
-         isOpen={isAuditModalOpen}
-         onClose={(): void => setIsAuditModalOpen(false)}
-         onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
-         title={
-           auditAction === 'UPDATE'
-             ? `Actualización de identidad para ${formData.fullName}`
-             : `Baja definitiva del personal: ${formData.fullName}`
-         }
-         actionType={auditAction}
-       />
-     </form>
+      <div className="archon-grid-2">
+        <div className="flex gap-4">
+          {editingUser && (
+            <button
+              type="button"
+              onClick={(): void => {
+                setAuditAction('DELETE');
+                setIsAuditModalOpen(true);
+              }}
+              className="btn-sentinel-red px-8 flex items-center justify-center gap-2 uppercase font-black text-[11px] tracking-widest rounded-[4px]"
+            >
+              <Trash2 size={16} /> Eliminar Personal
+            </button>
+          )}
+        </div>
+        <div className="archon-button-group">
+          <button
+            type="button"
+            onClick={(): void => {
+              setEditingUser(null);
+              setActivePanel('DIRECTORY');
+            }}
+            className="btn-sentinel-red uppercase font-black text-[11px] tracking-widest rounded-[4px]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || !canSubmit}
+            className={`btn-sentinel-emerald uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
+              !canSubmit ? 'opacity-50 grayscale cursor-not-allowed' : ''
+            }`}
+          >
+            {isSubmitting && 'Transmitiendo...'}
+            {!isSubmitting && (editingUser ? 'Sincronizar Cambios' : 'Confirmar Alta')}
+            <Save size={16} />
+          </button>
+        </div>
+      </div>
+
+      <AuditJustificationModal
+        isOpen={isAuditModalOpen}
+        onClose={(): void => setIsAuditModalOpen(false)}
+        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
+        title={
+          auditAction === 'UPDATE'
+            ? `Actualización de identidad para ${formData.fullName}`
+            : `Baja definitiva del personal: ${formData.fullName}`
+        }
+        actionType={auditAction}
+      />
+    </form>
   );
 };
 
