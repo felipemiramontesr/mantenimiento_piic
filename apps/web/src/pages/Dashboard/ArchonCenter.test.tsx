@@ -1,10 +1,7 @@
-import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
+import { render, screen, act } from '../../test/testUtils';
 import ArchonCenter from './ArchonCenter';
-import { FleetProvider } from '../../context/FleetContext';
-
-import { UserProvider } from '../../context/UserContext';
 
 vi.mock('../../api/client', () => ({
   default: {
@@ -13,40 +10,29 @@ vi.mock('../../api/client', () => ({
   },
 }));
 
-describe('ArchonCenter Component (Sovereign Dashboard)', () => {
+describe('ArchonCenter Component (Apex Standard)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders branding name and command titles', async () => {
+  const renderModule = async (): Promise<void> => {
     await act(async () => {
       render(
         <BrowserRouter>
-          <UserProvider>
-            <FleetProvider>
-              <ArchonCenter />
-            </FleetProvider>
-          </UserProvider>
+          <ArchonCenter />
         </BrowserRouter>
       );
     });
+  };
 
+  it('renders branding name and command titles', async () => {
+    await renderModule();
     expect(screen.getByText('Centro de Comando')).toBeDefined();
     expect(screen.getByText('Análisis Predictivo de Segmentos Operativos')).toBeDefined();
   });
 
   it('renders all 6 KPI cards with correct text in Spanish', async () => {
-    await act(async () => {
-      render(
-        <BrowserRouter>
-          <UserProvider>
-            <FleetProvider>
-              <ArchonCenter />
-            </FleetProvider>
-          </UserProvider>
-        </BrowserRouter>
-      );
-    });
+    await renderModule();
 
     expect(screen.getByText(/Salud de Flota/i)).toBeDefined();
     expect(screen.getByText(/Fuerza Operativa/i)).toBeDefined();
@@ -57,23 +43,12 @@ describe('ArchonCenter Component (Sovereign Dashboard)', () => {
     expect(screen.getByText(/Mermas Operativas/i)).toBeDefined();
     expect(screen.getByText(/Incidencias en Ruta/i)).toBeDefined();
 
-    // Verify visibility of action buttons with a robust ARIA role matcher
     const detailButtons = screen.getAllByRole('button', { name: /VER REPORTE/i });
     expect(detailButtons.length).toBe(8);
   });
 
   it('renders the 3 main category cards with 2x2 grid', async () => {
-    await act(async () => {
-      render(
-        <BrowserRouter>
-          <UserProvider>
-            <FleetProvider>
-              <ArchonCenter />
-            </FleetProvider>
-          </UserProvider>
-        </BrowserRouter>
-      );
-    });
+    await renderModule();
 
     expect(screen.getByText('Vehículos de Flota')).toBeDefined();
     expect(screen.getByText('Maquinaria Pesada')).toBeDefined();
