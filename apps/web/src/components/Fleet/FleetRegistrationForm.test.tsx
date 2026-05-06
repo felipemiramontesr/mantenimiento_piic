@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, Mock, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import FleetRegistrationForm from './FleetRegistrationForm';
 import useFleetForm from '../../hooks/useFleetForm';
 import { UseFleetFormReturn, CatalogOption, FleetStatus } from '../../types/fleet';
@@ -88,7 +88,7 @@ describe('FleetRegistrationForm Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useFleetForm as Mock).mockReturnValue(mockController);
+    vi.mocked(useFleetForm).mockReturnValue(mockController);
   });
 
   it('should render all form sections', (): void => {
@@ -105,7 +105,7 @@ describe('FleetRegistrationForm Component', () => {
 
   it('should show "Transmitiendo..." when submitting', async (): Promise<void> => {
     const submittingController = { ...mockController, isSubmitting: true } as UseFleetFormReturn;
-    (useFleetForm as Mock).mockReturnValue(submittingController);
+    vi.mocked(useFleetForm).mockReturnValue(submittingController);
 
     render(<FleetRegistrationForm controller={submittingController} {...mockProps} />);
     expect(screen.getByText(/Transmitiendo.../i)).toBeInTheDocument();

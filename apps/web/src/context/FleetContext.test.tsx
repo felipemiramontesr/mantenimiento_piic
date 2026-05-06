@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, waitFor, RenderResult } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { render, waitFor, RenderResult, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FleetProvider, useFleet } from './FleetContext';
 import api from '../api/client';
 
@@ -72,7 +72,7 @@ describe('FleetContext (Sovereign State Engine)', () => {
   });
 
   it('provides initial stats and hydrates from API', async () => {
-    (api.get as Mock).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: [] } });
       if (url === '/incidents') return Promise.resolve({ data: { success: true, data: [] } });
       return Promise.reject(new Error('Unknown URL'));
@@ -99,7 +99,7 @@ describe('FleetContext (Sovereign State Engine)', () => {
       { id: 'U2', status: 'En Ruta', mtbfHours: 200, mttrHours: 20, assetTypeId: 1 },
     ];
 
-    (api.get as Mock).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
       if (url === '/incidents') return Promise.resolve({ data: { success: true, data: [] } });
       return Promise.reject(new Error('Unknown URL'));
@@ -119,8 +119,8 @@ describe('FleetContext (Sovereign State Engine)', () => {
   });
 
   it('handles reportIncident and refreshes incidents count', async () => {
-    (api.get as Mock).mockResolvedValue({ data: { success: true, data: [] } });
-    (api.post as Mock).mockResolvedValue({ data: { success: true } });
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    vi.mocked(api.post).mockResolvedValue({ data: { success: true } });
 
     let renderResult: RenderResult | undefined;
     await act(async () => {
@@ -134,7 +134,7 @@ describe('FleetContext (Sovereign State Engine)', () => {
     const { getByText } = renderResult!;
 
     // Mock the second call for incidents after report
-    (api.get as Mock).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/incidents')
         return Promise.resolve({ data: { success: true, data: [{ status: 'OPEN' }] } });
       return Promise.resolve({ data: { success: true, data: [] } });
@@ -149,9 +149,9 @@ describe('FleetContext (Sovereign State Engine)', () => {
   });
 
   it('handles startRoute and finishRoute with unit refresh', async () => {
-    (api.get as Mock).mockResolvedValue({ data: { success: true, data: [] } });
-    (api.post as Mock).mockResolvedValue({ data: { success: true } });
-    (api.patch as Mock).mockResolvedValue({ data: { success: true } });
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    vi.mocked(api.post).mockResolvedValue({ data: { success: true } });
+    vi.mocked(api.patch).mockResolvedValue({ data: { success: true } });
 
     let renderResult: RenderResult | undefined;
     await act(async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
 import api from './client';
 
@@ -23,7 +23,7 @@ describe('Axios API Client (ARCHON CORE)', () => {
   });
 
   it('should add Authorization header if token exists in localStorage', async () => {
-    (localStorage.getItem as Mock).mockReturnValue('mocked-token');
+    vi.mocked(localStorage.getItem).mockReturnValue('mocked-token');
 
     const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,7 +35,7 @@ describe('Axios API Client (ARCHON CORE)', () => {
   });
 
   it('should not add Authorization header if no token', async () => {
-    (localStorage.getItem as Mock).mockReturnValue(null);
+    vi.mocked(localStorage.getItem).mockReturnValue(null);
 
     const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

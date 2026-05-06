@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, RenderResult } from '@testing-library/react';
-import { describe, it, expect, vi, Mock } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import FleetModule from './FleetModule';
 import { FleetProvider } from '../../context/FleetContext';
@@ -151,20 +151,20 @@ describe('FleetModule Orchestrator', () => {
     );
 
   it('should start in the GRID view', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    vi.mocked(useFleetForm).mockReturnValue(baseMock);
     renderModule();
     expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    vi.mocked(useFleetForm).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
   });
 
   it('should return to GRID view when clicking the "Estrategia Operativa" card', (): void => {
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    vi.mocked(useFleetForm).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     // Clicking the Strategy card should return to the inventory table
@@ -174,13 +174,13 @@ describe('FleetModule Orchestrator', () => {
 
   it('should show success view after successful registration', async (): Promise<void> => {
     // 1. Setup Registration State
-    (useFleetForm as Mock).mockReturnValue(baseMock);
+    vi.mocked(useFleetForm).mockReturnValue(baseMock);
 
     const { rerender } = renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
 
     // 2. Transition to Success State
-    (useFleetForm as Mock).mockReturnValue({
+    vi.mocked(useFleetForm).mockReturnValue({
       ...baseMock,
       registrationSuccess: true,
     } as unknown as UseFleetFormReturn);
