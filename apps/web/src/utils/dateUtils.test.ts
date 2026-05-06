@@ -4,10 +4,10 @@ import { formatDate, formatDateTime } from './dateUtils';
 describe('Archon Date Engine (v.1.0.0)', () => {
   const mockDate = '2026-05-04T15:30:00Z';
 
-  test('formatDate should return DD/MM/YYYY with AM/PM for es-MX', () => {
+  test('formatDate should return DD/MM/YYYY for es-MX', () => {
     const formatted = formatDate(mockDate);
-    // Standardizes check for Date + Time (AM/PM)
-    expect(formatted).toMatch(/^\d{2}\/\d{2}\/\d{4}.*\d{2}:\d{2}.*(a\.m\.|p\.m\.|AM|PM)$/i);
+    // Verified: Forecast column requirement (Date Only)
+    expect(formatted).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
   });
 
   test('formatDateTime should return DD/MM/YYYY and time with AM/PM for es-MX', () => {
