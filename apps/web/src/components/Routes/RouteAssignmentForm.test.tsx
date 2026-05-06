@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RouteAssignmentForm from './RouteAssignmentForm';
 import { FleetProvider } from '../../context/FleetContext';
@@ -14,17 +14,23 @@ vi.mock('../../api/client', () => ({
 
 describe('RouteAssignmentForm (Cockpit Standard)', () => {
   const mockUnits = [
-    { id: 'ASM-001', marca: 'Nissan', modelo: 'March', status: 'Disponible', odometer: 50000, placas: 'ABC-123' },
+    {
+      id: 'ASM-001',
+      marca: 'Nissan',
+      modelo: 'March',
+      status: 'Disponible',
+      odometer: 50000,
+      placas: 'ABC-123',
+    },
   ];
-  const mockUsers = [
-    { id: 1, fullName: 'Juan Perez', username: 'juan.perez' },
-  ];
+  const mockUsers = [{ id: 1, fullName: 'Juan Perez', username: 'juan.perez' }];
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (api.get as any).mockImplementation((url: string) => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
-      if (url === '/auth/users') return Promise.resolve({ data: { success: true, data: mockUsers } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: [] } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
@@ -35,7 +41,7 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteAssignmentForm onCancel={() => {}} onSuccess={() => {}} />
+            <RouteAssignmentForm onCancel={vi.fn()} onSuccess={vi.fn()} />
           </FleetProvider>
         </UserProvider>
       );
@@ -51,7 +57,7 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteAssignmentForm onCancel={() => {}} onSuccess={() => {}} />
+            <RouteAssignmentForm onCancel={vi.fn()} onSuccess={vi.fn()} />
           </FleetProvider>
         </UserProvider>
       );
@@ -63,7 +69,11 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
     });
 
     // Open Unit Select
-    const unitSelectTrigger = await screen.findByText(/Buscar activo/i, { exact: false }, { timeout: 5000 });
+    const unitSelectTrigger = await screen.findByText(
+      /Buscar activo/i,
+      { exact: false },
+      { timeout: 5000 }
+    );
     fireEvent.click(unitSelectTrigger);
 
     // Select ASM-001
@@ -71,11 +81,19 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
     fireEvent.click(unitOption);
 
     // Open Operator Select
-    const operatorSelectTrigger = await screen.findByText(/Buscar por nombre/i, { exact: false }, { timeout: 3000 });
+    const operatorSelectTrigger = await screen.findByText(
+      /Buscar por nombre/i,
+      { exact: false },
+      { timeout: 3000 }
+    );
     fireEvent.click(operatorSelectTrigger);
 
     // Select Juan Perez
-    const operatorOption = await screen.findByText(/Juan Perez/i, { exact: false }, { timeout: 3000 });
+    const operatorOption = await screen.findByText(
+      /Juan Perez/i,
+      { exact: false },
+      { timeout: 3000 }
+    );
     fireEvent.click(operatorOption);
 
     // Fill Destination
@@ -86,18 +104,21 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
     const submitBtn = screen.getByRole('button', { name: /Confirmar Despacho/i });
     expect(submitBtn).not.toBeDisabled();
 
-    (api.post as any).mockResolvedValueOnce({ data: { success: true } });
+    vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true } });
 
     await act(async () => {
       fireEvent.click(submitBtn);
     });
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/routes/start', expect.objectContaining({
-        unitId: 'ASM-001',
-        operatorId: 1,
-        destination: 'Base Norte'
-      }));
+      expect(api.post).toHaveBeenCalledWith(
+        '/routes/start',
+        expect.objectContaining({
+          unitId: 'ASM-001',
+          operatorId: 1,
+          destination: 'Base Norte',
+        })
+      );
     });
   });
 });

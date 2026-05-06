@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, Mock } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import ForensicJournalTable from './ForensicJournalTable';
 import { FleetProvider } from '../../context/FleetContext';
 import { UserProvider } from '../../context/UserContext';
@@ -25,7 +25,7 @@ describe('ForensicJournalTable (Audit Standard)', () => {
   ];
 
   it('renders forensic logs correctly', async () => {
-    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: mockLogs } });
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: mockLogs } });
 
     await act(async () => {
       render(
@@ -46,11 +46,21 @@ describe('ForensicJournalTable (Audit Standard)', () => {
 
   it('renders different event styles correctly', async () => {
     const multiLogs = [
-      { id: 2, unit_id: 'ASM-002', event_type: 'ROUTE_START', created_at: new Date().toISOString() },
-      { id: 3, unit_id: 'ASM-003', event_type: 'ROUTE_FINISH', created_at: new Date().toISOString() },
+      {
+        id: 2,
+        unit_id: 'ASM-002',
+        event_type: 'ROUTE_START',
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 3,
+        unit_id: 'ASM-003',
+        event_type: 'ROUTE_FINISH',
+        created_at: new Date().toISOString(),
+      },
       { id: 4, unit_id: 'ASM-004', event_type: 'UNKNOWN', created_at: new Date().toISOString() },
     ];
-    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: multiLogs } });
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: multiLogs } });
 
     await act(async () => {
       render(
@@ -70,7 +80,7 @@ describe('ForensicJournalTable (Audit Standard)', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    (api.get as Mock).mockRejectedValueOnce(new Error('Forensic Failure'));
+    vi.mocked(api.get).mockRejectedValueOnce(new Error('Forensic Failure'));
 
     await act(async () => {
       render(
