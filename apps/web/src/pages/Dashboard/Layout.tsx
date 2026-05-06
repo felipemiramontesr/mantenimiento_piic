@@ -27,6 +27,7 @@ const DashboardLayout: React.FC = () => {
             overflowY: 'auto',
             height: '100vh',
             position: 'relative',
+            minWidth: 0,
           }}
         >
           <ArchonTopBar />

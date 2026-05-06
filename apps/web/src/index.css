@@ -902,6 +902,7 @@ body {
   width: 100%;
   overflow: hidden;
   background-color: var(--bg-workspace);
+  min-width: 0;
 }
 
 .workspace-header-pro {
