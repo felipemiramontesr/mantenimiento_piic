@@ -282,7 +282,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   }
 
   const renderIdentitySection = (): React.ReactElement => (
-    <div className="glass-card-pro p-10 space-y-8">
+    <div className="space-y-8">
       <div className="flex items-center gap-3">
         <div className="bg-[#0f2a44] p-2 rounded-[4px]">
           <ShieldCheck size={20} className="text-white" />
@@ -415,7 +415,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   };
 
   const renderMissionSection = (): React.ReactElement => (
-    <div className="glass-card-pro p-10 space-y-8">
+    <div className="space-y-8 pt-8 border-t border-[#0f2a44]/5">
       <div className="flex items-center gap-3">
         <div className="bg-emerald-600 p-2 rounded-[4px]">
           <MapPin size={20} className="text-white" />
@@ -500,7 +500,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     }
 
     return (
-      <div className="glass-card-pro p-10 space-y-8">
+      <div className="space-y-8">
         <div className="flex items-center gap-3">
           <div className="bg-sky-600 p-2 rounded-[4px]">
             <Gauge size={20} className="text-white" />
@@ -580,7 +580,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="glass-card-pro p-10 space-y-8 border-l-4 border-amber-500"
+      className="space-y-8 pt-8 border-t border-[#0f2a44]/5"
     >
       <div className="flex items-center gap-3">
         <div className="bg-amber-500 p-2 rounded-[4px]">
@@ -662,14 +662,15 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* Body Integrado */}
       <form onSubmit={handleSubmit} className="space-y-12">
-        <div className="archon-grid-2 gap-12">
-          {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
-          <div className="space-y-12">
+        <div className="archon-grid-2 gap-12 items-start">
+          {/* COLUMNA 1: IDENTIDAD Y MISIÓN (BLOQUE UNIFICADO) */}
+          <div className="glass-card-pro p-10 space-y-12 bg-white">
             {renderIdentitySection()}
             {renderMissionSection()}
           </div>
 
-          <div className="space-y-12">
+          {/* COLUMNA 2: TELEMETRÍA Y CIERRE (BLOQUE UNIFICADO) */}
+          <div className="glass-card-pro p-10 space-y-12 bg-white">
             {renderTelemetrySection()}
             {isEdit && renderClosureSection()}
           </div>
