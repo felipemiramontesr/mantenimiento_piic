@@ -3,8 +3,10 @@ import { MapPin } from 'lucide-react';
 import ArchonSelect from '../../ArchonSelect';
 import { RouteAssignmentPanelProps } from './types';
 
+import { CatalogOption } from '../../../types/fleet';
+
 interface RouteMissionPanelProps extends RouteAssignmentPanelProps {
-  origins: { id: string; label: string }[];
+  origins: CatalogOption[];
 }
 
 /**
