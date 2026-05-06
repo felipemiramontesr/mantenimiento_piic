@@ -20,7 +20,6 @@ import {
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
 import FleetKpiMatrix from './FleetKpiMatrix';
-import FleetEditModal from './FleetEditModal';
 import {
   calculateMaintForecast,
   formatDate,
@@ -35,6 +34,7 @@ import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 interface FleetGridViewProps {
   units: FleetUnit[];
   loading?: boolean;
+  onEdit: (unit: FleetUnit) => void;
 }
 
 const IdentityCluster = ({
@@ -463,9 +463,9 @@ const FleetUnitRow = ({
 export const FleetGridView = ({
   units = [],
   loading = false,
+  onEdit,
 }: FleetGridViewProps): React.JSX.Element => {
   const [selectedGalleryUnit, setSelectedGalleryUnit] = useState<FleetUnit | null>(null);
-  const [editingUnit, setEditingUnit] = useState<FleetUnit | null>(null);
   const [sortConfig, setSortConfig] = useState<{
     field: 'unidad' | 'programacion' | 'pronostico' | null;
     direction: 'asc' | 'desc';
@@ -646,23 +646,13 @@ export const FleetGridView = ({
                   key={unit.uuid}
                   unit={unit}
                   onSelectImage={setSelectedGalleryUnit}
-                  onEdit={setEditingUnit}
+                  onEdit={onEdit}
                 />
               )
             )}
           </tbody>
         </table>
       </div>
-      {editingUnit && (
-        <FleetEditModal
-          unit={editingUnit}
-          onClose={(): void => setEditingUnit(null)}
-          onSuccess={(): void => {
-            setEditingUnit(null);
-            window.location.reload(); // Quick refresh for now
-          }}
-        />
-      )}
     </div>
   );
 };

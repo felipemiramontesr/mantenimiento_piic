@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Truck } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+import { FleetUnit, CreateFleetUnit } from '../../types/fleet';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
 import FleetManagementCards, { ManagementPanel } from '../../components/Fleet/FleetManagementCards';
@@ -16,9 +17,67 @@ import useFleetForm from '../../hooks/useFleetForm';
  * Principles: SOLID, DRY, DIP
  * Refinement: Dynamic Panel Orchestration with Axial Scroll
  */
+
+const mapBaseIds = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
+  assetTypeId: unit.assetTypeId || 0,
+  brandId: unit.brandId || 0,
+  modelId: unit.modelId || 0,
+  departmentId: unit.departmentId || undefined,
+  operationalUseId: unit.operationalUseId || undefined,
+  locationId: unit.locationId || undefined,
+  engineTypeId: unit.engineTypeId || undefined,
+  traccionId: unit.traccionId || 0,
+  transmisionId: unit.transmisionId || 0,
+  fuelTypeId: unit.fuelTypeId || 0,
+  colorId: unit.colorId || undefined,
+  maintenanceCenterId: unit.maintenanceCenterId || undefined,
+});
+
+const mapOperationalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
+  placas: unit.placas || undefined,
+  numeroSerie: unit.numeroSerie || undefined,
+  year: unit.year || 2024,
+  tireSpec: unit.tireSpec || undefined,
+  tireBrandId: unit.tireBrandId || undefined,
+  terrainTypeId: unit.terrainTypeId || undefined,
+  capacidadCarga: unit.capacidadCarga || undefined,
+  fuelTankCapacity: unit.fuelTankCapacity || 0,
+  odometer: unit.odometer || 0,
+  protocolStartDate: unit.protocolStartDate || undefined,
+  maintIntervalDays: unit.maintIntervalDays || 90,
+  maintIntervalKm: unit.maintIntervalKm || 5000,
+  lastServiceDate: unit.lastServiceDate || undefined,
+  lastServiceReading: unit.lastServiceReading || 0,
+  dailyUsageAvg: unit.dailyUsageAvg || undefined,
+});
+
+const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
+  vencimientoVerificacion: unit.vencimientoVerificacion || undefined,
+  circulationCardNumber: unit.circulationCardNumber || undefined,
+  accountingAccount: unit.accountingAccount || undefined,
+  legalComplianceDate: unit.legalComplianceDate || undefined,
+  insuranceExpiryDate: unit.insuranceExpiryDate || undefined,
+  insuranceCompanyId: unit.insuranceCompanyId || undefined,
+  environmentalHologram: unit.environmentalHologram || undefined,
+  monthlyLeasePayment: unit.monthlyLeasePayment || 0,
+  ownerId: unit.ownerId || undefined,
+  complianceStatusId: unit.complianceStatusId || undefined,
+});
+
+const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
+  ({
+    id: unit.id,
+    images: unit.images || [],
+    status: unit.status,
+    description: unit.routeDescription || undefined,
+    ...mapBaseIds(unit),
+    ...mapOperationalData(unit),
+    ...mapLegalData(unit),
+  } as CreateFleetUnit);
 const FleetModule: React.FC = (): React.ReactElement => {
   const { refreshUnits, units, loading } = useFleet();
   const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
+  const [editingUnit, setEditingUnit] = useState<FleetUnit | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
@@ -40,7 +99,25 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   const handleReturnToGrid = (): void => {
     setActivePanel('STRATEGY');
+    setEditingUnit(null);
     setRegistrationSuccess(false);
+  };
+
+  const handleEditUnit = (unit: FleetUnit): void => {
+    setEditingUnit(unit);
+    setActivePanel('EXPANSION');
+    setRegistrationSuccess(false);
+
+    // 🔱 HYDRATE CONTROLLER
+    fleetController.setFormData(mapUnitToFormData(unit));
+    if (unit.assetTypeId) fleetController.handleAssetTypeChange(unit.assetTypeId);
+    if (unit.brandId) fleetController.handleMarcaChange(unit.brandId);
+
+    if (panelRef.current?.scrollIntoView) {
+      setTimeout((): void => {
+        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   return (
@@ -72,11 +149,15 @@ const FleetModule: React.FC = (): React.ReactElement => {
                 className="text-[#0f2a44] tracking-tighter font-black text-2xl"
                 style={{ margin: 0, padding: 0, lineHeight: 1 }}
               >
-                Administrar Unidades
+                {editingUnit
+                  ? `Rectificación de Activo: ${editingUnit.id}`
+                  : 'Administrar Unidades'}
               </h2>
             </div>
             <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Administración de Activos, Registro Técnico & Optimización de Flota
+              {editingUnit
+                ? 'Protocolo de Gestión Forense Archon'
+                : 'Administración de Activos, Registro Técnico & Optimización de Flota'}
             </p>
           </div>
 
@@ -107,12 +188,19 @@ const FleetModule: React.FC = (): React.ReactElement => {
               <FleetSuccessView formData={formData} />
             ) : (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                {activePanel === 'STRATEGY' && <FleetGridView units={units} loading={loading} />}
+                {activePanel === 'STRATEGY' && (
+                  <FleetGridView units={units} loading={loading} onEdit={handleEditUnit} />
+                )}
                 {activePanel === 'EXPANSION' && (
                   <FleetRegistrationForm
                     controller={fleetController}
-                    onSuccess={refreshUnits}
+                    onSuccess={async (): Promise<void> => {
+                      await refreshUnits();
+                      handleReturnToGrid();
+                    }}
                     onCancel={handleReturnToGrid}
+                    isEdit={!!editingUnit}
+                    unitId={editingUnit?.id}
                   />
                 )}
               </div>
@@ -122,7 +210,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       </section>
 
       <footer className="workspace-footer-pro">
-        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+        <p>© Todos los derechos reservados por ArchonCore by PIIC GROUP.</p>
         <p className="text-[#0f2a44]">
           {BRANDING_NAME} {SYSTEM_VERSION}
         </p>

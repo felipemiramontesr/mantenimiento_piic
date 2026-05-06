@@ -15,6 +15,7 @@ import {
   Save,
   Cpu,
   Layers,
+  Trash2,
 } from 'lucide-react';
 import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
@@ -111,6 +112,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 }: FleetRegistrationFormProps): React.JSX.Element => {
   const [isAuditModalOpen, setIsAuditModalOpen] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [auditAction, setAuditAction] = React.useState<'UPDATE' | 'DELETE'>('UPDATE');
   const {
     formData,
     error,
@@ -148,13 +150,35 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
   const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(formData);
 
+  const handleConfirmDelete = async (reason: string): Promise<void> => {
+    setIsProcessing(true);
+    try {
+      await api.delete(`/fleet/${unitId}`, {
+        data: { reason },
+      });
+      await onSuccess();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('🔱 [Fleet Delete Error]:', err);
+    } finally {
+      setIsProcessing(false);
+      setIsAuditModalOpen(false);
+    }
+  };
+
   const handleConfirmAudit = async (reason: string): Promise<void> => {
     setIsProcessing(true);
     try {
-      await api.patch(`/fleet/${unitId}`, {
-        data: formData,
-        reason,
-      });
+      if (auditAction === 'UPDATE') {
+        await api.patch(`/fleet/${unitId}`, {
+          data: formData,
+          reason,
+        });
+      } else {
+        await api.delete(`/fleet/${unitId}`, {
+          data: { reason },
+        });
+      }
       await onSuccess();
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -168,6 +192,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (isEdit) {
+      setAuditAction('UPDATE');
       setIsAuditModalOpen(true);
     } else {
       try {
@@ -898,19 +923,32 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       </div>
 
       <div className="archon-grid-2 mt-12">
-        <div />
+        <div>
+          {isEdit && (
+            <button
+              type="button"
+              onClick={(): void => {
+                setAuditAction('DELETE');
+                setIsAuditModalOpen(true);
+              }}
+              className="px-8 py-4 bg-rose-600/10 text-rose-600 border border-rose-600/20 rounded-[4px] font-black text-xs uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center gap-3 active:scale-95 shadow-lg"
+            >
+              <Trash2 size={18} /> Eliminar Activo
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-6">
           <button
             type="button"
             onClick={onCancel}
-            className="btn-sentinel-navy w-full uppercase font-black text-[11px] tracking-widest rounded-[4px]"
+            className="btn-sentinel-navy w-full uppercase font-black text-[11px] tracking-widest rounded-[4px] shadow-xl active:scale-95 py-4"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting || isProcessing || !canSubmit}
-            className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
+            className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-3 rounded-[4px] transition-all duration-300 shadow-xl active:scale-95 py-4 ${
               !canSubmit || isSubmitting || isProcessing
                 ? 'opacity-50 grayscale cursor-not-allowed'
                 : ''
@@ -920,7 +958,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               if (isSubmitting || isProcessing) return 'Transmitiendo...';
               return isEdit ? 'Sincronizar Cambios' : 'Confirmar Alta';
             })()}
-            <Save size={16} />
+            <Save size={18} />
           </button>
         </div>
       </div>
@@ -928,9 +966,15 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       <AuditJustificationModal
         isOpen={isAuditModalOpen}
         onClose={(): void => setIsAuditModalOpen(false)}
-        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
-        title={`Actualización técnica para el activo ${unitId}`}
-        actionType="UPDATE"
+        onConfirm={(reason: string): Promise<void> =>
+          auditAction === 'UPDATE' ? handleConfirmAudit(reason) : handleConfirmDelete(reason)
+        }
+        title={
+          auditAction === 'UPDATE'
+            ? `Actualización técnica para el activo ${unitId}`
+            : `Baja definitiva del activo ${unitId} del inventario industrial`
+        }
+        actionType={auditAction}
       />
     </form>
   );
