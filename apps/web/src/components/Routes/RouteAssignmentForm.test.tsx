@@ -1,10 +1,9 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { screen, fireEvent, waitFor, act, render } from '../../test/testUtils';
 import RouteAssignmentForm from './RouteAssignmentForm';
-import { FleetProvider } from '../../context/FleetContext';
-import { UserProvider } from '../../context/UserContext';
 import api from '../../api/client';
 
+// 🔱 Mock API Client (Sovereign Infrastructure)
 vi.mock('../../api/client', () => ({
   default: {
     get: vi.fn(),
@@ -12,7 +11,7 @@ vi.mock('../../api/client', () => ({
   },
 }));
 
-describe('RouteAssignmentForm (Cockpit Standard)', () => {
+describe('RouteAssignmentForm (Apex Refactor)', () => {
   const mockUnits = [
     {
       id: 'ASM-001',
@@ -32,71 +31,45 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
       if (url === '/auth/users')
         return Promise.resolve({ data: { success: true, data: mockUsers } });
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: [] } });
+      if (url === '/catalogs/ROUTE_ORIGIN')
+        return Promise.resolve({ data: { success: true, data: [{ id: 1, label: 'Base' }] } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
   });
 
-  it('renders the cockpit and loads initial data', async () => {
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <RouteAssignmentForm onClose={vi.fn()} />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+  it('renders the apex cockpit and loads initial data', async () => {
+    render(<RouteAssignmentForm onClose={vi.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Identidad del Servicio/i)).toBeDefined();
+      expect(screen.getByText(/Identidad del Servicio/i)).toBeInTheDocument();
     });
   });
 
-  it('allows selecting a unit and an operator', async () => {
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <RouteAssignmentForm onClose={vi.fn()} />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+  it('allows selecting a unit and an operator in the atomic panels', async () => {
+    render(<RouteAssignmentForm onClose={vi.fn()} />);
 
     // Wait for hydration
     await waitFor(() => {
       expect(screen.queryByText(/Sincronizando/i)).toBeNull();
     });
 
-    // Open Unit Select
-    const unitSelectTrigger = await screen.findByText(
-      /Clave o modelo/i,
-      { exact: false },
-      { timeout: 5000 }
-    );
+    // Open Unit Select (Atomic Identity Panel)
+    const unitSelectTrigger = await screen.findByText(/Clave o modelo/i, { exact: false });
     fireEvent.click(unitSelectTrigger);
 
     // Select ASM-001
-    const unitOption = await screen.findByText(/ASM-001/i, { exact: false }, { timeout: 3000 });
+    const unitOption = await screen.findByText(/ASM-001/i, { exact: false });
     fireEvent.click(unitOption);
 
     // Open Operator Select
-    const operatorSelectTrigger = await screen.findByText(
-      /Buscar por nombre/i,
-      { exact: false },
-      { timeout: 3000 }
-    );
+    const operatorSelectTrigger = await screen.findByText(/Buscar por nombre/i, { exact: false });
     fireEvent.click(operatorSelectTrigger);
 
     // Select Juan Perez
-    const operatorOption = await screen.findByText(
-      /Juan Perez/i,
-      { exact: false },
-      { timeout: 3000 }
-    );
+    const operatorOption = await screen.findByText(/Juan Perez/i, { exact: false });
     fireEvent.click(operatorOption);
 
-    // Fill Destination
+    // Fill Destination (Atomic Mission Panel)
     const destinationInput = screen.getByPlaceholderText(/Ej: Mina Nivel 400/i);
     fireEvent.change(destinationInput, { target: { value: 'Base Norte' } });
 

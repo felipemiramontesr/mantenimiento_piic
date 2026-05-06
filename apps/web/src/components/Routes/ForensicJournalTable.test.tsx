@@ -1,8 +1,6 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { screen, waitFor, render } from '../../test/testUtils';
 import ForensicJournalTable from './ForensicJournalTable';
-import { FleetProvider } from '../../context/FleetContext';
-import { UserProvider } from '../../context/UserContext';
 import api from '../../api/client';
 
 vi.mock('../../api/client', () => ({
@@ -11,7 +9,7 @@ vi.mock('../../api/client', () => ({
   },
 }));
 
-describe('ForensicJournalTable (Audit Standard)', () => {
+describe('ForensicJournalTable (Apex Standard)', () => {
   const mockLogs = [
     {
       id: 1,
@@ -24,27 +22,19 @@ describe('ForensicJournalTable (Audit Standard)', () => {
     },
   ];
 
-  it('renders forensic logs correctly', async () => {
+  it('renders forensic logs correctly using sovereign providers', async () => {
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: mockLogs } });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <ForensicJournalTable />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<ForensicJournalTable />);
 
     await waitFor(() => {
-      expect(screen.getByText('ASM-001')).toBeDefined();
+      expect(screen.getByText('ASM-001')).toBeInTheDocument();
     });
-    expect(screen.getByText(/MECANICA: Falla motor/i)).toBeDefined();
-    expect(screen.getByText(/INCIDENCIA/i)).toBeDefined();
+    expect(screen.getByText(/MECANICA: Falla motor/i)).toBeInTheDocument();
+    expect(screen.getByText(/INCIDENCIA/i)).toBeInTheDocument();
   });
 
-  it('renders different event styles correctly', async () => {
+  it('renders different event styles correctly with exact regex matching', async () => {
     const multiLogs = [
       {
         id: 2,
@@ -62,36 +52,19 @@ describe('ForensicJournalTable (Audit Standard)', () => {
     ];
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: multiLogs } });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <ForensicJournalTable />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<ForensicJournalTable />);
 
     await waitFor(() => {
-      expect(screen.getByText(/SALIDA/i)).toBeDefined();
-      expect(screen.getByText(/ENTRADA/i)).toBeDefined();
-      // Use more specific matcher to avoid header conflict
+      expect(screen.getByText(/SALIDA/i)).toBeInTheDocument();
+      expect(screen.getByText(/ENTRADA/i)).toBeInTheDocument();
       expect(screen.getAllByText(/^EVENTO$/i).length).toBeGreaterThan(0);
     });
   });
 
-  it('handles API errors gracefully', async () => {
+  it('handles API errors gracefully in the journal', async () => {
     vi.mocked(api.get).mockRejectedValueOnce(new Error('Forensic Failure'));
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <ForensicJournalTable />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<ForensicJournalTable />);
 
     await waitFor(() => {
       expect(screen.queryByText(/Accediendo a Memoria Forense/i)).toBeNull();

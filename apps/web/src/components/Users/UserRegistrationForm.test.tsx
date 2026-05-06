@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup, within, act } from '@testing-library/react';
+import { screen, fireEvent, waitFor, cleanup, within, act, render } from '../../test/testUtils';
 import api from '../../api/client';
 import UserRegistrationForm from './UserRegistrationForm';
 
