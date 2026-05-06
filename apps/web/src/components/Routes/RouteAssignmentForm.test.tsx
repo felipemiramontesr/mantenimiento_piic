@@ -97,7 +97,7 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
     fireEvent.click(operatorOption);
 
     // Fill Destination
-    const destinationInput = screen.getByPlaceholderText(/¿A dónde se dirige la unidad\?/i);
+    const destinationInput = screen.getByPlaceholderText(/Ej: Mina Nivel 400/i);
     fireEvent.change(destinationInput, { target: { value: 'Base Norte' } });
 
     // Verify button is enabled and click
