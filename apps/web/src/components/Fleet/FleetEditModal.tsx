@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Trash2, ShieldAlert } from 'lucide-react';
+import { X, Trash2, ShieldAlert } from 'lucide-react';
 import { FleetUnit, CreateFleetUnit } from '../../types/fleet';
 import api from '../../api/client';
 import AuditJustificationModal from '../Common/AuditJustificationModal';
@@ -84,8 +84,6 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({
 }): React.JSX.Element => {
   const controller = useFleetForm();
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
-  const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // Hydrate form with unit data
   useEffect(() => {
@@ -97,37 +95,21 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({
     }
   }, [unit]);
 
-  const handleUpdateClick = (e: React.FormEvent): void => {
-    e.preventDefault();
-    setAuditAction('UPDATE');
-    setIsAuditModalOpen(true);
-  };
-
   const handleDeleteClick = (): void => {
-    setAuditAction('DELETE');
     setIsAuditModalOpen(true);
   };
 
-  const handleConfirmAudit = async (reason: string): Promise<void> => {
-    setIsProcessing(true);
+  const handleConfirmDelete = async (reason: string): Promise<void> => {
     try {
-      if (auditAction === 'UPDATE') {
-        await api.patch(`/fleet/${unit.id}`, {
-          data: controller.formData,
-          reason,
-        });
-      } else {
-        await api.delete(`/fleet/${unit.id}`, {
-          data: { reason },
-        });
-      }
+      await api.delete(`/fleet/${unit.id}`, {
+        data: { reason },
+      });
       onSuccess();
       onClose();
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('🔱 [Fleet Audit Error]:', err);
+      console.error('🔱 [Fleet Delete Error]:', err);
     } finally {
-      setIsProcessing(false);
       setIsAuditModalOpen(false);
     }
   };
@@ -171,32 +153,19 @@ const FleetEditModal: React.FC<FleetEditModalProps> = ({
           <FleetRegistrationForm
             controller={controller}
             onCancel={onClose}
-            onSuccess={(): Promise<void> => Promise.resolve()} // Not used here as we intercept with Audit modal
+            onSuccess={async (): Promise<void> => onSuccess()}
+            isEdit
+            unitId={unit.id}
           />
         </div>
-      </div>
-
-      {/* Persistent Action Bar */}
-      <div className="bg-white border-t border-slate-200 p-6 flex justify-center shadow-[0_-10px_30px_rgba(0,0,0,0.05)] relative z-50">
-        <button
-          onClick={handleUpdateClick}
-          disabled={isProcessing}
-          className="bg-navy-900 text-white px-12 py-4 rounded-[4px] font-black text-sm uppercase tracking-[0.3em] hover:bg-sky-900 transition-all shadow-2xl flex items-center gap-3 active:scale-95"
-        >
-          <Save size={18} /> Guardar Cambios con Auditoría
-        </button>
       </div>
 
       <AuditJustificationModal
         isOpen={isAuditModalOpen}
         onClose={(): void => setIsAuditModalOpen(false)}
-        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
-        title={
-          auditAction === 'UPDATE'
-            ? `Actualización técnica para el activo ${unit.id}`
-            : `Baja definitiva del activo ${unit.id} del inventario industrial`
-        }
-        actionType={auditAction}
+        onConfirm={(reason: string): Promise<void> => handleConfirmDelete(reason)}
+        title={`Baja definitiva del activo ${unit.id} del inventario industrial`}
+        actionType="DELETE"
       />
     </div>
   );

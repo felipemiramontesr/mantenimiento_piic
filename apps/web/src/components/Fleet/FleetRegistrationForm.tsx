@@ -21,6 +21,8 @@ import ArchonSelect from '../ArchonSelect';
 import ArchonDatePicker from '../ArchonDatePicker';
 import ArchonImageUploader from '../ArchonImageUploader';
 import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
+import AuditJustificationModal from '../Common/AuditJustificationModal';
+import api from '../../api/client';
 import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
 import { UseFleetFormReturn, CatalogOption, CreateFleetUnit } from '../../types/fleet';
 
@@ -34,6 +36,8 @@ interface FleetRegistrationFormProps {
   controller: UseFleetFormReturn;
   onSuccess: () => Promise<void>;
   onCancel: () => void;
+  isEdit?: boolean;
+  unitId?: string;
 }
 
 const getPronosticoArchon = (
@@ -102,7 +106,11 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   controller,
   onSuccess,
   onCancel,
+  isEdit = false,
+  unitId,
 }: FleetRegistrationFormProps): React.JSX.Element => {
+  const [isAuditModalOpen, setIsAuditModalOpen] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
   const {
     formData,
     error,
@@ -140,11 +148,33 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
   const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(formData);
 
-  const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
+  const handleConfirmAudit = async (reason: string): Promise<void> => {
+    setIsProcessing(true);
     try {
-      await handleSubmit(e, onSuccess);
-    } catch (err: unknown) {
-      // Logic handled by hook state
+      await api.patch(`/fleet/${unitId}`, {
+        data: formData,
+        reason,
+      });
+      await onSuccess();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('🔱 [Fleet Audit Error]:', err);
+    } finally {
+      setIsProcessing(false);
+      setIsAuditModalOpen(false);
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (isEdit) {
+      setIsAuditModalOpen(true);
+    } else {
+      try {
+        await handleSubmit(e, onSuccess);
+      } catch (err: unknown) {
+        // Logic handled by hook state
+      }
     }
   };
 
@@ -158,13 +188,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       {/* ── 2x2 PANEL ARCHITECTURE ─────────────────────────────────────── */}
       <div className="archon-grid-2 items-start gap-8">
         {/* PANEL 1: MOTOR DE JERARQUÍA (Top-Left) */}
-        <div
-          className="glass-card-pro bg-white p-10 space-y-8 relative z-20"
-          style={{ borderTop: '4px solid #f2b705' }}
-        >
+        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-20">
           <div className="archon-card-header-pro">
-            <Layers className="text-yellow-500" size={24} />
-            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">IDENTIDAD</h3>
+            <Layers className="text-yellow-500" size={22} />
+            <h3>IDENTIDAD</h3>
           </div>
 
           <div className="space-y-6 relative z-10">
@@ -287,15 +314,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
 
         {/* PANEL 2: IDENTIDAD & CUMPLIMIENTO (Top-Right) */}
-        <div
-          className="glass-card-pro bg-white p-10 space-y-8 relative z-20"
-          style={{ borderTop: '4px solid #0ea5e9' }}
-        >
+        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-20">
           <div className="archon-card-header-pro">
-            <ShieldCheck size={24} className="text-sky-600" />
-            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">
-              CUMPLIMIENTO
-            </h3>
+            <ShieldCheck size={22} className="text-sky-600" />
+            <h3>CUMPLIMIENTO</h3>
           </div>
 
           <div className="space-y-6">
@@ -458,15 +480,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
 
         {/* PANEL 3: PERFIL TÉCNICO DE LA UNIDAD (Bottom-Left) */}
-        <div
-          className="glass-card-pro bg-white p-10 space-y-8 relative z-10"
-          style={{ borderTop: '4px solid #0f2a44' }}
-        >
+        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-10">
           <div className="archon-card-header-pro">
-            <Cpu size={24} className="text-navy-700" />
-            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">
-              Perfil Técnico de la Unidad
-            </h3>
+            <Cpu size={22} className="text-navy-700" />
+            <h3>Perfil Técnico de la Unidad</h3>
           </div>
 
           <div className="space-y-6">
@@ -658,15 +675,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
 
         {/* PANEL 4: LOGÍSTICA ESTRATÉGICA & MANTENIMIENTO (Bottom-Right) */}
-        <div
-          className="glass-card-pro bg-white p-10 space-y-8 relative z-10"
-          style={{ borderTop: '4px solid #64748b' }}
-        >
+        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-10">
           <div className="archon-card-header-pro">
-            <MapPin size={24} className="text-slate-500" />
-            <h3 className="text-navy-900 font-bold uppercase tracking-wider text-lg">
-              Logística Estratégica & Mto.
-            </h3>
+            <MapPin size={22} className="text-slate-500" />
+            <h3>Logística Estratégica & Mto.</h3>
           </div>
 
           <div className="space-y-6">
@@ -885,28 +897,41 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
       </div>
 
-      <div className="archon-grid-2 mt-8">
+      <div className="archon-grid-2 mt-12">
         <div />
         <div className="grid grid-cols-2 gap-6">
           <button
             type="button"
             onClick={onCancel}
-            className="btn-sentinel-red w-full uppercase font-black text-[11px] tracking-widest rounded-[4px]"
+            className="btn-sentinel-navy w-full uppercase font-black text-[11px] tracking-widest rounded-[4px]"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || !canSubmit}
+            disabled={isSubmitting || isProcessing || !canSubmit}
             className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
-              !canSubmit || isSubmitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
+              !canSubmit || isSubmitting || isProcessing
+                ? 'opacity-50 grayscale cursor-not-allowed'
+                : ''
             }`}
           >
-            {isSubmitting ? 'Transmitiendo...' : 'Confirmar Alta'}
+            {((): string => {
+              if (isSubmitting || isProcessing) return 'Transmitiendo...';
+              return isEdit ? 'Sincronizar Cambios' : 'Confirmar Alta';
+            })()}
             <Save size={16} />
           </button>
         </div>
       </div>
+
+      <AuditJustificationModal
+        isOpen={isAuditModalOpen}
+        onClose={(): void => setIsAuditModalOpen(false)}
+        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
+        title={`Actualización técnica para el activo ${unitId}`}
+        actionType="UPDATE"
+      />
     </form>
   );
 };
