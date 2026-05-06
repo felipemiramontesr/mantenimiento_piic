@@ -79,8 +79,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     departments,
     roles,
   } = useUsers();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [successData, setSuccessData] = useState<{ tempPass?: string; isEdit?: boolean } | null>(
     null
   );
@@ -192,6 +192,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       }
       setSuccessData({ tempPass });
       await fetchUsers();
+    } else {
+      throw new Error(response.data.error || 'Error en el servidor.');
     }
   };
 
@@ -213,6 +215,23 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+    setError(null);
+
+    // 🛡️ Sentinel Validation Protocol
+    if (
+      !formData.fullName ||
+      !formData.username ||
+      !formData.email
+    ) {
+      setError('Todos los campos marcados con (*) son obligatorios.');
+      return;
+    }
+
+    if (!editingUser && formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
     if (editingUser) {
       setAuditAction('UPDATE');
       setIsAuditModalOpen(true);
@@ -220,8 +239,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       setIsSubmitting(true);
       try {
         await handleCreate();
-      } catch (err) {
-        setSuccessData({ tempPass: `TEMP-${Math.random().toString(36).slice(-8)}` });
+      } catch (err: unknown) {
+        const errObj = err as { response?: { data?: { error?: string } }, message?: string };
+        const msg = errObj.response?.data?.error || errObj.message || 'Falla en el alta.';
+        setError(msg);
       } finally {
         setIsSubmitting(false);
       }
@@ -244,12 +265,15 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   }
 
   return (
-    <form
+    <>
+      <form
+      data-testid="registration-form"
+      name="registration-form"
       onSubmit={handleFormSubmit}
       className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-40 space-y-8"
     >
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-6 animate-in fade-in slide-in-from-top-4">
+        <div data-testid="error-message" className="bg-red-50 border-l-4 border-red-500 p-6 animate-in fade-in slide-in-from-top-4">
           <div className="flex items-center gap-4">
             <div className="bg-red-100 p-2 rounded-[4px]">
               <Shield size={18} className="text-red-500" />
@@ -269,7 +293,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
           <ArchonField label="Nombre Completo" icon={User} required>
             <input
-              required
               type="text"
               placeholder="Ej. Ana Karen Flores Baca"
               className="archon-input"
@@ -283,7 +306,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           <div className="grid grid-cols-2 gap-8">
             <ArchonField label="Usuario (Login)" icon={Shield} required>
               <input
-                required
                 type="text"
                 placeholder="aflores"
                 className="archon-input"
@@ -336,7 +358,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
           <ArchonField label="Correo Electrónico" icon={Mail} required>
             <input
-              required
               type="email"
               placeholder="ana.karen@piic.com.mx"
               className="archon-input"
@@ -439,7 +460,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 setAuditAction('DELETE');
                 setIsAuditModalOpen(true);
               }}
-              className="btn-sentinel-red px-8 flex items-center justify-center gap-2 uppercase font-black text-[11px] tracking-widest rounded-[4px]"
+              className="btn-sentinel-red"
             >
               <Trash2 size={16} /> Eliminar Personal
             </button>
@@ -452,14 +473,14 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               setEditingUser(null);
               setActivePanel('DIRECTORY');
             }}
-            className="btn-sentinel-red uppercase font-black text-[11px] tracking-widest rounded-[4px]"
+            className="btn-sentinel-red"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting || !canSubmit}
-            className={`btn-sentinel-emerald uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-2 rounded-[4px] transition-all duration-300 ${
+            className={`btn-sentinel-emerald ${
               !canSubmit ? 'opacity-50 grayscale cursor-not-allowed' : ''
             }`}
           >
@@ -469,20 +490,21 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           </button>
         </div>
       </div>
-
-      <AuditJustificationModal
-        isOpen={isAuditModalOpen}
-        onClose={(): void => setIsAuditModalOpen(false)}
-        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
-        title={
-          auditAction === 'UPDATE'
-            ? `Actualización de identidad para ${formData.fullName}`
-            : `Baja definitiva del personal: ${formData.fullName}`
-        }
-        actionType={auditAction}
-      />
     </form>
-  );
+
+    <AuditJustificationModal
+      isOpen={isAuditModalOpen}
+      onClose={(): void => setIsAuditModalOpen(false)}
+      onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
+      title={
+        auditAction === 'UPDATE'
+          ? `Actualización de identidad para ${formData.fullName}`
+          : `Baja definitiva del personal: ${formData.fullName}`
+      }
+      actionType={auditAction}
+    />
+  </>
+);
 };
 
 export default UserRegistrationForm;

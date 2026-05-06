@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { http, HttpResponse } from 'msw';
@@ -145,5 +145,68 @@ describe('useFleetForm Hook', () => {
 
     expect(result.current.formData.id).toBe('');
     expect(result.current.registrationSuccess).toBe(false);
+  });
+
+  it('should handle modelo changes correctly', (): void => {
+    const { result } = renderHook(() => useFleetForm());
+    act((): void => {
+      result.current.handleModeloChange(301);
+    });
+    expect(result.current.formData.modelId).toBe(301);
+  });
+
+  it('should reset error state', (): void => {
+    const { result } = renderHook(() => useFleetForm());
+    act((): void => {
+      result.current.setError('Sample Error');
+    });
+    expect(result.current.error).toBe('Sample Error');
+    act((): void => {
+      result.current.resetError();
+    });
+    expect(result.current.error).toBe(null);
+  });
+
+  it('should convert files to base64 strings', async (): Promise<void> => {
+    const { result } = renderHook(() => useFleetForm());
+    const file = new File(['foo'], 'foo.txt', { type: 'text/plain' });
+
+    await act(async (): Promise<void> => {
+      await result.current.setSelectedFiles([file]);
+    });
+
+    expect(result.current.formData.images).toHaveLength(1);
+    expect(result.current.formData.images?.[0]).toMatch(/^data:text\/plain;base64,/);
+  });
+
+  it('should use emergency brands if catalog fetch returns empty', async (): Promise<void> => {
+    // Force empty response for brands
+    server.use(
+      http.get('*/catalogs/BRAND', () => HttpResponse.json({ success: true, data: [] }))
+    );
+
+    const { result } = renderHook(() => useFleetForm());
+
+    await waitFor(() => {
+      expect(result.current.marcas).toContainEqual(
+        expect.objectContaining({ label: 'Toyota (Safe Mode)' })
+      );
+    });
+  });
+
+  it('should handle fetch failure in fetchCategory', async () => {
+    server.use(
+      http.get('*/catalogs/BRAND', () => HttpResponse.error())
+    );
+
+    const { result } = renderHook(() => useFleetForm());
+
+    await act(async () => {
+      await result.current.handleAssetTypeChange(1);
+    });
+
+    expect(result.current.marcas).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Toyota (Safe Mode)' })
+    ]));
   });
 });

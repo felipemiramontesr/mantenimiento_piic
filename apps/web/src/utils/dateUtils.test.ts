@@ -19,5 +19,15 @@ describe('Archon Date Engine (v.1.0.0)', () => {
     expect(formatDate('')).toBe('---');
     // @ts-expect-error - Testing invalid input
     expect(formatDate(null)).toBe('---');
+    // @ts-expect-error - Testing invalid input
+    expect(formatDate(undefined)).toBe('---');
+  });
+
+  test('formatDateTime should handle null/undefined', () => {
+    expect(formatDateTime('')).toBe('---');
+    // @ts-expect-error - Testing invalid input
+    expect(formatDateTime(null)).toBe('---');
+    // @ts-expect-error - Testing invalid input
+    expect(formatDateTime(undefined)).toBe('---');
   });
 });

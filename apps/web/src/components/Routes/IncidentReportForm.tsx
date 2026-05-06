@@ -205,7 +205,7 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
           <button
             type="submit"
             disabled={submitting || !formData.description}
-            className="btn-sentinel-emerald flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+            className="btn-sentinel-emerald"
           >
             {submitting ? 'Emitiendo Alerta...' : 'Emitir Alerta Sentinel'}
             <ChevronRight size={14} />

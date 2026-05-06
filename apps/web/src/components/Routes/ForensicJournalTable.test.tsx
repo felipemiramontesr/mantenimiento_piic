@@ -1,4 +1,4 @@
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, Mock } from 'vitest';
 import ForensicJournalTable from './ForensicJournalTable';
 import { FleetProvider } from '../../context/FleetContext';
@@ -42,5 +42,48 @@ describe('ForensicJournalTable (Audit Standard)', () => {
     });
     expect(screen.getByText(/MECANICA: Falla motor/i)).toBeDefined();
     expect(screen.getByText(/INCIDENCIA/i)).toBeDefined();
+  });
+
+  it('renders different event styles correctly', async () => {
+    const multiLogs = [
+      { id: 2, unit_id: 'ASM-002', event_type: 'ROUTE_START', created_at: new Date().toISOString() },
+      { id: 3, unit_id: 'ASM-003', event_type: 'ROUTE_FINISH', created_at: new Date().toISOString() },
+      { id: 4, unit_id: 'ASM-004', event_type: 'UNKNOWN', created_at: new Date().toISOString() },
+    ];
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: multiLogs } });
+
+    await act(async () => {
+      render(
+        <UserProvider>
+          <FleetProvider>
+            <ForensicJournalTable />
+          </FleetProvider>
+        </UserProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/SALIDA/i)).toBeDefined();
+      expect(screen.getByText(/ENTRADA/i)).toBeDefined();
+      expect(screen.getByText(/EVENTO/i)).toBeDefined();
+    });
+  });
+
+  it('handles API errors gracefully', async () => {
+    (api.get as Mock).mockRejectedValueOnce(new Error('Forensic Failure'));
+
+    await act(async () => {
+      render(
+        <UserProvider>
+          <FleetProvider>
+            <ForensicJournalTable />
+          </FleetProvider>
+        </UserProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).toBeNull();
+    });
   });
 });

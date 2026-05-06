@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor, act, RenderResult } from '@testing-library/react';
+import { render, waitFor, RenderResult } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { FleetProvider, useFleet } from './FleetContext';
 import api from '../api/client';

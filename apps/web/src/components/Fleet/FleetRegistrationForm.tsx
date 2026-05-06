@@ -924,7 +924,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 setAuditAction('DELETE');
                 setIsAuditModalOpen(true);
               }}
-              className="btn-sentinel-red px-8 flex items-center justify-center gap-3 active:scale-95 shadow-lg"
+              className="btn-sentinel-red"
             >
               <Trash2 size={18} /> Eliminar Activo
             </button>
@@ -934,14 +934,14 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="btn-sentinel-red uppercase font-black text-[11px] tracking-widest rounded-[4px] shadow-xl active:scale-95"
+            className="btn-sentinel-red"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting || isProcessing || !canSubmit}
-            className={`btn-sentinel-emerald uppercase font-black text-[11px] tracking-widest flex items-center justify-center gap-3 rounded-[4px] transition-all duration-300 shadow-xl active:scale-95 ${
+            className={`btn-sentinel-emerald ${
               !canSubmit || isSubmitting || isProcessing
                 ? 'opacity-50 grayscale cursor-not-allowed'
                 : ''

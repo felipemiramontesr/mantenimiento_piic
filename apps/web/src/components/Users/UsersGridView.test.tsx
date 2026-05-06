@@ -145,4 +145,5 @@ describe('UsersGridView Component', () => {
     // Archon vs Operador
     expect(screen.getAllByText(/Administrator|Operator One/)[0].textContent).toBe('Administrator');
   });
+
 });

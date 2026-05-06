@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateMaintForecast } from './fleetPredictiveEngine';
+import { calculateMaintForecast, formatDate as formatDatePredictive } from './fleetPredictiveEngine';
 
 /**
  * 🔱 Archon Test Suite: FleetPredictiveEngine
@@ -74,5 +74,39 @@ describe('FleetPredictiveEngine - Mathematical Integrity', () => {
     expectedDate.setDate(expectedDate.getDate() + 5);
 
     expect(result?.forecastDate.toDateString()).toBe(expectedDate.toDateString());
+  });
+
+  it('should use default values for intervalDays and intervalKm when null/undefined', () => {
+    const result = calculateMaintForecast(undefined, null, undefined, 0, 0, new Date());
+    expect(result?.intervalDays).toBe(180);
+    expect(result?.intervalKm).toBe(10000);
+    expect(result?.avgDailyKm).toBe(30);
+  });
+
+  it('should calculate intensity correctly when overdue', () => {
+    const lastDate = new Date();
+    lastDate.setDate(lastDate.getDate() - 300); // Very overdue
+    const result = calculateMaintForecast(180, 10000, 10, 20000, 5000, lastDate);
+    
+    expect(result?.isOverdue).toBe(true);
+    expect(result?.overdueIntensity).toBeGreaterThan(0);
+    expect(result?.overdueIntensity).toBeLessThanOrEqual(1);
+  });
+
+  it('should handle NaN values gracefully', () => {
+    // @ts-expect-error - Testing NaN inputs
+    const result = calculateMaintForecast("invalid", "invalid", "invalid", "invalid", "invalid", new Date());
+    expect(result?.kmParaServicio).toBe(0);
+    expect(result?.nextServiceKm).toBe(0);
+  });
+
+  it('should handle null/undefined in the local formatDate utility', () => {
+    expect(formatDatePredictive(null)).toBe('---');
+    expect(formatDatePredictive(undefined)).toBe('---');
+    expect(formatDatePredictive(new Date('invalid'))).toBe('---');
+    
+    const validDate = new Date('2026-05-04T00:00:00Z');
+    const formatted = formatDatePredictive(validDate);
+    expect(formatted).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
   });
 });
