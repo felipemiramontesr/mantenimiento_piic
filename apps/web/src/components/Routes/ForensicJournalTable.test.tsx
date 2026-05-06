@@ -75,7 +75,8 @@ describe('ForensicJournalTable (Audit Standard)', () => {
     await waitFor(() => {
       expect(screen.getByText(/SALIDA/i)).toBeDefined();
       expect(screen.getByText(/ENTRADA/i)).toBeDefined();
-      expect(screen.getByText(/EVENTO/i)).toBeDefined();
+      // Use more specific matcher to avoid header conflict
+      expect(screen.getAllByText(/^EVENTO$/i).length).toBeGreaterThan(0);
     });
   });
 

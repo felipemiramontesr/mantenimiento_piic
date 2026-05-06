@@ -41,14 +41,14 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteAssignmentForm onCancel={vi.fn()} onSuccess={vi.fn()} />
+            <RouteAssignmentForm onClose={vi.fn()} />
           </FleetProvider>
         </UserProvider>
       );
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/ASIGNACIÓN DE MISIÓN/i)).toBeDefined();
+      expect(screen.getByText(/Identidad del Servicio/i)).toBeDefined();
     });
   });
 
@@ -57,7 +57,7 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteAssignmentForm onCancel={vi.fn()} onSuccess={vi.fn()} />
+            <RouteAssignmentForm onClose={vi.fn()} />
           </FleetProvider>
         </UserProvider>
       );
@@ -70,7 +70,7 @@ describe('RouteAssignmentForm (Cockpit Standard)', () => {
 
     // Open Unit Select
     const unitSelectTrigger = await screen.findByText(
-      /Buscar activo/i,
+      /Clave o modelo/i,
       { exact: false },
       { timeout: 5000 }
     );
