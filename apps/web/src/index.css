@@ -1685,7 +1685,7 @@ body {
   border-collapse: collapse !important;
   background: transparent;
   position: relative;
-  top: 0;
+  top: 0 !important;
   table-layout: auto !important;
 }
 
