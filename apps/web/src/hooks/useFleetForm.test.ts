@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { http, HttpResponse } from 'msw';
@@ -181,9 +181,7 @@ describe('useFleetForm Hook', () => {
 
   it('should use emergency brands if catalog fetch returns empty', async (): Promise<void> => {
     // Force empty response for brands
-    server.use(
-      http.get('*/catalogs/BRAND', () => HttpResponse.json({ success: true, data: [] }))
-    );
+    server.use(http.get('*/catalogs/BRAND', () => HttpResponse.json({ success: true, data: [] })));
 
     const { result } = renderHook(() => useFleetForm());
 
@@ -195,9 +193,7 @@ describe('useFleetForm Hook', () => {
   });
 
   it('should handle fetch failure in fetchCategory', async () => {
-    server.use(
-      http.get('*/catalogs/BRAND', () => HttpResponse.error())
-    );
+    server.use(http.get('*/catalogs/BRAND', () => HttpResponse.error()));
 
     const { result } = renderHook(() => useFleetForm());
 
@@ -205,8 +201,8 @@ describe('useFleetForm Hook', () => {
       await result.current.handleAssetTypeChange(1);
     });
 
-    expect(result.current.marcas).toEqual(expect.arrayContaining([
-      expect.objectContaining({ label: 'Toyota (Safe Mode)' })
-    ]));
+    expect(result.current.marcas).toEqual(
+      expect.arrayContaining([expect.objectContaining({ label: 'Toyota (Safe Mode)' })])
+    );
   });
 });
