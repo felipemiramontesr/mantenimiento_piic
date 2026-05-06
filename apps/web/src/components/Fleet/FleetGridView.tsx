@@ -406,7 +406,7 @@ const FleetUnitRow = ({
         <LogisticsCluster unit={unit} cuenta={mockData.cuenta} usageUnit={usageUnit} />
       </td>
 
-      <td className="py-16 px-6 min-w-[160px]">
+      <td className="py-12 px-2 min-w-[140px]">
         <OdometerCluster
           unit={unit}
           usageUnit={usageUnit}
@@ -415,7 +415,7 @@ const FleetUnitRow = ({
         />
       </td>
 
-      <td className="py-16 px-6 min-w-[200px]">
+      <td className="py-12 px-2 min-w-[180px]">
         <SpecCluster unit={unit} />
       </td>
 

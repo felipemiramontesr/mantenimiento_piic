@@ -843,7 +843,7 @@ body {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(15, 42, 68, 0.08);
   border-radius: 4px; /* Strict Industrial Align */
-  padding: 40px; /* Golden Padding V.4.4.0 */
+  padding: 24px; /* Industrial Compression V.50.4.9 */
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.03), inset 1px 1px 0 rgba(255, 255, 255, 0.9);
   transition: all 0.4s ease;
 }
@@ -1692,7 +1692,7 @@ body {
 
 .archon-registry-table th {
   background-color: #0f2a44;
-  padding: 32px 12px !important;
+  padding: 16px 8px !important;
   font-size: 10px !important;
   font-weight: 900 !important;
   text-transform: uppercase;
@@ -1704,7 +1704,7 @@ body {
 }
 
 .archon-registry-table td {
-  padding: 14px 12px !important;
+  padding: 10px 8px !important;
   text-align: center;
   vertical-align: middle;
   background: white;
