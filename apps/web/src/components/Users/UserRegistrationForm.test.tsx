@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup, within, act } from '@testing-library/react';
 import api from '../../api/client';
 import UserRegistrationForm from './UserRegistrationForm';
@@ -15,7 +15,22 @@ vi.mock('../../api/client', () => ({
 }));
 
 // 🔱 Context Mocking Factory
-const getMockState = (): Record<string, unknown> => ({
+interface MockUserState {
+  users: unknown[];
+  isLoading: boolean;
+  activePanel: string;
+  setActivePanel: Mock;
+  fetchUsers: Mock;
+  toggleUserStatus: Mock;
+  updateUser: Mock;
+  deleteUser: Mock;
+  editingUser: Record<string, unknown> | null;
+  setEditingUser: Mock;
+  departments: string[];
+  roles: { id: number; label: string }[];
+}
+
+const getMockState = (): MockUserState => ({
   users: [],
   isLoading: false,
   activePanel: 'SIGNUP',
@@ -36,7 +51,7 @@ const getMockState = (): Record<string, unknown> => ({
 let currentMockState = getMockState();
 
 vi.mock('../../context/UserContext', () => ({
-  useUsers: (): Record<string, unknown> => currentMockState,
+  useUsers: (): MockUserState => currentMockState,
   UserProvider: ({ children }: { children: React.ReactNode }): React.ReactElement => (
     <div>{children}</div>
   ),
