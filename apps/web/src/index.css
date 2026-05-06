@@ -1685,7 +1685,7 @@ body {
   border-collapse: separate;
   border-spacing: 0 12px !important;
   background: transparent;
-  margin-top: -8px;
+  margin-top: -12px !important;
   table-layout: auto !important;
 }
 

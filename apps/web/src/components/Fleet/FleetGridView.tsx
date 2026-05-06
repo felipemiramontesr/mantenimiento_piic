@@ -569,7 +569,7 @@ export const FleetGridView = ({
               <th>IDENTIDAD</th>
               <th>LOGÍSTICA</th>
               <th>ODOMETRÍA</th>
-              <th>CONFIG</th>
+              <th>CONFIGURACIÓN</th>
               <th
                 onClick={(): void =>
                   setSortConfig(

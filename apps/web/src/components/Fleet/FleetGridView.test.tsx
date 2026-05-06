@@ -23,6 +23,6 @@ describe('FleetGridView Component', () => {
     expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
     expect(screen.getByText('LOGÍSTICA')).toBeInTheDocument();
     expect(screen.getByText('ODOMETRÍA')).toBeInTheDocument();
-    expect(screen.getByText('CONFIG')).toBeInTheDocument();
+    expect(screen.getByText('CONFIGURACIÓN')).toBeInTheDocument();
   });
 });
