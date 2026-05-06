@@ -25,6 +25,7 @@ import {
   formatDate,
   MaintenanceForecast,
 } from '../../utils/fleetPredictiveEngine';
+import { formatDateTime } from '../../utils/dateUtils';
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
 import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 
@@ -143,7 +144,7 @@ const OdometerCluster = ({
         {(unit.lastServiceReading || 0).toLocaleString()} {usageUnit}
       </span>
       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-        {formatDate(new Date(unit.lastServiceDate || Date.now()))}
+        {formatDateTime(new Date(unit.lastServiceDate || Date.now()))}
       </span>
     </div>
     <div className="flex flex-col items-center bg-amber-50 px-3 py-1 rounded border border-amber-100 shadow-sm">

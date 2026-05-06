@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Clock, ArrowRight, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 import api from '../../api/client';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDateTime } from '../../utils/dateUtils';
 
 interface ActivityLog {
   id: number;
@@ -118,7 +118,7 @@ const ForensicJournalTable: React.FC = () => {
                   <td className="py-4">
                     <div className="flex flex-col">
                       <span className="text-[11px] font-black text-[#0f2a44]">
-                        {formatDate(log.created_at)}
+                        {formatDateTime(log.created_at)}
                       </span>
                     </div>
                   </td>

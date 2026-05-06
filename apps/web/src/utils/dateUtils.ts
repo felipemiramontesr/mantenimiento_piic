@@ -5,19 +5,16 @@
  */
 
 /**
- * Formats a date string or object to the Spanish (Mexico) standard with AM/PM time.
+ * Formats a date string or object to the Spanish (Mexico) standard (Date only).
  * @param date - The date to format (string, number, or Date object)
- * @returns Formatted date string (DD/MM/YYYY hh:mm AM/PM)
+ * @returns Formatted date string (DD/MM/YYYY)
  */
 export const formatDate = (date: string | number | Date): string => {
   if (!date) return '---';
-  return new Date(date).toLocaleString('es-MX', {
+  return new Date(date).toLocaleDateString('es-MX', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
   });
 };
 
