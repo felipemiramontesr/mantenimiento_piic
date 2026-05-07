@@ -46,7 +46,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
             <input
               type="number"
               placeholder="0,000"
-              value={formData.endReading}
+              value={formData.endReading || ''}
               onChange={(e): void => updateForm({ endReading: Number(e.target.value) })}
               className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] outline-none transition-colors rounded-[4px]"
               disabled={isFinished}
@@ -65,7 +65,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
             <input
               type="number"
               placeholder="0.00"
-              value={formData.fuelLitersLoaded}
+              value={formData.fuelLitersLoaded || ''}
               onChange={(e): void => updateForm({ fuelLitersLoaded: Number(e.target.value) })}
               className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] outline-none transition-colors rounded-[4px]"
               disabled={isFinished}

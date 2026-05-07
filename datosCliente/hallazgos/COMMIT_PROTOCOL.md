@@ -10,7 +10,7 @@ Todos los mensajes de commit deben seguir estrictamente el siguiente patrón:
 
 ### Desglose del formato:
 
-- **`V.x.x.x`**: Versión incremental (Última detectada: `V.60.1.6`).
+- **`V.x.x.x`**: Versión incremental (Última detectada: `V.60.1.7`).
 - **`_`**: Separador obligatorio.
 - **`Technical_Description`**: En inglés, con la primera letra de cada palabra preferiblemente en mayúscula.
 
@@ -19,6 +19,8 @@ Todos los mensajes de commit deben seguir estrictamente el siguiente patrón:
 `V.50.2.4_Updated_Audit_Report_With_Forensic_Certification`
 
 ## 2. Instrucciones de Sincronización (Push)
+
+Siempre preeguntar al usuario si debo hacer Push.
 
 Cuando el USUARIO indique las palabras clave **"Hacer Push"** o **"push"**, la IA deberá:
 
