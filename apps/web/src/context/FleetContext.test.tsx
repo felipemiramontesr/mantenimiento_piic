@@ -57,9 +57,13 @@ describe('FleetContext (World Class QA Suite)', () => {
       );
     });
 
+    // Wait for Silk Hydration to stabilize state
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+
     // Verify cache is shown first
     expect(screen.getByTestId('total').textContent).toBe('1');
-    expect(screen.getByTestId('loading').textContent).toBe('false');
     expect(archonCache.get).toHaveBeenCalledWith('fleet_units');
   });
 

@@ -73,8 +73,12 @@ describe('UserContext (Silk Hydration Suite)', () => {
       );
     });
 
+    // Wait for the Silk Hydration initial sync to stabilize
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+
     expect(screen.getByTestId('users-count').textContent).toBe('1');
-    expect(screen.getByTestId('loading').textContent).toBe('false');
   });
 
   it('🔱 RESILIENCE: Should keep users on screen if API sync fails', async () => {
