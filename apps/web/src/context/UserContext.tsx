@@ -53,8 +53,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }): React.JSX.Element => {
   // 1. Universal Hydration Layer (DRY)
   const usersTransform = useMemo(
-    () => (data: RawUserResponse[]) =>
-      data.map((u) => ({
+    () => (data: unknown) =>
+      (data as RawUserResponse[]).map((u) => ({
         id: String(u.id),
         username: u.username,
         fullName: u.full_name || u.fullName || '',
