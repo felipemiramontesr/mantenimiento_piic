@@ -66,7 +66,7 @@ export const useRouteAssignmentControl = (
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
 
-  // 🧪 Initialization & Hydration
+  // 🧪 Initialization & Hydration (Refactored v.60.1.6)
   useEffect((): void => {
     if (routeToEdit) {
       setFormData({
@@ -81,8 +81,34 @@ export const useRouteAssignmentControl = (
         fuelLitersLoaded: routeToEdit.fuel_liters_loaded || 0,
         fuelTicketImage: routeToEdit.fuel_ticket_image || '',
       });
+    } else {
+      // 🔱 Atomic Reset: Ensure a clean slate for new assignments
+      setFormData({
+        unitId: '',
+        operatorId: '',
+        origin: 'Arian Silver Zacatecas',
+        destination: '',
+        description: '',
+        fuelLevel: 100,
+        startReading: 0,
+        endReading: 0,
+        fuelLitersLoaded: 0,
+        fuelTicketImage: '',
+      });
+      setSelectedUnitData(null);
+      setError(null);
     }
   }, [routeToEdit]);
+
+  const fetchActiveRoutes = useCallback(async (): Promise<void> => {
+    try {
+      const res = await api.get('/routes');
+      const active = (res.data?.data || []).filter((r: RouteLog) => !r.end_time);
+      setActiveRoutes(active);
+    } catch (err) {
+      /* Silent fail */
+    }
+  }, []);
 
   useEffect((): void => {
     const fetchOrigins = async (): Promise<void> => {
@@ -96,19 +122,9 @@ export const useRouteAssignmentControl = (
       }
     };
 
-    const fetchActiveRoutes = async (): Promise<void> => {
-      try {
-        const res = await api.get('/routes');
-        const active = (res.data?.data || []).filter((r: RouteLog) => !r.end_time);
-        setActiveRoutes(active);
-      } catch (err) {
-        /* Silent fail */
-      }
-    };
-
     fetchOrigins();
     fetchActiveRoutes();
-  }, []);
+  }, [fetchActiveRoutes, routeToEdit]); // Re-fetch availability when context changes
 
   // 🏎️ Selection Sync
   useEffect((): void => {
