@@ -44,10 +44,14 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30"
             />
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="0,000"
               value={formData.endReading === 0 ? '' : formData.endReading}
-              onChange={(e): void => updateForm({ endReading: Number(e.target.value) })}
+              onChange={(e): void => {
+                const val = e.target.value.replace(/[^0-9.]/g, '');
+                updateForm({ endReading: val === '' ? 0 : Number(val) });
+              }}
               className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] outline-none transition-colors rounded-[4px]"
               disabled={isFinished}
             />
@@ -63,10 +67,14 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30"
             />
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="0.00"
               value={formData.fuelLitersLoaded === 0 ? '' : formData.fuelLitersLoaded}
-              onChange={(e): void => updateForm({ fuelLitersLoaded: Number(e.target.value) })}
+              onChange={(e): void => {
+                const val = e.target.value.replace(/[^0-9.]/g, '');
+                updateForm({ fuelLitersLoaded: val === '' ? 0 : Number(val) });
+              }}
               className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] outline-none transition-colors rounded-[4px]"
               disabled={isFinished}
             />
