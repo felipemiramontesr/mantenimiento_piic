@@ -18,7 +18,7 @@ import { useUsers } from '../../context/UserContext';
 import { BRANDING_NAME } from '../../constants/versionConstants';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V.60.1.9';
+const SYSTEM_VERSION = 'V.60.2.0';
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();

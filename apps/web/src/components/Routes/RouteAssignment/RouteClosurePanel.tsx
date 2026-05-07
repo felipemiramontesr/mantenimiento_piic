@@ -52,7 +52,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
                 const val = e.target.value.replace(/[^0-9.]/g, '');
                 updateForm({ endReading: val === '' ? 0 : Number(val) });
               }}
-              className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] outline-none transition-colors rounded-[4px]"
+              className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
               disabled={isFinished}
             />
           </div>
@@ -75,7 +75,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
                 const val = e.target.value.replace(/[^0-9.]/g, '');
                 updateForm({ fuelLitersLoaded: val === '' ? 0 : Number(val) });
               }}
-              className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] outline-none transition-colors rounded-[4px]"
+              className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
               disabled={isFinished}
             />
           </div>
