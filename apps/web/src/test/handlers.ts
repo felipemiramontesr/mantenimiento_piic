@@ -74,6 +74,30 @@ const handlers = [
       ]);
     }
 
+    if (
+      [
+        'FUEL',
+        'DRIVE_TYPE',
+        'TRANSMISSION',
+        'DEPARTMENT',
+        'LOCATION',
+        'OPERATIONAL_USE',
+        'TIRE_BRAND',
+        'LUBE_BRAND',
+        'FILTER_BRAND',
+        'ENGINE_TYPE',
+        'TERRAIN_TYPE',
+        'FLEET_OWNER',
+        'COMPLIANCE_STATUS',
+        'VEHICLE_COLOR',
+        'MAINTENANCE_CENTER',
+        'INSURANCE_COMPANY',
+        'ROUTE_ORIGIN',
+      ].includes(category as string)
+    ) {
+      return HttpResponse.json([{ id: 1, label: `Mock ${category}`, code: `M_${category}` }]);
+    }
+
     return HttpResponse.json([]);
   }),
 

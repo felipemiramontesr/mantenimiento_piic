@@ -52,14 +52,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }): React.JSX.Element => {
   // 1. Universal Hydration Layer (DRY)
-  const {
-    data: users,
-    isSyncing: usersSyncing,
-    refresh: fetchUsers,
-  } = useSilkHydration<UserIndustrial>({
-    key: 'users_directory',
-    endpoint: '/auth/users',
-    transform: (data: RawUserResponse[]) =>
+  const usersTransform = useMemo(
+    () => (data: RawUserResponse[]) =>
       data.map((u) => ({
         id: String(u.id),
         username: u.username,
@@ -72,6 +66,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         imageUrl: u.profile_picture_url || u.image_url || '',
         roleName: u.roleName,
       })),
+    []
+  );
+
+  const {
+    data: users,
+    isSyncing: usersSyncing,
+    refresh: fetchUsers,
+  } = useSilkHydration<UserIndustrial>({
+    key: 'users_directory',
+    endpoint: '/auth/users',
+    transform: usersTransform,
   });
 
   const { data: departmentsData } = useSilkHydration<CatalogOption>({
