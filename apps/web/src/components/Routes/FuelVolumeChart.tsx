@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
  * Implementation: Sovereign Circular Volumetric Gauge (v.3.5.0)
  *
  * DESIGN RATIONALE:
- * - Scale: Fixed w-20 (80px) to prevent layout overlap in high-density dashboards.
+ * - Scale: Fixed w-16 (64px) to prevent layout overlap in high-density dashboards.
  * - Geometry: Radius 40 inside 100x100 viewBox provides a 10-unit safety margin,
  *   preventing SVG clipping (clipping) in high-DPI displays.
  * - Precision: Real-time liter calculation based on unit capacity.
@@ -32,7 +32,7 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const currentLiters = Number(((currentLevel / 100) * totalCapacity).toFixed(1));
   const remainingLiters = Number((totalCapacity - currentLiters).toFixed(1));
 
-  // SVG Pie/Donut Calculation - Calibrated for w-20 (No overlap)
+  // SVG Pie/Donut Calculation - Calibrated for w-16 (No overlap)
   const radius = 32;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (currentLevel / 100) * circumference;
