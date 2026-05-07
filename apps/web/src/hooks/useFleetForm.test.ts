@@ -10,16 +10,18 @@ import server from '../test/server';
  * Implementation: 100% Core Logic Coverage (Pillar 2 - v.18.0.0)
  */
 describe('useFleetForm Hook', () => {
-  it('should initialize with default fleet form data', (): void => {
+  it('should initialize with default fleet form data', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.formData.id).toBe('');
-    expect(result.current.formData.assetTypeId).toBe(null);
+    expect(result.current.formData.assetTypeId).toBe(1); // VEH is 1
   });
 
-  it('should handle asset type changes correctly', (): void => {
+  it('should handle asset type changes correctly', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
-    act((): void => {
-      result.current.handleAssetTypeChange(2);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async (): Promise<void> => {
+      await result.current.handleAssetTypeChange(2);
     });
     expect(result.current.formData.assetTypeId).toBe(2);
     expect(result.current.formData.brandId).toBe(null);
@@ -57,8 +59,11 @@ describe('useFleetForm Hook', () => {
     const onSuccess = vi.fn(async (): Promise<void> => Promise.resolve());
     const { result } = renderHook(() => useFleetForm());
 
+    // Wait for initial hydration to avoid act warnings
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
     // Populate ALL required fields as per v35 validation logic
-    act((): void => {
+    await act(async () => {
       result.current.setFormData((prev) => ({
         ...prev,
         id: 'UNIT-001',
@@ -82,12 +87,15 @@ describe('useFleetForm Hook', () => {
 
   it('should throw error when submitting with missing required fields', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     // Initial state is already missing fields, so it should throw
-    await expect(async (): Promise<void> => {
+    await act(async () => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
-      await result.current.handleSubmit(e);
-    }).rejects.toThrow('🚨 Todos los campos marcados con (*) son obligatorios.');
+      await expect(result.current.handleSubmit(e)).rejects.toThrow(
+        '🚨 Todos los campos marcados con (*) son obligatorios.'
+      );
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBe('🚨 Todos los campos marcados con (*) son obligatorios.');
@@ -105,9 +113,10 @@ describe('useFleetForm Hook', () => {
     );
 
     const { result } = renderHook(() => useFleetForm());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     // Populate required fields to bypass client-side validation first
-    act((): void => {
+    await act(async () => {
       result.current.setFormData((prev) => ({
         ...prev,
         id: 'UNIT-001',
@@ -120,10 +129,10 @@ describe('useFleetForm Hook', () => {
       }));
     });
 
-    await expect(async (): Promise<void> => {
+    await act(async () => {
       const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
-      await result.current.handleSubmit(e);
-    }).rejects.toThrow('DB Connection Error');
+      await expect(result.current.handleSubmit(e)).rejects.toThrow('DB Connection Error');
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBe('DB Connection Error');
@@ -131,15 +140,16 @@ describe('useFleetForm Hook', () => {
     expect(result.current.registrationSuccess).toBe(false);
   });
 
-  it('should reset form state to initial values', (): void => {
+  it('should reset form state to initial values', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    act((): void => {
+    await act(async (): Promise<void> => {
       result.current.setFormData((prev) => ({ ...prev, id: 'MODIFIED' }));
       result.current.setRegistrationSuccess(true);
     });
 
-    act((): void => {
+    await act(async (): Promise<void> => {
       result.current.resetForm();
     });
 
@@ -147,21 +157,23 @@ describe('useFleetForm Hook', () => {
     expect(result.current.registrationSuccess).toBe(false);
   });
 
-  it('should handle modelo changes correctly', (): void => {
+  it('should handle modelo changes correctly', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
-    act((): void => {
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async (): Promise<void> => {
       result.current.handleModeloChange(301);
     });
     expect(result.current.formData.modelId).toBe(301);
   });
 
-  it('should reset error state', (): void => {
+  it('should reset error state', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm());
-    act((): void => {
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async (): Promise<void> => {
       result.current.setError('Sample Error');
     });
     expect(result.current.error).toBe('Sample Error');
-    act((): void => {
+    await act(async (): Promise<void> => {
       result.current.resetError();
     });
     expect(result.current.error).toBe(null);
