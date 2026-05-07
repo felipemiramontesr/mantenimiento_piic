@@ -15,6 +15,7 @@ import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import { formatDateTime } from '../../utils/dateUtils';
+import { archonCache } from '../../utils/archonCache';
 import IncidentReportForm from './IncidentReportForm';
 
 export interface RouteLog {
@@ -47,15 +48,23 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { units } = useFleet();
   const { users } = useUsers();
 
-  const [logs, setLogs] = React.useState<RouteLog[]>([]);
+  const [logs, setLogs] = React.useState<RouteLog[]>(
+    () => archonCache.get<RouteLog[]>('route_logs') || []
+  );
+  const [isSyncing, setIsSyncing] = React.useState(false);
   const [reportingRoute, setReportingRoute] = React.useState<RouteLog | null>(null);
 
   const fetchRoutes = async (): Promise<void> => {
+    setIsSyncing(true);
     try {
       const res = await api.get('/routes');
-      setLogs(res.data?.data || []);
+      const data = res.data?.data || [];
+      setLogs(data);
+      archonCache.set('route_logs', data);
     } catch (err) {
       // Quiet fail to maintain Sovereign silence
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -82,7 +91,15 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   };
 
   return (
-    <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700">
+    <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative">
+      {isSyncing && (
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-[8px] font-black uppercase tracking-widest text-[#0f2a44] opacity-30">
+            Syncing
+          </span>
+        </div>
+      )}
       <table className="archon-registry-table w-full">
         <thead>
           <tr>

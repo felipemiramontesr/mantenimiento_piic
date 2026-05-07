@@ -29,6 +29,18 @@ Plan de acción detallado, incluyendo archivos a modificar, nuevas implementacio
 
 Cierre de la respuesta solicitando refinamiento, comentarios o el "Go" para proceder. **No se debe ejecutar ninguna acción de escritura/modificación de código hasta recibir el "Go" del usuario.**
 
+## 3. Principios de Ingeniería Soberana
+
+Para garantizar una experiencia de grado industrial ("Zero-Noise"), se deben seguir estos principios en todo el desarrollo:
+
+### Silk Hydration (Hidratación de Seda)
+
+Es **obligatorio** que todo componente que consuma datos externos (API) implemente persistencia local:
+
+1. **Caché-First**: El estado inicial debe leerse de `archonCache` para mostrar datos instantáneamente al montar el componente.
+2. **Sincronización Silenciosa**: El fetch de red debe ocurrir en segundo plano y actualizar la caché y el estado sin interrumpir al usuario.
+3. **Resiliencia**: En caso de fallo de red, se deben mantener los datos de la caché en pantalla.
+
 ---
 
 _Este protocolo es de cumplimiento obligatorio y prevalece sobre cualquier otra instrucción general de comunicación._
