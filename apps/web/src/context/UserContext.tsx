@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import useSilkHydration from '../hooks/useSilkHydration';
 import { UserIndustrial, UserPanel } from '../types/user';
 import { DEPARTAMENTOS } from '../constants/fleetConstants';
@@ -86,11 +86,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [activePanel, setActivePanel] = useState<UserPanel>('DIRECTORY');
   const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);
+  const [isInitialHydrationComplete, setIsInitialHydrationComplete] = useState(false);
+
+  useEffect(() => {
+    if (!usersSyncing && !deptsSyncing && !rolesSyncing) {
+      setIsInitialHydrationComplete(true);
+    }
+  }, [usersSyncing, deptsSyncing, rolesSyncing]);
 
   const departments = useMemo(() => departmentsData.map((d) => d.label), [departmentsData]);
 
   const roles = rolesData;
-  const isLoading = (usersSyncing || deptsSyncing || rolesSyncing) && !users.length;
+  const isLoading = !isInitialHydrationComplete;
 
   const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
     try {

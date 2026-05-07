@@ -37,7 +37,7 @@ export default function useSilkHydration<T>({
     return cached || initialData;
   });
 
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   // 🛡️ Mount Shield Protocol
