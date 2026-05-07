@@ -63,7 +63,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <form onSubmit={handleSubmit} className="space-y-12">
+      <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-12">
         <div className="archon-grid-2 gap-12 items-start">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
           <div className="glass-card-pro p-10 space-y-12 bg-white">
