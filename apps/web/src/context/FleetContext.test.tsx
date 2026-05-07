@@ -92,7 +92,11 @@ describe('FleetContext (World Class QA Suite)', () => {
   it('🔱 ATOMIC SYNC: Should update UI and Cache after successful fetch', async () => {
     vi.mocked(archonCache.get).mockReturnValue([]);
     const freshData = [{ id: 'U-FRESH', status: 'Disponible', assetTypeId: 1 }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: freshData } });
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/fleet') return Promise.resolve({ data: { success: true, data: freshData } });
+      if (url === '/incidents') return Promise.resolve({ data: { success: true, data: [] } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
 
     await act(async () => {
       render(

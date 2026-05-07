@@ -135,6 +135,9 @@ describe('UserContext (Silk Hydration Suite)', () => {
     vi.mocked(api.get).mockImplementation((url) => {
       if (url === '/auth/users')
         return Promise.resolve({ data: { success: true, data: rawUsers } });
+      if (url === '/catalogs/DEPARTMENT')
+        return Promise.resolve({ data: { success: true, data: [] } });
+      if (url === '/auth/roles') return Promise.resolve({ data: { success: true, data: [] } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 

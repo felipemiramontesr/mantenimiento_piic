@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import api from '../api/client';
 import { FleetUnit } from '../types/fleet';
 import useSilkHydration from '../hooks/useSilkHydration';
@@ -61,24 +61,12 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     endpoint: '/fleet',
   });
 
-  const {
-    data: incidents,
-    isSyncing: incidentsSyncing,
-    refresh: refreshIncidents,
-  } = useSilkHydration<{ status: string }>({
+  const { data: incidents, refresh: refreshIncidents } = useSilkHydration<{ status: string }>({
     key: 'system_incidents',
     endpoint: '/incidents',
   });
 
-  const [isInitialHydrationComplete, setIsInitialHydrationComplete] = useState(false);
-
-  useEffect(() => {
-    if (!unitsSyncing && !incidentsSyncing) {
-      setIsInitialHydrationComplete(true);
-    }
-  }, [unitsSyncing, incidentsSyncing]);
-
-  const loading = !isInitialHydrationComplete;
+  const loading = unitsSyncing && !units.length;
 
   const incidentsCount = useMemo(
     () => incidents.filter((i) => i.status === 'OPEN').length,
