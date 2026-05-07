@@ -10,7 +10,7 @@ Todos los mensajes de commit deben seguir estrictamente el siguiente patrón:
 
 ### Desglose del formato:
 
-- **`V.x.x.x`**: Versión incremental (Última detectada: `V.70.1.2`).
+- **`V.x.x.x`**: Versión incremental (Última detectada: `V.70.1.3`).
 - **`_`**: Separador obligatorio.
 - **`Technical_Description`**: En inglés, con la primera letra de cada palabra preferiblemente en mayúscula.
 

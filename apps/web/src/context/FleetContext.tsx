@@ -61,12 +61,16 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     endpoint: '/fleet',
   });
 
-  const { data: incidents, refresh: refreshIncidents } = useSilkHydration<{ status: string }>({
+  const {
+    data: incidents,
+    isSyncing: incidentsSyncing,
+    refresh: refreshIncidents,
+  } = useSilkHydration<{ status: string }>({
     key: 'system_incidents',
     endpoint: '/incidents',
   });
 
-  const loading = unitsSyncing && !units.length;
+  const loading = (unitsSyncing || incidentsSyncing) && !units.length;
 
   const incidentsCount = useMemo(
     () => incidents.filter((i) => i.status === 'OPEN').length,

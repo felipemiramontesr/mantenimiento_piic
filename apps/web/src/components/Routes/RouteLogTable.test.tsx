@@ -1,9 +1,22 @@
+import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RouteLogTable from './RouteLogTable';
-import { FleetProvider } from '../../context/FleetContext';
-import { UserProvider } from '../../context/UserContext';
+import { FleetProvider, useFleet } from '../../context/FleetContext';
+import { UserProvider, useUsers } from '../../context/UserContext';
 import api from '../../api/client';
+
+// 🔱 Reposo Absoluto Protocol: Component to block until all providers are hydrated
+const SyncWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { loading: fleetLoading } = useFleet();
+  const { isLoading: usersLoading } = useUsers();
+
+  if (fleetLoading || usersLoading) {
+    return <div data-testid="absolute-loading">Hydrating Archon...</div>;
+  }
+
+  return <>{children}</>;
+};
 
 vi.mock('../../api/client', () => ({
   default: {
@@ -75,11 +88,15 @@ describe('RouteLogTable (Logistics Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteLogTable />
+            <SyncWrapper>
+              <RouteLogTable />
+            </SyncWrapper>
           </FleetProvider>
         </UserProvider>
       );
     });
+
+    await waitFor(() => expect(screen.queryByTestId('absolute-loading')).toBeNull());
 
     await waitFor(() => {
       expect(screen.getByText('ASM-001')).toBeDefined();
@@ -102,11 +119,15 @@ describe('RouteLogTable (Logistics Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteLogTable />
+            <SyncWrapper>
+              <RouteLogTable />
+            </SyncWrapper>
           </FleetProvider>
         </UserProvider>
       );
     });
+
+    await waitFor(() => expect(screen.queryByTestId('absolute-loading')).toBeNull());
 
     await waitFor(() => {
       // It should render the headers but no data rows
@@ -130,11 +151,15 @@ describe('RouteLogTable (Logistics Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteLogTable onEdit={onEdit} />
+            <SyncWrapper>
+              <RouteLogTable onEdit={onEdit} />
+            </SyncWrapper>
           </FleetProvider>
         </UserProvider>
       );
     });
+
+    await waitFor(() => expect(screen.queryByTestId('absolute-loading')).toBeNull());
 
     await waitFor(() => {
       expect(screen.getByTitle(/Finalizar Misión/i)).toBeDefined();
@@ -151,11 +176,15 @@ describe('RouteLogTable (Logistics Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteLogTable />
+            <SyncWrapper>
+              <RouteLogTable />
+            </SyncWrapper>
           </FleetProvider>
         </UserProvider>
       );
     });
+
+    await waitFor(() => expect(screen.queryByTestId('absolute-loading')).toBeNull());
 
     // Should not crash
     expect(screen.getByText(/OPERADOR/i)).toBeDefined();
@@ -174,11 +203,15 @@ describe('RouteLogTable (Logistics Standard)', () => {
       render(
         <UserProvider>
           <FleetProvider>
-            <RouteLogTable />
+            <SyncWrapper>
+              <RouteLogTable />
+            </SyncWrapper>
           </FleetProvider>
         </UserProvider>
       );
     });
+
+    await waitFor(() => expect(screen.queryByTestId('absolute-loading')).toBeNull());
 
     await waitFor(() => {
       expect(screen.getByTitle(/Reportar Incidencia/i)).toBeDefined();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Dispatch, SetStateAction } from 'react';
+import { useState, useEffect, useCallback, Dispatch, SetStateAction, useRef } from 'react';
 import { archonCache } from '../utils/archonCache';
 import api from '../api/client';
 
@@ -40,8 +40,19 @@ export default function useSilkHydration<T>({
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  // 🛡️ Mount Shield Protocol
+  const isMounted = useRef(true);
+  useEffect(
+    () => () => {
+      isMounted.current = false;
+    },
+    []
+  );
+
   // 2. Atomic Sync Engine
   const sync = useCallback(async (): Promise<void> => {
+    if (!isMounted.current) return;
+
     setIsSyncing(true);
     setError(null);
     try {
@@ -52,15 +63,19 @@ export default function useSilkHydration<T>({
         freshData = transform(freshData);
       }
 
-      setData(freshData);
-      archonCache.set(key, freshData);
-
-      if (onSuccess) onSuccess(freshData);
+      if (isMounted.current) {
+        setData(freshData);
+        archonCache.set(key, freshData);
+        if (onSuccess) onSuccess(freshData);
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err : new Error('Sync failed'));
-      // Sovereign Silence Protocol: Errors are handled internally
+      if (isMounted.current) {
+        setError(err instanceof Error ? err : new Error('Sync failed'));
+      }
     } finally {
-      setIsSyncing(false);
+      if (isMounted.current) {
+        setIsSyncing(false);
+      }
     }
   }, [key, endpoint, transform, onSuccess]);
 

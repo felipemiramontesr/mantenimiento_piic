@@ -74,12 +74,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       })),
   });
 
-  const { data: departmentsData } = useSilkHydration<CatalogOption>({
+  const { data: departmentsData, isSyncing: deptsSyncing } = useSilkHydration<CatalogOption>({
     key: 'system_departments',
     endpoint: '/catalogs/DEPARTMENT',
   });
 
-  const { data: rolesData } = useSilkHydration<CatalogOption>({
+  const { data: rolesData, isSyncing: rolesSyncing } = useSilkHydration<CatalogOption>({
     key: 'system_roles',
     endpoint: '/auth/roles',
   });
@@ -90,7 +90,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const departments = useMemo(() => departmentsData.map((d) => d.label), [departmentsData]);
 
   const roles = rolesData;
-  const isLoading = usersSyncing && !users.length;
+  const isLoading = (usersSyncing || deptsSyncing || rolesSyncing) && !users.length;
 
   const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
     try {
