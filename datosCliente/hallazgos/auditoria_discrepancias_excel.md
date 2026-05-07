@@ -160,28 +160,59 @@ Tras la auditoría de calidad de código y la implementación de la bovéda fore
 
 ---
 
+### P. Blindaje de Integridad y UX Fase IV (RESOLVIDO v.60.1.7)
+
+Tras identificar fugas de estado al alternar entre edición y creación de rutas, se aplicaron correcciones de arquitectura reactiva:
+
+1. **Reinicio Atómico de Formularios**: Se implementó una `key` dinámica basada en el UUID de la ruta que obliga a React a reconstruir el componente desde cero en cada cambio, garantizando una limpieza absoluta del estado.
+2. **Sincronización de Disponibilidad**: Se forzó la actualización del catálogo de activos activos mediante un efecto reactivo, impidiendo la doble asignación de unidades u operadores en tránsito.
+
+### Q. Estándar Archon Clean-Input (RESOLVIDO v.60.1.9)
+
+Se eliminó la dependencia de los inputs numéricos nativos del navegador por sus limitaciones estéticas e industriales:
+
+1. **Neutralización de Spinners**: Se migraron los campos de telemetría a `type="text"`, eliminando las flechas de incremento que obstruían la visibilidad.
+2. **Activación de Placeholders Suaves**: Mediante campos controlados, se logró que el campo nazca realmente vacío, permitiendo que el placeholder (`0.00`) sea 100% visible con una opacidad soberana del 30%, evitando la confusión con datos reales.
+
+### R. Era de la Hidratación Universal - Silk Hydration (RESOLVIDO v.60.3.0)
+
+Se institucionalizó el protocolo de carga instantánea para eliminar la latencia percibida en la bitácora:
+
+1. **Protocolo Caché-First**: La bitácora de rutas ahora se hidrata instantáneamente desde `archonCache`. Los datos aparecen en el milisegundo uno, eliminando cualquier fenómeno de "tabla desaparecida".
+2. **Sincronización Silenciosa**: El sistema valida novedades con el servidor en segundo plano, informando al usuario mediante el indicador `Syncing` sin interrumpir la operación.
+
+### S. Ergonomía Sentinel: Inserción Local (RESOLVIDO v.60.3.1)
+
+Se refinó el flujo de reporte de emergencias para mantener la concentración del operador:
+
+1. **Eliminación de Modales Flotantes**: El formulario de incidencia ahora se inserta directamente en el panel de la bitácora, reemplazando la tabla de forma fluida.
+2. **Continuidad Contextual**: El usuario ya no pierde de vista la sección de administración al reportar un siniestro, reforzando la sensación de un sistema unificado y cohesivo.
+
+---
+
 ## 5. Certificación de Integridad Archon
 
-El sistema **Archon v.50.2.4** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
+El sistema **Archon v.60.3.1** se declara oficialmente superior al sistema de gestión basado en Excel por las siguientes razones:
 
-- **Resiliencia:** Inmunidad total a la volatilidad del servidor y pérdida de archivos locales.
+- **Resiliencia:** Inmunidad total a la volatilidad del servidor y pérdida de archivos locales mediante persistencia universal.
 - **Precisión:** Cálculos dinámicos basados en desgaste diario real y ordenamiento natural de activos.
 - **Seguridad:** Encriptación de grado bancario (ALE) y validación de disponibilidad 1:1 en tiempo real.
 - **Robustez:** Contratos de datos estrictos (Zod) que impiden la entrada de basura técnica al sistema de registros.
 - **Transparencia:** Rastro forense inmutable (Protocolo L) que garantiza la rendición de cuentas en cada acto administrativo.
+- **Disponibilidad:** Hidratación inmediata (Silk Hydration) que garantiza datos en pantalla sin latencia.
 
 ---
 
-## 6. Hitos Estratégicos por Alcanzar (Roadmap v.6.0)
+## 6. Hitos Estratégicos por Alcanzar (Roadmap v.7.0)
 
-Con la base de datos purificada y la interfaz estabilizada, Archon se prepara para la siguiente fase de dominancia tecnológica:
+Con la infraestructura de rutas estabilizada y blindada, Archon se prepara para la siguiente fase:
 
-1.  **Refinamiento Estético y UX Premium**: Evolución de los componentes visuales para alcanzar un estándar de "Cero Ruido" y máxima elegancia industrial, priorizando la legibilidad de datos densos.
-2.  **Forensic Hub (Visualización de Logs)**: Desarrollo de la interfaz de consulta para que el rol de Auditor pueda reconstruir la cronología de cualquier activo.
-3.  **Arquitectura i18n v.2.0**: Implementación de soporte multi-región para unidades de medida y conversión dinámica de divisas.
+1. **Panel de Inspección Forense**: Desarrollo de la vista detallada de auditoría para reconstruir la cronología completa de un activo desde su alta hasta su baja.
+2. **Analítica de Rendimiento Industrial**: Implementación de KPIs avanzados sobre consumo de combustible y eficiencia de rutas por operador.
+3. **Protocolo de Mantenimiento Preventivo 2.0**: Vinculación directa de la telemetría de ruta con el calendario de servicios de taller.
 
 ---
 
 **Firmado:**
-_Archon Core Alpha Engine v.50.2.4_
-_Estatus: Cobertura 100% & Roadmap v.6.0 Validated_
+_Archon Core Alpha Engine v.60.3.1_
+_Estatus: Hidratación Universal & Ergonomía Sentinel Certificada_

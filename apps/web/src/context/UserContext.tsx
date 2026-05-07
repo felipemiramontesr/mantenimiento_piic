@@ -1,13 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
+import useSilkHydration from '../hooks/useSilkHydration';
 import { UserIndustrial, UserPanel } from '../types/user';
 import { DEPARTAMENTOS } from '../constants/fleetConstants';
-import { archonCache } from '../utils/archonCache';
 import api from '../api/client';
 
 /**
  * 🔱 Archon Context: UserContext
- * Implementation: Sentinel Operational Standard (Axios-based)
- * v.28.23.7 - Identity Orchestration (Strict Typing & API Sync)
+ * Architecture: DRY & SOLID (Silk Hydration Standard)
+ * v.70.0.0 - Identity Orchestration (Unified Persistence)
  */
 
 interface RawUserResponse {
@@ -38,161 +38,122 @@ interface UserContextType {
   setActivePanel: (panel: UserPanel) => void;
   fetchUsers: () => Promise<void>;
   toggleUserStatus: (id: string, currentStatus: boolean) => Promise<void>;
-   updateUser: (id: string, data: Partial<UserIndustrial>, reason: string) => Promise<boolean>;
-   deleteUser: (id: string, reason: string) => Promise<boolean>;
-   editingUser: UserIndustrial | null;
-   setEditingUser: (user: UserIndustrial | null) => void;
-   departments: string[];
-   roles: CatalogOption[];
- }
+  updateUser: (id: string, data: Partial<UserIndustrial>, reason: string) => Promise<boolean>;
+  deleteUser: (id: string, reason: string) => Promise<boolean>;
+  editingUser: UserIndustrial | null;
+  setEditingUser: (user: UserIndustrial | null) => void;
+  departments: string[];
+  roles: CatalogOption[];
+}
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }): React.JSX.Element => {
-  const [users, setUsers] = useState<UserIndustrial[]>(
-    () =>
-      // Initial hydration from Persistent Cache
-      archonCache.get<UserIndustrial[]>('users_directory') || []
-  );
-  const [isLoading, setIsLoading] = useState(!users.length);
+  // 1. Universal Hydration Layer (DRY)
+  const {
+    data: users,
+    isSyncing: usersSyncing,
+    refresh: fetchUsers,
+  } = useSilkHydration<UserIndustrial>({
+    key: 'users_directory',
+    endpoint: '/auth/users',
+    transform: (data: RawUserResponse[]) =>
+      data.map((u) => ({
+        id: String(u.id),
+        username: u.username,
+        fullName: u.full_name || u.fullName || '',
+        email: u.email,
+        roleId: u.roleId,
+        department: u.department,
+        employeeNumber: u.employee_number || u.employeeNumber || '',
+        is_active: Boolean(u.is_active),
+        imageUrl: u.profile_picture_url || u.image_url || '',
+        roleName: u.roleName,
+      })),
+  });
+
+  const { data: departmentsData } = useSilkHydration<CatalogOption>({
+    key: 'system_departments',
+    endpoint: '/catalogs/DEPARTMENT',
+  });
+
+  const { data: rolesData } = useSilkHydration<CatalogOption>({
+    key: 'system_roles',
+    endpoint: '/auth/roles',
+  });
+
   const [activePanel, setActivePanel] = useState<UserPanel>('DIRECTORY');
   const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);
-  const [departments, setDepartments] = useState<string[]>(
-    () => archonCache.get<string[]>('system_departments') || []
-  );
-  const [roles, setRoles] = useState<CatalogOption[]>(
-    () => archonCache.get<CatalogOption[]>('system_roles') || []
-  );
 
-  const fetchUsers = useCallback(async (): Promise<void> => {
-    setIsLoading(true);
+  const departments = useMemo(() => departmentsData.map((d) => d.label), [departmentsData]);
+
+  const roles = rolesData;
+  const isLoading = usersSyncing && !users.length;
+
+  const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
     try {
-      // Fetch users via the official Archon Auth Gateway
-      const response = await api.get('/auth/users');
+      // Use the standard PATCH protocol for state modification
+      const response = await api.patch(`/auth/users/${id}`, {
+        data: { is_active: !currentStatus },
+        reason: 'Modificación de estatus operativo vía Directorio',
+      });
 
       if (response.data.success) {
-        // Map backend schema to Frontend Industrial Schema with Strict Typing
-        const mappedUsers = (response.data.data as RawUserResponse[]).map(
-          (u): UserIndustrial => ({
-            id: String(u.id),
-            username: u.username,
-            fullName: u.full_name || u.fullName || '',
-            email: u.email,
-            roleId: u.roleId,
-            department: u.department,
-            employeeNumber: u.employee_number || u.employeeNumber || '',
-            is_active: Boolean(u.is_active),
-            imageUrl: u.profile_picture_url || u.image_url || '',
-            roleName: u.roleName,
-          })
-        );
-        setUsers(mappedUsers);
-        // Commit to Persistent Cache
-        archonCache.set('users_directory', mappedUsers);
+        await fetchUsers();
       }
     } catch (err: unknown) {
-      // Silently handle error as per Zero-Noise policy
-    } finally {
-      setIsLoading(false);
+      // Silently handle error
     }
-  }, []);
+  };
 
-   const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
-     try {
-       // Use the standard PATCH protocol for state modification
-       const response = await api.patch(`/auth/users/${id}`, {
-         data: { is_active: !currentStatus },
-         reason: 'Modificación de estatus operativo vía Directorio',
-       });
- 
-       if (response.data.success) {
-         await fetchUsers();
-       }
-     } catch (err: unknown) {
-       // Silently handle error
-     }
-   };
- 
-   const updateUser = async (
-     id: string,
-     data: Partial<UserIndustrial>,
-     reason: string
-   ): Promise<boolean> => {
-     try {
-       // Map frontend update to backend schema (CamelCase Sync v.28.40.0)
-       const backendData = {
-         fullName: data.fullName,
-         email: data.email,
-         roleId: data.roleId,
-         department: data.department,
-         employeeNumber: data.employeeNumber,
-         profilePictureUrl: data.imageUrl,
-         password: data.password,
-       };
- 
-       const response = await api.patch(`/auth/users/${id}`, {
-         data: backendData,
-         reason,
-       });
- 
-       if (response.data.success) {
-         await fetchUsers();
-         return true;
-       }
-       return false;
-     } catch (err: unknown) {
-       return false;
-     }
-   };
- 
-   const deleteUser = async (id: string, reason: string): Promise<boolean> => {
-     try {
-       const response = await api.delete(`/auth/users/${id}`, {
-         data: { reason },
-       });
-       if (response.data.success) {
-         await fetchUsers();
-         return true;
-       }
-       return false;
-     } catch (err) {
-       return false;
-     }
-   };
-
-  const fetchDepartments = useCallback(async (): Promise<void> => {
+  const updateUser = async (
+    id: string,
+    data: Partial<UserIndustrial>,
+    reason: string
+  ): Promise<boolean> => {
     try {
-      const response = await api.get('/catalogs/DEPARTMENT');
-      if (response.data?.length) {
-        const labels = response.data.map((d: CatalogOption) => d.label);
-        setDepartments(labels);
-        // Commit to Persistent Cache
-        archonCache.set('system_departments', labels);
-      }
-    } catch (err) {
-      // Slient fallback
-    }
-  }, []);
+      // Map frontend update to backend schema (CamelCase Sync v.28.40.0)
+      const backendData = {
+        fullName: data.fullName,
+        email: data.email,
+        roleId: data.roleId,
+        department: data.department,
+        employeeNumber: data.employeeNumber,
+        profilePictureUrl: data.imageUrl,
+        password: data.password,
+      };
 
-  const fetchRoles = useCallback(async (): Promise<void> => {
+      const response = await api.patch(`/auth/users/${id}`, {
+        data: backendData,
+        reason,
+      });
+
+      if (response.data.success) {
+        await fetchUsers();
+        return true;
+      }
+      return false;
+    } catch (err: unknown) {
+      return false;
+    }
+  };
+
+  const deleteUser = async (id: string, reason: string): Promise<boolean> => {
     try {
-      const response = await api.get('/auth/roles');
-      if (response.data?.success && Array.isArray(response.data.data)) {
-        setRoles(response.data.data);
-        archonCache.set('system_roles', response.data.data);
+      const response = await api.delete(`/auth/users/${id}`, {
+        data: { reason },
+      });
+      if (response.data.success) {
+        await fetchUsers();
+        return true;
       }
+      return false;
     } catch (err) {
-      // Slient fallback
+      return false;
     }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-    fetchDepartments();
-    fetchRoles();
-  }, [fetchUsers, fetchDepartments, fetchRoles]);
+  };
 
   return (
     <UserContext.Provider
@@ -203,13 +164,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         setActivePanel,
         fetchUsers,
         toggleUserStatus,
-         updateUser,
-         deleteUser,
-         editingUser,
-         setEditingUser,
-         departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
-         roles,
-       }}
+        updateUser,
+        deleteUser,
+        editingUser,
+        setEditingUser,
+        departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
+        roles,
+      }}
     >
       {children}
     </UserContext.Provider>

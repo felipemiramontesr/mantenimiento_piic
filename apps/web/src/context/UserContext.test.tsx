@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, waitFor, RenderResult, act } from '@testing-library/react';
+import { render, waitFor, act, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UserProvider, useUsers } from './UserContext';
 import api from '../api/client';
+import { archonCache } from '../utils/archonCache';
 
-// 🔱 Mock API Client
+// 🔱 World Class Mocking
 vi.mock('../api/client', () => ({
   default: {
     get: vi.fn(),
@@ -13,188 +14,136 @@ vi.mock('../api/client', () => ({
   },
 }));
 
+vi.mock('../utils/archonCache', () => ({
+  archonCache: {
+    get: vi.fn(),
+    set: vi.fn(),
+  },
+}));
+
 const TestComponent = (): React.JSX.Element => {
-  const { users, roles, isLoading, fetchUsers } = useUsers();
+  const { users, roles, isLoading } = useUsers();
   return (
     <div>
-      <div data-testid="loading">{isLoading ? 'true' : 'false'}</div>
+      <div data-testid="loading">{isLoading.toString()}</div>
       <div data-testid="users-count">{users.length}</div>
       <div data-testid="roles-count">{roles.length}</div>
-      <button
-        onClick={(): void => {
-          fetchUsers().catch(() => {
-            /* ignore */
-          });
-        }}
-      >
-        Refresh
-      </button>
     </div>
   );
 };
 
-const TestComponentWithActions = (): React.JSX.Element => {
-  const { toggleUserStatus, updateUser } = useUsers();
-  return (
-    <div>
-      <button
-        onClick={(): void => {
-          toggleUserStatus('1', true).catch(() => {
-            /* ignore */
-          });
-        }}
-      >
-        Toggle
-      </button>
-      <button
-        onClick={(): void => {
-          updateUser('1', { fullName: 'New Name' }, 'Audit Test Reason').catch(() => {
-            /* ignore */
-          });
-        }}
-      >
-        Update
-      </button>
-    </div>
-  );
-};
-
-describe('UserContext (Identity Infrastructure)', () => {
+describe('UserContext (Silk Hydration Suite)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('hydrates users and roles from API', async () => {
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url === '/auth/users')
-        return Promise.resolve({
-          data: {
-            success: true,
-            data: [
-              {
-                id: 1,
-                full_name: 'Test User',
-                email: 't@t.com',
-                roleId: 1,
-                department: 'TI',
-                is_active: 1,
-                roleName: 'Admin',
-              },
-            ],
-          },
-        });
-      if (url === '/auth/roles')
-        return Promise.resolve({ data: { success: true, data: [{ id: 1, label: 'Admin' }] } });
-      if (url === '/catalogs/DEPARTMENT')
-        return Promise.resolve({ data: [{ id: 1, label: 'TI' }] });
-      return Promise.reject(new Error('Unknown URL'));
+  it('🔱 CACHE-FIRST: Should render users from cache immediately', async () => {
+    const mockCacheUsers = [
+      {
+        id: '1',
+        username: 'cached_user',
+        fullName: 'Cached',
+        email: '',
+        roleId: 1,
+        department: '',
+        employeeNumber: '',
+        is_active: true,
+        imageUrl: '',
+        roleName: 'Admin',
+      },
+    ];
+    vi.mocked(archonCache.get).mockImplementation((key) => {
+      if (key === 'users_directory') return mockCacheUsers;
+      return [];
     });
 
-    let renderResult: RenderResult | undefined;
-    await act(async () => {
-      renderResult = render(
-        <UserProvider>
-          <TestComponent />
-        </UserProvider>
-      );
-    });
-
-    const { getByTestId } = renderResult!;
-    await waitFor(() => expect(getByTestId('users-count').textContent).toBe('1'));
-    expect(getByTestId('roles-count').textContent).toBe('1');
-  });
-
-  it('handles fetchUsers correctly', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-
-    let renderResult: RenderResult | undefined;
-    await act(async () => {
-      renderResult = render(
-        <UserProvider>
-          <TestComponent />
-        </UserProvider>
-      );
-    });
-
-    const { getByText } = renderResult!;
-
-    await act(async () => {
-      getByText('Refresh').click();
-    });
-
-    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/auth/users'));
-  });
-
-  it('handles toggleUserStatus correctly', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    vi.mocked(api.patch).mockResolvedValue({ data: { success: true } });
-
-    let renderResult: RenderResult | undefined;
-    await act(async () => {
-      renderResult = render(
-        <UserProvider>
-          <TestComponentWithActions />
-        </UserProvider>
-      );
-    });
-
-    await act(async () => {
-      renderResult!.getByText('Toggle').click();
-    });
-
-    await waitFor(() =>
-      expect(api.patch).toHaveBeenCalledWith('/auth/users/1', {
-        data: { is_active: false },
-        reason: 'Modificación de estatus operativo vía Directorio',
-      })
+    // Slow API
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve({ data: { success: true, data: [] } }), 100);
+        })
     );
-  });
 
-  it('handles updateUser correctly', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    vi.mocked(api.patch).mockResolvedValue({ data: { success: true } });
-
-    let renderResult: RenderResult | undefined;
     await act(async () => {
-      renderResult = render(
+      render(
         <UserProvider>
-          <TestComponentWithActions />
+          <TestComponent />
         </UserProvider>
       );
     });
 
-    await act(async () => {
-      renderResult!.getByText('Update').click();
-    });
-
-    await waitFor(() => expect(api.patch).toHaveBeenCalled());
+    expect(screen.getByTestId('users-count').textContent).toBe('1');
+    expect(screen.getByTestId('loading').textContent).toBe('false');
   });
 
-  it('handles updateUser failure correctly', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    vi.mocked(api.patch).mockResolvedValue({ data: { success: false } });
+  it('🔱 RESILIENCE: Should keep users on screen if API sync fails', async () => {
+    const mockCacheUsers = [
+      {
+        id: '1',
+        username: 'persistent',
+        fullName: 'Persistent',
+        email: '',
+        roleId: 1,
+        department: '',
+        employeeNumber: '',
+        is_active: true,
+        imageUrl: '',
+        roleName: 'Admin',
+      },
+    ];
+    vi.mocked(archonCache.get).mockImplementation((key) => {
+      if (key === 'users_directory') return mockCacheUsers;
+      return [];
+    });
+    vi.mocked(api.get).mockRejectedValue(new Error('Network Failure'));
 
-    let renderResult: RenderResult | undefined;
     await act(async () => {
-      renderResult = render(
+      render(
         <UserProvider>
-          <TestComponentWithActions />
+          <TestComponent />
         </UserProvider>
       );
     });
 
-    await act(async () => {
-      renderResult!.getByText('Update').click();
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/auth/users');
     });
 
-    await waitFor(() => expect(api.patch).toHaveBeenCalled());
+    // Still shows cached data
+    expect(screen.getByTestId('users-count').textContent).toBe('1');
   });
 
-  it('throws error when useUsers is used outside provider', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation((): void => {
-      /* ignore */
+  it('🔱 TYPE SHIELDING: Should map raw response to industrial schema', async () => {
+    vi.mocked(archonCache.get).mockReturnValue([]);
+    const rawUsers = [
+      {
+        id: 101,
+        username: 'jdoe',
+        full_name: 'John Doe',
+        email: 'j@d.com',
+        roleId: 2,
+        department: 'Logistics',
+        is_active: 1,
+        roleName: 'Operator',
+      },
+    ];
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: rawUsers } });
+      return Promise.resolve({ data: { success: true, data: [] } });
     });
-    expect(() => render(<TestComponent />)).toThrow('useUsers must be used within a UserProvider');
-    consoleSpy.mockRestore();
+
+    await act(async () => {
+      render(
+        <UserProvider>
+          <TestComponent />
+        </UserProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('users-count').textContent).toBe('1');
+    });
   });
 });

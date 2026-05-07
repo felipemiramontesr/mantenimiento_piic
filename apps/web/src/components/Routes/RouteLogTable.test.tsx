@@ -161,7 +161,7 @@ describe('RouteLogTable (Logistics Standard)', () => {
     expect(screen.getByText(/OPERADOR/i)).toBeDefined();
   });
 
-  it('allows opening incident report form', async () => {
+  it('🔱 LOCAL INSERTION: Should hide table and show incident form in-place', async () => {
     vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: mockRoutes } });
       if (url === '/auth/users')
@@ -184,9 +184,20 @@ describe('RouteLogTable (Logistics Standard)', () => {
       expect(screen.getByTitle(/Reportar Incidencia/i)).toBeDefined();
     });
 
+    // 1. Initially Table is visible
+    expect(screen.getByRole('table')).toBeDefined();
+
+    // 2. Click Alert Button
     fireEvent.click(screen.getByTitle(/Reportar Incidencia/i));
 
-    // Check if IncidentReportForm is visible (Protocolo Sentinel text)
+    // 3. TABLE SHOULD BE REMOVED FROM DOM (Local Insertion Protocol)
+    expect(screen.queryByRole('table')).toBeNull();
+
+    // 4. Form should be visible
     expect(screen.getByText(/Protocolo Sentinel/i)).toBeDefined();
+
+    // 5. Click Cancel and Table should return
+    fireEvent.click(screen.getByText(/Cancelar/i));
+    expect(screen.getByRole('table')).toBeDefined();
   });
 });

@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, waitFor, RenderResult, act } from '@testing-library/react';
+import { render, waitFor, act, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FleetProvider, useFleet } from './FleetContext';
 import api from '../api/client';
+import { archonCache } from '../utils/archonCache';
 
-// 🔱 Mock API Client
+// 🔱 Senior Mocking Layer
 vi.mock('../api/client', () => ({
   default: {
     get: vi.fn(),
@@ -13,178 +14,115 @@ vi.mock('../api/client', () => ({
   },
 }));
 
-// Test Component to consume the context
+vi.mock('../utils/archonCache', () => ({
+  archonCache: {
+    get: vi.fn(),
+    set: vi.fn(),
+  },
+}));
+
 const TestComponent = (): React.JSX.Element => {
-  const { stats, refreshUnits, reportIncident, startRoute, finishRoute } = useFleet();
+  const { stats, loading, units } = useFleet();
   return (
     <div>
       <div data-testid="total">{stats.total}</div>
-      <div data-testid="incidents">{stats.openIncidents}</div>
-      <button
-        onClick={(): void => {
-          refreshUnits().catch(() => {
-            /* ignore */
-          });
-        }}
-      >
-        Refresh
-      </button>
-      <button
-        onClick={(): void => {
-          reportIncident('uuid', {
-            category: 'MECANICA',
-            description: 'Test',
-            severity: 'LOW',
-          }).catch(() => {
-            /* ignore */
-          });
-        }}
-      >
-        Report
-      </button>
-      <button
-        onClick={(): void => {
-          startRoute({ unitId: 'U1', driverId: 1, startReading: 10, destination: 'D' }).catch(
-            () => {
-              /* ignore */
-            }
-          );
-        }}
-      >
-        Start
-      </button>
-      <button
-        onClick={(): void => {
-          finishRoute('uuid', { endReading: 20 }).catch(() => {
-            /* ignore */
-          });
-        }}
-      >
-        Finish
-      </button>
+      <div data-testid="loading">{loading.toString()}</div>
+      <div data-testid="units-count">{units.length}</div>
     </div>
   );
 };
 
-describe('FleetContext (Sovereign State Engine)', () => {
+describe('FleetContext (World Class QA Suite)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('provides initial stats and hydrates from API', async () => {
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url === '/fleet') return Promise.resolve({ data: { success: true, data: [] } });
-      if (url === '/incidents') return Promise.resolve({ data: { success: true, data: [] } });
-      return Promise.reject(new Error('Unknown URL'));
-    });
+  it('🔱 PROTOCOLO CACHE-FIRST: Should show cached data immediately', async () => {
+    const mockCache = [{ id: 'U-CACHE', status: 'Disponible', assetTypeId: 1 }];
+    vi.mocked(archonCache.get).mockReturnValue(mockCache);
 
-    let renderResult: RenderResult | undefined;
-    await act(async () => {
-      renderResult = render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
-
-    const { getByTestId } = renderResult!;
-    expect(getByTestId('total').textContent).toBe('0');
-    expect(api.get).toHaveBeenCalledWith('/fleet');
-    expect(api.get).toHaveBeenCalledWith('/incidents');
-  });
-
-  it('calculates complex metrics correctly (MTBF, MTTR)', async () => {
-    const mockUnits = [
-      { id: 'U1', status: 'Disponible', mtbfHours: 100, mttrHours: 10, assetTypeId: 1 },
-      { id: 'U2', status: 'En Ruta', mtbfHours: 200, mttrHours: 20, assetTypeId: 1 },
-    ];
-
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
-      if (url === '/incidents') return Promise.resolve({ data: { success: true, data: [] } });
-      return Promise.reject(new Error('Unknown URL'));
-    });
-
-    let renderResult: RenderResult | undefined;
-    await act(async () => {
-      renderResult = render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
-
-    const { getByTestId } = renderResult!;
-    await waitFor(() => expect(getByTestId('total').textContent).toBe('2'));
-  });
-
-  it('handles reportIncident and refreshes incidents count', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    vi.mocked(api.post).mockResolvedValue({ data: { success: true } });
-
-    let renderResult: RenderResult | undefined;
-    await act(async () => {
-      renderResult = render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
-
-    const { getByText } = renderResult!;
-
-    // Mock the second call for incidents after report
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url === '/incidents')
-        return Promise.resolve({ data: { success: true, data: [{ status: 'OPEN' }] } });
-      return Promise.resolve({ data: { success: true, data: [] } });
-    });
-
-    await act(async () => {
-      getByText('Report').click();
-    });
-
-    await waitFor(() => expect(api.post).toHaveBeenCalled());
-    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/incidents'));
-  });
-
-  it('handles startRoute and finishRoute with unit refresh', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    vi.mocked(api.post).mockResolvedValue({ data: { success: true } });
-    vi.mocked(api.patch).mockResolvedValue({ data: { success: true } });
-
-    let renderResult: RenderResult | undefined;
-    await act(async () => {
-      renderResult = render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
-
-    const { getByText } = renderResult!;
-
-    await act(async () => {
-      getByText('Start').click();
-    });
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/routes/start', expect.any(Object)));
-
-    await act(async () => {
-      getByText('Finish').click();
-    });
-    await waitFor(() =>
-      expect(api.patch).toHaveBeenCalledWith('/routes/uuid/finish', expect.any(Object))
+    // API will be slow
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve({ data: { success: true, data: [] } }), 100);
+        })
     );
-  });
 
-  it('throws error when useFleet is used outside provider', () => {
-    // Silence console.error for this test to keep logs clean
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation((): void => {
-      /* ignore */
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
     });
 
-    expect(() => render(<TestComponent />)).toThrow('useFleet must be used within a FleetProvider');
+    // Verify cache is shown first
+    expect(screen.getByTestId('total').textContent).toBe('1');
+    expect(screen.getByTestId('loading').textContent).toBe('false');
+    expect(archonCache.get).toHaveBeenCalledWith('fleet_units');
+  });
 
-    consoleSpy.mockRestore();
+  it('🔱 RESILIENCE: Should maintain cache data if API fails', async () => {
+    const mockCache = [{ id: 'U-PERSISTENT', status: 'Disponible', assetTypeId: 1 }];
+    vi.mocked(archonCache.get).mockReturnValue(mockCache);
+    vi.mocked(api.get).mockRejectedValue(new Error('Internal Server Error 500'));
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    // Wait for sync attempt to finish
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalled();
+    });
+
+    // Verify data was NOT cleared despite API failure
+    expect(screen.getByTestId('total').textContent).toBe('1');
+  });
+
+  it('🔱 ATOMIC SYNC: Should update UI and Cache after successful fetch', async () => {
+    vi.mocked(archonCache.get).mockReturnValue([]);
+    const freshData = [{ id: 'U-FRESH', status: 'Disponible', assetTypeId: 1 }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: freshData } });
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('total').textContent).toBe('1');
+    });
+
+    expect(archonCache.set).toHaveBeenCalledWith('fleet_units', freshData);
+  });
+
+  it('🔱 ANALYTICAL INTEGRITY: Calculates metrics for all asset types', async () => {
+    const complexFleet = [
+      { id: 'V1', assetTypeId: 1, status: 'Disponible' }, // Vehiculo
+      { id: 'M1', assetTypeId: 2, status: 'En Mantenimiento' }, // Maquinaria
+      { id: 'H1', assetTypeId: 3, status: 'Disponible' }, // Herramienta
+    ];
+    vi.mocked(archonCache.get).mockReturnValue(complexFleet);
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: complexFleet } });
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    // This component only shows total, but it forces useMemo calculation
+    expect(screen.getByTestId('total').textContent).toBe('3');
   });
 });

@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import api from '../api/client';
 import { FleetUnit } from '../types/fleet';
-import { archonCache } from '../utils/archonCache';
+import useSilkHydration from '../hooks/useSilkHydration';
 
 interface CategorizedMetrics {
   count: number;
@@ -51,65 +51,27 @@ interface FleetContextType {
 export const FleetContext = createContext<FleetContextType | undefined>(undefined);
 
 export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [units, setUnits] = useState<FleetUnit[]>(
-    (): FleetUnit[] =>
-      // ⚡ AGGRESSIVE HYDRATION: Immediate memory population from Archon Cache
-      archonCache.get<FleetUnit[]>('fleet_units') || []
+  // 1. World Class Data Sourcing (DRY Protocol)
+  const {
+    data: units,
+    isSyncing: unitsSyncing,
+    refresh: refreshUnits,
+  } = useSilkHydration<FleetUnit>({
+    key: 'fleet_units',
+    endpoint: '/fleet',
+  });
+
+  const { data: incidents, refresh: refreshIncidents } = useSilkHydration<{ status: string }>({
+    key: 'system_incidents',
+    endpoint: '/incidents',
+  });
+
+  const loading = unitsSyncing && !units.length;
+
+  const incidentsCount = useMemo(
+    () => incidents.filter((i) => i.status === 'OPEN').length,
+    [incidents]
   );
-
-  const [loading, setLoading] = useState<boolean>(!units.length);
-
-  const isMountedRef = React.useRef(true);
-  useEffect(() => {
-    isMountedRef.current = true;
-    return (): void => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  const [incidentsCount, setIncidentsCount] = useState<number>(0);
-
-  const refreshIncidents = async (): Promise<void> => {
-    try {
-      const response = await api.get<{
-        success: boolean;
-        data: Array<{ status: string }>;
-      }>('/incidents');
-      if (isMountedRef.current && response.data.success) {
-        const open = response.data.data.filter((i) => i.status === 'OPEN').length;
-        setIncidentsCount(open);
-      }
-    } catch (error) {
-      // Noise reduction
-    }
-  };
-
-  const refreshUnits = async (): Promise<void> => {
-    try {
-      const response = await api.get<{ success: boolean; data: FleetUnit[] }>('/fleet');
-      if (isMountedRef.current && response.data.success) {
-        const freshData = response.data.data;
-        setUnits(freshData);
-        // Commit to Persistent Cache
-        archonCache.set('fleet_units', freshData);
-      }
-    } catch (error) {
-      // Noise reduction for Sovereign operations
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  };
-
-  /**
-   * Silk Hydration: Background Refresh
-   * This happens silently if cache is already present.
-   */
-  useEffect(() => {
-    refreshUnits();
-    refreshIncidents();
-  }, []);
 
   const stats = useMemo((): FleetStats => {
     const total = units.length;

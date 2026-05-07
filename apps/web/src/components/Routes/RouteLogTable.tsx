@@ -11,11 +11,10 @@ import {
   AlertTriangle,
   Truck,
 } from 'lucide-react';
-import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import { formatDateTime } from '../../utils/dateUtils';
-import { archonCache } from '../../utils/archonCache';
+import useRouteLogs from '../../hooks/useRouteLogs';
 import IncidentReportForm from './IncidentReportForm';
 
 export interface RouteLog {
@@ -42,35 +41,15 @@ interface RouteLogTableProps {
 /**
  * 🔱 ARCHON ROUTE LOG TABLE
  * Architecture: Sovereign Instrumental Grid (Symmetrical Alignment)
- * Version: 36.5.4 - Operational Rectification Protocol
+ * Principle: SOLID (SRP) - Clean Decoupled View
+ * Version: 70.0.0
  */
 const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { units } = useFleet();
   const { users } = useUsers();
+  const { logs, isSyncing, refresh } = useRouteLogs();
 
-  const [logs, setLogs] = React.useState<RouteLog[]>(
-    () => archonCache.get<RouteLog[]>('route_logs') || []
-  );
-  const [isSyncing, setIsSyncing] = React.useState(false);
   const [reportingRoute, setReportingRoute] = React.useState<RouteLog | null>(null);
-
-  const fetchRoutes = async (): Promise<void> => {
-    setIsSyncing(true);
-    try {
-      const res = await api.get('/routes');
-      const data = res.data?.data || [];
-      setLogs(data);
-      archonCache.set('route_logs', data);
-    } catch (err) {
-      // Quiet fail to maintain Sovereign silence
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  React.useEffect(() => {
-    fetchRoutes();
-  }, []);
 
   const getStatus = (
     log: RouteLog
@@ -296,7 +275,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
             onClose={(): void => setReportingRoute(null)}
             onSuccess={(): void => {
               setReportingRoute(null);
-              fetchRoutes();
+              refresh();
             }}
           />
         </div>
