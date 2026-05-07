@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor, act, render } from '../../test/testUtils';
+import { screen, fireEvent, waitFor, act, render, mockStartRoute } from '../../test/testUtils';
 import RouteAssignmentForm from './RouteAssignmentForm';
 import api from '../../api/client';
 
@@ -84,8 +84,7 @@ describe('RouteAssignmentForm (Apex Refactor)', () => {
     });
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith(
-        '/routes/start',
+      expect(mockStartRoute).toHaveBeenCalledWith(
         expect.objectContaining({
           unitId: 'ASM-001',
           driverId: 1,

@@ -1,17 +1,75 @@
-import React, { ReactElement } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, RenderOptions, renderHook, RenderHookOptions } from '@testing-library/react';
-import { UserProvider } from '../context/UserContext';
-import { FleetProvider } from '../context/FleetContext';
+import { vi } from 'vitest';
+import { type ReactElement, type ReactNode } from 'react';
+import { UserContext } from '../context/UserContext';
+import { FleetContext } from '../context/FleetContext';
 
 /**
- * 🔱 Archon Test Utility: Sovereign Provider Wrapper
- * Purpose: Centralizes the context injection for all frontend suites.
- * Architecture: Ensures consistent state across unit and integration tests.
+ * 🔱 Archon Test Utility: Sovereign Provider Injection
+ * Purpose: Provides a stable, memory-efficient context for all unit tests.
+ * v.60.2.3 - Exported Control Mocks for Assertions.
  */
-export const AllTheProviders = ({ children }: { children: React.ReactNode }): ReactElement => (
-  <UserProvider>
-    <FleetProvider>{children}</FleetProvider>
-  </UserProvider>
+
+export const mockStartRoute = vi.fn();
+export const mockFinishRoute = vi.fn();
+
+const MockUserContext = {
+  users: [{ id: '1', fullName: 'Juan Perez', username: 'juan.perez', roleName: 'Operador' }],
+  isLoading: false,
+  activePanel: 'DIRECTORY' as const,
+  setActivePanel: vi.fn(),
+  fetchUsers: vi.fn(),
+  toggleUserStatus: vi.fn(),
+  updateUser: vi.fn(),
+  deleteUser: vi.fn(),
+  editingUser: null,
+  setEditingUser: vi.fn(),
+  departments: [],
+  roles: [],
+};
+
+const MockFleetContext = {
+  units: [
+    {
+      id: 'ASM-001',
+      marca: 'Nissan',
+      modelo: 'March',
+      status: 'Disponible',
+      odometer: 50000,
+      placas: 'ABC-123',
+      currentReading: 50000,
+    },
+  ],
+  stats: {
+    total: 1,
+    available: 1,
+    inRoute: 0,
+    maintenance: 0,
+    discontinued: 0,
+    totalInactive: 0,
+    maintenanceIndex: 0,
+    openIncidents: 0,
+    globalMTBF: 0,
+    globalMTTR: 0,
+    globalAvailability: 100,
+    categories: {
+      vehiculo: { total: 1, active: 0, health: 100 },
+      maquinaria: { total: 0, active: 0, health: 0 },
+      herramienta: { total: 0, active: 0, health: 0 },
+    },
+  } as any,
+  loading: false,
+  refreshUnits: vi.fn(),
+  startRoute: mockStartRoute,
+  finishRoute: mockFinishRoute,
+  reportIncident: vi.fn(),
+};
+
+const AllTheProviders = ({ children }: { children: ReactNode }): ReactElement => (
+  <UserContext.Provider value={MockUserContext as any}>
+    <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
+  </UserContext.Provider>
 );
 
 const renderWithProviders = (
@@ -27,7 +85,4 @@ const renderHookWithProviders = <Result, Props>(
 
 // Re-export everything from RTL
 export * from '@testing-library/react';
-
-// Override/Export methods
-export { renderWithProviders as render };
-export { renderHookWithProviders as renderHook };
+export { renderWithProviders as render, renderHookWithProviders as renderHook };

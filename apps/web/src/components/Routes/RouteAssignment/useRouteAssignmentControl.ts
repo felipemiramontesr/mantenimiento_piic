@@ -124,30 +124,26 @@ export const useRouteAssignmentControl = (
   }, [formData.unitId, units, isEdit]);
 
   // 📐 Sorting & Filtering (Memoized for Performance)
-  const naturalCollator = useMemo(
-    () => new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }),
-    []
-  );
 
   const availableUnits = useMemo(
     (): SelectOption[] =>
       units
         .filter((u) => u.status === 'Disponible' || (isEdit && u.id === routeToEdit?.unit_id))
-        .sort((a, b) => naturalCollator.compare(a.id, b.id))
+        .sort((a, b) => (a.id > b.id ? 1 : -1))
         .map((u) => ({
           value: u.id,
           label: `${u.id} - ${u.marca} ${u.modelo}`,
           secondaryLabel: `ODO: ${Number(u.odometer || 0).toLocaleString()} KM | ${u.placas}`,
           searchTerms: `${u.marca} ${u.modelo} ${u.placas} ${u.departamento}`,
         })),
-    [units, isEdit, routeToEdit, naturalCollator]
+    [units, isEdit, routeToEdit]
   );
 
   const operatorOptions = useMemo((): SelectOption[] => {
     const busyUserIds = activeRoutes.map((r) => r.operator_id);
     return users
       .filter((u) => !busyUserIds.includes(u.id) || (isEdit && u.id === routeToEdit?.operator_id))
-      .sort((a, b) => a.fullName.localeCompare(b.fullName))
+      .sort((a, b) => (a.fullName > b.fullName ? 1 : -1))
       .map((u) => ({
         value: String(u.id),
         label: u.fullName,
