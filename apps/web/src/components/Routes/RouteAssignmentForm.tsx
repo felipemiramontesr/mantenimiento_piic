@@ -55,7 +55,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     };
   };
 
-  const { text: rightButtonText, className: submitButtonClass } = getButtonState();
+  const { text: rightButtonText } = getButtonState();
 
   const startReadingDisplay = isEdit
     ? routeToEdit?.start_km?.toLocaleString() || '0,000'
@@ -113,14 +113,14 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
         )}
 
-        {/* Sovereign Footer */}
-        <div className="flex justify-between items-center gap-8 mt-12 pt-12 border-t border-slate-100">
+        {/* Sovereign Footer (Refactored v.60.1.5) */}
+        <div className="archon-grid-2 mt-12 pt-12 border-t border-slate-100">
           <div>
             {isEdit && (
               <button
                 type="button"
                 onClick={triggerAuditDelete}
-                className="px-8 py-4 bg-rose-600/10 text-rose-600 border border-rose-600/20 rounded-[4px] font-black text-xs uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center gap-3 shadow-lg"
+                className="btn-sentinel-red w-full"
               >
                 <Trash2 size={18} /> Eliminar Registro
               </button>
@@ -140,7 +140,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                     !formData.destination ||
                     (isEdit && !formData.endReading)))
               }
-              className={`btn-sentinel-emerald ${submitButtonClass} ${
+              className={`btn-sentinel-emerald ${
                 submitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
               }`}
             >

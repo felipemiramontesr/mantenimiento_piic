@@ -915,7 +915,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
       </div>
 
-      <div className="archon-grid-2 mt-12">
+      <div className="archon-grid-2 mt-12 pt-12 border-t border-slate-100">
         <div>
           {isEdit && (
             <button
@@ -924,18 +924,14 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 setAuditAction('DELETE');
                 setIsAuditModalOpen(true);
               }}
-              className="btn-sentinel-red"
+              className="btn-sentinel-red w-full"
             >
               <Trash2 size={18} /> Eliminar Activo
             </button>
           )}
         </div>
         <div className="archon-button-group">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="btn-sentinel-red"
-          >
+          <button type="button" onClick={onCancel} className="btn-sentinel-red">
             Cancelar
           </button>
           <button
