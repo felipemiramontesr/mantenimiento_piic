@@ -114,7 +114,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         )}
 
         {/* Sovereign Footer (Refactored v.60.1.5) */}
-        <div className="archon-grid-2 mt-6 pt-6 border-t border-slate-100">
+        <div className="archon-grid-2 mt-2 pt-6 border-t border-slate-100">
           <div>
             {isEdit && (
               <button

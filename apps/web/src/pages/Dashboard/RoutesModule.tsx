@@ -109,7 +109,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
 
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">
-        <div className="flex flex-col gap-12 pb-[60vh]">
+        <div className="flex flex-col gap-12 pb-6">
           <RouteManagementCards
             activePanel={activePanel}
             onPanelChange={(p): void => {

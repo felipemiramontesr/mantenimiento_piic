@@ -1,4 +1,4 @@
-export const SYSTEM_VERSION = '73.5.1';
+export const SYSTEM_VERSION = '73.5.2';
 export const BRANDING_NAME = 'ArchonCore Industrial Alpha';
 export const CACHE_PREFIX = 'archon_v73_5_1';
 export const SOVEREIGN_MODE = true;

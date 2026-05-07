@@ -38,7 +38,7 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const offset = circumference - (currentLevel / 100) * circumference;
 
   return (
-    <div className="flex flex-col gap-4 bg-white/40 p-4 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
+    <div className="flex flex-col gap-4 bg-white/40 p-2 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
       <div className="flex items-center justify-between gap-8">
         {/* 🥧 CIRCULAR PIE CHART (SVG) - REFINED SCALE */}
         <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
