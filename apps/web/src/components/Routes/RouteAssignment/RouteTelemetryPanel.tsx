@@ -56,7 +56,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="bg-sky-600 p-2 rounded-[4px]">
           <Gauge size={20} className="text-white" />
@@ -75,7 +75,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
         <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
           PARAMETRÍA DE SENSORES
         </label>
-        <div className="bg-[#0f2a44]/5 p-4 rounded-[4px] space-y-4">
+        <div className="bg-[#0f2a44]/5 p-3 rounded-[4px] space-y-4">
           {/* Odometry Snapshot */}
           <div className="flex items-center justify-between border-b border-[#0f2a44]/10 pb-3">
             <div className="flex flex-col">

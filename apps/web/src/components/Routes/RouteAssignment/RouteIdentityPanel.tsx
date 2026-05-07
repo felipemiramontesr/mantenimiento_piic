@@ -17,7 +17,7 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
   operatorOptions,
   selectedUnitData,
 }) => (
-  <div className="space-y-8">
+  <div className="space-y-4">
     {/* Header */}
     <div className="flex items-center gap-3">
       <div className="bg-[#0f2a44] p-2 rounded-[4px]">

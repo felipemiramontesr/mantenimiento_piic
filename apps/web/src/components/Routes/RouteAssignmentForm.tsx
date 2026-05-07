@@ -62,11 +62,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
     : Number(selectedUnitData?.odometer || 0).toLocaleString();
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-12">
-        <div className="archon-grid-2 gap-12 items-start">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-4">
+      <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-6">
+        <div className="archon-grid-2 gap-8 items-start">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
-          <div className="glass-card-pro p-10 space-y-12 bg-white">
+          <div className="glass-card-pro p-6 space-y-6 bg-white">
             <RouteIdentityPanel
               formData={formData}
               updateForm={updateForm}
@@ -86,7 +86,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
 
           {/* COLUMNA 2: TELEMETRÍA Y CIERRE */}
-          <div className="glass-card-pro p-10 space-y-12 bg-white">
+          <div className="glass-card-pro p-6 space-y-6 bg-white">
             <RouteTelemetryPanel
               formData={formData}
               updateForm={updateForm}
@@ -114,7 +114,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         )}
 
         {/* Sovereign Footer (Refactored v.60.1.5) */}
-        <div className="archon-grid-2 mt-12 pt-12 border-t border-slate-100">
+        <div className="archon-grid-2 mt-6 pt-6 border-t border-slate-100">
           <div>
             {isEdit && (
               <button
