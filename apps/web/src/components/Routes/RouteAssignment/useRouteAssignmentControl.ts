@@ -77,8 +77,8 @@ export const useRouteAssignmentControl = (
         description: routeToEdit.description || '',
         fuelLevel: routeToEdit.fuelLevel || 100,
         startReading: routeToEdit.start_km || 0,
-        endReading: routeToEdit.end_km || 0,
-        fuelLitersLoaded: routeToEdit.fuel_liters_loaded || 0,
+        endReading: Number(routeToEdit.end_km || 0),
+        fuelLitersLoaded: Number(routeToEdit.fuel_liters_loaded || 0),
         fuelTicketImage: routeToEdit.fuel_ticket_image || '',
       });
     } else {
