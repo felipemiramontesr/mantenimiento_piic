@@ -33,7 +33,7 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const remainingLiters = Number((totalCapacity - currentLiters).toFixed(1));
 
   // SVG Pie/Donut Calculation - Calibrated for w-20 (No overlap)
-  const radius = 40;
+  const radius = 32;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (currentLevel / 100) * circumference;
 
@@ -41,8 +41,8 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
     <div className="flex flex-col gap-4 bg-white/40 p-2 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
       <div className="flex items-center justify-between gap-8">
         {/* 🥧 CIRCULAR PIE CHART (SVG) - REFINED SCALE */}
-        <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
-          <svg width="80" height="80" className="-rotate-90" viewBox="0 0 100 100">
+        <div className="relative flex items-center justify-center w-16 h-16 shrink-0">
+          <svg width="64" height="64" className="-rotate-90" viewBox="0 0 100 100">
             {/* Background Track */}
             <circle
               cx="50"
