@@ -18,6 +18,17 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
+// 🔱 React Router Noise Shield (v.7.0.0 Readiness)
+/* eslint-disable no-console */
+const originalWarn = console.warn;
+console.warn = (...args: any[]): void => {
+  if (args[0] && typeof args[0] === 'string' && args[0].includes('React Router Future Flag')) {
+    return;
+  }
+  originalWarn(...args);
+};
+/* eslint-enable no-console */
+
 // 🔱 Motion Suppression (v.1.0.0 CI Stability)
 // Use a Proxy to handle any motion[tag] automatically
 vi.mock('framer-motion', () => ({

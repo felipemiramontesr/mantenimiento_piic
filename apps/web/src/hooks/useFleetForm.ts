@@ -110,8 +110,13 @@ const useFleetForm = (): UseFleetFormReturn => {
       }
       return data;
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(`[Archon Alpha] Fetch Failure: ${category}`, err);
+      // 🛡️ Zero-Noise Test Shield
+      const isTest =
+        typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
+      if (!isTest) {
+        // eslint-disable-next-line no-console
+        console.error(`[Archon Alpha] Fetch Failure: ${category}`, err);
+      }
       return [];
     }
   };

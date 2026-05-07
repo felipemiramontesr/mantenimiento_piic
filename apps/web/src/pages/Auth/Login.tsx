@@ -56,29 +56,46 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    // eslint-disable-next-line no-console
-    console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
-    // eslint-disable-next-line no-console
-    console.log('🔍 Identifying:', username);
+    // 🛡️ Zero-Noise Test Shield
+    const isTest =
+      typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
+
+    if (!isTest) {
+      // eslint-disable-next-line no-console
+      console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
+      // eslint-disable-next-line no-console
+      console.log('🔍 Identifying:', username);
+    }
 
     try {
       const response = await api.post('/auth/login', { username, password });
-      // eslint-disable-next-line no-console
-      console.log('✅ [Archon Auth] Response Received:', response.status);
+      // 🛡️ Zero-Noise Test Shield (Already declared in upper scope)
+
+      if (!isTest) {
+        // eslint-disable-next-line no-console
+        console.log('✅ [Archon Auth] Response Received:', response.status);
+      }
 
       if (response.data.token) {
-        // eslint-disable-next-line no-console
-        console.log('🔑 [Archon Auth] Token Verification Successful');
+        if (!isTest) {
+          // eslint-disable-next-line no-console
+          console.log('🔑 [Archon Auth] Token Verification Successful');
+        }
         login(response.data.token, response.data.user);
         navigate('/dashboard');
       } else {
-        // eslint-disable-next-line no-console
-        console.error('❌ [Archon Auth] Protocol Error: Token missing in payload');
+        if (!isTest) {
+          // eslint-disable-next-line no-console
+          console.error('❌ [Archon Auth] Protocol Error: Token missing in payload');
+        }
         setError('Error de protocolo: El servidor no devolvió una clave de acceso válida.');
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('🚨 [Archon Auth] Terminal Exception:', err);
+      // 🛡️ Zero-Noise Test Shield (Already declared in upper scope)
+      if (!isTest) {
+        // eslint-disable-next-line no-console
+        console.error('🚨 [Archon Auth] Terminal Exception:', err);
+      }
       const axiosError = err as AxiosError<{ error: string }>;
       const message =
         axiosError.response?.status === 401

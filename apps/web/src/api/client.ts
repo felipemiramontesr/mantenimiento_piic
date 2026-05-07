@@ -13,8 +13,11 @@ const api = axios.create({
   },
 });
 
-// eslint-disable-next-line no-console
-console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
+// 🛡️ Zero-Noise Test Shield
+if (typeof process === 'undefined' || (process.env.NODE_ENV !== 'test' && !process.env.VITEST)) {
+  // eslint-disable-next-line no-console
+  console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
+}
 
 // Request Interceptor for JWT
 api.interceptors.request.use((config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
@@ -29,21 +32,29 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig): InternalAxios
 api.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => response,
   (error: AxiosError): Promise<never> => {
-    // eslint-disable-next-line no-console
-    console.error('🌐 [Archon API Client] Networking Error:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      config: error.config?.url,
-    });
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
-      // 🕵️ Forensic Log: Catch the culprit before redirect
+    // 🛡️ Zero-Noise Test Shield
+    const isTest =
+      typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
+
+    if (!isTest) {
       // eslint-disable-next-line no-console
-      console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
-        url: error.config?.url,
-        method: error.config?.method,
-        token_present: !!localStorage.getItem('auth_token'),
+      console.error('🌐 [Archon API Client] Networking Error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config?.url,
       });
+    }
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+      if (!isTest) {
+        // 🕵️ Forensic Log: Catch the culprit before redirect
+        // eslint-disable-next-line no-console
+        console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
+          url: error.config?.url,
+          method: error.config?.method,
+          token_present: !!localStorage.getItem('auth_token'),
+        });
+      }
       localStorage.removeItem('auth_token');
       window.location.href = '/login';
     }

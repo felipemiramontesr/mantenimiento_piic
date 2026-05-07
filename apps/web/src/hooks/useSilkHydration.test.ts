@@ -27,17 +27,22 @@ describe('useSilkHydration', () => {
     vi.clearAllMocks();
   });
 
-  it('should initialize with cached data if available', () => {
+  it('should initialize with cached data if available', async () => {
     vi.mocked(archonCache.get).mockReturnValue(mockData);
+    vi.mocked(api.get).mockResolvedValue({ data: { data: mockData } });
 
     const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
 
     expect(result.current.data).toEqual(mockData);
     expect(archonCache.get).toHaveBeenCalledWith(mockKey);
+
+    // Wait for background sync to avoid act() warnings
+    await waitFor(() => expect(result.current.isSyncing).toBe(false));
   });
 
-  it('should initialize with initialData if cache is empty', () => {
+  it('should initialize with initialData if cache is empty', async () => {
     vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockResolvedValue({ data: { data: [] } });
     const initial = [{ id: 0 }];
 
     const { result } = renderHook(() =>
@@ -45,6 +50,8 @@ describe('useSilkHydration', () => {
     );
 
     expect(result.current.data).toEqual(initial);
+    // Wait for background sync to avoid act() warnings
+    await waitFor(() => expect(result.current.isSyncing).toBe(false));
   });
 
   it('should fetch fresh data and update cache on mount', async () => {
