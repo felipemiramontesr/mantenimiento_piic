@@ -801,7 +801,7 @@ body {
   }
 }
 
-/* 🌀 SMOOTH ACCORDION ENGINE (v.1.0.0) */
+/* 🌀 SOVEREIGN ACCORDION ENGINE (v.2.0.0 - Optimized) */
 .accordion-content {
   display: grid;
   grid-template-rows: 0fr;
@@ -815,6 +815,7 @@ body {
 
 .accordion-inner {
   min-height: 0;
+  width: 100% !important;
 }
 
 .expanded-row-container {
@@ -1721,12 +1722,12 @@ body {
 }
 /* 🏛️ ARCHON REGISTRY TABLE (v.18.6.0.2) - CENTERED SYMMETRY */
 .archon-registry-table {
-  width: 100%;
+  width: 100% !important;
   border-collapse: collapse !important;
   background: transparent;
   position: relative;
   top: 0 !important;
-  table-layout: auto !important;
+  table-layout: auto; /* Removed !important to allow fixed overrides */
 }
 
 .archon-registry-table th,
@@ -1953,27 +1954,7 @@ table th > div {
   white-space: nowrap !important;
 }
 
-/* 🔱 ARCHON ACCORDION ENGINE (v.1.0.0) */
-.accordion-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0;
-  background: rgba(15, 42, 68, 0.01);
-}
-
-.accordion-content.expanded {
-  max-height: 2000px; /* High ceiling for forensic history */
-  opacity: 1;
-}
-
-.accordion-inner {
-  width: 100% !important;
-  box-sizing: border-box;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
+/* 🔱 ARCHON ACCORDION OVERRIDES */
 .accordion-inner .archon-registry-table {
   width: 100% !important;
   box-shadow: none !important;
@@ -1981,6 +1962,9 @@ table th > div {
   margin: 0 !important;
 }
 
+.accordion-inner .archon-registry-table tr {
+  border-bottom: none !important;
+}
 .accordion-inner .archon-registry-table th {
   background: rgba(15, 42, 68, 0.8) !important;
   backdrop-filter: blur(4px);

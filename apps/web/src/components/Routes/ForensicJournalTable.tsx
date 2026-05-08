@@ -103,7 +103,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
 
       <div
         className={`${
-          unitId ? 'bg-transparent w-full' : 'glass-card-pro bg-white shadow-2xl mx-8'
+          unitId ? 'bg-transparent w-full !m-0' : 'glass-card-pro bg-white shadow-2xl mx-8'
         } !px-0 !pt-0 !pb-4 overflow-x-auto rounded-[4px] custom-scrollbar`}
       >
         <table
