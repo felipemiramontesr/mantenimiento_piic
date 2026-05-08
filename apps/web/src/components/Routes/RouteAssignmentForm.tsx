@@ -57,6 +57,10 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
   const { text: rightButtonText } = getButtonState();
 
+  const startReadingDisplay = isEdit
+    ? routeToEdit?.start_km?.toLocaleString() || '0,000'
+    : Number(selectedUnitData?.odometer || 0).toLocaleString();
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-4">
       <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-2">
@@ -97,18 +101,12 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           {/* COLUMNA 2: TELEMETRÍA Y CIERRE */}
           <div className="glass-card-pro p-6 space-y-2 bg-white">
             <RouteTelemetryPanel
-              phase={isEdit ? 'return' : 'departure'}
-              odometerValue={
-                isEdit ? String(formData.endReading || '') : String(formData.startReading || '')
-              }
-              fuelLevelValue={formData.fuelLevel}
-              onOdometerChange={(val: string): void =>
-                updateForm(isEdit ? { endReading: Number(val) } : { startReading: Number(val) })
-              }
-              onFuelLevelChange={(val: number): void => updateForm({ fuelLevel: val })}
-              startReading={isEdit ? Number(routeToEdit?.start_km || 0) : undefined}
-              unit={selectedUnitData?.assetTypeId === 2 ? 'hrs' : 'km'}
-              disabled={isFinished}
+              formData={formData}
+              updateForm={updateForm}
+              isEdit={isEdit}
+              isFinished={isFinished}
+              tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
+              startReadingDisplay={startReadingDisplay}
             />
             {isEdit && (
               <RouteClosurePanel
