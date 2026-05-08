@@ -64,9 +64,9 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-4">
       <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-2">
-        <div className="archon-grid-2 gap-8 items-start">
+        <div className="archon-grid-2 gap-8">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
-          <div className="glass-card-pro !h-fit p-6 space-y-2 bg-white">
+          <div className="glass-card-pro p-6 space-y-2 bg-white">
             <RouteIdentityPanel
               formData={formData}
               updateForm={updateForm}
@@ -84,9 +84,9 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               origins={origins}
             />
 
-            {/* Trash action integrated in first panel if editing */}
+            {/* Trash action integrated in first panel if editing - Anchored to bottom */}
             {isEdit && (
-              <div className="pt-4 mt-2 border-t border-slate-100">
+              <div className="pt-4 mt-auto border-t border-slate-100">
                 <button
                   type="button"
                   onClick={triggerAuditDelete}
@@ -99,7 +99,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
 
           {/* COLUMNA 2: TELEMETRÍA Y CIERRE */}
-          <div className="glass-card-pro !h-fit p-6 space-y-2 bg-white">
+          <div className="glass-card-pro p-6 space-y-2 bg-white">
             <RouteTelemetryPanel
               formData={formData}
               updateForm={updateForm}
@@ -117,8 +117,8 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               />
             )}
 
-            {/* MAIN ACTIONS INTEGRATED INTO THE TELEMETRY PANEL */}
-            <div className="archon-button-group pt-4 mt-2 border-t border-slate-100">
+            {/* MAIN ACTIONS INTEGRATED INTO THE TELEMETRY PANEL - Anchored to bottom */}
+            <div className="archon-button-group pt-4 mt-auto border-t border-slate-100">
               <button type="button" onClick={onClose} className="btn-sentinel-red !h-[45px]">
                 {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
               </button>
