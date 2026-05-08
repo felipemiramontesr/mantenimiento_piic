@@ -2048,19 +2048,19 @@ table th > div {
 /* 2. Surrounding Border & Permanent Colors */
 .archon-registry-table tr.expanded-focus-blue td {
   background-color: rgba(59, 130, 246, 0.12) !important;
-  border-top: 2px solid #0f2a44 !important;
+  border-top: none !important;
 }
 .archon-registry-table tr.expanded-focus-blue td:first-child {
-  border-left: 2px solid #0f2a44 !important;
+  border-left: none !important;
 }
 .archon-registry-table tr.expanded-focus-blue td:last-child {
-  border-right: 2px solid #0f2a44 !important;
+  border-right: none !important;
   padding-right: 20px !important; /* Keep alignment for main row */
 }
 
 .archon-registry-table tr.accordion-row-carrier td.accordion-carrier {
-  border-left: 2px solid #0f2a44 !important;
-  border-right: 2px solid #0f2a44 !important;
+  border-left: none !important;
+  border-right: none !important;
   border-bottom: 2px solid #0f2a44 !important;
   background-color: rgba(16, 185, 129, 0.08) !important;
   padding: 0 !important; /* KILL PADDING GAP */
