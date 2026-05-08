@@ -102,7 +102,7 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
       ref={formRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[4px] shadow-2xl border border-rose-100 overflow-hidden w-full"
+      className="bg-white rounded-[4px] border border-rose-100 overflow-hidden w-full"
     >
       {/* 🛡️ Sentinel Command Header */}
       <header className="bg-rose-700 px-6 py-4 text-white flex items-center justify-between relative overflow-hidden">
