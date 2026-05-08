@@ -37,7 +37,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       // 4. Mock Activity Log
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
-      const uuid = await RouteService.startRoute('UNIT-001', 1, 1000, 'Mina 1');
+      const uuid = await RouteService.startRoute('UNIT-001', 1, 1000, 100, 'Mina 1');
 
       expect(uuid).toBeDefined();
       expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     it('should throw error if unit is not found', async () => {
       mockConnection.execute.mockResolvedValueOnce([[]]);
 
-      await expect(RouteService.startRoute('MISSING', 1, 1000, 'Dest')).rejects.toThrow(
+      await expect(RouteService.startRoute('MISSING', 1, 1000, 100, 'Dest')).rejects.toThrow(
         /Unit MISSING not found/
       );
     });
@@ -57,13 +57,15 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     it('should handle transaction start failure', async () => {
       mockConnection.beginTransaction.mockRejectedValueOnce(new Error('TX_FAIL'));
 
-      await expect(RouteService.startRoute('UNIT-1', 1, 1000, 'Dest')).rejects.toThrow('TX_FAIL');
+      await expect(RouteService.startRoute('UNIT-1', 1, 1000, 100, 'Dest')).rejects.toThrow(
+        'TX_FAIL'
+      );
     });
 
     it('should throw error if unit is already in transit', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'En Ruta', currentReading: 1000 }]]);
 
-      await expect(RouteService.startRoute('BUSY', 1, 1000, 'Dest')).rejects.toThrow(
+      await expect(RouteService.startRoute('BUSY', 1, 1000, 100, 'Dest')).rejects.toThrow(
         /Unit BUSY is already in transit/
       );
     });
@@ -87,31 +89,37 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       // 4. Mock Final Log
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
-      await RouteService.finishRoute('UUID-123', 1200);
+      await RouteService.finishRoute('UUID-123', 1200, 95);
 
       expect(mockConnection.commit).toHaveBeenCalled();
       expect(mockConnection.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_units SET currentReading = ?, status = "Disponible"'),
-        [1200, 'UNIT-001']
+        expect.stringContaining(
+          'UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ?, status = "Disponible"'
+        ),
+        [1200, 95, 'UNIT-001']
       );
     });
 
     it('should throw error if route is not found', async () => {
       mockConnection.execute.mockResolvedValueOnce([[]]);
 
-      await expect(RouteService.finishRoute('MISSING', 2000)).rejects.toThrow(/Route not found/);
+      await expect(RouteService.finishRoute('MISSING', 2000, 100)).rejects.toThrow(
+        /Route not found/
+      );
     });
 
     it('should throw error if route is not active', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'COMPLETED' }]]);
 
-      await expect(RouteService.finishRoute('DONE', 2000)).rejects.toThrow(/Route is not active/);
+      await expect(RouteService.finishRoute('DONE', 2000, 100)).rejects.toThrow(
+        /Route is not active/
+      );
     });
 
     it('should throw error if end reading is lower than start reading', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE', start_reading: 5000 }]]);
 
-      await expect(RouteService.finishRoute('ERROR', 4000)).rejects.toThrow(
+      await expect(RouteService.finishRoute('ERROR', 4000, 100)).rejects.toThrow(
         /End reading cannot be lower than start reading/
       );
     });
@@ -219,9 +227,9 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     it('should throw error if route for incident is not found', async () => {
       mockConnection.execute.mockResolvedValueOnce([[]]);
 
-      await expect(
-        RouteService.reportIncident('MISSING', 'OTRA', 'Desc', 'LOW')
-      ).rejects.toThrow(/Route not found/);
+      await expect(RouteService.reportIncident('MISSING', 'OTRA', 'Desc', 'LOW')).rejects.toThrow(
+        /Route not found/
+      );
     });
   });
 
