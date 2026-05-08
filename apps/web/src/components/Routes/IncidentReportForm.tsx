@@ -137,47 +137,47 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
         </button>
       </header>
 
-      <form onSubmit={handleSubmit} className="p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* LEFT COLUMN: Classification */}
-          <div className="lg:col-span-4 space-y-8">
+      <form onSubmit={handleSubmit} className="p-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* 🔱 COLUMNA ALFA: Clasificación Forense */}
+          <div className="space-y-10">
             {/* Category Selection */}
             <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
+              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
                 Clasificación del Evento
               </label>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-2.5">
                 {categories.map((cat) => (
                   <button
                     key={cat.value}
                     type="button"
                     onClick={(): void => setFormData({ ...formData, category: cat.value })}
                     className={`
-                      flex items-center justify-between p-3.5 rounded-[4px] border transition-all text-left group
+                      flex items-center justify-between p-4 rounded-[4px] border transition-all text-left group
                       ${
                         formData.category === cat.value
                           ? 'border-rose-600 bg-rose-50/50 shadow-sm'
-                          : 'border-gray-100 bg-gray-50/50 text-[#0f2a44]/60 hover:border-rose-200'
+                          : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/60 hover:border-rose-200'
                       }
                     `}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <cat.icon
                         size={16}
                         className={
-                          formData.category === cat.value ? 'text-rose-600' : 'text-slate-400'
+                          formData.category === cat.value ? 'text-rose-600' : 'text-[#0f2a44]/40'
                         }
                       />
                       <span
-                        className={`text-[11px] font-black uppercase tracking-tight ${
-                          formData.category === cat.value ? 'text-rose-900' : ''
+                        className={`text-[11px] font-black uppercase tracking-widest ${
+                          formData.category === cat.value ? 'text-[#0f2a44]' : ''
                         }`}
                       >
                         {cat.label}
                       </span>
                     </div>
                     {formData.category === cat.value && (
-                      <ChevronRight size={14} className="text-rose-600" />
+                      <div className="w-1.5 h-1.5 bg-rose-600 rounded-full" />
                     )}
                   </button>
                 ))}
@@ -186,71 +186,67 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
 
             {/* Severity Selection */}
             <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
+              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
                 Grado de Severidad Operativa
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {severities.map((sev) => (
                   <button
                     key={sev.value}
                     type="button"
                     onClick={(): void => setFormData({ ...formData, severity: sev.value })}
                     className={`
-                      py-3 rounded-[4px] border transition-all text-center
+                      py-4 rounded-[4px] border transition-all text-center
                       ${
                         formData.severity === sev.value
-                          ? `border-${sev.color.split('-')[1]}-600 ${sev.bg} ${
-                              sev.color
-                            } shadow-sm font-black`
-                          : 'border-gray-100 bg-gray-50/50 text-gray-400 text-[10px] font-bold'
+                          ? `border-[#0f2a44] ${sev.bg} text-[#0f2a44] shadow-sm font-black`
+                          : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/30 text-[10px] font-black'
                       }
                     `}
                   >
-                    <span className="text-[10px] uppercase tracking-widest">{sev.label}</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em]">{sev.label}</span>
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Evidence & Description */}
-          <div className="lg:col-span-8 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Detailed Description */}
-              <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
-                  Relato de los Hechos
-                </label>
-                <div className="relative">
-                  <MessageSquare size={16} className="absolute left-4 top-4 text-[#0f2a44]/20" />
-                  <textarea
-                    required
-                    rows={8}
-                    placeholder="Describa el evento, ubicación y estado de la unidad..."
-                    value={formData.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="w-full bg-gray-50 border-2 border-gray-100 focus:border-rose-500 p-4 pl-12 text-sm font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] h-[200px]"
-                  />
-                </div>
+          {/* 🔱 COLUMNA BETA: Evidencia y Relato */}
+          <div className="space-y-10 flex flex-col h-full">
+            {/* Detailed Description */}
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+                Relato de los Hechos
+              </label>
+              <div className="relative">
+                <MessageSquare size={16} className="absolute left-4 top-4 text-[#0f2a44]/20" />
+                <textarea
+                  required
+                  rows={6}
+                  placeholder="Describa el evento, ubicación y estado de la unidad..."
+                  value={formData.description}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="w-full bg-[#0f2a44]/2 border-2 border-[#0f2a44]/5 focus:border-rose-500 p-4 pl-12 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] h-[160px]"
+                />
               </div>
+            </div>
 
-              {/* Photo Evidence */}
-              <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-40">
-                  Evidencia Visual (Mandatorio)
-                </label>
-                <div className="h-[200px]">
-                  <ArchonImageUploader
-                    images={formData.evidenceImage ? [formData.evidenceImage] : []}
-                    onChange={(imgs: string[]): void =>
-                      setFormData({ ...formData, evidenceImage: imgs[0] || '' })
-                    }
-                    title="Capturar Escena"
-                    maxImages={1}
-                  />
-                </div>
+            {/* Photo Evidence */}
+            <div className="space-y-4 flex-grow">
+              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+                Evidencia Visual (Mandatorio)
+              </label>
+              <div className="h-[210px]">
+                <ArchonImageUploader
+                  images={formData.evidenceImage ? [formData.evidenceImage] : []}
+                  onChange={(imgs: string[]): void =>
+                    setFormData({ ...formData, evidenceImage: imgs[0] || '' })
+                  }
+                  title="Capturar Escena"
+                  maxImages={1}
+                />
               </div>
             </div>
 
@@ -259,18 +255,18 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-4 bg-rose-50 text-rose-800 text-xs font-bold border-l-4 border-rose-600 flex items-center gap-3 rounded-r-[4px]"
+                className="p-4 bg-rose-50 text-rose-800 text-[10px] font-black border-l-4 border-rose-600 flex items-center gap-3 rounded-r-[4px]"
               >
                 <AlertTriangle size={18} /> {error}
               </motion.div>
             )}
 
-            {/* Submit Actions */}
-            <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
+            {/* Sovereign Submit Actions */}
+            <div className="flex items-center justify-end gap-6 pt-8 mt-auto">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-rose-600 transition-colors"
+                className="text-[10px] font-black uppercase tracking-[0.3em] text-[#0f2a44]/40 hover:text-rose-600 transition-colors border-b-2 border-transparent hover:border-rose-600 pb-1"
               >
                 Cancelar
               </button>
@@ -278,16 +274,22 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
                 type="submit"
                 disabled={submitting || !formData.description}
                 className={`
-                  flex items-center gap-3 px-8 py-4 rounded-[4px] text-[11px] font-black uppercase tracking-[0.2em] transition-all
+                  flex items-center gap-4 px-10 py-5 rounded-[4px] text-[10px] font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group
                   ${
                     submitting || !formData.description
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-rose-600 text-white shadow-xl shadow-rose-600/20 hover:bg-rose-700 hover:-translate-y-0.5'
+                      ? 'bg-[#0f2a44]/5 text-[#0f2a44]/20 cursor-not-allowed'
+                      : 'bg-[#0f2a44] text-white shadow-2xl shadow-[#0f2a44]/20 hover:-translate-y-1'
                   }
                 `}
               >
-                {submitting ? 'Transmitiendo Alerta...' : 'Emitir Alerta Sentinel'}
-                <ChevronRight size={16} />
+                <span className="relative z-10">
+                  {submitting ? 'Transmitiendo...' : 'Emitir Alerta Sentinel'}
+                </span>
+                <ChevronRight
+                  size={16}
+                  className="relative z-10 group-hover:translate-x-1 transition-transform"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               </button>
             </div>
           </div>
