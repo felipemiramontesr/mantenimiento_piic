@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Navigation,
   Truck,
+  AlertTriangle,
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
@@ -49,10 +50,14 @@ const RouteLogRow = ({
   log,
   index,
   onEdit,
+  onReport,
+  onFinish,
 }: {
   log: RouteLog;
   index: number;
   onEdit?: (l: RouteLog) => void;
+  onReport: (l: RouteLog) => void;
+  onFinish: (l: RouteLog) => void;
 }): React.JSX.Element => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const { users } = useUsers();
@@ -196,11 +201,27 @@ const RouteLogRow = ({
 
         <td className="py-6 px-4">
           <div className="flex justify-center gap-2">
+            {!log.end_time && (
+              <button
+                onClick={(e: React.MouseEvent): void => {
+                  e.stopPropagation();
+                  onReport(log);
+                }}
+                title="Reportar Incidencia"
+                className="flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none text-rose-600 bg-rose-50 hover:bg-rose-100"
+              >
+                <AlertTriangle
+                  size={18}
+                  className="transition-transform duration-300 group-hover:scale-110"
+                />
+              </button>
+            )}
             <button
-              onClick={(e): void => {
+              onClick={(e: React.MouseEvent): void => {
                 e.stopPropagation();
                 onEdit?.(log);
               }}
+              title="Editar Registro (Auditado)"
               className="flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none text-[#0f2a44] bg-gray-50 hover:bg-gray-100"
             >
               <Pencil
@@ -208,6 +229,21 @@ const RouteLogRow = ({
                 className="transition-transform duration-300 group-hover:rotate-12"
               />
             </button>
+            {!log.end_time && (
+              <button
+                onClick={(e: React.MouseEvent): void => {
+                  e.stopPropagation();
+                  onFinish(log);
+                }}
+                title="Finalizar Misión"
+                className="flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none text-[#f2b705] bg-amber-50/30 hover:bg-amber-100/50"
+              >
+                <CheckCircle2
+                  size={18}
+                  className="transition-transform duration-300 group-hover:scale-110"
+                />
+              </button>
+            )}
           </div>
         </td>
       </motion.tr>
@@ -254,7 +290,14 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
           <tbody>
             {logs.map(
               (log, index): React.JSX.Element => (
-                <RouteLogRow key={log.uuid} log={log} index={index} onEdit={onEdit} />
+                <RouteLogRow
+                  key={log.uuid}
+                  log={log}
+                  index={index}
+                  onEdit={onEdit}
+                  onReport={(l): void => setReportingRoute(l)}
+                  onFinish={(l): void => onEdit?.(l)}
+                />
               )
             )}
           </tbody>
