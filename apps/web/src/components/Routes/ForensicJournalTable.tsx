@@ -28,7 +28,7 @@ interface ForensicJournalTableProps {
 /**
  * 🔱 ARCHON FORENSIC JOURNAL TABLE
  * Purpose: Immutable trace of all asset impacts and telemetery deltas.
- * Version: 1.1.0 - Focused Unit Audit
+ * Version: 1.2.0 - Full-Width Symmetry Standard
  */
 const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hideHeader }) => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -39,7 +39,6 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
       const res = await api.get('/unit-logs');
       let data = res.data?.data || [];
 
-      // 🎯 FOCUS FILTERING (Sovereign Core)
       if (unitId) {
         data = data.filter((l: ActivityLog) => l.unit_id === unitId);
       }
@@ -87,9 +86,9 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
   }
 
   return (
-    <div className={`animate-in fade-in duration-700 ${unitId ? '' : 'space-y-6'}`}>
+    <div className={`animate-in fade-in duration-700 w-full ${unitId ? '' : 'space-y-6'}`}>
       {!hideHeader && !unitId && (
-        <div className="flex items-center gap-3 px-6 py-4 bg-white/50 glass-card-pro rounded-[4px] border border-[#0f2a44]/5">
+        <div className="flex items-center gap-3 px-6 py-4 bg-white/50 glass-card-pro rounded-[4px] border border-[#0f2a44]/5 mx-8">
           <Shield className="text-amber-500" size={24} />
           <div>
             <h2 className="text-lg font-black text-[#0f2a44] uppercase tracking-tighter leading-none">
@@ -104,19 +103,22 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
 
       <div
         className={`${
-          unitId ? 'bg-transparent' : 'glass-card-pro bg-white shadow-2xl'
+          unitId ? 'bg-transparent w-full' : 'glass-card-pro bg-white shadow-2xl mx-8'
         } !px-0 !pt-0 !pb-4 overflow-x-auto rounded-[4px] custom-scrollbar`}
       >
-        <table className="archon-registry-table w-full">
+        <table
+          className="archon-registry-table w-full"
+          style={{ tableLayout: 'fixed', minWidth: '100%' }}
+        >
           <thead>
             <tr className={unitId ? 'bg-[#0f2a44]/[0.02]' : ''}>
-              <th>FECHA / HORA</th>
-              {!unitId && <th>ACTIVO</th>}
-              <th>EVENTO / IMPACTO</th>
-              <th>DESCRIPCIÓN / NOTA</th>
-              <th>TELEMETRÍA (SNAPSHOT)</th>
-              <th>DELTA</th>
-              <th>RESPONSABLE</th>
+              <th style={{ width: '15%' }}>FECHA / HORA</th>
+              {!unitId && <th style={{ width: '15%' }}>ACTIVO</th>}
+              <th style={{ width: '15%' }}>EVENTO / IMPACTO</th>
+              <th style={{ width: '40%' }}>DESCRIPCIÓN / NOTA</th>
+              <th style={{ width: '15%' }}>TELEMETRÍA (SNAPSHOT)</th>
+              <th style={{ width: '10%' }}>DELTA</th>
+              <th style={{ width: '15%' }}>RESPONSABLE</th>
             </tr>
           </thead>
           <tbody>
@@ -164,8 +166,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
                     </div>
                   </td>
 
-                  <td className="py-4 px-4 max-w-xs">
-                    <p className="text-[10px] font-bold text-[#0f2a44] opacity-70 line-clamp-2 italic leading-tight">
+                  <td className="py-4 px-4">
+                    <p className="text-[10px] font-bold text-[#0f2a44] opacity-70 line-clamp-2 italic leading-tight text-center">
                       {log.description || 'Sin descripción forense'}
                     </p>
                   </td>

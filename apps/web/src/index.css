@@ -1968,13 +1968,17 @@ table th > div {
 }
 
 .accordion-inner {
-  width: 100%;
+  width: 100% !important;
   box-sizing: border-box;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .accordion-inner .archon-registry-table {
+  width: 100% !important;
   box-shadow: none !important;
   border-radius: 0 !important;
+  margin: 0 !important;
 }
 
 .accordion-inner .archon-registry-table th {

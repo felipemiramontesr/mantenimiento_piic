@@ -251,7 +251,7 @@ const RouteLogRow = ({
       <tr>
         <td colSpan={6} className="p-0 border-none">
           <div className={`accordion-content ${isExpanded ? 'expanded' : ''}`}>
-            <div className="accordion-inner bg-gray-50/50 border-b border-[#0f2a44]/5">
+            <div className="accordion-inner border-b border-[#0f2a44]/5">
               <ForensicJournalTable unitId={log.unit_id} hideHeader />
             </div>
           </div>
