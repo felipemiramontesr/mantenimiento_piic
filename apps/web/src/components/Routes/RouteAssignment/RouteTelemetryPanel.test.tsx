@@ -14,6 +14,7 @@ describe('RouteTelemetryPanel (Sensor Validation)', () => {
       description: '',
       endReading: 0,
       fuelLitersLoaded: 0,
+      fuelAmount: 0,
       fuelTicketImage: '',
       additivesCheck: false,
       tirePressureJson: '{}',

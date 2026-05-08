@@ -71,6 +71,33 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
               />
             </div>
           </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 flex items-center justify-between">
+              Monto Total del Ticket
+              <span className="text-amber-600 font-black">$</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/40 font-black text-[10px]">
+                $
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={Number(formData.fuelAmount) === 0 ? '' : formData.fuelAmount}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
+                  const val = e.target.value.replace(/[^0-9.]/g, '');
+                  updateForm({ fuelAmount: val === '' ? 0 : Number(val) });
+                }}
+                className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+                disabled={isFinished}
+              />
+            </div>
+            <p className="text-[8px] font-bold text-[#0f2a44]/40 italic">
+              * Incluye combustible, aditivos y otros insumos del ticket.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-1.5">

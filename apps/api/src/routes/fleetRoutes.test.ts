@@ -97,7 +97,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/routes/UUID-123/finish',
-        payload: { endReading: 1200, fuelLevelEnd: 90 },
+        payload: { endReading: 1200, fuelLevelEnd: 90, fuelAmount: 500 },
       });
 
       expect(response.statusCode).toBe(200);
@@ -110,7 +110,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       const response = await app.inject({
         method: 'PATCH',
         url: '/v1/routes/UUID-123/finish',
-        payload: { endReading: 900, fuelLevelEnd: 90 },
+        payload: { endReading: 900, fuelLevelEnd: 90, fuelAmount: 500 },
       });
 
       expect(response.statusCode).toBe(400);

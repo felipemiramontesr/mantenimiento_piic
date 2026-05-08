@@ -89,7 +89,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       // 4. Mock Final Log
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
-      await RouteService.finishRoute('UUID-123', 1200, 95);
+      await RouteService.finishRoute('UUID-123', 1200, 95, undefined, undefined, undefined, 0, 500);
 
       expect(mockConnection.commit).toHaveBeenCalled();
       expect(mockConnection.execute).toHaveBeenCalledWith(

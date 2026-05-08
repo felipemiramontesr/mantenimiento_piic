@@ -22,6 +22,7 @@ const finishRouteSchema = z.object({
   endReading: z.number().min(0),
   fuelLevelEnd: z.number().min(0).max(100),
   fuelLitersLoaded: z.number().min(0).optional(),
+  fuelAmount: z.number().min(0).optional(),
   fuelTicketImage: z.string().optional(), // Base64
   additivesCheck: z.boolean().optional(),
   tirePressureJson: z.string().optional(),
@@ -78,6 +79,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         data.fuelLevelEnd,
         data.fuelTicketImage,
         data.fuelLitersLoaded,
+        data.fuelAmount,
         data.additivesCheck,
         data.tirePressureJson,
         data.checklistJson
@@ -123,7 +125,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           start_reading as start_km, end_reading as end_km,
           start_at as start_time, end_at as end_time,
           fuel_level_start, fuel_level_end,
-          fuel_liters_loaded, fuel_ticket_image,
+          fuel_liters_loaded, fuel_amount, fuel_ticket_image,
           additives_check, tire_pressure_json, checklist_json,
           created_at
         FROM fleet_routes 

@@ -11,6 +11,7 @@ export interface RouteAssignmentFormData {
   startReading: number;
   endReading: number;
   fuelLitersLoaded: number;
+  fuelAmount: number;
   fuelTicketImage: string;
   additivesCheck: boolean;
   tirePressureJson: string;

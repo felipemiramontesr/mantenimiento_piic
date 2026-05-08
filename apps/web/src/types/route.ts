@@ -13,6 +13,7 @@ export interface ArchonRoute {
   start_at?: string;
   end_at?: string;
   fuel_liters_loaded?: number;
+  fuel_amount?: number;
   fuel_ticket_image?: string; // Base64
   created_at: string;
   updated_at: string;
@@ -31,6 +32,7 @@ export interface FinishRoutePayload {
   endReading: number;
   fuelLevelEnd: number;
   fuelLitersLoaded?: number;
+  fuelAmount?: number;
   fuelTicketImage?: string;
   additivesCheck?: boolean;
   tirePressureJson?: string;

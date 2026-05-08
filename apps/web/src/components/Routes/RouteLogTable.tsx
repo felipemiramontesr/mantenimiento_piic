@@ -33,6 +33,7 @@ export interface RouteLog {
   start_km: number;
   end_km: number | null;
   fuel_liters_loaded?: number;
+  fuel_amount?: number;
   fuel_ticket_image?: string;
   additives_check?: number | boolean;
   tire_pressure_json?: string;

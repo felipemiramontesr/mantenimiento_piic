@@ -97,6 +97,7 @@ export default class RouteService {
     tirePressureJson?: string,
     checklistJson?: string,
     fuelLiters = 0,
+    fuelAmount = 0,
     additivesCheck = false
   ): Promise<void> {
     const connection = await db.getConnection();
@@ -121,13 +122,14 @@ export default class RouteService {
       await connection.execute(
         `UPDATE fleet_routes 
         SET status = 'COMPLETED', end_reading = ?, end_at = NOW(), 
-            fuel_level_end = ?, fuel_liters_loaded = ?, fuel_ticket_image = ?,
+            fuel_level_end = ?, fuel_liters_loaded = ?, fuel_amount = ?, fuel_ticket_image = ?,
             additives_check = ?, tire_pressure_json = ?, checklist_json = ?
         WHERE uuid = ?`,
         [
           endReading,
           fuelLevelEnd,
           fuelLiters,
+          fuelAmount,
           fuelImage || null,
           additivesCheck,
           tirePressureJson || null,
