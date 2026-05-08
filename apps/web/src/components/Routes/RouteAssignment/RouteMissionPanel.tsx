@@ -19,7 +19,7 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({
   isEdit,
   origins,
 }) => (
-  <div className="space-y-4 pt-4 border-t border-[#0f2a44]/5">
+  <div className="space-y-4">
     <div className="flex items-center gap-3">
       <div className="bg-emerald-600 p-2 rounded-[4px]">
         <MapPin size={20} className="text-white" />

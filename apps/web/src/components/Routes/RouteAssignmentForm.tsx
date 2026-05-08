@@ -63,7 +63,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-4">
-      <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-6">
+      <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-2">
         <div className="archon-grid-2 gap-8 items-start">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
           <div className="glass-card-pro p-6 space-y-6 bg-white">
@@ -114,7 +114,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         )}
 
         {/* Sovereign Footer (Refactored v.60.1.5) */}
-        <div className="archon-grid-2 mt-6 pt-6 border-t border-slate-100">
+        <div className="archon-grid-2 mt-2 pt-2 border-t border-slate-100">
           <div>
             {isEdit && (
               <button
