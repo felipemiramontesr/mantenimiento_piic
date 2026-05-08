@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigation } from 'lucide-react';
+import { Navigation, Truck, ShieldCheck } from 'lucide-react';
 import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
@@ -106,6 +106,59 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
           </div>
         </div>
       </header>
+
+      {/* 🔱 HEADER KPI GRID (Symmetry Pro) */}
+      <section className="px-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Card 1: Logistics & Forensics */}
+          <div
+            className="glass-card-pro bg-white p-8 border-t-4 border-[#0f2a44] flex items-center justify-between group hover:shadow-2xl transition-all duration-500 cursor-pointer"
+            onClick={(): void => handleAction('BITACORA')}
+          >
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-navy-400 uppercase tracking-[0.3em] mb-2">
+                Ecosistema de Gestión
+              </span>
+              <h3 className="text-2xl font-black text-navy-900 tracking-tight mb-1">
+                Logística Operativa
+              </h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                  Auditoría Forense • Rastro Inmutable
+                </span>
+              </div>
+            </div>
+            <div className="w-16 h-16 rounded-[4px] bg-navy-50 flex items-center justify-center text-navy-900 group-hover:bg-navy-900 group-hover:text-white transition-colors duration-500">
+              <Truck size={32} />
+            </div>
+          </div>
+
+          {/* Card 2: Emerald Status */}
+          <div
+            className="glass-card-pro bg-[#10b981] p-8 flex items-center justify-between group hover:shadow-2xl transition-all duration-500 border-none cursor-pointer"
+            onClick={(): void => handleAction('DESPACHO')}
+          >
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-white/60 uppercase tracking-[0.3em] mb-2">
+                Disponibilidad Táctica
+              </span>
+              <h3 className="text-2xl font-black text-white tracking-tight mb-1">
+                Certificación Archon Elite
+              </h3>
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={14} className="text-white/80" />
+                <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">
+                  Protocolo Industrial V.78.1
+                </span>
+              </div>
+            </div>
+            <div className="w-16 h-16 rounded-[4px] bg-white/20 flex items-center justify-center text-white backdrop-blur-md">
+              <ShieldCheck size={32} />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">

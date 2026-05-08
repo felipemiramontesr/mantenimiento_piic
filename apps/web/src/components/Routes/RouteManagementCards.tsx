@@ -15,12 +15,12 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
   onAction,
 }) => (
   <div className="archon-central-axis animate-in fade-in slide-in-from-top-4 duration-700">
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-      {/* Card 1: Logística Operativa (NAVY) */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      {/* Card 1: Logística Operativa & Forense (NAVY) */}
       <div
         onClick={(): void => onPanelChange('LOGS')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
-          activePanel === 'LOGS'
+          activePanel === 'LOGS' || activePanel === 'JOURNAL'
             ? 'border-2 border-[#0f2a44] shadow-lg'
             : 'card-hover-navy opacity-80 hover:opacity-100'
         }`}
@@ -29,7 +29,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
         <div className="flex items-center justify-center gap-3 mb-4 w-full">
           <History size={20} className="text-[#0f2a44]" />
           <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-widest">
-            Logística Operativa
+            Logística & Auditoría
           </span>
         </div>
 
@@ -53,7 +53,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
               Administración
             </h3>
             <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-              Histórico de Trayectos
+              Histórico • Journal Forense
             </p>
           </div>
         </div>
@@ -66,7 +66,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
               onPanelChange('LOGS');
             }}
             className={`btn-sentinel-navy w-full ${
-              activePanel === 'LOGS' ? 'bg-[#0f2a44] text-white' : ''
+              activePanel === 'LOGS' || activePanel === 'JOURNAL' ? 'bg-[#0f2a44] text-white' : ''
             }`}
           >
             Ver Bitácora <ArrowRight size={10} className="text-white ml-2" />
@@ -128,63 +128,6 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
             }`}
           >
             Iniciar <ArrowRight size={10} className="text-white ml-2" />
-          </button>
-        </div>
-      </div>
-
-      {/* Card 3: Auditoría Forense (AMBER) */}
-      <div
-        onClick={(): void => onPanelChange('JOURNAL')}
-        className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
-          activePanel === 'JOURNAL'
-            ? 'border-2 border-amber-500 shadow-lg'
-            : 'card-hover-amber opacity-80 hover:opacity-100'
-        }`}
-        style={{ borderTop: '4px solid #f59e0b' }}
-      >
-        <div className="flex items-center justify-center gap-3 mb-4 w-full">
-          <Shield size={20} className="text-amber-500" />
-          <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-widest">
-            Auditoría Forense
-          </span>
-        </div>
-
-        <div className="archon-tile-payload space-y-8 pb-16">
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '4px',
-              backgroundColor: 'rgba(245, 158, 11, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(245, 158, 11, 0.4)',
-            }}
-          >
-            <Shield size={40} className="text-amber-500" />
-          </div>
-          <div className="flex flex-col items-center space-y-1 mb-12">
-            <h3 className="text-[#0f2a44] font-black uppercase tracking-[0.15em] text-[14px]">
-              Journal de Activos
-            </h3>
-            <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-              Rastro Inmutable
-            </p>
-          </div>
-        </div>
-
-        <div className="archon-tile-action">
-          <button
-            onClick={(e): void => {
-              e.stopPropagation();
-              onPanelChange('JOURNAL');
-            }}
-            className={`btn-sentinel-amber w-full ${
-              activePanel === 'JOURNAL' ? 'bg-amber-600 text-white' : ''
-            }`}
-          >
-            Inspeccionar <ArrowRight size={10} className="text-white ml-2" />
           </button>
         </div>
       </div>
