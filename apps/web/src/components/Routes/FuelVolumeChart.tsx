@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
  * Implementation: Sovereign Circular Volumetric Gauge (v.3.5.0)
  *
  * DESIGN RATIONALE:
- * - Scale: Fixed w-16 (64px) to prevent layout overlap in high-density dashboards.
+ * - Scale: Fixed w-20 (80px) to prevent layout overlap in high-density dashboards.
  * - Geometry: Radius 40 inside 100x100 viewBox provides a 10-unit safety margin,
  *   preventing SVG clipping (clipping) in high-DPI displays.
  * - Precision: Real-time liter calculation based on unit capacity.
@@ -32,17 +32,17 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
   const currentLiters = Number(((currentLevel / 100) * totalCapacity).toFixed(1));
   const remainingLiters = Number((totalCapacity - currentLiters).toFixed(1));
 
-  // SVG Pie/Donut Calculation - Calibrated for w-16 (No overlap)
-  const radius = 32;
+  // SVG Pie/Donut Calculation - Calibrated for w-20 (No overlap)
+  const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (currentLevel / 100) * circumference;
 
   return (
-    <div className="flex flex-col gap-4 bg-white/40 p-2 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
+    <div className="flex flex-col gap-4 bg-white/40 p-4 rounded-[4px] border border-[#0f2a44]/5 relative overflow-hidden">
       <div className="flex items-center justify-between gap-8">
         {/* 🥧 CIRCULAR PIE CHART (SVG) - REFINED SCALE */}
-        <div className="relative flex items-center justify-center w-16 h-16 shrink-0">
-          <svg width="64" height="64" className="-rotate-90" viewBox="0 0 100 100">
+        <div className="relative flex items-center justify-center w-20 h-20 shrink-0">
+          <svg width="80" height="80" className="-rotate-90" viewBox="0 0 100 100">
             {/* Background Track */}
             <circle
               cx="50"

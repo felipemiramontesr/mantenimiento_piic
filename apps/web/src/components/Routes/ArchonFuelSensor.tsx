@@ -32,7 +32,7 @@ const FUEL_STEPS = [
 ];
 
 const ArchonFuelSensor: React.FC<ArchonFuelSensorProps> = ({ value, onChange, disabled }) => (
-  <div className="w-full space-y-4 py-2 select-none relative">
+  <div className="w-full space-y-8 py-6 select-none relative">
     {/* 📐 GAUGE CHASSIS */}
     <div className="relative h-14 w-full">
       {/* ⛽ THE SOLID BAR (NO TEXTURE) */}

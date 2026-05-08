@@ -30,8 +30,8 @@ describe('FuelVolumeChart', () => {
   it('renders SVG components with fixed dimensions', () => {
     const { container } = render(<FuelVolumeChart {...defaultProps} />);
     const svg = container.querySelector('svg');
-    expect(svg).toHaveAttribute('width', '64');
-    expect(svg).toHaveAttribute('height', '64');
+    expect(svg).toHaveAttribute('width', '80');
+    expect(svg).toHaveAttribute('height', '80');
   });
 
   it('applies the correct status color to the progress bar', () => {

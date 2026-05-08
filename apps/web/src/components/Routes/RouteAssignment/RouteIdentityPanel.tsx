@@ -50,9 +50,9 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#0f2a44]/5 p-1.5 rounded-[4px] border-l-4 border-emerald-500 flex items-center gap-2"
+          className="bg-[#0f2a44]/5 p-2 rounded-[4px] border-l-4 border-emerald-500 flex items-center gap-4"
         >
-          <div className="w-14 h-14 bg-white rounded-[4px] border-2 border-[#0f2a44]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+          <div className="w-20 h-20 bg-white rounded-[4px] border-2 border-[#0f2a44]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
             {selectedUnitData.images?.[0] ? (
               <img
                 src={selectedUnitData.images[0]}
