@@ -20,19 +20,31 @@ interface ActivityLog {
   created_at: string;
 }
 
+interface ForensicJournalTableProps {
+  unitId?: string;
+  hideHeader?: boolean;
+}
+
 /**
  * 🔱 ARCHON FORENSIC JOURNAL TABLE
  * Purpose: Immutable trace of all asset impacts and telemetery deltas.
- * Version: 1.0.0 - Sovereign Forensic Audit
+ * Version: 1.1.0 - Focused Unit Audit
  */
-const ForensicJournalTable: React.FC = () => {
+const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hideHeader }) => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLogs = async (): Promise<void> => {
     try {
       const res = await api.get('/unit-logs');
-      setLogs(res.data?.data || []);
+      let data = res.data?.data || [];
+
+      // 🎯 FOCUS FILTERING (Sovereign Core)
+      if (unitId) {
+        data = data.filter((l: ActivityLog) => l.unit_id === unitId);
+      }
+
+      setLogs(data);
     } catch (err) {
       // Sovereign silence
     } finally {
@@ -42,7 +54,7 @@ const ForensicJournalTable: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [unitId]);
 
   const getEventStyle = (
     type: string
@@ -66,8 +78,8 @@ const ForensicJournalTable: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-64 flex items-center justify-center">
-        <p className="text-[#0f2a44] font-black animate-pulse uppercase tracking-widest text-xs">
+      <div className="h-32 flex items-center justify-center">
+        <p className="text-[#0f2a44] font-black animate-pulse uppercase tracking-widest text-[10px]">
           Accediendo a Memoria Forense...
         </p>
       </div>
@@ -75,25 +87,31 @@ const ForensicJournalTable: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-700">
-      <div className="flex items-center gap-3 px-6 py-4 bg-white/50 glass-card-pro rounded-[4px] border border-[#0f2a44]/5">
-        <Shield className="text-amber-500" size={24} />
-        <div>
-          <h2 className="text-lg font-black text-[#0f2a44] uppercase tracking-tighter leading-none">
-            Journal de Activos
-          </h2>
-          <p className="text-[10px] font-bold text-[#0f2a44] opacity-40 uppercase tracking-widest">
-            Rastro Inmutable de Operaciones y Desgaste
-          </p>
+    <div className={`animate-in fade-in duration-700 ${unitId ? '' : 'space-y-6'}`}>
+      {!hideHeader && !unitId && (
+        <div className="flex items-center gap-3 px-6 py-4 bg-white/50 glass-card-pro rounded-[4px] border border-[#0f2a44]/5">
+          <Shield className="text-amber-500" size={24} />
+          <div>
+            <h2 className="text-lg font-black text-[#0f2a44] uppercase tracking-tighter leading-none">
+              Journal de Activos
+            </h2>
+            <p className="text-[10px] font-bold text-[#0f2a44] opacity-40 uppercase tracking-widest">
+              Rastro Inmutable de Operaciones y Desgaste
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
+      <div
+        className={`${
+          unitId ? 'bg-transparent' : 'glass-card-pro bg-white shadow-2xl'
+        } !px-0 !pt-0 !pb-4 overflow-x-auto rounded-[4px] custom-scrollbar`}
+      >
         <table className="archon-registry-table w-full">
           <thead>
-            <tr>
+            <tr className={unitId ? 'bg-[#0f2a44]/[0.02]' : ''}>
               <th>FECHA / HORA</th>
-              <th>ACTIVO</th>
+              {!unitId && <th>ACTIVO</th>}
               <th>EVENTO / IMPACTO</th>
               <th>DESCRIPCIÓN / NOTA</th>
               <th>TELEMETRÍA (SNAPSHOT)</th>
@@ -114,28 +132,25 @@ const ForensicJournalTable: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.03 }}
                 >
-                  {/* Fecha */}
                   <td className="py-4">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-black text-[#0f2a44]">
-                        {formatDateTime(log.created_at)}
-                      </span>
-                    </div>
+                    <span className="text-[11px] font-black text-[#0f2a44]">
+                      {formatDateTime(log.created_at)}
+                    </span>
                   </td>
 
-                  {/* Activo */}
-                  <td className="py-4">
-                    <div className="flex flex-col items-center">
-                      <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-[#0f2a44]">
-                        {log.unit_id}
-                      </span>
-                      <span className="text-[9px] font-bold opacity-40 uppercase">
-                        {log.marca} {log.modelo}
-                      </span>
-                    </div>
-                  </td>
+                  {!unitId && (
+                    <td className="py-4">
+                      <div className="flex flex-col items-center">
+                        <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-[#0f2a44]">
+                          {log.unit_id}
+                        </span>
+                        <span className="text-[9px] font-bold opacity-40 uppercase">
+                          {log.marca} {log.modelo}
+                        </span>
+                      </div>
+                    </td>
+                  )}
 
-                  {/* Evento */}
                   <td className="py-4">
                     <div className="flex items-center justify-center gap-2">
                       <div className={`p-1.5 rounded-[4px] ${style.bg}`}>
@@ -149,14 +164,12 @@ const ForensicJournalTable: React.FC = () => {
                     </div>
                   </td>
 
-                  {/* Descripción */}
                   <td className="py-4 px-4 max-w-xs">
                     <p className="text-[10px] font-bold text-[#0f2a44] opacity-70 line-clamp-2 italic leading-tight">
                       {log.description || 'Sin descripción forense'}
                     </p>
                   </td>
 
-                  {/* Snapshot Telemetría */}
                   <td className="py-4">
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-[10px] font-bold opacity-60">
@@ -166,11 +179,10 @@ const ForensicJournalTable: React.FC = () => {
                       <span className="text-[11px] font-black text-[#0f2a44]">
                         {log.reading_after?.toLocaleString() || '---'}
                       </span>
-                      <span className="text-[9px] font-bold opacity-30">KM/H</span>
+                      <span className="text-[9px] font-bold opacity-30">KM</span>
                     </div>
                   </td>
 
-                  {/* Delta */}
                   <td className="py-4">
                     {delta > 0 ? (
                       <div className="flex items-center justify-center gap-1 text-rose-600">
@@ -182,11 +194,12 @@ const ForensicJournalTable: React.FC = () => {
                     )}
                   </td>
 
-                  {/* Responsable */}
                   <td className="py-4">
                     <div className="text-center">
                       <p className="text-[11px] font-black text-[#0f2a44]">{log.operatorName}</p>
-                      <p className="text-[9px] font-bold opacity-40 uppercase">Archon Certified</p>
+                      <p className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">
+                        Certified Audit
+                      </p>
                     </div>
                   </td>
                 </motion.tr>
@@ -196,9 +209,9 @@ const ForensicJournalTable: React.FC = () => {
         </table>
 
         {logs.length === 0 && (
-          <div className="py-12 text-center">
+          <div className="py-8 text-center">
             <p className="text-[10px] font-black opacity-20 uppercase tracking-widest">
-              No se han registrado impactos forenses aún.
+              Sin registros forenses para esta unidad
             </p>
           </div>
         )}
