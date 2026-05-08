@@ -219,7 +219,7 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
                   <textarea
                     required
                     rows={8}
-                    placeholder="Describa el evento, ubicación exacta y estado actual de la unidad y operador..."
+                    placeholder="Describa el evento, ubicación y estado de la unidad..."
                     value={formData.description}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
                       setFormData({ ...formData, description: e.target.value })
@@ -265,7 +265,7 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
                 onClick={onClose}
                 className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-rose-600 transition-colors"
               >
-                Abortar Reporte
+                Cancelar
               </button>
               <button
                 type="submit"
