@@ -40,7 +40,6 @@ export interface RouteLog {
   tire_pressure_json?: string;
   checklist_json?: string;
   checklist_after_json?: string;
-  checklist_after_json?: string;
 }
 
 interface RouteLogTableProps {
@@ -114,10 +113,10 @@ const RouteLogRow = ({
             </div>
             <div className="text-left">
               <p className="text-[13px] font-black text-[#0f2a44] leading-tight">
-                {operator?.nombre || 'Staff No Identificado'}
+                {operator?.fullName || 'Staff No Identificado'}
               </p>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                ID: {operator?.num_empleado || 'OPE-999'}
+                ID: {operator?.employeeNumber || 'OPE-999'}
               </p>
             </div>
           </div>
@@ -296,6 +295,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
         </table>
       ) : (
         <IncidentReportForm
+          routeUuid={reportingRoute.uuid}
           unitId={reportingRoute.unit_id}
           onClose={(): void => setReportingRoute(null)}
           onSuccess={(): void => {
