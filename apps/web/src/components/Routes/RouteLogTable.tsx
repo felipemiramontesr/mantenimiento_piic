@@ -114,7 +114,7 @@ const RouteLogRow = ({
             </div>
             <div className="text-left">
               <p className="text-[13px] font-black text-[#0f2a44] leading-tight">
-                {operator?.nombre || 'Personal No Identificado'}
+                {operator?.nombre || 'Staff No Identificado'}
               </p>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                 ID: {operator?.num_empleado || 'OPE-999'}
@@ -131,7 +131,6 @@ const RouteLogRow = ({
               <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
                 NO MEDIA
               </span>
-              <span className="sr-only">NO MEDIA</span>
             </div>
             <span className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px]">
               {log.unit_id}
