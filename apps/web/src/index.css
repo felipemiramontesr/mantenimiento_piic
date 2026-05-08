@@ -818,6 +818,13 @@ body {
   width: 100% !important;
 }
 
+/* 🛑 TOTAL SATURATION OVERRIDE (V.78.8.0) */
+.archon-registry-table td.accordion-carrier {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
 .expanded-row-container {
   background-color: rgba(15, 42, 68, 0.015);
   border-bottom: 1px solid rgba(15, 42, 68, 0.05);
