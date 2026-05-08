@@ -19,6 +19,9 @@ jobs:
   backend-validation:
     name: 🛡️ Backend (API) Verification
     runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.results.outputs.tests }}
+      passed: ${{ steps.results.outputs.passed }}
     steps:
       - uses: actions/checkout@v5
       - name: Setup Node.js
@@ -32,6 +35,16 @@ jobs:
         run: |
           npm run lint --workspace=@mantenimiento/api
           npm run test --workspace=@mantenimiento/api
+      - name: Extract Results
+        id: results
+        if: always()
+        run: |
+          # Simple extraction from JUnit XML
+          TESTS=$(grep -oP 'tests="\K[^"]+' apps/api/test-results.xml | head -1 || echo "0")
+          FAILURES=$(grep -oP 'failures="\K[^"]+' apps/api/test-results.xml | head -1 || echo "0")
+          PASSED=$((TESTS - FAILURES))
+          echo "tests=$TESTS" >> $GITHUB_OUTPUT
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v6
         if: always()
@@ -43,6 +56,9 @@ jobs:
   frontend-validation:
     name: 🎨 Frontend (Web) Verification
     runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.results.outputs.tests }}
+      passed: ${{ steps.results.outputs.passed }}
     steps:
       - uses: actions/checkout@v5
       - name: Setup Node.js
@@ -56,6 +72,16 @@ jobs:
         run: |
           npm run lint --workspace=@mantenimiento/web
           npm run test --workspace=@mantenimiento/web
+      - name: Extract Results
+        id: results
+        if: always()
+        run: |
+          # Simple extraction from JUnit XML
+          TESTS=$(grep -oP 'tests="\K[^"]+' apps/web/test-results.xml | head -1 || echo "0")
+          FAILURES=$(grep -oP 'failures="\K[^"]+' apps/web/test-results.xml | head -1 || echo "0")
+          PASSED=$((TESTS - FAILURES))
+          echo "tests=$TESTS" >> $GITHUB_OUTPUT
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v6
         if: always()
@@ -79,9 +105,43 @@ jobs:
       - name: Validate SQL Schema
         run: npm run db:validate
 
+  global-certification:
+    name: 🔱 Archon Global Certification
+    needs: [backend-validation, frontend-validation, database-validation]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Certification Dashboard
+        run: |
+          B_TESTS=${{ needs.backend-validation.outputs.tests }}
+          B_PASSED=${{ needs.backend-validation.outputs.passed }}
+          F_TESTS=${{ needs.frontend-validation.outputs.tests }}
+          F_PASSED=${{ needs.frontend-validation.outputs.passed }}
+          
+          TOTAL_TESTS=$((B_TESTS + F_TESTS))
+          TOTAL_PASSED=$((B_PASSED + F_PASSED))
+          
+          echo "### 🔱 ARCHON CERTIFICATION DASHBOARD" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Módulo | Estado | Tests Pasados | Integridad |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :---: | :---: | :---: |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🛡️ Backend API | ✅ PASSED | $B_PASSED / $B_TESTS | 100% |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎨 Frontend Web | ✅ PASSED | $F_PASSED / $F_TESTS | 100% |" >> $GITHUB_STEP_SUMMARY
+          echo "| **TOTAL** | **CERTIFICADO** | **$TOTAL_PASSED / $TOTAL_TESTS** | **100%** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🛠️ STACK DE VALIDACIÓN INDUSTRIAL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Herramienta | Técnica | Función |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Vitest** | Unit Testing | Validación atómica de componentes UI |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Jest / Supertest** | Integration | Pruebas de endpoints y contratos API |" >> $GITHUB_STEP_SUMMARY
+          echo "| **ESLint** | Static Analysis | Cumplimiento de estándares de código |" >> $GITHUB_STEP_SUMMARY
+          echo "| **SonarJS** | Forensic Audit | Análisis de complejidad y seguridad |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Husky** | Git Hooks | Blindaje de integridad pre-commit |" >> $GITHUB_STEP_SUMMARY
+          echo "| **lftp** | Native Sync | Despliegue industrial mediante protocolo seguro |" >> $GITHUB_STEP_SUMMARY
+
   hostinger-deployment:
     name: 🚀 Deployment to Hostinger
-    needs: [backend-validation, frontend-validation, database-validation]
+    needs: [global-certification]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -93,11 +153,6 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-
-      - name: Build Web Application
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-        run: npm run build --workspace=@mantenimiento/web
 
       - name: Build Web Application
         env:
