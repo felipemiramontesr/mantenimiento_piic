@@ -1837,7 +1837,11 @@ table th > div {
 
 .archon-registry-table tr {
   transition: all 0.2s ease;
-  border-bottom: 12px solid #ffffff; /* Removed !important to allow overrides */
+  border-bottom: 12px solid #ffffff;
+}
+
+.archon-registry-table thead tr {
+  border-bottom: none !important;
 }
 
 .archon-registry-table tr:hover td {
