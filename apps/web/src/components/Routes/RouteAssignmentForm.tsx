@@ -66,7 +66,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
       <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-2">
         <div className="archon-grid-2 gap-8 items-start">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
-          <div className="glass-card-pro p-6 space-y-6 bg-white">
+          <div className="glass-card-pro !h-fit p-6 space-y-2 bg-white">
             <RouteIdentityPanel
               formData={formData}
               updateForm={updateForm}
@@ -83,10 +83,23 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               isFinished={isFinished}
               origins={origins}
             />
+
+            {/* Trash action integrated in first panel if editing */}
+            {isEdit && (
+              <div className="pt-4 mt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={triggerAuditDelete}
+                  className="btn-sentinel-red w-full opacity-60 hover:opacity-100"
+                >
+                  <Trash2 size={16} /> Eliminar Registro
+                </button>
+              </div>
+            )}
           </div>
 
           {/* COLUMNA 2: TELEMETRÍA Y CIERRE */}
-          <div className="glass-card-pro p-6 space-y-6 bg-white">
+          <div className="glass-card-pro !h-fit p-6 space-y-2 bg-white">
             <RouteTelemetryPanel
               formData={formData}
               updateForm={updateForm}
@@ -103,58 +116,45 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 isFinished={isFinished}
               />
             )}
+
+            {/* MAIN ACTIONS INTEGRATED INTO THE TELEMETRY PANEL */}
+            <div className="archon-button-group pt-4 mt-2 border-t border-slate-100">
+              <button type="button" onClick={onClose} className="btn-sentinel-red !h-[45px]">
+                {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
+              </button>
+              <button
+                type="submit"
+                disabled={
+                  submitting ||
+                  (!isFinished &&
+                    (!formData.unitId ||
+                      !formData.operatorId ||
+                      !formData.destination ||
+                      (isEdit && !formData.endReading)))
+                }
+                className={`btn-sentinel-emerald !h-[45px] ${
+                  submitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
+                }`}
+              >
+                {submitting ? (
+                  'Procesando...'
+                ) : (
+                  <>
+                    {isFinished ? 'Sincronizar' : rightButtonText}
+                    {isFinished ? <Save size={18} /> : <ChevronRight size={18} />}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Status Reporting */}
         {error && (
-          <div className="px-6 py-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 text-[11px] font-bold rounded-[4px] shadow-sm">
+          <div className="mt-4 px-6 py-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 text-[11px] font-bold rounded-[4px] shadow-sm">
             {error}
           </div>
         )}
-
-        {/* Sovereign Footer (Refactored v.60.1.5) */}
-        <div className="archon-grid-2 mt-2 pt-2 border-t border-slate-100">
-          <div>
-            {isEdit && (
-              <button
-                type="button"
-                onClick={triggerAuditDelete}
-                className="btn-sentinel-red w-full"
-              >
-                <Trash2 size={18} /> Eliminar Registro
-              </button>
-            )}
-          </div>
-          <div className="archon-button-group">
-            <button type="button" onClick={onClose} className="btn-sentinel-red">
-              {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
-            </button>
-            <button
-              type="submit"
-              disabled={
-                submitting ||
-                (!isFinished &&
-                  (!formData.unitId ||
-                    !formData.operatorId ||
-                    !formData.destination ||
-                    (isEdit && !formData.endReading)))
-              }
-              className={`btn-sentinel-emerald ${
-                submitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
-              }`}
-            >
-              {submitting ? (
-                'Procesando...'
-              ) : (
-                <>
-                  {isFinished ? 'Sincronizar Cambios' : rightButtonText}
-                  {isFinished ? <Save size={18} /> : <ChevronRight size={18} />}
-                </>
-              )}
-            </button>
-          </div>
-        </div>
       </form>
 
       <AuditJustificationModal
