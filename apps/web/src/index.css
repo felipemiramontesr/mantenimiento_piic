@@ -818,7 +818,7 @@ body {
   width: 100% !important;
 }
 
-/* 🛑 TOTAL SATURATION OVERRIDE (V.78.13.0) */
+/* 🛑 TOTAL SATURATION OVERRIDE (V.78.14.0 - Hardened) */
 .archon-registry-table td.accordion-carrier {
   padding: 0 !important;
   margin: 0 !important;
@@ -826,6 +826,7 @@ body {
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
+  background: transparent !important;
 }
 
 .accordion-inner {
@@ -836,22 +837,45 @@ body {
   display: block !important;
 }
 
-.accordion-inner .archon-registry-table {
-  width: 100% !important;
-  min-width: 100% !important;
-  margin: 0 !important;
+/* 🎨 SOVEREIGN FOCAL UNIT & CHROMATIC PROTOCOL */
+.archon-registry-table tr.expanded-focus-blue td {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  border-top: 2px solid #0f2a44 !important;
+  border-bottom: none !important; /* Touch accordion */
 }
 
-/* 🎨 FOCAL CHROMATIC PROTOCOL */
-.archon-registry-table tr.expanded-focus-blue {
-  background-color: rgba(59, 130, 246, 0.05) !important; /* Soft Industrial Blue */
+.archon-registry-table tr.expanded-focus-blue td:first-child {
+  border-left: 2px solid #0f2a44 !important;
 }
 
-.archon-registry-table .forensic-focus-green tr:not(thead tr) {
-  background-color: rgba(16, 185, 129, 0.03) !important; /* Soft Forensic Emerald */
+.archon-registry-table tr.expanded-focus-blue td:last-child {
+  border-right: 2px solid #0f2a44 !important;
+  padding-right: 20px !important; /* Keep alignment for main row */
 }
 
-.archon-registry-table .forensic-focus-green tr:hover td {
+.archon-registry-table tr.accordion-row-carrier td.accordion-carrier {
+  border-left: 2px solid #0f2a44 !important;
+  border-right: 2px solid #0f2a44 !important;
+  border-bottom: 2px solid #0f2a44 !important;
+  background-color: rgba(16, 185, 129, 0.04) !important;
+}
+
+/* Force neutralization for NESTED forensic table to hit the edge */
+.accordion-inner .archon-registry-table th:last-child,
+.accordion-inner .archon-registry-table td:last-child {
+  padding-right: 8px !important; /* Industrial Standard Gap, not 20px */
+}
+
+.accordion-inner .archon-registry-table td {
+  background-color: transparent !important; /* Inherit green focus */
+}
+
+.accordion-inner .archon-registry-table tr:not(thead tr) {
+  background-color: rgba(16, 185, 129, 0.03) !important;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.1) !important;
+}
+
+.accordion-inner .archon-registry-table tr:hover td {
   background-color: rgba(16, 185, 129, 0.08) !important;
 }
 
@@ -1813,7 +1837,7 @@ table th > div {
 
 .archon-registry-table tr {
   transition: all 0.2s ease;
-  border-bottom: 12px solid #ffffff !important;
+  border-bottom: 12px solid #ffffff; /* Removed !important to allow overrides */
 }
 
 .archon-registry-table tr:hover td {
