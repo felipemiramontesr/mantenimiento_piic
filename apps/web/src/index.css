@@ -2030,3 +2030,58 @@ table th > div {
   background: rgba(15, 42, 68, 0.8) !important;
   backdrop-filter: blur(4px);
 }
+
+/* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) */
+
+/* 1. Eliminate Vertical Gaps (Red Boxes) */
+.archon-registry-table tr.expanded-focus-blue {
+  border-bottom: none !important;
+}
+.archon-registry-table tr.accordion-row-carrier {
+  border-bottom: 12px solid #ffffff !important; /* Gap after the whole unit */
+}
+
+/* 2. Surrounding Border & Permanent Colors */
+.archon-registry-table tr.expanded-focus-blue td {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  border-top: 2px solid #0f2a44 !important;
+}
+.archon-registry-table tr.expanded-focus-blue td:first-child {
+  border-left: 2px solid #0f2a44 !important;
+}
+.archon-registry-table tr.expanded-focus-blue td:last-child {
+  border-right: 2px solid #0f2a44 !important;
+  padding-right: 20px !important; /* Keep alignment for main row */
+}
+
+.archon-registry-table tr.accordion-row-carrier td.accordion-carrier {
+  border-left: 2px solid #0f2a44 !important;
+  border-right: 2px solid #0f2a44 !important;
+  border-bottom: 2px solid #0f2a44 !important;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  padding: 0 !important; /* KILL PADDING GAP */
+}
+
+/* 3. Absolute Saturation Fix (Right Gap) */
+.archon-registry-table tr.accordion-row-carrier td.accordion-carrier:last-child {
+  padding-right: 0 !important; /* Neutralize legacy 20px rule */
+}
+
+.accordion-inner .archon-registry-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  margin: 0 !important;
+}
+
+.accordion-inner .archon-registry-table th:last-child,
+.accordion-inner .archon-registry-table td:last-child {
+  padding-right: 8px !important; /* Standard cell gap */
+}
+
+.accordion-inner .archon-registry-table td {
+  background-color: transparent !important; /* Use parent's green focus */
+}
+
+.accordion-inner .archon-registry-table tr:not(thead tr) {
+  background-color: rgba(16, 185, 129, 0.04) !important;
+}
