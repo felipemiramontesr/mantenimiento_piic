@@ -818,11 +818,18 @@ body {
   width: 100% !important;
 }
 
-/* 🛑 TOTAL SATURATION OVERRIDE (V.78.8.0) */
+/* 🛑 TOTAL SATURATION OVERRIDE (V.78.9.0) */
 .archon-registry-table td.accordion-carrier {
   padding: 0 !important;
+  padding-right: 0 !important; /* Force override for last-child rules */
   margin: 0 !important;
   border: none !important;
+}
+
+/* 🛑 NESTED TABLE PADDING NEUTRALIZATION */
+.accordion-inner .archon-registry-table th:last-child,
+.accordion-inner .archon-registry-table td:last-child {
+  padding-right: 8px !important; /* Match other cells instead of 20px */
 }
 
 .expanded-row-container {
