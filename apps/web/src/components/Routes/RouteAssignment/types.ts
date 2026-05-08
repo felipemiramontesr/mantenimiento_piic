@@ -12,6 +12,9 @@ export interface RouteAssignmentFormData {
   endReading: number;
   fuelLitersLoaded: number;
   fuelTicketImage: string;
+  additivesCheck: boolean;
+  tirePressureJson: string;
+  checklistJson: string;
 }
 
 export interface RouteAssignmentPanelProps {

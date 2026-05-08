@@ -13,14 +13,19 @@ const startRouteSchema = z.object({
   unitId: z.string().min(2).max(50),
   driverId: z.number().int(),
   startReading: z.number().min(0),
+  fuelLevelStart: z.number().min(0).max(100),
   destination: z.string().min(2).max(255),
   originId: z.number().int().optional(),
 });
 
 const finishRouteSchema = z.object({
   endReading: z.number().min(0),
+  fuelLevelEnd: z.number().min(0).max(100),
   fuelLitersLoaded: z.number().min(0).optional(),
   fuelTicketImage: z.string().optional(), // Base64
+  additivesCheck: z.boolean().optional(),
+  tirePressureJson: z.string().optional(),
+  checklistJson: z.string().optional(),
 });
 
 const reportIncidentSchema = z.object({
@@ -42,6 +47,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         data.unitId,
         data.driverId,
         data.startReading,
+        data.fuelLevelStart,
         data.destination,
         data.originId
       );
@@ -69,8 +75,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       await RouteService.finishRoute(
         uuid,
         data.endReading,
+        data.fuelLevelEnd,
+        data.fuelTicketImage,
         data.fuelLitersLoaded,
-        data.fuelTicketImage
+        data.additivesCheck,
+        data.tirePressureJson,
+        data.checklistJson
       );
 
       return reply.send({
@@ -112,7 +122,10 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           id, uuid, unit_id, driver_id as operator_id, origin_id, destination, status,
           start_reading as start_km, end_reading as end_km,
           start_at as start_time, end_at as end_time,
-          fuel_liters_loaded, fuel_ticket_image, created_at
+          fuel_level_start, fuel_level_end,
+          fuel_liters_loaded, fuel_ticket_image,
+          additives_check, tire_pressure_json, checklist_json,
+          created_at
         FROM fleet_routes 
         ORDER BY created_at DESC`
       );

@@ -22,14 +22,19 @@ export interface StartRoutePayload {
   unitId: string;
   driverId: number;
   startReading: number;
+  fuelLevelStart: number;
   destination: string;
   originId?: number;
 }
 
 export interface FinishRoutePayload {
   endReading: number;
+  fuelLevelEnd: number;
   fuelLitersLoaded?: number;
   fuelTicketImage?: string;
+  additivesCheck?: boolean;
+  tirePressureJson?: string;
+  checklistJson?: string;
 }
 
 export type IncidentCategory = 'MECANICA' | 'SINIESTRO' | 'LEGAL' | 'OPERATIVA' | 'OTRA';

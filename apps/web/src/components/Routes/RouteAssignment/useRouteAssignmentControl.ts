@@ -53,6 +53,9 @@ export const useRouteAssignmentControl = (
     endReading: 0,
     fuelLitersLoaded: 0,
     fuelTicketImage: '',
+    additivesCheck: false,
+    tirePressureJson: '',
+    checklistJson: '',
   });
 
   const [origins, setOrigins] = useState<CatalogOption[]>(
@@ -80,6 +83,9 @@ export const useRouteAssignmentControl = (
         endReading: Number(routeToEdit.end_km || 0),
         fuelLitersLoaded: Number(routeToEdit.fuel_liters_loaded || 0),
         fuelTicketImage: routeToEdit.fuel_ticket_image || '',
+        additivesCheck: !!routeToEdit.additives_check,
+        tirePressureJson: routeToEdit.tire_pressure_json || '',
+        checklistJson: routeToEdit.checklist_json || '',
       });
     } else {
       // 🔱 Atomic Reset: Ensure a clean slate for new assignments
@@ -94,6 +100,9 @@ export const useRouteAssignmentControl = (
         endReading: 0,
         fuelLitersLoaded: 0,
         fuelTicketImage: '',
+        additivesCheck: false,
+        tirePressureJson: '',
+        checklistJson: '',
       });
       setSelectedUnitData(null);
       setError(null);
@@ -126,11 +135,21 @@ export const useRouteAssignmentControl = (
     fetchActiveRoutes();
   }, [fetchActiveRoutes, routeToEdit]); // Re-fetch availability when context changes
 
-  // 🏎️ Selection Sync
+  // 🏎️ Selection Sync (Inheritance Protocol v.75.0.0)
   useEffect((): void => {
     if (formData.unitId) {
       const unit = units.find((u) => u.id === formData.unitId);
       setSelectedUnitData(unit || null);
+
+      if (!isEdit && unit) {
+        // Inherit telemetry from unit's last known state
+        setFormData((prev) => ({
+          ...prev,
+          startReading: Number(unit.odometer || 0),
+          fuelLevel: Number(unit.lastFuelLevel ?? 100),
+        }));
+      }
+
       if (isEdit && unit && !formData.endReading) {
         setFormData((prev) => ({ ...prev, endReading: Number(unit.currentReading || 0) }));
       }
@@ -203,18 +222,36 @@ export const useRouteAssignmentControl = (
     setSubmitting(true);
     setError(null);
 
+    // 🛡️ Forensic Failsafe: Prevent logical telemetry errors
+    if (isEdit && routeToEdit) {
+      const end = Number(formData.endReading);
+      const start = Number(formData.startReading);
+      if (end < start) {
+        setError(
+          `Error Forense: La lectura final (${end}) no puede ser menor a la inicial (${start}).`
+        );
+        setSubmitting(false);
+        return;
+      }
+    }
+
     try {
       if (isEdit && routeToEdit) {
         await finishRoute(routeToEdit.uuid, {
           endReading: Number(formData.endReading),
+          fuelLevelEnd: Number(formData.fuelLevel),
           fuelLitersLoaded: Number(formData.fuelLitersLoaded),
           fuelTicketImage: formData.fuelTicketImage || undefined,
+          additivesCheck: formData.additivesCheck,
+          tirePressureJson: formData.tirePressureJson || undefined,
+          checklistJson: formData.checklistJson || undefined,
         });
       } else {
         await startRoute({
           unitId: formData.unitId,
           driverId: Number(formData.operatorId),
-          startReading: Number(selectedUnitData?.odometer || 0),
+          startReading: Number(formData.startReading),
+          fuelLevelStart: Number(formData.fuelLevel),
           destination: formData.destination,
           originId: origins.find((o) => o.label === formData.origin)?.id
             ? Number(origins.find((o) => o.label === formData.origin)?.id)

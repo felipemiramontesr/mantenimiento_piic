@@ -1,132 +1,110 @@
 import React from 'react';
-import { Gauge, Droplets, AlertCircle } from 'lucide-react';
+import { Milestone, Gauge, Fuel, Info } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import ArchonFuelSensor from '../ArchonFuelSensor';
-import FuelVolumeChart from '../FuelVolumeChart';
-import { RouteAssignmentPanelProps } from './types';
 
-interface RouteTelemetryPanelProps extends RouteAssignmentPanelProps {
-  tankCapacity: number;
-  startReadingDisplay: string;
+interface RouteTelemetryPanelProps {
+  phase: 'departure' | 'return';
+  odometerValue: string;
+  fuelLevelValue: number;
+  onOdometerChange: (val: string) => void;
+  onFuelLevelChange: (val: number) => void;
+  startReading?: number;
+  unit?: string;
+  disabled?: boolean;
 }
 
 /**
- * 🔱 Archon Panel: Route Telemetry (Fase III)
- * Real-time sensor synchronization for odometry and fuel levels.
+ * 🔱 Archon Panel: Route Telemetry (v.75.0.0)
+ * Precision cockpit interface for vehicle sensors.
  */
 const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
-  formData,
-  updateForm,
-  isFinished,
-  tankCapacity,
-  startReadingDisplay,
+  phase,
+  odometerValue,
+  fuelLevelValue,
+  onOdometerChange,
+  onFuelLevelChange,
+  startReading,
+  unit = 'km',
+  disabled = false,
 }) => {
-  if (!formData.unitId) {
-    return (
-      <div className="space-y-4 opacity-50">
-        <div className="flex items-center gap-2 h-4">
-          <Gauge size={14} className="text-[#0f2a44]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44]">
-            Fase III: Telemetría de Salida
-          </span>
-        </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-            PARAMETRÍA DE SENSORES
-          </label>
-          <div className="bg-[#0f2a44]/5 p-8 rounded-[4px] border-2 border-dashed border-[#0f2a44]/10 flex flex-col items-center justify-center text-center">
-            <AlertCircle size={24} className="text-[#0f2a44]/20 mb-2" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/40">
-              SISTEMA DESCONECTADO
-            </p>
-            <p className="text-[8px] font-bold text-[#0f2a44]/30 mt-1">
-              SELECCIONE UNA UNIDAD PARA ACTIVAR PARAMETRÍA
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const getFuelColor = (level: number): string => {
-    if (level >= 87.5) return '#22c55e';
-    if (level >= 62.5) return '#facc15';
-    if (level >= 37.5) return '#f97316';
-    if (level >= 12.5) return '#ef4444';
-    return '#a855f7';
-  };
+  const isReturn = phase === 'return';
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="bg-sky-600 p-2 rounded-[4px]">
-          <Gauge size={20} className="text-white" />
-        </div>
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-600 opacity-50">
-            Fase III
-          </span>
-          <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
-            Telemetría de Salida
-          </h3>
-        </div>
+    <Card className="border-[#0f2a44]/10 shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden">
+      <div className="bg-[#0f2a44]/5 px-4 py-2 border-b border-[#0f2a44]/10 flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-[#0f2a44] flex items-center gap-2">
+          <Gauge className="w-3.5 h-3.5" />
+          Telemetría de {isReturn ? 'Retorno' : 'Salida'}
+        </h3>
+        {isReturn && startReading !== undefined && (
+          <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
+            Salida: {startReading} {unit}
+          </Badge>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-          PARAMETRÍA DE SENSORES
-        </label>
-        <div className="bg-[#0f2a44]/5 p-3 rounded-[4px] space-y-4">
-          {/* Odometry Snapshot */}
-          <div className="flex items-center justify-between border-b border-[#0f2a44]/10 pb-3">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44] mb-0.5">
-                Lectura de Odómetro
-              </span>
-              <div className="flex items-center gap-2">
-                <Gauge size={18} className="text-[#0f2a44]/40" />
-                <p className="text-2xl font-black text-[#0f2a44] tracking-tighter">
-                  {startReadingDisplay}{' '}
-                  <span className="text-[10px] opacity-40 font-bold ml-1">KM</span>
-                </p>
-              </div>
-            </div>
+      <CardContent className="p-4 space-y-6">
+        {/* Odómetro / Horómetro Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-bold text-[#0f2a44]/70 uppercase flex items-center gap-1.5">
+              <Milestone className="w-3 h-3" />
+              Lectura de Odómetro ({unit})
+            </Label>
+          </div>
+          <div className="relative">
+            <Input
+              type="number"
+              value={odometerValue}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                onOdometerChange(e.target.value)
+              }
+              placeholder="0.00"
+              disabled={disabled}
+              className="pl-9 bg-white border-[#0f2a44]/15 focus:ring-[#0f2a44]/20 h-11 text-lg font-mono"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 font-bold">
+              #
+            </span>
+          </div>
+          <p className="text-[10px] text-[#0f2a44]/50 flex items-center gap-1">
+            <Info className="w-3 h-3" />
+            Ingrese la lectura actual del tablero físico
+          </p>
+        </div>
+
+        {/* Fuel Level Section with Archon Sensor */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-[11px] font-bold text-[#0f2a44]/70 uppercase flex items-center gap-1.5">
+              <Fuel className="w-3 h-3" />
+              Nivel de Combustible
+            </Label>
+            <Badge variant="secondary" className="font-mono text-xs bg-[#0f2a44] text-white">
+              {fuelLevelValue}%
+            </Badge>
           </div>
 
-          {/* Fuel Sensor */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Droplets size={14} className="text-emerald-500" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]">
-                  Nivel de Combustible:
-                </p>
-              </div>
-              <p className="text-xl font-black text-[#0f2a44] tracking-tighter">
-                {formData.fuelLevel}%
-              </p>
-            </div>
+          <div className="px-2">
+            <ArchonFuelSensor
+              value={fuelLevelValue}
+              onChange={onFuelLevelChange}
+              disabled={disabled}
+            />
+          </div>
 
-            <div>
-              <ArchonFuelSensor
-                value={formData.fuelLevel}
-                onChange={(val: number): void => updateForm({ fuelLevel: val })}
-                disabled={isFinished}
-              />
-            </div>
-
-            {tankCapacity > 0 && (
-              <div>
-                <FuelVolumeChart
-                  currentLevel={formData.fuelLevel}
-                  totalCapacity={tankCapacity}
-                  color={getFuelColor(formData.fuelLevel)}
-                />
-              </div>
-            )}
+          <div className="bg-[#0f2a44]/5 p-2.5 rounded-lg border border-[#0f2a44]/10">
+            <p className="text-[10px] text-[#0f2a44]/70 leading-relaxed italic text-center">
+              Seleccione la posición que mejor represente el indicador del tablero.
+            </p>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -21,8 +21,13 @@ export interface RouteEntry {
   end_reading?: number;
   start_at?: Date;
   end_at?: Date;
+  fuel_level_start: number;
+  fuel_level_end?: number;
   fuel_liters_loaded?: number;
   fuel_ticket_image?: string;
+  additives_check?: boolean;
+  tire_pressure_json?: string;
+  checklist_json?: string;
 }
 
 export default class RouteService {
@@ -33,6 +38,7 @@ export default class RouteService {
     unitId: string,
     driverId: number,
     startReading: number,
+    fuelLevelStart: number,
     destination: string,
     originId?: number
   ): Promise<string> {
@@ -54,9 +60,9 @@ export default class RouteService {
       // 2. Create the Route
       await connection.execute(
         `INSERT INTO fleet_routes 
-        (uuid, unit_id, driver_id, origin_id, destination, status, start_reading, start_at) 
-        VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, NOW())`,
-        [routeUuid, unitId, driverId, originId || null, destination, startReading]
+        (uuid, unit_id, driver_id, origin_id, destination, status, start_reading, fuel_level_start, start_at) 
+        VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, NOW())`,
+        [routeUuid, unitId, driverId, originId || null, destination, startReading, fuelLevelStart]
       );
 
       // 3. Update Unit Status (Impact)
@@ -86,8 +92,12 @@ export default class RouteService {
   static async finishRoute(
     routeUuid: string,
     endReading: number,
+    fuelLevelEnd: number,
     fuelImage?: string,
-    fuelLiters = 0
+    tirePressureJson?: string,
+    checklistJson?: string,
+    fuelLiters = 0,
+    additivesCheck = false
   ): Promise<void> {
     const connection = await db.getConnection();
 
@@ -111,15 +121,25 @@ export default class RouteService {
       await connection.execute(
         `UPDATE fleet_routes 
         SET status = 'COMPLETED', end_reading = ?, end_at = NOW(), 
-            fuel_liters_loaded = ?, fuel_ticket_image = ? 
+            fuel_level_end = ?, fuel_liters_loaded = ?, fuel_ticket_image = ?,
+            additives_check = ?, tire_pressure_json = ?, checklist_json = ?
         WHERE uuid = ?`,
-        [endReading, fuelLiters, fuelImage || null, routeUuid]
+        [
+          endReading,
+          fuelLevelEnd,
+          fuelLiters,
+          fuelImage || null,
+          additivesCheck,
+          tirePressureJson || null,
+          checklistJson || null,
+          routeUuid,
+        ]
       );
 
       // 3. Update Unit (The massive impact)
       await connection.execute(
-        'UPDATE fleet_units SET currentReading = ?, status = "Disponible" WHERE id = ?',
-        [endReading, route.unit_id]
+        'UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ?, status = "Disponible" WHERE id = ?',
+        [endReading, fuelLevelEnd, route.unit_id]
       );
 
       // 4. Create Final Log

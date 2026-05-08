@@ -79,6 +79,11 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
               <span className="text-[10px] font-bold opacity-60 text-[#0f2a44]">
                 {selectedUnitData.placas}
               </span>
+              {selectedUnitData.lastFuelLevel !== undefined && !isEdit && (
+                <span className="text-[10px] font-bold text-sky-700 bg-sky-100/50 px-1.5 rounded uppercase">
+                  Telemetría Heredada: {selectedUnitData.lastFuelLevel}%
+                </span>
+              )}
             </div>
             <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1">
               {selectedUnitData.departamento}

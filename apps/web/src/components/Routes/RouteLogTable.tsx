@@ -26,12 +26,17 @@ export interface RouteLog {
   destination: string;
   description?: string;
   fuelLevel?: number;
+  fuel_level_start?: number;
+  fuel_level_end?: number;
   start_time: string;
   end_time: string | null;
   start_km: number;
   end_km: number | null;
   fuel_liters_loaded?: number;
   fuel_ticket_image?: string;
+  additives_check?: number | boolean;
+  tire_pressure_json?: string;
+  checklist_json?: string;
 }
 
 interface RouteLogTableProps {

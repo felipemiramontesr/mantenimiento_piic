@@ -127,6 +127,7 @@ export interface FleetUnit {
   // 🔱 Dynamic Analytical Fields (v.45.6.0)
   color?: string | null;
   nextServiceReading?: number | null;
+  lastFuelLevel?: number;
 }
 
 export interface CreateFleetUnit {
@@ -182,6 +183,7 @@ export interface CreateFleetUnit {
   maintIntervalDays?: number;
   dailyUsageAvg?: number | null;
   insurance_company_id?: number | null;
+  lastFuelLevel?: number;
 }
 
 export interface UseFleetFormReturn {
