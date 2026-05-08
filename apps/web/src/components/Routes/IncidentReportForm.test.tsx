@@ -3,12 +3,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import IncidentReportForm from './IncidentReportForm';
 import { FleetContext } from '../../context/FleetContext';
 
+/**
+ * @file IncidentReportForm.test.tsx
+ * @description Suite de validación para el Protocolo Sentinel.
+ * Aplica principios DRY al centralizar la hidratación del contexto de prueba.
+ */
+
 describe('IncidentReportForm (Sentinel Protocol)', () => {
-  const mockReportIncident = vi.fn().mockResolvedValue(undefined);
+  const mockReportIncident = vi.fn();
   const mockOnClose = vi.fn();
   const mockOnSuccess = vi.fn();
 
-  const fleetContextValue = {
+  // 🔱 DRY: Factory para el contexto de flota
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createFleetContext = (overrides = {}): any => ({
     units: [],
     stats: {
       total: 0,
@@ -50,19 +58,17 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
       },
     },
     loading: false,
-    refreshUnits: vi.fn().mockResolvedValue(undefined),
-    startRoute: vi.fn().mockResolvedValue(undefined),
-    finishRoute: vi.fn().mockResolvedValue(undefined),
+    refreshUnits: vi.fn(),
+    startRoute: vi.fn(),
+    finishRoute: vi.fn(),
     reportIncident: mockReportIncident,
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
+    ...overrides,
   });
 
-  it('renders the form correctly with industrial aesthetics', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderForm = (contextValue = createFleetContext()): any =>
     render(
-      <FleetContext.Provider value={fleetContextValue}>
+      <FleetContext.Provider value={contextValue}>
         <IncidentReportForm
           onClose={mockOnClose}
           onSuccess={mockOnSuccess}
@@ -72,6 +78,13 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
       </FleetContext.Provider>
     );
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReportIncident.mockResolvedValue(undefined);
+  });
+
+  it('renders the form correctly with industrial aesthetics', () => {
+    renderForm();
     expect(screen.getByText(/Protocolo Sentinel: Alerta de Incidencia/i)).toBeDefined();
     expect(
       screen.getByPlaceholderText(/Describa el evento, ubicación y estado de la unidad/i)
@@ -79,42 +92,20 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     expect(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i })).toBeDefined();
   });
 
-  it('validates required fields before submission', async () => {
-    render(
-      <FleetContext.Provider value={fleetContextValue}>
-        <IncidentReportForm
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-          routeUuid="test-uuid"
-          unitId="ASM-001"
-        />
-      </FleetContext.Provider>
-    );
-
+  it('validates required fields: submission button should be disabled when empty', () => {
+    renderForm();
     const submitBtn = screen.getByRole('button', { name: /Emitir Alerta Sentinel/i });
-    // Button is disabled when description is empty
     expect(submitBtn).toBeDisabled();
   });
 
-  it('submits correctly when fields are filled', async () => {
-    render(
-      <FleetContext.Provider value={fleetContextValue}>
-        <IncidentReportForm
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-          routeUuid="test-uuid"
-          unitId="ASM-001"
-        />
-      </FleetContext.Provider>
-    );
+  it('executes forensic submission correctly when fields are filled', async () => {
+    renderForm();
 
-    // Fill description
     const desc = screen.getByPlaceholderText(
       /Describa el evento, ubicación y estado de la unidad/i
     );
-    fireEvent.change(desc, { target: { value: 'Falla en motor de arranque' } });
+    fireEvent.change(desc, { target: { value: 'Falla crítica en transmisión' } });
 
-    // Click submit
     const submitBtn = screen.getByRole('button', { name: /Emitir Alerta Sentinel/i });
     expect(submitBtn).not.toBeDisabled();
 
@@ -127,8 +118,8 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
         'test-uuid',
         expect.objectContaining({
           category: 'MECANICA',
-          description: 'Falla en motor de arranque',
-          severity: 'MEDIUM', // Default in component
+          description: 'Falla crítica en transmisión',
+          severity: 'MEDIUM',
         })
       );
     });
@@ -137,7 +128,56 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it('handles image upload via Base64 integration', async () => {
-    // This would test the ArchonImageUploader interaction if mocked or just the state
+  it('handles transmission failures (Sentinel Fault Recovery)', async () => {
+    const errorMsg = 'Error de red en Protocolo Sentinel';
+    mockReportIncident.mockRejectedValue(new Error(errorMsg));
+
+    renderForm();
+
+    const desc = screen.getByPlaceholderText(
+      /Describa el evento, ubicación y estado de la unidad/i
+    );
+    fireEvent.change(desc, { target: { value: 'Evento de prueba' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(new RegExp(errorMsg, 'i'))).toBeDefined();
+    });
+
+    expect(mockOnSuccess).not.toHaveBeenCalled();
+  });
+
+  it('allows category and severity selection switching', async () => {
+    renderForm();
+
+    // Seleccionar Siniestro
+    const siniestroBtn = screen.getByText(/Siniestro \/ Accidente/i);
+    fireEvent.click(siniestroBtn);
+
+    // Seleccionar Crítica
+    const criticaBtn = screen.getByText(/CRÍTICA/i);
+    fireEvent.click(criticaBtn);
+
+    const desc = screen.getByPlaceholderText(
+      /Describa el evento, ubicación y estado de la unidad/i
+    );
+    fireEvent.change(desc, { target: { value: 'Accidente total' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
+    });
+
+    await waitFor(() => {
+      expect(mockReportIncident).toHaveBeenCalledWith(
+        'test-uuid',
+        expect.objectContaining({
+          category: 'SINIESTRO',
+          severity: 'CRITICAL',
+        })
+      );
+    });
   });
 });

@@ -45,10 +45,13 @@ interface RouteLogTableProps {
 }
 
 /**
- * 🔱 ARCHON ROUTE LOG TABLE
+ * @component RouteLogTable
+ * @version 78.0.0 (Archon Elite)
+ * @description Mission control table for monitoring fleet operations and forensic logging.
+ * Supports real-time incident reporting via the Sentinel Protocol integration.
+ *
  * Architecture: Sovereign Instrumental Grid (Symmetrical Alignment)
  * Principle: SOLID (SRP) - Clean Decoupled View
- * Version: 70.0.0
  */
 const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { units } = useFleet();

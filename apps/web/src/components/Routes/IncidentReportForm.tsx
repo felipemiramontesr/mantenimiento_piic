@@ -1,3 +1,10 @@
+/**
+ * @file IncidentReportForm.tsx
+ * @version 78.0.0 (Archon Elite)
+ * @description High-fidelity forensic reporting interface for route incidents.
+ * Implements the Sentinel Protocol for critical event classification and evidence capturing.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -36,7 +43,10 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔱 Auto-Scroll Protocol (v.76.6.0)
+  /**
+   * 🔱 SENTINEL AUTO-SCROLL (v.76.6.0)
+   * Ensures the operator's focus is locked on the forensic unit upon mounting.
+   */
   useEffect(() => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
@@ -73,9 +83,14 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
     { value: 'CRITICAL', label: 'CRÍTICA', color: 'text-rose-600', bg: 'bg-rose-50' },
   ];
 
+  /**
+   * 🔱 ARCHON COMMAND: PERSIST_INCIDENT
+   * Orchestrates the transmission of the forensic report to the central fleet engine.
+   * Implements atomic validation and error recovery.
+   */
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    if (!formData.description) return;
+    if (!formData.description || submitting) return;
 
     setSubmitting(true);
     setError(null);
@@ -87,11 +102,17 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
         severity: formData.severity,
         evidenceImage: formData.evidenceImage || undefined,
       });
+
+      // Success Protocol
       if (onSuccess) onSuccess();
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al reportar la incidencia';
+      // Error Recovery & Forensic Logging
+      const msg =
+        err instanceof Error ? err.message : 'Error en la transmisión del protocolo Sentinel.';
       setError(msg);
+      // eslint-disable-next-line no-console
+      console.error('Archon Sentinel Fault:', err);
     } finally {
       setSubmitting(false);
     }
