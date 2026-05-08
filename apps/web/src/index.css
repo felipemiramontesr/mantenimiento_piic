@@ -2042,7 +2042,7 @@ table th > div {
   border-bottom: none !important;
 }
 .archon-registry-table tr.accordion-row-carrier {
-  border-bottom: 12px solid #ffffff !important; /* Gap after the whole unit */
+  border-bottom: none !important;
 }
 
 /* 2. Surrounding Border & Permanent Colors */
