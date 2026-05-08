@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -31,9 +31,15 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const formRef = useRef<HTMLDivElement>(null);
   const { reportIncident } = useFleet();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 🔱 Auto-Scroll Protocol (v.76.6.0)
+  useEffect(() => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const [formData, setFormData] = useState({
     category: 'MECANICA' as IncidentCategory,
@@ -93,6 +99,7 @@ const IncidentReportForm: React.FC<IncidentReportFormProps> = ({
 
   return (
     <motion.div
+      ref={formRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-[4px] shadow-2xl border border-rose-100 overflow-hidden w-full"

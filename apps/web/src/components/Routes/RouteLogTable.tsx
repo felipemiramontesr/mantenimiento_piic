@@ -274,17 +274,15 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
           </tbody>
         </table>
       ) : (
-        <div className="p-8 bg-gray-50/50 animate-in fade-in zoom-in-95 duration-500">
-          <IncidentReportForm
-            routeUuid={reportingRoute.uuid}
-            unitId={reportingRoute.unit_id}
-            onClose={(): void => setReportingRoute(null)}
-            onSuccess={(): void => {
-              setReportingRoute(null);
-              refresh();
-            }}
-          />
-        </div>
+        <IncidentReportForm
+          routeUuid={reportingRoute.uuid}
+          unitId={reportingRoute.unit_id}
+          onClose={(): void => setReportingRoute(null)}
+          onSuccess={(): void => {
+            setReportingRoute(null);
+            refresh();
+          }}
+        />
       )}
     </div>
   );
