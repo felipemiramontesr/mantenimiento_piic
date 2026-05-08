@@ -166,14 +166,14 @@ const RouteLogRow = ({
             <div className="flex items-center gap-2 text-slate-400">
               <Gauge size={14} />
               <span className="text-[11px] font-black tracking-tight">
-                {log.start_km.toLocaleString()} KM
+                {log.start_km?.toLocaleString() || '0'} KM
               </span>
             </div>
-            {log.end_km && (
+            {log.end_km !== null && log.end_km !== undefined && (
               <div className="flex items-center gap-2 text-emerald-500">
                 <CheckCircle2 size={14} />
                 <span className="text-[11px] font-black tracking-tight">
-                  {log.end_km.toLocaleString()} KM
+                  {log.end_km?.toLocaleString()} KM
                 </span>
               </div>
             )}
