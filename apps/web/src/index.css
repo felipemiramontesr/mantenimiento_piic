@@ -2049,6 +2049,7 @@ table th > div {
 .archon-registry-table tr.expanded-focus-blue td {
   background-color: rgba(59, 130, 246, 0.12) !important;
   border-top: 2px solid #0f2a44 !important;
+  box-shadow: 0 -12px 0 0 rgba(59, 130, 246, 0.12) !important; /* Bridge gap with same focal color */
 }
 .archon-registry-table tr.expanded-focus-blue td:first-child {
   border-left: none !important;
