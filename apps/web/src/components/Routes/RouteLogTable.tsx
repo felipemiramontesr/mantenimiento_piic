@@ -276,7 +276,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
         </div>
       )}
       {!reportingRoute ? (
-        <table className="archon-registry-table w-full">
+        <table data-testid="archon-route-log-table" className="archon-registry-table w-full">
           <thead>
             <tr>
               <th>OPERADOR</th>

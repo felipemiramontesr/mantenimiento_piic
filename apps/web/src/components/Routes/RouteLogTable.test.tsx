@@ -185,19 +185,19 @@ describe('RouteLogTable (Logistics Standard)', () => {
     });
 
     // 1. Initially Table is visible
-    expect(screen.getByRole('table')).toBeDefined();
+    expect(screen.getByTestId('archon-route-log-table')).toBeDefined();
 
     // 2. Click Alert Button
     fireEvent.click(screen.getByTitle(/Reportar Incidencia/i));
 
     // 3. TABLE SHOULD BE REMOVED FROM DOM (Local Insertion Protocol)
-    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByTestId('archon-route-log-table')).toBeNull();
 
     // 4. Form should be visible
     expect(screen.getByText(/Protocolo Sentinel/i)).toBeDefined();
 
     // 5. Click Cancel and Table should return
     fireEvent.click(screen.getByText(/Cancelar/i));
-    expect(screen.getByRole('table')).toBeDefined();
+    expect(screen.getByTestId('archon-route-log-table')).toBeDefined();
   });
 });
