@@ -1789,6 +1789,7 @@ body {
   position: relative;
   top: 0 !important;
   table-layout: auto; /* Removed !important to allow fixed overrides */
+  margin-bottom: 0 !important;
 }
 
 .archon-registry-table th,

@@ -257,7 +257,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   };
 
   return (
-    <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative">
+    <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative">
       {isSyncing && (
         <div className="absolute top-4 right-4 flex items-center gap-2">
           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
