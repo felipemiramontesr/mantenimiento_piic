@@ -122,12 +122,6 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
                 totalCapacity={tankCapacity}
                 color={fuelLevelValue > 20 ? '#0f2a44' : '#ef4444'}
               />
-              <div className="flex justify-between mt-1 px-1">
-                <span className="text-[9px] font-bold text-[#0f2a44]/40">Capacidad Total:</span>
-                <span className="text-[9px] font-black text-[#0f2a44]">{tankCapacity}L</span>
-              </div>
-              {/* Hidden text for specific test matcher compatibility if needed, 
-                  but FuelVolumeChart should already contain "Total Tanque:" */}
             </div>
           )}
         </div>
