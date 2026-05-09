@@ -1061,30 +1061,6 @@ body {
 }
 
 /* 🔘 SENTINEL INTERACTION SYSTEM */
-.btn-sentinel-yellow {
-  background-color: var(--color-accent);
-  color: var(--color-primary);
-  font-weight: 900;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 12px 24px;
-  border-radius: 4px; /* Industrial Sharpness */
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(242, 183, 5, 0.3);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-sentinel-yellow:hover {
-  background-color: #d9a404;
-  box-shadow: 0 6px 20px rgba(242, 183, 5, 0.45);
-}
-
 .btn-yellow-pro {
   background-color: var(--color-accent);
   color: var(--color-primary);

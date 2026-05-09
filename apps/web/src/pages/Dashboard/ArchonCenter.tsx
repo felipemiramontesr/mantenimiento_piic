@@ -79,7 +79,11 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           }}
           className={`btn-sentinel-${variant} w-full text-[11px] font-black py-3`}
         >
-          VER REPORTE <ArrowRight size={12} className="text-white ml-2" />
+          VER REPORTE{' '}
+          <ArrowRight
+            size={12}
+            className={`${variant === 'yellow' ? 'text-[#0f2a44]' : 'text-white'} ml-2`}
+          />
         </button>
       </div>
     </div>
