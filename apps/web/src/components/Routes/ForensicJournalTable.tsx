@@ -182,13 +182,17 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
 
                   <td className="py-4">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-[10px] font-bold opacity-60">
+                      <span className="text-[11px] font-black text-[#0f2a44]">
                         {log.reading_before?.toLocaleString()}
                       </span>
-                      <ArrowRight size={10} className="opacity-20" />
-                      <span className="text-[11px] font-black text-[#0f2a44]">
-                        {log.reading_after?.toLocaleString() || '---'}
-                      </span>
+                      {log.event_type !== 'ROUTE_START' && log.reading_after && (
+                        <>
+                          <ArrowRight size={10} className="opacity-20" />
+                          <span className="text-[11px] font-black text-[#0f2a44]">
+                            {log.reading_after?.toLocaleString()}
+                          </span>
+                        </>
+                      )}
                       <span className="text-[9px] font-bold opacity-30">KM</span>
                     </div>
                   </td>
