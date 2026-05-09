@@ -1849,6 +1849,10 @@ table th > div {
   background: rgba(15, 42, 68, 0.015);
 }
 
+.archon-registry-table tr.expanded-focus-blue:hover td {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
 /* 🔘 GLOBAL REGISTRY RESET (Prohibición de Márgenes Gruesos) */
 .archon-registry-table button,
 .archon-registry-table .btn-sentinel-emerald,
@@ -2059,7 +2063,7 @@ table th > div {
   top: -12px;
   left: 0;
   right: 0;
-  height: 12px;
+  height: 13px; /* 1px overlap with row to kill bleed */
   background-color: rgba(59, 130, 246, 0.08);
   border-top: 2px solid #0f2a44 !important;
   z-index: 10;

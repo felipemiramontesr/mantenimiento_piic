@@ -97,7 +97,7 @@ const RouteLogRow = ({
         transition={{ delay: index * 0.05 }}
         onClick={onToggle}
         className={`cursor-pointer transition-all duration-300 hover:bg-[#0f2a44]/[0.02] ${
-          isExpanded ? 'expanded-focus-blue shadow-inner' : ''
+          isExpanded ? 'expanded-focus-blue' : ''
         }`}
       >
         {/* Operador */}
