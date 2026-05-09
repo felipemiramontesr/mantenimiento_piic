@@ -2049,8 +2049,19 @@ table th > div {
 /* 2. Surrounding Border & Permanent Colors */
 .archon-registry-table tr.expanded-focus-blue td {
   background-color: rgba(59, 130, 246, 0.12) !important;
-  border-top: 2px solid #0f2a44 !important;
+  position: relative;
   box-shadow: 0 -12px 0 0 rgba(59, 130, 246, 0.12) !important; /* Bridge gap with same focal color */
+}
+
+.archon-registry-table tr.expanded-focus-blue td::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #0f2a44;
+  z-index: 10;
 }
 .archon-registry-table tr.expanded-focus-blue td:first-child {
   border-left: none !important;
