@@ -228,8 +228,16 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
                           else displayDesc = '—';
                         }
 
+                        const isIncident = log.event_type === 'ROUTE_INCIDENT';
+
                         return (
-                          <p className="text-[10px] font-bold text-[#0f2a44] opacity-70 line-clamp-2 italic leading-tight text-center max-w-[200px]">
+                          <p
+                            className={`text-[10px] font-bold line-clamp-2 leading-tight text-center max-w-[200px] ${
+                              isIncident
+                                ? 'text-rose-600 bg-rose-50 not-italic px-3 py-1 rounded-[4px] border border-rose-100 shadow-sm'
+                                : 'text-[#0f2a44] opacity-70 italic'
+                            }`}
+                          >
                             {displayDesc}
                           </p>
                         );
