@@ -2,32 +2,36 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * 🔱 Archon E2E Infrastructure: Playwright Configuration
- * Implementation: PIIC Sovereign Quality Gate (v.17.0.0)
+ * Implementation: Sovereign Browser Automation (v.78.46.4)
+ *
+ * Strategy: Chromium-only for speed. Full browser matrix in CI.
+ * Prerequisite: Both API and Web dev servers must be running.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: process.env.CI ? 'github' : 'html',
+
+  /* Global timeout per test */
+  timeout: 45_000,
+
+  /* Shared settings for all tests */
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'https://mantenimiento.piic.com.mx',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
     viewport: { width: 1280, height: 720 },
   },
 
+  /* Projects: Chromium only for dev speed */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-  },
 });

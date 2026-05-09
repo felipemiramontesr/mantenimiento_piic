@@ -49,6 +49,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
       }}
       className="nav-item-pro cursor-pointer group"
       title={isCollapsed ? label : ''}
+      data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <div style={{ color: active ? '#f2b705' : 'rgba(255,255,255,0.4)' }}>{icon}</div>
       {!isCollapsed && (
@@ -236,6 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               transition: 'all 0.2s ease',
             }}
             title="Configuración de Sistema"
+            data-testid="nav-item-settings"
           >
             <Settings size={14} />
             {!isCollapsed && <span>Configuración</span>}

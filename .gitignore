@@ -24,6 +24,12 @@ yarn-error.log*
 .eslintcache
 coverage/
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # IDE and OS Files
 .DS_Store
 Thumbs.db

@@ -66,6 +66,7 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
 
           <div className="archon-tile-action">
             <button
+              data-testid="fleet-strategy-btn"
               className={`btn-sentinel-navy w-full ${
                 activePanel === 'STRATEGY' ? 'bg-[#0f2a44] text-white' : ''
               }`}
@@ -120,6 +121,7 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
 
             <div className="archon-tile-action">
               <button
+                data-testid="fleet-registration-btn"
                 className={`btn-sentinel-emerald w-full ${
                   activePanel === 'EXPANSION' ? 'bg-emerald-600 text-white' : ''
                 }`}

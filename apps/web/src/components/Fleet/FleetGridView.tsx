@@ -357,6 +357,7 @@ const FleetUnitRow = ({
 
   return (
     <tr
+      data-testid={`fleet-row-${unit.id.toLowerCase()}`}
       className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.025] ${
         isOverdue ? 'bg-red-50/40' : ''
       }`}
@@ -531,7 +532,11 @@ export const FleetGridView = ({
         />
       )}
       <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 w-full max-w-full overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
-        <table key="fleet-table-v50.3.2" className="archon-registry-table w-full">
+        <table
+          data-testid="fleet-inventory-table"
+          key="fleet-table-v50.3.2"
+          className="archon-registry-table w-full"
+        >
           <thead>
             <tr>
               <th>ACTIVO</th>
