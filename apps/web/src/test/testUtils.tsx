@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { type ReactElement, type ReactNode } from 'react';
 import { UserContext } from '../context/UserContext';
 import { FleetContext } from '../context/FleetContext';
+import { AuthProvider } from '../context/AuthContext';
 
 /**
  * 🔱 Archon Test Utility: Sovereign Provider Injection
@@ -67,9 +68,11 @@ const MockFleetContext = {
 };
 
 const AllTheProviders = ({ children }: { children: ReactNode }): ReactElement => (
-  <UserContext.Provider value={MockUserContext as any}>
-    <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
-  </UserContext.Provider>
+  <AuthProvider>
+    <UserContext.Provider value={MockUserContext as any}>
+      <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
+    </UserContext.Provider>
+  </AuthProvider>
 );
 
 const renderWithProviders = (

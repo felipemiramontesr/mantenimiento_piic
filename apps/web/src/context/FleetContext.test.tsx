@@ -63,7 +63,9 @@ describe('FleetContext (World Class QA Suite)', () => {
     });
 
     // Verify cache is shown first
-    expect(screen.getByTestId('total').textContent).toBe('1');
+    await waitFor(() => {
+      expect(screen.getByTestId('total').textContent).toBe('1');
+    });
     expect(archonCache.get).toHaveBeenCalledWith('fleet_units');
   });
 
