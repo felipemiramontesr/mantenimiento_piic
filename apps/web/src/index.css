@@ -2073,10 +2073,10 @@ table th > div {
 }
 
 .accordion-inner .archon-registry-table tr:not(thead tr) {
-  background-color: rgba(16, 185, 129, 0.08) !important;
+  background-color: transparent !important;
   border-bottom: none !important;
 }
 
 .accordion-inner .archon-registry-table tr:hover td {
-  background-color: rgba(16, 185, 129, 0.08) !important;
+  background-color: transparent !important;
 }

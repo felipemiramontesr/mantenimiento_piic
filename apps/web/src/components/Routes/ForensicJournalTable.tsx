@@ -104,7 +104,9 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
       <div
         className={`${
           unitId ? 'bg-transparent w-full !p-0 !m-0' : 'glass-card-pro bg-white shadow-2xl mx-8'
-        } !pt-0 !pb-4 overflow-x-auto ${unitId ? '' : 'rounded-[4px]'} custom-scrollbar`}
+        } !pt-0 ${unitId ? '!pb-0' : '!pb-4'} overflow-x-auto ${
+          unitId ? '' : 'rounded-[4px]'
+        } custom-scrollbar`}
       >
         <table
           className={`archon-registry-table w-full ${unitId ? 'forensic-focus-green' : ''}`}
