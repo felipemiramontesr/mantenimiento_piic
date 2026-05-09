@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
-import { formatDateTime } from '../../utils/dateUtils';
+import { formatDateTime, calculateDuration } from '../../utils/dateUtils';
 import useRouteLogs from '../../hooks/useRouteLogs';
 import IncidentReportForm from './IncidentReportForm';
 import ForensicJournalTable from './ForensicJournalTable';
@@ -142,23 +142,57 @@ const RouteLogRow = ({
 
         {/* Misión */}
         <td className="py-6">
-          <div className="flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-2">
-              <Navigation size={12} className="text-emerald-500" />
-              <span className="text-[12px] font-black text-[#0f2a44] tracking-tight">
-                {log.origin}
-              </span>
+          <div className="flex flex-col items-center gap-3">
+            {/* Pierna de Ida (Outbound) */}
+            <div className="flex flex-col items-center">
+              <div className="flex items-center gap-2 mb-1">
+                <Navigation size={12} className="text-emerald-500 opacity-50" />
+                <span className="text-[11px] font-black text-[#0f2a44] tracking-tight">
+                  Desde: {log.origin}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock size={10} className="text-[#0f2a44] opacity-30" />
+                <span className="text-[10px] font-bold uppercase tracking-tight text-[#0f2a44]">
+                  {formatDateTime(log.start_time)}
+                </span>
+                <ArrowRight size={10} className="opacity-20" />
+                <span className="text-[10px] font-black uppercase tracking-tight text-emerald-600">
+                  {log.destination}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 opacity-40">
-              <Clock size={10} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">
-                {formatDateTime(log.start_time)}
-              </span>
-              <ArrowRight size={10} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">
-                {log.destination}
-              </span>
-            </div>
+
+            {/* Pierna de Regreso (Inbound) + Tiempo Total */}
+            {log.end_time && (
+              <div className="flex flex-col items-center border-t border-[#0f2a44]/5 pt-3 w-full max-w-[180px]">
+                <div className="flex items-center gap-2 mb-1">
+                  <Navigation size={12} className="text-blue-500 opacity-50 rotate-180" />
+                  <span className="text-[11px] font-black text-[#0f2a44] tracking-tight opacity-70">
+                    Retorno a Base
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock size={10} className="text-[#0f2a44] opacity-30" />
+                  <span className="text-[10px] font-bold uppercase tracking-tight text-[#0f2a44]">
+                    {formatDateTime(log.end_time)}
+                  </span>
+                  <ArrowRight size={10} className="opacity-20" />
+                  <span className="text-[10px] font-black uppercase tracking-tight opacity-50">
+                    {log.origin}
+                  </span>
+                </div>
+
+                <div className="px-3 py-1 bg-[#0f2a44]/5 rounded-full">
+                  <p className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest flex items-center gap-2">
+                    <span className="opacity-40 text-[8px]">Tiempo Total:</span>
+                    <span className="text-emerald-600">
+                      {calculateDuration(log.start_time, log.end_time)}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </td>
 

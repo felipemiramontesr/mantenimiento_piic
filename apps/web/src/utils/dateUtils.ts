@@ -34,3 +34,26 @@ export const formatDateTime = (date: string | number | Date): string => {
     hour12: true,
   });
 };
+/**
+ * Calculates the duration between two dates in a human-readable hour format.
+ * @param start - Start date
+ * @param end - End date
+ * @returns Formatted duration string (e.g., "2h 30m")
+ */
+export const calculateDuration = (
+  start: string | number | Date,
+  end: string | number | Date | null
+): string => {
+  if (!start || !end) return '---';
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  const diffMs = e - s;
+
+  if (diffMs < 0) return '0h 0m';
+
+  const totalMinutes = Math.floor(diffMs / 1000 / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${hours}h ${minutes}m`;
+};
