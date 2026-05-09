@@ -188,7 +188,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
                                 {log.unit_sede || 'BASE'}
                               </span>
                               <ArrowRight size={10} className="opacity-20" />
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter truncate max-w-[80px]">
+                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
                                 {log.route_destination}
                               </span>
                             </div>
@@ -197,7 +197,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
                         if (log.event_type === 'ROUTE_FINISH') {
                           return (
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter truncate max-w-[80px]">
+                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
                                 {log.route_destination}
                               </span>
                               <ArrowRight size={10} className="opacity-20" />
