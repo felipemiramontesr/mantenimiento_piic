@@ -99,6 +99,24 @@ const RouteLogRow = ({
           isExpanded ? 'expanded-focus-blue' : ''
         }`}
       >
+        {/* Activo */}
+        <td className="py-6">
+          <div className="flex flex-col items-center">
+            <div className="w-14 h-14 rounded-[4px] bg-slate-50 flex items-center justify-center mb-2 border border-slate-100 relative group">
+              <Truck size={24} className="text-slate-300" />
+              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                NO MEDIA
+              </span>
+            </div>
+            <span className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px]">
+              {log.unit_id}
+            </span>
+            <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+              {unit?.marca} {unit?.modelo}
+            </span>
+          </div>
+        </td>
+
         {/* Operador */}
         <td className="py-6">
           <div className="flex items-center justify-center gap-3">
@@ -118,24 +136,6 @@ const RouteLogRow = ({
                 ID: {operator?.employeeNumber || 'OPE-999'}
               </p>
             </div>
-          </div>
-        </td>
-
-        {/* Activo */}
-        <td className="py-6">
-          <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-[4px] bg-slate-50 flex items-center justify-center mb-2 border border-slate-100 relative group">
-              <Truck size={24} className="text-slate-300" />
-              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                NO MEDIA
-              </span>
-            </div>
-            <span className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px]">
-              {log.unit_id}
-            </span>
-            <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
-              {unit?.marca} {unit?.modelo}
-            </span>
           </div>
         </td>
 
@@ -325,8 +325,8 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
         <table data-testid="archon-route-log-table" className="archon-registry-table w-full">
           <thead>
             <tr>
-              <th>OPERADOR</th>
               <th>ACTIVO / UNIDAD</th>
+              <th>OPERADOR</th>
               <th>MISIÓN / TRAYECTO</th>
               <th>TELEMETRÍA</th>
               <th>DELTA</th>
