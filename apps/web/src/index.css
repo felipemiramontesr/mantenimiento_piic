@@ -816,6 +816,8 @@ body {
 .accordion-inner {
   min-height: 0;
   width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* 🛑 TOTAL SATURATION OVERRIDE (V.78.14.0 - Hardened) */
@@ -2094,5 +2096,5 @@ table th > div {
 }
 
 .accordion-inner .archon-registry-table tr:not(thead tr) {
-  background-color: rgba(16, 185, 129, 0.04) !important;
+  background-color: rgba(16, 185, 129, 0.08) !important;
 }

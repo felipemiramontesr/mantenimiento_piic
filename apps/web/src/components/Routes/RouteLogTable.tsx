@@ -237,7 +237,7 @@ const RouteLogRow = ({
       <tr className={isExpanded ? 'accordion-row-carrier' : ''}>
         <td colSpan={6} className="accordion-carrier">
           <div className={`accordion-content ${isExpanded ? 'expanded' : ''}`}>
-            <div className="accordion-inner border-b border-[#0f2a44]/5">
+            <div className="accordion-inner">
               <ForensicJournalTable unitId={log.unit_id} hideHeader />
             </div>
           </div>
