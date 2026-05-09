@@ -217,9 +217,24 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
                   </td>
 
                   <td className="py-4 px-4">
-                    <p className="text-[10px] font-bold text-[#0f2a44] opacity-70 line-clamp-2 italic leading-tight text-center">
-                      {log.description || 'Sin descripción forense'}
-                    </p>
+                    <div className="flex justify-center">
+                      {((): React.ReactNode => {
+                        let displayDesc = log.description;
+                        if (!displayDesc) {
+                          if (log.event_type === 'ROUTE_START')
+                            displayDesc = 'Despliegue operativo iniciado.';
+                          else if (log.event_type === 'ROUTE_FINISH')
+                            displayDesc = 'Cierre de misión logístico.';
+                          else displayDesc = '—';
+                        }
+
+                        return (
+                          <p className="text-[10px] font-bold text-[#0f2a44] opacity-70 line-clamp-2 italic leading-tight text-center max-w-[200px]">
+                            {displayDesc}
+                          </p>
+                        );
+                      })()}
+                    </div>
                   </td>
 
                   <td className="py-4">
