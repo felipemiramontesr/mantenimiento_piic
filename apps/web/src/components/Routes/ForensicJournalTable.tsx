@@ -43,6 +43,12 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
         data = data.filter((l: ActivityLog) => l.unit_id === unitId);
       }
 
+      // 🔱 Chronological Sequencing (Ascending Order: Salida -> Entrada)
+      data.sort(
+        (a: ActivityLog, b: ActivityLog) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
       setLogs(data);
     } catch (err) {
       // Sovereign silence
