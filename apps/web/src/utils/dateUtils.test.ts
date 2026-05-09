@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { formatDate, formatDateTime } from './dateUtils';
+import { formatDate, formatDateTime, calculateDuration } from './dateUtils';
 
 describe('Archon Date Engine (v.1.0.0)', () => {
   const mockDate = '2026-05-04T15:30:00Z';
@@ -29,5 +29,23 @@ describe('Archon Date Engine (v.1.0.0)', () => {
     expect(formatDateTime(null)).toBe('---');
     // @ts-expect-error - Testing invalid input
     expect(formatDateTime(undefined)).toBe('---');
+  });
+
+  test('calculateDuration should return human-readable duration', () => {
+    const start = '2026-05-04T10:00:00Z';
+    const end = '2026-05-04T12:30:00Z';
+    expect(calculateDuration(start, end)).toBe('2h 30m');
+  });
+
+  test('calculateDuration should return --- for missing inputs', () => {
+    expect(calculateDuration('', null)).toBe('---');
+    // @ts-expect-error - Testing invalid input
+    expect(calculateDuration(null, '2026-05-04T10:00:00Z')).toBe('---');
+  });
+
+  test('calculateDuration should return 0h 0m for negative diff', () => {
+    const start = '2026-05-04T15:00:00Z';
+    const end = '2026-05-04T10:00:00Z';
+    expect(calculateDuration(start, end)).toBe('0h 0m');
   });
 });

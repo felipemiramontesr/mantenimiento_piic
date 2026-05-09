@@ -14,6 +14,7 @@ const api = axios.create({
 });
 
 // 🛡️ Zero-Noise Test Shield
+/* istanbul ignore next */
 if (typeof process === 'undefined' || (process.env.NODE_ENV !== 'test' && !process.env.VITEST)) {
   // eslint-disable-next-line no-console
   console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
@@ -37,6 +38,7 @@ api.interceptors.response.use(
       typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
 
     if (!isTest) {
+      /* istanbul ignore next */
       // eslint-disable-next-line no-console
       console.error('🌐 [Archon API Client] Networking Error:', {
         message: error.message,
@@ -48,6 +50,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       if (!isTest) {
         // 🕵️ Forensic Log: Catch the culprit before redirect
+        /* istanbul ignore next */
         // eslint-disable-next-line no-console
         console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
           url: error.config?.url,
