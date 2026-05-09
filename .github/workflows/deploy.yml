@@ -134,6 +134,7 @@ jobs:
           echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| **Vitest** | Unit Testing | Validación atómica de componentes UI |" >> $GITHUB_STEP_SUMMARY
           echo "| **Jest / Supertest** | Integration | Pruebas de endpoints y contratos API |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Playwright** | E2E Testing | Simulación forense de navegación y escenarios críticos |" >> $GITHUB_STEP_SUMMARY
           echo "| **ESLint** | Static Analysis | Cumplimiento de estándares de código |" >> $GITHUB_STEP_SUMMARY
           echo "| **SonarJS** | Forensic Audit | Análisis de complejidad y seguridad |" >> $GITHUB_STEP_SUMMARY
           echo "| **Husky** | Git Hooks | Blindaje de integridad pre-commit |" >> $GITHUB_STEP_SUMMARY

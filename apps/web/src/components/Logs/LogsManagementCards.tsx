@@ -73,14 +73,14 @@ const LogsManagementCards: React.FC<LogsManagementCardsProps> = ({
         onClick={(): void => onPanelChange('INCIDENTS')}
         className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
           activePanel === 'INCIDENTS'
-            ? 'border-2 border-red-600 shadow-lg'
+            ? 'border-2 border-red-500 shadow-lg'
             : 'hover:opacity-100 opacity-80'
         }`}
-        style={{ borderTop: '4px solid #dc2626' }}
+        style={{ borderTop: '4px solid #ef4444' }}
       >
         <div className="flex items-center justify-center gap-3 mb-4 w-full">
-          <Flame size={20} className="text-red-600" />
-          <span className="text-instrument-header text-red-600 opacity-80 uppercase tracking-widest">
+          <Flame size={20} className="text-red-500" />
+          <span className="text-instrument-header text-red-500 opacity-80 uppercase tracking-widest">
             Monitoreo Crítico
           </span>
         </div>
@@ -91,14 +91,14 @@ const LogsManagementCards: React.FC<LogsManagementCardsProps> = ({
               width: '80px',
               height: '80px',
               borderRadius: '4px',
-              backgroundColor: 'rgba(220, 38, 38, 0.1)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px solid rgba(220, 38, 38, 0.4)',
+              border: '2px solid rgba(239, 68, 68, 0.4)',
             }}
           >
-            <AlertTriangle size={40} className="text-red-600" />
+            <AlertTriangle size={40} className="text-red-500" />
           </div>
           <div className="flex flex-col items-center space-y-1 mb-12">
             <h3 className="text-[#0f2a44] font-black uppercase tracking-[0.15em] text-[14px]">
