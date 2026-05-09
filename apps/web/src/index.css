@@ -14,7 +14,7 @@
   --card-border: #e2e8f0; /* Clean light gray border */
   --color-subtitle: #ffffff;
 }
-
+/* 🏛️ ARCHON SOVEREIGN CORE (V.78.37.0) */
 /* 🔱 ARCHON CUSTOM SCROLLBAR (Premium Spacing) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -855,31 +855,7 @@ body {
   padding-right: 20px !important; /* Keep alignment for main row */
 }
 
-.archon-registry-table tr.accordion-row-carrier td.accordion-carrier {
-  border-left: 2px solid #0f2a44 !important;
-  border-right: 2px solid #0f2a44 !important;
-  border-bottom: 2px solid #0f2a44 !important;
-  background-color: rgba(16, 185, 129, 0.04) !important;
-}
-
-/* Force neutralization for NESTED forensic table to hit the edge */
-.accordion-inner .archon-registry-table th:last-child,
-.accordion-inner .archon-registry-table td:last-child {
-  padding-right: 8px !important; /* Industrial Standard Gap, not 20px */
-}
-
-.accordion-inner .archon-registry-table td {
-  background-color: transparent !important; /* Inherit green focus */
-}
-
-.accordion-inner .archon-registry-table tr:not(thead tr) {
-  background-color: rgba(16, 185, 129, 0.03) !important;
-  border-bottom: 1px solid rgba(16, 185, 129, 0.1) !important;
-}
-
-.accordion-inner .archon-registry-table tr:hover td {
-  background-color: rgba(16, 185, 129, 0.08) !important;
-}
+/* 🎨 SOVEREIGN FOCAL UNIT & CHROMATIC PROTOCOL */
 
 .expanded-row-container {
   background-color: rgba(15, 42, 68, 0.015);
