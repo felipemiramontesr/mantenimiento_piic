@@ -220,6 +220,23 @@ const RouteLogRow = ({
           </div>
         </td>
 
+        {/* Delta */}
+        <td className="py-6">
+          <div className="flex flex-col items-center">
+            {log.end_km !== null && log.end_km !== undefined ? (
+              <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <span className="text-[10px] font-black tracking-widest">+</span>
+                <span className="text-[11px] font-black tracking-tight">
+                  {(log.end_km - log.start_km).toLocaleString()}
+                </span>
+                <span className="text-[8px] font-bold opacity-60 ml-0.5">KM</span>
+              </div>
+            ) : (
+              <span className="text-[11px] font-black text-slate-300">---</span>
+            )}
+          </div>
+        </td>
+
         {/* Estado */}
         <td className="py-6">
           <div className="flex justify-center">
@@ -273,7 +290,7 @@ const RouteLogRow = ({
       </motion.tr>
 
       <tr className={isExpanded ? 'accordion-row-carrier' : ''}>
-        <td colSpan={6} className="accordion-carrier">
+        <td colSpan={7} className="accordion-carrier">
           <div className={`accordion-content ${isExpanded ? 'expanded' : ''}`}>
             <div className="accordion-inner">
               <ForensicJournalTable unitId={log.unit_id} hideHeader />
@@ -312,6 +329,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
               <th>ACTIVO / UNIDAD</th>
               <th>MISIÓN / TRAYECTO</th>
               <th>TELEMETRÍA</th>
+              <th>DELTA</th>
               <th>ESTADO</th>
               <th>AJUSTES</th>
             </tr>
