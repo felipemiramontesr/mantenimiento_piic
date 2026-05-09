@@ -2084,6 +2084,7 @@ table th > div {
   width: 100% !important;
   min-width: 100% !important;
   margin: 0 !important;
+  border-collapse: collapse !important;
 }
 
 .accordion-inner .archon-registry-table th:last-child,
@@ -2096,5 +2097,10 @@ table th > div {
 }
 
 .accordion-inner .archon-registry-table tr:not(thead tr) {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-bottom: none !important;
+}
+
+.accordion-inner .archon-registry-table tr:hover td {
   background-color: rgba(16, 185, 129, 0.08) !important;
 }
