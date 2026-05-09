@@ -152,12 +152,13 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           u.full_name as operatorName,
           c_brand.label as marca,
           c_model.label as modelo,
-          f.sede as unit_sede,
+          c_loc.label as unit_sede,
           r.destination as route_destination,
           c_origin.label as route_origin_label
         FROM unit_activity_logs l
         LEFT JOIN users u ON l.created_by = u.id
         LEFT JOIN fleet_units f ON l.unit_id = f.id
+        LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id AND c_loc.category = 'LOCATION'
         LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id AND c_brand.category = 'BRAND'
         LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id AND c_model.category = 'MODEL'
         LEFT JOIN fleet_routes r ON l.reference_id = r.uuid
