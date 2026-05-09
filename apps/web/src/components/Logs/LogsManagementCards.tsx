@@ -113,13 +113,11 @@ const LogsManagementCards: React.FC<LogsManagementCardsProps> = ({
         <div className="archon-tile-action">
           <button
             data-testid="logs-incidents-btn"
-            className={`w-full flex items-center justify-center py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all duration-300 ${
-              activePanel === 'INCIDENTS'
-                ? 'bg-red-600 text-white'
-                : 'bg-[rgba(220,38,38,0.1)] text-red-600 hover:bg-red-600 hover:text-white'
+            className={`btn-sentinel-red w-full ${
+              activePanel === 'INCIDENTS' ? 'bg-[#ef4444] text-white' : ''
             }`}
           >
-            Ver Incidencias <ArrowRight size={10} className="ml-2" />
+            Ver Incidencias <ArrowRight size={10} className="text-white ml-2" />
           </button>
         </div>
       </div>
