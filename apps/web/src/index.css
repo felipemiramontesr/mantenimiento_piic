@@ -1819,7 +1819,7 @@ table th > div {
 }
 
 .archon-registry-table td {
-  padding: 10px 8px !important;
+  padding: 16px 8px !important;
   background: white;
   font-size: 13px;
   color: #0f2a44;
@@ -1838,7 +1838,7 @@ table th > div {
 
 .archon-registry-table tr {
   transition: all 0.2s ease;
-  border-bottom: 12px solid #ffffff;
+  border-bottom: 1px solid rgba(15, 42, 68, 0.05) !important;
 }
 
 .archon-registry-table thead tr {
@@ -2055,18 +2055,7 @@ table th > div {
   background-color: rgba(59, 130, 246, 0.08) !important;
   position: relative;
   box-shadow: none !important;
-}
-
-.archon-registry-table tr.expanded-focus-blue td::before {
-  content: '';
-  position: absolute;
-  top: -12px;
-  left: 0;
-  right: 0;
-  height: 13px; /* 1px overlap with row to kill bleed */
-  background-color: rgba(59, 130, 246, 0.08);
   border-top: 2px solid #0f2a44 !important;
-  z-index: 10;
 }
 .archon-registry-table tr.expanded-focus-blue td:first-child {
   border-left: none !important;
