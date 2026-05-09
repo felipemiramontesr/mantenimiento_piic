@@ -18,6 +18,9 @@ interface ActivityLog {
   marca: string;
   modelo: string;
   created_at: string;
+  unit_sede?: string;
+  route_destination?: string;
+  route_origin_label?: string;
 }
 
 interface ForensicJournalTableProps {
@@ -123,7 +126,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
               <th style={{ width: '15%' }}>FECHA / HORA</th>
               {!unitId && <th style={{ width: '15%' }}>ACTIVO</th>}
               <th style={{ width: '15%' }}>EVENTO / IMPACTO</th>
-              <th style={{ width: '40%' }}>DESCRIPCIÓN / NOTA</th>
+              <th style={{ width: '20%' }}>TRAYECTO</th>
+              <th style={{ width: '25%' }}>DESCRIPCIÓN / NOTA</th>
               <th style={{ width: '15%' }}>TELEMETRÍA (SNAPSHOT)</th>
               <th style={{ width: '10%' }}>DELTA</th>
               <th style={{ width: '15%' }}>RESPONSABLE</th>
@@ -171,6 +175,44 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
                       >
                         {style.label}
                       </span>
+                    </div>
+                  </td>
+
+                  <td className="py-4">
+                    <div className="flex flex-col items-center justify-center px-2">
+                      {((): React.ReactNode => {
+                        if (log.event_type === 'ROUTE_START') {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
+                                {log.unit_sede || 'BASE'}
+                              </span>
+                              <ArrowRight size={10} className="opacity-20" />
+                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter truncate max-w-[80px]">
+                                {log.route_destination}
+                              </span>
+                            </div>
+                          );
+                        }
+                        if (log.event_type === 'ROUTE_FINISH') {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter truncate max-w-[80px]">
+                                {log.route_destination}
+                              </span>
+                              <ArrowRight size={10} className="opacity-20" />
+                              <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
+                                {log.unit_sede || 'BASE'}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
+                            —
+                          </span>
+                        );
+                      })()}
                     </div>
                   </td>
 
