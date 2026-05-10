@@ -89,7 +89,12 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       // 4. Mock Final Log
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
-      await RouteService.finishRoute('UUID-123', 1200, 95, undefined, undefined, undefined, 0, 500);
+      await RouteService.finishRoute('UUID-123', {
+        endReading: 1200,
+        fuelLevelEnd: 95,
+        fuelLiters: 0,
+        fuelAmount: 500,
+      });
 
       expect(mockConnection.commit).toHaveBeenCalled();
       expect(mockConnection.execute).toHaveBeenCalledWith(
@@ -103,25 +108,25 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     it('should throw error if route is not found', async () => {
       mockConnection.execute.mockResolvedValueOnce([[]]);
 
-      await expect(RouteService.finishRoute('MISSING', 2000, 100)).rejects.toThrow(
-        /Route not found/
-      );
+      await expect(
+        RouteService.finishRoute('MISSING', { endReading: 2000, fuelLevelEnd: 100 })
+      ).rejects.toThrow(/Route not found/);
     });
 
     it('should throw error if route is not active', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'COMPLETED' }]]);
 
-      await expect(RouteService.finishRoute('DONE', 2000, 100)).rejects.toThrow(
-        /Route is not active/
-      );
+      await expect(
+        RouteService.finishRoute('DONE', { endReading: 2000, fuelLevelEnd: 100 })
+      ).rejects.toThrow(/Route is not active/);
     });
 
     it('should throw error if end reading is lower than start reading', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE', start_reading: 5000 }]]);
 
-      await expect(RouteService.finishRoute('ERROR', 4000, 100)).rejects.toThrow(
-        /End reading cannot be lower than start reading/
-      );
+      await expect(
+        RouteService.finishRoute('ERROR', { endReading: 4000, fuelLevelEnd: 100 })
+      ).rejects.toThrow(/End reading cannot be lower than start reading/);
     });
   });
 
