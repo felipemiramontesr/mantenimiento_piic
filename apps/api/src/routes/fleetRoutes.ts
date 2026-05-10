@@ -173,19 +173,31 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             COALESCE(JSON_VALUE(a.snapshot_after, '$.unit_id'), r.unit_id) as unit_id,
             'ADMIN_EDIT' as event_type,
             a.entity_id as reference_id,
-            -- Detect which reading changed (End vs Start)
+            -- Detect which reading changed (End vs Start) with NULL-safe logic
             CAST(
               CASE 
-                WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading') 
+                WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading')
+                     OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NULL)
                 THEN JSON_VALUE(a.snapshot_before, '$.end_reading')
-                ELSE JSON_VALUE(a.snapshot_before, '$.start_reading')
+                WHEN JSON_VALUE(a.snapshot_before, '$.start_reading') <> JSON_VALUE(a.snapshot_after, '$.start_reading')
+                     OR (JSON_VALUE(a.snapshot_before, '$.start_reading') IS NULL AND JSON_VALUE(a.snapshot_after, '$.start_reading') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.start_reading') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.start_reading') IS NULL)
+                THEN JSON_VALUE(a.snapshot_before, '$.start_reading')
+                ELSE COALESCE(JSON_VALUE(a.snapshot_before, '$.end_reading'), JSON_VALUE(a.snapshot_before, '$.start_reading'))
               END AS DECIMAL(12,2)
             ) as reading_before,
             CAST(
               CASE 
-                WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading') 
+                WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading')
+                     OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NULL)
                 THEN JSON_VALUE(a.snapshot_after, '$.end_reading')
-                ELSE JSON_VALUE(a.snapshot_after, '$.start_reading')
+                WHEN JSON_VALUE(a.snapshot_before, '$.start_reading') <> JSON_VALUE(a.snapshot_after, '$.start_reading')
+                     OR (JSON_VALUE(a.snapshot_before, '$.start_reading') IS NULL AND JSON_VALUE(a.snapshot_after, '$.start_reading') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.start_reading') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.start_reading') IS NULL)
+                THEN JSON_VALUE(a.snapshot_after, '$.start_reading')
+                ELSE COALESCE(JSON_VALUE(a.snapshot_after, '$.end_reading'), JSON_VALUE(a.snapshot_after, '$.start_reading'))
               END AS DECIMAL(12,2)
             ) as reading_after,
             JSON_VALUE(a.snapshot_before, '$.status') as status_before,
@@ -195,19 +207,31 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             a.created_at,
             CAST(JSON_VALUE(a.snapshot_before, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_before,
             CAST(JSON_VALUE(a.snapshot_after, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_after,
-            -- Detect which fuel level changed (End vs Start) to avoid showing 'backwards' or irrelevant data
+            -- Detect which fuel level changed (End vs Start) with NULL-safe logic
             CAST(
               CASE 
-                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end') 
+                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end')
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NULL)
                 THEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end')
-                ELSE JSON_VALUE(a.snapshot_before, '$.fuel_level_start')
+                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_start') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_start')
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_start') IS NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_start') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_start') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_start') IS NULL)
+                THEN JSON_VALUE(a.snapshot_before, '$.fuel_level_start')
+                ELSE COALESCE(JSON_VALUE(a.snapshot_before, '$.fuel_level_end'), JSON_VALUE(a.snapshot_before, '$.fuel_level_start'))
               END AS DECIMAL(5,2)
             ) as fuel_level_before,
             CAST(
               CASE 
-                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end') 
+                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end')
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NULL)
                 THEN JSON_VALUE(a.snapshot_after, '$.fuel_level_end')
-                ELSE JSON_VALUE(a.snapshot_after, '$.fuel_level_start')
+                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_start') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_start')
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_start') IS NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_start') IS NOT NULL)
+                     OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_start') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_start') IS NULL)
+                THEN JSON_VALUE(a.snapshot_after, '$.fuel_level_start')
+                ELSE COALESCE(JSON_VALUE(a.snapshot_after, '$.fuel_level_end'), JSON_VALUE(a.snapshot_after, '$.fuel_level_start'))
               END AS DECIMAL(5,2)
             ) as fuel_level_after
           FROM administrative_audit_logs a
