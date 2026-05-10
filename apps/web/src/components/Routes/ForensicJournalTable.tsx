@@ -135,7 +135,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
           <div className="w-full py-4 bg-emerald-50/50 border-y border-emerald-100 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
             <Activity size={16} className="text-emerald-500 animate-pulse" />
             <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.3em]">
-              Ruta Saludable | No existen Incidencias
+              Ruta Saludable
             </span>
           </div>
         ) : (
