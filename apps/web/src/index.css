@@ -1312,25 +1312,27 @@ body {
     box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.95);
   }
 
-  .btn-sentinel-yellow {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background-color: #f2b705;
-    color: #0f2a44;
-    height: 57px !important;
-    padding: 0 28px !important;
-    border-radius: 4px;
-    font-weight: 900;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    border: none;
-    cursor: pointer;
-  }
   /* ... mapping other variants similarly ... */
+}
+
+.btn-sentinel-yellow {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: #f2b705;
+  color: #0f2a44;
+  height: 57px !important;
+  width: 100% !important;
+  padding: 0 28px !important;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
 }
 
 .btn-sentinel-yellow:hover {
