@@ -801,10 +801,12 @@ body {
   }
 }
 
-/* 🌀 SOVEREIGN ACCORDION ENGINE (v.2.0.0 - Optimized) */
+/* 🌀 SOVEREIGN ACCORDION ENGINE (v.3.0.0 - Full Width Hardened) */
 .accordion-content {
   display: grid;
   grid-template-rows: 0fr;
+  grid-template-columns: 1fr;
+  width: 100% !important;
   transition: grid-template-rows 500ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
@@ -815,6 +817,7 @@ body {
 
 .accordion-inner {
   min-height: 0;
+  min-width: 0;
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -833,6 +836,7 @@ body {
 
 .accordion-inner {
   min-height: 0;
+  min-width: 0;
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -1886,12 +1890,35 @@ table th > div {
   white-space: nowrap !important;
 }
 
-/* 🔱 ARCHON ACCORDION OVERRIDES */
+/* 🔱 ARCHON ACCORDION OVERRIDES (V.78.47.10 - Full Saturation) */
+.accordion-inner > * {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.accordion-inner div {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 .accordion-inner .archon-registry-table {
   width: 100% !important;
+  min-width: 100% !important;
   box-shadow: none !important;
   border-radius: 0 !important;
   margin: 0 !important;
+  border-collapse: collapse !important;
 }
 
 .accordion-inner .archon-registry-table tr {
