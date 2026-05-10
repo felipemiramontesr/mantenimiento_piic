@@ -25,6 +25,7 @@ interface ActivityLog {
 
 interface ForensicJournalTableProps {
   unitId?: string;
+  routeUuid?: string;
   hideHeader?: boolean;
 }
 
@@ -33,7 +34,11 @@ interface ForensicJournalTableProps {
  * Purpose: Immutable trace of all asset impacts and telemetery deltas.
  * Version: 1.2.0 - Full-Width Symmetry Standard
  */
-const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hideHeader }) => {
+const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
+  unitId,
+  routeUuid,
+  hideHeader,
+}) => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +47,10 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
       const res = await api.get('/unit-logs');
       let data = res.data?.data || [];
 
-      if (unitId) {
+      if (routeUuid) {
+        // 🔱 Route-Scoped Filter: Only show forensic events linked to this specific route
+        data = data.filter((l: ActivityLog) => l.reference_id === routeUuid);
+      } else if (unitId) {
         data = data.filter((l: ActivityLog) => l.unit_id === unitId);
       }
 
@@ -62,7 +70,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
 
   useEffect(() => {
     fetchLogs();
-  }, [unitId]);
+  }, [unitId, routeUuid]);
 
   const getEventStyle = (
     type: string
