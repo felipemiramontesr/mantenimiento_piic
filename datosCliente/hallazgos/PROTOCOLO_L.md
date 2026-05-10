@@ -41,6 +41,7 @@ Es **obligatorio** que todo componente que consuma datos externos (API) implemen
 1. **Caché-First**: El estado inicial debe leerse de `archonCache` para mostrar datos instantáneamente al montar el componente.
 2. **Sincronización Silenciosa**: El fetch de red debe ocurrir en segundo plano y actualizar la caché y el estado sin interrumpir al usuario.
 3. **Resiliencia**: En caso de fallo de red, se deben mantener los datos de la caché en pantalla.
+4. en mandatorio usar **DRY** y **SOLID** ademas de cualquier cotra tecnica que haga del sistema un sistema de clase mundial.
 
 ---
 

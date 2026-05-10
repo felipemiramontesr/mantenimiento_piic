@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Clock, ArrowRight, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Shield, Clock, ArrowRight, Activity, AlertTriangle } from 'lucide-react';
 import api from '../../api/client';
 import { formatDateTime } from '../../utils/dateUtils';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -108,10 +108,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
     { key: 'fecha', label: 'FECHA / HORA' },
     ...(!unitId ? [{ key: 'activo', label: 'ACTIVO' }] : []),
     { key: 'evento', label: 'EVENTO / IMPACTO' },
-    { key: 'trayecto', label: 'TRAYECTO' },
     { key: 'descripcion', label: 'DESCRIPCIÓN / NOTA' },
-    { key: 'telemetria', label: 'TELEMETRÍA (SNAPSHOT)' },
-    { key: 'delta', label: 'DELTA' },
+    { key: 'modificacion', label: 'MODIFICACIÓN' },
     { key: 'responsable', label: 'RESPONSABLE' },
   ] as ArchonTableHeader[];
 
@@ -201,44 +199,6 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4">
-                    <div className="flex flex-col items-center justify-center px-2">
-                      {((): React.ReactNode => {
-                        if (log.event_type === 'ROUTE_START') {
-                          return (
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
-                                {log.unit_sede || 'BASE'}
-                              </span>
-                              <ArrowRight size={10} className="opacity-20" />
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
-                                {log.route_destination}
-                              </span>
-                            </div>
-                          );
-                        }
-                        if (log.event_type === 'ROUTE_FINISH') {
-                          return (
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
-                                {log.route_destination}
-                              </span>
-                              <ArrowRight size={10} className="opacity-20" />
-                              <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
-                                {log.unit_sede || 'BASE'}
-                              </span>
-                            </div>
-                          );
-                        }
-                        return (
-                          <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
-                            —
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </td>
-
                   <td className="py-4 px-4">
                     <div className="flex justify-center">
                       {((): React.ReactNode => {
@@ -265,31 +225,43 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                   </td>
 
                   <td className="py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-[11px] font-black text-[#0f2a44]">
-                        {log.reading_before?.toLocaleString()}
-                      </span>
-                      {log.event_type !== 'ROUTE_START' && log.reading_after && (
-                        <>
-                          <ArrowRight size={10} className="opacity-20" />
-                          <span className="text-[11px] font-black text-[#0f2a44]">
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      {log.reading_before !== log.reading_after && (
+                        <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
+                          <Activity size={10} className="text-[#0f2a44] opacity-50" />
+                          <span className="text-[10px] font-black text-[#0f2a44]">
+                            {log.reading_before?.toLocaleString()}
+                          </span>
+                          <ArrowRight size={10} className="opacity-30" />
+                          <span className="text-[10px] font-black text-[#0f2a44]">
                             {log.reading_after?.toLocaleString()}
                           </span>
-                        </>
+                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded-sm">
+                            {delta > 0 ? `+${delta.toLocaleString()}` : delta.toLocaleString()} KM
+                          </span>
+                        </div>
                       )}
-                      <span className="text-[9px] font-bold opacity-30">KM</span>
-                    </div>
-                  </td>
 
-                  <td className="py-4">
-                    {delta > 0 ? (
-                      <div className="flex items-center justify-center gap-1 text-[#0f2a44]">
-                        <TrendingUp size={10} className="opacity-40" />
-                        <span className="text-[11px] font-black">{delta.toLocaleString()}</span>
-                      </div>
-                    ) : (
-                      <span className="text-[10px] font-bold opacity-20 text-[#0f2a44]">---</span>
-                    )}
+                      {log.status_before !== log.status_after && (
+                        <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
+                          <Shield size={10} className="text-[#0f2a44] opacity-50" />
+                          <span className="text-[10px] font-black text-[#0f2a44] opacity-40">
+                            {log.status_before}
+                          </span>
+                          <ArrowRight size={10} className="opacity-30" />
+                          <span className="text-[10px] font-black text-[#0f2a44]">
+                            {log.status_after}
+                          </span>
+                        </div>
+                      )}
+
+                      {log.reading_before === log.reading_after &&
+                        log.status_before === log.status_after && (
+                          <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
+                            —
+                          </span>
+                        )}
+                    </div>
                   </td>
 
                   <td className="py-4">
