@@ -203,6 +203,24 @@ export const useRouteAssignmentControl = (
     setFormData((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  const getForensicPayload = (): Record<string, unknown> => {
+    const originId = origins.find((o) => o.label === formData.origin)?.id;
+    const { origin: _origin, ...rest } = formData;
+    return {
+      ...rest,
+      operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
+      originId: originId ? Number(originId) : undefined,
+      fuelLevel: Number(formData.fuelLevel || 0),
+      fuelLitersLoaded: Number(formData.fuelLitersLoaded || 0),
+      fuelAmount: Number(formData.fuelAmount || 0),
+      startReading: Number(formData.startReading || 0),
+      endReading: Number(formData.endReading || 0),
+      additivesCheck: formData.additivesCheck ? 1 : 0,
+      tirePressureJson: formData.tirePressureJson || null,
+      checklistJson: formData.checklistJson || null,
+    };
+  };
+
   const handleConfirmAudit = async (reason: string): Promise<void> => {
     if (!reason || reason.length < 5) {
       setError('La justificación debe tener al menos 5 caracteres.');
@@ -214,22 +232,7 @@ export const useRouteAssignmentControl = (
 
     try {
       if (auditAction === 'UPDATE') {
-        // 🔱 Forensic Mapping: Ensure numeric types and ID conversion
-        const originId = origins.find((o) => o.label === formData.origin)?.id;
-
-        // Clean payload for the forensic vault
-        const { origin: _origin, ...rest } = formData;
-        const payload = {
-          ...rest,
-          operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
-          originId: originId ? Number(originId) : undefined,
-          fuelLevel: Number(formData.fuelLevel || 0),
-          fuelLitersLoaded: Number(formData.fuelLitersLoaded || 0),
-          fuelAmount: Number(formData.fuelAmount || 0),
-          startReading: Number(formData.startReading || 0),
-          endReading: Number(formData.endReading || 0),
-        };
-
+        const payload = getForensicPayload();
         await api.put(`/routes/${routeToEdit?.uuid}`, { data: payload, reason });
       } else {
         await api.delete(`/routes/${routeToEdit?.uuid}`, { data: { reason } });
