@@ -71,9 +71,9 @@ export default class RouteService {
       // 4. Create Impact Log
       await connection.execute(
         `INSERT INTO unit_activity_logs 
-        (unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by) 
-        VALUES (?, 'ROUTE_START', ?, ?, ?, 'En Ruta', ?)`,
-        [unitId, routeUuid, units[0].currentReading, units[0].status, driverId]
+        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by) 
+        VALUES (?, ?, 'ROUTE_START', ?, ?, ?, 'En Ruta', ?)`,
+        [randomUUID(), unitId, routeUuid, units[0].currentReading, units[0].status, driverId]
       );
 
       await connection.commit();
@@ -159,9 +159,9 @@ export default class RouteService {
       // 4. Create Final Log
       await connection.execute(
         `INSERT INTO unit_activity_logs 
-        (unit_id, event_type, reference_id, reading_before, reading_after, status_before, status_after, created_by) 
-        VALUES (?, 'ROUTE_FINISH', ?, ?, ?, 'En Ruta', 'Disponible', ?)`,
-        [route.unit_id, routeUuid, route.start_reading, endReading, route.driver_id]
+        (uuid, unit_id, event_type, reference_id, reading_before, reading_after, status_before, status_after, created_by) 
+        VALUES (?, ?, 'ROUTE_FINISH', ?, ?, ?, 'En Ruta', 'Disponible', ?)`,
+        [randomUUID(), route.unit_id, routeUuid, route.start_reading, endReading, route.driver_id]
       );
 
       await connection.commit();
@@ -225,9 +225,10 @@ export default class RouteService {
       // 4. Log the incident in the forensic journal
       await connection.execute(
         `INSERT INTO unit_activity_logs 
-        (unit_id, event_type, reference_id, reading_before, status_before, status_after, description, created_by) 
-        VALUES (?, 'ROUTE_INCIDENT', ?, ?, ?, ?, ?, ?)`,
+        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, description, created_by) 
+        VALUES (?, ?, 'ROUTE_INCIDENT', ?, ?, ?, ?, ?, ?)`,
         [
+          randomUUID(),
           route.unit_id,
           routeUuid,
           route.start_reading,

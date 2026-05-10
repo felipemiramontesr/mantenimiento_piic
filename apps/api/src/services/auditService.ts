@@ -1,4 +1,5 @@
 import { RowDataPacket } from 'mysql2';
+import { randomUUID } from 'node:crypto';
 import db from './db';
 
 export interface AuditLogEntry {
@@ -19,11 +20,12 @@ export const recordAuditLog = async (entry: AuditLogEntry): Promise<void> => {
   try {
     const query = `
       INSERT INTO administrative_audit_logs 
-      (entity_type, entity_id, action, snapshot_before, snapshot_after, reason, user_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (uuid, entity_type, entity_id, action, snapshot_before, snapshot_after, reason, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await db.query(query, [
+      randomUUID(),
       entry.entity_type,
       entry.entity_id,
       entry.action,

@@ -5,7 +5,7 @@ import { formatDateTime } from '../../utils/dateUtils';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 interface ActivityLog {
-  id: number;
+  id: string;
   unit_id: string;
   event_type: string;
   reference_id: string;
@@ -15,6 +15,8 @@ interface ActivityLog {
   status_after: string;
   fuel_before?: number;
   fuel_after?: number;
+  fuel_level_before?: number;
+  fuel_level_after?: number;
   description: string;
   operatorName: string;
   marca: string;
@@ -108,6 +110,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
   const headers: ArchonTableHeader[] = [
     { key: 'fecha', label: 'FECHA / HORA' },
+    { key: 'folio', label: 'FOLIO' },
     ...(!unitId ? [{ key: 'activo', label: 'ACTIVO' }] : []),
     { key: 'evento', label: 'EVENTO / IMPACTO' },
     { key: 'descripcion', label: 'DESCRIPCIÓN / NOTA' },
@@ -172,6 +175,12 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                   <td className="py-4">
                     <span className="text-[11px] font-black text-[#0f2a44]">
                       {formatDateTime(log.created_at)}
+                    </span>
+                  </td>
+
+                  <td className="py-4">
+                    <span className="text-[9px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-1.5 py-0.5 rounded border border-[#0f2a44]/10 uppercase tracking-tighter">
+                      {log.id.substring(0, 8)}
                     </span>
                   </td>
 
@@ -247,7 +256,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                           </div>
                         )}
 
-                      {/* ⛽ FUEL IMPACT */}
+                      {/* ⛽ FUEL IMPACT (Liters) */}
                       {log.fuel_before !== null &&
                         log.fuel_after !== null &&
                         Number(log.fuel_before) !== Number(log.fuel_after) && (
@@ -259,6 +268,22 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                             <ArrowRight size={10} className="opacity-30" />
                             <span className="text-[10px] font-black text-[#0f2a44]">
                               {Number(log.fuel_after).toFixed(1)} L
+                            </span>
+                          </div>
+                        )}
+
+                      {/* ⛽ FUEL IMPACT (Percentage Level) */}
+                      {log.fuel_level_before !== null &&
+                        log.fuel_level_after !== null &&
+                        Number(log.fuel_level_before) !== Number(log.fuel_level_after) && (
+                          <div className="flex items-center gap-2 bg-amber-50/50 border border-amber-100 px-2 py-1 rounded-[4px]">
+                            <Fuel size={10} className="text-amber-600" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {Number(log.fuel_level_before).toFixed(0)}%
+                            </span>
+                            <ArrowRight size={10} className="opacity-30" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {Number(log.fuel_level_after).toFixed(0)}%
                             </span>
                           </div>
                         )}
@@ -283,6 +308,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                       {(!log.reading_before ||
                         Number(log.reading_before) === Number(log.reading_after)) &&
                         (!log.fuel_before || Number(log.fuel_before) === Number(log.fuel_after)) &&
+                        (!log.fuel_level_before ||
+                          Number(log.fuel_level_before) === Number(log.fuel_level_after)) &&
                         (!log.status_before || log.status_before === log.status_after) && (
                           <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
                             —
