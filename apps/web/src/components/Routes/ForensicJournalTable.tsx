@@ -95,16 +95,6 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
     { key: 'responsable', label: 'RESPONSABLE' },
   ] as ArchonTableHeader[];
 
-  if (loading) {
-    return (
-      <div className="h-32 flex items-center justify-center">
-        <p className="text-[#0f2a44] font-black animate-pulse uppercase tracking-widest text-[10px]">
-          Accediendo a Memoria Forense...
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className={`animate-in fade-in duration-700 w-full ${unitId ? '' : 'space-y-6'}`}>
       {!hideHeader && !unitId && (
@@ -125,6 +115,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
         <ArchonDataTable
           className={unitId ? 'bg-transparent !shadow-none' : ''}
           testId="forensic-journal-table"
+          loading={loading}
+          loadingMessage="Accediendo a Memoria Forense..."
           data={logs}
           headers={headers}
           emptyMessage="Sin registros forenses para esta unidad"

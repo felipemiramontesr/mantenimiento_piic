@@ -13,6 +13,7 @@ interface ArchonDataTableProps<T> {
   headers: ArchonTableHeader[];
   renderRow: (item: T, index: number) => React.ReactNode;
   loading?: boolean;
+  loadingMessage?: string;
   emptyMessage?: string;
   testId?: string;
   className?: string;
@@ -33,6 +34,7 @@ export function ArchonDataTable<T>({
   headers,
   renderRow,
   loading = false,
+  loadingMessage = 'Sincronizando Registros...',
   emptyMessage = 'No hay registros disponibles-',
   testId = 'archon-data-table',
   className = '',
@@ -45,7 +47,7 @@ export function ArchonDataTable<T>({
         <div className="flex items-center gap-3 opacity-40 animate-pulse">
           <div className="w-4 h-4 bg-[#f2b705] rounded-[4px]" />
           <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
-            Sincronizando Registros...
+            {loadingMessage}
           </span>
         </div>
         <ArchonTableSkeleton rows={6} />

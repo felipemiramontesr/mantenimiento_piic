@@ -181,6 +181,7 @@ const UsersGridView = (): React.JSX.Element => {
     <div className="space-y-[20px] text-[#0f2a44]">
       <ArchonDataTable
         loading={isLoading}
+        loadingMessage="Sincronizando Identidades..."
         data={sortedUsers}
         headers={headers}
         onSort={handleSort}

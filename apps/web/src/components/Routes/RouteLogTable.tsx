@@ -350,6 +350,8 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
       )}
       <ArchonDataTable
         testId="archon-route-log-table"
+        loading={isSyncing && logs.length === 0}
+        loadingMessage="Sincronizando Rutas..."
         data={logs}
         headers={headers}
         renderRow={(log, index): React.ReactNode => (

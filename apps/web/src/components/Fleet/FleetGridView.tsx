@@ -532,6 +532,7 @@ export const FleetGridView = ({
       <ArchonDataTable
         testId="fleet-inventory-table"
         loading={loading}
+        loadingMessage="Sincronizando Activos..."
         data={sortedUnits}
         headers={headers}
         onSort={(key): void => {
