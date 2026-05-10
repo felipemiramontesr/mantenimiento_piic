@@ -95,8 +95,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
       case 'ADMIN_EDIT':
         return {
           label: 'CORRECCIÓN',
-          color: 'text-slate-600',
-          bg: 'bg-slate-50',
+          color: 'text-rose-600',
+          bg: 'bg-rose-50',
           icon: Shield,
         };
       default:
@@ -159,9 +159,16 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
               const style = getEventStyle(log.event_type);
               const delta = log.reading_after ? log.reading_after - log.reading_before : 0;
               const EventIcon = style.icon;
+              const isIncident =
+                log.event_type === 'ROUTE_INCIDENT' || log.event_type === 'ADMIN_EDIT';
 
               return (
-                <tr key={log.id} className="animate-in slide-in-from-left-2 duration-300">
+                <tr
+                  key={log.id}
+                  className={`animate-in slide-in-from-left-2 duration-300 ${
+                    isIncident ? '!bg-rose-50/60' : ''
+                  }`}
+                >
                   <td className="py-4">
                     <span className="text-[11px] font-black text-[#0f2a44]">
                       {formatDateTime(log.created_at)}
@@ -244,15 +251,10 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                           else displayDesc = '—';
                         }
 
-                        const isIncident =
-                          log.event_type === 'ROUTE_INCIDENT' || log.event_type === 'ADMIN_EDIT';
-
                         return (
                           <p
-                            className={`text-[10px] font-bold line-clamp-2 leading-tight text-center max-w-[200px] ${
-                              isIncident
-                                ? 'text-rose-600 bg-rose-50 not-italic px-3 py-1 rounded-[4px] border border-rose-100 shadow-sm'
-                                : 'text-[#0f2a44] opacity-70 italic'
+                            className={`text-[10px] font-bold leading-tight text-center w-full text-[#0f2a44] ${
+                              isIncident ? 'not-italic px-3 py-1' : 'opacity-70 italic'
                             }`}
                           >
                             {displayDesc}
