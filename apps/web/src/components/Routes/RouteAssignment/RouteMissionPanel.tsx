@@ -13,12 +13,7 @@ interface RouteMissionPanelProps extends RouteAssignmentPanelProps {
  * 🔱 Archon Panel: Route Mission (Fase II)
  * Handles destination, origin and mission description.
  */
-const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({
-  formData,
-  updateForm,
-  _isFinished,
-  origins,
-}) => (
+const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateForm, origins }) => (
   <div className="space-y-4">
     <div className="flex items-center gap-3">
       <div className="bg-emerald-600 p-2 rounded-[4px]">

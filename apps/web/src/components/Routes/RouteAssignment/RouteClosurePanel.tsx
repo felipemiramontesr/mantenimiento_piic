@@ -8,11 +8,7 @@ import { RouteAssignmentPanelProps } from './types';
  * 🔱 Archon Panel: Route Closure (Fase IV)
  * Handles final evidence capture, fuel tickets and industrial telemetry synchronization.
  */
-const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
-  formData,
-  updateForm,
-  _isFinished,
-}) => {
+const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({ formData, updateForm }) => {
   const tireData = React.useMemo(() => {
     try {
       return JSON.parse(formData.tirePressureJson || '{}');

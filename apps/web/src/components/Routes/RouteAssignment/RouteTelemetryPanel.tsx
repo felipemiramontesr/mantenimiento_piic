@@ -18,7 +18,6 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
   formData,
   updateForm,
   isEdit,
-  _isFinished,
   tankCapacity,
   startReadingDisplay,
 }) => {

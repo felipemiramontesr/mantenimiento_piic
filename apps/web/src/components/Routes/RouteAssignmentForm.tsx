@@ -82,7 +82,6 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               formData={formData}
               updateForm={updateForm}
               isEdit={isEdit}
-              isFinished={isFinished}
               origins={origins}
             />
 
@@ -106,17 +105,11 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               formData={formData}
               updateForm={updateForm}
               isEdit={isEdit}
-              isFinished={isFinished}
               tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
               startReadingDisplay={startReadingDisplay}
             />
             {isEdit && (
-              <RouteClosurePanel
-                formData={formData}
-                updateForm={updateForm}
-                isEdit={isEdit}
-                isFinished={isFinished}
-              />
+              <RouteClosurePanel formData={formData} updateForm={updateForm} isEdit={isEdit} />
             )}
 
             {/* 🔱 SOVEREIGN ACTION ECOSYSTEM - Anchored to bottom */}

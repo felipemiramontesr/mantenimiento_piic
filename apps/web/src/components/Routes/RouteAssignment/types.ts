@@ -22,11 +22,11 @@ export interface RouteAssignmentPanelProps {
   formData: RouteAssignmentFormData;
   updateForm: (updates: Partial<RouteAssignmentFormData>) => void;
   isEdit: boolean;
-  isFinished: boolean;
 }
 
 export interface RouteIdentityPanelProps extends RouteAssignmentPanelProps {
   availableUnits: SelectOption[];
   operatorOptions: SelectOption[];
   selectedUnitData?: FleetUnit | null;
+  isFinished: boolean;
 }
