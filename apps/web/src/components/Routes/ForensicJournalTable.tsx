@@ -180,7 +180,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                   <td className="py-4">
                     <span className="text-[9px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-1.5 py-0.5 rounded border border-[#0f2a44]/10 uppercase tracking-tighter">
-                      {log.id.substring(0, 8)}
+                      {String(log.id).substring(0, 8)}
                     </span>
                   </td>
 

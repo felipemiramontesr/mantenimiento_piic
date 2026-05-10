@@ -12,7 +12,7 @@ vi.mock('../../api/client', () => ({
 describe('ForensicJournalTable (Apex Standard)', () => {
   const mockLogs = [
     {
-      id: 1,
+      id: 'uuid-12345678',
       unit_id: 'ASM-001',
       event_type: 'ROUTE_INCIDENT',
       status_before: 'En Ruta',
@@ -37,18 +37,23 @@ describe('ForensicJournalTable (Apex Standard)', () => {
   it('renders different event styles correctly with exact regex matching', async () => {
     const multiLogs = [
       {
-        id: 2,
+        id: 'uuid-start-1',
         unit_id: 'ASM-002',
         event_type: 'ROUTE_START',
         created_at: new Date().toISOString(),
       },
       {
-        id: 3,
+        id: 'uuid-finish-1',
         unit_id: 'ASM-003',
         event_type: 'ROUTE_FINISH',
         created_at: new Date().toISOString(),
       },
-      { id: 4, unit_id: 'ASM-004', event_type: 'UNKNOWN', created_at: new Date().toISOString() },
+      {
+        id: 'uuid-unk-1',
+        unit_id: 'ASM-004',
+        event_type: 'UNKNOWN',
+        created_at: new Date().toISOString(),
+      },
     ];
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: multiLogs } });
 
