@@ -92,6 +92,13 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
           bg: 'bg-rose-50',
           icon: AlertTriangle,
         };
+      case 'ADMIN_EDIT':
+        return {
+          label: 'CORRECCIÓN',
+          color: 'text-slate-600',
+          bg: 'bg-slate-50',
+          icon: Shield,
+        };
       default:
         return { label: 'EVENTO', color: 'text-gray-500', bg: 'bg-gray-50', icon: Clock };
     }
@@ -237,7 +244,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                           else displayDesc = '—';
                         }
 
-                        const isIncident = log.event_type === 'ROUTE_INCIDENT';
+                        const isIncident =
+                          log.event_type === 'ROUTE_INCIDENT' || log.event_type === 'ADMIN_EDIT';
 
                         return (
                           <p

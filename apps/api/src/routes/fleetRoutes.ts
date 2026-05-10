@@ -154,7 +154,32 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           c_loc.label as unit_sede,
           r.destination as route_destination,
           c_origin.label as route_origin_label
-        FROM unit_activity_logs l
+        FROM (
+          SELECT 
+            id, unit_id, event_type, reference_id, 
+            reading_before, reading_after, 
+            status_before, status_after, 
+            description, created_by, created_at
+          FROM unit_activity_logs
+          
+          UNION ALL
+          
+          SELECT 
+            a.id + 1000000 as id, 
+            r.unit_id,
+            'ADMIN_EDIT' as event_type,
+            a.entity_id as reference_id,
+            NULL as reading_before,
+            NULL as reading_after,
+            NULL as status_before,
+            NULL as status_after,
+            CONCAT('MODIFICACIÓN: ', a.reason) as description,
+            a.user_id as created_by,
+            a.created_at
+          FROM administrative_audit_logs a
+          JOIN fleet_routes r ON a.entity_id = r.uuid
+          WHERE a.entity_type = 'route_log'
+        ) l
         LEFT JOIN users u ON l.created_by = u.id
         LEFT JOIN fleet_units f ON l.unit_id = f.id
         LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id AND c_loc.category = 'LOCATION'
