@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { AxiosError } from 'axios';
 import { useFleet } from '../../../context/FleetContext';
 import { useUsers } from '../../../context/UserContext';
 import { archonCache } from '../../../utils/archonCache';
@@ -73,21 +74,26 @@ export const useRouteAssignmentControl = (
   // 🧪 Initialization & Hydration (Refactored v.60.1.6)
   useEffect((): void => {
     if (routeToEdit) {
+      // 🔱 Forensic Hydration: Map diverse source schemas to standard Archon form state
+      const raw = routeToEdit as unknown as Record<string, unknown>;
       setFormData({
-        unitId: routeToEdit.unit_id,
-        operatorId: String(routeToEdit.operator_id),
-        origin: routeToEdit.origin || 'Arian Silver Zacatecas',
-        destination: routeToEdit.destination,
-        description: routeToEdit.description || '',
-        fuelLevel: routeToEdit.fuelLevel || 100,
-        startReading: routeToEdit.start_km || 0,
-        endReading: Number(routeToEdit.end_km || 0),
-        fuelLitersLoaded: Number(routeToEdit.fuel_liters_loaded || 0),
-        fuelAmount: Number(routeToEdit.fuel_amount || 0),
-        fuelTicketImage: routeToEdit.fuel_ticket_image || '',
-        additivesCheck: !!routeToEdit.additives_check,
-        tirePressureJson: routeToEdit.tire_pressure_json || '',
-        checklistJson: routeToEdit.checklist_json || '',
+        unitId: (raw.unit_id as string) || '',
+        operatorId: String(raw.operator_id || raw.driver_id || ''),
+        origin:
+          origins.find((o) => o.id === raw.origin_id)?.label ||
+          (raw.origin as string) ||
+          'Arian Silver Zacatecas',
+        destination: (raw.destination as string) || '',
+        description: (raw.description as string) || '',
+        fuelLevel: Number(raw.fuelLevel || raw.fuel_level_start || raw.fuel_level_end || 100),
+        startReading: Number(raw.start_km || raw.start_reading || 0),
+        endReading: Number(raw.end_km || raw.end_reading || 0),
+        fuelLitersLoaded: Number(raw.fuel_liters_loaded || 0),
+        fuelAmount: Number(raw.fuel_amount || 0),
+        fuelTicketImage: (raw.fuel_ticket_image as string) || '',
+        additivesCheck: !!(raw.additives_check || raw.additivesCheck),
+        tirePressureJson: (raw.tire_pressure_json as string) || '',
+        checklistJson: (raw.checklist_json as string) || '',
       });
     } else {
       // 🔱 Atomic Reset: Ensure a clean slate for new assignments
@@ -215,6 +221,7 @@ export const useRouteAssignmentControl = (
         const { origin: _origin, ...rest } = formData;
         const payload = {
           ...rest,
+          operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
           originId: originId ? Number(originId) : undefined,
           fuelLevel: Number(formData.fuelLevel || 0),
           fuelLitersLoaded: Number(formData.fuelLitersLoaded || 0),
@@ -227,13 +234,19 @@ export const useRouteAssignmentControl = (
       } else {
         await api.delete(`/routes/${routeToEdit?.uuid}`, { data: { reason } });
       }
-      onClose();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error en el protocolo de auditoría';
-      setError(msg);
-    } finally {
+
+      // 🔱 Atomic Success: Only close when synchronization is verified
       setSubmitting(false);
       setIsAuditModalOpen(false);
+      onClose();
+    } catch (err: unknown) {
+      setSubmitting(false);
+      const axiosError = err as AxiosError<{ message?: string }>;
+      const serverMsg = axiosError.response?.data?.message;
+      const msg =
+        serverMsg || (err instanceof Error ? err.message : 'Error en el protocolo de auditoría');
+      setError(msg);
+      // DO NOT close modal, allow user to correct or retry
     }
   };
 
