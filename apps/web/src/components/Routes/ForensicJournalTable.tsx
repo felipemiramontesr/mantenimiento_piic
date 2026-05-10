@@ -96,7 +96,9 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
   ] as ArchonTableHeader[];
 
   return (
-    <div className={`animate-in fade-in duration-700 w-full ${unitId ? '' : 'space-y-6'}`}>
+    <div
+      className={`animate-in fade-in duration-700 w-full !p-0 !m-0 ${unitId ? '' : 'space-y-6'}`}
+    >
       {!hideHeader && !unitId && (
         <div className="flex items-center gap-3 px-6 py-4 bg-white/50 glass-card-pro rounded-[4px] border border-[#0f2a44]/5 mx-8">
           <Shield className="text-amber-500" size={24} />
@@ -111,9 +113,9 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
         </div>
       )}
 
-      <div className={unitId ? 'w-full' : 'mx-8'}>
+      <div className={unitId ? '!w-full !px-0' : 'mx-8'}>
         <ArchonDataTable
-          className={unitId ? 'bg-transparent !shadow-none' : ''}
+          className={unitId ? '!w-full !shadow-none !rounded-none !border-none' : ''}
           testId="forensic-journal-table"
           variant={unitId ? 'embedded' : 'master'}
           loading={loading}

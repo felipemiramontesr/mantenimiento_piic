@@ -291,9 +291,9 @@ const RouteLogRow = ({
       </motion.tr>
 
       <tr className={isExpanded ? 'accordion-row-carrier' : ''}>
-        <td colSpan={7} className="accordion-carrier">
-          <div className={`accordion-content ${isExpanded ? 'expanded' : ''}`}>
-            <div className="accordion-inner">
+        <td colSpan={7} className="accordion-carrier !p-0 !m-0">
+          <div className={`accordion-content ${isExpanded ? 'expanded' : ''} !bg-transparent`}>
+            <div className="accordion-inner !p-0 !m-0">
               <ForensicJournalTable unitId={log.unit_id} hideHeader />
             </div>
           </div>

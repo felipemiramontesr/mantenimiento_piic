@@ -71,7 +71,7 @@ export function ArchonDataTable<T>({
   const containerClasses =
     variant === 'master'
       ? `glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative ${className}`
-      : `w-full overflow-x-auto custom-scrollbar relative ${className}`;
+      : `w-full !p-0 !m-0 !rounded-none !border-none overflow-x-auto custom-scrollbar relative ${className}`;
 
   return (
     <div className={containerClasses}>
