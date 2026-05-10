@@ -16,7 +16,7 @@ interface RouteMissionPanelProps extends RouteAssignmentPanelProps {
 const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({
   formData,
   updateForm,
-  isEdit,
+  isFinished,
   origins,
 }) => (
   <div className="space-y-4">
@@ -44,7 +44,7 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({
           value={formData.origin}
           onChange={(val): void => updateForm({ origin: val })}
           icon={MapPin}
-          disabled={isEdit}
+          disabled={isFinished}
         />
       </div>
       <div className="space-y-2">
@@ -57,7 +57,7 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({
           value={formData.destination}
           onChange={(e): void => updateForm({ destination: e.target.value })}
           className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors rounded-[4px] disabled:opacity-50"
-          disabled={isEdit}
+          disabled={isFinished}
         />
       </div>
     </div>
@@ -69,7 +69,7 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({
         value={formData.description}
         onChange={(e): void => updateForm({ description: e.target.value })}
         className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-emerald-500 p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] disabled:opacity-50"
-        disabled={isEdit}
+        disabled={isFinished}
       />
     </div>
   </div>

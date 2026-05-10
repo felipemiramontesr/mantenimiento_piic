@@ -104,7 +104,7 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
         onChange={(val): void => updateForm({ operatorId: val })}
         icon={User}
         placeholder="Buscar por nombre o nómina..."
-        disabled={isEdit}
+        disabled={isFinished}
       />
     </div>
 

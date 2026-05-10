@@ -43,19 +43,21 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   // 📐 Computed UI Logic (V8 Performance Optimized)
   const getButtonState = (): { text: string; className: string } => {
     if (isFinished)
-      return { text: 'Cerrar Vista', className: 'bg-emerald-600 hover:bg-emerald-700' };
-    if (isEdit)
+      return { text: 'Sincronizar', className: 'bg-emerald-600 hover:bg-emerald-700' };
+    if (isEdit) {
+      const hasOdometer = Number(formData.endReading) > 0;
       return {
-        text: 'Finalizar Misión',
-        className: 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20',
+        text: hasOdometer ? 'Finalizar Misión' : 'Actualizar Trayecto',
+        className: hasOdometer
+          ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'
+          : 'bg-sky-600 hover:bg-sky-700 shadow-sky-600/20',
       };
+    }
     return {
       text: 'Autorizar Despacho',
       className: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20',
     };
   };
-
-  const { text: rightButtonText } = getButtonState();
 
   const startReadingDisplay = isEdit
     ? routeToEdit?.start_km?.toLocaleString() || '0,000'
@@ -120,27 +122,24 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             {/* MAIN ACTIONS INTEGRATED INTO THE TELEMETRY PANEL - Anchored to bottom */}
             <div className="archon-button-group pt-4 mt-auto border-t border-slate-100">
               <button type="button" onClick={onClose} className="btn-sentinel-red !h-[45px]">
-                {isFinished ? 'Volver a Bitácora' : 'Cancelar'}
+                {isEdit ? 'Volver a Bitácora' : 'Cancelar'}
               </button>
               <button
                 type="submit"
                 disabled={
                   submitting ||
                   (!isFinished &&
-                    (!formData.unitId ||
-                      !formData.operatorId ||
-                      !formData.destination ||
-                      (isEdit && !formData.endReading)))
+                    (!formData.unitId || !formData.operatorId || !formData.destination))
                 }
-                className={`btn-sentinel-emerald !h-[45px] ${
+                className={`${getButtonState().className} !h-[45px] ${
                   submitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
-                }`}
+                } transition-all duration-300 flex items-center justify-center gap-2`}
               >
                 {submitting ? (
                   'Procesando...'
                 ) : (
                   <>
-                    {isFinished ? 'Sincronizar' : rightButtonText}
+                    {getButtonState().text}
                     {isFinished ? <Save size={18} /> : <ChevronRight size={18} />}
                   </>
                 )}

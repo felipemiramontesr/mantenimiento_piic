@@ -1890,26 +1890,26 @@ table th > div {
   white-space: nowrap !important;
 }
 
-/* 🔱 ARCHON ACCORDION OVERRIDES (V.78.47.10 - Full Saturation) */
-.accordion-inner > * {
+/* 🔱 ARCHON ACCORDION OVERRIDES (V.78.47.12 - Scoped Integrity) */
+.accordion-inner > .archon-registry-table {
   width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
+  min-width: 100% !important;
   box-shadow: none !important;
-  border: none !important;
-  background: transparent !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border-collapse: collapse !important;
 }
 
-.accordion-inner div {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  border: none !important;
+.accordion-inner .archon-registry-table th {
+  background: rgba(15, 42, 68, 0.9) !important;
+  backdrop-filter: blur(8px);
+  padding: 12px 16px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.accordion-inner .archon-registry-table td {
+  padding: 12px 16px !important;
+  background: transparent !important;
 }
 
 .accordion-inner .archon-registry-table {

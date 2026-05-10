@@ -240,17 +240,24 @@ export const useRouteAssignmentControl = (
 
     try {
       if (isEdit && routeToEdit) {
-        await finishRoute(routeToEdit.uuid, {
-          endReading: Number(formData.endReading),
-          fuelLevelEnd: Number(formData.fuelLevel),
-          fuelLitersLoaded: Number(formData.fuelLitersLoaded),
-          fuelAmount: Number(formData.fuelAmount),
-          fuelTicketImage: formData.fuelTicketImage || undefined,
-          additivesCheck: formData.additivesCheck,
-          tirePressureJson: formData.tirePressureJson || undefined,
-          checklistJson: formData.checklistJson || undefined,
-        });
+        if (Number(formData.endReading) > 0) {
+          // 🏁 Finish Mission: End kilometer provided
+          await finishRoute(routeToEdit.uuid, {
+            endReading: Number(formData.endReading),
+            fuelLevelEnd: Number(formData.fuelLevel),
+            fuelLitersLoaded: Number(formData.fuelLitersLoaded),
+            fuelAmount: Number(formData.fuelAmount),
+            fuelTicketImage: formData.fuelTicketImage || undefined,
+            additivesCheck: formData.additivesCheck,
+            tirePressureJson: formData.tirePressureJson || undefined,
+            checklistJson: formData.checklistJson || undefined,
+          });
+        } else {
+          // 📝 Correct Active Mission: Typos, operator change, etc.
+          await api.put(`/routes/${routeToEdit.uuid}`, { data: formData });
+        }
       } else {
+        // 🚀 New Dispatch
         await startRoute({
           unitId: formData.unitId,
           driverId: Number(formData.operatorId),
