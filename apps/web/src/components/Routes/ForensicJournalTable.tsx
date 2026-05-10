@@ -50,6 +50,11 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
       if (routeUuid) {
         // 🔱 Route-Scoped Filter: Only show forensic events linked to this specific route
         data = data.filter((l: ActivityLog) => l.reference_id === routeUuid);
+
+        // 🔱 Clean Redundancy: Focus exclusively on anomalies/incidents
+        data = data.filter(
+          (l: ActivityLog) => l.event_type !== 'ROUTE_START' && l.event_type !== 'ROUTE_FINISH'
+        );
       } else if (unitId) {
         data = data.filter((l: ActivityLog) => l.unit_id === unitId);
       }
@@ -103,6 +108,10 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
     { key: 'responsable', label: 'RESPONSABLE' },
   ] as ArchonTableHeader[];
 
+  const emptyMsg = routeUuid
+    ? 'Ruta Saludable | No existen Incidencias'
+    : 'Sin registros forenses para esta unidad';
+
   return (
     <div
       className={`animate-in fade-in duration-700 w-full !p-0 !m-0 ${unitId ? '' : 'space-y-6'}`}
@@ -130,7 +139,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
           loadingMessage="Accediendo a Memoria Forense..."
           data={logs}
           headers={headers}
-          emptyMessage="Sin registros forenses para esta unidad"
+          emptyMessage={emptyMsg}
           renderRow={(log, _index): React.ReactNode => {
             const style = getEventStyle(log.event_type);
             const delta = log.reading_after ? log.reading_after - log.reading_before : 0;
