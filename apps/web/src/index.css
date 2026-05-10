@@ -831,7 +831,7 @@ body {
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  background: transparent !important;
+  background: transparent;
 }
 
 .accordion-inner {
@@ -1974,7 +1974,7 @@ table th > div {
   border-left: none !important;
   border-right: none !important;
   border-bottom: 2px solid #0f2a44 !important;
-  background-color: rgba(16, 185, 129, 0.08) !important;
+  background-color: transparent !important;
   padding: 0 !important; /* KILL PADDING GAP */
 }
 
@@ -1996,11 +1996,11 @@ table th > div {
 }
 
 .accordion-inner .archon-registry-table td {
-  background-color: transparent !important; /* Use parent's green focus */
+  background-color: inherit;
 }
 
 .accordion-inner .archon-registry-table tr:not(thead tr) {
-  background-color: transparent !important;
+  background-color: inherit;
   border-bottom: none !important;
 }
 
