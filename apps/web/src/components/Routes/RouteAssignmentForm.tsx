@@ -42,20 +42,17 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
   // 📐 Computed UI Logic (V8 Performance Optimized)
   const getButtonState = (): { text: string; className: string } => {
-    if (isFinished)
-      return { text: 'Sincronizar', className: 'bg-emerald-600 hover:bg-emerald-700' };
+    if (isFinished) return { text: 'Sincronizar', className: 'btn-sentinel-emerald' };
     if (isEdit) {
       const hasOdometer = Number(formData.endReading) > 0;
       return {
         text: hasOdometer ? 'Finalizar Misión' : 'Actualizar Trayecto',
-        className: hasOdometer
-          ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'
-          : 'bg-sky-600 hover:bg-sky-700 shadow-sky-600/20',
+        className: hasOdometer ? 'btn-sentinel-amber' : 'btn-sentinel-sky',
       };
     }
     return {
       text: 'Autorizar Despacho',
-      className: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20',
+      className: 'btn-sentinel-emerald',
     };
   };
 
@@ -114,12 +111,12 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
             {/* 🔱 SOVEREIGN ACTION ECOSYSTEM - Anchored to bottom */}
             <div className="flex gap-4 pt-8 mt-auto border-t border-slate-100">
-              <button type="button" onClick={onClose} className="btn-sentinel-red !w-[40%] group">
+              <button type="button" onClick={onClose} className="btn-sentinel-red w-1/2 group">
                 <ChevronRight
                   size={18}
                   className="rotate-180 group-hover:-translate-x-1 transition-transform"
                 />
-                {isEdit ? 'Volver a Bitácora' : 'Cancelar'}
+                <span className="truncate">{isEdit ? 'Volver a Bitácora' : 'Cancelar'}</span>
               </button>
               <button
                 type="submit"
@@ -128,7 +125,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                   (!isFinished &&
                     (!formData.unitId || !formData.operatorId || !formData.destination))
                 }
-                className={`${getButtonState().className} flex-1 group`}
+                className={`${getButtonState().className} w-1/2 group`}
               >
                 {submitting ? (
                   <>
