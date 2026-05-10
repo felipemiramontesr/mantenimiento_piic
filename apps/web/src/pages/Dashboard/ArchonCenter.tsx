@@ -257,9 +257,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Activos Totales',
             stats.total,
             Truck,
-            '#8b5cf6',
+            '#0f2a44',
             'Unidades totales en inventario',
-            'violet'
+            'navy'
           )}
           {renderKPI(
             'Disponibilidad',
