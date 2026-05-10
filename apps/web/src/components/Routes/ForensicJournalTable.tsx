@@ -163,20 +163,15 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                 log.event_type === 'ROUTE_INCIDENT' || log.event_type === 'ADMIN_EDIT';
 
               return (
-                <tr
-                  key={log.id}
-                  className={`animate-in slide-in-from-left-2 duration-300 ${
-                    isIncident ? '!bg-rose-50/30' : ''
-                  }`}
-                >
-                  <td className="py-4">
+                <tr key={log.id} className="animate-in slide-in-from-left-2 duration-300">
+                  <td className={`py-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                     <span className="text-[11px] font-black text-[#0f2a44]">
                       {formatDateTime(log.created_at)}
                     </span>
                   </td>
 
                   {!unitId && (
-                    <td className="py-4">
+                    <td className={`py-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                       <div className="flex flex-col items-center">
                         <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-[#0f2a44]">
                           {log.unit_id}
@@ -188,7 +183,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </td>
                   )}
 
-                  <td className="py-4">
+                  <td className={`py-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                     <div className="flex items-center justify-center gap-2">
                       <div className={`p-1.5 rounded-[4px] ${style.bg}`}>
                         <EventIcon size={12} className={style.color} />
@@ -201,7 +196,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4">
+                  <td className={`py-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                     <div className="flex flex-col items-center justify-center px-2">
                       {((): React.ReactNode => {
                         if (log.event_type === 'ROUTE_START') {
@@ -239,7 +234,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4 px-4">
+                  <td className={`py-4 px-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                     <div className="flex justify-center">
                       {((): React.ReactNode => {
                         let displayDesc = log.description;
@@ -264,7 +259,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4">
+                  <td className={`py-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-[11px] font-black text-[#0f2a44]">
                         {log.reading_before?.toLocaleString()}
@@ -281,7 +276,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4">
+                  <td className={`py-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                     {delta > 0 ? (
                       <div className="flex items-center justify-center gap-1 text-[#0f2a44]">
                         <TrendingUp size={10} className="opacity-40" />
@@ -292,7 +287,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     )}
                   </td>
 
-                  <td className="py-4">
+                  <td className={`py-4 ${isIncident ? '!bg-rose-50/40' : ''}`}>
                     <div className="text-center">
                       <p className="text-[11px] font-black text-[#0f2a44]">{log.operatorName}</p>
                       <p className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">
