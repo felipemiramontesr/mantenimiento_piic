@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Clock, ArrowRight, Activity, AlertTriangle } from 'lucide-react';
+import { Shield, Clock, ArrowRight, Activity, AlertTriangle, Fuel } from 'lucide-react';
 import api from '../../api/client';
 import { formatDateTime } from '../../utils/dateUtils';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -13,6 +13,8 @@ interface ActivityLog {
   reading_after: number;
   status_before: string;
   status_after: string;
+  fuel_before?: number;
+  fuel_after?: number;
   description: string;
   operatorName: string;
   marca: string;
@@ -226,37 +228,62 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                   <td className="py-4">
                     <div className="flex flex-col items-center justify-center gap-1.5">
-                      {log.reading_before !== log.reading_after && (
-                        <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
-                          <Activity size={10} className="text-[#0f2a44] opacity-50" />
-                          <span className="text-[10px] font-black text-[#0f2a44]">
-                            {log.reading_before?.toLocaleString()}
-                          </span>
-                          <ArrowRight size={10} className="opacity-30" />
-                          <span className="text-[10px] font-black text-[#0f2a44]">
-                            {log.reading_after?.toLocaleString()}
-                          </span>
-                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded-sm">
-                            {delta > 0 ? `+${delta.toLocaleString()}` : delta.toLocaleString()} KM
-                          </span>
-                        </div>
-                      )}
+                      {/* 🚗 READING IMPACT (KM/HRS) */}
+                      {log.reading_before !== null &&
+                        log.reading_after !== null &&
+                        Number(log.reading_before) !== Number(log.reading_after) && (
+                          <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
+                            <Activity size={10} className="text-[#0f2a44] opacity-50" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {log.reading_before?.toLocaleString()}
+                            </span>
+                            <ArrowRight size={10} className="opacity-30" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {log.reading_after?.toLocaleString()}
+                            </span>
+                            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded-sm">
+                              {delta > 0 ? `+${delta.toLocaleString()}` : delta.toLocaleString()} KM
+                            </span>
+                          </div>
+                        )}
 
-                      {log.status_before !== log.status_after && (
-                        <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
-                          <Shield size={10} className="text-[#0f2a44] opacity-50" />
-                          <span className="text-[10px] font-black text-[#0f2a44] opacity-40">
-                            {log.status_before}
-                          </span>
-                          <ArrowRight size={10} className="opacity-30" />
-                          <span className="text-[10px] font-black text-[#0f2a44]">
-                            {log.status_after}
-                          </span>
-                        </div>
-                      )}
+                      {/* ⛽ FUEL IMPACT */}
+                      {log.fuel_before !== null &&
+                        log.fuel_after !== null &&
+                        Number(log.fuel_before) !== Number(log.fuel_after) && (
+                          <div className="flex items-center gap-2 bg-amber-50/50 border border-amber-100 px-2 py-1 rounded-[4px]">
+                            <Fuel size={10} className="text-amber-600" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {Number(log.fuel_before).toFixed(1)} L
+                            </span>
+                            <ArrowRight size={10} className="opacity-30" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {Number(log.fuel_after).toFixed(1)} L
+                            </span>
+                          </div>
+                        )}
 
-                      {log.reading_before === log.reading_after &&
-                        log.status_before === log.status_after && (
+                      {/* 🛡️ STATUS IMPACT */}
+                      {log.status_before !== log.status_after &&
+                        log.status_before &&
+                        log.status_after && (
+                          <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
+                            <Shield size={10} className="text-[#0f2a44] opacity-50" />
+                            <span className="text-[10px] font-black text-[#0f2a44] opacity-40">
+                              {log.status_before}
+                            </span>
+                            <ArrowRight size={10} className="opacity-30" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {log.status_after}
+                            </span>
+                          </div>
+                        )}
+
+                      {/* 🔱 NO IMPACT DETECTED */}
+                      {(!log.reading_before ||
+                        Number(log.reading_before) === Number(log.reading_after)) &&
+                        (!log.fuel_before || Number(log.fuel_before) === Number(log.fuel_after)) &&
+                        (!log.status_before || log.status_before === log.status_after) && (
                           <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
                             —
                           </span>

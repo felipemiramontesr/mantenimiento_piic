@@ -159,25 +159,29 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             id, unit_id, event_type, reference_id, 
             reading_before, reading_after, 
             status_before, status_after, 
-            description, created_by, created_at
+            description, created_by, created_at,
+            NULL as fuel_before,
+            NULL as fuel_after
           FROM unit_activity_logs
           
           UNION ALL
           
           SELECT 
             a.id + 1000000 as id, 
-            r.unit_id,
+            COALESCE(JSON_VALUE(a.snapshot_after, '$.unit_id'), r.unit_id) as unit_id,
             'ADMIN_EDIT' as event_type,
             a.entity_id as reference_id,
-            r.start_reading as reading_before,
-            r.end_reading as reading_after,
-            NULL as status_before,
-            NULL as status_after,
+            CAST(JSON_VALUE(a.snapshot_before, '$.end_reading') AS DECIMAL(12,2)) as reading_before,
+            CAST(JSON_VALUE(a.snapshot_after, '$.end_reading') AS DECIMAL(12,2)) as reading_after,
+            JSON_VALUE(a.snapshot_before, '$.status') as status_before,
+            JSON_VALUE(a.snapshot_after, '$.status') as status_after,
             CONCAT('MODIFICACIÓN: ', a.reason) as description,
             a.user_id as created_by,
-            a.created_at
+            a.created_at,
+            CAST(JSON_VALUE(a.snapshot_before, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_before,
+            CAST(JSON_VALUE(a.snapshot_after, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_after
           FROM administrative_audit_logs a
-          JOIN fleet_routes r ON a.entity_id = r.uuid
+          LEFT JOIN fleet_routes r ON a.entity_id = r.uuid
           WHERE a.entity_type = 'route_log'
         ) l
         LEFT JOIN users u ON l.created_by = u.id
