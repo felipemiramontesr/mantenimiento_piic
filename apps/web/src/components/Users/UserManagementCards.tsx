@@ -1,6 +1,7 @@
 import React from 'react';
-import { Users, UserPlus, ArrowRight, Shield, ClipboardList } from 'lucide-react';
+import { Users, UserPlus, Shield, ClipboardList } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
+import ArchonManagementCard from '../UI/ArchonManagementCard';
 
 /**
  * 🔱 Archon Component: UserManagementCards
@@ -12,115 +13,34 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
 
   return (
-    <div className="archon-central-axis">
+    <div className="archon-central-axis animate-in fade-in slide-in-from-top-4 duration-700">
       <div className="archon-grid-2 gap-8 mb-8">
-        {/* ── CARD 01: Mando y Supervisión (NAVY) ────────────────────────── */}
-        <div
+        <ArchonManagementCard
+          variant="navy"
+          headerTitle="Directorio Maestro"
+          HeaderIcon={ClipboardList}
+          PayloadIcon={Shield}
+          actionTitle="Mando"
+          description="Supervisión Directiva"
+          buttonText="Ver Directorio"
+          isActive={activePanel === 'DIRECTORY'}
           onClick={(): void => setActivePanel('DIRECTORY')}
-          className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
-            activePanel === 'DIRECTORY'
-              ? 'border-2 border-[#0f2a44] shadow-lg'
-              : 'card-hover-navy opacity-80 hover:opacity-100'
-          }`}
-          style={{ borderTop: '4px solid #0f2a44' }}
-        >
-          <div className="flex items-center justify-center gap-3 mb-4 w-full">
-            <ClipboardList size={20} className="text-[#0f2a44]" />
-            <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-widest">
-              Directorio Maestro
-            </span>
-          </div>
+        />
 
-          <div className="archon-tile-payload space-y-8 pb-16">
-            <div
-              style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '4px',
-                backgroundColor: 'rgba(15, 42, 68, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px solid rgba(15, 42, 68, 0.4)',
-              }}
-            >
-              <Shield size={40} className="text-[#0f2a44]" />
-            </div>
-            <div className="flex flex-col items-center space-y-1 mb-12">
-              <h3 className="text-[#0f2a44] font-black uppercase tracking-[0.15em] text-[14px]">
-                Mando
-              </h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                Supervisión Directiva
-              </p>
-            </div>
-          </div>
-
-          <div className="archon-tile-action">
-            <button
-              className={`btn-sentinel-navy w-full ${
-                activePanel === 'DIRECTORY' ? 'bg-[#0f2a44] text-white' : ''
-              }`}
-            >
-              Ver Directorio <ArrowRight size={10} className="text-white ml-2" />
-            </button>
-          </div>
-        </div>
-
-        <div
+        <ArchonManagementCard
+          variant="emerald"
+          headerTitle="Alta de Personal"
+          HeaderIcon={UserPlus}
+          PayloadIcon={Users}
+          actionTitle="Registrar"
+          description="Gestión de Identidad"
+          buttonText="Iniciar Registro"
+          isActive={activePanel === 'SIGNUP'}
           onClick={(): void => {
             setEditingUser(null);
             setActivePanel('SIGNUP');
           }}
-          className={`glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500 ${
-            activePanel === 'SIGNUP'
-              ? 'border-2 border-[#10b981] shadow-lg'
-              : 'card-hover-emerald opacity-80 hover:opacity-100'
-          }`}
-          style={{ borderTop: '4px solid #10b981' }}
-        >
-          <div className="flex items-center justify-center gap-3 mb-4 w-full">
-            <UserPlus size={20} className="text-[#10b981]" />
-            <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-widest">
-              Alta de Personal
-            </span>
-          </div>
-
-          <div className="archon-tile-payload space-y-8 pb-16">
-            <div
-              style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '4px',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px solid rgba(16, 185, 129, 0.4)',
-              }}
-            >
-              <Users size={40} className="text-[#10b981]" />
-            </div>
-            <div className="flex flex-col items-center space-y-1 mb-12">
-              <h3 className="text-[#0f2a44] font-black uppercase tracking-[0.15em] text-[14px]">
-                Registrar
-              </h3>
-              <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
-                Gestión de Identidad
-              </p>
-            </div>
-          </div>
-
-          <div className="archon-tile-action">
-            <button
-              className={`btn-sentinel-emerald w-full ${
-                activePanel === 'SIGNUP' ? 'bg-[#10b981] text-white' : ''
-              }`}
-            >
-              Iniciar Registro <ArrowRight size={10} className="text-white ml-2" />
-            </button>
-          </div>
-        </div>
+        />
       </div>
     </div>
   );

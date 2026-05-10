@@ -42,7 +42,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     path?: string
   ): React.ReactElement => (
     <div
-      className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-500`}
+      className="glass-card-pro archon-instrument-tile animate-in fade-in duration-500"
       style={{ borderTop: `4px solid ${color}` }}
     >
       <div
@@ -101,8 +101,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   const renderCategoryAnalyticalColumn = (
     title: string,
     categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta',
-    accentColor: string,
-    variant: 'violet' | 'yellow' | 'sky' | 'navy'
+    accentColor: string
   ): React.ReactElement => {
     const data = stats.categories[categoryKey];
     const avail = data.availablePercent;
@@ -122,7 +121,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
     return (
       <div
-        className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-700`}
+        className="glass-card-pro archon-instrument-tile animate-in fade-in duration-700"
         style={{ borderTop: '4px solid #0f2a44' }}
       >
         <div className="flex items-center gap-4 mb-4">
@@ -239,9 +238,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
       <section className="archon-workspace-chassis">
         <div className="archon-grid-3">
-          {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6', 'navy')}
-          {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705', 'navy')}
-          {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9', 'navy')}
+          {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
+          {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
+          {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
           {renderKPI(
             'Fuerza Operativa',
             activePersonnelCount,
