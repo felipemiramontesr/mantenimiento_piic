@@ -16,6 +16,7 @@ import { formatDateTime, calculateDuration } from '../../utils/dateUtils';
 import useRouteLogs from '../../hooks/useRouteLogs';
 import IncidentReportForm from './IncidentReportForm';
 import ForensicJournalTable from './ForensicJournalTable';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 export interface RouteLog {
   id: string;
@@ -311,45 +312,19 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
-  return (
-    <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative">
-      {isSyncing && (
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[8px] font-black uppercase tracking-widest text-[#0f2a44] opacity-30">
-            Syncing
-          </span>
-        </div>
-      )}
-      {!reportingRoute ? (
-        <table data-testid="archon-route-log-table" className="archon-registry-table w-full">
-          <thead>
-            <tr>
-              <th>ACTIVO / UNIDAD</th>
-              <th>OPERADOR</th>
-              <th>MISIÓN / TRAYECTO</th>
-              <th>TELEMETRÍA</th>
-              <th>DELTA</th>
-              <th>ESTADO</th>
-              <th>AJUSTES</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log, index) => (
-              <RouteLogRow
-                key={log.uuid}
-                log={log}
-                index={index}
-                isExpanded={expandedRowId === log.uuid}
-                onToggle={(): void => handleToggle(log.uuid)}
-                onEdit={onEdit}
-                onReport={(l): void => setReportingRoute(l)}
-                onFinish={(l): void => onEdit?.(l)}
-              />
-            ))}
-          </tbody>
-        </table>
-      ) : (
+  const headers: ArchonTableHeader[] = [
+    { key: 'activo', label: 'ACTIVO / UNIDAD' },
+    { key: 'operador', label: 'OPERADOR' },
+    { key: 'mision', label: 'MISIÓN / TRAYECTO' },
+    { key: 'telemetria', label: 'TELEMETRÍA' },
+    { key: 'delta', label: 'DELTA' },
+    { key: 'estado', label: 'ESTADO' },
+    { key: 'ajustes', label: 'AJUSTES' },
+  ];
+
+  if (reportingRoute) {
+    return (
+      <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative">
         <IncidentReportForm
           routeUuid={reportingRoute.uuid}
           unitId={reportingRoute.unit_id}
@@ -359,7 +334,37 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
             refresh();
           }}
         />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {isSyncing && (
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+          <span className="text-[8px] font-black uppercase tracking-widest text-[#0f2a44] opacity-30">
+            Syncing
+          </span>
+        </div>
       )}
+      <ArchonDataTable
+        testId="archon-route-log-table"
+        data={logs}
+        headers={headers}
+        renderRow={(log, index): React.ReactNode => (
+          <RouteLogRow
+            key={log.uuid}
+            log={log}
+            index={index}
+            isExpanded={expandedRowId === log.uuid}
+            onToggle={(): void => handleToggle(log.uuid)}
+            onEdit={onEdit}
+            onReport={(l): void => setReportingRoute(l)}
+            onFinish={(l): void => onEdit?.(l)}
+          />
+        )}
+      />
     </div>
   );
 };

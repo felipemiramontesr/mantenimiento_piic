@@ -1,18 +1,8 @@
 import React from 'react';
-import {
-  User,
-  Mail,
-  Activity,
-  Pencil,
-  Hash,
-  Briefcase,
-  Image as ImageIcon,
-  ChevronUp,
-  ChevronDown,
-} from 'lucide-react';
+import { User, Mail, Activity, Pencil, Hash, Briefcase, Image as ImageIcon } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
-import { ArchonTableSkeleton } from '../ArchonSkeleton';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 /**
  * 🔱 Archon Component: UsersGridView
@@ -143,140 +133,69 @@ const UsersGridView = (): React.JSX.Element => {
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
-  if (isLoading) {
-    return (
-      <div className="glass-card-pro bg-white p-6 space-y-6">
-        <div className="flex items-center gap-3 opacity-40 animate-pulse">
-          <div className="w-4 h-4 bg-[#0f2a44] rounded-[4px]" />
-          <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
-            Sincronizando Identidades...
-          </span>
-        </div>
-        <ArchonTableSkeleton rows={8} />
-      </div>
-    );
-  }
-
-  const handleSort = (field: 'username' | 'identity' | 'role' | 'status'): void => {
+  const handleSort = (key: string): void => {
+    const field = key as 'username' | 'identity' | 'role' | 'status';
     setSortConfig((prev) => ({
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
     }));
   };
 
-  const SortIndicator = ({
-    active,
-    direction,
-  }: {
-    active: boolean;
-    direction: 'asc' | 'desc';
-  }): React.JSX.Element => (
-    <span
-      className={`inline-flex ml-1 transition-all duration-300 ${
-        active ? 'opacity-100 text-[#059669]' : 'opacity-80 text-[#10b981]'
-      }`}
-    >
-      {active && direction === 'desc' ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-    </span>
-  );
+  const sortedUsers = React.useMemo(() => {
+    const data = [...users];
+    if (!sortConfig.field) return data;
 
-  const sortedUsers = [...users].sort((a, b) => {
-    if (!sortConfig.field) return 0;
-    let valA = '';
-    let valB = '';
+    return data.sort((a, b) => {
+      let valA = '';
+      let valB = '';
 
-    if (sortConfig.field === 'username') {
-      valA = a.username;
-      valB = b.username;
-    } else if (sortConfig.field === 'identity') {
-      valA = a.fullName || a.username;
-      valB = b.fullName || b.username;
-    } else if (sortConfig.field === 'role') {
-      valA = a.roleName || '';
-      valB = b.roleName || '';
-    } else if (sortConfig.field === 'status') {
-      valA = a.is_active ? '1' : '0';
-      valB = b.is_active ? '1' : '0';
-    }
+      if (sortConfig.field === 'username') {
+        valA = a.username;
+        valB = b.username;
+      } else if (sortConfig.field === 'identity') {
+        valA = a.fullName || a.username;
+        valB = b.fullName || b.username;
+      } else if (sortConfig.field === 'role') {
+        valA = a.roleName || '';
+        valB = b.roleName || '';
+      } else if (sortConfig.field === 'status') {
+        valA = a.is_active ? '1' : '0';
+        valB = b.is_active ? '1' : '0';
+      }
 
-    return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-  });
+      return sortConfig.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    });
+  }, [users, sortConfig]);
+
+  const headers: ArchonTableHeader[] = [
+    { key: 'avatar', label: 'ACTIVO' },
+    { key: 'username', label: 'EMPLEADO', sortable: true },
+    { key: 'identity', label: 'IDENTIDAD', sortable: true },
+    { key: 'contact', label: 'CANAL DE CONTACTO' },
+    { key: 'role', label: 'ROL Y DEPARTAMENTO', sortable: true },
+    { key: 'status', label: 'ESTATUS OPERATIVO', sortable: true },
+    { key: 'settings', label: 'AJUSTES' },
+  ];
 
   return (
     <div className="space-y-[20px] text-[#0f2a44]">
-      <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
-        <table className="archon-registry-table w-full">
-          <thead>
-            <tr>
-              <th>ACTIVO</th>
-              <th
-                onClick={(): void => handleSort('username')}
-                className="cursor-pointer hover:bg-sky-900 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  EMPLEADO
-                  <SortIndicator
-                    active={sortConfig.field === 'username'}
-                    direction={sortConfig.direction}
-                  />
-                </div>
-              </th>
-              <th
-                onClick={(): void => handleSort('identity')}
-                className="cursor-pointer hover:bg-sky-900 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  IDENTIDAD
-                  <SortIndicator
-                    active={sortConfig.field === 'identity'}
-                    direction={sortConfig.direction}
-                  />
-                </div>
-              </th>
-              <th>CANAL DE CONTACTO</th>
-              <th
-                onClick={(): void => handleSort('role')}
-                className="cursor-pointer hover:bg-sky-900 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  ROL Y DEPARTAMENTO
-                  <SortIndicator
-                    active={sortConfig.field === 'role'}
-                    direction={sortConfig.direction}
-                  />
-                </div>
-              </th>
-              <th
-                onClick={(): void => handleSort('status')}
-                className="cursor-pointer hover:bg-sky-900 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-1">
-                  ESTATUS OPERATIVO
-                  <SortIndicator
-                    active={sortConfig.field === 'status'}
-                    direction={sortConfig.direction}
-                  />
-                </div>
-              </th>
-              <th>AJUSTES</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedUsers.map(
-              (item: UserIndustrial): React.JSX.Element => (
-                <UserRegistryRow
-                  key={item.id}
-                  user={item}
-                  onEdit={(u): void => {
-                    setEditingUser(u);
-                    setActivePanel('SIGNUP');
-                  }}
-                />
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+      <ArchonDataTable
+        loading={isLoading}
+        data={sortedUsers}
+        headers={headers}
+        onSort={handleSort}
+        sortConfig={sortConfig}
+        renderRow={(item: UserIndustrial): React.JSX.Element => (
+          <UserRegistryRow
+            key={item.id}
+            user={item}
+            onEdit={(u): void => {
+              setEditingUser(u);
+              setActivePanel('SIGNUP');
+            }}
+          />
+        )}
+      />
     </div>
   );
 };

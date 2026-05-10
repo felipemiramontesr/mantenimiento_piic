@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Shield, Clock, ArrowRight, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 import api from '../../api/client';
 import { formatDateTime } from '../../utils/dateUtils';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 interface ActivityLog {
   id: number;
@@ -84,6 +84,17 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
     }
   };
 
+  const headers: ArchonTableHeader[] = [
+    { key: 'fecha', label: 'FECHA / HORA' },
+    ...(!unitId ? [{ key: 'activo', label: 'ACTIVO' }] : []),
+    { key: 'evento', label: 'EVENTO / IMPACTO' },
+    { key: 'trayecto', label: 'TRAYECTO' },
+    { key: 'descripcion', label: 'DESCRIPCIÓN / NOTA' },
+    { key: 'telemetria', label: 'TELEMETRÍA (SNAPSHOT)' },
+    { key: 'delta', label: 'DELTA' },
+    { key: 'responsable', label: 'RESPONSABLE' },
+  ] as ArchonTableHeader[];
+
   if (loading) {
     return (
       <div className="h-32 flex items-center justify-center">
@@ -110,190 +121,157 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
         </div>
       )}
 
-      <div
-        className={`${
-          unitId ? 'bg-transparent w-full !p-0 !m-0' : 'glass-card-pro bg-white shadow-2xl mx-8'
-        } !pt-0 ${unitId ? '!pb-0' : '!pb-4'} overflow-x-auto ${
-          unitId ? '' : 'rounded-[4px]'
-        } custom-scrollbar`}
-      >
-        <table
-          className={`archon-registry-table w-full ${unitId ? 'forensic-focus-green' : ''}`}
-          style={{ tableLayout: 'fixed', minWidth: '100%' }}
-        >
-          <thead>
-            <tr className={unitId ? 'bg-[#0f2a44]/[0.02]' : ''}>
-              <th style={{ width: '15%' }}>FECHA / HORA</th>
-              {!unitId && <th style={{ width: '15%' }}>ACTIVO</th>}
-              <th style={{ width: '15%' }}>EVENTO / IMPACTO</th>
-              <th style={{ width: '20%' }}>TRAYECTO</th>
-              <th style={{ width: '25%' }}>DESCRIPCIÓN / NOTA</th>
-              <th style={{ width: '15%' }}>TELEMETRÍA (SNAPSHOT)</th>
-              <th style={{ width: '10%' }}>DELTA</th>
-              <th style={{ width: '15%' }}>RESPONSABLE</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log, index) => {
-              const style = getEventStyle(log.event_type);
-              const delta = log.reading_after ? log.reading_after - log.reading_before : 0;
-              const EventIcon = style.icon;
+      <div className={unitId ? 'w-full' : 'mx-8'}>
+        <ArchonDataTable
+          className={unitId ? 'bg-transparent !shadow-none' : ''}
+          testId="forensic-journal-table"
+          data={logs}
+          headers={headers}
+          emptyMessage="Sin registros forenses para esta unidad"
+          renderRow={(log, _index): React.ReactNode => {
+            const style = getEventStyle(log.event_type);
+            const delta = log.reading_after ? log.reading_after - log.reading_before : 0;
+            const EventIcon = style.icon;
 
-              return (
-                <motion.tr
-                  key={log.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                >
+            return (
+              <tr key={log.id} className="animate-in slide-in-from-left-2 duration-300">
+                <td className="py-4">
+                  <span className="text-[11px] font-black text-[#0f2a44]">
+                    {formatDateTime(log.created_at)}
+                  </span>
+                </td>
+
+                {!unitId && (
                   <td className="py-4">
-                    <span className="text-[11px] font-black text-[#0f2a44]">
-                      {formatDateTime(log.created_at)}
+                    <div className="flex flex-col items-center">
+                      <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-[#0f2a44]">
+                        {log.unit_id}
+                      </span>
+                      <span className="text-[9px] font-bold opacity-40 uppercase">
+                        {log.marca} {log.modelo}
+                      </span>
+                    </div>
+                  </td>
+                )}
+
+                <td className="py-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className={`p-1.5 rounded-[4px] ${style.bg}`}>
+                      <EventIcon size={12} className={style.color} />
+                    </div>
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-widest ${style.color}`}
+                    >
+                      {style.label}
                     </span>
-                  </td>
+                  </div>
+                </td>
 
-                  {!unitId && (
-                    <td className="py-4">
-                      <div className="flex flex-col items-center">
-                        <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-[#0f2a44]">
-                          {log.unit_id}
-                        </span>
-                        <span className="text-[9px] font-bold opacity-40 uppercase">
-                          {log.marca} {log.modelo}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-
-                  <td className="py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className={`p-1.5 rounded-[4px] ${style.bg}`}>
-                        <EventIcon size={12} className={style.color} />
-                      </div>
-                      <span
-                        className={`text-[10px] font-black uppercase tracking-widest ${style.color}`}
-                      >
-                        {style.label}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="py-4">
-                    <div className="flex flex-col items-center justify-center px-2">
-                      {((): React.ReactNode => {
-                        if (log.event_type === 'ROUTE_START') {
-                          return (
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
-                                {log.unit_sede || 'BASE'}
-                              </span>
-                              <ArrowRight size={10} className="opacity-20" />
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
-                                {log.route_destination}
-                              </span>
-                            </div>
-                          );
-                        }
-                        if (log.event_type === 'ROUTE_FINISH') {
-                          return (
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
-                                {log.route_destination}
-                              </span>
-                              <ArrowRight size={10} className="opacity-20" />
-                              <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
-                                {log.unit_sede || 'BASE'}
-                              </span>
-                            </div>
-                          );
-                        }
+                <td className="py-4">
+                  <div className="flex flex-col items-center justify-center px-2">
+                    {((): React.ReactNode => {
+                      if (log.event_type === 'ROUTE_START') {
                         return (
-                          <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
-                            —
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
+                              {log.unit_sede || 'BASE'}
+                            </span>
+                            <ArrowRight size={10} className="opacity-20" />
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
+                              {log.route_destination}
+                            </span>
+                          </div>
                         );
-                      })()}
-                    </div>
-                  </td>
-
-                  <td className="py-4 px-4">
-                    <div className="flex justify-center">
-                      {((): React.ReactNode => {
-                        let displayDesc = log.description;
-                        if (!displayDesc) {
-                          if (log.event_type === 'ROUTE_START')
-                            displayDesc = 'Despliegue operativo iniciado.';
-                          else if (log.event_type === 'ROUTE_FINISH')
-                            displayDesc = 'Cierre de misión logístico.';
-                          else displayDesc = '—';
-                        }
-
-                        const isIncident = log.event_type === 'ROUTE_INCIDENT';
-
+                      }
+                      if (log.event_type === 'ROUTE_FINISH') {
                         return (
-                          <p
-                            className={`text-[10px] font-bold line-clamp-2 leading-tight text-center max-w-[200px] ${
-                              isIncident
-                                ? 'text-rose-600 bg-rose-50 not-italic px-3 py-1 rounded-[4px] border border-rose-100 shadow-sm'
-                                : 'text-[#0f2a44] opacity-70 italic'
-                            }`}
-                          >
-                            {displayDesc}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter text-center leading-none">
+                              {log.route_destination}
+                            </span>
+                            <ArrowRight size={10} className="opacity-20" />
+                            <span className="text-[10px] font-black text-[#0f2a44] opacity-50 uppercase tracking-tighter">
+                              {log.unit_sede || 'BASE'}
+                            </span>
+                          </div>
                         );
-                      })()}
-                    </div>
-                  </td>
+                      }
+                      return (
+                        <span className="text-[10px] font-black text-[#0f2a44] opacity-20">—</span>
+                      );
+                    })()}
+                  </div>
+                </td>
 
-                  <td className="py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="text-[11px] font-black text-[#0f2a44]">
-                        {log.reading_before?.toLocaleString()}
-                      </span>
-                      {log.event_type !== 'ROUTE_START' && log.reading_after && (
-                        <>
-                          <ArrowRight size={10} className="opacity-20" />
-                          <span className="text-[11px] font-black text-[#0f2a44]">
-                            {log.reading_after?.toLocaleString()}
-                          </span>
-                        </>
-                      )}
-                      <span className="text-[9px] font-bold opacity-30">KM</span>
-                    </div>
-                  </td>
+                <td className="py-4 px-4">
+                  <div className="flex justify-center">
+                    {((): React.ReactNode => {
+                      let displayDesc = log.description;
+                      if (!displayDesc) {
+                        if (log.event_type === 'ROUTE_START')
+                          displayDesc = 'Despliegue operativo iniciado.';
+                        else if (log.event_type === 'ROUTE_FINISH')
+                          displayDesc = 'Cierre de misión logístico.';
+                        else displayDesc = '—';
+                      }
 
-                  <td className="py-4">
-                    {delta > 0 ? (
-                      <div className="flex items-center justify-center gap-1 text-rose-600">
-                        <TrendingUp size={10} />
-                        <span className="text-[11px] font-black">+{delta.toLocaleString()}</span>
-                      </div>
-                    ) : (
-                      <span className="text-[10px] font-bold opacity-20">---</span>
+                      const isIncident = log.event_type === 'ROUTE_INCIDENT';
+
+                      return (
+                        <p
+                          className={`text-[10px] font-bold line-clamp-2 leading-tight text-center max-w-[200px] ${
+                            isIncident
+                              ? 'text-rose-600 bg-rose-50 not-italic px-3 py-1 rounded-[4px] border border-rose-100 shadow-sm'
+                              : 'text-[#0f2a44] opacity-70 italic'
+                          }`}
+                        >
+                          {displayDesc}
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </td>
+
+                <td className="py-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-[11px] font-black text-[#0f2a44]">
+                      {log.reading_before?.toLocaleString()}
+                    </span>
+                    {log.event_type !== 'ROUTE_START' && log.reading_after && (
+                      <>
+                        <ArrowRight size={10} className="opacity-20" />
+                        <span className="text-[11px] font-black text-[#0f2a44]">
+                          {log.reading_after?.toLocaleString()}
+                        </span>
+                      </>
                     )}
-                  </td>
+                    <span className="text-[9px] font-bold opacity-30">KM</span>
+                  </div>
+                </td>
 
-                  <td className="py-4">
-                    <div className="text-center">
-                      <p className="text-[11px] font-black text-[#0f2a44]">{log.operatorName}</p>
-                      <p className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">
-                        Certified Audit
-                      </p>
+                <td className="py-4">
+                  {delta > 0 ? (
+                    <div className="flex items-center justify-center gap-1 text-rose-600">
+                      <TrendingUp size={10} />
+                      <span className="text-[11px] font-black">+{delta.toLocaleString()}</span>
                     </div>
-                  </td>
-                </motion.tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  ) : (
+                    <span className="text-[10px] font-bold opacity-20">---</span>
+                  )}
+                </td>
 
-        {logs.length === 0 && (
-          <div className="py-8 text-center">
-            <p className="text-[10px] font-black opacity-20 uppercase tracking-widest">
-              Sin registros forenses para esta unidad
-            </p>
-          </div>
-        )}
+                <td className="py-4">
+                  <div className="text-center">
+                    <p className="text-[11px] font-black text-[#0f2a44]">{log.operatorName}</p>
+                    <p className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">
+                      Certified Audit
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            );
+          }}
+        />
       </div>
     </div>
   );

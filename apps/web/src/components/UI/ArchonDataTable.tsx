@@ -1,0 +1,111 @@
+import React from 'react';
+import { ArchonTableSkeleton } from '../ArchonSkeleton';
+
+export interface ArchonTableHeader {
+  key: string;
+  label: string;
+  align?: 'left' | 'center' | 'right';
+  sortable?: boolean;
+}
+
+interface ArchonDataTableProps<T> {
+  data: T[];
+  headers: ArchonTableHeader[];
+  renderRow: (item: T, index: number) => React.ReactNode;
+  loading?: boolean;
+  emptyMessage?: string;
+  testId?: string;
+  className?: string;
+  onSort?: (key: string) => void;
+  sortConfig?: {
+    field: string | null;
+    direction: 'asc' | 'desc';
+  };
+}
+
+/**
+ * 🔱 ARCHON DATA TABLE (v.1.0.0)
+ * Architecture: Sovereign Registry Engine
+ * Principles: DRY, SOLID, ZERO-NOISE
+ */
+export function ArchonDataTable<T>({
+  data,
+  headers,
+  renderRow,
+  loading = false,
+  emptyMessage = 'No hay registros disponibles-',
+  testId = 'archon-data-table',
+  className = '',
+  onSort,
+  sortConfig,
+}: ArchonDataTableProps<T>): React.JSX.Element {
+  if (loading) {
+    return (
+      <div className={`glass-card-pro bg-white p-6 space-y-6 ${className}`}>
+        <div className="flex items-center gap-3 opacity-40 animate-pulse">
+          <div className="w-4 h-4 bg-[#f2b705] rounded-[4px]" />
+          <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
+            Sincronizando Registros...
+          </span>
+        </div>
+        <ArchonTableSkeleton rows={6} />
+      </div>
+    );
+  }
+
+  const getJustifyClass = (align?: string): string => {
+    if (align === 'left') return 'justify-start';
+    if (align === 'right') return 'justify-end';
+    return 'justify-center';
+  };
+
+  return (
+    <div
+      className={`glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative ${className}`}
+    >
+      <table data-testid={testId} className="archon-registry-table w-full">
+        <thead>
+          <tr>
+            {headers.map((header) => (
+              <th
+                key={header.key}
+                onClick={(): void => {
+                  if (header.sortable && onSort) {
+                    onSort(header.key);
+                  }
+                }}
+                className={`${
+                  header.sortable ? 'cursor-pointer hover:bg-sky-900 transition-colors' : ''
+                } text-${header.align || 'center'}`}
+              >
+                <div className={`flex items-center gap-2 ${getJustifyClass(header.align)}`}>
+                  {header.label}
+                  {header.sortable && sortConfig?.field === header.key && (
+                    <span className="inline-flex ml-1 text-amber-400">
+                      {sortConfig.direction === 'desc' ? '▼' : '▲'}
+                    </span>
+                  )}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {data.length > 0 ? (
+            data.map((item, index) => renderRow(item, index))
+          ) : (
+            <tr>
+              <td colSpan={headers.length} className="py-20 text-center">
+                <p className="text-[14px] font-black text-[#0f2a44] opacity-20 uppercase tracking-widest">
+                  {emptyMessage}
+                </p>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default ArchonDataTable;

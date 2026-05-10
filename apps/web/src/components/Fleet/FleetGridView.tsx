@@ -8,8 +8,6 @@ import {
   TrendingUp,
   Tag,
   MapPin,
-  ChevronUp,
-  ChevronDown,
   Truck,
   Wrench,
   Fuel,
@@ -26,8 +24,8 @@ import {
   MaintenanceForecast,
 } from '../../utils/fleetPredictiveEngine';
 import { formatDateTime } from '../../utils/dateUtils';
-import { ArchonTableSkeleton } from '../ArchonSkeleton';
 import { checkHoyNoCircula } from '../../utils/fleetCompliance';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
 // Visual Impact Update: 100% Data Parity with Master Source
@@ -509,18 +507,18 @@ export const FleetGridView = ({
       .map((i: { unit: FleetUnit; forecast: MaintenanceForecast | null }): FleetUnit => i.unit);
   }, [units, sortConfig]);
 
-  if (loading)
-    return (
-      <div className="glass-card-pro bg-white p-6 space-y-6">
-        <div className="flex items-center gap-3 opacity-40 animate-pulse">
-          <div className="w-4 h-4 bg-[#f2b705] rounded-[4px]" />
-          <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
-            Sincronizando Activos...
-          </span>
-        </div>
-        <ArchonTableSkeleton rows={6} />
-      </div>
-    );
+  const headers: ArchonTableHeader[] = [
+    { key: 'activo', label: 'ACTIVO' },
+    { key: 'unidad', label: 'UNIDAD / MODELO', sortable: true },
+    { key: 'identidad', label: 'IDENTIDAD' },
+    { key: 'logistica', label: 'LOGÍSTICA' },
+    { key: 'odometria', label: 'ODOMETRÍA' },
+    { key: 'configuracion', label: 'CONFIGURACIÓN' },
+    { key: 'programacion', label: 'KM RESTANTES', sortable: true },
+    { key: 'pronostico', label: 'PRONÓSTICO (FECHA)', sortable: true },
+    { key: 'salud', label: 'SALUD' },
+    { key: 'acciones', label: 'ACCIONES' },
+  ];
 
   return (
     <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
@@ -531,134 +529,28 @@ export const FleetGridView = ({
           onClose={(): void => setSelectedGalleryUnit(null)}
         />
       )}
-      <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-8 w-full max-w-full overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar">
-        <table
-          data-testid="fleet-inventory-table"
-          key="fleet-table-v50.3.2"
-          className="archon-registry-table w-full"
-        >
-          <thead>
-            <tr>
-              <th>ACTIVO</th>
-              <th
-                onClick={(): void =>
-                  setSortConfig(
-                    (p: {
-                      field: 'unidad' | 'programacion' | 'pronostico' | null;
-                      direction: 'asc' | 'desc';
-                    }): {
-                      field: 'unidad' | 'programacion' | 'pronostico' | null;
-                      direction: 'asc' | 'desc';
-                    } => ({
-                      field: 'unidad',
-                      direction: p.field === 'unidad' && p.direction === 'asc' ? 'desc' : 'asc',
-                    })
-                  )
-                }
-                className="cursor-pointer hover:bg-sky-900 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  UNIDAD / MODELO
-                  <span
-                    className={`inline-flex ml-1 ${
-                      sortConfig.field === 'unidad' ? 'text-amber-400' : 'opacity-40'
-                    }`}
-                  >
-                    {sortConfig.field === 'unidad' && sortConfig.direction === 'desc' ? (
-                      <ChevronDown size={16} />
-                    ) : (
-                      <ChevronUp size={16} />
-                    )}
-                  </span>
-                </div>
-              </th>
-              <th>IDENTIDAD</th>
-              <th>LOGÍSTICA</th>
-              <th>ODOMETRÍA</th>
-              <th>CONFIGURACIÓN</th>
-              <th
-                onClick={(): void =>
-                  setSortConfig(
-                    (p: {
-                      field: 'unidad' | 'programacion' | 'pronostico' | null;
-                      direction: 'asc' | 'desc';
-                    }): {
-                      field: 'unidad' | 'programacion' | 'pronostico' | null;
-                      direction: 'asc' | 'desc';
-                    } => ({
-                      field: 'programacion',
-                      direction:
-                        p.field === 'programacion' && p.direction === 'asc' ? 'desc' : 'asc',
-                    })
-                  )
-                }
-                className="cursor-pointer hover:bg-sky-900 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  KM RESTANTES
-                  <span
-                    className={`inline-flex ml-1 ${
-                      sortConfig.field === 'programacion' ? 'text-amber-400' : 'opacity-40'
-                    }`}
-                  >
-                    {sortConfig.field === 'programacion' && sortConfig.direction === 'desc' ? (
-                      <ChevronDown size={16} />
-                    ) : (
-                      <ChevronUp size={16} />
-                    )}
-                  </span>
-                </div>
-              </th>
-              <th
-                onClick={(): void =>
-                  setSortConfig(
-                    (p: {
-                      field: 'unidad' | 'programacion' | 'pronostico' | null;
-                      direction: 'asc' | 'desc';
-                    }): {
-                      field: 'unidad' | 'programacion' | 'pronostico' | null;
-                      direction: 'asc' | 'desc';
-                    } => ({
-                      field: 'pronostico',
-                      direction: p.field === 'pronostico' && p.direction === 'asc' ? 'desc' : 'asc',
-                    })
-                  )
-                }
-                className="cursor-pointer hover:bg-sky-900 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  PRONÓSTICO (FECHA)
-                  <span
-                    className={`inline-flex ml-1 ${
-                      sortConfig.field === 'pronostico' ? 'text-amber-400' : 'opacity-40'
-                    }`}
-                  >
-                    {sortConfig.field === 'pronostico' && sortConfig.direction === 'desc' ? (
-                      <ChevronDown size={16} />
-                    ) : (
-                      <ChevronUp size={16} />
-                    )}
-                  </span>
-                </div>
-              </th>
-              <th>SALUD</th>
-              <th>ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {sortedUnits.map(
-              (unit): React.ReactElement => (
-                <FleetUnitRow
-                  key={unit.uuid}
-                  unit={unit}
-                  onSelectImage={setSelectedGalleryUnit}
-                  onEdit={onEdit}
-                />
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+      <ArchonDataTable
+        testId="fleet-inventory-table"
+        loading={loading}
+        data={sortedUnits}
+        headers={headers}
+        onSort={(key): void => {
+          const field = key as 'unidad' | 'programacion' | 'pronostico';
+          setSortConfig((p) => ({
+            field,
+            direction: p.field === field && p.direction === 'asc' ? 'desc' : 'asc',
+          }));
+        }}
+        sortConfig={sortConfig}
+        renderRow={(unit): React.ReactElement => (
+          <FleetUnitRow
+            key={unit.uuid}
+            unit={unit}
+            onSelectImage={setSelectedGalleryUnit}
+            onEdit={onEdit}
+          />
+        )}
+      />
     </div>
   );
 };
