@@ -64,7 +64,7 @@ const LogsModule: React.FC = (): React.ReactElement => {
       </header>
 
       {/* 📊 BODY MODULAR (Zen Skeleton) */}
-      <section className="workspace-body-pro">
+      <section className="archon-workspace-chassis">
         <div className="archon-axial-container flex flex-col gap-12 w-full max-w-full">
           <LogsManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
 
