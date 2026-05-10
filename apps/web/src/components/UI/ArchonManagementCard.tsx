@@ -114,7 +114,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
       <div className="archon-tile-action">
         <button
           data-testid={testId}
-          className={`btn-sentinel-${variant} w-full ${
+          className={`btn-sentinel btn-sentinel-${variant} w-full ${
             isActive ? getActiveButtonClass(variant) : ''
           }`}
         >
