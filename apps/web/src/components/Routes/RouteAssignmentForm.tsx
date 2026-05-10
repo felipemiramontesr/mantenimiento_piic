@@ -121,11 +121,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
             {/* 🔱 SOVEREIGN ACTION ECOSYSTEM - Anchored to bottom */}
             <div className="flex gap-4 pt-8 mt-auto border-t border-slate-100">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-sentinel-red !w-[40%] flex items-center justify-center gap-3 group"
-              >
+              <button type="button" onClick={onClose} className="btn-sentinel-red !w-[40%] group">
                 <ChevronRight
                   size={18}
                   className="rotate-180 group-hover:-translate-x-1 transition-transform"
@@ -139,9 +135,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                   (!isFinished &&
                     (!formData.unitId || !formData.operatorId || !formData.destination))
                 }
-                className={`${
-                  getButtonState().className
-                } btn-sentinel flex-1 flex items-center justify-center gap-3 transition-all duration-500`}
+                className={`${getButtonState().className} flex-1 group`}
               >
                 {submitting ? (
                   <>
