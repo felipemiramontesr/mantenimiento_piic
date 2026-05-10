@@ -304,17 +304,45 @@ export default class RouteService {
       if (rows.length === 0) throw new Error('Route not found');
       const snapshotBefore = rows[0];
 
-      // 2. Perform Update
-      const fields = Object.keys(data)
-        .map((key) => `${key} = ?`)
-        .join(', ');
-      const values = Object.values(data);
+      // 2. Perform Update with Column Mapping (Frontend camelCase -> DB snake_case)
+      const columnMap: Record<string, string> = {
+        unitId: 'unit_id',
+        operatorId: 'driver_id',
+        originId: 'origin_id',
+        destination: 'destination',
+        status: 'status',
+        startReading: 'start_reading',
+        endReading: 'end_reading',
+        fuelLevel: snapshotBefore.status === 'ACTIVE' ? 'fuel_level_start' : 'fuel_level_end',
+        fuelLitersLoaded: 'fuel_liters_loaded',
+        fuelAmount: 'fuel_amount',
+        fuelTicketImage: 'fuel_ticket_image',
+        additivesCheck: 'additives_check',
+        tirePressureJson: 'tire_pressure_json',
+        checklistJson: 'checklist_json',
+      };
 
-      if (fields.length > 0) {
-        await connection.execute(`UPDATE fleet_routes SET ${fields} WHERE uuid = ?`, [
-          ...values,
-          uuid,
-        ]);
+      const fieldsToUpdate: string[] = [];
+      const values: unknown[] = [];
+
+      Object.entries(data).forEach(([key, value]) => {
+        const column = columnMap[key];
+        if (column) {
+          fieldsToUpdate.push(`${column} = ?`);
+          // Special handling for booleans/numeric types if necessary
+          if (key === 'additivesCheck') {
+            values.push(value ? 1 : 0);
+          } else {
+            values.push(value);
+          }
+        }
+      });
+
+      if (fieldsToUpdate.length > 0) {
+        await connection.execute(
+          `UPDATE fleet_routes SET ${fieldsToUpdate.join(', ')} WHERE uuid = ?`,
+          [...values, uuid]
+        );
       }
 
       // 3. Get snapshot after

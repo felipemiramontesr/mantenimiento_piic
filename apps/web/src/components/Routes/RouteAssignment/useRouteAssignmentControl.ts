@@ -198,16 +198,29 @@ export const useRouteAssignmentControl = (
   }, []);
 
   const handleConfirmAudit = async (reason: string): Promise<void> => {
+    if (!reason || reason.length < 5) {
+      setError('La justificación debe tener al menos 5 caracteres.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (auditAction === 'UPDATE') {
-        await api.put(`/routes/${routeToEdit?.uuid}`, { data: formData, reason });
+        // 🔱 Forensic Mapping: Ensure origin label is converted back to ID
+        const originId = origins.find((o) => o.label === formData.origin)?.id;
+        const payload = {
+          ...formData,
+          originId: originId ? Number(originId) : undefined,
+        };
+
+        await api.put(`/routes/${routeToEdit?.uuid}`, { data: payload, reason });
       } else {
         await api.delete(`/routes/${routeToEdit?.uuid}`, { data: { reason } });
       }
       onClose();
     } catch (err) {
-      setError('Error en el protocolo de auditoría');
+      const msg = err instanceof Error ? err.message : 'Error en el protocolo de auditoría';
+      setError(msg);
     } finally {
       setSubmitting(false);
       setIsAuditModalOpen(false);

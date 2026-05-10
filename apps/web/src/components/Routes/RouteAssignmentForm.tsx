@@ -168,6 +168,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             : `Eliminación forense del registro ${routeToEdit?.id}`
         }
         actionType={auditAction}
+        loading={submitting}
       />
     </div>
   );

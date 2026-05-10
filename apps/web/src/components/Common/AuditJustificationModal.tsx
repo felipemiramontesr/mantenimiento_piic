@@ -6,6 +6,7 @@ interface AuditJustificationModalProps {
   onConfirm(reason: string): void;
   title: string;
   actionType: 'UPDATE' | 'DELETE';
+  loading?: boolean;
 }
 
 /**
@@ -18,6 +19,7 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
   onConfirm,
   title,
   actionType,
+  loading,
 }) => {
   const [reason, setReason] = useState('');
 
@@ -26,7 +28,11 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
   const isDelete = actionType === 'DELETE';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+    >
       <div className="bg-[#0A0F1E] border border-white/10 rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="p-6">
           <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
@@ -60,16 +66,23 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
           </div>
 
           <div className="archon-button-group mt-8">
-            <button onClick={onClose} className="btn-sentinel-red text-sm">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="btn-sentinel-red text-sm disabled:opacity-50"
+            >
               Cancelar
             </button>
             <button
               onClick={(): void => onConfirm(reason)}
-              disabled={reason.length < 5}
+              disabled={reason.length < 5 || loading}
               className={`${
                 isDelete ? 'btn-sentinel-red' : 'btn-sentinel-emerald'
-              } text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+              } text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
             >
+              {loading && (
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
               {isDelete ? 'Confirmar Baja' : 'Sincronizar'}
             </button>
           </div>
