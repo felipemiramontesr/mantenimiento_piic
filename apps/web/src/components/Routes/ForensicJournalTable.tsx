@@ -115,6 +115,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({ unitId, hid
         <ArchonDataTable
           className={unitId ? 'bg-transparent !shadow-none' : ''}
           testId="forensic-journal-table"
+          variant={unitId ? 'embedded' : 'master'}
           loading={loading}
           loadingMessage="Accediendo a Memoria Forense..."
           data={logs}

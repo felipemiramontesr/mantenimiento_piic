@@ -22,6 +22,7 @@ interface ArchonDataTableProps<T> {
     field: string | null;
     direction: 'asc' | 'desc';
   };
+  variant?: 'master' | 'embedded';
 }
 
 /**
@@ -40,10 +41,16 @@ export function ArchonDataTable<T>({
   className = '',
   onSort,
   sortConfig,
+  variant = 'master',
 }: ArchonDataTableProps<T>): React.JSX.Element {
   if (loading) {
+    const loadingClasses =
+      variant === 'master'
+        ? `glass-card-pro bg-white p-6 space-y-6 ${className}`
+        : `w-full p-0 space-y-4 ${className}`;
+
     return (
-      <div className={`glass-card-pro bg-white p-6 space-y-6 ${className}`}>
+      <div className={loadingClasses}>
         <div className="flex items-center gap-3 opacity-40 animate-pulse">
           <div className="w-4 h-4 bg-[#f2b705] rounded-[4px]" />
           <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
@@ -61,10 +68,13 @@ export function ArchonDataTable<T>({
     return 'justify-center';
   };
 
+  const containerClasses =
+    variant === 'master'
+      ? `glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative ${className}`
+      : `w-full overflow-x-auto custom-scrollbar relative ${className}`;
+
   return (
-    <div
-      className={`glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative ${className}`}
-    >
+    <div className={containerClasses}>
       <table data-testid={testId} className="archon-registry-table w-full">
         <thead>
           <tr>
