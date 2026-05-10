@@ -96,7 +96,7 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
         payload: { data: { destination: 'New' }, reason: 'Correction' },
       });
       expect(response.statusCode).toBe(400);
-      expect(JSON.parse(response.body).message).toBe('Route not found');
+      expect(JSON.parse(response.body).message).toContain('Route not found');
     });
 
     it('should delete route forensically', async () => {
@@ -123,7 +123,7 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
         payload: { reason: 'Decommissioning' },
       });
       expect(response.statusCode).toBe(400);
-      expect(JSON.parse(response.body).message).toBe('Route not found');
+      expect(JSON.parse(response.body).message).toContain('Route not found');
     });
 
     it('should handle errors in route forensic updates', async () => {

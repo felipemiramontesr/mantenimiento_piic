@@ -341,6 +341,19 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       );
     });
 
+    it('should throw error if uuid is missing', async () => {
+      await expect(RouteService.updateRoute('', {}, 'Reason', 1)).rejects.toThrow(
+        'Missing route UUID for update'
+      );
+    });
+
+    it('should handle non-Error exceptions in catch block', async () => {
+      mockConnection.execute.mockRejectedValueOnce('STRING_FAIL');
+      await expect(
+        RouteService.updateRoute('UUID-1', { destination: 'X' }, 'Reason', 1)
+      ).rejects.toThrow('Forensic Update Failure: Unknown database error');
+    });
+
     it('should successfully delete a route and log audit', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ uuid: 'UUID-DEL' }]]); // Snapshot Before
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Delete

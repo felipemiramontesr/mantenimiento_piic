@@ -204,13 +204,23 @@ export const useRouteAssignmentControl = (
     }
 
     setSubmitting(true);
+    setError(null);
+
     try {
       if (auditAction === 'UPDATE') {
-        // 🔱 Forensic Mapping: Ensure origin label is converted back to ID
+        // 🔱 Forensic Mapping: Ensure numeric types and ID conversion
         const originId = origins.find((o) => o.label === formData.origin)?.id;
+
+        // Clean payload for the forensic vault
+        const { origin: _origin, ...rest } = formData;
         const payload = {
-          ...formData,
+          ...rest,
           originId: originId ? Number(originId) : undefined,
+          fuelLevel: Number(formData.fuelLevel || 0),
+          fuelLitersLoaded: Number(formData.fuelLitersLoaded || 0),
+          fuelAmount: Number(formData.fuelAmount || 0),
+          startReading: Number(formData.startReading || 0),
+          endReading: Number(formData.endReading || 0),
         };
 
         await api.put(`/routes/${routeToEdit?.uuid}`, { data: payload, reason });

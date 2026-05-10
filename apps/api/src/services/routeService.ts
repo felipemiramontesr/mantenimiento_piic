@@ -292,6 +292,8 @@ export default class RouteService {
     reason: string,
     adminId: number
   ): Promise<void> {
+    if (!uuid) throw new Error('Missing route UUID for update');
+
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
@@ -368,7 +370,8 @@ export default class RouteService {
     } catch (e) {
       await connection.rollback();
       connection.release();
-      throw e;
+      const msg = e instanceof Error ? e.message : 'Unknown database error';
+      throw new Error(`Forensic Update Failure: ${msg}`);
     }
   }
 
