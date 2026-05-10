@@ -1925,29 +1925,19 @@ table th > div {
 
 .accordion-inner .archon-registry-table td {
   padding: 12px 16px !important;
-  background: transparent !important;
+  background: transparent;
+  color: #0f2a44 !important;
 }
 
-.accordion-inner .archon-registry-table {
-  width: 100% !important;
-  min-width: 100% !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  margin: 0 !important;
-  border-collapse: collapse !important;
+.forensic-incident-row td {
+  background-color: #fff5f5 !important;
 }
 
-.accordion-inner .archon-registry-table tr {
-  border-bottom: none !important;
-}
-.accordion-inner .archon-registry-table th {
-  background: rgba(15, 42, 68, 0.8) !important;
-  backdrop-filter: blur(4px);
+.accordion-inner .archon-registry-table tr:hover td {
+  background-color: rgba(15, 42, 68, 0.02) !important;
 }
 
-/* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) */
-
-/* 1. Eliminate Vertical Gaps (Red Boxes) */
+/* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) - RESTORED */
 .archon-registry-table tr.expanded-focus-blue {
   border-bottom: none !important;
 }
@@ -1955,19 +1945,11 @@ table th > div {
   border-bottom: none !important;
 }
 
-/* 2. Surrounding Border & Permanent Colors */
 .archon-registry-table tr.expanded-focus-blue td {
   background-color: rgba(59, 130, 246, 0.08) !important;
   position: relative;
   box-shadow: none !important;
   border-top: 2px solid #0f2a44 !important;
-}
-.archon-registry-table tr.expanded-focus-blue td:first-child {
-  border-left: none !important;
-}
-.archon-registry-table tr.expanded-focus-blue td:last-child {
-  border-right: none !important;
-  padding-right: 20px !important; /* Keep alignment for main row */
 }
 
 .archon-registry-table tr.accordion-row-carrier td.accordion-carrier {
@@ -1975,35 +1957,5 @@ table th > div {
   border-right: none !important;
   border-bottom: 2px solid #0f2a44 !important;
   background-color: transparent !important;
-  padding: 0 !important; /* KILL PADDING GAP */
-}
-
-/* 3. Absolute Saturation Fix (Right Gap) */
-.archon-registry-table tr.accordion-row-carrier td.accordion-carrier:last-child {
-  padding-right: 0 !important; /* Neutralize legacy 20px rule */
-}
-
-.accordion-inner .archon-registry-table {
-  width: 100% !important;
-  min-width: 100% !important;
-  margin: 0 !important;
-  border-collapse: collapse !important;
-}
-
-.accordion-inner .archon-registry-table th:last-child,
-.accordion-inner .archon-registry-table td:last-child {
-  padding-right: 8px !important; /* Standard cell gap */
-}
-
-.accordion-inner .archon-registry-table td {
-  background-color: inherit;
-}
-
-.accordion-inner .archon-registry-table tr:not(thead tr) {
-  background-color: inherit;
-  border-bottom: none !important;
-}
-
-.accordion-inner .archon-registry-table tr:hover td {
-  background-color: transparent !important;
+  padding: 0 !important;
 }
