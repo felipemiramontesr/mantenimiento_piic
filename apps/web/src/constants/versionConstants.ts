@@ -1,6 +1,6 @@
-export const SYSTEM_VERSION = '75.0.0';
+export const SYSTEM_VERSION = '78.80.0';
 export const BRANDING_NAME = 'ArchonCore Industrial Alpha';
-export const CACHE_PREFIX = 'archon_v73_5_1';
+export const CACHE_PREFIX = 'archon_v78_80_0';
 export const SOVEREIGN_MODE = true;
-export const LAST_SYNC = '2026-05-07T04:54:00Z';
+export const LAST_SYNC = '2026-05-10T17:23:00Z';
 export const ENABLE_DEBUG = true;

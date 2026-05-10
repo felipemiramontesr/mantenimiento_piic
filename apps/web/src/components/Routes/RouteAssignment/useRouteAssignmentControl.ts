@@ -85,7 +85,13 @@ export const useRouteAssignmentControl = (
           'Arian Silver Zacatecas',
         destination: (raw.destination as string) || '',
         description: (raw.description as string) || '',
-        fuelLevel: Number(raw.fuelLevel || raw.fuel_level_start || raw.fuel_level_end || 100),
+        fuelLevel: Number(
+          raw.fuelLevel ||
+            (isFinished ? raw.fuel_level_end : raw.fuel_level_start) ||
+            raw.fuel_level_start ||
+            raw.fuel_level_end ||
+            100
+        ),
         startReading: Number(raw.start_km || raw.start_reading || 0),
         endReading: Number(raw.end_km || raw.end_reading || 0),
         fuelLitersLoaded: Number(raw.fuel_liters_loaded || 0),
