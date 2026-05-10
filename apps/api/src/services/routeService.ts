@@ -91,15 +91,27 @@ export default class RouteService {
    */
   static async finishRoute(
     routeUuid: string,
-    endReading: number,
-    fuelLevelEnd: number,
-    fuelImage?: string,
-    tirePressureJson?: string,
-    checklistJson?: string,
-    fuelLiters = 0,
-    fuelAmount = 0,
-    additivesCheck = false
+    params: {
+      endReading: number;
+      fuelLevelEnd: number;
+      fuelImage?: string;
+      tirePressureJson?: string;
+      checklistJson?: string;
+      fuelLiters?: number;
+      fuelAmount?: number;
+      additivesCheck?: boolean;
+    }
   ): Promise<void> {
+    const {
+      endReading,
+      fuelLevelEnd,
+      fuelImage,
+      tirePressureJson,
+      checklistJson,
+      fuelLiters = 0,
+      fuelAmount = 0,
+      additivesCheck = false,
+    } = params;
     const connection = await db.getConnection();
 
     try {

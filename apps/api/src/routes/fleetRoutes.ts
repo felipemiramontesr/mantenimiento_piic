@@ -73,17 +73,16 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       const { uuid } = request.params as { uuid: string };
       const data = finishRouteSchema.parse(request.body);
 
-      await RouteService.finishRoute(
-        uuid,
-        data.endReading,
-        data.fuelLevelEnd,
-        data.fuelTicketImage,
-        data.fuelLitersLoaded,
-        data.fuelAmount,
-        data.additivesCheck,
-        data.tirePressureJson,
-        data.checklistJson
-      );
+      await RouteService.finishRoute(uuid, {
+        endReading: data.endReading,
+        fuelLevelEnd: data.fuelLevelEnd,
+        fuelImage: data.fuelTicketImage,
+        fuelLiters: data.fuelLitersLoaded,
+        fuelAmount: data.fuelAmount,
+        additivesCheck: data.additivesCheck,
+        tirePressureJson: data.tirePressureJson,
+        checklistJson: data.checklistJson,
+      });
 
       return reply.send({
         success: true,
