@@ -286,14 +286,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'yellow'
           )}
           {renderKPI(
-            'Mermas Operativas',
-            stats.totalInactive,
-            ShieldAlert,
-            '#ef4444',
-            'Unidades fuera de servicio',
-            'red'
-          )}
-          {renderKPI(
             'Incidencias en Ruta',
             stats.openIncidents,
             ShieldAlert,
@@ -301,6 +293,14 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
             'Alertas Sentinel sin resolver',
             'red',
             '/routes'
+          )}
+          {renderKPI(
+            'Mermas Operativas',
+            stats.totalInactive,
+            ShieldAlert,
+            '#8b5cf6',
+            'Unidades fuera de servicio',
+            'violet'
           )}
         </div>
       </section>
