@@ -1934,7 +1934,7 @@ table th > div {
 }
 
 .accordion-inner .archon-registry-table tr:hover td {
-  background-color: rgba(15, 42, 68, 0.02) !important;
+  background-color: inherit !important;
 }
 
 /* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) - RESTORED */
