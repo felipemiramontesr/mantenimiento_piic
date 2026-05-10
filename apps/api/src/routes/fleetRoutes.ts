@@ -173,9 +173,21 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             COALESCE(JSON_VALUE(a.snapshot_after, '$.unit_id'), r.unit_id) as unit_id,
             'ADMIN_EDIT' as event_type,
             a.entity_id as reference_id,
-            -- Prioritize end_reading for impact, fallback to start_reading
-            CAST(COALESCE(JSON_VALUE(a.snapshot_before, '$.end_reading'), JSON_VALUE(a.snapshot_before, '$.start_reading')) AS DECIMAL(12,2)) as reading_before,
-            CAST(COALESCE(JSON_VALUE(a.snapshot_after, '$.end_reading'), JSON_VALUE(a.snapshot_after, '$.start_reading')) AS DECIMAL(12,2)) as reading_after,
+            -- Detect which reading changed (End vs Start)
+            CAST(
+              CASE 
+                WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading') 
+                THEN JSON_VALUE(a.snapshot_before, '$.end_reading')
+                ELSE JSON_VALUE(a.snapshot_before, '$.start_reading')
+              END AS DECIMAL(12,2)
+            ) as reading_before,
+            CAST(
+              CASE 
+                WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading') 
+                THEN JSON_VALUE(a.snapshot_after, '$.end_reading')
+                ELSE JSON_VALUE(a.snapshot_after, '$.start_reading')
+              END AS DECIMAL(12,2)
+            ) as reading_after,
             JSON_VALUE(a.snapshot_before, '$.status') as status_before,
             JSON_VALUE(a.snapshot_after, '$.status') as status_after,
             CONCAT('MODIFICACIÓN: ', a.reason) as description,
@@ -183,8 +195,21 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             a.created_at,
             CAST(JSON_VALUE(a.snapshot_before, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_before,
             CAST(JSON_VALUE(a.snapshot_after, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_after,
-            CAST(JSON_VALUE(a.snapshot_before, '$.fuel_level_end') AS DECIMAL(5,2)) as fuel_level_before,
-            CAST(JSON_VALUE(a.snapshot_after, '$.fuel_level_end') AS DECIMAL(5,2)) as fuel_level_after
+            -- Detect which fuel level changed (End vs Start) to avoid showing 'backwards' or irrelevant data
+            CAST(
+              CASE 
+                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end') 
+                THEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end')
+                ELSE JSON_VALUE(a.snapshot_before, '$.fuel_level_start')
+              END AS DECIMAL(5,2)
+            ) as fuel_level_before,
+            CAST(
+              CASE 
+                WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end') 
+                THEN JSON_VALUE(a.snapshot_after, '$.fuel_level_end')
+                ELSE JSON_VALUE(a.snapshot_after, '$.fuel_level_start')
+              END AS DECIMAL(5,2)
+            ) as fuel_level_after
           FROM administrative_audit_logs a
           LEFT JOIN fleet_routes r ON a.entity_id = r.uuid
           WHERE a.entity_type = 'route_log'
