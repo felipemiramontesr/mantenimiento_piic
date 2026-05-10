@@ -82,25 +82,25 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
   ): { label: string; color: string; bg: string; icon: React.ElementType } => {
     switch (type) {
       case 'ROUTE_START':
-        return { label: 'SALIDA', color: 'text-emerald-500', bg: 'bg-emerald-50', icon: Activity };
+        return { label: 'SALIDA', color: 'text-[#0f2a44]', bg: 'bg-emerald-50', icon: Activity };
       case 'ROUTE_FINISH':
-        return { label: 'ENTRADA', color: 'text-blue-500', bg: 'bg-blue-50', icon: Shield };
+        return { label: 'ENTRADA', color: 'text-[#0f2a44]', bg: 'bg-blue-50', icon: Shield };
       case 'ROUTE_INCIDENT':
         return {
           label: 'INCIDENCIA',
-          color: 'text-rose-600',
+          color: 'text-[#0f2a44]',
           bg: 'bg-rose-50',
           icon: AlertTriangle,
         };
       case 'ADMIN_EDIT':
         return {
           label: 'CORRECCIÓN',
-          color: 'text-rose-600',
+          color: 'text-[#0f2a44]',
           bg: 'bg-rose-50',
           icon: Shield,
         };
       default:
-        return { label: 'EVENTO', color: 'text-gray-500', bg: 'bg-gray-50', icon: Clock };
+        return { label: 'EVENTO', color: 'text-[#0f2a44]', bg: 'bg-gray-50', icon: Clock };
     }
   };
 
@@ -166,7 +166,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                 <tr
                   key={log.id}
                   className={`animate-in slide-in-from-left-2 duration-300 ${
-                    isIncident ? '!bg-rose-50/60' : ''
+                    isIncident ? '!bg-rose-50/30' : ''
                   }`}
                 >
                   <td className="py-4">
@@ -283,12 +283,12 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                   <td className="py-4">
                     {delta > 0 ? (
-                      <div className="flex items-center justify-center gap-1 text-rose-600">
-                        <TrendingUp size={10} />
-                        <span className="text-[11px] font-black">+{delta.toLocaleString()}</span>
+                      <div className="flex items-center justify-center gap-1 text-[#0f2a44]">
+                        <TrendingUp size={10} className="opacity-40" />
+                        <span className="text-[11px] font-black">{delta.toLocaleString()}</span>
                       </div>
                     ) : (
-                      <span className="text-[10px] font-bold opacity-20">---</span>
+                      <span className="text-[10px] font-bold opacity-20 text-[#0f2a44]">---</span>
                     )}
                   </td>
 
