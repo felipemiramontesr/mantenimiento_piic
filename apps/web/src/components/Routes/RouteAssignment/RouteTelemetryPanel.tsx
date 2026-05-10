@@ -18,7 +18,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
   formData,
   updateForm,
   isEdit,
-  isFinished,
+  _isFinished,
   tankCapacity,
   startReadingDisplay,
 }) => {
@@ -79,7 +79,6 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
                 )
               }
               placeholder="0.00"
-              disabled={isFinished}
               className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#0f2a44] p-3 pl-10 text-lg font-mono text-[#0f2a44] outline-none transition-all rounded-t-md"
             />
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 font-bold">
@@ -110,7 +109,6 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
             <ArchonFuelSensor
               value={fuelLevelValue}
               onChange={(val: number): void => updateForm({ fuelLevel: val })}
-              disabled={isFinished}
             />
           </div>
 

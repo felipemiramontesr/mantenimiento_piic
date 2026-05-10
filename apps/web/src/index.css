@@ -1325,59 +1325,66 @@ body {
   justify-content: center;
   gap: 12px;
   color: white !important;
-  height: 57px !important;
+  height: 52px !important;
   width: 100% !important;
-  padding: 0 28px !important;
+  padding: 0 32px !important;
   border-radius: 4px;
   font-weight: 900;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border: none;
+  letter-spacing: 0.25em;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none !important;
+  outline: none !important;
   cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
-.btn-sentinel-yellow {
-  background-color: #f2b705;
-}
-.btn-sentinel-yellow:hover {
-  background-color: #ffd000;
+.btn-sentinel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.btn-sentinel-violet {
-  background-color: #8b5cf6;
+.btn-sentinel:hover::after {
+  opacity: 1;
 }
-.btn-sentinel-violet:hover {
-  background-color: #7c3aed;
+
+.btn-sentinel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.btn-sentinel:active {
+  transform: translateY(0);
 }
 
 .btn-sentinel-emerald {
-  background-color: #10b981;
-}
-.btn-sentinel-emerald:hover {
-  background-color: #059669;
-}
-
-.btn-sentinel-sky {
-  background-color: #0ea5e9;
-}
-.btn-sentinel-sky:hover {
-  background-color: #0284c7;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
 }
 
 .btn-sentinel-red {
-  background-color: #ef4444;
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
 }
-.btn-sentinel-red:hover {
-  background-color: #dc2626;
+
+.btn-sentinel-sky {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.25);
 }
 
 .btn-sentinel-amber {
-  background-color: #f59e0b;
-}
-.btn-sentinel-amber:hover {
-  background-color: #d97706;
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
 }
 
 .btn-sentinel-navy {

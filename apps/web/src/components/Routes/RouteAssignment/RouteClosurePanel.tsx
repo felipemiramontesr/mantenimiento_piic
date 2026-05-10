@@ -11,7 +11,7 @@ import { RouteAssignmentPanelProps } from './types';
 const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
   formData,
   updateForm,
-  isFinished,
+  _isFinished,
 }) => {
   const tireData = React.useMemo(() => {
     try {
@@ -67,7 +67,6 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
                   updateForm({ fuelLitersLoaded: val === '' ? 0 : Number(val) });
                 }}
                 className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
-                disabled={isFinished}
               />
             </div>
           </div>
@@ -91,7 +90,6 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
                   updateForm({ fuelAmount: val === '' ? 0 : Number(val) });
                 }}
                 className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
-                disabled={isFinished}
               />
             </div>
             <p className="text-[8px] font-bold text-[#0f2a44]/40 italic">
@@ -109,7 +107,6 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
             onChange={(imgs: string[]): void => updateForm({ fuelTicketImage: imgs[0] || '' })}
             title="Capturar Ticket"
             maxImages={1}
-            disabled={isFinished}
           />
         </div>
 
@@ -125,9 +122,8 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
                   updateForm({ additivesCheck: e.target.checked })
                 }
                 className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
-                disabled={isFinished}
               />
-              <label htmlFor="additivesCheck" className="text-[11px] font-bold text-[#0f2a44]">
+              <label htmlFor="additivesCheck" className="text-xs font-bold text-[#0f2a44]">
                 ¿Se aplicaron Aditivos?
               </label>
             </div>
@@ -151,7 +147,6 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({
                       updateTire(pos, e.target.value)
                     }
                     className="w-full bg-white border border-[#0f2a44]/10 p-1.5 text-center text-[10px] font-black text-[#0f2a44] rounded-[4px] focus:border-amber-500 outline-none transition-colors"
-                    disabled={isFinished}
                   />
                 </div>
               ))}

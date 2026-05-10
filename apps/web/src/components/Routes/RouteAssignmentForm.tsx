@@ -119,9 +119,17 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               />
             )}
 
-            {/* MAIN ACTIONS INTEGRATED INTO THE TELEMETRY PANEL - Anchored to bottom */}
-            <div className="archon-button-group pt-4 mt-auto border-t border-slate-100">
-              <button type="button" onClick={onClose} className="btn-sentinel-red !h-[45px]">
+            {/* 🔱 SOVEREIGN ACTION ECOSYSTEM - Anchored to bottom */}
+            <div className="flex gap-4 pt-8 mt-auto border-t border-slate-100">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-sentinel-red !w-[40%] flex items-center justify-center gap-3 group"
+              >
+                <ChevronRight
+                  size={18}
+                  className="rotate-180 group-hover:-translate-x-1 transition-transform"
+                />
                 {isEdit ? 'Volver a Bitácora' : 'Cancelar'}
               </button>
               <button
@@ -131,16 +139,26 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                   (!isFinished &&
                     (!formData.unitId || !formData.operatorId || !formData.destination))
                 }
-                className={`${getButtonState().className} !h-[45px] ${
-                  submitting ? 'opacity-50 grayscale cursor-not-allowed' : ''
-                } transition-all duration-300 flex items-center justify-center gap-2`}
+                className={`${
+                  getButtonState().className
+                } btn-sentinel flex-1 flex items-center justify-center gap-3 transition-all duration-500`}
               >
                 {submitting ? (
-                  'Procesando...'
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Transmitiendo...
+                  </>
                 ) : (
                   <>
-                    {getButtonState().text}
-                    {isFinished ? <Save size={18} /> : <ChevronRight size={18} />}
+                    <span className="tracking-[0.2em]">{getButtonState().text}</span>
+                    {isFinished ? (
+                      <Save size={18} className="animate-pulse" />
+                    ) : (
+                      <ChevronRight
+                        size={18}
+                        className="group-hover:translate-x-1 transition-transform"
+                      />
+                    )}
                   </>
                 )}
               </button>
