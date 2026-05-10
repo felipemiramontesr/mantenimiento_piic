@@ -257,4 +257,101 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       expect(result[0].unit_id).toBe('ASM-001');
     });
   });
+
+  describe('updateRoute & deleteRoute (Forensic Audit)', () => {
+    it('should successfully update an active route with correct column mapping', async () => {
+      const mockBefore = { uuid: 'UUID-1', status: 'ACTIVE' };
+      const mockAfter = { uuid: 'UUID-1', status: 'ACTIVE', destination: 'New Dest' };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]); // Snapshot Before
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update
+      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]); // Snapshot After
+
+      await RouteService.updateRoute(
+        'UUID-1',
+        { destination: 'New Dest', fuelLevel: 80 },
+        'Reason',
+        1
+      );
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'UPDATE fleet_routes SET destination = ?, fuel_level_start = ? WHERE uuid = ?'
+        ),
+        ['New Dest', 80, 'UUID-1']
+      );
+      expect(mockConnection.commit).toHaveBeenCalled();
+    });
+
+    it('should update fuel_level_end if route is COMPLETED', async () => {
+      const mockBefore = { uuid: 'UUID-1', status: 'COMPLETED' };
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'COMPLETED' }]]);
+
+      await RouteService.updateRoute('UUID-1', { fuelLevel: 75 }, 'Reason', 1);
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_routes SET fuel_level_end = ? WHERE uuid = ?'),
+        [75, 'UUID-1']
+      );
+    });
+
+    it('should handle additivesCheck boolean mapping', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+
+      await RouteService.updateRoute('UUID-1', { additivesCheck: true }, 'Reason', 1);
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_routes SET additives_check = ? WHERE uuid = ?'),
+        [1, 'UUID-1']
+      );
+    });
+
+    it('should handle additivesCheck false mapping', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+
+      await RouteService.updateRoute('UUID-1', { additivesCheck: false }, 'Reason', 1);
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_routes SET additives_check = ? WHERE uuid = ?'),
+        [0, 'UUID-1']
+      );
+    });
+
+    it('should ignore unmapped fields', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+
+      await RouteService.updateRoute(
+        'UUID-1',
+        { unknownField: 'ignore me', destination: 'Dest' } as any,
+        'Reason',
+        1
+      );
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_routes SET destination = ? WHERE uuid = ?'),
+        ['Dest', 'UUID-1']
+      );
+    });
+
+    it('should successfully delete a route and log audit', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[{ uuid: 'UUID-DEL' }]]); // Snapshot Before
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Delete
+
+      await RouteService.deleteRoute('UUID-DEL', 'Cleanup', 1);
+
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('DELETE FROM fleet_routes WHERE uuid = ?'),
+        ['UUID-DEL']
+      );
+      expect(mockConnection.commit).toHaveBeenCalled();
+    });
+  });
 });
