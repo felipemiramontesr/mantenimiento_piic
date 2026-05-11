@@ -114,7 +114,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
     ...(!unitId ? [{ key: 'activo', label: 'ACTIVO' }] : []),
     { key: 'evento', label: 'EVENTO / IMPACTO' },
     { key: 'descripcion', label: 'DESCRIPCIÓN / NOTA' },
-    { key: 'modificacion', label: '' },
+    { key: 'modificacion', label: 'MODIFICACIÓN' },
     { key: 'responsable', label: 'RESPONSABLE' },
   ] as ArchonTableHeader[];
 
@@ -213,7 +213,11 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                   <td className="py-4 px-4">
                     <div className="flex justify-center">
                       {((): React.ReactNode => {
-                        let displayDesc = log.description;
+                        let displayDesc = log.description || '';
+
+                        // 🔱 Clean Redundancy: Strip the redundant prefix if present
+                        displayDesc = displayDesc.replace(/^MODIFICACIÓN:\s*/i, '');
+
                         if (!displayDesc) {
                           if (log.event_type === 'ROUTE_START')
                             displayDesc = 'Despliegue operativo iniciado.';
