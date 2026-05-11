@@ -17,6 +17,8 @@ interface ActivityLog {
   fuel_after?: number;
   fuel_level_before?: number;
   fuel_level_after?: number;
+  fuel_amount_before?: number;
+  fuel_amount_after?: number;
   description: string;
   operatorName: string;
   marca: string;
@@ -292,6 +294,26 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                           </div>
                         )}
 
+                      {/* 💰 FINANCIAL IMPACT (Cost) */}
+                      {log.fuel_amount_before !== null &&
+                        log.fuel_amount_after !== null &&
+                        Number(log.fuel_amount_before) !== Number(log.fuel_amount_after) && (
+                          <div className="flex items-center gap-2 bg-emerald-50/50 border border-emerald-100 px-2 py-1 rounded-[4px]">
+                            <span className="text-[10px] font-black text-emerald-600">$</span>
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {Number(log.fuel_amount_before).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                              })}
+                            </span>
+                            <ArrowRight size={10} className="opacity-30" />
+                            <span className="text-[10px] font-black text-[#0f2a44]">
+                              {Number(log.fuel_amount_after).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                              })}
+                            </span>
+                          </div>
+                        )}
+
                       {/* 🛡️ STATUS IMPACT */}
                       {log.status_before !== log.status_after &&
                         log.status_before &&
@@ -314,6 +336,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         (!log.fuel_before || Number(log.fuel_before) === Number(log.fuel_after)) &&
                         (!log.fuel_level_before ||
                           Number(log.fuel_level_before) === Number(log.fuel_level_after)) &&
+                        (!log.fuel_amount_before ||
+                          Number(log.fuel_amount_before) === Number(log.fuel_amount_after)) &&
                         (!log.status_before || log.status_before === log.status_after) && (
                           <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
                             —
