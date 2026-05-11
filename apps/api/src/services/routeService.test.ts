@@ -283,17 +283,33 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       expect(mockConnection.commit).toHaveBeenCalled();
     });
 
-    it('should update fuel_level_end if route is COMPLETED', async () => {
-      const mockBefore = { uuid: 'UUID-1', status: 'COMPLETED' };
-      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]);
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'COMPLETED' }]]);
+    it('should update fuel_level_end if route is COMPLETED and propagate to unit', async () => {
+      const mockBefore = { uuid: 'UUID-1', status: 'COMPLETED', unit_id: 'ASM-001' };
+      const mockAfter = {
+        uuid: 'UUID-1',
+        status: 'COMPLETED',
+        end_time: '2026-05-10T00:00:00Z',
+        end_reading: 1500,
+        fuel_level_end: 75,
+        unit_id: 'ASM-001',
+      };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]); // Snapshot Before
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Route
+      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]); // Snapshot After
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Unit (Chain of Custody)
 
       await RouteService.updateRoute('UUID-1', { fuelLevel: 75 }, 'Reason', 1);
 
       expect(mockConnection.execute).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE fleet_routes SET fuel_level_end = ? WHERE uuid = ?'),
         [75, 'UUID-1']
+      );
+
+      // Verify Chain of Custody propagation to Unit
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ?'),
+        [1500, 75, 'ASM-001']
       );
     });
 
