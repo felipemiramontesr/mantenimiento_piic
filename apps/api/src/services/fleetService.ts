@@ -22,7 +22,6 @@ export default class FleetService {
         f.*,
         f.lastServiceReading AS lastServiceReading,
         f.lastServiceDate AS lastServiceDate,
-        f.currentReading AS currentReading,
         f.maintIntervalKm AS maintIntervalKm,
         f.maintIntervalDays AS maintIntervalDays,
         c_at.label AS assetType,
@@ -109,7 +108,6 @@ export default class FleetService {
       ...payload,
       id,
       uuid,
-      currentReading: data.odometer || 0,
     };
 
     const fields = Object.keys(intelligencePayload);
@@ -155,6 +153,7 @@ export default class FleetService {
 
       // 2. Prepare Updates
       const updates = this.preparePayload(data);
+
       const fields = Object.keys(updates);
       if (fields.length === 0) {
         connection.release();

@@ -104,7 +104,6 @@ export interface FleetUnit {
   maintIntervalKm?: number;
   lastServiceDate?: string | null;
   lastServiceReading?: number;
-  currentReading?: number;
   // 🔱 Computed Health Data
   healthScore?: number;
   healthStatus?: string;

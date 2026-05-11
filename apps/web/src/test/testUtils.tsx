@@ -39,7 +39,6 @@ const MockFleetContext = {
       status: 'Disponible',
       odometer: 50000,
       placas: 'ABC-123',
-      currentReading: 50000,
     },
   ],
   stats: {

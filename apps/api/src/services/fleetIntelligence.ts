@@ -24,7 +24,7 @@ export interface FleetUnit extends RowDataPacket {
   maintIntervalKm: number;
   lastServiceDate: string | null;
   lastServiceReading: number;
-  currentReading: number;
+  odometer: number;
   availabilityIndex: number;
   mtbfHours: number;
   mttrHours: number;
@@ -40,7 +40,7 @@ export interface UnitHealth {
   healthStatus: string;
   healthColor: string;
   lastServiceDate: Date | null;
-  currentReading: number;
+  odometer: number;
   lastReading: number;
   today: Date;
   kmLimit: number;
@@ -55,7 +55,7 @@ export class FleetIntelligenceEngine {
     const today = new Date();
     const lastServiceDate = unit.lastServiceDate ? new Date(unit.lastServiceDate) : null;
     const lastReading = Number(unit.lastServiceReading || 0);
-    const currentReading = Number(unit.currentReading || 0);
+    const odometer = Number(unit.odometer || 0);
 
     const timeLimit = Number(unit.maintIntervalDays || ARCHON_DEFAULTS.MAINT_INTERVAL_DAYS);
     const usageLimit = Number(unit.maintIntervalKm || ARCHON_DEFAULTS.MAINT_INTERVAL_KM);
@@ -68,7 +68,7 @@ export class FleetIntelligenceEngine {
 
     let usageProgress = 0;
     if (usageLimit > 0) {
-      usageProgress = Math.max(0, (currentReading - lastReading) / usageLimit);
+      usageProgress = Math.max(0, (odometer - lastReading) / usageLimit);
     }
 
     const maxProgress = Math.max(timeProgress, usageProgress);
@@ -93,7 +93,7 @@ export class FleetIntelligenceEngine {
       healthStatus,
       healthColor,
       lastServiceDate,
-      currentReading,
+      odometer,
       lastReading,
       today,
       kmLimit: usageLimit,
@@ -118,10 +118,12 @@ export class FleetIntelligenceEngine {
             (health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24)
           )
         : null,
-      unitsSinceService: health.currentReading - health.lastReading,
+      unitsSinceService: health.odometer - health.lastReading,
       nextServiceReading: health.lastReading + health.kmLimit,
       forecastDate: this.computeForecast(decrypted),
-      odometer: health.currentReading,
+      // 🔱 Legacy Compatibility: Map odometer to currentReading
+      currentReading: health.odometer,
+      odometer: health.odometer,
     };
   }
 
@@ -136,7 +138,7 @@ export class FleetIntelligenceEngine {
     // 🔱 Forecast by Usage (If metrics available)
     const intServi = unit.maintIntervalKm || 0;
     const dailyAvg = unit.dailyUsageAvg || 0;
-    const currentOdometer = unit.currentReading || 0;
+    const currentOdometer = unit.odometer || 0;
     const lastReading = unit.lastServiceReading || 0;
 
     if (intServi > 0 && dailyAvg > 0) {

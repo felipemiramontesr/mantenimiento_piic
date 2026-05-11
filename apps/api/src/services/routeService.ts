@@ -50,7 +50,7 @@ export default class RouteService {
 
       // 1. Validate Unit availability
       const [units] = await connection.execute<RowDataPacket[]>(
-        'SELECT status, currentReading FROM fleet_units WHERE id = ? FOR UPDATE',
+        'SELECT status, odometer FROM fleet_units WHERE id = ? FOR UPDATE',
         [unitId]
       );
 
@@ -73,7 +73,7 @@ export default class RouteService {
         `INSERT INTO unit_activity_logs 
         (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by) 
         VALUES (?, ?, 'ROUTE_START', ?, ?, ?, 'En Ruta', ?)`,
-        [randomUUID(), unitId, routeUuid, units[0].currentReading, units[0].status, driverId]
+        [randomUUID(), unitId, routeUuid, units[0].odometer, units[0].status, driverId]
       );
 
       await connection.commit();
@@ -152,7 +152,7 @@ export default class RouteService {
 
       // 3. Update Unit (The massive impact)
       await connection.execute(
-        'UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ?, status = "Disponible" WHERE id = ?',
+        'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ?, status = "Disponible" WHERE id = ?',
         [endReading, fuelLevelEnd, route.unit_id]
       );
 
@@ -369,7 +369,7 @@ export default class RouteService {
       // 5. Chain of Custody (X=Y Protocol): Propagate changes to Unit if route is finished
       if (snapshotAfter.end_time) {
         await connection.execute(
-          'UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ? WHERE id = ?',
+          'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ? WHERE id = ?',
           [snapshotAfter.end_reading, snapshotAfter.fuel_level_end, snapshotAfter.unit_id]
         );
       }

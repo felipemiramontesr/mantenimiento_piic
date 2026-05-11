@@ -11,7 +11,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
     maintIntervalDays: 180,
     maintIntervalKm: 10000,
     lastServiceReading: 5000,
-    currentReading: 5000,
+    odometer: 5000,
     lastServiceDate: new Date().toISOString(),
   };
 
@@ -24,7 +24,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
   it('should collapse to 0% health when KM limit is exactly reached', () => {
     const overdueUnit = {
       ...mockUnit,
-      currentReading: 15000, // 5000 (last) + 10000 (interval)
+      odometer: 15000, // 5000 (last) + 10000 (interval)
     };
     const result = FleetIntelligenceEngine.computeHealth(overdueUnit);
     expect(result.healthScore).toBe(0);
@@ -47,7 +47,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
   it('should show Caution status when health is at 25%', () => {
     const cautionUnit = {
       ...mockUnit,
-      currentReading: 12500, // 75% progress -> 25% health
+      odometer: 12500, // 75% progress -> 25% health
     };
     const result = FleetIntelligenceEngine.computeHealth(cautionUnit);
     expect(result.healthScore).toBe(25);
@@ -58,7 +58,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
   it('should handle extreme overdue values (Negative logic)', () => {
     const criticalUnit = {
       ...mockUnit,
-      currentReading: 1000000, // Way over limit
+      odometer: 1000000, // Way over limit
     };
     const result = FleetIntelligenceEngine.computeHealth(criticalUnit);
     expect(result.healthScore).toBe(0);
@@ -69,7 +69,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
     const unitWithNoInterval = {
       ...mockUnit,
       maintIntervalKm: 0, // Should trigger default 10,000
-      currentReading: 16000, // 11,000 km since last (5,000)
+      odometer: 16000, // 11,000 km since last (5,000)
     };
     const result = FleetIntelligenceEngine.computeHealth(unitWithNoInterval);
     expect(result.healthScore).toBe(0); // Overdue because 11,000 > 10,000
@@ -101,7 +101,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
         maintIntervalDays: 365, // 1 year
         maintIntervalKm: 10000,
         lastServiceReading: 0,
-        currentReading: 0,
+        odometer: 0,
         dailyUsageAvg: 1000, // Very high usage: 10 days to reach 10,000
       };
 
@@ -120,7 +120,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
         maintIntervalDays: 5, // Very soon
         maintIntervalKm: 10000,
         lastServiceReading: 0,
-        currentReading: 0,
+        odometer: 0,
         dailyUsageAvg: 1, // 10,000 days to reach limit
       };
 

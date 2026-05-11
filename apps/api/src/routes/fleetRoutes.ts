@@ -156,7 +156,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           c_origin.label as route_origin_label
         FROM (
           SELECT 
-            uuid as id, unit_id, event_type, reference_id, 
+            id, unit_id, event_type, reference_id, 
             reading_before, reading_after, 
             status_before, status_after, 
             description, created_by, created_at,
@@ -173,7 +173,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           UNION ALL
           
           SELECT 
-            a.uuid as id, 
+            a.id, 
             COALESCE(JSON_VALUE(a.snapshot_after, '$.unit_id'), r.unit_id) as unit_id,
             'ADMIN_EDIT' as event_type,
             a.entity_id as reference_id,
@@ -206,7 +206,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             ) as reading_after,
             JSON_VALUE(a.snapshot_before, '$.status') as status_before,
             JSON_VALUE(a.snapshot_after, '$.status') as status_after,
-            CONCAT('MODIFICACIÓN: ', a.reason) as description,
+            a.reason as description,
             a.user_id as created_by,
             a.created_at,
             CAST(JSON_VALUE(a.snapshot_before, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_before,

@@ -27,9 +27,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
   describe('startRoute', () => {
     it('should successfully start a route and impact the unit state', async () => {
       // 1. Mock Unit Check
-      mockConnection.execute.mockResolvedValueOnce([
-        [{ status: 'Disponible', currentReading: 1000 }],
-      ]);
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'Disponible', odometer: 1000 }]]);
       // 2. Mock Insert Route
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
       // 3. Mock Update Unit
@@ -63,7 +61,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     });
 
     it('should throw error if unit is already in transit', async () => {
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'En Ruta', currentReading: 1000 }]]);
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'En Ruta', odometer: 1000 }]]);
 
       await expect(RouteService.startRoute('BUSY', 1, 1000, 100, 'Dest')).rejects.toThrow(
         /Unit BUSY is already in transit/
@@ -99,7 +97,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       expect(mockConnection.commit).toHaveBeenCalled();
       expect(mockConnection.execute).toHaveBeenCalledWith(
         expect.stringContaining(
-          'UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ?, status = "Disponible"'
+          'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ?, status = "Disponible"'
         ),
         [1200, 95, 'UNIT-001']
       );

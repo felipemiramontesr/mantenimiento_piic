@@ -29,7 +29,7 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
   describe('getAllUnits', () => {
     it('should retrieve and process all units from registry', async () => {
       const mockRows = [
-        { id: 'ASM-001', assetTypeId: 1, lastServiceReading: 5000, currentReading: 6000 },
+        { id: 'ASM-001', assetTypeId: 1, lastServiceReading: 5000, odometer: 6000 },
       ];
       (db.execute as any).mockResolvedValue([mockRows]);
 

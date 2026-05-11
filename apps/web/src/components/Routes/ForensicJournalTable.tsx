@@ -221,6 +221,10 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                         // 🔱 Clean Redundancy: Strip the redundant prefix if present
                         displayDesc = displayDesc.replace(/^MODIFICACIÓN:\s*/i, '');
+                        displayDesc = displayDesc.replace(
+                          /Modificación de todas las filas es redundante/gi,
+                          ''
+                        );
 
                         if (!displayDesc) {
                           if (log.event_type === 'ROUTE_START')
@@ -319,8 +323,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                       {/* 🔱 UNIVERSAL DELTA ENGINE (Snapshot Comparison) */}
                       {((): React.ReactNode => {
-                        const rawBefore = log.snapshot_before;
-                        const rawAfter = log.snapshot_after;
+                        const { snapshot_before: rawBefore, snapshot_after: rawAfter } = log;
 
                         if (!rawBefore || !rawAfter) return null;
 
@@ -361,8 +364,6 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                                 fuel_liters_loaded: 'Litros Cargados',
                                 fuel_amount: 'Costo Combustible',
                                 status: 'Estado',
-                                driver_id: 'ID Operador',
-                                origin_id: 'ID Origen',
                                 additives_check: 'Aditivos',
                                 description: 'Nota/Misión',
                               };
@@ -381,16 +382,17 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                               // Dynamic Units (Prefix/Suffix)
                               let prefix = '';
                               let suffix = '';
-                              if (key === 'fuel_amount') prefix = '$';
+                              if (key.includes('amount')) prefix = '$';
                               if (key === 'fuel_liters_loaded') suffix = ' L';
                               if (key.includes('reading')) suffix = ' KM';
                               if (key.includes('level')) suffix = ' %';
 
-                              const formatVal = (v: unknown): string => {
+                              const formatVal = (v: unknown, k: string): string => {
                                 if (v === null || v === undefined) return '—';
-                                if (typeof v === 'number') {
-                                  return v.toLocaleString(undefined, {
-                                    minimumFractionDigits: key.includes('amount') ? 2 : 1,
+                                if (k === 'additives_check') return v ? 'SI' : 'NO';
+                                if (!Number.isNaN(Number(v))) {
+                                  return Number(v).toLocaleString(undefined, {
+                                    minimumFractionDigits: k.includes('amount') ? 2 : 1,
                                   });
                                 }
                                 return String(v);
@@ -406,13 +408,13 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                                   </span>
                                   <span className="text-[9px] font-bold text-[#0f2a44] opacity-50 line-through">
                                     {prefix}
-                                    {formatVal(valBefore)}
+                                    {formatVal(valBefore, key)}
                                     {suffix}
                                   </span>
                                   <ArrowRight size={8} className="opacity-20" />
                                   <span className="text-[9px] font-black text-blue-600">
                                     {prefix}
-                                    {formatVal(valAfter)}
+                                    {formatVal(valAfter, key)}
                                     {suffix}
                                   </span>
                                 </div>

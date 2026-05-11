@@ -182,8 +182,9 @@ export const useRouteAssignmentControl = (
         }));
       }
 
-      if (isEdit && unit && !formData.endReading) {
-        setFormData((prev) => ({ ...prev, endReading: Number(unit.currentReading || 0) }));
+      // 🔱 Initial Telemetry Capture: Only hydrate if current reading is explicitly empty or zero
+      if (isEdit && unit && (formData.endReading === undefined || formData.endReading === 0)) {
+        setFormData((prev) => ({ ...prev, endReading: Number(unit.odometer || 0) }));
       }
     } else {
       setSelectedUnitData(null);
