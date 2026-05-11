@@ -10,8 +10,9 @@ Este documento registra la evolución del valor comercial y estratégico del sis
 | :-------------- | :--------------------------------------------------- | :---------------------- | :------------------------ | :-------------------------------- |
 | **v.1.0.0**     | Prototipo Funcional (CRUD Básico)                    | $15,000 - $25,000       | $3,000                    | MVP (Minimum Viable Product)      |
 | **v.50.2.4**    | Bóveda Forense e Integridad de Datos                 | $120,000 - $180,000     | $21,600 - $32,400         | Enterprise Asset Management (EAM) |
-| **v.78.100.19** | **Archon Sovereign Industrial: Seguridad & Paridad** | **$385,000 - $450,000** | **$62,000 - $75,000**     | **Sovereign Industrial Engine**   |
+| **v.73.5.0**    | Gobernanza, Cumplimiento y Justicia Algorítmica      | $210,000 - $275,000     | $35,000 - $45,000         | Industrial Governance Ecosystem   |
 | **v.78.0.0**    | Archon Elite: Trazabilidad Financiera & UX           | $295,000 - $365,000     | $48,000 - $58,000         | Sovereign Intelligence Unit       |
+| **v.78.100.19** | **Archon Sovereign Industrial: Seguridad & Paridad** | **$385,000 - $450,000** | **$62,000 - $75,000**     | **Sovereign Industrial Engine**   |
 
 ---
 
