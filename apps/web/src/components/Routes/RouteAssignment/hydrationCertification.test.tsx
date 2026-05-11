@@ -14,7 +14,10 @@ vi.mock('../../../context/FleetContext');
 vi.mock('../../../context/UserContext');
 
 const MOCK_FLEET_CONTEXT = {
-  units: [],
+  units: [
+    { id: 'route-completed', fuelTankCapacity: 80 },
+    { id: 'route-active', fuelTankCapacity: 80 },
+  ],
   startRoute: vi.fn(),
   finishRoute: vi.fn(),
   refreshUnits: vi.fn(),
@@ -34,6 +37,7 @@ describe('useRouteAssignmentControl (Hydration Certification)', () => {
   it('prioritizes fuel_level_end for completed routes even if it is 0', async () => {
     const completedRoute = {
       uuid: 'route-completed',
+      unit_id: 'route-completed',
       end_time: '2026-05-10T12:00:00Z',
       fuel_level_start: 100,
       fuel_level_end: 0, // Critical case: 0 must be respected
@@ -51,6 +55,7 @@ describe('useRouteAssignmentControl (Hydration Certification)', () => {
   it('prioritizes fuel_level_end over fuel_level_start for completed routes', async () => {
     const completedRoute = {
       uuid: 'route-completed',
+      unit_id: 'route-completed',
       end_time: '2026-05-10T12:00:00Z',
       fuel_level_start: 100,
       fuel_level_end: 83,
@@ -66,6 +71,7 @@ describe('useRouteAssignmentControl (Hydration Certification)', () => {
   it('uses fuel_level_start for active routes (no end_time)', async () => {
     const activeRoute = {
       uuid: 'route-active',
+      unit_id: 'route-active',
       end_time: null,
       fuel_level_start: 75,
       fuel_level_end: null,

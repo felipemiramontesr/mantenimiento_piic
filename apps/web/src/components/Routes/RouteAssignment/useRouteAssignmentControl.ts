@@ -72,19 +72,27 @@ export const useRouteAssignmentControl = (
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
 
-  // 🧪 Initialization & Hydration (Refactored v.78.96.5)
-  useEffect((): void => {
-    if (routeToEdit) {
-      // 🔱 Forensic Hydration: Map diverse source schemas to standard Archon form state
-      const raw = routeToEdit as unknown as Record<string, unknown>;
-      const hydratedFuel = Number(
+  // 🧪 Initialization & Hydration (Refactored v.78.99.5)
+  const hydrateRouteData = useCallback(
+    (route: RouteLog) => {
+      const raw = route as unknown as Record<string, unknown>;
+      const liters = Number(raw.fuel_liters_loaded || raw.fuelLitersLoaded || 0);
+      const unitId = (raw.unit_id as string) || (raw.unitId as string) || '';
+      const unit = units.find((u) => u.id === unitId);
+      const capacity = unit?.fuelTankCapacity || 80;
+
+      const hydratedTotal = Number(
         (isFinished ? raw.fuel_level_end ?? raw.fuel_level_start : raw.fuel_level_start) ??
           raw.fuelLevel ??
           100
       );
 
+      // Back-calculate arrival base if route is finished (Total - Load)
+      const loadIncrement = (liters / capacity) * 100;
+      const arrivalBase = isFinished ? Math.max(0, hydratedTotal - loadIncrement) : hydratedTotal;
+
       setFormData({
-        unitId: (raw.unit_id as string) || '',
+        unitId,
         operatorId: String(raw.operator_id || raw.driver_id || ''),
         origin:
           origins.find((o) => o.id === raw.origin_id)?.label ||
@@ -92,18 +100,25 @@ export const useRouteAssignmentControl = (
           'Arian Silver Zacatecas',
         destination: (raw.destination as string) || '',
         description: (raw.description as string) || '',
-        fuelLevel: hydratedFuel,
-        arrivalFuelLevel: hydratedFuel,
+        fuelLevel: hydratedTotal,
+        arrivalFuelLevel: arrivalBase,
         startReading: Number(raw.start_km || raw.start_reading || 0),
         endReading: Number(raw.end_km || raw.end_reading || 0),
-        fuelLitersLoaded: Number(raw.fuel_liters_loaded || 0),
+        fuelLitersLoaded: liters,
         fuelAmount: Number(raw.fuel_amount || 0),
         fuelTicketImage: (raw.fuel_ticket_image as string) || '',
         additivesCheck: !!(raw.additives_check || raw.additivesCheck),
         tirePressureJson: (raw.tire_pressure_json as string) || '',
         checklistJson: (raw.checklist_json as string) || '',
       });
-    } else {
+    },
+    [units, origins, isFinished]
+  );
+
+  useEffect((): void => {
+    if (routeToEdit && units.length > 0) {
+      hydrateRouteData(routeToEdit);
+    } else if (!routeToEdit) {
       // 🔱 Atomic Reset: Ensure a clean slate for new assignments
       setFormData({
         unitId: '',
@@ -124,7 +139,7 @@ export const useRouteAssignmentControl = (
       });
       setError(null);
     }
-  }, [routeToEdit]);
+  }, [routeToEdit, units, hydrateRouteData]);
 
   const fetchActiveRoutes = useCallback(async (): Promise<void> => {
     try {
