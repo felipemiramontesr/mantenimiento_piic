@@ -318,35 +318,55 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                       {/* 🔱 UNIVERSAL DELTA ENGINE (Snapshot Comparison) */}
                       {((): React.ReactNode => {
-                        const before = log.snapshot_before;
-                        const after = log.snapshot_after;
+                        const rawBefore = log.snapshot_before;
+                        const rawAfter = log.snapshot_after;
 
-                        if (!before || !after) return null;
+                        if (!rawBefore || !rawAfter) return null;
+
+                        let before: Record<string, unknown>;
+                        let after: Record<string, unknown>;
+
+                        // SAFE PARSE: Ensure we are working with objects, not strings
+                        try {
+                          before =
+                            typeof rawBefore === 'string'
+                              ? JSON.parse(rawBefore)
+                              : (rawBefore as Record<string, unknown>);
+                          after =
+                            typeof rawAfter === 'string'
+                              ? JSON.parse(rawAfter)
+                              : (rawAfter as Record<string, unknown>);
+                        } catch (e) {
+                          return null;
+                        }
+
+                        if (!after || typeof after !== 'object' || Array.isArray(after))
+                          return null;
 
                         return (
                           <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                             {Object.keys(after).map((key) => {
-                              const valBefore = before[key];
-                              const valAfter = after[key];
+                              const valBefore = (before as Record<string, unknown>)[key];
+                              const valAfter = (after as Record<string, unknown>)[key];
 
-                              // Skip fields already handled by specialized UI or internal IDs
-                              const skipFields = [
-                                'id',
-                                'uuid',
-                                'unit_id',
-                                'created_at',
-                                'updated_at',
-                                'driver_id',
-                                'start_reading',
-                                'end_reading',
-                                'fuel_liters_loaded',
-                                'fuel_level_start',
-                                'fuel_level_end',
-                                'fuel_amount',
-                                'status',
-                              ];
+                              // 🛡️ ARCHON WHITELIST: Only show business-relevant fields
+                              // This eliminates internal noise like UUIDs, IDs, and internal timestamps
+                              const whitelist: Record<string, string> = {
+                                destination: 'Destino',
+                                start_reading: 'Lectura Inicial',
+                                end_reading: 'Lectura Final',
+                                fuel_level_start: 'Nivel Combustible Inicial',
+                                fuel_level_end: 'Nivel Combustible Final',
+                                fuel_liters_loaded: 'Litros Cargados',
+                                fuel_amount: 'Costo Combustible',
+                                status: 'Estado',
+                                driver_id: 'ID Operador',
+                                origin_id: 'ID Origen',
+                                additives_check: 'Aditivos',
+                                description: 'Nota/Misión',
+                              };
 
-                              if (skipFields.includes(key)) return null;
+                              if (!whitelist[key]) return null;
 
                               // Only show if value actually changed
                               if (
@@ -355,17 +375,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                               )
                                 return null;
 
-                              // Handle display labels for specific keys
-                              const labelMap: Record<string, string> = {
-                                destination: 'Destino',
-                                origin_id: 'Origen ID',
-                                description: 'Nota',
-                                tire_pressure_json: 'Presión Llantas',
-                                checklist_json: 'Checklist',
-                                additives_check: 'Aditivos',
-                              };
-
-                              const label = labelMap[key] || key.toUpperCase();
+                              const label = whitelist[key];
 
                               return (
                                 <div
@@ -376,11 +386,11 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                                     {label}:
                                   </span>
                                   <span className="text-[9px] font-bold text-[#0f2a44] opacity-50 line-through">
-                                    {String(valBefore || '—')}
+                                    {String(valBefore ?? '—')}
                                   </span>
                                   <ArrowRight size={8} className="opacity-20" />
                                   <span className="text-[9px] font-black text-blue-600">
-                                    {String(valAfter || '—')}
+                                    {String(valAfter ?? '—')}
                                   </span>
                                 </div>
                               );
