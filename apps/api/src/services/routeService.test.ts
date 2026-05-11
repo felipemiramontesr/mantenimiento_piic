@@ -67,6 +67,14 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         /Unit BUSY is already in transit/
       );
     });
+
+    it('should throw error if start reading is lower than unit odometer', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'Disponible', odometer: 2000 }]]);
+
+      await expect(RouteService.startRoute('UNIT-1', 1, 1500, 100, 'Dest')).rejects.toThrow(
+        /Start reading \(1500 KM\) cannot be lower than the unit's current odometer \(2000 KM\)/
+      );
+    });
   });
 
   describe('finishRoute', () => {
@@ -366,6 +374,15 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       await expect(
         RouteService.updateRoute('UUID-1', { destination: 'X' }, 'Reason', 1)
       ).rejects.toThrow('Forensic Update Failure: Unknown database error');
+    });
+
+    it('should throw error if end reading is lower than start reading during update', async () => {
+      const mockBefore = { uuid: 'UUID-1', start_reading: 5000, end_reading: 6000 };
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]); // Snapshot Before
+
+      await expect(
+        RouteService.updateRoute('UUID-1', { endReading: 4000 }, 'Reason', 1)
+      ).rejects.toThrow(/End reading \(4000 KM\) cannot be lower than start reading \(5000 KM\)/);
     });
 
     it('should successfully delete a route and log audit', async () => {
