@@ -40,6 +40,7 @@ export interface RouteLog {
   tire_pressure_json?: string;
   checklist_json?: string;
   checklist_after_json?: string;
+  incident_count?: number;
 }
 
 interface RouteLogTableProps {
@@ -98,7 +99,7 @@ const RouteLogRow = ({
         onClick={onToggle}
         className={`cursor-pointer transition-all duration-300 hover:bg-[#0f2a44]/[0.02] ${
           isExpanded ? 'expanded-focus-blue' : ''
-        }`}
+        } ${log.incident_count && log.incident_count > 0 ? 'forensic-incident-row' : ''}`}
       >
         {/* Activo */}
         <td className="py-6">

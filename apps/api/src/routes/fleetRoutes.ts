@@ -120,15 +120,21 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const [rows] = await db.execute<RowDataPacket[]>(
         `SELECT 
-          id, uuid, unit_id, driver_id as operator_id, origin_id, destination, status,
-          start_reading as start_km, end_reading as end_km,
-          start_at as start_time, end_at as end_time,
-          fuel_level_start, fuel_level_end,
-          fuel_liters_loaded, fuel_amount, fuel_ticket_image,
-          additives_check, tire_pressure_json, checklist_json,
-          created_at
-        FROM fleet_routes 
-        ORDER BY created_at DESC`
+          r.id, r.uuid, r.unit_id, r.driver_id as operator_id, r.origin_id, r.destination, r.status,
+          r.start_reading as start_km, r.end_reading as end_km,
+          r.start_at as start_time, r.end_at as end_time,
+          r.fuel_level_start, r.fuel_level_end,
+          r.fuel_liters_loaded, r.fuel_amount, r.fuel_ticket_image,
+          r.additives_check, r.tire_pressure_json, r.checklist_json,
+          r.created_at,
+          (
+            SELECT COUNT(*) FROM route_incidents i WHERE i.route_uuid = r.uuid
+          ) + (
+            SELECT COUNT(*) FROM administrative_audit_logs a 
+            WHERE a.entity_id = r.uuid AND a.entity_type = 'route_log'
+          ) as incident_count
+        FROM fleet_routes r
+        ORDER BY r.created_at DESC`
       );
       return reply.send({
         success: true,
