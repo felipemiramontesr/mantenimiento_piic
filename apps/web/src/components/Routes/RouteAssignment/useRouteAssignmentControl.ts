@@ -86,10 +86,8 @@ export const useRouteAssignmentControl = (
         destination: (raw.destination as string) || '',
         description: (raw.description as string) || '',
         fuelLevel: Number(
-          raw.fuelLevel ||
-            (isFinished ? raw.fuel_level_end : raw.fuel_level_start) ||
-            raw.fuel_level_start ||
-            raw.fuel_level_end ||
+          (isFinished ? raw.fuel_level_end ?? raw.fuel_level_start : raw.fuel_level_start) ??
+            raw.fuelLevel ??
             100
         ),
         startReading: Number(raw.start_km || raw.start_reading || 0),
