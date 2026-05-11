@@ -187,7 +187,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
 
           <div className="px-2">
             <ArchonFuelSensor
-              value={isEdit ? formData.arrivalFuelLevel : formData.fuelLevel}
+              value={Number(isEdit ? formData.arrivalFuelLevel : formData.fuelLevel)}
               onChange={(val: number): void =>
                 updateForm(isEdit ? { arrivalFuelLevel: val } : { fuelLevel: val })
               }
@@ -198,9 +198,9 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
           {tankCapacity > 0 && (
             <div className="pt-2 border-t border-[#0f2a44]/5">
               <FuelVolumeChart
-                currentLevel={formData.fuelLevel}
+                currentLevel={Number(formData.fuelLevel)}
                 totalCapacity={tankCapacity}
-                color={formData.fuelLevel > 20 ? '#0f2a44' : '#ef4444'}
+                color={Number(formData.fuelLevel) > 20 ? '#0f2a44' : '#ef4444'}
               />
             </div>
           )}
