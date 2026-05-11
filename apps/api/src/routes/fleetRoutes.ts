@@ -165,7 +165,9 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             NULL as fuel_level_before,
             NULL as fuel_level_after,
             NULL as fuel_amount_before,
-            NULL as fuel_amount_after
+            NULL as fuel_amount_after,
+            NULL as snapshot_before,
+            NULL as snapshot_after
           FROM unit_activity_logs
           
           UNION ALL
@@ -237,7 +239,9 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
               END AS DECIMAL(5,2)
             ) as fuel_level_after,
             CAST(JSON_VALUE(a.snapshot_before, '$.fuel_amount') AS DECIMAL(12,2)) as fuel_amount_before,
-            CAST(JSON_VALUE(a.snapshot_after, '$.fuel_amount') AS DECIMAL(12,2)) as fuel_amount_after
+            CAST(JSON_VALUE(a.snapshot_after, '$.fuel_amount') AS DECIMAL(12,2)) as fuel_amount_after,
+            a.snapshot_before,
+            a.snapshot_after
           FROM administrative_audit_logs a
           LEFT JOIN fleet_routes r ON a.entity_id = r.uuid
           WHERE a.entity_type = 'route_log'

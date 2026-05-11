@@ -19,6 +19,8 @@ interface ActivityLog {
   fuel_level_after?: number;
   fuel_amount_before?: number;
   fuel_amount_after?: number;
+  snapshot_before?: Record<string, unknown>;
+  snapshot_after?: Record<string, unknown>;
   description: string;
   operatorName: string;
   marca: string;
@@ -313,6 +315,69 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                             </span>
                           </div>
                         )}
+
+                      {/* 🔱 UNIVERSAL DELTA ENGINE (Snapshot Comparison) */}
+                      {log.snapshot_before && log.snapshot_after && (
+                        <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                          {Object.keys(log.snapshot_after).map((key) => {
+                            const valBefore = log.snapshot_before[key];
+                            const valAfter = log.snapshot_after[key];
+
+                            // Skip fields already handled by specialized UI or internal IDs
+                            const skipFields = [
+                              'id',
+                              'uuid',
+                              'unit_id',
+                              'created_at',
+                              'updated_at',
+                              'driver_id',
+                              'start_reading',
+                              'end_reading',
+                              'fuel_liters_loaded',
+                              'fuel_level_start',
+                              'fuel_level_end',
+                              'fuel_amount',
+                              'status',
+                            ];
+
+                            if (skipFields.includes(key)) return null;
+
+                            // Only show if value actually changed
+                            if (valBefore === valAfter || (valBefore === null && valAfter === null))
+                              return null;
+
+                            // Handle display labels for specific keys
+                            const labelMap: Record<string, string> = {
+                              destination: 'Destino',
+                              origin_id: 'Origen ID',
+                              description: 'Nota',
+                              tire_pressure_json: 'Presión Llantas',
+                              checklist_json: 'Checklist',
+                              additives_check: 'Aditivos',
+                            };
+
+                            const label = labelMap[key] || key.toUpperCase();
+
+                            return (
+                              <div
+                                key={key}
+                                className="flex items-center gap-1.5 bg-[#0f2a44]/[0.03] border border-[#0f2a44]/5 px-2 py-0.5 rounded-[4px]"
+                              >
+                                <span className="text-[8px] font-black text-[#0f2a44] opacity-40 uppercase">
+                                  {label}:
+                                </span>
+                                <span className="text-[9px] font-bold text-[#0f2a44] opacity-50 line-through">
+                                  {String(valBefore || '—')}
+                                </span>
+                                <ArrowRight size={8} className="opacity-20" />
+                                <span className="text-[9px] font-black text-blue-600">
+                                  {String(valAfter || '—')}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {/* 🛡️ STATUS IMPACT */}
                       {log.status_before !== log.status_after &&
