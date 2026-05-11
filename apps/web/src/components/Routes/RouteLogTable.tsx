@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Truck,
   AlertTriangle,
+  Fuel,
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
@@ -222,6 +223,21 @@ const RouteLogRow = ({
           </div>
         </td>
 
+        {/* Combustible */}
+        <td className="py-6">
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+              <Fuel size={14} />
+              <span className="text-[11px] font-black tracking-tight">
+                {log.end_time ? log.fuel_level_end : log.fuel_level_start}%
+              </span>
+            </div>
+            <span className="text-[8px] font-bold text-slate-400 uppercase mt-1">
+              {log.end_time ? 'LECTURA FINAL' : 'PUNTO PARTIDA'}
+            </span>
+          </div>
+        </td>
+
         {/* Delta */}
         <td className="py-6">
           <div className="flex flex-col items-center">
@@ -304,7 +320,7 @@ const RouteLogRow = ({
       </motion.tr>
 
       <tr className={isExpanded ? 'accordion-row-carrier' : ''}>
-        <td colSpan={7} className="accordion-carrier !p-0 !m-0">
+        <td colSpan={8} className="accordion-carrier !p-0 !m-0">
           <div className={`accordion-content ${isExpanded ? 'expanded' : ''} !bg-transparent`}>
             <div className="accordion-inner !p-0 !m-0">
               <ForensicJournalTable unitId={log.unit_id} routeUuid={log.uuid} hideHeader />
@@ -330,6 +346,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
     { key: 'operador', label: 'OPERADOR' },
     { key: 'mision', label: 'MISIÓN / TRAYECTO' },
     { key: 'telemetria', label: 'TELEMETRÍA' },
+    { key: 'combustible', label: 'COMBUSTIBLE' },
     { key: 'delta', label: 'DELTA' },
     { key: 'estado', label: 'ESTADO' },
     { key: 'ajustes', label: 'AJUSTES' },
