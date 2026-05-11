@@ -2,13 +2,15 @@ import { Page } from '@playwright/test';
 
 /**
  * 🔱 Archon E2E Infrastructure: API Mocking
- * Implementation: PIIC Sovereign Network Interceptor (v.1.0.0)
+ * Implementation: PIIC Sovereign Network Interceptor (v.1.1.0)
  *
- * Strategy: Intercepts all /v1 requests and returns predictable data.
- * This ensures E2E tests pass even if the real DB/API is offline.
+ * Strategy: Stateful interception to validate Forensic Parity.
  */
 export default async function setupApiMocks(page: Page): Promise<void> {
-  // Mock Login (intercepts both local and production URLs)
+  // 🧠 State Tracking
+  let asm006Odometer = 357900;
+
+  // 🔐 Mock Login
   await page.route(
     (url) => url.href.includes('/auth/login'),
     async (route) => {
@@ -23,7 +25,6 @@ export default async function setupApiMocks(page: Page): Promise<void> {
             user: {
               id: 1,
               username: 'GrayMan',
-              fullName: 'Archon Master',
               roleId: 0,
               roleName: 'Master (Archon)',
               is_active: true,
@@ -33,31 +34,41 @@ export default async function setupApiMocks(page: Page): Promise<void> {
       } else {
         await route.fulfill({
           status: 401,
-          contentType: 'application/json',
           body: JSON.stringify({ error: 'Credenciales inválidas' }),
         });
       }
     }
   );
 
-  // Mock Fleet List
+  // 🏥 Mock Fleet Inventory
   await page.route(
-    (url) => url.href.includes('/fleet') && !url.href.includes('/auth'),
+    (url) =>
+      url.href.includes('/fleet') && !url.href.includes('/routes') && !url.href.includes('/auth'),
     async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          count: 1,
+          count: 2,
           data: [
             {
-              id: 'ASM-E2E',
-              uuid: 'mock-uuid',
+              id: 'ASM-006',
+              uuid: 'uuid-006',
+              marca: 'Nissan',
+              modelo: 'Frontier',
+              status: 'Disponible',
+              odometer: asm006Odometer,
+              lastFuelLevel: 100,
+            },
+            {
+              id: 'ASM-001',
+              uuid: 'uuid-001',
               marca: 'Toyota',
               modelo: 'Hilux',
-              status: 'Disponible',
-              placas: 'E2E-TEST',
+              status: 'En Ruta',
+              odometer: 100000,
+              lastFuelLevel: 80,
             },
           ],
         }),
@@ -65,14 +76,49 @@ export default async function setupApiMocks(page: Page): Promise<void> {
     }
   );
 
-  // Mock Catalogs
+  // 📜 Mock Forensic Journal (Routes)
+  await page.route(
+    (url) => url.href.includes('/routes'),
+    async (route) => {
+      const method = route.request().method();
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            {
+              uuid: 'route-uuid-1',
+              unit_id: 'ASM-006',
+              status: 'COMPLETED',
+              start_reading: 350000,
+              end_reading: asm006Odometer,
+              fuel_level_end: 95,
+              destination: 'Mina 1',
+              driver_name: 'Adriana Mendoza',
+              end_at: '2026-05-10T22:00:00Z',
+            },
+          ]),
+        });
+      } else if (method === 'PATCH') {
+        const body = route.request().postDataJSON();
+        if (body.endReading) {
+          asm006Odometer = body.endReading;
+        }
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({ success: true }),
+        });
+      }
+    }
+  );
+
+  // 📁 Mock Catalogs
   await page.route(
     (url) => url.href.includes('/catalogs/'),
     async (route) => {
       await route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([{ id: 1, label: 'Mock Category', code: 'MOCK' }]),
+        body: JSON.stringify([{ id: 1, label: 'General', code: 'GEN' }]),
       });
     }
   );
