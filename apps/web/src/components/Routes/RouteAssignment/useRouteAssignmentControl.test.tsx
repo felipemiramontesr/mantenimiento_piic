@@ -1,3 +1,4 @@
+/** @vitest-environment jsdom */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -15,7 +16,7 @@ vi.mock('../../../context/UserContext');
 
 // 🔱 Sovereign Mock Data (Stable References & Type Integrity)
 const STABLE_FLEET_CONTEXT = {
-  units: [],
+  units: [{ id: 'ASM-001', fuelTankCapacity: 80 }],
   stats: {
     total: 0,
     available: 0,
