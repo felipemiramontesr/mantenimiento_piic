@@ -2054,7 +2054,7 @@ table th > div {
 }
 
 .forensic-incident-row:hover td {
-  background-color: #fff5f5 !important;
+  background-color: rgba(15, 42, 68, 0.015) !important;
 }
 
 .accordion-inner .archon-registry-table tr:hover td {

@@ -1,4 +1,4 @@
-import { RowDataPacket } from 'mysql2';
+import { RowDataPacket, PoolConnection } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import { recordAuditLog } from './auditService';
@@ -31,6 +31,26 @@ export interface RouteEntry {
 }
 
 export default class RouteService {
+  /**
+   * Internal helper to synchronize the unit's odometer and fuel with the latest journey data.
+   */
+  private static async syncUnitState(connection: PoolConnection, unitId: string): Promise<void> {
+    const [rows] = await connection.execute<RowDataPacket[]>(
+      `SELECT end_reading, fuel_level_end 
+       FROM fleet_routes 
+       WHERE unit_id = ? AND status = 'COMPLETED' 
+       ORDER BY end_at DESC, id DESC LIMIT 1`,
+      [unitId]
+    );
+
+    if (rows.length > 0) {
+      await connection.execute(
+        'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ? WHERE id = ?',
+        [rows[0].end_reading, rows[0].fuel_level_end, unitId]
+      );
+    }
+  }
+
   /**
    * Starts a journey: Atomic transaction impacting unit and logs.
    */
@@ -381,13 +401,8 @@ export default class RouteService {
         user_id: adminId,
       });
 
-      // 5. Chain of Custody (X=Y Protocol): Propagate changes to Unit if route is finished
-      if (snapshotAfter.end_time) {
-        await connection.execute(
-          'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ? WHERE id = ?',
-          [snapshotAfter.end_reading, snapshotAfter.fuel_level_end, snapshotAfter.unit_id]
-        );
-      }
+      // 5. Chain of Custody (X=Y Protocol): Propagate changes to Unit if this is the most recent reading
+      await this.syncUnitState(connection, snapshotAfter.unit_id);
 
       await connection.commit();
       connection.release();
@@ -427,6 +442,9 @@ export default class RouteService {
         reason,
         user_id: adminId,
       });
+
+      // 4. Chain of Custody: Recalculate unit state in case we deleted the latest record
+      await this.syncUnitState(connection, snapshotBefore.unit_id);
 
       await connection.commit();
       connection.release();
