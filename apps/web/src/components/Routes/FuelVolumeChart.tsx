@@ -101,7 +101,7 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
             </div>
             <div className="flex items-center justify-between text-[10px]">
               <span className="font-bold opacity-50 text-[#0f2a44]">Espacio Libre:</span>
-              <span className="font-black text-rose-500">-{remainingLiters}L</span>
+              <span className="font-black text-[#0f2a44]">{remainingLiters}L</span>
             </div>
           </div>
         </div>

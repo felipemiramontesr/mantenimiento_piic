@@ -70,12 +70,20 @@ export const useRouteAssignmentControl = (
   const [error, setError] = useState<string | null>(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
+  const [arrivalFuelLevel, setArrivalFuelLevel] = useState<number>(100);
 
-  // 🧪 Initialization & Hydration (Refactored v.60.1.6)
+  // 🧪 Initialization & Hydration (Refactored v.78.90.0)
   useEffect((): void => {
     if (routeToEdit) {
       // 🔱 Forensic Hydration: Map diverse source schemas to standard Archon form state
       const raw = routeToEdit as unknown as Record<string, unknown>;
+      const hydratedFuel = Number(
+        (isFinished ? raw.fuel_level_end ?? raw.fuel_level_start : raw.fuel_level_start) ??
+          raw.fuelLevel ??
+          100
+      );
+
+      setArrivalFuelLevel(hydratedFuel);
       setFormData({
         unitId: (raw.unit_id as string) || '',
         operatorId: String(raw.operator_id || raw.driver_id || ''),
@@ -85,11 +93,7 @@ export const useRouteAssignmentControl = (
           'Arian Silver Zacatecas',
         destination: (raw.destination as string) || '',
         description: (raw.description as string) || '',
-        fuelLevel: Number(
-          (isFinished ? raw.fuel_level_end ?? raw.fuel_level_start : raw.fuel_level_start) ??
-            raw.fuelLevel ??
-            100
-        ),
+        fuelLevel: hydratedFuel,
         startReading: Number(raw.start_km || raw.start_reading || 0),
         endReading: Number(raw.end_km || raw.end_reading || 0),
         fuelLitersLoaded: Number(raw.fuel_liters_loaded || 0),
@@ -203,9 +207,30 @@ export const useRouteAssignmentControl = (
   }, [users, activeRoutes, isEdit, routeToEdit]);
 
   // 📝 Actions
-  const updateForm = useCallback((updates: Partial<RouteAssignmentFormData>): void => {
-    setFormData((prev) => ({ ...prev, ...updates }));
-  }, []);
+  const updateForm = useCallback(
+    (updates: Partial<RouteAssignmentFormData>): void => {
+      // 🔱 Reactive Telemetry Linking (v.78.90.0)
+      const finalUpdates = { ...updates };
+
+      if ('fuelLevel' in finalUpdates && finalUpdates.fuelLevel !== undefined) {
+        setArrivalFuelLevel(finalUpdates.fuelLevel);
+      }
+
+      if (
+        'fuelLitersLoaded' in finalUpdates &&
+        finalUpdates.fuelLitersLoaded !== undefined &&
+        selectedUnitData?.fuelTankCapacity
+      ) {
+        const liters = finalUpdates.fuelLitersLoaded;
+        const capacity = selectedUnitData.fuelTankCapacity;
+        const increment = (liters / capacity) * 100;
+        finalUpdates.fuelLevel = Math.min(100, arrivalFuelLevel + increment);
+      }
+
+      setFormData((prev) => ({ ...prev, ...finalUpdates }));
+    },
+    [arrivalFuelLevel, selectedUnitData]
+  );
 
   const getForensicPayload = (): Record<string, unknown> => {
     const originId = origins.find((o) => o.label === formData.origin)?.id;
