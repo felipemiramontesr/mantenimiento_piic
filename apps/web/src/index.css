@@ -2053,12 +2053,12 @@ table th > div {
   background-color: #fff5f5 !important;
 }
 
-.forensic-incident-row:hover td {
-  background-color: rgba(15, 42, 68, 0.015) !important;
-}
-
 .accordion-inner .archon-registry-table tr:hover td {
   background-color: inherit !important;
+}
+
+.archon-registry-table tr.forensic-incident-row:hover td {
+  background-color: rgba(59, 130, 246, 0.08) !important;
 }
 
 /* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) - RESTORED */
