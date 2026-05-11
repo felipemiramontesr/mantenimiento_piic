@@ -28,6 +28,7 @@ export interface RouteEntry {
   additives_check?: boolean;
   tire_pressure_json?: string;
   checklist_json?: string;
+  description?: string;
 }
 
 export default class RouteService {
@@ -62,7 +63,8 @@ export default class RouteService {
     startReading: number,
     fuelLevelStart: number,
     destination: string,
-    originId?: number
+    originId?: number,
+    description?: string
   ): Promise<string> {
     const connection = await db.getConnection();
     const routeUuid = randomUUID();
@@ -87,9 +89,18 @@ export default class RouteService {
       // 2. Create the Route
       await connection.execute(
         `INSERT INTO fleet_routes 
-        (uuid, unit_id, driver_id, origin_id, destination, status, start_reading, fuel_level_start, start_at) 
-        VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, NOW())`,
-        [routeUuid, unitId, driverId, originId || null, destination, startReading, fuelLevelStart]
+        (uuid, unit_id, driver_id, origin_id, destination, status, start_reading, fuel_level_start, description, start_at) 
+        VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, NOW())`,
+        [
+          routeUuid,
+          unitId,
+          driverId,
+          originId || null,
+          destination,
+          startReading,
+          fuelLevelStart,
+          description || null,
+        ]
       );
 
       // 3. Update Unit Status (Impact)
@@ -127,6 +138,7 @@ export default class RouteService {
       fuelLiters?: number;
       fuelAmount?: number;
       additivesCheck?: boolean;
+      description?: string;
     }
   ): Promise<void> {
     const {
@@ -138,6 +150,7 @@ export default class RouteService {
       fuelLiters = 0,
       fuelAmount = 0,
       additivesCheck = false,
+      description,
     } = params;
     const connection = await db.getConnection();
 
@@ -162,7 +175,7 @@ export default class RouteService {
         `UPDATE fleet_routes 
         SET status = 'COMPLETED', end_reading = ?, end_at = NOW(), 
             fuel_level_end = ?, fuel_liters_loaded = ?, fuel_amount = ?, fuel_ticket_image = ?,
-            additives_check = ?, tire_pressure_json = ?, checklist_json = ?
+            additives_check = ?, tire_pressure_json = ?, checklist_json = ?, description = COALESCE(?, description)
         WHERE uuid = ?`,
         [
           endReading,
@@ -173,6 +186,7 @@ export default class RouteService {
           additivesCheck,
           tirePressureJson || null,
           checklistJson || null,
+          description || null,
           routeUuid,
         ]
       );
@@ -350,6 +364,7 @@ export default class RouteService {
         additivesCheck: 'additives_check',
         tirePressureJson: 'tire_pressure_json',
         checklistJson: 'checklist_json',
+        description: 'description',
       };
 
       const fieldsToUpdate: string[] = [];

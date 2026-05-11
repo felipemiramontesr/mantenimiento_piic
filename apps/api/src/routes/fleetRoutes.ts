@@ -16,6 +16,7 @@ const startRouteSchema = z.object({
   fuelLevelStart: z.number().min(0).max(100),
   destination: z.string().min(2).max(255),
   originId: z.number().int().optional(),
+  description: z.string().optional(),
 });
 
 const finishRouteSchema = z.object({
@@ -27,6 +28,7 @@ const finishRouteSchema = z.object({
   additivesCheck: z.boolean().optional(),
   tirePressureJson: z.string().optional(),
   checklistJson: z.string().optional(),
+  description: z.string().optional(),
 });
 
 const reportIncidentSchema = z.object({
@@ -50,7 +52,8 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         data.startReading,
         data.fuelLevelStart,
         data.destination,
-        data.originId
+        data.originId,
+        data.description
       );
 
       return reply.code(201).send({
@@ -82,6 +85,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         additivesCheck: data.additivesCheck,
         tirePressureJson: data.tirePressureJson,
         checklistJson: data.checklistJson,
+        description: data.description,
       });
 
       return reply.send({
