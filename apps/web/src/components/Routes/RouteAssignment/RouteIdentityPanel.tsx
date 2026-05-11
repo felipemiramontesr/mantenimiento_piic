@@ -44,7 +44,6 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
         onChange={(val): void => updateForm({ unitId: val })}
         icon={Truck}
         placeholder="Clave o modelo..."
-        disabled={isEdit}
       />
       {selectedUnitData && (
         <motion.div

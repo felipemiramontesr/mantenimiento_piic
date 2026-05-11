@@ -41,7 +41,6 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
   }
 
   const isReturn = isEdit;
-  const odometerValue = isEdit ? formData.endReading || '' : formData.startReading || '';
 
   return (
     <div className="space-y-4">
@@ -69,34 +68,73 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
 
       <div className="space-y-6 pt-2">
         {/* Odómetro / Horómetro Section */}
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5 h-4">
-            <Milestone size={12} />
-            LECTURA DE ODÓMETRO (KM)
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              value={odometerValue}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                updateForm(
-                  isEdit
-                    ? { endReading: Number(e.target.value) }
-                    : { startReading: Number(e.target.value) }
-                )
-              }
-              placeholder="0.00"
-              className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#0f2a44] p-3 pl-10 text-lg font-mono text-[#0f2a44] outline-none transition-all rounded-t-md"
-            />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 font-bold">
-              #
-            </span>
-          </div>
-          {!isEdit && (
-            <p className="text-[10px] font-bold text-[#0f2a44]/40 flex items-center gap-1">
-              <Info size={10} />
-              Basado en última lectura: {startReadingDisplay} KM
-            </p>
+        <div className="space-y-4">
+          {!isEdit ? (
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5 h-4">
+                <Milestone size={12} />
+                LECTURA DE ODÓMETRO (KM)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={formData.startReading || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    updateForm({ startReading: Number(e.target.value) })
+                  }
+                  placeholder="0.00"
+                  className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#0f2a44] p-3 pl-10 text-lg font-mono text-[#0f2a44] outline-none transition-all rounded-t-md"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 font-bold">
+                  #
+                </span>
+              </div>
+              <p className="text-[10px] font-bold text-[#0f2a44]/40 flex items-center gap-1">
+                <Info size={10} />
+                Basado en última lectura: {startReadingDisplay} KM
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 opacity-50 flex items-center gap-1.5 h-4">
+                  <Milestone size={12} />
+                  SALIDA (KM)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.startReading || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                      updateForm({ startReading: Number(e.target.value) })
+                    }
+                    className="w-full bg-emerald-50/50 border-b-2 border-emerald-500/20 focus:border-emerald-500 p-2 pl-8 text-sm font-mono text-[#0f2a44] outline-none transition-all rounded-t-md"
+                  />
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-emerald-500/30 font-bold">
+                    #
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-blue-600 opacity-50 flex items-center gap-1.5 h-4">
+                  <Milestone size={12} />
+                  LLEGADA (KM)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.endReading || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                      updateForm({ endReading: Number(e.target.value) })
+                    }
+                    className="w-full bg-blue-50/50 border-b-2 border-blue-500/20 focus:border-blue-500 p-2 pl-8 text-sm font-mono text-[#0f2a44] outline-none transition-all rounded-t-md"
+                  />
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-500/30 font-bold">
+                    #
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

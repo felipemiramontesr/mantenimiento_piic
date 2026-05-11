@@ -42,6 +42,7 @@ export interface RouteLog {
   checklist_json?: string;
   checklist_after_json?: string;
   incident_count?: number;
+  origin_id?: number;
 }
 
 interface RouteLogTableProps {

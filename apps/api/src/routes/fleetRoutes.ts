@@ -126,6 +126,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           r.fuel_level_start, r.fuel_level_end,
           r.fuel_liters_loaded, r.fuel_amount, r.fuel_ticket_image,
           r.additives_check, r.tire_pressure_json, r.checklist_json,
+          r.description,
           r.created_at,
           (
             SELECT COUNT(*) FROM route_incidents i WHERE i.route_uuid = r.uuid

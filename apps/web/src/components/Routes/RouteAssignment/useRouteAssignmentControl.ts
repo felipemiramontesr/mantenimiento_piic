@@ -75,41 +75,38 @@ export const useRouteAssignmentControl = (
   // 🧪 Initialization & Hydration (Refactored v.78.99.5)
   const hydrateRouteData = useCallback(
     (route: RouteLog) => {
-      const raw = route as unknown as Record<string, unknown>;
-      const liters = Number(raw.fuel_liters_loaded || raw.fuelLitersLoaded || 0);
-      const unitId = (raw.unit_id as string) || (raw.unitId as string) || '';
+      const unitId = route.unit_id || '';
       const unit = units.find((u) => u.id === unitId);
       const capacity = unit?.fuelTankCapacity || 80;
 
-      const hydratedTotal = Number(
-        (isFinished ? raw.fuel_level_end ?? raw.fuel_level_start : raw.fuel_level_start) ??
-          raw.fuelLevel ??
-          100
-      );
+      // Determinamos el nivel de combustible a mostrar basado en el estatus
+      const fuelVal = isFinished
+        ? Number(route.fuel_level_end ?? route.fuel_level_start ?? 100)
+        : Number(route.fuel_level_start ?? 100);
 
-      // Back-calculate arrival base if route is finished (Total - Load)
+      const liters = Number(route.fuel_liters_loaded || 0);
       const loadIncrement = (liters / capacity) * 100;
-      const arrivalBase = isFinished ? Math.max(0, hydratedTotal - loadIncrement) : hydratedTotal;
+      const arrivalBase = isFinished ? Math.max(0, fuelVal - loadIncrement) : fuelVal;
 
       setFormData({
         unitId,
-        operatorId: String(raw.operator_id || raw.driver_id || ''),
+        operatorId: String(route.operator_id || ''),
         origin:
-          origins.find((o) => o.id === raw.origin_id)?.label ||
-          (raw.origin as string) ||
+          origins.find((o) => o.id === route.origin_id)?.label ||
+          route.origin ||
           'Arian Silver Zacatecas',
-        destination: (raw.destination as string) || '',
-        description: (raw.description as string) || '',
-        fuelLevel: hydratedTotal,
+        destination: route.destination || '',
+        description: route.description || '',
+        fuelLevel: fuelVal,
         arrivalFuelLevel: arrivalBase,
-        startReading: Number(raw.start_km || raw.start_reading || 0),
-        endReading: Number(raw.end_km || raw.end_reading || 0),
+        startReading: Number(route.start_km ?? 0),
+        endReading: Number(route.end_km ?? 0),
         fuelLitersLoaded: liters,
-        fuelAmount: Number(raw.fuel_amount || 0),
-        fuelTicketImage: (raw.fuel_ticket_image as string) || '',
-        additivesCheck: !!(raw.additives_check || raw.additivesCheck),
-        tirePressureJson: (raw.tire_pressure_json as string) || '',
-        checklistJson: (raw.checklist_json as string) || '',
+        fuelAmount: Number(route.fuel_amount || 0),
+        fuelTicketImage: route.fuel_ticket_image || '',
+        additivesCheck: Boolean(route.additives_check),
+        tirePressureJson: route.tire_pressure_json || '',
+        checklistJson: route.checklist_json || '',
       });
     },
     [units, origins, isFinished]
