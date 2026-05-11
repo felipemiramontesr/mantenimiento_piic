@@ -44,21 +44,30 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
   const odometerValue = isEdit ? formData.endReading || '' : formData.startReading || '';
 
   return (
-    <div className="bg-white rounded-lg border border-[#0f2a44]/10 shadow-sm overflow-hidden mb-4">
+    <div className="space-y-4">
       {/* HEADER */}
-      <div className="bg-[#0f2a44]/5 px-4 py-2 border-b border-[#0f2a44]/10 flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-[#0f2a44] flex items-center gap-2">
-          <Gauge className="w-3.5 h-3.5" />
-          Telemetría de {isReturn ? 'Retorno' : 'Salida'}
-        </h3>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-[#0f2a44] p-2 rounded-[4px]">
+            <Gauge size={20} className="text-white" />
+          </div>
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+              Fase III
+            </span>
+            <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+              Telemetría de {isReturn ? 'Retorno' : 'Salida'}
+            </h3>
+          </div>
+        </div>
         {isReturn && (
-          <div className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+          <div className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-black uppercase tracking-widest">
             Salida: {startReadingDisplay} KM
           </div>
         )}
       </div>
 
-      <div className="p-4 space-y-6">
+      <div className="space-y-6 pt-2">
         {/* Odómetro / Horómetro Section */}
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5 h-4">

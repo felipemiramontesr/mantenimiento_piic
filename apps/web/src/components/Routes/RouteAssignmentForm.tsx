@@ -82,6 +82,17 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
               origins={origins}
             />
 
+            {/* FASE III: TELEMETRÍA - Integrated in left panel */}
+            <div className="pt-4 border-t border-slate-100">
+              <RouteTelemetryPanel
+                formData={formData}
+                updateForm={updateForm}
+                isEdit={isEdit}
+                tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
+                startReadingDisplay={startReadingDisplay}
+              />
+            </div>
+
             {/* Trash action integrated in first panel if editing - Anchored to bottom */}
             {isEdit && (
               <div className="pt-4 mt-auto border-t border-slate-100">
@@ -96,17 +107,24 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
             )}
           </div>
 
-          {/* COLUMNA 2: TELEMETRÍA Y CIERRE */}
+          {/* COLUMNA 2: CIERRE Y EVIDENCIA */}
           <div className="glass-card-pro p-6 space-y-2 bg-white">
-            <RouteTelemetryPanel
-              formData={formData}
-              updateForm={updateForm}
-              isEdit={isEdit}
-              tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
-              startReadingDisplay={startReadingDisplay}
-            />
-            {isEdit && (
+            {isEdit ? (
               <RouteClosurePanel formData={formData} updateForm={updateForm} isEdit={isEdit} />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full opacity-30 space-y-4 py-20">
+                <div className="bg-slate-100 p-6 rounded-full">
+                  <ChevronRight size={48} className="text-slate-400" />
+                </div>
+                <div className="text-center">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em]">
+                    Fase IV Bloqueada
+                  </h4>
+                  <p className="text-[8px] font-bold uppercase tracking-widest mt-1">
+                    Disponible solo en modo edición/retorno
+                  </p>
+                </div>
+              </div>
             )}
 
             {/* 🔱 SOVEREIGN ACTION ECOSYSTEM - Anchored to bottom */}
