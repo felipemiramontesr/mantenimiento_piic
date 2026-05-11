@@ -226,15 +226,30 @@ const RouteLogRow = ({
         {/* Combustible */}
         <td className="py-6">
           <div className="flex flex-col items-center">
-            <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
-              <Fuel size={14} />
-              <span className="text-[11px] font-black tracking-tight">
-                {log.end_time ? log.fuel_level_end : log.fuel_level_start}%
-              </span>
-            </div>
-            <span className="text-[8px] font-bold text-slate-400 uppercase mt-1">
-              {log.end_time ? 'LECTURA FINAL' : 'PUNTO PARTIDA'}
-            </span>
+            {((): React.JSX.Element => {
+              const currentPercent = log.end_time ? log.fuel_level_end : log.fuel_level_start;
+              const tankCap = unit?.fuelTankCapacity || 0;
+              const realLiters = tankCap > 0 ? (tankCap * (currentPercent || 0)) / 100 : null;
+
+              return (
+                <>
+                  <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+                    <Fuel size={14} />
+                    <span className="text-[11px] font-black tracking-tight">
+                      {currentPercent?.toLocaleString(undefined, { minimumFractionDigits: 1 })}%
+                    </span>
+                  </div>
+                  {realLiters !== null && (
+                    <span className="text-[10px] font-black text-[#0f2a44] mt-1 opacity-80">
+                      {realLiters.toLocaleString(undefined, { minimumFractionDigits: 1 })} L
+                    </span>
+                  )}
+                  <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">
+                    {log.end_time ? 'LECTURA FINAL' : 'PUNTO PARTIDA'}
+                  </span>
+                </>
+              );
+            })()}
           </div>
         </td>
 
