@@ -42,17 +42,17 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
   // 📐 Computed UI Logic (V8 Performance Optimized)
   const getButtonState = (): { text: string; className: string } => {
-    if (isFinished) return { text: 'Sincronizar', className: 'btn-sentinel-emerald' };
+    if (isFinished) return { text: 'Sincronizar', className: 'btn-sentinel-emerald-static' };
     if (isEdit) {
       const hasOdometer = Number(formData.endReading) > 0;
       return {
         text: hasOdometer ? 'Finalizar Misión' : 'Actualizar Trayecto',
-        className: hasOdometer ? 'btn-sentinel-amber' : 'btn-sentinel-sky',
+        className: hasOdometer ? 'btn-sentinel-amber-static' : 'btn-sentinel-sky-static',
       };
     }
     return {
       text: 'Autorizar Despacho',
-      className: 'btn-sentinel-emerald',
+      className: 'btn-sentinel-emerald-static',
     };
   };
 

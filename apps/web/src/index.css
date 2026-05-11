@@ -1436,6 +1436,93 @@ body {
   display: none !important;
 }
 
+/* 🛑 STATIC EMERALD BUTTON */
+.btn-sentinel-emerald-static {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
+  color: white !important;
+  height: 52px !important;
+  width: 100% !important;
+  padding: 0 32px !important;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  border: none !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: none !important;
+}
+.btn-sentinel-emerald-static:hover {
+  transform: none !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25) !important;
+}
+.btn-sentinel-emerald-static::after {
+  display: none !important;
+}
+
+/* 🛑 STATIC SKY BUTTON */
+.btn-sentinel-sky-static {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.25);
+  color: white !important;
+  height: 52px !important;
+  width: 100% !important;
+  padding: 0 32px !important;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  border: none !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: none !important;
+}
+.btn-sentinel-sky-static:hover {
+  transform: none !important;
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.25) !important;
+}
+.btn-sentinel-sky-static::after {
+  display: none !important;
+}
+
+/* 🛑 STATIC AMBER BUTTON */
+.btn-sentinel-amber-static {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
+  color: white !important;
+  height: 52px !important;
+  width: 100% !important;
+  padding: 0 32px !important;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  border: none !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: none !important;
+}
+.btn-sentinel-amber-static:hover {
+  transform: none !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25) !important;
+}
+.btn-sentinel-amber-static::after {
+  display: none !important;
+}
+
 /* 🏢 FORM GRID SYSTEM */
 .archon-grid-2 {
   display: grid;
