@@ -114,7 +114,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
     ...(!unitId ? [{ key: 'activo', label: 'ACTIVO' }] : []),
     { key: 'evento', label: 'EVENTO / IMPACTO' },
     { key: 'descripcion', label: 'DESCRIPCIÓN / NOTA' },
-    { key: 'modificacion', label: 'MODIFICACIÓN' },
+    { key: 'modificacion', label: '' },
     { key: 'responsable', label: 'RESPONSABLE' },
   ] as ArchonTableHeader[];
 
