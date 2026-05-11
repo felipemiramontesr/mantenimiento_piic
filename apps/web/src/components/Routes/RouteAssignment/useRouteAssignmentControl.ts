@@ -70,9 +70,8 @@ export const useRouteAssignmentControl = (
   const [error, setError] = useState<string | null>(null);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
-  const [arrivalFuelLevel, setArrivalFuelLevel] = useState<number>(100);
 
-  // 🧪 Initialization & Hydration (Refactored v.78.90.0)
+  // 🧪 Initialization & Hydration (Refactored v.78.96.5)
   useEffect((): void => {
     if (routeToEdit) {
       // 🔱 Forensic Hydration: Map diverse source schemas to standard Archon form state
@@ -83,7 +82,6 @@ export const useRouteAssignmentControl = (
           100
       );
 
-      setArrivalFuelLevel(hydratedFuel);
       setFormData({
         unitId: (raw.unit_id as string) || '',
         operatorId: String(raw.operator_id || raw.driver_id || ''),
@@ -94,6 +92,7 @@ export const useRouteAssignmentControl = (
         destination: (raw.destination as string) || '',
         description: (raw.description as string) || '',
         fuelLevel: hydratedFuel,
+        arrivalFuelLevel: hydratedFuel,
         startReading: Number(raw.start_km || raw.start_reading || 0),
         endReading: Number(raw.end_km || raw.end_reading || 0),
         fuelLitersLoaded: Number(raw.fuel_liters_loaded || 0),
@@ -112,6 +111,7 @@ export const useRouteAssignmentControl = (
         destination: '',
         description: '',
         fuelLevel: 100,
+        arrivalFuelLevel: 100,
         startReading: 0,
         endReading: 0,
         fuelLitersLoaded: 0,
@@ -121,7 +121,6 @@ export const useRouteAssignmentControl = (
         tirePressureJson: '',
         checklistJson: '',
       });
-      setSelectedUnitData(null);
       setError(null);
     }
   }, [routeToEdit]);
@@ -209,35 +208,26 @@ export const useRouteAssignmentControl = (
   // 📝 Actions
   const updateForm = useCallback(
     (updates: Partial<RouteAssignmentFormData>): void => {
-      // 🔱 Reactive Telemetry Linking (v.78.95.5)
-      const finalUpdates = { ...updates };
+      setFormData((prev) => {
+        const next = { ...prev, ...updates };
 
-      // 1. Manual Slider Adjustment: Update base and re-apply existing load
-      if ('fuelLevel' in finalUpdates && !('fuelLitersLoaded' in finalUpdates)) {
-        const manualLevel = finalUpdates.fuelLevel ?? 0;
-        setArrivalFuelLevel(manualLevel);
-
-        if (formData.fuelLitersLoaded > 0 && selectedUnitData?.fuelTankCapacity) {
-          const increment = (formData.fuelLitersLoaded / selectedUnitData.fuelTankCapacity) * 100;
-          finalUpdates.fuelLevel = Math.min(100, manualLevel + increment);
+        // 🔱 Reactive Telemetry Linking (v.78.96.8)
+        // Whenever Arrival Level or Liters Loaded change, recalculate total FuelLevel
+        if (
+          ('arrivalFuelLevel' in updates || 'fuelLitersLoaded' in updates) &&
+          selectedUnitData?.fuelTankCapacity
+        ) {
+          const base = next.arrivalFuelLevel;
+          const liters = next.fuelLitersLoaded;
+          const capacity = selectedUnitData.fuelTankCapacity;
+          const increment = (liters / capacity) * 100;
+          next.fuelLevel = Math.min(100, base + increment);
         }
-      }
 
-      // 2. Liter Load Adjustment: Calculate resulting level from the stable base
-      if (
-        'fuelLitersLoaded' in finalUpdates &&
-        finalUpdates.fuelLitersLoaded !== undefined &&
-        selectedUnitData?.fuelTankCapacity
-      ) {
-        const liters = finalUpdates.fuelLitersLoaded;
-        const capacity = selectedUnitData.fuelTankCapacity;
-        const increment = (liters / capacity) * 100;
-        finalUpdates.fuelLevel = Math.min(100, arrivalFuelLevel + increment);
-      }
-
-      setFormData((prev) => ({ ...prev, ...finalUpdates }));
+        return next;
+      });
     },
-    [arrivalFuelLevel, selectedUnitData, formData.fuelLitersLoaded]
+    [selectedUnitData]
   );
 
   const getForensicPayload = (): Record<string, unknown> => {

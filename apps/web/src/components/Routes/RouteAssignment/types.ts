@@ -8,6 +8,7 @@ export interface RouteAssignmentFormData {
   destination: string;
   description: string;
   fuelLevel: number;
+  arrivalFuelLevel: number;
   startReading: number;
   endReading: number;
   fuelLitersLoaded: number;

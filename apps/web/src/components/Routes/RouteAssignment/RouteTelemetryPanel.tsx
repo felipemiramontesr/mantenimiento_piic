@@ -42,7 +42,6 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
 
   const isReturn = isEdit;
   const odometerValue = isEdit ? formData.endReading || '' : formData.startReading || '';
-  const fuelLevelValue = formData.fuelLevel;
 
   return (
     <div className="bg-white rounded-lg border border-[#0f2a44]/10 shadow-sm overflow-hidden mb-4">
@@ -97,27 +96,27 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
           <div className="flex items-center justify-between mb-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5">
               <Fuel className="w-3 h-3" />
-              Nivel de Combustible
+              Nivel al Llegar (%)
             </label>
-            <span className="font-mono text-xs bg-[#0f2a44] text-white px-2 py-0.5 rounded font-bold">
-              {fuelLevelValue}%
+            <span className="font-mono text-xs bg-[#0f2a44]/20 text-[#0f2a44] px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
+              {formData.arrivalFuelLevel}%
             </span>
           </div>
 
           <div className="px-2">
             <ArchonFuelSensor
-              value={fuelLevelValue}
-              onChange={(val: number): void => updateForm({ fuelLevel: val })}
+              value={formData.arrivalFuelLevel}
+              onChange={(val: number): void => updateForm({ arrivalFuelLevel: val })}
             />
           </div>
 
-          {/* Chart Integration (Required for Capacity Validation) */}
+          {/* Chart Integration (Resulting State) */}
           {tankCapacity > 0 && (
             <div className="pt-2 border-t border-[#0f2a44]/5">
               <FuelVolumeChart
-                currentLevel={fuelLevelValue}
+                currentLevel={formData.fuelLevel}
                 totalCapacity={tankCapacity}
-                color={fuelLevelValue > 20 ? '#0f2a44' : '#ef4444'}
+                color={formData.fuelLevel > 20 ? '#0f2a44' : '#ef4444'}
               />
             </div>
           )}
