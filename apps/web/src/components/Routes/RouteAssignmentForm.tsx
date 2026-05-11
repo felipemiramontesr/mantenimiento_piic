@@ -16,7 +16,7 @@ interface RouteAssignmentFormProps {
 }
 
 /**
- * 🔱 ARCHON COCKPIT: RouteAssignmentForm (Refactored v.60.0.0)
+ * 🔱 ARCHON COCKPIT: RouteAssignmentForm (Refactored v.78.100.5)
  * Philosophy: Sovereign Asset Dispatch Command Center.
  * Architecture: Atomic Decomposition & Headless Logic via useRouteAssignmentControl.
  */
@@ -116,41 +116,30 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
         </div>
 
-        {/* 🔱 SOVEREIGN GLOBAL ACTION BAR - Extracted from panels for design homogeneity */}
-        <div className="flex items-center justify-between gap-8 pt-8 mt-4 border-t border-[#0f2a44]/5">
-          {/* Left Wing: Danger Zone */}
-          <div className="w-1/3">
+        {/* 🔱 SOVEREIGN GLOBAL ACTION BAR - Aligned with Axial Grid for Uniformity */}
+        <div className="archon-grid-2 gap-8 pt-8 mt-4 border-t border-[#0f2a44]/5">
+          {/* Left Panel Action: Danger Zone */}
+          <div className="flex items-center">
             {isEdit && (
               <button
                 type="button"
                 onClick={triggerAuditDelete}
-                className="btn-sentinel-red-static w-full shadow-lg"
+                className="btn-sentinel-red-static w-full"
               >
                 <Trash2 size={16} /> Eliminar Registro
               </button>
             )}
           </div>
 
-          {/* Right Wing: Navigation & Submission */}
-          <div className="flex gap-4 w-2/3 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-sentinel-red w-[240px] group shadow-lg"
-            >
-              <ChevronRight
-                size={18}
-                className="rotate-180 group-hover:-translate-x-1 transition-transform"
-              />
-              <span className="truncate">{isEdit ? 'Volver a Bitácora' : 'Cancelar'}</span>
-            </button>
+          {/* Right Panel Action: Command Execution */}
+          <div className="flex items-center">
             <button
               type="submit"
               disabled={
                 submitting ||
                 (!isFinished && (!formData.unitId || !formData.operatorId || !formData.destination))
               }
-              className={`${getButtonState().className} w-[240px] group shadow-lg`}
+              className={`${getButtonState().className} w-full group`}
             >
               {submitting ? (
                 <>
