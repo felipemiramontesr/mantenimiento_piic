@@ -209,13 +209,21 @@ export const useRouteAssignmentControl = (
   // 📝 Actions
   const updateForm = useCallback(
     (updates: Partial<RouteAssignmentFormData>): void => {
-      // 🔱 Reactive Telemetry Linking (v.78.90.0)
+      // 🔱 Reactive Telemetry Linking (v.78.95.5)
       const finalUpdates = { ...updates };
 
-      if ('fuelLevel' in finalUpdates && finalUpdates.fuelLevel !== undefined) {
-        setArrivalFuelLevel(finalUpdates.fuelLevel);
+      // 1. Manual Slider Adjustment: Update base and re-apply existing load
+      if ('fuelLevel' in finalUpdates && !('fuelLitersLoaded' in finalUpdates)) {
+        const manualLevel = finalUpdates.fuelLevel ?? 0;
+        setArrivalFuelLevel(manualLevel);
+
+        if (formData.fuelLitersLoaded > 0 && selectedUnitData?.fuelTankCapacity) {
+          const increment = (formData.fuelLitersLoaded / selectedUnitData.fuelTankCapacity) * 100;
+          finalUpdates.fuelLevel = Math.min(100, manualLevel + increment);
+        }
       }
 
+      // 2. Liter Load Adjustment: Calculate resulting level from the stable base
       if (
         'fuelLitersLoaded' in finalUpdates &&
         finalUpdates.fuelLitersLoaded !== undefined &&
@@ -229,7 +237,7 @@ export const useRouteAssignmentControl = (
 
       setFormData((prev) => ({ ...prev, ...finalUpdates }));
     },
-    [arrivalFuelLevel, selectedUnitData]
+    [arrivalFuelLevel, selectedUnitData, formData.fuelLitersLoaded]
   );
 
   const getForensicPayload = (): Record<string, unknown> => {
