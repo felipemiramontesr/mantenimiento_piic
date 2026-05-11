@@ -92,19 +92,6 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 startReadingDisplay={startReadingDisplay}
               />
             </div>
-
-            {/* Trash action integrated in first panel if editing - Anchored to bottom */}
-            {isEdit && (
-              <div className="pt-4 mt-auto border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={triggerAuditDelete}
-                  className="btn-sentinel-red-static w-full"
-                >
-                  <Trash2 size={16} /> Eliminar Registro
-                </button>
-              </div>
-            )}
           </div>
 
           {/* COLUMNA 2: CIERRE Y EVIDENCIA */}
@@ -126,45 +113,64 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 </div>
               </div>
             )}
+          </div>
+        </div>
 
-            {/* 🔱 SOVEREIGN ACTION ECOSYSTEM - Anchored to bottom */}
-            <div className="flex gap-4 pt-8 mt-auto border-t border-slate-100">
-              <button type="button" onClick={onClose} className="btn-sentinel-red w-1/2 group">
-                <ChevronRight
-                  size={18}
-                  className="rotate-180 group-hover:-translate-x-1 transition-transform"
-                />
-                <span className="truncate">{isEdit ? 'Volver a Bitácora' : 'Cancelar'}</span>
-              </button>
+        {/* 🔱 SOVEREIGN GLOBAL ACTION BAR - Extracted from panels for design homogeneity */}
+        <div className="flex items-center justify-between gap-8 pt-8 mt-4 border-t border-[#0f2a44]/5">
+          {/* Left Wing: Danger Zone */}
+          <div className="w-1/3">
+            {isEdit && (
               <button
-                type="submit"
-                disabled={
-                  submitting ||
-                  (!isFinished &&
-                    (!formData.unitId || !formData.operatorId || !formData.destination))
-                }
-                className={`${getButtonState().className} w-1/2 group`}
+                type="button"
+                onClick={triggerAuditDelete}
+                className="btn-sentinel-red-static w-full shadow-lg"
               >
-                {submitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Transmitiendo...
-                  </>
-                ) : (
-                  <>
-                    <span className="tracking-[0.2em]">{getButtonState().text}</span>
-                    {isFinished ? (
-                      <Save size={18} className="animate-pulse" />
-                    ) : (
-                      <ChevronRight
-                        size={18}
-                        className="group-hover:translate-x-1 transition-transform"
-                      />
-                    )}
-                  </>
-                )}
+                <Trash2 size={16} /> Eliminar Registro
               </button>
-            </div>
+            )}
+          </div>
+
+          {/* Right Wing: Navigation & Submission */}
+          <div className="flex gap-4 w-2/3 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-sentinel-red w-[240px] group shadow-lg"
+            >
+              <ChevronRight
+                size={18}
+                className="rotate-180 group-hover:-translate-x-1 transition-transform"
+              />
+              <span className="truncate">{isEdit ? 'Volver a Bitácora' : 'Cancelar'}</span>
+            </button>
+            <button
+              type="submit"
+              disabled={
+                submitting ||
+                (!isFinished && (!formData.unitId || !formData.operatorId || !formData.destination))
+              }
+              className={`${getButtonState().className} w-[240px] group shadow-lg`}
+            >
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Transmitiendo...
+                </>
+              ) : (
+                <>
+                  <span className="tracking-[0.2em]">{getButtonState().text}</span>
+                  {isFinished ? (
+                    <Save size={18} className="animate-pulse" />
+                  ) : (
+                    <ChevronRight
+                      size={18}
+                      className="group-hover:translate-x-1 transition-transform"
+                    />
+                  )}
+                </>
+              )}
+            </button>
           </div>
         </div>
 
