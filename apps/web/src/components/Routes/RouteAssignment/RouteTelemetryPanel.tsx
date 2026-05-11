@@ -145,15 +145,49 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
               <Fuel className="w-3 h-3" />
               {isEdit ? 'Nivel al Llegar (%)' : 'Nivel de Salida (%)'}
             </label>
-            <span className="font-mono text-xs bg-[#0f2a44]/20 text-[#0f2a44] px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
-              {formData.fuelLevel}%
-            </span>
+            <div className="flex items-center gap-2">
+              {/* Mirror: Liters Input */}
+              <div className="flex items-center bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-[4px] px-2 py-0.5">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={
+                    (
+                      ((isEdit ? formData.arrivalFuelLevel : formData.fuelLevel) / 100) *
+                      tankCapacity
+                    ).toFixed(2) || '0.00'
+                  }
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
+                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    if (val && tankCapacity > 0) {
+                      const newPct = (Number(val) / tankCapacity) * 100;
+                      updateForm(
+                        isEdit
+                          ? { arrivalFuelLevel: Math.min(100, newPct) }
+                          : { fuelLevel: Math.min(100, newPct) }
+                      );
+                    } else {
+                      updateForm(isEdit ? { arrivalFuelLevel: 0 } : { fuelLevel: 0 });
+                    }
+                  }}
+                  className="w-10 bg-transparent text-[10px] font-mono font-black text-[#0f2a44] outline-none text-right"
+                />
+                <span className="text-[8px] font-black text-[#0f2a44]/40 ml-1">L</span>
+              </div>
+
+              {/* Percentage Badge */}
+              <span className="font-mono text-xs bg-[#0f2a44]/20 text-[#0f2a44] px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
+                {isEdit ? formData.arrivalFuelLevel : formData.fuelLevel}%
+              </span>
+            </div>
           </div>
 
           <div className="px-2">
             <ArchonFuelSensor
-              value={formData.fuelLevel}
-              onChange={(val: number): void => updateForm({ fuelLevel: val })}
+              value={isEdit ? formData.arrivalFuelLevel : formData.fuelLevel}
+              onChange={(val: number): void =>
+                updateForm(isEdit ? { arrivalFuelLevel: val } : { fuelLevel: val })
+              }
             />
           </div>
 

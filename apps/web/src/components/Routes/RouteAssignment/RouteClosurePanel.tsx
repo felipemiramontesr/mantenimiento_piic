@@ -57,7 +57,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({ formData, upda
                 type="text"
                 inputMode="decimal"
                 placeholder="0.00"
-                value={Number(formData.fuelLitersLoaded) === 0 ? '' : formData.fuelLitersLoaded}
+                value={formData.fuelLitersLoaded}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                   const val = e.target.value.replace(/[^0-9.]/g, '');
                   updateForm({ fuelLitersLoaded: val === '' ? 0 : Number(val) });
@@ -80,7 +80,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({ formData, upda
                 type="text"
                 inputMode="decimal"
                 placeholder="0.00"
-                value={Number(formData.fuelAmount) === 0 ? '' : formData.fuelAmount}
+                value={formData.fuelAmount}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                   const val = e.target.value.replace(/[^0-9.]/g, '');
                   updateForm({ fuelAmount: val === '' ? 0 : Number(val) });
