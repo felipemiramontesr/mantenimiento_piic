@@ -27,6 +27,7 @@ describe('🔱 Archon Forensic Audit Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (db.getConnection as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConnection);
+    mockConnection.execute.mockResolvedValue([[], []]);
   });
 
   it('should capture correct snapshots when updating fuel level from 100 to 83', async () => {

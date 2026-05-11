@@ -35,6 +35,8 @@ export default class RouteService {
    * Internal helper to synchronize the unit's odometer and fuel with the latest journey data.
    */
   private static async syncUnitState(connection: PoolConnection, unitId: string): Promise<void> {
+    if (!unitId) return;
+
     const [rows] = await connection.execute<RowDataPacket[]>(
       `SELECT end_reading, fuel_level_end 
        FROM fleet_routes 

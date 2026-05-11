@@ -22,6 +22,7 @@ vi.mock('./db', () => ({
 describe('RouteService - Journey Engine (Forensic Standard)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConnection.execute.mockResolvedValue([[], []]);
   });
 
   describe('startRoute', () => {
@@ -303,6 +304,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       mockConnection.execute.mockResolvedValueOnce([[mockBefore]]); // Snapshot Before
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Route
       mockConnection.execute.mockResolvedValueOnce([[mockAfter]]); // Snapshot After
+      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]); // syncUnitState SELECT
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Unit (Chain of Custody)
 
       await RouteService.updateRoute('UUID-1', { fuelLevel: 75 }, 'Reason', 1);
