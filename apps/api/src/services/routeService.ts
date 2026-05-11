@@ -366,6 +366,14 @@ export default class RouteService {
         user_id: adminId,
       });
 
+      // 5. Chain of Custody (X=Y Protocol): Propagate changes to Unit if route is finished
+      if (snapshotAfter.end_time) {
+        await connection.execute(
+          'UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ? WHERE id = ?',
+          [snapshotAfter.end_reading, snapshotAfter.fuel_level_end, snapshotAfter.unit_id]
+        );
+      }
+
       await connection.commit();
       connection.release();
     } catch (e) {

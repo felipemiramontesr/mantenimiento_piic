@@ -96,7 +96,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
           <div className="flex items-center justify-between mb-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5">
               <Fuel className="w-3 h-3" />
-              Nivel al Llegar (%)
+              {isEdit ? 'Nivel al Llegar (%)' : 'Nivel de Salida (%)'}
             </label>
             <span className="font-mono text-xs bg-[#0f2a44]/20 text-[#0f2a44] px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
               {formData.arrivalFuelLevel}%
@@ -118,6 +118,9 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
                 totalCapacity={tankCapacity}
                 color={formData.fuelLevel > 20 ? '#0f2a44' : '#ef4444'}
               />
+              <p className="text-[8px] font-bold text-center mt-2 opacity-40 uppercase tracking-widest text-[#0f2a44]">
+                {isEdit ? 'Consolidado Final (Entrada Y)' : 'Estado Inicial (Salida X)'}
+              </p>
             </div>
           )}
         </div>
