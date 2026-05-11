@@ -7,6 +7,7 @@ describe('RouteTelemetryPanel (Sensor Validation)', () => {
     formData: {
       unitId: 'ASM-001',
       fuelLevel: 75,
+      arrivalFuelLevel: 75,
       startReading: 12000,
       operatorId: '1',
       origin: 'Base',

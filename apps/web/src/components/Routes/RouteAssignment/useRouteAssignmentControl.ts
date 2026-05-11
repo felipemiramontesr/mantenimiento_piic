@@ -50,6 +50,7 @@ export const useRouteAssignmentControl = (
     destination: '',
     description: '',
     fuelLevel: 100,
+    arrivalFuelLevel: 100,
     startReading: 0,
     endReading: 0,
     fuelLitersLoaded: 0,
