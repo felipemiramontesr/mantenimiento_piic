@@ -60,7 +60,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({ formData, upda
                 value={formData.fuelLitersLoaded}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                   const val = e.target.value.replace(/[^0-9.]/g, '');
-                  updateForm({ fuelLitersLoaded: val === '' ? 0 : Number(val) });
+                  updateForm({ fuelLitersLoaded: val });
                 }}
                 className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
               />
@@ -83,7 +83,7 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({ formData, upda
                 value={formData.fuelAmount}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                   const val = e.target.value.replace(/[^0-9.]/g, '');
-                  updateForm({ fuelAmount: val === '' ? 0 : Number(val) });
+                  updateForm({ fuelAmount: val });
                 }}
                 className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
               />

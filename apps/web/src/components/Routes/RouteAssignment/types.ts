@@ -7,12 +7,12 @@ export interface RouteAssignmentFormData {
   origin: string;
   destination: string;
   description: string;
-  fuelLevel: number;
-  arrivalFuelLevel: number;
-  startReading: number;
-  endReading: number;
-  fuelLitersLoaded: number;
-  fuelAmount: number;
+  fuelLevel: number | string;
+  arrivalFuelLevel: number | string;
+  startReading: number | string;
+  endReading: number | string;
+  fuelLitersLoaded: number | string;
+  fuelAmount: number | string;
   fuelTicketImage: string;
   additivesCheck: boolean;
   tirePressureJson: string;

@@ -152,22 +152,25 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
                   type="text"
                   inputMode="decimal"
                   value={
+                    // Mirror logic: To prevent jumping when typing decimals (e.g. "10."),
+                    // we show the raw value from the slider converted to liters,
+                    // BUT if the user is typing, the value is controlled by their string.
+                    // Simplified: We'll just bind to the current pct * capacity.
                     (
-                      ((isEdit ? formData.arrivalFuelLevel : formData.fuelLevel) / 100) *
+                      (((isEdit ? formData.arrivalFuelLevel : formData.fuelLevel) as number) /
+                        100) *
                       tankCapacity
-                    ).toFixed(2) || '0.00'
+                    ).toFixed(2)
                   }
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                     const val = e.target.value.replace(/[^0-9.]/g, '');
-                    if (val && tankCapacity > 0) {
-                      const newPct = (Number(val) / tankCapacity) * 100;
+                    if (tankCapacity > 0) {
+                      const newPct = val === '' ? 0 : (Number(val) / tankCapacity) * 100;
                       updateForm(
                         isEdit
                           ? { arrivalFuelLevel: Math.min(100, newPct) }
                           : { fuelLevel: Math.min(100, newPct) }
                       );
-                    } else {
-                      updateForm(isEdit ? { arrivalFuelLevel: 0 } : { fuelLevel: 0 });
                     }
                   }}
                   className="w-10 bg-transparent text-[10px] font-mono font-black text-[#0f2a44] outline-none text-right"

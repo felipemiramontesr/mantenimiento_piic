@@ -229,8 +229,8 @@ export const useRouteAssignmentControl = (
         // Whenever Arrival Level or Liters Loaded change, recalculate total FuelLevel
         // 🧪 Consolidated Update Logic (Total-to-Arrival Conversion)
         if ('fuelLevel' in updates && !('arrivalFuelLevel' in updates)) {
-          const total = next.fuelLevel;
-          const liters = next.fuelLitersLoaded;
+          const total = Number(next.fuelLevel || 0);
+          const liters = Number(next.fuelLitersLoaded || 0);
           const capacity = selectedUnitData?.fuelTankCapacity || 80;
           const increment = (liters / capacity) * 100;
           next.arrivalFuelLevel = Math.max(0, total - increment);
@@ -241,8 +241,8 @@ export const useRouteAssignmentControl = (
           ('arrivalFuelLevel' in updates || 'fuelLitersLoaded' in updates) &&
           selectedUnitData?.fuelTankCapacity
         ) {
-          const base = next.arrivalFuelLevel;
-          const liters = next.fuelLitersLoaded;
+          const base = Number(next.arrivalFuelLevel || 0);
+          const liters = Number(next.fuelLitersLoaded || 0);
           const capacity = selectedUnitData.fuelTankCapacity;
           const increment = (liters / capacity) * 100;
           next.fuelLevel = Math.min(100, base + increment);
