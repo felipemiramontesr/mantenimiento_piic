@@ -229,6 +229,16 @@ export const useRouteAssignmentControl = (
 
         // 🔱 Reactive Telemetry Linking (v.78.96.8)
         // Whenever Arrival Level or Liters Loaded change, recalculate total FuelLevel
+        // 🧪 Consolidated Update Logic (Total-to-Arrival Conversion)
+        if ('fuelLevel' in updates && !('arrivalFuelLevel' in updates)) {
+          const total = next.fuelLevel;
+          const liters = next.fuelLitersLoaded;
+          const capacity = selectedUnitData?.fuelTankCapacity || 80;
+          const increment = (liters / capacity) * 100;
+          next.arrivalFuelLevel = Math.max(0, total - increment);
+        }
+
+        // 🧪 Arrival/Load-to-Total Conversion
         if (
           ('arrivalFuelLevel' in updates || 'fuelLitersLoaded' in updates) &&
           selectedUnitData?.fuelTankCapacity

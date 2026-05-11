@@ -99,14 +99,14 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
               {isEdit ? 'Nivel al Llegar (%)' : 'Nivel de Salida (%)'}
             </label>
             <span className="font-mono text-xs bg-[#0f2a44]/20 text-[#0f2a44] px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
-              {formData.arrivalFuelLevel}%
+              {formData.fuelLevel}%
             </span>
           </div>
 
           <div className="px-2">
             <ArchonFuelSensor
-              value={formData.arrivalFuelLevel}
-              onChange={(val: number): void => updateForm({ arrivalFuelLevel: val })}
+              value={formData.fuelLevel}
+              onChange={(val: number): void => updateForm({ fuelLevel: val })}
             />
           </div>
 
