@@ -225,13 +225,25 @@ const RouteLogRow = ({
         <td className="py-6">
           <div className="flex flex-col items-center">
             {log.end_km !== null && log.end_km !== undefined ? (
-              <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                <span className="text-[10px] font-black tracking-widest">+</span>
-                <span className="text-[11px] font-black tracking-tight">
-                  {(log.end_km - log.start_km).toLocaleString()}
-                </span>
-                <span className="text-[8px] font-bold opacity-60 ml-0.5">KM</span>
-              </div>
+              ((): React.JSX.Element => {
+                const delta = log.end_km - log.start_km;
+                const isNegative = delta < 0;
+                return (
+                  <div
+                    className={`flex items-center gap-1 px-3 py-1 rounded-full ${
+                      isNegative ? 'text-rose-600 bg-rose-50' : 'text-emerald-600 bg-emerald-50'
+                    }`}
+                  >
+                    {!isNegative && (
+                      <span className="text-[10px] font-black tracking-widest">+</span>
+                    )}
+                    <span className="text-[11px] font-black tracking-tight">
+                      {delta.toLocaleString()}
+                    </span>
+                    <span className="text-[8px] font-bold opacity-60 ml-0.5">KM</span>
+                  </div>
+                );
+              })()
             ) : (
               <span className="text-[11px] font-black text-slate-300">---</span>
             )}
