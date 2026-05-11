@@ -88,7 +88,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 <button
                   type="button"
                   onClick={triggerAuditDelete}
-                  className="btn-sentinel-red w-full opacity-60 hover:opacity-100"
+                  className="btn-sentinel-red-static w-full"
                 >
                   <Trash2 size={16} /> Eliminar Registro
                 </button>
