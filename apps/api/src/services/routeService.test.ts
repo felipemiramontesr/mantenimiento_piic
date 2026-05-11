@@ -306,7 +306,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
 
       // Verify Chain of Custody propagation to Unit
       expect(mockConnection.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_units SET currentReading = ?, lastFuelLevel = ?'),
+        expect.stringContaining('UPDATE fleet_units SET odometer = ?, lastFuelLevel = ?'),
         [1500, 75, 'ASM-001']
       );
     });
