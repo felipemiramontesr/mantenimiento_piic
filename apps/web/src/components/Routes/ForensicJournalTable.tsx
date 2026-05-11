@@ -308,6 +308,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                               })}
                             </span>
                             <ArrowRight size={10} className="opacity-30" />
+                            <span className="text-[10px] font-black text-emerald-600">$</span>
                             <span className="text-[10px] font-black text-[#0f2a44]">
                               {Number(log.fuel_amount_after).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
@@ -377,6 +378,24 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                               const label = whitelist[key];
 
+                              // Dynamic Units (Prefix/Suffix)
+                              let prefix = '';
+                              let suffix = '';
+                              if (key === 'fuel_amount') prefix = '$';
+                              if (key === 'fuel_liters_loaded') suffix = ' L';
+                              if (key.includes('reading')) suffix = ' KM';
+                              if (key.includes('level')) suffix = ' %';
+
+                              const formatVal = (v: unknown): string => {
+                                if (v === null || v === undefined) return '—';
+                                if (typeof v === 'number') {
+                                  return v.toLocaleString(undefined, {
+                                    minimumFractionDigits: key.includes('amount') ? 2 : 1,
+                                  });
+                                }
+                                return String(v);
+                              };
+
                               return (
                                 <div
                                   key={key}
@@ -386,11 +405,15 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                                     {label}:
                                   </span>
                                   <span className="text-[9px] font-bold text-[#0f2a44] opacity-50 line-through">
-                                    {String(valBefore ?? '—')}
+                                    {prefix}
+                                    {formatVal(valBefore)}
+                                    {suffix}
                                   </span>
                                   <ArrowRight size={8} className="opacity-20" />
                                   <span className="text-[9px] font-black text-blue-600">
-                                    {String(valAfter ?? '—')}
+                                    {prefix}
+                                    {formatVal(valAfter)}
+                                    {suffix}
                                   </span>
                                 </div>
                               );
