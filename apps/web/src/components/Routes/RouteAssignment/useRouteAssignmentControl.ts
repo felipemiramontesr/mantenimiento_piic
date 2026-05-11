@@ -37,7 +37,7 @@ export const useRouteAssignmentControl = (
   onClose: () => void,
   routeToEdit?: RouteLog | null
 ): RouteAssignmentControl => {
-  const { units, startRoute, finishRoute } = useFleet();
+  const { units, startRoute, finishRoute, refreshUnits } = useFleet();
   const { users } = useUsers();
 
   const isEdit = !!routeToEdit;
@@ -292,6 +292,9 @@ export const useRouteAssignmentControl = (
         await api.delete(`/routes/${routeToEdit?.uuid}`, { data: { reason } });
       }
 
+      // 🔱 Global Synchronization: Ensure Fleet Inventory reflects forensic changes
+      await refreshUnits();
+
       // 🔱 Atomic Success: Only close when synchronization is verified
       setSubmitting(false);
       setIsAuditModalOpen(false);
@@ -369,6 +372,7 @@ export const useRouteAssignmentControl = (
         } else {
           // 📝 Correct Active Mission: Typos, operator change, etc.
           await api.put(`/routes/${routeToEdit.uuid}`, { data: formData });
+          await refreshUnits();
         }
       } else {
         // 🚀 New Dispatch
