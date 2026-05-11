@@ -307,6 +307,35 @@ export const useRouteAssignmentControl = (
     }
   };
 
+  const triggerAuditDelete = (): void => {
+    setAuditAction('DELETE');
+    setIsAuditModalOpen(true);
+  };
+
+  const validateTelemetry = useCallback((): boolean => {
+    // 🛡️ Forensic Failsafe: Prevent logical telemetry errors
+    if (isEdit && routeToEdit) {
+      const end = Number(formData.endReading);
+      const start = Number(formData.startReading);
+      if (end < start) {
+        setError(
+          `Error Forense: La lectura final (${end}) no puede ser menor a la inicial (${start}).`
+        );
+        return false;
+      }
+    } else if (!isEdit && selectedUnitData) {
+      const start = Number(formData.startReading);
+      const unitOdo = Number(selectedUnitData.odometer);
+      if (start < unitOdo) {
+        setError(
+          `Error Forense: El inicio de ruta (${start}) no puede ser menor al odómetro actual de la unidad (${unitOdo}).`
+        );
+        return false;
+      }
+    }
+    return true;
+  }, [isEdit, routeToEdit, formData.endReading, formData.startReading, selectedUnitData]);
+
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (isFinished) {
@@ -318,17 +347,9 @@ export const useRouteAssignmentControl = (
     setSubmitting(true);
     setError(null);
 
-    // 🛡️ Forensic Failsafe: Prevent logical telemetry errors
-    if (isEdit && routeToEdit) {
-      const end = Number(formData.endReading);
-      const start = Number(formData.startReading);
-      if (end < start) {
-        setError(
-          `Error Forense: La lectura final (${end}) no puede ser menor a la inicial (${start}).`
-        );
-        setSubmitting(false);
-        return;
-      }
+    if (!validateTelemetry()) {
+      setSubmitting(false);
+      return;
     }
 
     try {
@@ -369,11 +390,6 @@ export const useRouteAssignmentControl = (
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const triggerAuditDelete = (): void => {
-    setAuditAction('DELETE');
-    setIsAuditModalOpen(true);
   };
 
   return {

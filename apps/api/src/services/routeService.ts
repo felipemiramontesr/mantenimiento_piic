@@ -56,6 +56,11 @@ export default class RouteService {
 
       if (units.length === 0) throw new Error(`Unit ${unitId} not found`);
       if (units[0].status === 'En Ruta') throw new Error(`Unit ${unitId} is already in transit`);
+      if (startReading < units[0].odometer) {
+        throw new Error(
+          `Start reading (${startReading} KM) cannot be lower than the unit's current odometer (${units[0].odometer} KM)`
+        );
+      }
 
       // 2. Create the Route
       await connection.execute(
@@ -327,6 +332,16 @@ export default class RouteService {
 
       const fieldsToUpdate: string[] = [];
       const values: unknown[] = [];
+
+      // 2.1 Enforce telemetry logic (Failsafe)
+      const nextStartReading = data.startReading ?? snapshotBefore.start_reading;
+      const nextEndReading = data.endReading ?? snapshotBefore.end_reading;
+
+      if (nextEndReading !== null && nextEndReading < nextStartReading) {
+        throw new Error(
+          `Telemetry Disparity: End reading (${nextEndReading} KM) cannot be lower than start reading (${nextStartReading} KM).`
+        );
+      }
 
       Object.entries(data).forEach(([key, value]) => {
         const column = columnMap[key];
