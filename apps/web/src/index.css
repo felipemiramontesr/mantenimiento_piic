@@ -2053,6 +2053,10 @@ table th > div {
   background-color: #fff5f5 !important;
 }
 
+.forensic-incident-row:hover td {
+  background-color: #fff5f5 !important;
+}
+
 .accordion-inner .archon-registry-table tr:hover td {
   background-color: inherit !important;
 }
