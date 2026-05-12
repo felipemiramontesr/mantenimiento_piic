@@ -1,10 +1,7 @@
-import { render, screen, fireEvent, RenderResult } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
+import { render, screen, fireEvent, RenderResult } from '../../test/testUtils';
 import FleetModule from './FleetModule';
-import { FleetProvider } from '../../context/FleetContext';
-import { UserProvider } from '../../context/UserContext';
 import { UseFleetFormReturn, CatalogOption } from '../../types/fleet';
 import useFleetForm from '../../hooks/useFleetForm';
 
@@ -143,13 +140,7 @@ describe('FleetModule Orchestrator', () => {
   const renderModule = (): RenderResult =>
     render(
       <MemoryRouter>
-        <SovereignLayoutProvider>
-          <UserProvider>
-            <FleetProvider>
-              <FleetModule />
-            </FleetProvider>
-          </UserProvider>
-        </SovereignLayoutProvider>
+        <FleetModule />
       </MemoryRouter>
     );
 
@@ -191,13 +182,7 @@ describe('FleetModule Orchestrator', () => {
     // Re-render to pick up new mock values
     rerender(
       <MemoryRouter>
-        <SovereignLayoutProvider>
-          <UserProvider>
-            <FleetProvider>
-              <FleetModule />
-            </FleetProvider>
-          </UserProvider>
-        </SovereignLayoutProvider>
+        <FleetModule />
       </MemoryRouter>
     );
 

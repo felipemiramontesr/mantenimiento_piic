@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import { render, screen, act } from '../../test/testUtils';
-import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import ArchonCenter from './ArchonCenter';
 
 vi.mock('../../api/client', () => ({
@@ -20,9 +19,7 @@ describe('ArchonCenter Component (Apex Standard)', () => {
     await act(async () => {
       render(
         <BrowserRouter>
-          <SovereignLayoutProvider>
-            <ArchonCenter />
-          </SovereignLayoutProvider>
+          <ArchonCenter />
         </BrowserRouter>
       );
     });

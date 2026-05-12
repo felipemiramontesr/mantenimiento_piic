@@ -5,11 +5,12 @@ import { type ReactElement, type ReactNode } from 'react';
 import { UserContext } from '../context/UserContext';
 import { FleetContext } from '../context/FleetContext';
 import { AuthProvider } from '../context/AuthContext';
+import { SovereignLayoutProvider } from '../context/SovereignLayoutContext';
 
 /**
  * 🔱 Archon Test Utility: Sovereign Provider Injection
  * Purpose: Provides a stable, memory-efficient context for all unit tests.
- * v.60.2.3 - Exported Control Mocks for Assertions.
+ * v.60.2.4 - Sovereign Layout Integrated in AllTheProviders.
  */
 
 export const mockStartRoute = vi.fn();
@@ -68,9 +69,11 @@ const MockFleetContext = {
 
 const AllTheProviders = ({ children }: { children: ReactNode }): ReactElement => (
   <AuthProvider>
-    <UserContext.Provider value={MockUserContext as any}>
-      <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
-    </UserContext.Provider>
+    <SovereignLayoutProvider>
+      <UserContext.Provider value={MockUserContext as any}>
+        <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
+      </UserContext.Provider>
+    </SovereignLayoutProvider>
   </AuthProvider>
 );
 

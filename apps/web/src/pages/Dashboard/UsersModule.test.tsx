@@ -1,24 +1,21 @@
-import { render, screen, RenderResult } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
+import { render, screen, RenderResult } from '../../test/testUtils';
 import UsersModule from './UsersModule';
-
-import { UserProvider } from '../../context/UserContext';
 
 /**
  * 🔱 Archon Test Suite: UsersModule (v.28.25.2)
  * Implementation: Identity Sync Certification
  */
 describe('UsersModule Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   const renderModule = (): RenderResult =>
     render(
       <MemoryRouter>
-        <SovereignLayoutProvider>
-          <UserProvider>
-            <UsersModule />
-          </UserProvider>
-        </SovereignLayoutProvider>
+        <UsersModule />
       </MemoryRouter>
     );
 
