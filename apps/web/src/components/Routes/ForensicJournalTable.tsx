@@ -216,17 +216,28 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                       {((): React.ReactNode => {
                         let displayDesc = log.description || '';
 
-                        // 🛡️ ANOMALY DETECTION ENGINE (Hardened)
-                        const unit = units.find(
-                          (u) => String(u.id).trim() === String(log.unit_id).trim()
-                        );
-                        const isAnomalous =
+                        // 🛡️ VECTOR C: Normalización Forense de ID (Archon Resolver)
+                        const normalizeId = (id: string | number): string =>
+                          String(id)
+                            .replace(/^(ASM-|UN-|0+)/gi, '')
+                            .trim()
+                            .toLowerCase();
+
+                        const logUnitId = normalizeId(log.unit_id);
+                        const unit = units.find((u) => normalizeId(u.id) === logUnitId);
+
+                        // 🛡️ VECTOR A & B: Motor de Detección de Anomalías Heurístico
+                        const isPercentageAnomaly =
+                          log.fuel_level_after !== null && Number(log.fuel_level_after) > 100.1;
+
+                        const isCapacityAnomaly =
                           log.fuel_after !== null &&
-                          unit &&
-                          unit.fuelTankCapacity &&
+                          unit?.fuelTankCapacity &&
                           Number(log.fuel_after) > unit.fuelTankCapacity;
 
-                        // 🔱 Clean Redundancy: Strip the redundant prefix if present
+                        const isAnomalous = isPercentageAnomaly || isCapacityAnomaly;
+
+                        // 🔱 Clean Redundancy
                         displayDesc = displayDesc.replace(/^MODIFICACIÓN:\s*/i, '');
                         displayDesc = displayDesc.replace(
                           /Modificación de todas las filas es redundante/gi,
@@ -256,7 +267,11 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                             <p
                               className={`text-[10px] font-bold leading-tight text-center w-full text-[#0f2a44] ${
                                 isIncident ? 'not-italic px-3 py-1' : 'opacity-70 italic'
-                              } ${isAnomalous ? 'text-rose-700 bg-rose-50/50 rounded p-1' : ''}`}
+                              } ${
+                                isAnomalous
+                                  ? 'text-rose-700 bg-rose-50/50 rounded p-1 border border-rose-200'
+                                  : ''
+                              }`}
                             >
                               {displayDesc}
                             </p>
