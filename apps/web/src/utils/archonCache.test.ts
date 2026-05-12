@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { archonCache } from './archonCache';
-
-const CACHE_PREFIX = 'archon_v35_4_';
+import { CACHE_PREFIX, SYSTEM_VERSION } from '../constants/versionConstants';
 
 describe('archonCache', () => {
   beforeEach(() => {
@@ -21,13 +20,29 @@ describe('archonCache', () => {
   });
 
   it('handles version mismatch and clears invalid cache', () => {
+    // Force a Major version mismatch (using version 1.x vs 78.x)
     localStorage.setItem(
       `${CACHE_PREFIX}old_key`,
       JSON.stringify({ data: 'test', meta: { version: '1.0.0', timestamp: Date.now() } })
     );
     const data = archonCache.get('old_key');
     expect(data).toBeNull();
+    // Verify it was actually removed
     expect(localStorage.getItem(`${CACHE_PREFIX}old_key`)).toBeNull();
+  });
+
+  it('persists data across minor version changes', () => {
+    // Dynamically use the current Major version to simulate a minor update
+    const [major] = SYSTEM_VERSION.split('.');
+    localStorage.setItem(
+      `${CACHE_PREFIX}minor_key`,
+      JSON.stringify({
+        data: 'persistent',
+        meta: { version: `${major}.99.0`, timestamp: Date.now() },
+      })
+    );
+    const data = archonCache.get('minor_key');
+    expect(data).toBe('persistent');
   });
 
   it('handles malformed JSON payload in get', () => {
