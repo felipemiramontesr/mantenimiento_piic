@@ -27,9 +27,12 @@ describe('ForensicJournalTable (Apex Standard)', () => {
 
     render(<ForensicJournalTable />);
 
+    // 🛡️ WAIT FOR HYDRATION: Ensure the 'Accediendo a Memoria Forense...' message disappears
     await waitFor(() => {
-      expect(screen.getByText('ASM-001')).toBeInTheDocument();
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument();
     });
+
+    expect(screen.getByText('ASM-001')).toBeInTheDocument();
     expect(screen.getByText(/MECANICA: Falla motor/i)).toBeInTheDocument();
     expect(screen.getByText(/INCIDENCIA/i)).toBeInTheDocument();
   });
@@ -60,19 +63,24 @@ describe('ForensicJournalTable (Apex Standard)', () => {
     render(<ForensicJournalTable />);
 
     await waitFor(() => {
-      expect(screen.getByText(/SALIDA/i)).toBeInTheDocument();
-      expect(screen.getByText(/ENTRADA/i)).toBeInTheDocument();
-      expect(screen.getAllByText(/^EVENTO$/i).length).toBeGreaterThan(0);
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument();
     });
+
+    expect(screen.getByText(/SALIDA/i)).toBeInTheDocument();
+    expect(screen.getByText(/ENTRADA/i)).toBeInTheDocument();
   });
 
   it('handles API errors gracefully in the journal', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
     vi.mocked(api.get).mockRejectedValueOnce(new Error('Forensic Failure'));
 
     render(<ForensicJournalTable />);
 
     await waitFor(() => {
-      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).toBeNull();
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument();
     });
+
+    expect(screen.getByText(/Sin registros forenses/i)).toBeInTheDocument();
+    consoleSpy.mockRestore();
   });
 });

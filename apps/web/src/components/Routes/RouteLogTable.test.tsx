@@ -1,8 +1,7 @@
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RouteLogTable from './RouteLogTable';
-import { FleetProvider } from '../../context/FleetContext';
-import { UserProvider } from '../../context/UserContext';
+import { render } from '../../test/testUtils';
 import api from '../../api/client';
 
 vi.mock('../../api/client', () => ({
@@ -30,12 +29,13 @@ describe('RouteLogTable (Logistics Standard)', () => {
     {
       id: 1,
       username: 'jperez',
-      full_name: 'Juan Perez',
+      fullName: 'Juan Perez',
       email: 'j@p.com',
       roleId: 1,
       roleName: 'Admin',
       department: 'Sistemas',
-      is_active: true,
+      isActive: true,
+      employeeNumber: 'E1',
     },
   ];
   const mockUnits = [
@@ -71,21 +71,12 @@ describe('RouteLogTable (Logistics Standard)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <RouteLogTable />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<RouteLogTable />);
 
     await waitFor(() => {
       expect(screen.getByText('ASM-001')).toBeDefined();
     });
     expect(screen.getByText(/NO MEDIA/i)).toBeDefined();
-    // Check if finalization button (CheckCircle2) exists (title="Finalizar Misión")
     expect(screen.getByTitle(/Finalizar Misión/i)).toBeDefined();
   });
 
@@ -98,18 +89,9 @@ describe('RouteLogTable (Logistics Standard)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <RouteLogTable />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<RouteLogTable />);
 
     await waitFor(() => {
-      // It should render the headers but no data rows
       expect(screen.queryByText('ASM-001')).toBeNull();
     });
     expect(screen.getByText(/OPERADOR/i)).toBeDefined();
@@ -126,15 +108,7 @@ describe('RouteLogTable (Logistics Standard)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <RouteLogTable onEdit={onEdit} />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<RouteLogTable onEdit={onEdit} />);
 
     await waitFor(() => {
       expect(screen.getByTitle(/Finalizar Misión/i)).toBeDefined();
@@ -145,20 +119,15 @@ describe('RouteLogTable (Logistics Standard)', () => {
   });
 
   it('handles API errors in fetchRoutes', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
     vi.mocked(api.get).mockRejectedValueOnce(new Error('Fetch Error'));
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <RouteLogTable />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<RouteLogTable />);
 
-    // Should not crash
-    expect(screen.getByText(/OPERADOR/i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText(/OPERADOR/i)).toBeDefined();
+    });
+    consoleSpy.mockRestore();
   });
 
   it('🔱 LOCAL INSERTION: Should hide table and show incident form in-place', async () => {
@@ -170,15 +139,7 @@ describe('RouteLogTable (Logistics Standard)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <FleetProvider>
-            <RouteLogTable />
-          </FleetProvider>
-        </UserProvider>
-      );
-    });
+    render(<RouteLogTable />);
 
     await waitFor(() => {
       expect(screen.getByTitle(/Reportar Incidencia/i)).toBeDefined();

@@ -339,7 +339,9 @@ const RouteLogRow = ({
         <td colSpan={8} className="accordion-carrier !p-0 !m-0">
           <div className={`accordion-content ${isExpanded ? 'expanded' : ''} !bg-transparent`}>
             <div className="accordion-inner !p-0 !m-0">
-              <ForensicJournalTable unitId={log.unit_id} routeUuid={log.uuid} hideHeader />
+              {isExpanded && (
+                <ForensicJournalTable unitId={log.unit_id} routeUuid={log.uuid} hideHeader />
+              )}
             </div>
           </div>
         </td>

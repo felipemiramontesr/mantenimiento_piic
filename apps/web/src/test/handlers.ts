@@ -130,6 +130,21 @@ const handlers = [
       data: [],
     })
   ),
+
+  // 🔱 Logistics & Unit Logs Handlers
+  http.get('*/routes', () =>
+    HttpResponse.json({
+      success: true,
+      data: [],
+    })
+  ),
+
+  http.get('*/unit-logs', () =>
+    HttpResponse.json({
+      success: true,
+      data: [],
+    })
+  ),
 ];
 
 export default handlers;
