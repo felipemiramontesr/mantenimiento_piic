@@ -13,7 +13,7 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
   updateForm,
   tankCapacity,
 }) => {
-  const isOverfilled = React.useMemo(() => {
+  const hasTelemetryAnomaly = React.useMemo(() => {
     if (!tankCapacity) return false;
     const base = Number(formData.arrivalFuelLevel || 0);
     const liters = Number(formData.fuelLitersLoaded || 0);
@@ -74,18 +74,19 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
                   updateForm({ fuelLitersLoaded: val });
                 }}
                 className={`w-full bg-white border-b-2 ${
-                  isOverfilled ? 'border-rose-500' : 'border-[#0f2a44]/10'
+                  hasTelemetryAnomaly ? 'border-amber-500' : 'border-[#0f2a44]/10'
                 } focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]`}
               />
             </div>
-            {isOverfilled && (
+            {hasTelemetryAnomaly && (
               <motion.p
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-[9px] font-bold text-rose-600 flex items-center gap-1 mt-1"
+                className="text-[9px] font-bold text-amber-600 flex items-center gap-1 mt-1"
               >
                 <AlertTriangle size={10} />
-                No es posible agregar más combustible de lo que el tanque permite.
+                Advertencia: El volumen excede la capacidad teórica. La discrepancia será
+                registrada.
               </motion.p>
             )}
           </div>
