@@ -12,20 +12,20 @@ import ForensicJournalTable from '../../components/Routes/ForensicJournalTable';
  * Refinement: Centralized Header/Footer via SovereignLayoutContext
  */
 const RoutesModule: React.FC = (): React.JSX.Element => {
-  const { setTitle, setDescription } = useSovereignLayout();
+  const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
   const [editingRoute, setEditingRoute] = useState<RouteLog | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
-    setTitle(editingRoute ? `Rectificación: ${editingRoute.id}` : 'Administrar Rutas');
-    setDescription(
+    setSectionData(
+      editingRoute ? `Rectificación: ${editingRoute.id}` : 'Administrar Rutas',
       editingRoute
         ? 'Protocolo de Rectificación Logística Archon'
         : 'Despacho Logístico, Control de Tránsito & Auditoría Forense'
     );
-  }, [editingRoute, setTitle, setDescription]);
+  }, [editingRoute, setSectionData]);
 
   const scrollToPanel = (): void => {
     const element = panelRef.current;

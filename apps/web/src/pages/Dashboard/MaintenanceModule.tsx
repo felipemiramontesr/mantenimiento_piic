@@ -11,14 +11,16 @@ import MaintenanceManagementCards, {
  * Refinement: Centralized Header/Footer via SovereignLayoutContext
  */
 const MaintenanceModule: React.FC = (): React.ReactElement => {
-  const { setTitle, setDescription } = useSovereignLayout();
+  const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<MaintenancePanel>('HISTORY');
 
   // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
-    setTitle('Administrar Mantenimientos');
-    setDescription('Control de Servicios, Mantenimiento Preventivo & Correctivo');
-  }, [setTitle, setDescription]);
+    setSectionData(
+      'Administrar Mantenimientos',
+      'Control de Servicios, Mantenimiento Preventivo & Correctivo'
+    );
+  }, [setSectionData]);
 
   const handlePanelChange = (panel: MaintenancePanel): void => {
     setActivePanel(panel);

@@ -14,14 +14,13 @@ import FinancialManagementCards, {
  */
 const FinancialHealthModule: React.FC = (): React.ReactElement => {
   const { units, stats, loading } = useFleet();
-  const { setTitle, setDescription } = useSovereignLayout();
+  const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<FinancialPanel>('AUDIT');
 
   // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
-    setTitle('Salud Financiera');
-    setDescription('Inteligencia Económica y Control de Costos Operativos');
-  }, [setTitle, setDescription]);
+    setSectionData('Salud Financiera', 'Inteligencia Económica y Control de Costos Operativos');
+  }, [setSectionData]);
 
   // 🔱 Financial Intelligence Engine
   const totalMonthlyLease = units.reduce(

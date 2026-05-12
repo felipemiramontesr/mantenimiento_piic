@@ -15,14 +15,16 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
  */
 const UsersModule: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
-  const { setTitle, setDescription } = useSovereignLayout();
+  const { setSectionData } = useSovereignLayout();
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
-    setTitle('Administrar Personal');
-    setDescription('Gestión de Identidades, Roles Industriales & Auditoría de Acceso');
-  }, [setTitle, setDescription]);
+    setSectionData(
+      'Administrar Personal',
+      'Gestión de Identidades, Roles Industriales & Auditoría de Acceso'
+    );
+  }, [setSectionData]);
 
   // 🔱 IDENTITY ANCHOR
   useEffect(() => {

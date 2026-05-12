@@ -8,14 +8,13 @@ import LogsManagementCards, { LogsPanel } from '../../components/Logs/LogsManage
  * Refinement: Centralized Header/Footer via SovereignLayoutContext
  */
 const LogsModule: React.FC = (): React.ReactElement => {
-  const { setTitle, setDescription } = useSovereignLayout();
+  const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<LogsPanel>('FORENSIC');
 
   // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
-    setTitle('Logs de Seguridad');
-    setDescription('Auditoría y Vigilancia de Acceso al Sistema');
-  }, [setTitle, setDescription]);
+    setSectionData('Logs de Seguridad', 'Auditoría y Vigilancia de Acceso al Sistema');
+  }, [setSectionData]);
 
   const handlePanelChange = (panel: LogsPanel): void => {
     setActivePanel(panel);

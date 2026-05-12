@@ -77,7 +77,7 @@ const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
 
 const FleetModule: React.FC = (): React.ReactElement => {
   const { refreshUnits, units, loading } = useFleet();
-  const { setTitle, setDescription } = useSovereignLayout();
+  const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
   const [editingUnit, setEditingUnit] = useState<FleetUnit | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -88,13 +88,13 @@ const FleetModule: React.FC = (): React.ReactElement => {
 
   // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
-    setTitle(editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades');
-    setDescription(
+    setSectionData(
+      editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades',
       editingUnit
         ? 'Protocolo de Gestión Forense Archon'
         : 'Administración de Activos, Registro Técnico & Optimización de Flota'
     );
-  }, [editingUnit, setTitle, setDescription]);
+  }, [editingUnit, setSectionData]);
 
   const handlePanelChange = (panel: ManagementPanel): void => {
     setActivePanel(panel);

@@ -9,13 +9,15 @@ import ArchonProfilePanel from '../../components/Identity/ArchonProfilePanel';
  * Refinement: Centralized Header/Footer via SovereignLayoutContext
  */
 const SettingsModule: React.FC = (): React.ReactElement => {
-  const { setTitle, setDescription } = useSovereignLayout();
+  const { setSectionData } = useSovereignLayout();
 
   // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
-    setTitle('Configuración de Identidad');
-    setDescription('Gestión de Perfil, Seguridad de Acceso & Credenciales Archon');
-  }, [setTitle, setDescription]);
+    setSectionData(
+      'Configuración de Identidad',
+      'Gestión de Perfil, Seguridad de Acceso & Credenciales Archon'
+    );
+  }, [setSectionData]);
 
   return (
     <div className="animate-in fade-in duration-700">
