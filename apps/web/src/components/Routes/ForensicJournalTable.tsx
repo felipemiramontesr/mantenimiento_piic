@@ -350,7 +350,6 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                           destination: 'Destino',
                           status: 'Estado',
                           additives_check: 'Aditivos',
-                          description: 'Nota/Misión',
                         };
 
                         const whitelistedChanges = Object.keys(after).filter((key) => {
