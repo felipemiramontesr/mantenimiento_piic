@@ -212,9 +212,19 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                   </td>
 
                   <td className="py-4 px-4">
-                    <div className="flex justify-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
                       {((): React.ReactNode => {
                         let displayDesc = log.description || '';
+
+                        // 🛡️ ANOMALY DETECTION ENGINE (Hardened)
+                        const unit = units.find(
+                          (u) => String(u.id).trim() === String(log.unit_id).trim()
+                        );
+                        const isAnomalous =
+                          log.fuel_after !== null &&
+                          unit &&
+                          unit.fuelTankCapacity &&
+                          Number(log.fuel_after) > unit.fuelTankCapacity;
 
                         // 🔱 Clean Redundancy: Strip the redundant prefix if present
                         displayDesc = displayDesc.replace(/^MODIFICACIÓN:\s*/i, '');
@@ -232,13 +242,25 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         }
 
                         return (
-                          <p
-                            className={`text-[10px] font-bold leading-tight text-center w-full text-[#0f2a44] ${
-                              isIncident ? 'not-italic px-3 py-1' : 'opacity-70 italic'
-                            }`}
-                          >
-                            {displayDesc}
-                          </p>
+                          <>
+                            {isAnomalous && (
+                              <div className="w-full px-2 py-1.5 bg-rose-600 rounded-[2px] border border-rose-700 shadow-md animate-in fade-in slide-in-from-top-1 duration-300 mb-1">
+                                <div className="flex items-center gap-1.5 justify-center">
+                                  <AlertTriangle size={10} className="text-white animate-pulse" />
+                                  <span className="text-[8px] font-black text-white uppercase tracking-tighter leading-none text-center">
+                                    Posible desviación de consumo o robo de combustible
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            <p
+                              className={`text-[10px] font-bold leading-tight text-center w-full text-[#0f2a44] ${
+                                isIncident ? 'not-italic px-3 py-1' : 'opacity-70 italic'
+                              } ${isAnomalous ? 'text-rose-700 bg-rose-50/50 rounded p-1' : ''}`}
+                            >
+                              {displayDesc}
+                            </p>
+                          </>
                         );
                       })()}
                     </div>
@@ -280,29 +302,6 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                             </span>
                           </div>
                         )}
-
-                      {/* 🚨 ANOMALY DETECTION ENGINE: Fuel Capacity Violation */}
-                      {((): React.ReactNode => {
-                        if (log.fuel_after === null || log.fuel_after === undefined) return null;
-
-                        const unit = units.find((u) => u.id === log.unit_id);
-                        if (!unit || !unit.fuelTankCapacity) return null;
-
-                        const isAnomalous = Number(log.fuel_after) > unit.fuelTankCapacity;
-
-                        if (!isAnomalous) return null;
-
-                        return (
-                          <div className="mt-1 px-3 py-1.5 bg-rose-600 rounded-[2px] border border-rose-700 shadow-lg shadow-rose-900/20 animate-in fade-in zoom-in duration-300">
-                            <div className="flex items-center gap-2">
-                              <AlertTriangle size={12} className="text-white animate-pulse" />
-                              <span className="text-[8.5px] font-black text-white uppercase tracking-tighter leading-none">
-                                Posible desviación de consumo o robo de combustible
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })()}
 
                       {/* ⛽ FUEL IMPACT (Percentage Level) */}
                       {log.fuel_level_before !== null &&
