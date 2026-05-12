@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Wallet, TrendingUp, ArrowUpRight, DollarSign } from 'lucide-react';
-import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, ArrowUpRight, DollarSign } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { FleetUnit } from '../../types/fleet';
 import FinancialManagementCards, {
   FinancialPanel,
@@ -10,11 +10,18 @@ import FinancialManagementCards, {
 /**
  * 🔱 Archon Module: Financial Health
  * Implementation: Strictly Aligned with Sovereign UI Standard
- * Structure: Header | Body (Chassis) | Footer
+ * Structure: Sovereign Layout Integration
  */
 const FinancialHealthModule: React.FC = (): React.ReactElement => {
   const { units, stats, loading } = useFleet();
+  const { setTitle, setDescription } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<FinancialPanel>('AUDIT');
+
+  // 🚀 SYNC SOVEREIGN HEADER
+  useEffect(() => {
+    setTitle('Salud Financiera');
+    setDescription('Inteligencia Económica y Control de Costos Operativos');
+  }, [setTitle, setDescription]);
 
   // 🔱 Financial Intelligence Engine
   const totalMonthlyLease = units.reduce(
@@ -68,32 +75,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
   );
 
   return (
-    <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🔱 HEADER: SOVEREIGN STANDARD */}
-      <header className="workspace-header-pro">
-        <div className="flex flex-row items-center justify-between w-full">
-          <div className="flex flex-col items-start">
-            <div className="flex flex-row items-center gap-3 mb-2">
-              <Wallet size={28} className="text-[#f2b705]" />
-              <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-none">
-                Salud Financiera
-              </h2>
-            </div>
-            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Inteligencia Económica y Control de Costos Operativos
-            </p>
-          </div>
-
-          {/* Right Panel: Identity - HANDLED BY GLOBAL TOPBAR */}
-          <div
-            className="flex items-center gap-6 relative"
-            style={{ width: '44px', height: '44px' }}
-          >
-            {/* Symmetrical placeholder */}
-          </div>
-        </div>
-      </header>
-
+    <div className="animate-in fade-in duration-700">
       {/* 🔱 BODY: ARCHON CHASSIS */}
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container flex flex-col gap-12">
@@ -143,15 +125,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
           </div>
         </div>
       </section>
-
-      {/* 🔱 FOOTER: SYSTEM STANDARDIZATION */}
-      <footer className="workspace-footer-pro">
-        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">
-          {BRANDING_NAME} {SYSTEM_VERSION}
-        </p>
-      </footer>
-    </main>
+    </div>
   );
 };
 

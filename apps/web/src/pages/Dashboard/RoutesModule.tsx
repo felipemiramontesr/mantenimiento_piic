@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Navigation } from 'lucide-react';
-import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+import React, { useState, useEffect } from 'react';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import RouteManagementCards, { RoutePanel } from '../../components/Routes/RouteManagementCards';
 import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
 import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
@@ -10,11 +9,23 @@ import ForensicJournalTable from '../../components/Routes/ForensicJournalTable';
  * 🚀 ARCHON ROUTES MODULE (v.36.6.2)
  * Version: 38.1.0 - Sovereign Forensic Standard
  * Purpose: Central command for Route Dispatch & Logistics.
+ * Refinement: Centralized Header/Footer via SovereignLayoutContext
  */
 const RoutesModule: React.FC = (): React.JSX.Element => {
+  const { setTitle, setDescription } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<RoutePanel>('LOGS');
   const [editingRoute, setEditingRoute] = useState<RouteLog | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
+
+  // 🚀 SYNC SOVEREIGN HEADER
+  useEffect(() => {
+    setTitle(editingRoute ? `Rectificación: ${editingRoute.id}` : 'Administrar Rutas');
+    setDescription(
+      editingRoute
+        ? 'Protocolo de Rectificación Logística Archon'
+        : 'Despacho Logístico, Control de Tránsito & Auditoría Forense'
+    );
+  }, [editingRoute, setTitle, setDescription]);
 
   const scrollToPanel = (): void => {
     const element = panelRef.current;
@@ -62,51 +73,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
   };
 
   return (
-    <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO */}
-      <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-          }}
-        >
-          {/* Left Panel: Operational Context */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '8px',
-              }}
-            >
-              <Navigation size={28} style={{ color: '#f2b705' }} />
-              <h2
-                className="text-[#0f2a44] tracking-tighter font-black text-2xl"
-                style={{ margin: 0, padding: 0, lineHeight: 1 }}
-              >
-                {editingRoute
-                  ? `Rectificación de Trayecto: ${editingRoute.id}`
-                  : 'Administrar Rutas'}
-              </h2>
-            </div>
-            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              {editingRoute
-                ? 'Protocolo de Rectificación Logística Archon'
-                : 'Despacho Logístico, Control de Tránsito & Auditoría Forense'}
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            {/* Symmetrical placeholder */}
-          </div>
-        </div>
-      </header>
-
+    <div className="animate-in fade-in duration-700">
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">
         <div className="flex flex-col gap-4 pb-[60vh]">
@@ -131,15 +98,7 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
           </div>
         </div>
       </section>
-
-      {/* 📜 FOOTER (Sovereign Standards) */}
-      <footer className="workspace-footer-pro">
-        <p>© Todos los derechos reservados por ArchonCore by PIIC GROUP.</p>
-        <p className="text-[#0f2a44]">
-          {BRANDING_NAME} {SYSTEM_VERSION}
-        </p>
-      </footer>
-    </main>
+    </div>
   );
 };
 

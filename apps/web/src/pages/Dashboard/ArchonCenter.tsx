@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -15,23 +15,34 @@ import {
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
-import { BRANDING_NAME } from '../../constants/versionConstants';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
 
-const SYSTEM_VERSION = 'V.60.2.0';
+/**
+ * 🔱 Archon Component: ArchonCenter
+ * Implementation: Sovereign Command Center View
+ * Objective: High-density predictive analytics and fleet health orchestration.
+ * v.78.100.50 - Sovereign Layout Integrated
+ */
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
   const navigate = useNavigate();
   const { stats, loading } = useFleet();
   const { users } = useUsers();
+  const { setSectionData } = useSovereignLayout();
   const [isAccessControlOpen, setIsAccessControlOpen] = useState<boolean>(false);
 
-  // Identity Orchestration: Calculate active personnel (Excluding Archon)
+  // Set Section Metadata on Mount
+  useEffect(() => {
+    setSectionData(
+      'Centro de Comando',
+      'Análisis Predictivo de Segmentos Operativos',
+      null // No subheader actions for this view yet
+    );
+  }, [setSectionData]);
+
   const activePersonnelCount = users.filter((u) => u.is_active && u.username !== 'Archon').length;
 
-  /**
-   * KPI Presentation Engine
-   */
   const renderKPI = (
     label: string,
     value: string | number,
@@ -102,7 +113,6 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     const data = stats.categories[categoryKey];
     const avail = data.availablePercent;
 
-    // Pulse Logic Engine (v.28.35.1) - Non-nested for ESLint compliance
     let dotColor = 'bg-red-500 animate-pulse';
     if (avail >= 90) dotColor = 'bg-emerald-500';
     else if (avail >= 75) dotColor = 'bg-amber-500 animate-pulse';
@@ -211,112 +221,83 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   };
 
   return (
-    <main className="workspace-container-pro animate-in fade-in duration-700">
-      <header className="workspace-header-pro">
-        <div className="flex flex-row items-center justify-between w-full">
-          <div className="flex flex-col items-start">
-            <div className="flex flex-row items-center gap-3 mb-2">
-              <Layers size={28} className="text-[#f2b705]" />
-              <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-none">
-                Centro de Comando
-              </h2>
-            </div>
-            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              Análisis Predictivo de Segmentos Operativos
-            </p>
-          </div>
-
-          <div className="flex items-center gap-6 relative width-[44px] height-[44px]">
-            {/* Identity handled by global ArchonTopBar */}
-          </div>
-        </div>
-      </header>
-
-      <section className="archon-workspace-chassis">
-        <div className="archon-grid-3">
-          {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
-          {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
-          {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
-          {renderKPI(
-            'Fuerza Operativa',
-            activePersonnelCount,
-            Users,
-            '#0f2a44',
-            'Personal habilitado en sitio',
-            'navy'
-          )}
-          {renderKPI(
-            'Salud de Flota',
-            `${stats.maintenanceIndex}%`,
-            Gauge,
-            '#0f2a44',
-            'Índice global de operatividad',
-            'navy'
-          )}
-          {renderKPI(
-            'Activos Totales',
-            stats.total,
-            Truck,
-            '#0f2a44',
-            'Unidades totales en inventario',
-            'navy'
-          )}
-          {renderKPI(
-            'Disponibilidad',
-            stats.available,
-            ShieldCheck,
-            '#10b981',
-            'Unidades listas para operación',
-            'emerald'
-          )}
-          {renderKPI(
-            'Despliegue en Ruta',
-            stats.inRoute,
-            Navigation,
-            '#0ea5e9',
-            'Unidades en tránsito operativo',
-            'sky'
-          )}
-          {renderKPI(
-            'Mantenimiento',
-            stats.maintenance,
-            Wrench,
-            '#f2b705',
-            'Unidades en mantenimiento activo',
-            'yellow'
-          )}
-          {renderKPI(
-            'Incidencias en Ruta',
-            stats.openIncidents,
-            ShieldAlert,
-            '#ef4444',
-            'Alertas Sentinel sin resolver',
-            'red',
-            '/routes'
-          )}
-          {renderKPI(
-            'Mermas Operativas',
-            stats.totalInactive,
-            ShieldAlert,
-            '#8b5cf6',
-            'Unidades fuera de servicio',
-            'violet'
-          )}
-        </div>
-      </section>
-
-      <footer className="workspace-footer-pro">
-        <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
-        <p className="text-[#0f2a44]">
-          {BRANDING_NAME} {SYSTEM_VERSION}
-        </p>
-      </footer>
+    <div className="archon-axial-container animate-in fade-in duration-700">
+      <div className="archon-grid-3">
+        {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
+        {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
+        {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
+        {renderKPI(
+          'Fuerza Operativa',
+          activePersonnelCount,
+          Users,
+          '#0f2a44',
+          'Personal habilitado en sitio',
+          'navy'
+        )}
+        {renderKPI(
+          'Salud de Flota',
+          `${stats.maintenanceIndex}%`,
+          Gauge,
+          '#0f2a44',
+          'Índice global de operatividad',
+          'navy'
+        )}
+        {renderKPI(
+          'Activos Totales',
+          stats.total,
+          Truck,
+          '#0f2a44',
+          'Unidades totales en inventario',
+          'navy'
+        )}
+        {renderKPI(
+          'Disponibilidad',
+          stats.available,
+          ShieldCheck,
+          '#10b981',
+          'Unidades listas para operación',
+          'emerald'
+        )}
+        {renderKPI(
+          'Despliegue en Ruta',
+          stats.inRoute,
+          Navigation,
+          '#0ea5e9',
+          'Unidades en tránsito operativo',
+          'sky'
+        )}
+        {renderKPI(
+          'Mantenimiento',
+          stats.maintenance,
+          Wrench,
+          '#f2b705',
+          'Unidades en mantenimiento activo',
+          'yellow'
+        )}
+        {renderKPI(
+          'Incidencias en Ruta',
+          stats.openIncidents,
+          ShieldAlert,
+          '#ef4444',
+          'Alertas Sentinel sin resolver',
+          'red',
+          '/routes'
+        )}
+        {renderKPI(
+          'Mermas Operativas',
+          stats.totalInactive,
+          ShieldAlert,
+          '#8b5cf6',
+          'Unidades fuera de servicio',
+          'violet'
+        )}
+      </div>
 
       <AccessControlSlideOver
         isOpen={isAccessControlOpen}
         onClose={(): void => setIsAccessControlOpen(false)}
       />
-    </main>
+    </div>
   );
 };
 

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Truck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useFleet } from '../../context/FleetContext';
-import { BRANDING_NAME, SYSTEM_VERSION } from '../../constants/versionConstants';
+
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { FleetUnit, CreateFleetUnit } from '../../types/fleet';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
@@ -15,7 +15,7 @@ import useFleetForm from '../../hooks/useFleetForm';
  * 🚀 ARCHON FLEET MODULE (v.28.19.0)
  * Architecture: Sovereign Instrumental Node
  * Principles: SOLID, DRY, DIP
- * Refinement: Dynamic Panel Orchestration with Axial Scroll
+ * Refinement: Centralized Header/Footer via SovereignLayoutContext
  */
 
 const mapBaseIds = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
@@ -74,8 +74,10 @@ const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
     ...mapOperationalData(unit),
     ...mapLegalData(unit),
   } as CreateFleetUnit);
+
 const FleetModule: React.FC = (): React.ReactElement => {
   const { refreshUnits, units, loading } = useFleet();
+  const { setTitle, setDescription } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
   const [editingUnit, setEditingUnit] = useState<FleetUnit | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -84,12 +86,20 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const fleetController = useFleetForm();
   const { formData, registrationSuccess, setRegistrationSuccess } = fleetController;
 
+  // 🚀 SYNC SOVEREIGN HEADER
+  useEffect(() => {
+    setTitle(editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades');
+    setDescription(
+      editingUnit
+        ? 'Protocolo de Gestión Forense Archon'
+        : 'Administración de Activos, Registro Técnico & Optimización de Flota'
+    );
+  }, [editingUnit, setTitle, setDescription]);
+
   const handlePanelChange = (panel: ManagementPanel): void => {
     setActivePanel(panel);
     setRegistrationSuccess(false);
 
-    // 🚀 AXIAL SCROLL (Subtle & Smooth)
-    // Feature detection for professional-grade resilience in all environments
     if (panelRef.current?.scrollIntoView) {
       setTimeout((): void => {
         panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -121,65 +131,10 @@ const FleetModule: React.FC = (): React.ReactElement => {
   };
 
   return (
-    <main className="workspace-container-pro animate-in fade-in duration-700">
-      {/* 🚀 HEADER SOBERANO (Dual Panel) */}
-      <header className="workspace-header-pro" style={{ position: 'relative', minHeight: '12vh' }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-          }}
-        >
-          {/* Left Panel: Operational Context */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '8px',
-              }}
-            >
-              <Truck size={28} style={{ color: '#f2b705' }} />
-              <h2
-                className="text-[#0f2a44] tracking-tighter font-black text-2xl"
-                style={{ margin: 0, padding: 0, lineHeight: 1 }}
-              >
-                {editingUnit
-                  ? `Rectificación de Activo: ${editingUnit.id}`
-                  : 'Administrar Unidades'}
-              </h2>
-            </div>
-            <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-              {editingUnit
-                ? 'Protocolo de Gestión Forense Archon'
-                : 'Administración de Activos, Registro Técnico & Optimización de Flota'}
-            </p>
-          </div>
-
-          {/* Right Panel: Identity & Access - HANDLED BY GLOBAL TOPBAR */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '24px',
-              position: 'relative',
-              width: '44px',
-              height: '44px',
-            }}
-          >
-            {/* Placeholder to maintain header symmetry if needed, or leave empty */}
-          </div>
-        </div>
-      </header>
-
+    <div className="animate-in fade-in duration-700">
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis w-full max-w-full overflow-hidden">
-        {/* 🔱 AXIAL SYNC CONTAINER (v.28.37.0) */}
+        {/* 🔱 AXIAL SYNC CONTAINER */}
         <div className="archon-axial-container flex flex-col gap-12 w-full max-w-full">
           <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
 
@@ -208,14 +163,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
           </div>
         </div>
       </section>
-
-      <footer className="workspace-footer-pro">
-        <p>© Todos los derechos reservados por ArchonCore by PIIC GROUP.</p>
-        <p className="text-[#0f2a44]">
-          {BRANDING_NAME} {SYSTEM_VERSION}
-        </p>
-      </footer>
-    </main>
+    </div>
   );
 };
 
