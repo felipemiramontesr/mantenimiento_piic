@@ -2057,22 +2057,9 @@ table th > div {
   background-color: #fff5f5 !important;
 }
 
-.accordion-inner .archon-registry-table tr:hover td {
-  background-color: inherit !important;
-}
-
-/* 🔱 TOTAL HOVER SUPPRESSION POLICY */
+/* 🔱 TOTAL HOVER NEUTRALIZATION PROTOCOL: No visual reaction to cursor */
 .archon-registry-table tr:hover td {
-  background-color: transparent !important;
-}
-
-/* 🔱 NO-HOVER FORENSIC POLICY: Maintains visual integrity during audit */
-.archon-registry-table tr.forensic-incident-row:hover td {
-  background-color: rgba(59, 130, 246, 0.08) !important;
-}
-
-.archon-registry-table tr.route-incident-row:hover td {
-  background-color: #fff5f5 !important;
+  background-color: unset !important;
 }
 
 /* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) - RESTORED */
