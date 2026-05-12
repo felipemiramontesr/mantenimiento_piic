@@ -99,7 +99,7 @@ const RouteLogRow = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
         onClick={onToggle}
-        className={`cursor-pointer transition-all duration-300 hover:bg-[#0f2a44]/[0.02] ${
+        className={`cursor-pointer transition-all duration-300 ${
           isExpanded ? 'expanded-focus-blue' : ''
         } ${log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''}`}
       >
