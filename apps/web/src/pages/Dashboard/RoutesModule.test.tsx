@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '../../test/testUtils';
+import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import RoutesModule from './RoutesModule';
 
 // Mock context dependencies
@@ -22,7 +23,11 @@ describe('RoutesModule Orchestrator', () => {
   });
 
   it('renders the routes module correctly', () => {
-    const { container } = render(<RoutesModule />);
+    const { container } = render(
+      <SovereignLayoutProvider>
+        <RoutesModule />
+      </SovereignLayoutProvider>
+    );
     expect(container).toBeInTheDocument();
   });
 });

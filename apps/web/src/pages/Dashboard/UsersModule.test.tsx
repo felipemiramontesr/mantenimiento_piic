@@ -1,6 +1,7 @@
 import { render, screen, RenderResult } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import UsersModule from './UsersModule';
 
 import { UserProvider } from '../../context/UserContext';
@@ -13,9 +14,11 @@ describe('UsersModule Component', () => {
   const renderModule = (): RenderResult =>
     render(
       <MemoryRouter>
-        <UserProvider>
-          <UsersModule />
-        </UserProvider>
+        <SovereignLayoutProvider>
+          <UserProvider>
+            <UsersModule />
+          </UserProvider>
+        </SovereignLayoutProvider>
       </MemoryRouter>
     );
 

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, RenderResult } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import FleetModule from './FleetModule';
 import { FleetProvider } from '../../context/FleetContext';
 import { UserProvider } from '../../context/UserContext';
@@ -142,11 +143,13 @@ describe('FleetModule Orchestrator', () => {
   const renderModule = (): RenderResult =>
     render(
       <MemoryRouter>
-        <UserProvider>
-          <FleetProvider>
-            <FleetModule />
-          </FleetProvider>
-        </UserProvider>
+        <SovereignLayoutProvider>
+          <UserProvider>
+            <FleetProvider>
+              <FleetModule />
+            </FleetProvider>
+          </UserProvider>
+        </SovereignLayoutProvider>
       </MemoryRouter>
     );
 
@@ -188,11 +191,13 @@ describe('FleetModule Orchestrator', () => {
     // Re-render to pick up new mock values
     rerender(
       <MemoryRouter>
-        <UserProvider>
-          <FleetProvider>
-            <FleetModule />
-          </FleetProvider>
-        </UserProvider>
+        <SovereignLayoutProvider>
+          <UserProvider>
+            <FleetProvider>
+              <FleetModule />
+            </FleetProvider>
+          </UserProvider>
+        </SovereignLayoutProvider>
       </MemoryRouter>
     );
 

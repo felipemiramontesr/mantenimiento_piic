@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import MaintenanceModule from './MaintenanceModule';
 
 /**
@@ -12,7 +13,9 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
   const renderModule = (): void => {
     render(
       <MemoryRouter>
-        <MaintenanceModule />
+        <SovereignLayoutProvider>
+          <MaintenanceModule />
+        </SovereignLayoutProvider>
       </MemoryRouter>
     );
   };

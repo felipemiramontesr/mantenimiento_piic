@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import FinancialHealthModule from './FinancialHealthModule';
 import { FleetProvider } from '../../context/FleetContext';
 
@@ -31,9 +32,11 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
   const renderModule = (): void => {
     render(
       <MemoryRouter>
-        <FleetProvider>
-          <FinancialHealthModule />
-        </FleetProvider>
+        <SovereignLayoutProvider>
+          <FleetProvider>
+            <FinancialHealthModule />
+          </FleetProvider>
+        </SovereignLayoutProvider>
       </MemoryRouter>
     );
   };
