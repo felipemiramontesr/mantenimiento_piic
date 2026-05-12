@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 /**
  * 🔱 Archon Context: SovereignLayoutContext
  * Implementation: Global Layout Metadata Orchestration
  * Objective: Centralize section titles and technical descriptions for the Sovereign Header.
- * v.1.0.0
+ * v.1.1.0 - Hardened with useCallback to prevent infinite loops
  */
 
 interface LayoutData {
@@ -27,13 +27,12 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
     subheaderActions: null,
   });
 
-  const setSectionData = (
-    title: string,
-    description: string,
-    subheaderActions?: React.ReactNode
-  ): void => {
-    setLayoutData({ title, description, subheaderActions });
-  };
+  const setSectionData = useCallback(
+    (title: string, description: string, subheaderActions?: React.ReactNode): void => {
+      setLayoutData({ title, description, subheaderActions });
+    },
+    []
+  );
 
   return (
     <SovereignLayoutContext.Provider value={{ layoutData, setSectionData }}>
