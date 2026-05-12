@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Clock, ArrowRight, Activity, AlertTriangle, Fuel } from 'lucide-react';
 import api from '../../api/client';
 import { formatDateTime } from '../../utils/dateUtils';
+import { useFleet } from '../../context/FleetContext';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 interface ActivityLog {
@@ -49,6 +50,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 }) => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const { units } = useFleet();
 
   const fetchLogs = async (): Promise<void> => {
     try {
@@ -278,6 +280,29 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                             </span>
                           </div>
                         )}
+
+                      {/* 🚨 ANOMALY DETECTION ENGINE: Fuel Capacity Violation */}
+                      {((): React.ReactNode => {
+                        if (log.fuel_after === null || log.fuel_after === undefined) return null;
+
+                        const unit = units.find((u) => u.id === log.unit_id);
+                        if (!unit || !unit.fuelTankCapacity) return null;
+
+                        const isAnomalous = Number(log.fuel_after) > unit.fuelTankCapacity;
+
+                        if (!isAnomalous) return null;
+
+                        return (
+                          <div className="mt-1 px-3 py-1.5 bg-rose-600 rounded-[2px] border border-rose-700 shadow-lg shadow-rose-900/20 animate-in fade-in zoom-in duration-300">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle size={12} className="text-white animate-pulse" />
+                              <span className="text-[8.5px] font-black text-white uppercase tracking-tighter leading-none">
+                                Posible desviación de consumo o robo de combustible
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* ⛽ FUEL IMPACT (Percentage Level) */}
                       {log.fuel_level_before !== null &&
