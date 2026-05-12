@@ -24,7 +24,7 @@ Análisis técnico, crítico y estético de la solicitud. Sugerencias de mejora 
 
 ### 3. ¿Qué propones?
 
-Plan de acción detallado, incluyendo archivos a modificar, nuevas implementaciones o pasos lógicos a seguir.
+Plan de acción detallado, incluyendo archivos a modificar, nuevas implementaciones o pasos lógicos a seguir. Mejoras de QA, Ciberseguridad, Fullstack, DEVOPS, UI/UX, etc, no debe quedar ninguna área desprotejida; las propuestas que generé siempre serán enfocadas en mantener la maxima calidad del sistema que se esta desarrollando; siempre debe prevenir cambios que puedan dar problemas en el futuro tanto a la hora de debug, correr unit tests, escalamiento del sistema, etc.
 
 ### 4. Espera mis instrucciones
 

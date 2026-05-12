@@ -228,30 +228,46 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         // 🏗️ REGISTRO DE IDENTIDAD (Look-up O(1) con Triple Redundancia)
                         const unitMap = new Map();
                         units.forEach((u) => {
-                          const labelKey = normalizeId(u.id); // Etiqueta humana (ej: ASM-011 -> 11)
-                          const uuidKey = normalizeId(u.uuid); // ID de base de datos
+                          const labelKey = normalizeId(u.id);
+                          const uuidKey = normalizeId(u.uuid);
                           if (labelKey) unitMap.set(labelKey, u);
                           if (uuidKey) unitMap.set(uuidKey, u);
                         });
 
-                        // 🔱 Resolución del Activo
+                        // 🔱 Resolución del Activo y Contexto de Sesión
                         const logUnitId = normalizeId(log.unit_id);
-                        const unit =
-                          unitMap.get(logUnitId) ||
-                          units.find((u) => normalizeId(u.id) === logUnitId);
+                        const unit = unitMap.get(logUnitId);
 
-                        // ⛽ MOTOR DE DETECCIÓN DE ANOMALÍAS (Hardened)
+                        // 🧠 VECTOR F: Capacidad Observada (Forensic Intelligence)
+                        // Buscamos en los logs actuales si alguna vez se marcó 100% para esta unidad
+                        const sessionLogs = logs.filter(
+                          (l) => normalizeId(l.unit_id) === logUnitId
+                        );
+                        const fullTankLog = sessionLogs.find(
+                          (l) => l.fuel_level_after !== null && Number(l.fuel_level_after) === 100
+                        );
+
+                        const observedCapacity = fullTankLog
+                          ? Number(fullTankLog.fuel_after)
+                          : unit?.fuelTankCapacity;
+                        const theoreticalCapacity = unit?.fuelTankCapacity || 0;
+
+                        // ⛽ MOTOR DE DETECCIÓN DE ANOMALÍAS (Multi-Vector)
                         const isPercentageAnomaly =
                           log.fuel_level_after !== null && Number(log.fuel_level_after) > 100.1;
 
+                        // Anomalía por Capacidad (Teórica o Observada)
                         const isCapacityAnomaly =
                           log.fuel_after !== null &&
-                          unit?.fuelTankCapacity &&
-                          Number(log.fuel_after) > unit.fuelTankCapacity;
+                          observedCapacity &&
+                          Number(log.fuel_after) > observedCapacity + 0.1;
 
-                        // 🚨 HEURÍSTICO DE EMERGENCIA: Si no hay unidad pero la carga es > 40L, marcar como sospechoso
+                        // 🚨 HEURÍSTICO DE EMERGENCIA: Si la carga es sospechosamente alta (>45L) o excede capacidad teórica
                         const isSuspiciousVolume =
-                          !unit && log.fuel_after !== null && Number(log.fuel_after) > 40;
+                          log.fuel_after !== null &&
+                          (Number(log.fuel_after) > 45 ||
+                            (theoreticalCapacity > 0 &&
+                              Number(log.fuel_after) > theoreticalCapacity));
 
                         const isAnomalous =
                           isPercentageAnomaly || isCapacityAnomaly || isSuspiciousVolume;
