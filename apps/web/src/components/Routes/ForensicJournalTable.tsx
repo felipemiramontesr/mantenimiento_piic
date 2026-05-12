@@ -344,39 +344,29 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                           return null;
                         }
 
-                        if (!after || typeof after !== 'object' || Array.isArray(after))
-                          return null;
+                        // 🛡️ ARCHON WHITELIST: Only show business-relevant fields that ARE NOT
+                        // already represented by the specialized icon rows above.
+                        const whitelist: Record<string, string> = {
+                          destination: 'Destino',
+                          status: 'Estado',
+                          additives_check: 'Aditivos',
+                          description: 'Nota/Misión',
+                        };
+
+                        const whitelistedChanges = Object.keys(after).filter((key) => {
+                          if (!whitelist[key]) return false;
+                          const vB = (before as Record<string, unknown>)[key];
+                          const vA = (after as Record<string, unknown>)[key];
+                          return vB !== vA && !(vB === null && vA === null);
+                        });
+
+                        if (whitelistedChanges.length === 0) return null;
 
                         return (
                           <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-                            {Object.keys(after).map((key) => {
+                            {whitelistedChanges.map((key) => {
                               const valBefore = (before as Record<string, unknown>)[key];
                               const valAfter = (after as Record<string, unknown>)[key];
-
-                              // 🛡️ ARCHON WHITELIST: Only show business-relevant fields
-                              // This eliminates internal noise like UUIDs, IDs, and internal timestamps
-                              const whitelist: Record<string, string> = {
-                                destination: 'Destino',
-                                start_reading: 'Lectura Inicial',
-                                end_reading: 'Lectura Final',
-                                fuel_level_start: 'Nivel Combustible Inicial',
-                                fuel_level_end: 'Nivel Combustible Final',
-                                fuel_liters_loaded: 'Litros Cargados',
-                                fuel_amount: 'Costo Combustible',
-                                status: 'Estado',
-                                additives_check: 'Aditivos',
-                                description: 'Nota/Misión',
-                              };
-
-                              if (!whitelist[key]) return null;
-
-                              // Only show if value actually changed
-                              if (
-                                valBefore === valAfter ||
-                                (valBefore === null && valAfter === null)
-                              )
-                                return null;
-
                               const label = whitelist[key];
 
                               // Dynamic Units (Prefix/Suffix)
