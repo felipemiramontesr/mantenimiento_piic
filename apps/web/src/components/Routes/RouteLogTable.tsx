@@ -99,7 +99,7 @@ const RouteLogRow = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
         onClick={onToggle}
-        className={`cursor-pointer ${isExpanded ? 'expanded-focus-blue' : ''} ${
+        className={`${isExpanded ? 'expanded-focus-blue' : ''} ${
           log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''
         }`}
       >
@@ -108,7 +108,7 @@ const RouteLogRow = ({
           <div className="flex flex-col items-center">
             <div className="w-14 h-14 rounded-[4px] bg-slate-50 flex items-center justify-center mb-2 border border-slate-100 relative group">
               <Truck size={24} className="text-slate-300" />
-              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0">
                 NO MEDIA
               </span>
             </div>
@@ -303,7 +303,7 @@ const RouteLogRow = ({
                   e.stopPropagation();
                   onReport(log);
                 }}
-                className="p-2.5 rounded-[4px] bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all duration-300"
+                className="p-2.5 rounded-[4px] bg-[#0f2a44] text-white"
                 title="Reportar Incidencia"
               >
                 <AlertTriangle size={18} />
@@ -314,7 +314,7 @@ const RouteLogRow = ({
                 e.stopPropagation();
                 onEdit?.(log);
               }}
-              className="p-2.5 rounded-[4px] bg-slate-50 text-[#0f2a44] hover:bg-[#0f2a44] hover:text-white transition-all duration-300"
+              className="p-2.5 rounded-[4px] bg-[#0f2a44] text-white"
               title="Ajustes de Ruta"
             >
               <Pencil size={18} />
@@ -325,7 +325,7 @@ const RouteLogRow = ({
                   e.stopPropagation();
                   onFinish(log);
                 }}
-                className="p-2.5 rounded-[4px] bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all duration-300"
+                className="p-2.5 rounded-[4px] bg-[#0f2a44] text-white"
                 title="Finalizar Misión"
               >
                 <CheckCircle2 size={18} />

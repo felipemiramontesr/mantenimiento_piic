@@ -170,12 +170,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                 log.event_type === 'ROUTE_INCIDENT' || log.event_type === 'ADMIN_EDIT';
 
               return (
-                <tr
-                  key={log.id}
-                  className={`animate-in slide-in-from-left-2 duration-300 ${
-                    isIncident ? 'forensic-incident-row' : ''
-                  }`}
-                >
+                <tr key={log.id} className={isIncident ? 'forensic-incident-row' : ''}>
                   <td className="py-4">
                     <span className="text-[11px] font-black text-[#0f2a44]">
                       {formatDateTime(log.created_at)}

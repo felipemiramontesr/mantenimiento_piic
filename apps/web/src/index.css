@@ -1053,15 +1053,11 @@ body {
   border-bottom: 2px solid var(--color-accent);
 }
 
-.table-sentinel td {
+.table-sentinel tr td {
   padding: 14px 12px;
   border-bottom: 1px solid rgba(15, 42, 68, 0.03);
   color: rgba(15, 42, 68, 0.8);
   font-weight: 500;
-}
-
-.table-sentinel tr:hover td {
-  background: rgba(242, 183, 5, 0.03);
 }
 
 /* 🔘 SENTINEL INTERACTION SYSTEM */
@@ -1839,7 +1835,6 @@ table th > div {
 }
 
 .archon-registry-table tr {
-  transition: all 0.2s ease;
   border-bottom: 1px solid rgba(15, 42, 68, 0.05) !important;
 }
 
@@ -1847,12 +1842,21 @@ table th > div {
   border-bottom: none !important;
 }
 
-.archon-registry-table tr:hover td {
-  background: rgba(15, 42, 68, 0.015);
+/* 🔱 TOTAL HOVER NEUTRALIZATION PROTOCOL (V.78.100.20) */
+.archon-registry-table tr td {
+  background-color: white !important;
 }
 
-.archon-registry-table tr.expanded-focus-blue:hover td {
+.archon-registry-table tr.expanded-focus-blue td {
   background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+.archon-registry-table tr.forensic-incident-row td {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+.archon-registry-table tr.route-incident-row td {
+  background-color: #fff5f5 !important;
 }
 
 /* 🔘 GLOBAL REGISTRY RESET (Prohibición de Márgenes Gruesos) */
@@ -2057,10 +2061,7 @@ table th > div {
   background-color: #fff5f5 !important;
 }
 
-/* 🔱 TOTAL HOVER NEUTRALIZATION PROTOCOL: No visual reaction to cursor */
-.archon-registry-table tr:hover td {
-  background-color: unset !important;
-}
+/* 🔱 HOVER PURGE COMPLETED */
 
 /* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) - RESTORED */
 .archon-registry-table tr.expanded-focus-blue {

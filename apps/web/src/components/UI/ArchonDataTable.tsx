@@ -86,9 +86,9 @@ export function ArchonDataTable<T>({
                     onSort(header.key);
                   }
                 }}
-                className={`${
-                  header.sortable ? 'cursor-pointer hover:bg-sky-900 transition-colors' : ''
-                } text-${header.align || 'center'}`}
+                className={`${header.sortable ? 'cursor-default' : ''} text-${
+                  header.align || 'center'
+                }`}
               >
                 <div className={`flex items-center gap-2 ${getJustifyClass(header.align)}`}>
                   {header.label}
