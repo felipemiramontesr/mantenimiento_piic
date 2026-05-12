@@ -4,8 +4,7 @@
  * v.1.0.0 - Production Grade Persistence
  */
 
-const CACHE_PREFIX = 'archon_v35_4_';
-const SYSTEM_VERSION = '35.4.0';
+import { SYSTEM_VERSION, CACHE_PREFIX } from '../constants/versionConstants';
 
 export interface CacheMetadata {
   version: string;
@@ -47,8 +46,10 @@ export const archonCache = {
 
       const payload: CachePayload<T> = JSON.parse(raw);
 
-      // Version match check to prevent data corruption during updates
-      if (payload.meta.version !== SYSTEM_VERSION) {
+      // Version match check (Major version only) to allow minor updates persistence
+      const payloadMajor = payload.meta.version.split('.')[0];
+      const systemMajor = SYSTEM_VERSION.split('.')[0];
+      if (payloadMajor !== systemMajor) {
         localStorage.removeItem(`${CACHE_PREFIX}${key}`);
         return null;
       }

@@ -99,9 +99,9 @@ const RouteLogRow = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
         onClick={onToggle}
-        className={`cursor-pointer transition-all duration-300 ${
-          isExpanded ? 'expanded-focus-blue' : ''
-        } ${log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''}`}
+        className={`cursor-pointer ${isExpanded ? 'expanded-focus-blue' : ''} ${
+          log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''
+        }`}
       >
         {/* Activo */}
         <td className="py-6">

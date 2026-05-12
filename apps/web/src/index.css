@@ -2061,6 +2061,11 @@ table th > div {
   background-color: inherit !important;
 }
 
+/* 🔱 TOTAL HOVER SUPPRESSION POLICY */
+.archon-registry-table tr:hover td {
+  background-color: transparent !important;
+}
+
 /* 🔱 NO-HOVER FORENSIC POLICY: Maintains visual integrity during audit */
 .archon-registry-table tr.forensic-incident-row:hover td {
   background-color: rgba(59, 130, 246, 0.08) !important;
@@ -2068,10 +2073,6 @@ table th > div {
 
 .archon-registry-table tr.route-incident-row:hover td {
   background-color: #fff5f5 !important;
-}
-
-.archon-registry-table tr:hover td {
-  background-color: transparent;
 }
 
 /* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) - RESTORED */
