@@ -7,7 +7,7 @@ describe('ArchonFeedbackBanner Component', () => {
 
   it('renders null when message is empty', (): void => {
     const { container } = render(<ArchonFeedbackBanner message="" onClear={mockClear} />);
-    expect(container.firstChild).toBeNull();
+    expect(container.querySelector('[data-testid="archon-feedback-banner"]')).toBeNull();
   });
 
   it('renders error banner by default', (): void => {

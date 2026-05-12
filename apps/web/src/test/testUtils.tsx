@@ -87,10 +87,10 @@ const LayoutMetadataObserver = (): ReactElement => {
 const AllTheProviders = ({ children }: { children: ReactNode }): ReactElement => (
   <AuthProvider>
     <SovereignLayoutProvider>
-      <LayoutMetadataObserver />
       <UserContext.Provider value={MockUserContext as any}>
         <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
       </UserContext.Provider>
+      <LayoutMetadataObserver />
     </SovereignLayoutProvider>
   </AuthProvider>
 );

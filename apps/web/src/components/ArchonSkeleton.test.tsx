@@ -5,7 +5,7 @@ import { ArchonSkeleton, ArchonCardSkeleton, ArchonTableSkeleton } from './Archo
 describe('ArchonSkeleton Components', () => {
   it('renders ArchonSkeleton with defaults', (): void => {
     const { container } = render(<ArchonSkeleton />);
-    const el = container.firstChild as HTMLElement;
+    const el = container.querySelector('.animate-pulse') as HTMLElement;
     expect(el).toBeInTheDocument();
     expect(el.style.width).toBe('100%');
     expect(el.style.height).toBe('20px');
@@ -15,7 +15,7 @@ describe('ArchonSkeleton Components', () => {
     const { container } = render(
       <ArchonSkeleton width={200} height={40} borderRadius="8px" className="custom" />
     );
-    const el = container.firstChild as HTMLElement;
+    const el = container.querySelector('.custom') as HTMLElement;
     expect(el.style.width).toBe('200px');
     expect(el.style.height).toBe('40px');
     expect(el.style.borderRadius).toBe('8px');
@@ -23,7 +23,7 @@ describe('ArchonSkeleton Components', () => {
 
   it('renders ArchonCardSkeleton', (): void => {
     const { container } = render(<ArchonCardSkeleton />);
-    expect(container.firstChild).toBeInTheDocument();
+    expect(container.querySelector('.glass-card-pro')).toBeInTheDocument();
   });
 
   it('renders ArchonTableSkeleton with default rows', (): void => {

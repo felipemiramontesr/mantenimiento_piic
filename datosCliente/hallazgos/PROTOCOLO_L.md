@@ -8,7 +8,7 @@ Siempre se debe programar considerando el ingles como idioma principal y no se d
 El usuario esta trabgajando totalmente en remoto; GitHub Actions Pipeline con sus Secrets conectados a servidores Hostinger. No se debe realizar nada como si se estuviera trabajando en local.
 
 El sistema se aloja en: https://mantenimiento.piic.com.mx
-El usuario hará las modificaciones directamente en phpmyadminla IA solo realizaras los SQL pertinentes.
+El usuario hará las modificaciones directamente en phpmyadmin la IA solo realizaras los SQL pertinentes.
 
 ## 1. El Disparador (Trigger)
 
