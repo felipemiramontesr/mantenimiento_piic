@@ -146,51 +146,26 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
               {isEdit ? 'Nivel al Llegar (%)' : 'Nivel de Salida (%)'}
             </label>
             <div className="flex items-center gap-2">
-              {/* Mirror: Liters Input */}
-              <div className="flex items-center bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-[4px] px-2 py-0.5">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={
-                    // Mirror logic: To prevent jumping when typing decimals (e.g. "10."),
-                    // we show the raw value from the slider converted to liters,
-                    // BUT if the user is typing, the value is controlled by their string.
-                    // Simplified: We'll just bind to the current pct * capacity.
-                    (
-                      (((isEdit ? formData.arrivalFuelLevel : formData.fuelLevel) as number) /
-                        100) *
-                      tankCapacity
-                    ).toFixed(2)
-                  }
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-                    const val = e.target.value.replace(/[^0-9.]/g, '');
-                    if (tankCapacity > 0) {
-                      const newPct = val === '' ? 0 : (Number(val) / tankCapacity) * 100;
-                      updateForm(
-                        isEdit
-                          ? { arrivalFuelLevel: Math.min(100, newPct) }
-                          : { fuelLevel: Math.min(100, newPct) }
-                      );
-                    }
-                  }}
-                  className="w-10 bg-transparent text-[10px] font-mono font-black text-[#0f2a44] outline-none text-right"
-                />
-                <span className="text-[8px] font-black text-[#0f2a44]/40 ml-1">L</span>
-              </div>
-
-              {/* Percentage Badge */}
               <span className="font-mono text-xs bg-[#0f2a44]/20 text-[#0f2a44] px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
-                {isEdit ? formData.arrivalFuelLevel : formData.fuelLevel}%
+                {Number(formData.fuelLevel).toFixed(1)}%
               </span>
             </div>
           </div>
 
           <div className="px-2">
             <ArchonFuelSensor
-              value={Number(isEdit ? formData.arrivalFuelLevel : formData.fuelLevel)}
-              onChange={(val: number): void =>
-                updateForm(isEdit ? { arrivalFuelLevel: val } : { fuelLevel: val })
-              }
+              value={Number(formData.fuelLevel)}
+              onChange={(val: number): void => {
+                if (isEdit) {
+                  // Calculate arrival level from desired final level
+                  const liters = Number(formData.fuelLitersLoaded || 0);
+                  const increment = (liters / tankCapacity) * 100;
+                  const newArrival = Math.max(0, val - increment);
+                  updateForm({ arrivalFuelLevel: newArrival });
+                } else {
+                  updateForm({ fuelLevel: val });
+                }
+              }}
             />
           </div>
 

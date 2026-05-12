@@ -1,14 +1,25 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Droplets } from 'lucide-react';
+import { Camera, Droplets, AlertTriangle } from 'lucide-react';
 import ArchonImageUploader from '../../ArchonImageUploader';
-import { RouteAssignmentPanelProps } from './types';
+import { RouteClosurePanelProps } from './types';
 
 /**
  * 🔱 Archon Panel: Route Closure (Fase IV)
  * Handles final evidence capture, fuel tickets and industrial telemetry synchronization.
  */
-const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({ formData, updateForm }) => {
+const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
+  formData,
+  updateForm,
+  tankCapacity,
+}) => {
+  const isOverfilled = React.useMemo(() => {
+    if (!tankCapacity) return false;
+    const base = Number(formData.arrivalFuelLevel || 0);
+    const liters = Number(formData.fuelLitersLoaded || 0);
+    const increment = (liters / tankCapacity) * 100;
+    return base + increment > 100.1; // Small buffer for floats
+  }, [formData.arrivalFuelLevel, formData.fuelLitersLoaded, tankCapacity]);
   const tireData = React.useMemo(() => {
     try {
       return JSON.parse(formData.tirePressureJson || '{}');
@@ -62,9 +73,21 @@ const RouteClosurePanel: React.FC<RouteAssignmentPanelProps> = ({ formData, upda
                   const val = e.target.value.replace(/[^0-9.]/g, '');
                   updateForm({ fuelLitersLoaded: val });
                 }}
-                className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+                className={`w-full bg-white border-b-2 ${
+                  isOverfilled ? 'border-rose-500' : 'border-[#0f2a44]/10'
+                } focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]`}
               />
             </div>
+            {isOverfilled && (
+              <motion.p
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-[9px] font-bold text-rose-600 flex items-center gap-1 mt-1"
+              >
+                <AlertTriangle size={10} />
+                No es posible agregar más combustible de lo que el tanque permite.
+              </motion.p>
+            )}
           </div>
 
           <div className="space-y-1.5">

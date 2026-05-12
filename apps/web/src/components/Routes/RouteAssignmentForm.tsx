@@ -97,7 +97,12 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           {/* COLUMNA 2: CIERRE Y EVIDENCIA */}
           <div className="glass-card-pro p-6 space-y-2 bg-white">
             {isEdit ? (
-              <RouteClosurePanel formData={formData} updateForm={updateForm} isEdit={isEdit} />
+              <RouteClosurePanel
+                formData={formData}
+                updateForm={updateForm}
+                isEdit={isEdit}
+                tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full opacity-30 space-y-4 py-20">
                 <div className="bg-slate-100 p-6 rounded-full">

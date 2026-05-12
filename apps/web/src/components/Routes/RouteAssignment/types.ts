@@ -31,3 +31,6 @@ export interface RouteIdentityPanelProps extends RouteAssignmentPanelProps {
   selectedUnitData?: FleetUnit | null;
   isFinished: boolean;
 }
+export interface RouteClosurePanelProps extends RouteAssignmentPanelProps {
+  tankCapacity: number;
+}
