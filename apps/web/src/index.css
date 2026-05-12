@@ -2053,6 +2053,10 @@ table th > div {
   background-color: rgba(59, 130, 246, 0.08) !important;
 }
 
+.route-incident-row td {
+  background-color: #fff5f5 !important;
+}
+
 .accordion-inner .archon-registry-table tr:hover td {
   background-color: inherit !important;
 }
@@ -2060,6 +2064,10 @@ table th > div {
 /* 🔱 NO-HOVER FORENSIC POLICY: Maintains visual integrity during audit */
 .archon-registry-table tr.forensic-incident-row:hover td {
   background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+.archon-registry-table tr.route-incident-row:hover td {
+  background-color: #fff5f5 !important;
 }
 
 .archon-registry-table tr:hover td {

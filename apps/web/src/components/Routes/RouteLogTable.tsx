@@ -101,7 +101,7 @@ const RouteLogRow = ({
         onClick={onToggle}
         className={`cursor-pointer transition-all duration-300 hover:bg-[#0f2a44]/[0.02] ${
           isExpanded ? 'expanded-focus-blue' : ''
-        } ${log.incident_count && log.incident_count > 0 ? 'forensic-incident-row' : ''}`}
+        } ${log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''}`}
       >
         {/* Activo */}
         <td className="py-6">
