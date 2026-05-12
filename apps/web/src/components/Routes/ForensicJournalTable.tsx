@@ -228,10 +228,10 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         // 🏗️ REGISTRO DE IDENTIDAD (Look-up O(1) con Triple Redundancia)
                         const unitMap = new Map();
                         units.forEach((u) => {
-                          const idKey = normalizeId(u.id);
-                          const numKey = normalizeId(u.unit_number || u.name); // Soporte para múltiples campos de etiqueta
-                          if (idKey) unitMap.set(idKey, u);
-                          if (numKey) unitMap.set(numKey, u);
+                          const labelKey = normalizeId(u.id); // Etiqueta humana (ej: ASM-011 -> 11)
+                          const uuidKey = normalizeId(u.uuid); // ID de base de datos
+                          if (labelKey) unitMap.set(labelKey, u);
+                          if (uuidKey) unitMap.set(uuidKey, u);
                         });
 
                         // 🔱 Resolución del Activo
