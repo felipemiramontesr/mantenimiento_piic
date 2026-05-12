@@ -5,12 +5,12 @@ import { type ReactElement, type ReactNode } from 'react';
 import { UserContext } from '../context/UserContext';
 import { FleetContext } from '../context/FleetContext';
 import { AuthProvider } from '../context/AuthContext';
-import { SovereignLayoutProvider } from '../context/SovereignLayoutContext';
+import { SovereignLayoutProvider, useSovereignLayout } from '../context/SovereignLayoutContext';
 
 /**
  * 🔱 Archon Test Utility: Sovereign Provider Injection
  * Purpose: Provides a stable, memory-efficient context for all unit tests.
- * v.60.2.4 - Sovereign Layout Integrated in AllTheProviders.
+ * v.60.2.5 - Sovereign Layout Observer Integrated.
  */
 
 export const mockStartRoute = vi.fn();
@@ -67,9 +67,27 @@ const MockFleetContext = {
   reportIncident: vi.fn(),
 };
 
+/**
+ * 🔱 LayoutMetadataObserver (Test Infrastructure)
+ * Purpose: Surfaces the Sovereign Layout state into the DOM during tests.
+ * This ensures that assertions for section titles/descriptions continue to work
+ * even when the actual header is not part of the unit test.
+ */
+const LayoutMetadataObserver = (): ReactElement => {
+  const { layoutData } = useSovereignLayout();
+
+  return (
+    <div data-testid="sovereign-layout-metadata" style={{ display: 'none' }}>
+      <h1 data-testid="layout-title">{layoutData.title}</h1>
+      <p data-testid="layout-description">{layoutData.description}</p>
+    </div>
+  );
+};
+
 const AllTheProviders = ({ children }: { children: ReactNode }): ReactElement => (
   <AuthProvider>
     <SovereignLayoutProvider>
+      <LayoutMetadataObserver />
       <UserContext.Provider value={MockUserContext as any}>
         <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
       </UserContext.Provider>

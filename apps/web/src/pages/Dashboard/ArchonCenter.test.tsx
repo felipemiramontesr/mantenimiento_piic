@@ -27,8 +27,8 @@ describe('ArchonCenter Component (Apex Standard)', () => {
 
   it('renders branding name and command titles', async () => {
     await renderModule();
-    expect(screen.getByText('Centro de Comando')).toBeDefined();
-    expect(screen.getByText('Análisis Predictivo de Segmentos Operativos')).toBeDefined();
+    expect(await screen.findByText('Centro de Comando')).toBeDefined();
+    expect(await screen.findByText('Análisis Predictivo de Segmentos Operativos')).toBeDefined();
   });
 
   it('renders all 6 KPI cards with correct text in Spanish', async () => {

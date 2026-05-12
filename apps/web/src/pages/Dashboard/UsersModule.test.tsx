@@ -19,13 +19,13 @@ describe('UsersModule Component', () => {
       </MemoryRouter>
     );
 
-  it('should render the correct administrative context', (): void => {
+  it('should render the correct administrative context', async (): Promise<void> => {
     renderModule();
     // Updated to match Fleet-Standard label (v.28.24.0)
-    expect(screen.getByText(/Administrar Personal/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Administrar Personal/i)).toBeInTheDocument();
   });
 
-  it('should display the core personnel instruments', (): void => {
+  it('should display the core personnel instruments', async (): Promise<void> => {
     renderModule();
     // Updated to match Archon Standard labels (v.28.24.0)
     expect(screen.getByText(/Directorio Maestro/i)).toBeInTheDocument();

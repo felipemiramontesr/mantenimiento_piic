@@ -1,9 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
+import { render, screen, fireEvent } from '../../test/testUtils';
 import FinancialHealthModule from './FinancialHealthModule';
-import { FleetProvider } from '../../context/FleetContext';
 
 /**
  * 🔱 Archon Test Suite: FinancialHealthModule
@@ -32,21 +30,16 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
   const renderModule = (): void => {
     render(
       <MemoryRouter>
-        <SovereignLayoutProvider>
-          <FleetProvider>
-            <FinancialHealthModule />
-          </FleetProvider>
-        </SovereignLayoutProvider>
+        <FinancialHealthModule />
       </MemoryRouter>
     );
   };
 
-  it('renders correctly and calculates total lease as a number', () => {
+  it('renders correctly and calculates total lease as a number', async () => {
     renderModule();
-    expect(screen.getByText('Salud Financiera')).toBeInTheDocument();
+    expect(await screen.findByText('Salud Financiera')).toBeInTheDocument();
 
     // Total should be 3000.00 (1000 + 2000)
-    // If bug existed, it would be "010002000" or similar
     expect(screen.getByText('$3,000.00')).toBeInTheDocument();
   });
 
@@ -64,8 +57,8 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
     expect(screen.getByText('85%')).toBeInTheDocument();
   });
 
-  it('shows breadcrumbs/messages ad-hoc to the module', () => {
+  it('shows breadcrumbs/messages ad-hoc to the module', async () => {
     renderModule();
-    expect(screen.getByText(/Inteligencia Económica/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Inteligencia Económica/i)).toBeInTheDocument();
   });
 });

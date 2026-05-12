@@ -1,7 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
+import { render, screen, fireEvent } from '../../test/testUtils';
 import MaintenanceModule from './MaintenanceModule';
 
 /**
@@ -13,17 +12,15 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
   const renderModule = (): void => {
     render(
       <MemoryRouter>
-        <SovereignLayoutProvider>
-          <MaintenanceModule />
-        </SovereignLayoutProvider>
+        <MaintenanceModule />
       </MemoryRouter>
     );
   };
 
-  it('renders header and titles correctly', () => {
+  it('renders header and titles correctly', async () => {
     renderModule();
-    expect(screen.getByText('Administrar Mantenimientos')).toBeInTheDocument();
-    expect(screen.getByText(/Mantenimiento Preventivo/i)).toBeInTheDocument();
+    expect(await screen.findByText('Administrar Mantenimientos')).toBeInTheDocument();
+    expect(await screen.findByText(/Mantenimiento Preventivo/i)).toBeInTheDocument();
   });
 
   it('transitions between History and Schedule panels', () => {

@@ -144,10 +144,10 @@ describe('FleetModule Orchestrator', () => {
       </MemoryRouter>
     );
 
-  it('should start in the GRID view', (): void => {
+  it('should start in the GRID view', async (): Promise<void> => {
     vi.mocked(useFleetForm).mockReturnValue(baseMock);
     renderModule();
-    expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
+    expect(await screen.findByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should transition to CREATE view when starting registration', (): void => {
@@ -157,13 +157,13 @@ describe('FleetModule Orchestrator', () => {
     expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
   });
 
-  it('should return to GRID view when clicking the "Estrategia Operativa" card', (): void => {
+  it('should return to GRID view when clicking the "Estrategia Operativa" card', async (): Promise<void> => {
     vi.mocked(useFleetForm).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
     // Clicking the Strategy card should return to the inventory table
     fireEvent.click(screen.getByText(/Estrategia Operativa/i));
-    expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
+    expect(await screen.findByText('Administrar Unidades')).toBeInTheDocument();
   });
 
   it('should show success view after successful registration', async (): Promise<void> => {
