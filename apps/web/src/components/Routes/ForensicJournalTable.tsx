@@ -216,17 +216,31 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                       {((): React.ReactNode => {
                         let displayDesc = log.description || '';
 
-                        // 🛡️ VECTOR C: Normalización Forense de ID (Archon Resolver)
-                        const normalizeId = (id: string | number): string =>
-                          String(id)
-                            .replace(/^(ASM-|UN-|0+)/gi, '')
-                            .trim()
-                            .toLowerCase();
+                        // 🛡️ REGLA DE ORO: Normalización Forense de ID (Archon Resolver)
+                        const normalizeId = (id: string | number | undefined): string =>
+                          id
+                            ? String(id)
+                                .replace(/^(ASM-|UN-|0+)/gi, '')
+                                .trim()
+                                .toLowerCase()
+                            : '';
 
+                        // 🏗️ REGISTRO DE IDENTIDAD (Look-up O(1) con Triple Redundancia)
+                        const unitMap = new Map();
+                        units.forEach((u) => {
+                          const idKey = normalizeId(u.id);
+                          const numKey = normalizeId(u.unit_number || u.name); // Soporte para múltiples campos de etiqueta
+                          if (idKey) unitMap.set(idKey, u);
+                          if (numKey) unitMap.set(numKey, u);
+                        });
+
+                        // 🔱 Resolución del Activo
                         const logUnitId = normalizeId(log.unit_id);
-                        const unit = units.find((u) => normalizeId(u.id) === logUnitId);
+                        const unit =
+                          unitMap.get(logUnitId) ||
+                          units.find((u) => normalizeId(u.id) === logUnitId);
 
-                        // 🛡️ VECTOR A & B: Motor de Detección de Anomalías Heurístico
+                        // ⛽ MOTOR DE DETECCIÓN DE ANOMALÍAS (Hardened)
                         const isPercentageAnomaly =
                           log.fuel_level_after !== null && Number(log.fuel_level_after) > 100.1;
 
@@ -235,7 +249,12 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                           unit?.fuelTankCapacity &&
                           Number(log.fuel_after) > unit.fuelTankCapacity;
 
-                        const isAnomalous = isPercentageAnomaly || isCapacityAnomaly;
+                        // 🚨 HEURÍSTICO DE EMERGENCIA: Si no hay unidad pero la carga es > 40L, marcar como sospechoso
+                        const isSuspiciousVolume =
+                          !unit && log.fuel_after !== null && Number(log.fuel_after) > 40;
+
+                        const isAnomalous =
+                          isPercentageAnomaly || isCapacityAnomaly || isSuspiciousVolume;
 
                         // 🔱 Clean Redundancy
                         displayDesc = displayDesc.replace(/^MODIFICACIÓN:\s*/i, '');
@@ -255,10 +274,10 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         return (
                           <>
                             {isAnomalous && (
-                              <div className="w-full px-2 py-1.5 bg-rose-600 rounded-[2px] border border-rose-700 shadow-md animate-in fade-in slide-in-from-top-1 duration-300 mb-1">
+                              <div className="w-full px-2 py-1.5 bg-rose-600 rounded-[2px] border border-rose-700 shadow-md animate-pulse mb-1">
                                 <div className="flex items-center gap-1.5 justify-center">
-                                  <AlertTriangle size={10} className="text-white animate-pulse" />
-                                  <span className="text-[8px] font-black text-white uppercase tracking-tighter leading-none text-center">
+                                  <AlertTriangle size={11} className="text-white" />
+                                  <span className="text-[8.5px] font-black text-white uppercase tracking-tighter leading-none text-center">
                                     Posible desviación de consumo o robo de combustible
                                   </span>
                                 </div>
@@ -269,7 +288,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                                 isIncident ? 'not-italic px-3 py-1' : 'opacity-70 italic'
                               } ${
                                 isAnomalous
-                                  ? 'text-rose-700 bg-rose-50/50 rounded p-1 border border-rose-200'
+                                  ? 'text-rose-700 bg-rose-50/70 rounded p-1.5 border-2 border-rose-200 shadow-inner'
                                   : ''
                               }`}
                             >
