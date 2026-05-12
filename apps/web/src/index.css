@@ -844,17 +844,17 @@ body {
 }
 
 /* 🎨 SOVEREIGN FOCAL UNIT & CHROMATIC PROTOCOL */
-.archon-registry-table tr.expanded-focus-blue td {
-  background-color: rgba(59, 130, 246, 0.08) !important;
+.archon-registry-table tr.expanded-focus-sovereign td {
+  background-color: #fff5f5 !important;
   border-top: none !important;
   border-bottom: none !important; /* Touch accordion */
 }
 
-.archon-registry-table tr.expanded-focus-blue td:first-child {
+.archon-registry-table tr.expanded-focus-sovereign td:first-child {
   border-left: none !important;
 }
 
-.archon-registry-table tr.expanded-focus-blue td:last-child {
+.archon-registry-table tr.expanded-focus-sovereign td:last-child {
   border-right: none !important;
   padding-right: 20px !important; /* Keep alignment for main row */
 }
@@ -1847,8 +1847,8 @@ table th > div {
   background-color: white !important;
 }
 
-.archon-registry-table tr.expanded-focus-blue td {
-  background-color: rgba(59, 130, 246, 0.08) !important;
+.archon-registry-table tr.expanded-focus-sovereign td {
+  background-color: #fff5f5 !important;
 }
 
 .archon-registry-table tr.forensic-incident-row td {
@@ -2064,15 +2064,15 @@ table th > div {
 /* 🔱 HOVER PURGE COMPLETED */
 
 /* 🔱 ARCHON FOCAL UNIT RECTIFICATION (V.78.15.0) - RESTORED */
-.archon-registry-table tr.expanded-focus-blue {
+.archon-registry-table tr.expanded-focus-sovereign {
   border-bottom: none !important;
 }
 .archon-registry-table tr.accordion-row-carrier {
   border-bottom: none !important;
 }
 
-.archon-registry-table tr.expanded-focus-blue td {
-  background-color: rgba(59, 130, 246, 0.08) !important;
+.archon-registry-table tr.expanded-focus-sovereign td {
+  background-color: #fff5f5 !important;
   position: relative;
   box-shadow: none !important;
   border-top: 2px solid #0f2a44 !important;

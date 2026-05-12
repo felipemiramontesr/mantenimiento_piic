@@ -99,7 +99,7 @@ const RouteLogRow = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
         onClick={onToggle}
-        className={`${isExpanded ? 'expanded-focus-blue' : ''} ${
+        className={`${isExpanded ? 'expanded-focus-sovereign' : ''} ${
           log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''
         }`}
       >
