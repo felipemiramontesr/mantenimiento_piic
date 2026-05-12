@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Shield, Clock, ArrowRight, Activity, AlertTriangle, Fuel } from 'lucide-react';
 import api from '../../api/client';
 import { formatDateTime } from '../../utils/dateUtils';
@@ -51,6 +51,31 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const { units } = useFleet();
+
+  // 🧠 FASE 1: Inteligencia de Sesión (Doble Pase Forense)
+  // Escaneamos todos los logs antes de renderizar para construir el mapa de evidencia física
+  const sessionEvidence = useMemo(() => {
+    const evidenceMap = new Map<string, { maxObserved: number }>();
+
+    logs.forEach((l) => {
+      const normId = String(l.unit_id || '')
+        .replace(/^(ASM-|UN-|0+)/gi, '')
+        .trim()
+        .toLowerCase();
+      if (!normId) return;
+
+      const current = evidenceMap.get(normId) || { maxObserved: 0 };
+
+      // Si un log marca 100%, esa es nuestra capacidad observada "techo"
+      if (l.fuel_level_after !== null && Number(l.fuel_level_after) === 100) {
+        current.maxObserved = Math.max(current.maxObserved, Number(l.fuel_after));
+      }
+
+      evidenceMap.set(normId, current);
+    });
+
+    return evidenceMap;
+  }, [logs]);
 
   const fetchLogs = async (): Promise<void> => {
     try {
@@ -238,39 +263,31 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         const logUnitId = normalizeId(log.unit_id);
                         const unit = unitMap.get(logUnitId);
 
-                        // 🧠 VECTOR F: Capacidad Observada (Forensic Intelligence)
-                        // Buscamos en los logs actuales si alguna vez se marcó 100% para esta unidad
-                        const sessionLogs = logs.filter(
-                          (l) => normalizeId(l.unit_id) === logUnitId
-                        );
-                        const fullTankLog = sessionLogs.find(
-                          (l) => l.fuel_level_after !== null && Number(l.fuel_level_after) === 100
-                        );
+                        // 🧠 FASE 2: Validación con Evidencia de Sesión (Vector F)
+                        const evidence = sessionEvidence.get(logUnitId);
+                        const observedMax = evidence?.maxObserved || 0;
+                        const theoreticalCap = unit?.fuelTankCapacity || 0;
 
-                        const observedCapacity = fullTankLog
-                          ? Number(fullTankLog.fuel_after)
-                          : unit?.fuelTankCapacity;
-                        const theoreticalCapacity = unit?.fuelTankCapacity || 0;
-
-                        // ⛽ MOTOR DE DETECCIÓN DE ANOMALÍAS (Multi-Vector)
+                        // ⛽ MOTOR DE DETECCIÓN MULTI-VECTOR (Hardened)
                         const isPercentageAnomaly =
                           log.fuel_level_after !== null && Number(log.fuel_level_after) > 100.1;
 
-                        // Anomalía por Capacidad (Teórica o Observada)
-                        const isCapacityAnomaly =
-                          log.fuel_after !== null &&
-                          observedCapacity &&
-                          Number(log.fuel_after) > observedCapacity + 0.1;
+                        // Si tenemos evidencia de que el tanque se llena con menos (ej: 22.5L), 40L es robo.
+                        const isObservedAnomaly =
+                          observedMax > 0 && Number(log.fuel_after) > observedMax + 0.1;
 
-                        // 🚨 HEURÍSTICO DE EMERGENCIA: Si la carga es sospechosamente alta (>45L) o excede capacidad teórica
-                        const isSuspiciousVolume =
-                          log.fuel_after !== null &&
-                          (Number(log.fuel_after) > 45 ||
-                            (theoreticalCapacity > 0 &&
-                              Number(log.fuel_after) > theoreticalCapacity));
+                        // Si excede la capacidad teórica de la base de datos
+                        const isTheoreticalAnomaly =
+                          theoreticalCap > 0 && Number(log.fuel_after) > theoreticalCap;
+
+                        // Heurístico: Cualquier cambio sospechoso sin unidad resuelta
+                        const isSuspicious = !unit && Number(log.fuel_after) > 45;
 
                         const isAnomalous =
-                          isPercentageAnomaly || isCapacityAnomaly || isSuspiciousVolume;
+                          isPercentageAnomaly ||
+                          isObservedAnomaly ||
+                          isTheoreticalAnomaly ||
+                          isSuspicious;
 
                         // 🔱 Clean Redundancy
                         displayDesc = displayDesc.replace(/^MODIFICACIÓN:\s*/i, '');
