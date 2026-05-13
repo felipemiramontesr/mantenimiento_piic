@@ -8,31 +8,20 @@ export default {
     extend: {
       colors: {
         pinnacle: {
-          primary: '#0F2A44',
-          accent: '#F2B705',
+          navy: '#0F2A44',
+          yellow: '#F2B705',
           bg: '#F2F4F7',
           secondary: '#2E2E2E',
           text: '#1A1A1A',
         },
       },
-      spacing: {
-        8: '8px',
-        10: '40px',
-        12: '12px',
-        16: '16px',
-        24: '24px',
-        32: '32px',
-        40: '40px',
-        48: '48px',
-        64: '64px',
-        80: '80px',
-      },
       borderRadius: {
-        'pinnacle-card': '8px',
+        'pinnacle-card': '4px',
         'pinnacle-input': '4px',
       },
       boxShadow: {
         pinnacle: '0 10px 25px rgba(0, 0, 0, 0.05)',
+        'pinnacle-hover': '0 20px 40px rgba(15, 42, 68, 0.1)',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

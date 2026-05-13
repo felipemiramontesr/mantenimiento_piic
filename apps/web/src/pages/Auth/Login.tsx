@@ -108,31 +108,35 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="auth-grid-container">
+    <div className="relative min-h-screen flex flex-col-reverse md:flex-row overflow-hidden bg-[#0f2a44]">
       {/* 🌌 ATMOSPHERIC LAYER */}
-      <img src={serviceBackground} alt="Service Workshop" className="hero-bg-image" />
-      <div className="hero-overlay"></div>
+      <img
+        src={serviceBackground}
+        alt="Service Workshop"
+        className="fixed inset-0 w-full h-full object-cover z-0 animate-[pulse_60s_infinite_alternate] opacity-40 md:opacity-100"
+      />
+      <div className="fixed inset-0 z-10 bg-gradient-to-br from-[#0f2a44]/80 to-[#0f2a44]/95 backdrop-blur-[2px]"></div>
 
-      {/* 🏙️ HERO CONTENT (Brand Narrative) */}
-      <section className="hero-section">
-        <header className="hero-header animate-in fade-in duration-1000">
+      {/* 🏙️ HERO CONTENT (Brand Narrative) - Hidden on mobile by default in split view */}
+      <section className="relative z-20 flex flex-col w-full md:w-1/2 lg:w-[70%] min-h-screen p-0 transition-all duration-500">
+        <header className="h-[10vh] flex items-center px-6 md:px-20 animate-in fade-in duration-1000">
           <PiicLogo />
         </header>
 
-        <main className="hero-body animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
-          <h1 className="hero-title">
+        <main className="h-[80vh] flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
+          <h1 className="text-white font-black text-3xl md:text-4xl lg:text-5xl leading-tight max-w-2xl text-center md:text-left">
             Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
           </h1>
-          <p className="hero-subtitle">
+          <p className="text-white/70 text-lg md:text-xl max-w-lg text-center md:text-left">
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
 
-          <div className="hero-actions">
+          <div className="flex flex-col sm:flex-row gap-4 mt-4 justify-center md:justify-start">
             <a
               href="https://wa.me/5214929421780"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-primary"
+              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] px-8 py-4 rounded-[4px] font-bold text-base shadow-lg hover:bg-[#d9a404] transition-all"
             >
               Contactar a un asesor
             </a>
@@ -140,65 +144,68 @@ const LoginPage: React.FC = () => {
               href="https://piic.com.mx/"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-outline"
+              className="inline-flex items-center justify-center bg-white/5 border border-white/20 text-white backdrop-blur-md px-8 py-4 rounded-[4px] font-bold text-base hover:bg-white hover:text-[#0f2a44] transition-all"
             >
               Ver sitio Web
             </a>
           </div>
         </main>
 
-        <footer className="hero-footer animate-in fade-in duration-1000 delay-500">
-          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
+        <footer className="h-[10vh] flex flex-col md:flex-row items-center justify-center md:justify-between px-6 md:px-20 gap-1 animate-in fade-in duration-1000 delay-500">
+          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em] text-center md:text-left">
             Archon System | Powered by PIIC TECH
           </div>
-          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em]">
+          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em] text-center md:text-right">
             Todos los derechos reservados © 2026 PIIC GROUP
           </div>
         </footer>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (Top priority on mobile) */}
-      <section className="login-panel">
-        <div className="auth-card animate-in fade-in zoom-in duration-1000 delay-300">
-          {/* 📱 10% HEADER */}
-          <header className="auth-card-header">
-            <div className="login-card-logo animate-in fade-in duration-1000">
-              <PiicLogo />
-            </div>
+      {/* 🛡️ LOGIN PANEL (Mobile 10/80/10 Chassis) */}
+      <section className="relative z-30 flex flex-col items-center justify-center w-full md:w-1/2 lg:w-[30%] min-h-screen bg-white transition-all duration-400">
+        <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
+          {/* 📱 10% HEADER (Mobile Only Stripe) */}
+          <header className="h-[10vh] md:hidden bg-[#0f2a44] flex items-center px-6">
+            <PiicLogo />
           </header>
 
           {/* 🏙️ 80% BODY */}
-          <main className="auth-card-body">
-            <div className="auth-header-titles">
-              <h2 className="font-black tracking-tighter">Acceso Archon</h2>
-              <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+          <main className="h-[80vh] md:h-auto md:flex-1 bg-white p-8 md:p-12 flex flex-col justify-start md:justify-center">
+            <div className="text-center md:text-left mb-8 pb-10 border-b border-[#0f2a44]/10">
+              <div className="hidden md:flex mb-8">
+                <PiicLogo />
+              </div>
+              <h2 className="text-[#0f2a44] font-black tracking-tighter text-3xl lg:text-4xl">
+                Acceso Archon
+              </h2>
+              <p className="text-[#0f2a44]/50 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
                 Control de Flotas
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="login-form">
+            <form onSubmit={handleLogin} className="space-y-6">
               <div
                 style={{
                   minHeight: error ? '80px' : '0px',
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   opacity: error ? 1 : 0,
                 }}
-                className="mb-4 flex items-center overflow-hidden"
+                className="flex items-center overflow-hidden"
               >
                 {error && (
-                  <div className="w-full p-4 bg-red-500/10 text-red-400 text-[11px] font-black uppercase rounded border-l-4 border-red-500/50 backdrop-blur-md">
+                  <div className="w-full p-4 bg-red-500/10 text-red-500 text-[11px] font-black uppercase rounded border-l-4 border-red-500 backdrop-blur-md">
                     Error de Sistema: {error}
                   </div>
                 )}
               </div>
 
-              <div className="form-group">
-                <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+              <div className="space-y-2">
+                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
                   Identidad de Usuario
                 </label>
                 <input
                   type="text"
-                  className="diamond-input"
+                  className="w-full p-4 bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
                   value={username}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setUsername(e.target.value)
@@ -209,13 +216,13 @@ const LoginPage: React.FC = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label className="text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+              <div className="space-y-2">
+                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
                   Clave de Seguridad
                 </label>
                 <input
                   type="password"
-                  className="diamond-input"
+                  className="w-full p-4 bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setPassword(e.target.value)
@@ -226,51 +233,64 @@ const LoginPage: React.FC = () => {
                 />
               </div>
 
-              <div className="pt-2">
-                <button type="submit" disabled={loading} className="diamond-button">
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 bg-[#f2b705] text-[#0f2a44] rounded-[4px] font-black text-base uppercase tracking-widest shadow-lg hover:bg-[#d9a404] hover:shadow-xl transition-all disabled:opacity-50"
+                >
                   {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>
               </div>
 
-              <div className="forgot-password-container">
-                <a href="#" className="forgot-password-link">
+              <div className="text-center mt-6">
+                <a
+                  href="#"
+                  className="text-[#f2b705] text-[13px] font-bold hover:text-[#0f2a44] transition-all"
+                >
                   ¿Olvidaste tu contraseña?
                 </a>
               </div>
             </form>
           </main>
 
-          {/* 🏗️ 10% FOOTER */}
-          <footer className="auth-card-footer">
-            <p className="subtitle-brand text-[10px] font-black uppercase tracking-[0.3em]">
+          {/* 🏗️ 10% FOOTER (Mobile Only Stripe) */}
+          <footer className="h-[10vh] md:hidden bg-[#f2b705] flex flex-col items-center justify-center">
+            <p className="text-[#0f2a44] text-[10px] font-black uppercase tracking-[0.3em]">
               Powered by PIIC TECH
             </p>
-            <div className="copyright-container mt-2">
-              <span className="copyright-text">© 2026 PIIC GROUP</span>
-            </div>
+            <span className="text-[#0f2a44] text-[9px] font-bold mt-1 uppercase tracking-widest">
+              © 2026 PIIC GROUP
+            </span>
           </footer>
         </div>
       </section>
 
       {/* 🍪 COOKIE BANNER PIIC */}
       {showCookies && (
-        <div className="cookie-banner animate-in slide-in-from-bottom duration-500">
-          <p className="cookie-text">
+        <div className="fixed bottom-0 left-0 w-full bg-[#f2b705] p-6 z-[1000] flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-bottom duration-500">
+          <p className="text-[#0f2a44] text-sm font-medium leading-relaxed flex-1">
             Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
             <a
               href="https://piic.com.mx/politicas"
               target="_blank"
               rel="noopener noreferrer"
-              className="cookie-link"
+              className="font-bold underline"
             >
               política de uso, tratamiento de información y cookies.
             </a>
           </p>
-          <div className="cookie-actions">
-            <button onClick={(): void => setShowCookies(false)} className="cookie-btn-secondary">
+          <div className="flex gap-3">
+            <button
+              onClick={(): void => setShowCookies(false)}
+              className="px-6 py-2 border-2 border-[#0f2a44] text-[#0f2a44] rounded-[4px] font-black text-[12px] uppercase"
+            >
               RECHAZAR
             </button>
-            <button onClick={acceptCookies} className="cookie-btn">
+            <button
+              onClick={acceptCookies}
+              className="px-6 py-2 bg-[#0f2a44] text-white rounded-[4px] font-black text-[12px] uppercase"
+            >
               ACEPTAR
             </button>
           </div>
