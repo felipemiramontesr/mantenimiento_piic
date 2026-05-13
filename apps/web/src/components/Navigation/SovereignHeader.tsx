@@ -1,5 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, LogOut, User as UserIcon } from 'lucide-react';
+import {
+  Settings,
+  LogOut,
+  User as UserIcon,
+  LayoutDashboard,
+  Zap,
+  Truck,
+  Map,
+  Users,
+  Shield,
+  BarChart3,
+  Activity,
+  FileText,
+  Search,
+  Cpu,
+  Wrench,
+  AlertTriangle,
+  Navigation,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -8,8 +26,8 @@ import api from '../../api/client';
 /**
  * 🔱 Archon Component: SovereignHeader
  * Implementation: Sovereign Identity & Section Metadata Orchestration
- * Objective: High-density header with dynamic titles and user profile menu.
- * v.1.0.0
+ * Objective: High-density header with dynamic titles, user profile menu, and industrial icons.
+ * v.1.1.0 - Iconography Update
  */
 
 const SovereignHeader: React.FC = () => {
@@ -45,16 +63,40 @@ const SovereignHeader: React.FC = () => {
 
   const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
 
+  // 🛡️ Icon Mapping Engine
+  const getHeaderIcons = (title: string): { main: React.ElementType; sub: React.ElementType } => {
+    const normalizedTitle = title.trim();
+    if (normalizedTitle.includes('Comando')) return { main: LayoutDashboard, sub: Zap };
+    if (normalizedTitle.includes('Flota')) return { main: Truck, sub: Settings };
+    if (normalizedTitle.includes('Ruta')) return { main: Map, sub: Navigation };
+    if (normalizedTitle.includes('Usuario')) return { main: Users, sub: Shield };
+    if (normalizedTitle.includes('Financiera')) return { main: BarChart3, sub: Activity };
+    if (normalizedTitle.includes('Registro') || normalizedTitle.includes('Log'))
+      return { main: FileText, sub: Search };
+    if (normalizedTitle.includes('Ajuste') || normalizedTitle.includes('Config'))
+      return { main: Settings, sub: Cpu };
+    if (normalizedTitle.includes('Mantenimiento')) return { main: Wrench, sub: AlertTriangle };
+    return { main: Shield, sub: Zap };
+  };
+
+  const { main: MainIcon, sub: SubIcon } = getHeaderIcons(layoutData.title);
+
   return (
     <header className="workspace-header-pro w-full" style={{ zIndex: 50 }}>
       {/* 🛡️ Section Identification (Col Alfa) */}
       <div className="flex flex-col items-start">
-        <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-[0.9]">
-          {layoutData.title}
-        </h2>
-        <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.25em] opacity-50 mt-1">
-          {layoutData.description}
-        </p>
+        <div className="flex items-center gap-3">
+          <MainIcon size={20} className="text-[#f2b705]" strokeWidth={2.5} />
+          <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-[0.9]">
+            {layoutData.title}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <SubIcon size={10} className="text-[#f2b705] opacity-70" strokeWidth={3} />
+          <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.25em] opacity-50">
+            {layoutData.description}
+          </p>
+        </div>
       </div>
 
       {/* 👤 Sovereign Identity (Col Beta) */}
