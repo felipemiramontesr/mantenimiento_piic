@@ -972,13 +972,13 @@ body {
 
 .workspace-header-pro {
   min-height: 10vh;
-  height: auto; /* Dinámico para soportar Padding V.4.7.1 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
+  height: auto;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
   border-bottom: 1px solid rgba(15, 42, 68, 0.05);
-  padding: 40px 40px 0px 40px; /* Synchronized with Chassis v.37.1.2 */
+  padding: 0 40px !important; /* Synchronized with Chassis v.37.1.2 */
 }
 
 .workspace-body-pro {

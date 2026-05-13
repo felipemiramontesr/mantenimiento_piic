@@ -46,25 +46,20 @@ const SovereignHeader: React.FC = () => {
   const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
 
   return (
-    <header
-      className="workspace-header-pro flex items-center justify-between w-full"
-      style={{
-        zIndex: 50,
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid rgba(15, 42, 68, 0.05)',
-      }}
-    >
-      <div className="flex flex-col items-start px-8">
-        <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-tight">
+    <header className="workspace-header-pro w-full" style={{ zIndex: 50 }}>
+      {/* 🛡️ Section Identification (Col Alfa) */}
+      <div className="flex flex-col items-start">
+        <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-[0.9]">
           {layoutData.title}
         </h2>
-        <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+        <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.25em] opacity-50 mt-1">
           {layoutData.description}
         </p>
       </div>
 
+      {/* 👤 Sovereign Identity (Col Beta) */}
       <div className="flex items-center gap-6 relative" ref={menuRef}>
-        <h1 className="text-[#0f2a44] font-black text-lg tracking-tighter hidden md:block opacity-90">
+        <h1 className="text-[#0f2a44] font-black text-sm tracking-tighter hidden md:block opacity-80 uppercase">
           {currentUser?.username || 'Soberano'}
         </h1>
 
