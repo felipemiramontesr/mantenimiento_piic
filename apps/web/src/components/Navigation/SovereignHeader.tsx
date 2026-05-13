@@ -82,18 +82,18 @@ const SovereignHeader: React.FC = () => {
   const { main: MainIcon, sub: SubIcon } = getHeaderIcons(layoutData.title);
 
   return (
-    <header className="workspace-header-pro w-full" style={{ zIndex: 50 }}>
+    <header className="flex flex-row items-center justify-between w-full border-b border-pinnacle-navy/5 px-10 min-h-[10vh] h-auto bg-white relative z-50">
       {/* 🛡️ Section Identification (Col Alfa) */}
       <div className="flex flex-col items-start">
         <div className="flex items-center gap-3">
-          <MainIcon size={20} className="text-[#f2b705]" strokeWidth={2.5} />
-          <h2 className="text-[#0f2a44] tracking-tighter font-black text-2xl m-0 p-0 leading-[0.9]">
+          <MainIcon size={20} className="text-pinnacle-yellow" strokeWidth={2.5} />
+          <h2 className="text-pinnacle-navy tracking-tighter font-black text-2xl m-0 p-0 leading-[0.9]">
             {layoutData.title}
           </h2>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <SubIcon size={10} className="text-[#f2b705] opacity-70" strokeWidth={3} />
-          <p className="text-[#0f2a44] text-[10px] font-bold uppercase tracking-[0.25em] opacity-50">
+          <SubIcon size={10} className="text-pinnacle-yellow opacity-70" strokeWidth={3} />
+          <p className="text-pinnacle-navy text-[10px] font-bold uppercase tracking-[0.25em] opacity-50">
             {layoutData.description}
           </p>
         </div>
@@ -101,7 +101,7 @@ const SovereignHeader: React.FC = () => {
 
       {/* 👤 Sovereign Identity (Col Beta) */}
       <div className="flex items-center gap-6 relative" ref={menuRef}>
-        <h1 className="text-[#0f2a44] font-black text-sm tracking-tighter hidden md:block opacity-80 uppercase">
+        <h1 className="text-pinnacle-navy font-black text-sm tracking-tighter hidden md:block opacity-80 uppercase">
           {currentUser?.username || 'Soberano'}
         </h1>
 
@@ -109,10 +109,9 @@ const SovereignHeader: React.FC = () => {
           <button
             onClick={toggleMenu}
             className={`
-              w-[44px] h-[44px] rounded-[4px] flex items-center justify-center transition-all duration-300 overflow-hidden border-transparent
-              ${isMenuOpen ? 'border-[#f2b705]' : 'hover:border-[#f2b705]'}
+              w-[44px] h-[44px] rounded-[4px] flex items-center justify-center transition-all duration-300 overflow-hidden border border-transparent bg-transparent outline-none
+              ${isMenuOpen ? 'border-pinnacle-yellow' : 'hover:border-pinnacle-yellow'}
             `}
-            style={{ borderWidth: '1px' }}
           >
             {fullImageUrl ? (
               <img
@@ -125,7 +124,7 @@ const SovereignHeader: React.FC = () => {
                 }}
               />
             ) : (
-              <div className="w-full h-full bg-[#0f2a44] flex items-center justify-center text-[#f2b705]">
+              <div className="w-full h-full bg-pinnacle-navy flex items-center justify-center text-pinnacle-yellow">
                 <UserIcon size={20} />
               </div>
             )}
@@ -135,15 +134,15 @@ const SovereignHeader: React.FC = () => {
             <div className="absolute top-[50px] right-0 w-[180px] bg-white rounded-[4px] shadow-[0_10px_40px_rgba(15,42,68,0.12)] py-4 animate-in fade-in slide-in-from-top-1 duration-200 z-[110]">
               <button
                 onClick={handleSettings}
-                className="w-full px-16 py-12 flex items-center gap-12 hover:bg-[#f2b705]/5 text-[#0f2a44] transition-colors text-left border-0 bg-transparent"
+                className="w-full px-6 py-3 flex items-center gap-3 hover:bg-pinnacle-yellow/5 text-pinnacle-navy transition-colors text-left border-none bg-transparent outline-none cursor-pointer"
               >
-                <Settings size={14} className="text-[#f2b705]" />
+                <Settings size={14} className="text-pinnacle-yellow" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Ajustes</span>
               </button>
 
               <button
                 onClick={logout}
-                className="w-full px-16 py-12 flex items-center gap-12 hover:bg-rose-50/50 text-rose-600 transition-colors text-left border-0 bg-transparent"
+                className="w-full px-6 py-3 flex items-center gap-3 hover:bg-rose-50/50 text-rose-600 transition-colors text-left border-none bg-transparent outline-none cursor-pointer"
               >
                 <LogOut size={14} />
                 <span className="text-[10px] font-bold uppercase tracking-widest">

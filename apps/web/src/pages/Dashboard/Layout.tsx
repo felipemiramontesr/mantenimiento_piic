@@ -20,25 +20,19 @@ const DashboardLayout: React.FC = () => {
     <SovereignLayoutProvider>
       <FleetProvider>
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isCollapsed ? '80px minmax(0, 1fr)' : '260px minmax(0, 1fr)',
-            height: '100vh',
-            width: '100vw',
-            overflow: 'hidden',
-            backgroundColor: '#0f2a44',
-          }}
-          className="transition-all duration-300 ease-in-out"
+          className={`grid h-screen w-screen overflow-hidden bg-[#0f2a44] transition-all duration-300 ease-in-out ${
+            isCollapsed ? 'grid-cols-[80px_minmax(0,1fr)]' : 'grid-cols-[260px_minmax(0,1fr)]'
+          }`}
         >
           {/* 🔱 Navigation Chassis */}
           <Sidebar isCollapsed={isCollapsed} onToggle={(): void => setIsCollapsed(!isCollapsed)} />
 
           {/* 🏢 Workspace Chassis */}
-          <main className="workspace-container-pro">
+          <main className="flex flex-col h-screen w-full overflow-hidden bg-white min-w-0 relative">
             <SovereignHeader />
             <SovereignSubheader />
 
-            <div className="workspace-body-pro custom-scrollbar">
+            <div className="h-[80vh] overflow-y-auto px-[60px] py-10 custom-scrollbar flex-1">
               <Outlet />
             </div>
 

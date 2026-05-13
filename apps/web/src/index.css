@@ -522,50 +522,7 @@ body {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-/* 🏛️ SOVEREIGN WORKSPACE CHASSIS (V4.5.0) - 10/80/10 ENGINE */
-.workspace-container-pro {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-  background-color: var(--bg-workspace);
-  min-width: 0;
-}
-
-.workspace-header-pro {
-  min-height: 10vh;
-  height: auto;
-  display: flex !important;
-  flex-direction: row !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  border-bottom: 1px solid rgba(15, 42, 68, 0.05);
-  padding: 0 40px !important; /* Synchronized with Chassis v.37.1.2 */
-}
-
-.workspace-body-pro {
-  height: 80vh;
-  overflow-y: auto;
-  padding: 40px 60px;
-}
-
-.workspace-footer-pro {
-  height: 10vh;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid rgba(15, 42, 68, 0.05);
-  padding: 0 60px;
-  background: rgba(15, 42, 68, 0.01);
-}
-
-.workspace-footer-pro p {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: rgba(15, 42, 68, 0.5);
-}
+/* 🏛️ SOVEREIGN REGISTRY & ANALYTICAL LAYERS */
 
 /* 🖋️ SOVEREIGN TYPOGRAPHY (NAVY HIERARCHY) */
 .text-navy-main {

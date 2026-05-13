@@ -117,13 +117,9 @@ const LoginPage: React.FC = () => {
       />
       <div className="fixed inset-0 z-10 bg-gradient-to-br from-[#0f2a44]/80 to-[#0f2a44]/95 backdrop-blur-[2px]"></div>
 
-      {/* 🏙️ HERO CONTENT (Brand Narrative) - Hidden on mobile by default in split view */}
-      <section className="relative z-20 flex flex-col w-full md:w-2/3 lg:w-[66.666%] min-h-screen p-0 transition-all duration-500">
-        <header className="h-[10vh] flex items-center px-6 md:px-20 animate-in fade-in duration-1000">
-          <PiicLogo />
-        </header>
-
-        <main className="h-[80vh] flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
+      {/* 🏙️ HERO CONTENT (Cinematic Brand Narrative) */}
+      <section className="relative z-20 flex flex-col w-full md:w-[66.666%] min-h-screen p-0 transition-all duration-500 overflow-hidden">
+        <main className="flex-1 flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
           <h1 className="text-white font-black text-3xl md:text-4xl lg:text-5xl leading-tight max-w-2xl text-center md:text-left">
             Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
           </h1>
@@ -150,19 +146,10 @@ const LoginPage: React.FC = () => {
             </a>
           </div>
         </main>
-
-        <footer className="h-[10vh] flex flex-col md:flex-row items-center justify-center md:justify-between px-6 md:px-20 gap-1 animate-in fade-in duration-1000 delay-500">
-          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em] text-center md:text-left">
-            Archon System | Powered by PIIC TECH
-          </div>
-          <div className="text-white/20 text-[10px] font-black uppercase tracking-[0.4em] text-center md:text-right">
-            Todos los derechos reservados © 2026 PIIC GROUP
-          </div>
-        </footer>
       </section>
 
       {/* 🛡️ LOGIN PANEL (Mobile 10/80/10 Chassis) */}
-      <section className="relative z-30 flex flex-col items-center justify-center w-full md:w-1/3 lg:w-[33.333%] min-h-screen bg-white transition-all duration-400">
+      <section className="relative z-30 flex flex-col items-center justify-center w-full md:w-[33.333%] min-h-screen bg-white transition-all duration-400 shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
         <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
           {/* 📱 10% HEADER (Mobile Only Stripe) */}
           <header className="h-[10vh] md:hidden bg-[#0f2a44] flex items-center px-6">
