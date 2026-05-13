@@ -118,7 +118,7 @@ const LoginPage: React.FC = () => {
       <div className="fixed inset-0 z-10 bg-gradient-to-br from-[#0f2a44]/80 to-[#0f2a44]/95 backdrop-blur-[2px]"></div>
 
       {/* 🏙️ HERO CONTENT (Brand Narrative) - Hidden on mobile by default in split view */}
-      <section className="relative z-20 flex flex-col w-full md:w-1/2 lg:w-[70%] min-h-screen p-0 transition-all duration-500">
+      <section className="relative z-20 flex flex-col w-full md:w-2/3 lg:w-[66.666%] min-h-screen p-0 transition-all duration-500">
         <header className="h-[10vh] flex items-center px-6 md:px-20 animate-in fade-in duration-1000">
           <PiicLogo />
         </header>
@@ -136,7 +136,7 @@ const LoginPage: React.FC = () => {
               href="https://wa.me/5214929421780"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] px-8 py-4 rounded-[4px] font-bold text-base shadow-lg hover:bg-[#d9a404] transition-all"
+              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] px-8 py-4 rounded-[4px] font-bold text-base shadow-lg hover:bg-[#d9a404] transition-all border-none"
             >
               Contactar a un asesor
             </a>
@@ -144,7 +144,7 @@ const LoginPage: React.FC = () => {
               href="https://piic.com.mx/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-white/5 border border-white/20 text-white backdrop-blur-md px-8 py-4 rounded-[4px] font-bold text-base hover:bg-white hover:text-[#0f2a44] transition-all"
+              className="inline-flex items-center justify-center bg-white/5 border-none text-white backdrop-blur-md px-8 py-4 rounded-[4px] font-bold text-base hover:bg-white hover:text-[#0f2a44] transition-all"
             >
               Ver sitio Web
             </a>
@@ -162,7 +162,7 @@ const LoginPage: React.FC = () => {
       </section>
 
       {/* 🛡️ LOGIN PANEL (Mobile 10/80/10 Chassis) */}
-      <section className="relative z-30 flex flex-col items-center justify-center w-full md:w-1/2 lg:w-[30%] min-h-screen bg-white transition-all duration-400">
+      <section className="relative z-30 flex flex-col items-center justify-center w-full md:w-1/3 lg:w-[33.333%] min-h-screen bg-white transition-all duration-400">
         <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
           {/* 📱 10% HEADER (Mobile Only Stripe) */}
           <header className="h-[10vh] md:hidden bg-[#0f2a44] flex items-center px-6">
@@ -172,9 +172,6 @@ const LoginPage: React.FC = () => {
           {/* 🏙️ 80% BODY */}
           <main className="h-[80vh] md:h-auto md:flex-1 bg-white p-8 md:p-12 flex flex-col justify-start md:justify-center">
             <div className="text-center md:text-left mb-8 pb-10 border-b border-[#0f2a44]/10">
-              <div className="hidden md:flex mb-8">
-                <PiicLogo />
-              </div>
               <h2 className="text-[#0f2a44] font-black tracking-tighter text-3xl lg:text-4xl">
                 Acceso Archon
               </h2>
@@ -205,7 +202,7 @@ const LoginPage: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  className="w-full p-4 bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
+                  className="w-full p-4 bg-[#0f2a44]/5 border-none rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
                   value={username}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setUsername(e.target.value)
@@ -222,7 +219,7 @@ const LoginPage: React.FC = () => {
                 </label>
                 <input
                   type="password"
-                  className="w-full p-4 bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
+                  className="w-full p-4 bg-[#0f2a44]/5 border-none rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setPassword(e.target.value)
@@ -237,7 +234,7 @@ const LoginPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 bg-[#f2b705] text-[#0f2a44] rounded-[4px] font-black text-base uppercase tracking-widest shadow-lg hover:bg-[#d9a404] hover:shadow-xl transition-all disabled:opacity-50"
+                  className="w-full py-4 bg-[#f2b705] text-[#0f2a44] rounded-[4px] font-black text-base uppercase tracking-widest shadow-lg hover:bg-[#d9a404] hover:shadow-xl transition-all disabled:opacity-50 border-none"
                 >
                   {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>
@@ -254,14 +251,11 @@ const LoginPage: React.FC = () => {
             </form>
           </main>
 
-          {/* 🏗️ 10% FOOTER (Mobile Only Stripe) */}
-          <footer className="h-[10vh] md:hidden bg-[#f2b705] flex flex-col items-center justify-center">
-            <p className="text-[#0f2a44] text-[10px] font-black uppercase tracking-[0.3em]">
-              Powered by PIIC TECH
+          {/* 🏗️ 10% FOOTER (Sovereign Credits) */}
+          <footer className="h-[10vh] bg-[#f2b705] flex items-center justify-center px-6">
+            <p className="text-[#0f2a44] text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap overflow-hidden text-ellipsis">
+              Powered by PIIC TECH <span className="mx-2 opacity-30">|</span> © 2026 PIIC GROUP
             </p>
-            <span className="text-[#0f2a44] text-[9px] font-bold mt-1 uppercase tracking-widest">
-              © 2026 PIIC GROUP
-            </span>
           </footer>
         </div>
       </section>
