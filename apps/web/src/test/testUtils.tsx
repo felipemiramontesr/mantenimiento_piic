@@ -77,9 +77,10 @@ const LayoutMetadataObserver = (): ReactElement => {
   const { layoutData } = useSovereignLayout();
 
   return (
-    <div data-testid="sovereign-layout-metadata" style={{ display: 'none' }}>
+    <div data-testid="sovereign-layout-metadata">
       <h1 data-testid="layout-title">{layoutData.title}</h1>
       <p data-testid="layout-description">{layoutData.description}</p>
+      {layoutData.subheaderActions}
     </div>
   );
 };
@@ -88,9 +89,11 @@ const AllTheProviders = ({ children }: { children: ReactNode }): ReactElement =>
   <AuthProvider>
     <SovereignLayoutProvider>
       <UserContext.Provider value={MockUserContext as any}>
-        <FleetContext.Provider value={MockFleetContext as any}>{children}</FleetContext.Provider>
+        <FleetContext.Provider value={MockFleetContext as any}>
+          {children}
+          <LayoutMetadataObserver />
+        </FleetContext.Provider>
       </UserContext.Provider>
-      <LayoutMetadataObserver />
     </SovereignLayoutProvider>
   </AuthProvider>
 );

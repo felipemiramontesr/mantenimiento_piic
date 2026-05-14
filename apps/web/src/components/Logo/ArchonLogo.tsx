@@ -1,67 +1,58 @@
 import React from 'react';
 
+/**
+ * 🔱 Archon Component: ArchonLogo
+ * Implementation: Sovereign Brand Identity (V.78.100.91)
+ * Objective: High-precision SVG orchestration.
+ * Refactor: 100% Pure Tailwind Atomic Architecture (Mirror DNA).
+ */
+
 interface ArchonLogoProps {
   isCollapsed: boolean;
   size?: number;
 }
 
 const ArchonLogo: React.FC<ArchonLogoProps> = ({ isCollapsed, size = 44 }) => (
-  <div 
-    style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: isCollapsed ? '0' : '5.3px', // Reduced by 1/3 (from 8px)
-      justifyContent: isCollapsed ? 'center' : 'flex-start',
-      transition: 'all 0.3s ease'
-    }}
+  <div
+    className={`
+      flex items-center transition-all duration-300
+      ${isCollapsed ? 'justify-center gap-0' : 'justify-start gap-[5.3px]'}
+    `}
   >
-    {/* Outline Hexagon Icon (Transparent Fill) */}
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 100 100" 
-      fill="none" 
+    {/* ⬢ Outline Hexagon Icon */}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ flexShrink: 0 }}
+      className="shrink-0"
     >
-      {/* Hollow Hexagon (Outline Only) - Thickness increased to 16 */}
-      <path 
-        d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z" 
-        stroke="#f2b705" 
-        strokeWidth="16" 
-        fill="none" 
+      <path
+        d="M50 8L86.5 29V71L50 92L13.5 71V29L50 8Z"
+        className="stroke-pinnacle-yellow"
+        strokeWidth="16"
+        fill="none"
       />
     </svg>
 
-    {/* Brand Text ArchonCore⬢ */}
+    {/* 🖋️ Brand Text ArchonCore⬢ */}
     {!isCollapsed && (
-      <div style={{ display: 'flex', alignItems: 'baseline' }}>
-        <h1 style={{ 
-          fontSize: '26px', // Increased size for more presence
-          fontWeight: 900, 
-          margin: 0, 
-          letterSpacing: '-0.03em',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          display: 'flex',
-          alignItems: 'baseline'
-        }}>
-          <span style={{ color: '#f2b705' }}>Archon</span>
-          <span style={{ color: '#ffffff' }}>Core</span>
+      <div className="flex items-baseline">
+        <h1 className="text-[26px] font-black m-0 tracking-tight flex items-baseline font-sans">
+          <span className="text-pinnacle-yellow">Archon</span>
+          <span className="text-white">Core</span>
         </h1>
-        {/* Hexagonal Terminal Point (Technological Period) - Balanced 3px below baseline */}
-        <svg 
-          width="15" // Increased by 50% (from 10)
-          height="15" // Increased by 50% (from 10)
-          viewBox="0 0 100 100" 
-          style={{ 
-            marginLeft: '4px', 
-            alignSelf: 'baseline',
-            transform: 'translateY(3px)' // Optical offset as requested
-          }} 
+        {/* 💠 Hexagonal Terminal Point */}
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 100 100"
+          className="ml-1 self-baseline translate-y-[3px]"
         >
-          <path 
-            d="M50 5L89.5 27.5V72.5L50 95L10.5 72.5V27.5L50 5Z" 
-            fill="#f2b705" // Yellow as requested
+          <path
+            d="M50 5L89.5 27.5V72.5L50 95L10.5 72.5V27.5L50 5Z"
+            className="fill-pinnacle-yellow"
           />
         </svg>
       </div>
