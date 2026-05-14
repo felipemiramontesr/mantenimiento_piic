@@ -26,9 +26,10 @@ interface ArchonDataTableProps<T> {
 }
 
 /**
- * 🔱 ARCHON DATA TABLE (v.1.0.0)
+ * 🔱 ARCHON DATA TABLE (v.78.100.102)
  * Architecture: Sovereign Registry Engine
- * Principles: DRY, SOLID, ZERO-NOISE
+ * Principles: ZERO-NOISE, INDUSTRIAL AXIAL ALIGNMENT.
+ * Refactor: 100% Pure Tailwind (Purged Hexes & Shadows).
  */
 export function ArchonDataTable<T>({
   data,
@@ -46,14 +47,14 @@ export function ArchonDataTable<T>({
   if (loading) {
     const loadingClasses =
       variant === 'master'
-        ? `glass-card-pro bg-white p-6 space-y-6 ${className}`
+        ? `bg-white p-6 space-y-6 w-full ${className}`
         : `w-full p-0 space-y-4 ${className}`;
 
     return (
       <div className={loadingClasses}>
         <div className="flex items-center gap-3 opacity-40 animate-pulse">
-          <div className="w-4 h-4 bg-[#f2b705] rounded-[4px]" />
-          <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-[0.2em]">
+          <div className="w-4 h-4 bg-pinnacle-yellow rounded-[4px]" />
+          <span className="text-[11px] font-black text-pinnacle-navy uppercase tracking-[0.2em]">
             {loadingMessage}
           </span>
         </div>
@@ -70,14 +71,14 @@ export function ArchonDataTable<T>({
 
   const containerClasses =
     variant === 'master'
-      ? `glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative ${className}`
+      ? `bg-white overflow-hidden border border-pinnacle-navy/5 rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative w-full ${className}`
       : `w-full !p-0 !m-0 !rounded-none !border-none overflow-x-auto custom-scrollbar relative ${className}`;
 
   return (
     <div className={containerClasses}>
-      <table data-testid={testId} className="archon-registry-table w-full">
+      <table data-testid={testId} className="w-full border-collapse">
         <thead>
-          <tr>
+          <tr className="bg-pinnacle-navy border-b border-pinnacle-navy/10">
             {headers.map((header) => (
               <th
                 key={header.key}
@@ -86,14 +87,16 @@ export function ArchonDataTable<T>({
                     onSort(header.key);
                   }
                 }}
-                className={`${header.sortable ? 'cursor-default' : ''} text-${
-                  header.align || 'center'
-                }`}
+                className={`
+                  h-14 px-6 text-white text-[10px] font-black uppercase tracking-[0.15em]
+                  ${header.sortable ? 'cursor-pointer hover:bg-pinnacle-navy/90' : ''} 
+                  text-${header.align || 'center'}
+                `}
               >
                 <div className={`flex items-center gap-2 ${getJustifyClass(header.align)}`}>
                   {header.label}
                   {header.sortable && sortConfig?.field === header.key && (
-                    <span className="inline-flex ml-1 text-amber-400">
+                    <span className="inline-flex ml-1 text-pinnacle-yellow">
                       {sortConfig.direction === 'desc' ? '▼' : '▲'}
                     </span>
                   )}
@@ -102,13 +105,13 @@ export function ArchonDataTable<T>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 bg-white">
           {data.length > 0 ? (
             data.map((item, index) => renderRow(item, index))
           ) : (
             <tr>
               <td colSpan={headers.length} className="py-20 text-center">
-                <p className="text-[14px] font-black text-[#0f2a44] opacity-20 uppercase tracking-widest">
+                <p className="text-[14px] font-black text-pinnacle-navy opacity-20 uppercase tracking-widest">
                   {emptyMessage}
                 </p>
               </td>

@@ -5,15 +5,16 @@ import ArchonManagementCard from '../UI/ArchonManagementCard';
 
 /**
  * 🔱 Archon Component: UserManagementCards
- * Implementation: Dual-Axis Symmetry Selector (Fleet-Standard)
- * v.28.24.2 - Emerald Restoration & Static Entry
+ * Implementation: Dual-Axis Symmetry Selector (V.78.100.102)
+ * Objective: High-performance navigational orchestration for Personnel.
+ * Refactor: Forcing 2-Column Grid for axial symmetry.
  */
 
 const UserManagementCards: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
 
   return (
-    <div className="archon-grid-2-sovereign animate-in fade-in slide-in-from-top-4 duration-700">
+    <div className="grid grid-cols-2 gap-10 w-full animate-in fade-in slide-in-from-top-4 duration-700">
       <ArchonManagementCard
         variant="navy"
         headerTitle="Directorio Maestro"

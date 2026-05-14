@@ -8,10 +8,9 @@ import UsersGridView from '../../components/Users/UsersGridView';
 import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 
 /**
- * 🔱 Archon Component: UsersModule
- * Implementation: Sovereign Personnel Administration
- * v.20.0.0
- * Refinement: Centralized Header/Footer via SovereignLayoutContext
+ * 🔱 Archon Module: UsersModule
+ * Implementation: Sovereign Personnel Administration (V.78.100.102)
+ * Refactor: 100% Pure Tailwind (Purged Phantom Classes & Inconsistent Spacing).
  */
 const UsersModule: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
@@ -42,16 +41,13 @@ const UsersModule: React.FC = (): React.JSX.Element => {
   }, [activePanel]);
 
   return (
-    <div className="animate-in fade-in duration-700">
-      {/* 📊 BODY MODULAR */}
-      <section className="archon-workspace-chassis">
-        {/* 🔱 AXIAL SYNC CONTAINER */}
-        <div className="archon-axial-container flex flex-col gap-12">
-          <div ref={panelRef}>
-            {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
-          </div>
+    <div className="animate-in fade-in duration-700 w-full max-w-full">
+      {/* 🔱 AXIAL SYNC CONTAINER */}
+      <div className="flex flex-col gap-12 w-full max-w-full">
+        <div ref={panelRef} className="w-full">
+          {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
         </div>
-      </section>
+      </div>
     </div>
   );
 };

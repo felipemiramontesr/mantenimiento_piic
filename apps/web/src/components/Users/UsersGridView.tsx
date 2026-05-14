@@ -6,15 +6,16 @@ import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 /**
  * 🔱 Archon Component: UsersGridView
- * Implementation: High-Density Industrial Registry (Fleet-Standard)
- * v.28.24.2 - Identity Oversight (Static Recovery)
+ * Implementation: High-Density Industrial Registry (V.78.100.102)
+ * Objective: Personnel Administration with Zero-Noise Aesthetic.
+ * Refactor: 100% Pure Tailwind (Eradicated all Hex Codes).
  */
 
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
-  let styles = 'bg-gray-100 text-gray-600';
-  if (roleName === 'Archon') styles = 'bg-[#0f2a44] text-white';
-  if (roleName === 'Administrador') styles = 'bg-blue-100 text-blue-700';
-  if (roleName === 'Auditor') styles = 'bg-purple-100 text-purple-700';
+  let styles = 'bg-slate-100 text-slate-600';
+  if (roleName === 'Archon') styles = 'bg-pinnacle-navy text-white';
+  if (roleName === 'Administrador') styles = 'bg-sky-100 text-sky-700';
+  if (roleName === 'Auditor') styles = 'bg-violet-100 text-violet-700';
   if (roleName === 'Técnico') styles = 'bg-cyan-100 text-cyan-700';
   if (roleName === 'Operador') styles = 'bg-emerald-100 text-emerald-700';
 
@@ -30,13 +31,13 @@ const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
 const UserIdentityCluster = ({ user }: { user: UserIndustrial }): React.JSX.Element => (
   <div className="flex flex-col items-center gap-1.5">
     <div className="flex items-center gap-1.5 opacity-60">
-      <Hash size={10} className="text-[#0f2a44]" />
-      <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter">
+      <Hash size={10} className="text-pinnacle-navy" />
+      <span className="text-[10px] font-black text-pinnacle-navy uppercase tracking-tighter">
         {user.employeeNumber || 'SIN NÚMERO'}
       </span>
     </div>
     <div className="flex flex-col items-center">
-      <span className="text-[12px] font-black text-[#0f2a44] uppercase tracking-tight leading-tight text-center">
+      <span className="text-[12px] font-black text-pinnacle-navy uppercase tracking-tight leading-tight text-center">
         {user.fullName || user.username}
       </span>
     </div>
@@ -53,25 +54,25 @@ const UserRegistryRow = ({
   const { toggleUserStatus } = useUsers();
 
   return (
-    <tr className="transition-all duration-300 hover:bg-[#0f2a44]/[0.015]">
+    <tr className="transition-all duration-300 hover:bg-pinnacle-navy/[0.015]">
       <td className="py-6 text-center">
         <div className="flex justify-center items-center">
           {user.imageUrl ? (
             <img
               src={user.imageUrl}
-              className="w-48 h-48 rounded-[4px] object-cover"
+              className="w-12 h-12 rounded-[4px] object-cover border border-slate-100 shadow-sm"
               alt={user.username}
             />
           ) : (
-            <div className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center text-gray-300">
-              <ImageIcon size={48} className="opacity-40" />
+            <div className="w-12 h-12 rounded-[4px] bg-slate-50 flex items-center justify-center text-slate-300 border border-dashed border-slate-200">
+              <ImageIcon size={20} className="opacity-40" />
             </div>
           )}
         </div>
       </td>
       <td className="text-center px-4">
-        <div className="flex items-center justify-center gap-2 text-[#0f2a44] opacity-80">
-          <User size={12} className="text-[#f2b705]" />
+        <div className="flex items-center justify-center gap-2 text-pinnacle-navy opacity-80">
+          <User size={12} className="text-pinnacle-yellow" />
           <span className="text-[11px] font-black tracking-widest">
             {user.username.toUpperCase()}
           </span>
@@ -116,9 +117,9 @@ const UserRegistryRow = ({
         <div className="flex justify-center gap-2">
           <button
             onClick={(): void => onEdit(user)}
-            className="flex items-center justify-center w-10 h-10 text-[#059669] bg-emerald-50/30 hover:bg-emerald-100/50 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+            className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] border-none outline-none"
           >
-            <Pencil size={18} className="transition-transform duration-300 group-hover:rotate-12" />
+            <Pencil size={18} />
           </button>
         </div>
       </td>
@@ -178,7 +179,7 @@ const UsersGridView = (): React.JSX.Element => {
   ];
 
   return (
-    <div className="space-y-[20px] text-[#0f2a44]">
+    <div className="w-full text-pinnacle-navy">
       <ArchonDataTable
         loading={isLoading}
         loadingMessage="Sincronizando Identidades..."
