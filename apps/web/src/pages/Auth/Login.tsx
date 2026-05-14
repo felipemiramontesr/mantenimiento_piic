@@ -120,10 +120,12 @@ const LoginPage: React.FC = () => {
       {/* 🏙️ HERO CONTENT (Cinematic Brand Narrative - 2/3 Width) */}
       <section className="relative z-20 hidden md:flex flex-col md:col-span-2 min-h-screen p-0 transition-all duration-500 overflow-hidden font-display">
         <main className="flex-1 flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
-          <h1 className="text-pinnacle-white font-black text-3xl md:text-4xl lg:text-5xl leading-[1.1] max-w-[850px] text-center md:text-left">
-            Suministro industrial, tecnológico y comercial para <br className="hidden lg:block" />{' '}
-            operaciones que no pueden detenerse
-          </h1>
+          <div className="w-full">
+            <h1 className="text-pinnacle-white font-black text-3xl md:text-5xl lg:text-6xl leading-[1.05] max-w-[20ch] text-center md:text-left">
+              Suministro industrial, tecnológico y <br className="hidden lg:block" /> comercial para
+              operaciones que no pueden detenerse
+            </h1>
+          </div>
           <p className="text-pinnacle-white/70 text-lg md:text-xl max-w-none text-center md:text-left whitespace-nowrap font-sans">
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
