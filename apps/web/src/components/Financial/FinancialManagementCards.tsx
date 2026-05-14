@@ -13,13 +13,13 @@ interface FinancialManagementCardsProps {
  * 🔱 Archon Component: FinancialManagementCards
  * Implementation: Dual-Axis Symmetry Selector (V.78.100.91)
  * Theme: Financial Health (Navy & Emerald Integration)
- * Refactor: Sovereign Grid Architecture (Pure Tailwind).
+ * Refactor: Forcing 2-Column Grid on all workspace resolutions.
  */
 const FinancialManagementCards: React.FC<FinancialManagementCardsProps> = ({
   activePanel,
   onPanelChange,
 }) => (
-  <div className="archon-grid-2-sovereign animate-in fade-in slide-in-from-top-4 duration-700">
+  <div className="grid grid-cols-2 gap-10 w-full animate-in fade-in slide-in-from-top-4 duration-700">
     <ArchonManagementCard
       variant="navy"
       headerTitle="Auditoría de Costos"

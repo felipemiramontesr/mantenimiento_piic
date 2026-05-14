@@ -9,8 +9,8 @@ import FinancialManagementCards, {
 
 /**
  * 🔱 Archon Module: FinancialHealthModule
- * Implementation: Sovereign Industrial Intelligence (V.78.100.95)
- * Architecture: Subheader Injection & 2-Column Axial Grid.
+ * Implementation: Sovereign Industrial Intelligence (V.78.100.97)
+ * Architecture: Forcing 2-Column Axial Grid (Grid-Cols-2).
  * Refactor: 100% Pure Tailwind Purge (Zero Vanilla CSS).
  */
 const FinancialHealthModule: React.FC = (): React.ReactElement => {
@@ -45,7 +45,6 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
     description: string,
     variant: 'navy' | 'emerald' | 'yellow' | 'sky'
   ): React.ReactElement => {
-    // 🎨 Resolve Chromatic Tokens (DRY)
     const variantColors = {
       navy: 'text-pinnacle-navy',
       emerald: 'text-emerald-600',
@@ -61,7 +60,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
     };
 
     return (
-      <div className="card-archon-sovereign animate-in fade-in duration-700 flex flex-col h-full">
+      <div className="card-archon-sovereign animate-in fade-in duration-700 flex flex-col h-full min-h-[360px]">
         {/* 🔱 Header */}
         <div className="flex items-center gap-3 mb-6">
           <Icon size={18} className={variantColors[variant]} />
@@ -105,7 +104,8 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
     <div className="animate-in fade-in duration-700">
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container">
-          <div className="archon-grid-2-sovereign">
+          {/* 🔱 GRID 2XN: FORCED SYMMETRY */}
+          <div className="grid grid-cols-2 gap-10 w-full">
             {activePanel === 'AUDIT' && (
               <>
                 {renderFinancialKPI(
@@ -115,7 +115,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
                   'Pago mensual acumulado (Leasing)',
                   'navy'
                 )}
-                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[300px]">
+                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px]">
                   <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
                     Auditoría de Egresos
                   </h3>
@@ -135,7 +135,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
                   'Retorno operativo por unidad lista',
                   'emerald'
                 )}
-                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[300px]">
+                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px]">
                   <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
                     Motor de ROI
                   </h3>
