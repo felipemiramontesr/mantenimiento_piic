@@ -3,9 +3,9 @@ import { ArrowRight, LucideIcon } from 'lucide-react';
 
 /**
  * 🔱 Archon UI Component: ArchonManagementCard
- * Implementation: Sovereign Management Strategy Card (V.78.100.99)
- * Objective: High-performance navigational orchestration within modules.
- * Refactor: 100% Pure Tailwind Arbitrary Values (Zero Style Prop).
+ * Implementation: Sovereign Management Strategy Card (V.78.100.104)
+ * Objective: Chromatic differentiation via dynamic CSS variables.
+ * Refactor: Fixed CSS variable inheritance and arbitrary value mapping.
  */
 
 export type ArchonCardVariant = 'navy' | 'emerald' | 'red' | 'yellow' | 'sky' | 'violet' | 'blue';
@@ -23,25 +23,20 @@ export interface ArchonManagementCardProps {
   testId?: string;
 }
 
-const getVariantColor = (variant: ArchonCardVariant): string => {
-  switch (variant) {
-    case 'navy':
-      return '#0f2a44';
-    case 'emerald':
-      return '#10b981';
-    case 'red':
-      return '#ef4444';
-    case 'yellow':
-      return '#f2b705';
-    case 'sky':
-      return '#0ea5e9';
-    case 'violet':
-      return '#8b5cf6';
-    case 'blue':
-      return '#3b82f6';
-    default:
-      return '#0f2a44';
-  }
+const getVariantClasses = (variant: ArchonCardVariant): string => {
+  const mapping: Record<ArchonCardVariant, string> = {
+    navy: '[--card-accent:#0f2a44] [--card-accent-soft:#0f2a4415] [--card-accent-border:#0f2a4430]',
+    emerald:
+      '[--card-accent:#10b981] [--card-accent-soft:#10b98115] [--card-accent-border:#10b98130]',
+    red: '[--card-accent:#ef4444] [--card-accent-soft:#ef444415] [--card-accent-border:#ef444430]',
+    yellow:
+      '[--card-accent:#f2b705] [--card-accent-soft:#f2b70515] [--card-accent-border:#f2b70530]',
+    sky: '[--card-accent:#0ea5e9] [--card-accent-soft:#0ea5e915] [--card-accent-border:#0ea5e930]',
+    violet:
+      '[--card-accent:#8b5cf6] [--card-accent-soft:#8b5cf615] [--card-accent-border:#8b5cf630]',
+    blue: '[--card-accent:#3b82f6] [--card-accent-soft:#3b82f615] [--card-accent-border:#3b82f630]',
+  };
+  return mapping[variant] || mapping.navy;
 };
 
 const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
@@ -56,7 +51,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
   onClick,
   testId,
 }) => {
-  const hexColor = getVariantColor(variant);
+  const variantStyles = getVariantClasses(variant);
   const isYellow = variant === 'yellow';
 
   return (
@@ -65,9 +60,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
       className={`
         card-archon-sovereign cursor-pointer animate-in fade-in duration-500 group flex-1
         ${isActive ? 'border-x-slate-300 border-b-slate-300' : ''}
-        [--card-accent:${hexColor}]
-        [--card-accent-soft:${hexColor}15]
-        [--card-accent-border:${hexColor}30]
+        ${variantStyles}
       `}
     >
       {/* 🔱 HEADER */}
