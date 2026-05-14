@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
 
 export interface ArchonTableHeader {
@@ -26,10 +27,10 @@ interface ArchonDataTableProps<T> {
 }
 
 /**
- * 🔱 ARCHON DATA TABLE (v.78.100.102)
+ * 🔱 ARCHON DATA TABLE (v.78.100.103)
  * Architecture: Sovereign Registry Engine
  * Principles: ZERO-NOISE, INDUSTRIAL AXIAL ALIGNMENT.
- * Refactor: 100% Pure Tailwind (Purged Hexes & Shadows).
+ * Refactor: Persistent Sorting UX Telemetry (Lucide Integration).
  */
 export function ArchonDataTable<T>({
   data,
@@ -89,15 +90,29 @@ export function ArchonDataTable<T>({
                 }}
                 className={`
                   h-14 px-6 text-white text-[10px] font-black uppercase tracking-[0.15em]
-                  ${header.sortable ? 'cursor-pointer hover:bg-pinnacle-navy/90' : ''} 
+                  ${
+                    header.sortable
+                      ? 'cursor-pointer hover:bg-pinnacle-navy/90 transition-colors'
+                      : ''
+                  } 
                   text-${header.align || 'center'}
                 `}
               >
                 <div className={`flex items-center gap-2 ${getJustifyClass(header.align)}`}>
                   {header.label}
-                  {header.sortable && sortConfig?.field === header.key && (
-                    <span className="inline-flex ml-1 text-pinnacle-yellow">
-                      {sortConfig.direction === 'desc' ? '▼' : '▲'}
+                  {header.sortable && (
+                    <span className="inline-flex ml-1">
+                      {sortConfig?.field === header.key ? (
+                        <>
+                          {sortConfig.direction === 'desc' ? (
+                            <ChevronDown size={14} className="text-pinnacle-yellow" />
+                          ) : (
+                            <ChevronUp size={14} className="text-pinnacle-yellow" />
+                          )}
+                        </>
+                      ) : (
+                        <ChevronsUpDown size={14} className="text-white/20" />
+                      )}
                     </span>
                   )}
                 </div>
