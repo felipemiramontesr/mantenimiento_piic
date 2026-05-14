@@ -49,7 +49,7 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0f2a44]/80 backdrop-blur-xl"
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-pinnacle-navy/80 backdrop-blur-xl"
         onClick={onClose}
       >
         {/* Close Button */}
@@ -110,7 +110,7 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
                 <div
                   key={idx}
                   className={`w-1.5 h-1.5 rounded-[4px] transition-all duration-300 ${
-                    currentIndex === idx ? 'bg-[#f2b705] w-6' : 'bg-white/30'
+                    currentIndex === idx ? 'bg-pinnacle-yellow w-6' : 'bg-white/30'
                   }`}
                 />
               ))}

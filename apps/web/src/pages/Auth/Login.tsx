@@ -181,8 +181,13 @@ const LoginPage: React.FC = () => {
 
           {/* 🏙️ FOOTER */}
           <footer className="h-[10vh] flex items-center justify-center border-t border-pinnacle-navy/5 px-8">
-            <div className="flex items-center gap-4 text-pinnacle-navy/30 font-display font-bold text-[10px] uppercase tracking-[0.2em]">
-              <span>Powered by DREAMTEK © 2026</span>
+            <div className="flex flex-col items-center gap-1 text-center">
+              <span className="text-pinnacle-navy/40 font-bold text-[9px] uppercase tracking-widest">
+                © Todos los derechos reservados por ArchonCore by Dreamtek.
+              </span>
+              <span className="text-pinnacle-navy/20 font-black text-[8px] uppercase tracking-widest">
+                Archon Fleet System | V.78.100.50
+              </span>
             </div>
           </footer>
         </div>
