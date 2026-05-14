@@ -64,7 +64,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
       onClick={onClick}
       className={`
         card-archon-sovereign cursor-pointer animate-in fade-in duration-500 group
-        ${isActive ? 'border-slate-300' : ''}
+        ${isActive ? 'border-x-slate-300 border-b-slate-300' : ''}
       `}
       style={
         {
