@@ -3,9 +3,9 @@ import { ArrowRight, LucideIcon } from 'lucide-react';
 
 /**
  * 🔱 Archon UI Component: ArchonManagementCard
- * Implementation: Sovereign Management Strategy Card (V.78.100.91)
+ * Implementation: Sovereign Management Strategy Card (V.78.100.99)
  * Objective: High-performance navigational orchestration within modules.
- * Migration: 100% Sovereign Card Architecture (Pure Tailwind).
+ * Refactor: 100% Pure Tailwind Arbitrary Values (Zero Style Prop).
  */
 
 export type ArchonCardVariant = 'navy' | 'emerald' | 'red' | 'yellow' | 'sky' | 'violet' | 'blue';
@@ -63,37 +63,23 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
     <div
       onClick={onClick}
       className={`
-        card-archon-sovereign cursor-pointer animate-in fade-in duration-500 group
+        card-archon-sovereign cursor-pointer animate-in fade-in duration-500 group flex-1
         ${isActive ? 'border-x-slate-300 border-b-slate-300' : ''}
+        [--card-accent:${hexColor}]
+        [--card-accent-soft:${hexColor}15]
+        [--card-accent-border:${hexColor}30]
       `}
-      style={
-        {
-          '--card-accent': hexColor,
-          '--card-accent-soft': `${hexColor}15`,
-          '--card-accent-border': `${hexColor}30`,
-        } as React.CSSProperties
-      }
     >
       {/* 🔱 HEADER */}
       <div className="card-sovereign-header">
-        <HeaderIcon
-          size={18}
-          className="transition-colors"
-          style={{ color: 'var(--card-accent)' }}
-        />
+        <HeaderIcon size={18} className="transition-colors text-[var(--card-accent)]" />
         <span className="card-sovereign-title">{headerTitle}</span>
       </div>
 
       {/* 📦 PAYLOAD */}
       <div className="flex-1 flex flex-col items-center justify-center space-y-6 pb-8">
-        <div
-          className="w-20 h-20 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300"
-          style={{
-            backgroundColor: 'var(--card-accent-soft)',
-            borderColor: 'var(--card-accent-border)',
-          }}
-        >
-          <PayloadIcon size={32} style={{ color: 'var(--card-accent)' }} />
+        <div className="w-20 h-20 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300 bg-[var(--card-accent-soft)] border-[var(--card-accent-border)]">
+          <PayloadIcon size={32} className="text-[var(--card-accent)]" />
         </div>
 
         <div className="flex flex-col items-center space-y-1 text-center">
