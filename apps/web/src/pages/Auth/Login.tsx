@@ -108,8 +108,8 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col-reverse md:flex-row overflow-hidden bg-[#0f2a44]">
-      {/* 🌌 ATMOSPHERIC LAYER */}
+    <div className="grid grid-cols-1 md:grid-cols-3 min-h-screen overflow-hidden bg-[#0f2a44]">
+      {/* 🌌 ATMOSPHERIC LAYER (Global fixed backdrops) */}
       <img
         src={serviceBackground}
         alt="Service Workshop"
@@ -117,8 +117,8 @@ const LoginPage: React.FC = () => {
       />
       <div className="fixed inset-0 z-10 bg-gradient-to-br from-[#0f2a44]/80 to-[#0f2a44]/95 backdrop-blur-[2px]"></div>
 
-      {/* 🏙️ HERO CONTENT (Cinematic Brand Narrative) */}
-      <section className="relative z-20 flex flex-col w-full md:w-[66.666%] min-h-screen p-0 transition-all duration-500 overflow-hidden">
+      {/* 🏙️ HERO CONTENT (Cinematic Brand Narrative - 2/3 Width) */}
+      <section className="relative z-20 hidden md:flex flex-col md:col-span-2 min-h-screen p-0 transition-all duration-500 overflow-hidden">
         <main className="flex-1 flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
           <h1 className="text-white font-black text-3xl md:text-4xl lg:text-5xl leading-tight max-w-2xl text-center md:text-left">
             Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
@@ -132,7 +132,7 @@ const LoginPage: React.FC = () => {
               href="https://wa.me/5214929421780"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] px-8 py-4 rounded-[4px] font-bold text-base shadow-lg hover:bg-[#d9a404] transition-all border-none"
+              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] px-8 py-4 rounded-[4px] font-bold text-base shadow-lg hover:bg-[#d9a404] transition-all"
             >
               Contactar a un asesor
             </a>
@@ -140,7 +140,7 @@ const LoginPage: React.FC = () => {
               href="https://piic.com.mx/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-white/5 border-none text-white backdrop-blur-md px-8 py-4 rounded-[4px] font-bold text-base hover:bg-white hover:text-[#0f2a44] transition-all"
+              className="inline-flex items-center justify-center bg-white/5 text-white backdrop-blur-md px-8 py-4 rounded-[4px] font-bold text-base hover:bg-white hover:text-[#0f2a44] transition-all"
             >
               Ver sitio Web
             </a>
@@ -148,8 +148,8 @@ const LoginPage: React.FC = () => {
         </main>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (Mobile 10/80/10 Chassis) */}
-      <section className="relative z-30 flex flex-col items-center justify-center w-full md:w-[33.333%] min-h-screen bg-white transition-all duration-400 shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
+      {/* 🛡️ LOGIN PANEL (Access Center - 1/3 Width) */}
+      <section className="relative z-30 flex flex-col items-center justify-center col-span-1 min-h-screen bg-white transition-all duration-400 shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
         <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
           {/* 📱 10% HEADER (Mobile Only Stripe) */}
           <header className="h-[10vh] md:hidden bg-[#0f2a44] flex items-center px-6">
@@ -189,7 +189,7 @@ const LoginPage: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  className="w-full p-4 bg-[#0f2a44]/5 border-none rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
+                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
                   value={username}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setUsername(e.target.value)
@@ -206,7 +206,7 @@ const LoginPage: React.FC = () => {
                 </label>
                 <input
                   type="password"
-                  className="w-full p-4 bg-[#0f2a44]/5 border-none rounded-[4px] text-base text-[#0f2a44] outline-none focus:border-[#f2b705] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
+                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setPassword(e.target.value)
@@ -221,7 +221,7 @@ const LoginPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 bg-[#f2b705] text-[#0f2a44] rounded-[4px] font-black text-base uppercase tracking-widest shadow-lg hover:bg-[#d9a404] hover:shadow-xl transition-all disabled:opacity-50 border-none"
+                  className="w-full py-4 bg-[#f2b705] text-[#0f2a44] rounded-[4px] font-black text-base uppercase tracking-widest shadow-lg hover:bg-[#d9a404] hover:shadow-xl transition-all disabled:opacity-50"
                 >
                   {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>

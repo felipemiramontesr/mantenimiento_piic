@@ -1,7 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  a {
+    @apply no-underline !important;
+  }
+  button {
+    @apply border-none outline-none cursor-pointer !important;
+  }
+  input {
+    @apply border-none outline-none !important;
+  }
+}
 
 :root {
   --color-primary: #0f2a44; /* Deep Space Blue (Sidebar) */
