@@ -35,7 +35,7 @@
 
   .card-archon-sovereign {
     --card-accent: #0f2a44;
-    @apply bg-white rounded-[4px] shadow-pinnacle overflow-hidden border border-pinnacle-navy/5 border-t-4 border-t-solid transition-all duration-300 hover:shadow-pinnacle-hover flex flex-col p-6 h-full;
+    @apply bg-white rounded-[4px] shadow-pinnacle overflow-hidden border border-pinnacle-navy/5 border-t-4 border-solid transition-all duration-300 hover:shadow-pinnacle-hover flex flex-col p-6 h-full;
     border-top-color: var(--card-accent);
   }
 
