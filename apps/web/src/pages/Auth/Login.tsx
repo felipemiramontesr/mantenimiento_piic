@@ -118,21 +118,21 @@ const LoginPage: React.FC = () => {
       <div className="fixed inset-0 z-10 bg-gradient-to-br from-[#0f2a44]/80 to-[#0f2a44]/95 backdrop-blur-[2px]"></div>
 
       {/* 🏙️ HERO CONTENT (Cinematic Brand Narrative - 2/3 Width) */}
-      <section className="relative z-20 hidden md:flex flex-col md:col-span-2 min-h-screen p-0 transition-all duration-500 overflow-hidden">
+      <section className="relative z-20 hidden md:flex flex-col md:col-span-2 min-h-screen p-0 transition-all duration-500 overflow-hidden font-display">
         <main className="flex-1 flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
-          <h1 className="text-white font-black text-3xl md:text-4xl lg:text-5xl leading-tight max-w-2xl text-center md:text-left">
+          <h1 className="text-white font-black text-3xl md:text-4xl lg:text-5xl leading-[1.1] max-w-[850px] text-center md:text-left">
             Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
           </h1>
-          <p className="text-white/70 text-lg md:text-xl max-w-lg text-center md:text-left">
+          <p className="text-white/70 text-lg md:text-xl max-w-none text-center md:text-left whitespace-nowrap font-sans">
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-4 justify-center md:justify-start">
+          <div className="flex flex-col md:flex-row gap-4 mt-4 justify-center md:justify-start">
             <a
               href="https://wa.me/5214929421780"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] px-8 py-4 rounded-[4px] font-bold text-base shadow-lg hover:bg-[#d9a404] transition-all"
+              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] w-full md:w-72 h-16 rounded-[4px] font-black text-base shadow-lg hover:bg-[#d9a404] transition-all"
             >
               Contactar a un asesor
             </a>
@@ -140,7 +140,7 @@ const LoginPage: React.FC = () => {
               href="https://piic.com.mx/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-white/5 text-white backdrop-blur-md px-8 py-4 rounded-[4px] font-bold text-base hover:bg-white hover:text-[#0f2a44] transition-all"
+              className="inline-flex items-center justify-center bg-white/5 text-white backdrop-blur-md w-full md:w-72 h-16 rounded-[4px] font-black text-base hover:bg-white hover:text-[#0f2a44] transition-all"
             >
               Ver sitio Web
             </a>
@@ -162,7 +162,7 @@ const LoginPage: React.FC = () => {
               <h2 className="text-[#0f2a44] font-black tracking-tighter text-3xl lg:text-4xl">
                 Acceso Archon
               </h2>
-              <p className="text-[#0f2a44]/50 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+              <p className="text-[#0f2a44]/50 text-[10px] font-black uppercase tracking-[0.3em] mt-2 font-sans">
                 Control de Flotas
               </p>
             </div>
@@ -177,19 +177,19 @@ const LoginPage: React.FC = () => {
                 className="flex items-center overflow-hidden"
               >
                 {error && (
-                  <div className="w-full p-4 bg-red-500/10 text-red-500 text-[11px] font-black uppercase rounded border-l-4 border-red-500 backdrop-blur-md">
+                  <div className="w-full p-4 bg-red-500/10 text-red-500 text-[11px] font-black uppercase rounded border-l-4 border-red-500 backdrop-blur-md font-sans">
                     Error de Sistema: {error}
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1 font-sans">
                   Identidad de Usuario
                 </label>
                 <input
                   type="text"
-                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
+                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all font-sans"
                   value={username}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setUsername(e.target.value)
@@ -201,12 +201,12 @@ const LoginPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1">
+                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1 font-sans">
                   Clave de Seguridad
                 </label>
                 <input
                   type="password"
-                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all"
+                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all font-sans"
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setPassword(e.target.value)
@@ -230,7 +230,7 @@ const LoginPage: React.FC = () => {
               <div className="text-center mt-6">
                 <a
                   href="#"
-                  className="text-[#f2b705] text-[13px] font-bold hover:text-[#0f2a44] transition-all"
+                  className="text-[#f2b705] text-[13px] font-black hover:text-[#0f2a44] transition-all font-sans"
                 >
                   ¿Olvidaste tu contraseña?
                 </a>
@@ -240,7 +240,7 @@ const LoginPage: React.FC = () => {
 
           {/* 🏗️ 10% FOOTER (Sovereign Credits) */}
           <footer className="h-[10vh] bg-[#f2b705] flex items-center justify-center px-6">
-            <p className="text-[#0f2a44] text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap overflow-hidden text-ellipsis">
+            <p className="text-[#0f2a44] text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap overflow-hidden text-ellipsis font-sans">
               Powered by PIIC TECH <span className="mx-2 opacity-30">|</span> © 2026 PIIC GROUP
             </p>
           </footer>
@@ -249,28 +249,28 @@ const LoginPage: React.FC = () => {
 
       {/* 🍪 COOKIE BANNER PIIC */}
       {showCookies && (
-        <div className="fixed bottom-0 left-0 w-full bg-[#f2b705] p-6 z-[1000] flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-bottom duration-500">
-          <p className="text-[#0f2a44] text-sm font-medium leading-relaxed flex-1">
+        <div className="fixed bottom-0 left-0 w-full bg-[#f2b705] h-[10vh] px-10 z-[1000] flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] font-sans">
+          <p className="text-[#0f2a44] text-[11px] font-bold max-w-4xl leading-tight">
             Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
             <a
               href="https://piic.com.mx/politicas"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-bold underline"
+              className="font-black underline"
             >
               política de uso, tratamiento de información y cookies.
             </a>
           </p>
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <button
               onClick={(): void => setShowCookies(false)}
-              className="px-6 py-2 border-2 border-[#0f2a44] text-[#0f2a44] rounded-[4px] font-black text-[12px] uppercase"
+              className="px-8 h-10 bg-white text-[#0f2a44] rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-[#0f2a44] hover:text-white transition-all shadow-sm"
             >
               RECHAZAR
             </button>
             <button
               onClick={acceptCookies}
-              className="px-6 py-2 bg-[#0f2a44] text-white rounded-[4px] font-black text-[12px] uppercase"
+              className="px-8 h-10 bg-[#0f2a44] text-white rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-[#0f2a44] transition-all shadow-md"
             >
               ACEPTAR
             </button>
