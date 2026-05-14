@@ -9,9 +9,9 @@ import FinancialManagementCards, {
 
 /**
  * 🔱 Archon Module: FinancialHealthModule
- * Implementation: Sovereign Industrial Intelligence (V.78.100.97)
- * Architecture: Forcing 2-Column Axial Grid (Grid-Cols-2).
- * Refactor: 100% Pure Tailwind Purge (Zero Vanilla CSS).
+ * Implementation: Sovereign Industrial Intelligence (V.78.100.98)
+ * Architecture: Forced Axial Symmetry & Zero-CSS-Debt.
+ * Refactor: 100% Atomic Tailwind (Mirror DNA).
  */
 const FinancialHealthModule: React.FC = (): React.ReactElement => {
   const { units, stats, loading } = useFleet();
@@ -91,7 +91,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
 
         {/* 🔘 Action */}
         <button
-          className={`h-11 w-full flex items-center justify-center text-white font-display font-black text-[10px] uppercase tracking-widest rounded-[4px] transition-all duration-300 bg-pinnacle-navy hover:brightness-110`}
+          className={`h-11 w-full flex items-center justify-center text-white font-display font-black text-[10px] uppercase tracking-widest rounded-[4px] transition-all duration-300 bg-pinnacle-navy hover:brightness-110 shadow-sm`}
         >
           <span>Analizar Flujo</span>
           <ArrowUpRight size={12} className="ml-2" />
@@ -101,53 +101,49 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
   };
 
   return (
-    <div className="animate-in fade-in duration-700">
-      <section className="archon-workspace-chassis">
-        <div className="archon-axial-container">
-          {/* 🔱 GRID 2XN: FORCED SYMMETRY */}
-          <div className="grid grid-cols-2 gap-10 w-full">
-            {activePanel === 'AUDIT' && (
-              <>
-                {renderFinancialKPI(
-                  'Compromiso de Arrendamiento',
-                  `$${totalMonthlyLease.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-                  DollarSign,
-                  'Pago mensual acumulado (Leasing)',
-                  'navy'
-                )}
-                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px]">
-                  <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
-                    Auditoría de Egresos
-                  </h3>
-                  <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
-                    Sincronizando con base de datos maestra...
-                  </p>
-                </div>
-              </>
+    <div className="animate-in fade-in duration-700 w-full max-w-full">
+      {/* 🔱 GRID 2XN: FORCED SYMMETRY */}
+      <div className="grid grid-cols-2 gap-10 w-full">
+        {activePanel === 'AUDIT' && (
+          <>
+            {renderFinancialKPI(
+              'Compromiso de Arrendamiento',
+              `$${totalMonthlyLease.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+              DollarSign,
+              'Pago mensual acumulado (Leasing)',
+              'navy'
             )}
+            <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px]">
+              <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
+                Auditoría de Egresos
+              </h3>
+              <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
+                Sincronizando con base de datos maestra...
+              </p>
+            </div>
+          </>
+        )}
 
-            {activePanel === 'OPTIMIZATION' && (
-              <>
-                {renderFinancialKPI(
-                  'Eficiencia de Activos',
-                  `${efficiency}%`,
-                  TrendingUp,
-                  'Retorno operativo por unidad lista',
-                  'emerald'
-                )}
-                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px]">
-                  <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
-                    Motor de ROI
-                  </h3>
-                  <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
-                    Calculando proyecciones de ahorro...
-                  </p>
-                </div>
-              </>
+        {activePanel === 'OPTIMIZATION' && (
+          <>
+            {renderFinancialKPI(
+              'Eficiencia de Activos',
+              `${efficiency}%`,
+              TrendingUp,
+              'Retorno operativo por unidad lista',
+              'emerald'
             )}
-          </div>
-        </div>
-      </section>
+            <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px]">
+              <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
+                Motor de ROI
+              </h3>
+              <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
+                Calculando proyecciones de ahorro...
+              </p>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };
