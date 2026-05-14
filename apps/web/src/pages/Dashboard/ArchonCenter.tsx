@@ -20,9 +20,9 @@ import AccessControlSlideOver from '../../components/Identity/AccessControlSlide
 
 /**
  * 🔱 Archon Component: ArchonCenter
- * Implementation: Sovereign Command Center View (V.78.100.84)
+ * Implementation: Sovereign Command Center View (V.78.100.87)
  * Objective: High-density predictive analytics and fleet health orchestration.
- * Stabilization: Synchronized with Vitest suite (Mermas Operativas, Incidencias en Ruta).
+ * Migration: 100% Sovereign Inner Architecture (DRY).
  */
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
@@ -50,11 +50,9 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       className="card-archon-sovereign animate-in fade-in duration-500"
       style={{ '--card-accent': color } as React.CSSProperties}
     >
-      <div className="flex items-center justify-center gap-3 mb-6 w-full">
+      <div className="card-sovereign-header">
         <Icon size={20} style={{ color }} />
-        <span className="font-display font-black text-[10px] uppercase tracking-[0.2em] text-pinnacle-navy opacity-70">
-          {label}
-        </span>
+        <span className="card-sovereign-title">{label}</span>
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center pb-8">
@@ -62,10 +60,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           <div className="w-full h-12 bg-pinnacle-navy/5 animate-pulse rounded-[4px]" />
         ) : (
           <div className="flex flex-col items-center justify-center text-center w-full space-y-1">
-            <h3 className="text-4xl font-black text-pinnacle-navy tracking-tighter">{value}</h3>
-            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-pinnacle-navy/40">
-              {description}
-            </p>
+            <h3 className="card-sovereign-kpi-value">{value}</h3>
+            <p className="card-sovereign-kpi-label">{description}</p>
           </div>
         )}
       </div>
@@ -137,8 +133,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 border-t border-pinnacle-navy/5 mb-6">
-          <div className="p-4 border-r border-b border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+        <div className="card-sovereign-quadrant-grid">
+          <div className="card-sovereign-quadrant-item">
             <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               Disponibilidad
             </span>
@@ -149,13 +145,13 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               <div className={`w-2 h-2 rounded-full ${dotColor}`} />
             </div>
           </div>
-          <div className="p-4 border-b border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+          <div className="card-sovereign-quadrant-item">
             <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               Estado Crítico
             </span>
             <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
           </div>
-          <div className="p-4 border-r border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+          <div className="card-sovereign-quadrant-item">
             <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               MTBF Promedio
             </span>
@@ -166,7 +162,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               </span>
             </div>
           </div>
-          <div className="p-4 border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+          <div className="card-sovereign-quadrant-item">
             <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               MTTR Táctico
             </span>

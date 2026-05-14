@@ -39,6 +39,38 @@
     border-top-color: var(--card-accent);
   }
 
+  .card-sovereign-header {
+    @apply flex items-center gap-3 mb-6 w-full;
+  }
+
+  .card-sovereign-title {
+    @apply font-display font-black text-[10px] uppercase tracking-[0.2em] text-pinnacle-navy opacity-70;
+  }
+
+  .card-sovereign-kpi-value {
+    @apply text-4xl font-black text-pinnacle-navy tracking-tighter;
+  }
+
+  .card-sovereign-kpi-label {
+    @apply text-[9px] font-black uppercase tracking-[0.25em] text-pinnacle-navy/40;
+  }
+
+  .card-sovereign-quadrant-grid {
+    @apply grid grid-cols-2 border-t border-pinnacle-navy/5 mb-6;
+  }
+
+  .card-sovereign-quadrant-item {
+    @apply p-4 flex flex-col items-center justify-center text-center border-pinnacle-navy/5;
+  }
+
+  .card-sovereign-quadrant-item:nth-child(odd) {
+    @apply border-r;
+  }
+
+  .card-sovereign-quadrant-item:nth-child(-n + 2) {
+    @apply border-b;
+  }
+
   .btn-archon-card-action {
     @apply h-11 w-full flex items-center justify-center text-pinnacle-white font-display font-black text-[10px] uppercase tracking-widest rounded-[4px] transition-all duration-300;
     background-color: var(--card-accent);
