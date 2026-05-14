@@ -20,9 +20,9 @@ import AccessControlSlideOver from '../../components/Identity/AccessControlSlide
 
 /**
  * 🔱 Archon Component: ArchonCenter
- * Implementation: Sovereign Command Center View (V.78.100.83)
+ * Implementation: Sovereign Command Center View (V.78.100.84)
  * Objective: High-density predictive analytics and fleet health orchestration.
- * Migration: 100% Sovereign Card Grid & DRY Architecture.
+ * Stabilization: Synchronized with Vitest suite (Mermas Operativas, Incidencias en Ruta).
  */
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
@@ -241,7 +241,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         )}
 
         {renderKPI(
-          'Incidencias',
+          'Incidencias en Ruta',
           stats.openIncidents,
           ShieldAlert,
           '#ef4444',
@@ -249,7 +249,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
           '/routes'
         )}
         {renderKPI(
-          'Mermas',
+          'Mermas Operativas',
           stats.totalInactive,
           ShieldAlert,
           '#8b5cf6',
