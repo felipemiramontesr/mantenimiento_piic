@@ -75,25 +75,16 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
           </div>
 
           {/* 🔱 RIGHT: MULTI-LEVEL CONTENT */}
-          <div className="flex-1 flex flex-col justify-between space-y-2 py-1">
+          <div className="flex-1 flex flex-col justify-between h-20 py-1">
             <div className="flex items-center gap-2">
               <HeaderIcon size={14} className="text-[var(--card-accent)]" />
               <span className="card-sovereign-title !mb-0">{headerTitle}</span>
             </div>
 
-            <div className="flex flex-col">
-              <h3 className="text-pinnacle-navy font-black uppercase tracking-[0.12em] text-[11px] leading-tight">
-                {actionTitle}
-              </h3>
-              <p className="text-[8px] font-bold opacity-40 uppercase tracking-[0.2em] text-pinnacle-navy">
-                {description}
-              </p>
-            </div>
-
             <button
               data-testid={testId}
               className={`
-                btn-archon-card-action !h-8 !text-[8px]
+                btn-archon-card-action !h-11 !text-[10px]
                 ${isActive ? 'brightness-110 ring-1 ring-white/20' : ''}
                 ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
               `}
