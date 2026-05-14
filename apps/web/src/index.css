@@ -15,7 +15,7 @@
     @apply font-display font-black tracking-tight;
   }
   a {
-    @apply no-underline !important;
+    @apply no-underline text-pinnacle-yellow hover:opacity-80 transition-all duration-300 !important;
   }
   button {
     @apply border-none outline-none cursor-pointer !important;
