@@ -1,19 +1,23 @@
 import React from 'react';
-import { BRANDING_NAME } from '../../constants/versionConstants';
 
 /**
  * 🔱 Archon Component: SovereignFooter
- * Implementation: Global System Branding & Legal Metadata
- * Objective: Standardized footer for all dashboard views.
- * v.1.0.0
+ * Implementation: Global System Branding & Legal Metadata (V.78.100.94)
+ * Objective: High-performance 10% vertical chassis for system metadata.
+ * Refactor: 100% Pure Tailwind Atomic Architecture (Mirror DNA).
  */
 
 const SovereignFooter: React.FC = () => (
-  <footer className="workspace-footer-pro flex items-center justify-between w-full">
-    <div className="flex flex-col md:flex-row gap-2 md:gap-8 items-center text-[10px] font-bold uppercase tracking-widest opacity-40">
-      <p>© Todos los derechos reservados por ArchonCore by Dreamtek.</p>
+  <footer className="h-[10%] min-h-[60px] flex items-center justify-between w-full border-t border-pinnacle-navy/5 px-[60px] bg-white shrink-0">
+    {/* ⚖️ Legal Metadata (Col Alfa) */}
+    <div className="text-[10px] font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left">
+      © Todos los derechos reservados por ArchonCore by Dreamtek.
     </div>
-    <div className="text-[10px] font-black text-[#0f2a44] opacity-60">{BRANDING_NAME}</div>
+
+    {/* 🏗️ System Versioning (Col Beta) */}
+    <div className="text-[10px] font-black uppercase tracking-widest text-pinnacle-navy opacity-60 text-right">
+      Archon Fleet System | V.78.100.50
+    </div>
   </footer>
 );
 
