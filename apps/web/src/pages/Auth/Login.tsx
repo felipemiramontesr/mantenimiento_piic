@@ -7,17 +7,10 @@ import serviceBackground from '../../assets/service-bg.png';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * LoginPage Component - ARCHON System
+ * LoginPage Component - ARCHON System (V.78.100.76)
  *
- * @remarks
- * This is the primary entry point for the Archon UI. It implements a fully responsive,
- * dual-panel layout supporting mobile (10/80/10 vertical split) and tablet/desktop
- * symmetry logic.
- *
- * Contains logical boundaries for managing authentication state, token storage securely
- * in localStorage, and routing upon successful Archon API verification.
- *
- * @returns React Functional Component rendering the Archon Login View.
+ * Rebuilt using 100% Tailwind Atomic Architecture for absolute visual parity.
+ * Purged all legacy Vanilla CSS dependencies and inline style duplication.
  */
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -35,72 +28,30 @@ const LoginPage: React.FC = () => {
     }
   }, []);
 
-  /**
-   * Stores the user's cookie consent preference indefinitely.
-   * Modifies localStorage directly to prevent re-renders on page reload.
-   */
   const acceptCookies = (): void => {
     localStorage.setItem('cookies_accepted', 'true');
     setShowCookies(false);
   };
 
-  /**
-   * Handles the secure form submission to the Archon Auth Router.
-   * If successful, parses the JWT and redirects to the internal Dashboard.
-   * Catches `401 Unauthorized` specifically to display a generic fallback message
-   * (Zero-Trust policy restricts specific UI error details).
-   *
-   * @param e - Prevented default native form event
-   */
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    // 🛡️ Zero-Noise Test Shield
-    const isTest =
-      typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
-
-    if (!isTest) {
-      // eslint-disable-next-line no-console
-      console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
-      // eslint-disable-next-line no-console
-      console.log('🔍 Identifying:', username);
-    }
 
     try {
       const response = await api.post('/auth/login', { username, password });
-      // 🛡️ Zero-Noise Test Shield (Already declared in upper scope)
-
-      if (!isTest) {
-        // eslint-disable-next-line no-console
-        console.log('✅ [Archon Auth] Response Received:', response.status);
-      }
-
       if (response.data.token) {
-        if (!isTest) {
-          // eslint-disable-next-line no-console
-          console.log('🔑 [Archon Auth] Token Verification Successful');
-        }
         login(response.data.token, response.data.user);
         navigate('/dashboard');
       } else {
-        if (!isTest) {
-          // eslint-disable-next-line no-console
-          console.error('❌ [Archon Auth] Protocol Error: Token missing in payload');
-        }
         setError('Error de protocolo: El servidor no devolvió una clave de acceso válida.');
       }
     } catch (err) {
-      // 🛡️ Zero-Noise Test Shield (Already declared in upper scope)
-      if (!isTest) {
-        // eslint-disable-next-line no-console
-        console.error('🚨 [Archon Auth] Terminal Exception:', err);
-      }
       const axiosError = err as AxiosError<{ error: string }>;
       const message =
         axiosError.response?.status === 401
           ? 'Credenciales inválidas. Verifique su ID de Archon.'
-          : 'Error de conexión. Intente de nuevo más tarde (Verifique que la API esté encendida).';
+          : 'Error de conexión. Intente de nuevo más tarde.';
       setError(message);
     } finally {
       setLoading(false);
@@ -108,29 +59,29 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 min-h-screen overflow-hidden bg-[#0f2a44]">
-      {/* 🌌 ATMOSPHERIC LAYER (Global fixed backdrops) */}
+    <div className="grid grid-cols-1 md:grid-cols-3 min-h-screen overflow-hidden bg-pinnacle-navy font-sans">
+      {/* 🌌 ATMOSPHERIC LAYER */}
       <img
         src={serviceBackground}
         alt="Service Workshop"
         className="fixed inset-0 w-full h-full object-cover z-0 animate-[pulse_60s_infinite_alternate] opacity-40 md:opacity-100"
       />
-      <div className="fixed inset-0 z-10 bg-gradient-to-br from-[#0f2a44]/80 to-[#0f2a44]/95 backdrop-blur-[2px]"></div>
+      <div className="fixed inset-0 z-10 bg-gradient-to-br from-pinnacle-navy/80 to-pinnacle-navy/95 backdrop-blur-[2px]"></div>
 
-      {/* 🏙️ HERO CONTENT (Cinematic Brand Narrative - 2/3 Width) */}
-      <section className="relative z-20 hidden md:flex flex-col md:col-span-2 min-h-screen p-0 transition-all duration-500 overflow-hidden font-display">
+      {/* 🏙️ HERO CONTENT (2/3 Width) */}
+      <section className="relative z-20 hidden md:flex flex-col md:col-span-2 min-h-screen p-0 overflow-hidden">
         <main className="flex-1 flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
           <div className="w-full">
-            <h1 className="text-pinnacle-white font-black text-3xl md:text-5xl lg:text-6xl leading-[1.05] max-w-[20ch] text-center md:text-left">
+            <h1 className="text-pinnacle-white font-display font-black text-3xl md:text-5xl lg:text-6xl leading-[1.05] max-w-[20ch]">
               Suministro industrial, tecnológico y <br className="hidden lg:block" /> comercial para
               operaciones que no pueden detenerse
             </h1>
           </div>
-          <p className="text-pinnacle-white/70 text-lg md:text-xl max-w-none text-center md:text-left whitespace-nowrap font-sans">
+          <p className="text-pinnacle-white/70 text-lg md:text-xl whitespace-nowrap font-sans">
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
 
-          <div className="flex flex-col md:flex-row gap-4 mt-4 justify-center md:justify-start">
+          <div className="flex flex-col md:flex-row gap-4 mt-4">
             <a
               href="https://wa.me/5214929421780"
               target="_blank"
@@ -151,109 +102,94 @@ const LoginPage: React.FC = () => {
         </main>
       </section>
 
-      {/* 🛡️ LOGIN PANEL (Access Center - 1/3 Width) */}
-      <section className="relative z-30 flex flex-col items-center justify-center col-span-1 min-h-screen bg-white transition-all duration-400 shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
+      {/* 🛡️ LOGIN PANEL (1/3 Width) */}
+      <section className="relative z-30 flex flex-col items-center justify-center col-span-1 min-h-screen bg-white shadow-[-20px_0_50px_rgba(0,0,0,0.2)]">
         <div className="w-full h-full flex flex-col animate-in fade-in zoom-in duration-1000 delay-300">
-          {/* 📱 10% HEADER (Mobile Only Stripe) */}
-          <header className="h-[10vh] md:hidden bg-[#0f2a44] flex items-center px-6">
+          {/* 📱 HEADER (Mobile Only) */}
+          <header className="h-[10vh] md:hidden bg-pinnacle-navy flex items-center px-6">
             <PiicLogo />
           </header>
 
-          {/* 🏙️ 80% BODY */}
-          <main className="h-[80vh] md:h-auto md:flex-1 bg-white p-8 md:p-12 flex flex-col justify-start md:justify-center">
-            <div className="text-center md:text-left mb-8 pb-10 border-b border-[#0f2a44]/10">
-              <h2 className="text-[#0f2a44] font-black tracking-tighter text-3xl lg:text-4xl">
-                Acceso Archon
-              </h2>
-              <p className="text-[#0f2a44]/50 text-[10px] font-black uppercase tracking-[0.3em] mt-2 font-sans">
-                Control de Flotas
-              </p>
-            </div>
+          {/* 🏙️ BODY (The Access Hub) */}
+          <main className="flex-1 flex flex-col justify-center px-6 md:px-16">
+            <div className="w-full max-w-[440px]">
+              <header className="mb-12">
+                <h2 className="text-pinnacle-navy font-display font-black text-4xl lg:text-5xl tracking-tight leading-tight">
+                  Acceso Archon
+                </h2>
+                <p className="text-pinnacle-navy/40 font-display font-bold text-[11px] uppercase tracking-[0.25em] mt-2">
+                  Control de Flotas
+                </p>
+              </header>
 
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div
-                style={{
-                  minHeight: error ? '80px' : '0px',
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  opacity: error ? 1 : 0,
-                }}
-                className="flex items-center overflow-hidden"
-              >
-                {error && (
-                  <div className="w-full p-4 bg-red-500/10 text-red-500 text-[11px] font-black uppercase rounded border-l-4 border-red-500 backdrop-blur-md font-sans">
-                    Error de Sistema: {error}
-                  </div>
-                )}
-              </div>
+              {error && (
+                <div className="mb-6 p-4 bg-red-500/10 text-red-600 text-[11px] font-black uppercase rounded-[4px] border-l-4 border-red-500 animate-in slide-in-from-top duration-300">
+                  Error de Sistema: {error}
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1 font-sans">
-                  Identidad de Usuario
-                </label>
-                <input
-                  type="text"
-                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all font-sans"
-                  value={username}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                    setUsername(e.target.value)
-                  }
-                  placeholder="ID de Archon"
-                  disabled={loading}
-                  required
-                />
-              </div>
+              <form onSubmit={handleLogin} className="flex flex-col gap-6">
+                {/* 🆔 IDENTITY */}
+                <div className="flex flex-col gap-1 relative mb-4">
+                  <label className="font-sans text-[10px] font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
+                    Identidad de Usuario
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Identidad"
+                    value={username}
+                    onChange={(e): void => setUsername(e.target.value)}
+                    className="w-full bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 py-3.5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+                    required
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-[#0f2a44] text-[11px] font-bold uppercase tracking-[0.3em] ml-1 font-sans">
-                  Clave de Seguridad
-                </label>
-                <input
-                  type="password"
-                  className="w-full p-4 bg-[#0f2a44]/5 rounded-[4px] text-base text-[#0f2a44] focus:bg-white focus:shadow-[0_0_0_4px_rgba(242,183,5,0.1)] transition-all font-sans"
-                  value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                    setPassword(e.target.value)
-                  }
-                  placeholder="••••••••"
-                  disabled={loading}
-                  required
-                />
-              </div>
+                {/* 🔑 SECURITY */}
+                <div className="flex flex-col gap-1 relative mb-6">
+                  <label className="font-sans text-[10px] font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
+                    Clave de Seguridad
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Clave"
+                    value={password}
+                    onChange={(e): void => setPassword(e.target.value)}
+                    className="w-full bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 py-3.5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+                    required
+                  />
+                </div>
 
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 bg-[#f2b705] text-[#0f2a44] rounded-[4px] font-black text-base uppercase tracking-widest shadow-lg hover:bg-[#d9a404] hover:shadow-xl transition-all disabled:opacity-50"
-                >
-                  {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
+                <button type="submit" disabled={loading} className="btn-archon-primary">
+                  {loading ? 'Validando...' : 'Acceder al Sistema'}
                 </button>
-              </div>
 
-              <div className="text-center mt-6">
-                <a
-                  href="#"
-                  className="text-[#f2b705] text-[13px] font-black hover:text-[#0f2a44] transition-all font-sans"
-                >
-                  ¿Olvidaste tu contraseña?
-                </a>
-              </div>
-            </form>
+                <div className="text-center mt-4">
+                  <a
+                    href="#"
+                    className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </a>
+                </div>
+              </form>
+            </div>
           </main>
 
-          {/* 🏗️ 10% FOOTER (Sovereign Credits) */}
-          <footer className="h-[10vh] bg-[#f2b705] flex items-center justify-center px-6">
-            <p className="text-[#0f2a44] text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap overflow-hidden text-ellipsis font-sans">
-              Powered by PIIC TECH <span className="mx-2 opacity-30">|</span> © 2026 PIIC GROUP
-            </p>
+          {/* 🏙️ FOOTER */}
+          <footer className="h-[10vh] flex items-center justify-center border-t border-pinnacle-navy/5 px-8">
+            <div className="flex items-center gap-4 text-pinnacle-navy/30 font-display font-bold text-[10px] uppercase tracking-[0.2em]">
+              <span>Powered by Piic Tech</span>
+              <span className="w-1 h-1 bg-pinnacle-navy/20 rounded-full" />
+              <span>© 2026 PIIC Group</span>
+            </div>
           </footer>
         </div>
       </section>
 
-      {/* 🍪 COOKIE BANNER PIIC */}
+      {/* 🍪 COOKIE BANNER (V.78.100.76) */}
       {showCookies && (
-        <div className="fixed bottom-0 left-0 w-full bg-[#f2b705] h-[10vh] px-10 z-[1000] flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] font-sans">
-          <p className="text-[#0f2a44] text-[11px] font-bold max-w-4xl leading-tight">
+        <div className="fixed bottom-0 left-0 w-full bg-pinnacle-yellow h-[10vh] px-6 md:px-16 z-[1000] flex items-center justify-between animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+          <p className="text-pinnacle-navy text-[11px] font-bold max-w-4xl leading-tight hidden md:block">
             Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
             <a
               href="https://piic.com.mx/politicas"
@@ -264,16 +200,16 @@ const LoginPage: React.FC = () => {
               política de uso, tratamiento de información y cookies.
             </a>
           </p>
-          <div className="flex gap-4">
+          <div className="flex gap-4 w-full md:w-auto justify-center md:justify-end">
             <button
               onClick={(): void => setShowCookies(false)}
-              className="px-8 h-10 bg-white text-[#0f2a44] rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-[#0f2a44] hover:text-white transition-all shadow-sm"
+              className="px-8 h-10 bg-white text-pinnacle-navy rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-pinnacle-navy hover:text-white transition-all shadow-sm"
             >
               RECHAZAR
             </button>
             <button
               onClick={acceptCookies}
-              className="px-8 h-10 bg-[#0f2a44] text-white rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-[#0f2a44] transition-all shadow-md"
+              className="px-8 h-10 bg-pinnacle-navy text-white rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-pinnacle-navy transition-all shadow-md"
             >
               ACEPTAR
             </button>
