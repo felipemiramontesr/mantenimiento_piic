@@ -32,7 +32,7 @@ const DashboardLayout: React.FC = () => {
             <SovereignHeader />
             <SovereignSubheader />
 
-            <div className="h-[80vh] overflow-y-auto px-[60px] py-10 custom-scrollbar flex-1">
+            <div className="h-[80vh] overflow-y-auto px-10 py-[26px] custom-scrollbar flex-1">
               <Outlet />
             </div>
 
