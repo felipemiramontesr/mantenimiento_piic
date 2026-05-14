@@ -14,7 +14,7 @@ const SovereignSubheader: React.FC = () => {
   if (!layoutData.subheaderActions) return null;
 
   return (
-    <div className="sovereign-subheader animate-in fade-in duration-500 px-10 py-4 bg-white/50 backdrop-blur-md border-b border-pinnacle-navy/5 block w-full min-h-[64px]">
+    <div className="sovereign-subheader animate-in fade-in duration-500 px-10 py-2 bg-white/50 backdrop-blur-md border-b border-pinnacle-navy/5 block w-full min-h-[64px]">
       <div className="w-full h-full">{layoutData.subheaderActions}</div>
     </div>
   );

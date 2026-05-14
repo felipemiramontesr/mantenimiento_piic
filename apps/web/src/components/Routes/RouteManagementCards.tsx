@@ -25,6 +25,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
       description="Histórico • Journal Forense"
       buttonText="Ver Bitácora"
       isActive={activePanel === 'LOGS' || activePanel === 'JOURNAL'}
+      layout="horizontal"
       onClick={(e: React.MouseEvent): void => {
         e.stopPropagation();
         if (onAction) onAction('BITACORA');
@@ -41,6 +42,7 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
       description="Nueva Asignación"
       buttonText="Iniciar"
       isActive={activePanel === 'DISPATCH'}
+      layout="horizontal"
       onClick={(e: React.MouseEvent): void => {
         e.stopPropagation();
         if (onAction) onAction('DESPACHO');

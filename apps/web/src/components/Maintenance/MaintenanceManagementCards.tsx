@@ -28,6 +28,7 @@ const MaintenanceManagementCards: React.FC<MaintenanceManagementCardsProps> = ({
       description="Control de Servicios Pasados"
       buttonText="Ver Bitácora"
       isActive={activePanel === 'HISTORY'}
+      layout="horizontal"
       onClick={(): void => onPanelChange('HISTORY')}
     />
 
@@ -40,6 +41,7 @@ const MaintenanceManagementCards: React.FC<MaintenanceManagementCardsProps> = ({
       description="Alta de Nuevo Mantenimiento"
       buttonText="Iniciar Registro"
       isActive={activePanel === 'SCHEDULE'}
+      layout="horizontal"
       onClick={(): void => onPanelChange('SCHEDULE')}
     />
   </div>

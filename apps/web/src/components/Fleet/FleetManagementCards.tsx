@@ -27,6 +27,7 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
         description="Control de Inventario"
         buttonText="Ver Detalles"
         isActive={activePanel === 'STRATEGY'}
+        layout="horizontal"
         onClick={(): void => onPanelChange('STRATEGY')}
         testId="fleet-strategy-btn"
       />
@@ -41,6 +42,7 @@ const FleetManagementCards: React.FC<FleetManagementCardsProps> = ({
           description="Alta de Activos"
           buttonText="Iniciar Registro"
           isActive={activePanel === 'EXPANSION'}
+          layout="horizontal"
           onClick={(): void => onPanelChange('EXPANSION')}
           testId="fleet-registration-btn"
         />

@@ -23,6 +23,7 @@ const LogsManagementCards: React.FC<LogsManagementCardsProps> = ({
       description="Trazabilidad de Eventos"
       buttonText="Ver Bitácora"
       isActive={activePanel === 'FORENSIC'}
+      layout="horizontal"
       onClick={(): void => onPanelChange('FORENSIC')}
       testId="logs-forensic-btn"
     />
@@ -36,6 +37,7 @@ const LogsManagementCards: React.FC<LogsManagementCardsProps> = ({
       description="Reporte de Anomalías"
       buttonText="Ver Incidencias"
       isActive={activePanel === 'INCIDENTS'}
+      layout="horizontal"
       onClick={(): void => onPanelChange('INCIDENTS')}
       testId="logs-incidents-btn"
     />

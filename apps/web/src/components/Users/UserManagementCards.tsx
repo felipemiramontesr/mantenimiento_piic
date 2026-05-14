@@ -14,7 +14,7 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
 
   return (
-    <div className="grid grid-cols-2 gap-10 w-full animate-in fade-in slide-in-from-top-4 duration-700">
+    <div className="archon-grid-2-sovereign animate-in fade-in slide-in-from-top-4 duration-700">
       <ArchonManagementCard
         variant="navy"
         headerTitle="Directorio Maestro"
@@ -24,6 +24,7 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
         description="Supervisión Directiva"
         buttonText="Ver Directorio"
         isActive={activePanel === 'DIRECTORY'}
+        layout="horizontal"
         onClick={(): void => setActivePanel('DIRECTORY')}
       />
 
@@ -36,6 +37,7 @@ const UserManagementCards: React.FC = (): React.JSX.Element => {
         description="Gestión de Identidad"
         buttonText="Iniciar Registro"
         isActive={activePanel === 'SIGNUP'}
+        layout="horizontal"
         onClick={(): void => {
           setEditingUser(null);
           setActivePanel('SIGNUP');

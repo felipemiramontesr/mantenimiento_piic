@@ -19,7 +19,7 @@ const FinancialManagementCards: React.FC<FinancialManagementCardsProps> = ({
   activePanel,
   onPanelChange,
 }) => (
-  <div className="grid grid-cols-2 gap-10 w-full animate-in fade-in slide-in-from-top-4 duration-700">
+  <div className="archon-grid-2-sovereign animate-in fade-in slide-in-from-top-4 duration-700">
     <ArchonManagementCard
       variant="navy"
       headerTitle="Auditoría de Costos"
@@ -29,6 +29,7 @@ const FinancialManagementCards: React.FC<FinancialManagementCardsProps> = ({
       description="Control de Egresos & Leasing"
       buttonText="Ver Auditoría"
       isActive={activePanel === 'AUDIT'}
+      layout="horizontal"
       onClick={(): void => onPanelChange('AUDIT')}
     />
 
@@ -41,6 +42,7 @@ const FinancialManagementCards: React.FC<FinancialManagementCardsProps> = ({
       description="Proyección de Ahorro & Salud"
       buttonText="Analizar ROI"
       isActive={activePanel === 'OPTIMIZATION'}
+      layout="horizontal"
       onClick={(): void => onPanelChange('OPTIMIZATION')}
     />
   </div>
