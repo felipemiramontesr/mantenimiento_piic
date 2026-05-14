@@ -9,9 +9,9 @@ import FinancialManagementCards, {
 
 /**
  * 🔱 Archon Module: FinancialHealthModule
- * Implementation: Sovereign Industrial Intelligence (V.78.100.99)
- * Architecture: Flexbox-Driven Axial Symmetry (Zero-CSS-Debt).
- * Refactor: 100% Atomic Tailwind (Mirror DNA).
+ * Implementation: Sovereign Industrial Intelligence (V.78.100.100)
+ * Architecture: Hardened 2-Column Grid & Telemetry Restoration.
+ * Refactor: 100% Pure Tailwind (Mirror DNA).
  */
 const FinancialHealthModule: React.FC = (): React.ReactElement => {
   const { units, stats, loading } = useFleet();
@@ -60,7 +60,7 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
     };
 
     return (
-      <div className="card-archon-sovereign animate-in fade-in duration-700 flex flex-col h-full min-h-[360px] flex-1">
+      <div className="card-archon-sovereign animate-in fade-in duration-700 flex flex-col h-full min-h-[360px] w-full">
         {/* 🔱 Header */}
         <div className="flex items-center gap-3 mb-6">
           <Icon size={18} className={variantColors[variant]} />
@@ -101,9 +101,9 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
   };
 
   return (
-    <div className="animate-in fade-in duration-700 w-full max-w-full">
-      {/* 🔱 FLEX 2XN: FORCED AXIAL SYMMETRY */}
-      <div className="flex flex-row gap-10 w-full items-stretch">
+    <div className="animate-in fade-in duration-700 w-full">
+      {/* 🔱 GRID 2XN: HARDENED SYMMETRY */}
+      <div className="grid grid-cols-2 gap-10 w-full">
         {activePanel === 'AUDIT' && (
           <>
             {renderFinancialKPI(
@@ -113,9 +113,9 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
               'Pago mensual acumulado (Leasing)',
               'navy'
             )}
-            <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px] flex-1">
+            <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px] w-full">
               <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
-                Auditoría de Egresos
+                Auditoría de Egresos lista-
               </h3>
               <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
                 Sincronizando con base de datos maestra...
@@ -133,9 +133,9 @@ const FinancialHealthModule: React.FC = (): React.ReactElement => {
               'Retorno operativo por unidad lista',
               'emerald'
             )}
-            <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px] flex-1">
+            <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[360px] w-full">
               <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
-                Motor de ROI
+                Motor de ROI listo-
               </h3>
               <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
                 Calculando proyecciones de ahorro...

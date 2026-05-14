@@ -11,15 +11,15 @@ interface FinancialManagementCardsProps {
 
 /**
  * 🔱 Archon Component: FinancialManagementCards
- * Implementation: Dual-Axis Symmetry Selector (V.78.100.99)
+ * Implementation: Dual-Axis Symmetry Selector (V.78.100.100)
  * Theme: Financial Health (Navy & Emerald Integration)
- * Refactor: Flexbox-Driven Axial Symmetry (Pure Tailwind).
+ * Refactor: Hardened 2-Column Grid (Zero-Stacking Guarantee).
  */
 const FinancialManagementCards: React.FC<FinancialManagementCardsProps> = ({
   activePanel,
   onPanelChange,
 }) => (
-  <div className="flex flex-row gap-10 w-full items-stretch animate-in fade-in slide-in-from-top-4 duration-700">
+  <div className="grid grid-cols-2 gap-10 w-full animate-in fade-in slide-in-from-top-4 duration-700">
     <ArchonManagementCard
       variant="navy"
       headerTitle="Auditoría de Costos"
