@@ -7,10 +7,12 @@ import serviceBackground from '../../assets/service-bg.png';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * LoginPage Component - ARCHON System (V.78.100.77)
+ * LoginPage Component - ARCHON System (V.78.100.80)
  *
- * Rebuilt using 100% Tailwind Atomic Architecture with 100% Test Parity.
- * Synchronized with Vitest suite expectations while maintaining sovereign aesthetics.
+ * Final hardening of the Atomic Tailwind Architecture.
+ * - Uses .btn-archon-* component classes for interaction consistency.
+ * - Restores test-compliant placeholders and labels.
+ * - Purged all inline kinetic transforms (scale/active).
  */
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -161,11 +163,7 @@ const LoginPage: React.FC = () => {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-16 flex items-center justify-center bg-pinnacle-yellow text-pinnacle-white font-display font-black text-base uppercase tracking-[0.12em] rounded-[4px] shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                >
+                <button type="submit" disabled={loading} className="btn-archon-primary">
                   {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>
 
@@ -194,7 +192,7 @@ const LoginPage: React.FC = () => {
 
       {/* 🍪 COOKIE BANNER */}
       {showCookies && (
-        <div className="fixed bottom-0 left-0 w-full bg-pinnacle-yellow h-[10vh] px-6 md:px-16 z-[1000] flex items-center justify-between animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 left-0 w-full bg-pinnacle-yellow h-[10vh] px-6 md:px-16 z-[1000] flex items-center justify-between animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
           <p className="text-pinnacle-navy text-[11px] font-bold max-w-4xl leading-tight hidden md:block">
             Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
             <a
