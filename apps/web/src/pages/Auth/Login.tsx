@@ -7,10 +7,10 @@ import serviceBackground from '../../assets/service-bg.png';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * LoginPage Component - ARCHON System (V.78.100.76)
+ * LoginPage Component - ARCHON System (V.78.100.77)
  *
- * Rebuilt using 100% Tailwind Atomic Architecture for absolute visual parity.
- * Purged all legacy Vanilla CSS dependencies and inline style duplication.
+ * Rebuilt using 100% Tailwind Atomic Architecture with 100% Test Parity.
+ * Synchronized with Vitest suite expectations while maintaining sovereign aesthetics.
  */
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
       const message =
         axiosError.response?.status === 401
           ? 'Credenciales inválidas. Verifique su ID de Archon.'
-          : 'Error de conexión. Intente de nuevo más tarde.';
+          : 'Error de conexión. Intente de nuevo más tarde (Verifique que la API esté encendida).';
       setError(message);
     } finally {
       setLoading(false);
@@ -124,7 +124,7 @@ const LoginPage: React.FC = () => {
 
               {error && (
                 <div className="mb-6 p-4 bg-red-500/10 text-red-600 text-[11px] font-black uppercase rounded-[4px] border-l-4 border-red-500 animate-in slide-in-from-top duration-300">
-                  Error de Sistema: {error}
+                  {error}
                 </div>
               )}
 
@@ -136,10 +136,11 @@ const LoginPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="Identidad"
+                    placeholder="ID de Archon"
                     value={username}
                     onChange={(e): void => setUsername(e.target.value)}
                     className="w-full bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 py-3.5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -151,16 +152,21 @@ const LoginPage: React.FC = () => {
                   </label>
                   <input
                     type="password"
-                    placeholder="Clave"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e): void => setPassword(e.target.value)}
                     className="w-full bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 py-3.5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+                    disabled={loading}
                     required
                   />
                 </div>
 
-                <button type="submit" disabled={loading} className="btn-archon-primary">
-                  {loading ? 'Validando...' : 'Acceder al Sistema'}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-16 flex items-center justify-center bg-pinnacle-yellow text-pinnacle-white font-display font-black text-base uppercase tracking-[0.12em] rounded-[4px] shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                >
+                  {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>
 
                 <div className="text-center mt-4">
@@ -186,9 +192,9 @@ const LoginPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🍪 COOKIE BANNER (V.78.100.76) */}
+      {/* 🍪 COOKIE BANNER */}
       {showCookies && (
-        <div className="fixed bottom-0 left-0 w-full bg-pinnacle-yellow h-[10vh] px-6 md:px-16 z-[1000] flex items-center justify-between animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 left-0 w-full bg-pinnacle-yellow h-[10vh] px-6 md:px-16 z-[1000] flex items-center justify-between animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40_rgba(0,0,0,0.1)]">
           <p className="text-pinnacle-navy text-[11px] font-bold max-w-4xl leading-tight hidden md:block">
             Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
             <a
