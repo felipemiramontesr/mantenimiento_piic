@@ -182,9 +182,7 @@ const LoginPage: React.FC = () => {
           {/* 🏙️ FOOTER */}
           <footer className="h-[10vh] flex items-center justify-center border-t border-pinnacle-navy/5 px-8">
             <div className="flex items-center gap-4 text-pinnacle-navy/30 font-display font-bold text-[10px] uppercase tracking-[0.2em]">
-              <span>Powered by Piic Tech</span>
-              <span className="w-1 h-1 bg-pinnacle-navy/20 rounded-full" />
-              <span>© 2026 PIIC Group</span>
+              <span>Powered by DREAMTEK © 2026</span>
             </div>
           </footer>
         </div>
