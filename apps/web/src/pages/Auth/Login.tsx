@@ -167,7 +167,7 @@ const LoginPage: React.FC = () => {
                   {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>
 
-                <div className="text-center mt-4">
+                <div className="text-left mt-4">
                   <a
                     href="#"
                     className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
