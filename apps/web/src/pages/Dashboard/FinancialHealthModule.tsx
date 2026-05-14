@@ -8,114 +8,138 @@ import FinancialManagementCards, {
 } from '../../components/Financial/FinancialManagementCards';
 
 /**
- * 🔱 Archon Module: Financial Health
- * Implementation: Strictly Aligned with Sovereign UI Standard
- * Structure: Sovereign Layout Integration
+ * 🔱 Archon Module: FinancialHealthModule
+ * Implementation: Sovereign Industrial Intelligence (V.78.100.95)
+ * Architecture: Subheader Injection & 2-Column Axial Grid.
+ * Refactor: 100% Pure Tailwind Purge (Zero Vanilla CSS).
  */
 const FinancialHealthModule: React.FC = (): React.ReactElement => {
   const { units, stats, loading } = useFleet();
   const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<FinancialPanel>('AUDIT');
 
-  // 🚀 SYNC SOVEREIGN HEADER
+  const handlePanelChange = (panel: FinancialPanel): void => {
+    setActivePanel(panel);
+  };
+
+  // 🚀 SYNC SOVEREIGN INFRASTRUCTURE
   useEffect(() => {
-    setSectionData('Salud Financiera', 'Inteligencia Económica y Control de Costos Operativos');
-  }, [setSectionData]);
+    setSectionData(
+      'Salud Financiera',
+      'Inteligencia Económica y Control de Costos Operativos',
+      <FinancialManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+    );
+  }, [setSectionData, activePanel]);
 
   // 🔱 Financial Intelligence Engine
   const totalMonthlyLease = units.reduce(
     (acc: number, u: FleetUnit): number => acc + Number(u.monthlyLeasePayment || 0),
     0
   );
-  const efficiency = stats.maintenanceIndex; // % of units ready for operation
-
-  const handlePanelChange = (panel: FinancialPanel): void => {
-    setActivePanel(panel);
-  };
+  const efficiency = stats.maintenanceIndex;
 
   const renderFinancialKPI = (
     label: string,
     value: string,
     Icon: React.ElementType,
-    color: string,
     description: string,
     variant: 'navy' | 'emerald' | 'yellow' | 'sky'
-  ): React.ReactElement => (
-    <div
-      className={`glass-card-pro archon-instrument-tile card-hover-${variant} animate-in fade-in duration-500`}
-      style={{ borderTop: `4px solid ${color}` }}
-    >
-      <div className="flex items-center justify-center gap-3 mb-5 w-full">
-        <Icon size={24} style={{ color }} />
-        <span className="text-instrument-header text-[#0f2a44] opacity-90">{label}</span>
-      </div>
+  ): React.ReactElement => {
+    // 🎨 Resolve Chromatic Tokens (DRY)
+    const variantColors = {
+      navy: 'text-pinnacle-navy',
+      emerald: 'text-emerald-600',
+      yellow: 'text-pinnacle-yellow',
+      sky: 'text-sky-600',
+    };
 
-      <div className="archon-tile-payload flex flex-col items-center justify-center pb-6">
-        {loading ? (
-          <div className="archon-shimmer h-12 w-full rounded" />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-center w-full space-y-2">
-            <h3 className="text-kpi-black text-[#0f2a44] text-center w-full">{value}</h3>
-            <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center w-full">
+    const variantBg = {
+      navy: 'bg-pinnacle-navy/5',
+      emerald: 'bg-emerald-50',
+      yellow: 'bg-pinnacle-yellow/5',
+      sky: 'bg-sky-50',
+    };
+
+    return (
+      <div className="card-archon-sovereign animate-in fade-in duration-700 flex flex-col h-full">
+        {/* 🔱 Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Icon size={18} className={variantColors[variant]} />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-pinnacle-navy opacity-70">
+            {label}
+          </span>
+        </div>
+
+        {/* 📦 Payload */}
+        <div className="flex-1 flex flex-col items-center justify-center space-y-6 pb-8">
+          <div
+            className={`w-20 h-20 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300 ${variantBg[variant]} border-pinnacle-navy/5`}
+          >
+            <Icon size={32} className={variantColors[variant]} />
+          </div>
+
+          <div className="flex flex-col items-center space-y-2 text-center w-full">
+            {loading ? (
+              <div className="h-10 w-32 bg-slate-100 animate-pulse rounded-[4px]" />
+            ) : (
+              <h3 className="text-3xl font-black text-pinnacle-navy tracking-tighter">{value}</h3>
+            )}
+            <p className="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] text-pinnacle-navy">
               {description}
             </p>
           </div>
-        )}
-      </div>
+        </div>
 
-      <div className="archon-tile-action">
+        {/* 🔘 Action */}
         <button
-          className={`btn-sentinel-${variant} w-full text-[11px] font-black py-3 uppercase tracking-widest`}
+          className={`h-11 w-full flex items-center justify-center text-white font-display font-black text-[10px] uppercase tracking-widest rounded-[4px] transition-all duration-300 bg-pinnacle-navy hover:brightness-110`}
         >
-          Analizar Flujo <ArrowUpRight size={12} className="ml-2" />
+          <span>Analizar Flujo</span>
+          <ArrowUpRight size={12} className="ml-2" />
         </button>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="animate-in fade-in duration-700">
-      {/* 🔱 BODY: ARCHON CHASSIS */}
       <section className="archon-workspace-chassis">
-        <div className="archon-axial-container flex flex-col gap-12">
-          <FinancialManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
-
-          <div className="archon-grid-2">
+        <div className="archon-axial-container">
+          <div className="archon-grid-2-sovereign">
             {activePanel === 'AUDIT' && (
               <>
                 {renderFinancialKPI(
                   'Compromiso de Arrendamiento',
                   `$${totalMonthlyLease.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
                   DollarSign,
-                  '#0f2a44',
                   'Pago mensual acumulado (Leasing)',
                   'navy'
                 )}
-                <div className="glass-card-pro bg-white p-12 border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center animate-in fade-in duration-1000">
-                  <h3 className="text-[#0f2a44] text-lg font-black tracking-tight mb-2">
-                    Auditoría de Egresos lista-
+                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[300px]">
+                  <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
+                    Auditoría de Egresos
                   </h3>
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                  <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
                     Sincronizando con base de datos maestra...
                   </p>
                 </div>
               </>
             )}
+
             {activePanel === 'OPTIMIZATION' && (
               <>
                 {renderFinancialKPI(
                   'Eficiencia de Activos',
                   `${efficiency}%`,
                   TrendingUp,
-                  '#10b981',
                   'Retorno operativo por unidad lista',
                   'emerald'
                 )}
-                <div className="glass-card-pro bg-white p-12 border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center animate-in fade-in duration-1000">
-                  <h3 className="text-[#0f2a44] text-lg font-black tracking-tight mb-2">
-                    Motor de ROI listo-
+                <div className="card-archon-sovereign border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center p-12 min-h-[300px]">
+                  <h3 className="text-pinnacle-navy text-lg font-black tracking-tight mb-2 uppercase">
+                    Motor de ROI
                   </h3>
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                  <p className="text-pinnacle-navy/40 text-[10px] font-bold uppercase tracking-widest">
                     Calculando proyecciones de ahorro...
                   </p>
                 </div>
