@@ -372,7 +372,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
 
   if (reportingRoute) {
     return (
-      <div className="glass-card-pro bg-white !px-0 !pt-0 !pb-0 overflow-x-auto shadow-2xl rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative">
+      <div className="card-archon-sovereign bg-white !p-0 overflow-x-auto custom-scrollbar animate-in fade-in duration-700 relative">
         <IncidentReportForm
           routeUuid={reportingRoute.uuid}
           unitId={reportingRoute.unit_id}

@@ -25,7 +25,8 @@ import AuditJustificationModal from '../Common/AuditJustificationModal';
 /**
  * 🔱 Archon Component: UserRegistrationForm
  * Implementation: Sovereign Identity Enrollment (Axios-based)
- * v.28.24.2 - Security First & Static Entry
+ * v.78.100.105 - Forensic Purge (Zero-Noise Compliance)
+ * Refactor: 100% Pure Tailwind (Purged HEX & Legacy Classes).
  */
 
 interface SuccessViewProps {
@@ -34,13 +35,13 @@ interface SuccessViewProps {
 }
 
 const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
-  <div className="glass-card-pro bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px]">
+  <div className="card-archon-sovereign bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px] border-t-emerald-500">
     <CheckCircle size={64} className="text-emerald-500 animate-in zoom-in duration-500" />
     <div className="space-y-4">
-      <h2 className="text-2xl font-black text-[#0f2a44] uppercase tracking-tight">
+      <h2 className="text-2xl font-black text-pinnacle-navy uppercase tracking-tight">
         {data.isEdit ? 'Actualización Exitosa' : 'Incorporación Exitosa'}
       </h2>
-      <p className="text-[#0f2a44]/60 font-medium">
+      <p className="text-pinnacle-navy/60 font-medium">
         {data.isEdit
           ? 'La identidad ha sido sincronizada correctamente en los sistemas Archon.'
           : 'El personal ha sido registrado bajo el estándar Archon. Entregue la siguiente clave temporal al operador:'}
@@ -48,14 +49,14 @@ const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
     </div>
 
     {!data.isEdit && data.tempPass && (
-      <div className="w-full bg-[#0f2a44]/5 p-6 rounded-[4px] border-2 border-dashed border-[#0f2a44]/20 group relative">
-        <span className="text-3xl font-black text-[#0f2a44] tracking-[0.2em] font-mono">
+      <div className="w-full bg-pinnacle-navy/5 p-6 rounded-[4px] border-2 border-dashed border-pinnacle-navy/20 group relative">
+        <span className="text-3xl font-black text-pinnacle-navy tracking-[0.2em] font-mono">
           {data.tempPass}
         </span>
         <button
           type="button"
           onClick={(): Promise<void> => navigator.clipboard.writeText(data.tempPass || '')}
-          className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-[#0f2a44]/40 hover:text-[#0f2a44]"
+          className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-pinnacle-navy/40 hover:text-pinnacle-navy"
         >
           <Copy size={16} />
         </button>
@@ -117,7 +118,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         confirmPassword: '',
       });
     }
-  }, [editingUser]);
+  }, [editingUser, roles]);
 
   const generateTempPassword = (length = 12): string => {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -218,11 +219,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     setError(null);
 
     // 🛡️ Sentinel Validation Protocol
-    if (
-      !formData.fullName ||
-      !formData.username ||
-      !formData.email
-    ) {
+    if (!formData.fullName || !formData.username || !formData.email) {
       setError('Todos los campos marcados con (*) son obligatorios.');
       return;
     }
@@ -240,7 +237,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       try {
         await handleCreate();
       } catch (err: unknown) {
-        const errObj = err as { response?: { data?: { error?: string } }, message?: string };
+        const errObj = err as { response?: { data?: { error?: string } }; message?: string };
         const msg = errObj.response?.data?.error || errObj.message || 'Falla en el alta.';
         setError(msg);
       } finally {
@@ -267,244 +264,249 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   return (
     <>
       <form
-      data-testid="registration-form"
-      name="registration-form"
-      onSubmit={handleFormSubmit}
-      className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-40 space-y-8"
-    >
-      {error && (
-        <div data-testid="error-message" className="bg-red-50 border-l-4 border-red-500 p-6 animate-in fade-in slide-in-from-top-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-red-100 p-2 rounded-[4px]">
-              <Shield size={18} className="text-red-500" />
+        data-testid="registration-form"
+        name="registration-form"
+        onSubmit={handleFormSubmit}
+        className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-40 space-y-8"
+      >
+        {error && (
+          <div
+            data-testid="error-message"
+            className="bg-red-50 border-l-4 border-red-500 p-6 animate-in fade-in slide-in-from-top-4"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-red-100 p-2 rounded-[4px]">
+                <Shield size={18} className="text-red-500" />
+              </div>
+              <p className="text-[11px] uppercase font-black tracking-widest text-pinnacle-navy">
+                {error}
+              </p>
             </div>
-            <p className="text-[11px] uppercase font-black tracking-widest text-[#0f2a44]">
-              {error}
-            </p>
           </div>
-        </div>
-      )}
-      <div className="archon-grid-2">
-        <div className="glass-card-pro bg-white p-10 space-y-8">
-          <div className="archon-card-header-pro">
-            <Contact size={22} className="text-[#10b981]" />
-            <h3>{editingUser ? 'Actualizar Identidad' : 'Identidad de Personal'}</h3>
-          </div>
+        )}
+        <div className="archon-grid-2-sovereign">
+          <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#10b981]">
+            <div className="card-sovereign-header">
+              <Contact size={22} className="text-[var(--card-accent)]" />
+              <h3 className="card-sovereign-title text-[14px] opacity-100">
+                {editingUser ? 'Actualizar Identidad' : 'Identidad de Personal'}
+              </h3>
+            </div>
 
-          <ArchonField label="Nombre Completo" icon={User} required>
-            <input
-              type="text"
-              placeholder="Ej. Ana Karen Flores Baca"
-              className="archon-input"
-              value={formData.fullName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                setFormData({ ...formData, fullName: e.target.value })
-              }
-            />
-          </ArchonField>
-
-          <div className="grid grid-cols-2 gap-8">
-            <ArchonField label="Usuario (Login)" icon={Shield} required>
+            <ArchonField label="Nombre Completo" icon={User} required>
               <input
                 type="text"
-                placeholder="aflores"
+                placeholder="Ej. Ana Karen Flores Baca"
                 className="archon-input"
-                disabled={!!editingUser}
-                value={formData.username}
+                value={formData.fullName}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, username: e.target.value.toLowerCase() })
+                  setFormData({ ...formData, fullName: e.target.value })
                 }
               />
             </ArchonField>
-            <ArchonField label="No. de Empleado" icon={Hash}>
-              <input
-                type="text"
-                placeholder="EMP-XXX"
-                className="archon-input"
-                value={formData.employeeNumber}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, employeeNumber: e.target.value })
-                }
-              />
-            </ArchonField>
-          </div>
 
-          <div className="pt-8 mt-4 border-t border-[#0f2a44]/5">
-            <ArchonField label="Fotografía de Identidad" icon={ImageIcon}>
-              <ArchonImageUploader
-                images={formData.imageUrl ? [formData.imageUrl] : []}
-                onChange={(imgs: string[]): void =>
-                  setFormData({ ...formData, imageUrl: imgs[0] || '' })
-                }
-                onFileChange={(files: File[]): void => setSelectedFile(files[0] || null)}
-                maxImages={1}
-                title="Arrastra tu fotografía de perfil"
-                allowedFormats="JPG, PNG"
-                accept="image/jpeg, image/png"
-                variant="square"
-              />
-            </ArchonField>
-            <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4 text-center">
-              Estándar Archon: Formato cuadrado recomendado
-            </p>
-          </div>
-        </div>
-
-        <div className="glass-card-pro bg-white p-10 space-y-8">
-          <div className="archon-card-header-pro">
-            <Briefcase size={22} className="text-[#0f2a44]" />
-            <h3>Perfil Industrial</h3>
-          </div>
-
-          <ArchonField label="Correo Electrónico" icon={Mail} required>
-            <input
-              type="email"
-              placeholder="ana.karen@piic.com.mx"
-              className="archon-input"
-              value={formData.email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-            />
-          </ArchonField>
-
-          <div className="grid grid-cols-2 gap-8">
-            <ArchonField label="Rol Archon" icon={Shield} required>
-              <ArchonSelect
-                options={roles.map((r) => ({ value: r.id.toString(), label: r.label }))}
-                value={formData.roleId}
-                onChange={(val: string): void => setFormData({ ...formData, roleId: val })}
-              />
-            </ArchonField>
-            <ArchonField label="Departamento" icon={Briefcase}>
-              <ArchonSelect
-                options={departments}
-                value={formData.department}
-                onChange={(val: string): void => setFormData({ ...formData, department: val })}
-              />
-            </ArchonField>
-          </div>
-
-          <div className="relative">
-            <ArchonField
-              label={editingUser ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'}
-              icon={Key}
-            >
-              <div className="relative">
+            <div className="grid grid-cols-2 gap-8">
+              <ArchonField label="Usuario (Login)" icon={Shield} required>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  minLength={8}
-                  placeholder={
-                    editingUser
-                      ? 'Dejar vacío para no cambiar'
-                      : 'Opcional (Auto-generada si vacío)'
-                  }
-                  className="archon-input pr-12"
-                  value={formData.password}
+                  type="text"
+                  placeholder="aflores"
+                  className="archon-input"
+                  disabled={!!editingUser}
+                  value={formData.username}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                    setFormData({ ...formData, password: e.target.value })
+                    setFormData({ ...formData, username: e.target.value.toLowerCase() })
                   }
                 />
-                <button
-                  type="button"
-                  onClick={(): void => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-[4px] text-[#0f2a44]/20 hover:text-[#f2b705] hover:bg-[#f2b705]/10 transition-all duration-300 flex items-center justify-center border-0 bg-transparent outline-none focus:outline-none"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </ArchonField>
+              </ArchonField>
+              <ArchonField label="No. de Empleado" icon={Hash}>
+                <input
+                  type="text"
+                  placeholder="EMP-XXX"
+                  className="archon-input"
+                  value={formData.employeeNumber}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, employeeNumber: e.target.value })
+                  }
+                />
+              </ArchonField>
+            </div>
+
+            <div className="pt-8 mt-4 border-t border-pinnacle-navy/5">
+              <ArchonField label="Fotografía de Identidad" icon={ImageIcon}>
+                <ArchonImageUploader
+                  images={formData.imageUrl ? [formData.imageUrl] : []}
+                  onChange={(imgs: string[]): void =>
+                    setFormData({ ...formData, imageUrl: imgs[0] || '' })
+                  }
+                  onFileChange={(files: File[]): void => setSelectedFile(files[0] || null)}
+                  maxImages={1}
+                  title="Arrastra tu fotografía de perfil"
+                  allowedFormats="JPG, PNG"
+                  accept="image/jpeg, image/png"
+                  variant="square"
+                />
+              </ArchonField>
+              <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4 text-center">
+                Estándar Archon: Formato cuadrado recomendado
+              </p>
+            </div>
           </div>
 
-          {formData.password && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <ArchonField label="Confirmar Contraseña" icon={CheckCircle} required>
+          <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#0f2a44]">
+            <div className="card-sovereign-header">
+              <Briefcase size={22} className="text-[var(--card-accent)]" />
+              <h3 className="card-sovereign-title text-[14px] opacity-100">Perfil Industrial</h3>
+            </div>
+
+            <ArchonField label="Correo Electrónico" icon={Mail} required>
+              <input
+                type="email"
+                placeholder="ana.karen@piic.com.mx"
+                className="archon-input"
+                value={formData.email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
+            </ArchonField>
+
+            <div className="grid grid-cols-2 gap-8">
+              <ArchonField label="Rol Archon" icon={Shield} required>
+                <ArchonSelect
+                  options={roles.map((r) => ({ value: r.id.toString(), label: r.label }))}
+                  value={formData.roleId}
+                  onChange={(val: string): void => setFormData({ ...formData, roleId: val })}
+                />
+              </ArchonField>
+              <ArchonField label="Departamento" icon={Briefcase}>
+                <ArchonSelect
+                  options={departments}
+                  value={formData.department}
+                  onChange={(val: string): void => setFormData({ ...formData, department: val })}
+                />
+              </ArchonField>
+            </div>
+
+            <div className="relative">
+              <ArchonField
+                label={editingUser ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'}
+                icon={Key}
+              >
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Repita la clave para validar"
-                    className={`archon-input transition-all duration-300 ${
-                      formData.confirmPassword && !passwordsMatch
-                        ? 'border-red-200 bg-red-50/10'
-                        : ''
-                    }`}
-                    value={formData.confirmPassword}
+                    minLength={8}
+                    placeholder={
+                      editingUser
+                        ? 'Dejar vacío para no cambiar'
+                        : 'Opcional (Auto-generada si vacío)'
+                    }
+                    className="archon-input pr-12"
+                    value={formData.password}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                      setFormData({ ...formData, confirmPassword: e.target.value })
+                      setFormData({ ...formData, password: e.target.value })
                     }
                   />
-                  {formData.confirmPassword && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                      {passwordsMatch ? (
-                        <CheckCircle size={16} className="text-emerald-500 animate-in zoom-in" />
-                      ) : (
-                        <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">
-                          No coincide
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={(): void => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-[4px] text-pinnacle-navy/20 hover:text-pinnacle-yellow hover:bg-pinnacle-yellow/10 transition-all duration-300 flex items-center justify-center border-0 bg-transparent outline-none focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </ArchonField>
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="archon-grid-2">
-        <div className="flex gap-4">
-          {editingUser && (
+            {formData.password && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <ArchonField label="Confirmar Contraseña" icon={CheckCircle} required>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Repita la clave para validar"
+                      className={`archon-input transition-all duration-300 ${
+                        formData.confirmPassword && !passwordsMatch
+                          ? 'border-red-200 bg-red-50/10'
+                          : ''
+                      }`}
+                      value={formData.confirmPassword}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                        setFormData({ ...formData, confirmPassword: e.target.value })
+                      }
+                    />
+                    {formData.confirmPassword && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        {passwordsMatch ? (
+                          <CheckCircle size={16} className="text-emerald-500 animate-in zoom-in" />
+                        ) : (
+                          <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">
+                            No coincide
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </ArchonField>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="archon-grid-2-sovereign">
+          <div className="flex gap-4">
+            {editingUser && (
+              <button
+                type="button"
+                onClick={(): void => {
+                  setAuditAction('DELETE');
+                  setIsAuditModalOpen(true);
+                }}
+                className="btn-sentinel-red"
+              >
+                <Trash2 size={16} /> Eliminar Personal
+              </button>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-6">
             <button
               type="button"
               onClick={(): void => {
-                setAuditAction('DELETE');
-                setIsAuditModalOpen(true);
+                setEditingUser(null);
+                setActivePanel('DIRECTORY');
               }}
               className="btn-sentinel-red"
             >
-              <Trash2 size={16} /> Eliminar Personal
+              Cancelar
             </button>
-          )}
+            <button
+              type="submit"
+              disabled={isSubmitting || !canSubmit}
+              className={`btn-sentinel-emerald ${
+                !canSubmit ? 'opacity-50 grayscale cursor-not-allowed' : ''
+              }`}
+            >
+              {isSubmitting && 'Transmitiendo...'}
+              {!isSubmitting && (editingUser ? 'Sincronizar Cambios' : 'Confirmar Alta')}
+              <Save size={16} />
+            </button>
+          </div>
         </div>
-        <div className="archon-button-group">
-          <button
-            type="button"
-            onClick={(): void => {
-              setEditingUser(null);
-              setActivePanel('DIRECTORY');
-            }}
-            className="btn-sentinel-red"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting || !canSubmit}
-            className={`btn-sentinel-emerald ${
-              !canSubmit ? 'opacity-50 grayscale cursor-not-allowed' : ''
-            }`}
-          >
-            {isSubmitting && 'Transmitiendo...'}
-            {!isSubmitting && (editingUser ? 'Sincronizar Cambios' : 'Confirmar Alta')}
-            <Save size={16} />
-          </button>
-        </div>
-      </div>
-    </form>
+      </form>
 
-    <AuditJustificationModal
-      isOpen={isAuditModalOpen}
-      onClose={(): void => setIsAuditModalOpen(false)}
-      onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
-      title={
-        auditAction === 'UPDATE'
-          ? `Actualización de identidad para ${formData.fullName}`
-          : `Baja definitiva del personal: ${formData.fullName}`
-      }
-      actionType={auditAction}
-    />
-  </>
-);
+      <AuditJustificationModal
+        isOpen={isAuditModalOpen}
+        onClose={(): void => setIsAuditModalOpen(false)}
+        onConfirm={(reason: string): Promise<void> => handleConfirmAudit(reason)}
+        title={
+          auditAction === 'UPDATE'
+            ? `Actualización de identidad para ${formData.fullName}`
+            : `Baja definitiva del personal: ${formData.fullName}`
+        }
+        actionType={auditAction}
+      />
+    </>
+  );
 };
 
 export default UserRegistrationForm;

@@ -204,12 +204,12 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       <ArchonFeedbackBanner message={error || ''} type="error" onClear={resetError} />
 
       {/* ── 2x2 PANEL ARCHITECTURE ─────────────────────────────────────── */}
-      <div className="archon-grid-2 items-start gap-8">
+      <div className="archon-grid-2-sovereign items-start gap-10">
         {/* PANEL 1: MOTOR DE JERARQUÍA (Top-Left) */}
-        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-20">
-          <div className="archon-card-header-pro">
-            <Layers className="text-yellow-500" size={22} />
-            <h3>IDENTIDAD</h3>
+        <div className="card-archon-sovereign bg-white p-10 space-y-8 relative z-20 [--card-accent:#f2b705]">
+          <div className="card-sovereign-header">
+            <Layers className="text-[var(--card-accent)]" size={22} />
+            <h3 className="card-sovereign-title text-[14px] opacity-100">IDENTIDAD</h3>
           </div>
 
           <div className="space-y-6 relative z-10">
@@ -256,7 +256,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   required
                   type="text"
                   placeholder="Ej: VEH-001"
-                  className="archon-input font-bold text-lg tracking-widest text-sky-800"
+                  className="archon-input font-bold text-lg tracking-widest text-pinnacle-navy"
                   value={formData.id}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, id: e.target.value })
@@ -332,10 +332,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
 
         {/* PANEL 2: IDENTIDAD & CUMPLIMIENTO (Top-Right) */}
-        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-20">
-          <div className="archon-card-header-pro">
-            <ShieldCheck size={22} className="text-sky-600" />
-            <h3>CUMPLIMIENTO</h3>
+        <div className="card-archon-sovereign bg-white p-10 space-y-8 relative z-20 [--card-accent:#3b82f6]">
+          <div className="card-sovereign-header">
+            <ShieldCheck size={22} className="text-[var(--card-accent)]" />
+            <h3 className="card-sovereign-title text-[14px] opacity-100">CUMPLIMIENTO</h3>
           </div>
 
           <div className="space-y-6">
@@ -460,15 +460,15 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   />
                 </ArchonField>
                 <ArchonField label="Cuota Mensual / Arrend." icon={Zap}>
-                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-sky-500/50 focus-within:border-sky-500 transition-all duration-300 shadow-inner">
-                    <span className="px-4 py-3 text-slate-400 font-bold border-r border-slate-200 bg-slate-100 flex-shrink-0">
+                  <div className="flex items-center bg-pinnacle-navy/5 border border-pinnacle-navy/10 rounded-[4px] overflow-hidden focus-within:ring-2 focus-within:ring-pinnacle-navy/20 focus-within:border-pinnacle-navy/30 transition-all duration-300">
+                    <span className="px-4 py-3 text-pinnacle-navy/40 font-bold border-r border-pinnacle-navy/10 bg-pinnacle-navy/5 flex-shrink-0">
                       $
                     </span>
                     <input
                       type="number"
                       step="0.01"
                       placeholder="Ej: 15500.50"
-                      className="flex-1 w-full bg-transparent px-4 py-3 outline-none border-none focus:ring-0 font-mono text-emerald-700 font-bold placeholder:text-slate-400/60 placeholder:font-normal"
+                      className="flex-1 w-full bg-transparent px-4 py-3 outline-none border-none focus:ring-0 font-mono text-emerald-600 font-bold placeholder:text-pinnacle-navy/20 placeholder:font-normal"
                       value={formData.monthlyLeasePayment ?? ''}
                       onChange={(
                         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -498,10 +498,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
 
         {/* PANEL 3: PERFIL TÉCNICO DE LA UNIDAD (Bottom-Left) */}
-        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-10">
-          <div className="archon-card-header-pro">
-            <Cpu size={22} className="text-navy-700" />
-            <h3>Perfil Técnico de la Unidad</h3>
+        <div className="card-archon-sovereign bg-white p-10 space-y-8 relative z-10 [--card-accent:#0f2a44]">
+          <div className="card-sovereign-header">
+            <Cpu size={22} className="text-[var(--card-accent)]" />
+            <h3 className="card-sovereign-title text-[14px] opacity-100">PERFIL TÉCNICO</h3>
           </div>
 
           <div className="space-y-6">
@@ -618,7 +618,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="number"
                     step="0.1"
                     placeholder="Ej: 80.0"
-                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-amber-600 font-bold placeholder:text-slate-400/60 placeholder:font-normal"
+                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-pinnacle-yellow font-bold placeholder:text-pinnacle-navy/20 placeholder:font-normal"
                     value={formData.fuelTankCapacity ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -693,10 +693,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
 
         {/* PANEL 4: LOGÍSTICA ESTRATÉGICA & MANTENIMIENTO (Bottom-Right) */}
-        <div className="glass-card-pro bg-white p-10 space-y-8 relative z-10">
-          <div className="archon-card-header-pro">
-            <MapPin size={22} className="text-slate-500" />
-            <h3>Logística Estratégica & Mto.</h3>
+        <div className="card-archon-sovereign bg-white p-10 space-y-8 relative z-10 [--card-accent:#8b5cf6]">
+          <div className="card-sovereign-header">
+            <MapPin size={22} className="text-[var(--card-accent)]" />
+            <h3 className="card-sovereign-title text-[14px] opacity-100">LOGÍSTICA & MTO.</h3>
           </div>
 
           <div className="space-y-6">
@@ -857,7 +857,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="number"
                   step="0.1"
                   placeholder="Ej: 50.5"
-                  className="archon-input font-mono text-emerald-700 font-bold w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-slate-400/60 placeholder:font-normal"
+                  className="archon-input font-mono text-emerald-600 font-bold w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-pinnacle-navy/20 placeholder:font-normal"
                   value={formData.dailyUsageAvg ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({
@@ -881,32 +881,42 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             {/* 🔮 WOW CARD: PRONÓSTICO ARCHON */}
             <div
-              className={`mt-6 p-5 rounded border ${
-                isPronosticoReady ? 'bg-navy-900 border-navy-700' : 'bg-slate-100 border-slate-200'
-              } transition-colors duration-500`}
+              className={`mt-6 p-5 rounded-[4px] border ${
+                isPronosticoReady
+                  ? 'bg-pinnacle-navy border-pinnacle-navy/20 shadow-lg'
+                  : 'bg-pinnacle-navy/5 border-pinnacle-navy/10'
+              } transition-all duration-500`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <Zap
-                  className={isPronosticoReady ? 'text-yellow-400' : 'text-slate-400'}
-                  size={20}
+                  className={
+                    isPronosticoReady
+                      ? 'text-pinnacle-yellow animate-pulse'
+                      : 'text-pinnacle-navy/20'
+                  }
+                  size={24}
                 />
-                <div>
+                <div className="flex-1">
                   <h4
-                    className={`text-xs font-black uppercase tracking-widest ${
-                      isPronosticoReady ? 'text-white' : 'text-slate-500'
+                    className={`text-[9px] font-black uppercase tracking-[0.2em] ${
+                      isPronosticoReady ? 'text-pinnacle-yellow/80' : 'text-pinnacle-navy/40'
                     }`}
                   >
                     PRONÓSTICO AUTOMÁTICO
                   </h4>
                   {isPronosticoReady ? (
-                    <div className="mt-2 space-y-1">
-                      <p className="text-2xl font-black text-rose-500 tracking-tight">
+                    <div className="mt-2 space-y-0.5">
+                      <p className="text-2xl font-black text-white tracking-tighter">
                         {pronosticoDateStr}
                       </p>
-                      <p className="text-xs text-slate-400 font-medium">{pronosticoText}</p>
+                      <p className="text-[10px] text-white/60 font-bold uppercase tracking-widest">
+                        {pronosticoText}
+                      </p>
                     </div>
                   ) : (
-                    <p className="mt-2 text-xs text-slate-500 font-medium">{pronosticoText}</p>
+                    <p className="mt-2 text-[10px] text-pinnacle-navy/40 font-bold uppercase tracking-widest">
+                      {pronosticoText}
+                    </p>
                   )}
                 </div>
               </div>
@@ -915,7 +925,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
       </div>
 
-      <div className="archon-grid-2 mt-12 pt-12 border-t border-slate-100">
+      <div className="archon-grid-2-sovereign mt-12 pt-12 border-t border-pinnacle-navy/5">
         <div>
           {isEdit && (
             <button
@@ -930,7 +940,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             </button>
           )}
         </div>
-        <div className="archon-button-group">
+        <div className="flex items-center justify-end gap-6">
           <button type="button" onClick={onCancel} className="btn-sentinel-red">
             Cancelar
           </button>

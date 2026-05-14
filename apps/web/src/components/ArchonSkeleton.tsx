@@ -30,7 +30,7 @@ export const ArchonSkeleton: React.FC<SkeletonProps> = ({
 );
 
 export const ArchonCardSkeleton: React.FC = () => (
-  <div className="glass-card-pro bg-white p-10 space-y-6 opacity-60">
+  <div className="card-archon-sovereign bg-white p-10 space-y-6 opacity-60">
     <div className="flex items-center space-x-4">
       <ArchonSkeleton width={48} height={48} borderRadius="50%" />
       <div className="space-y-2 flex-grow">

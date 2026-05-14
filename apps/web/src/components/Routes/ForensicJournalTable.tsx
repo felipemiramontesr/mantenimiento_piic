@@ -117,25 +117,30 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
   ): { label: string; color: string; bg: string; icon: React.ElementType } => {
     switch (type) {
       case 'ROUTE_START':
-        return { label: 'SALIDA', color: 'text-[#0f2a44]', bg: 'bg-emerald-50', icon: Activity };
+        return {
+          label: 'SALIDA',
+          color: 'text-pinnacle-navy',
+          bg: 'bg-emerald-50',
+          icon: Activity,
+        };
       case 'ROUTE_FINISH':
-        return { label: 'ENTRADA', color: 'text-[#0f2a44]', bg: 'bg-blue-50', icon: Shield };
+        return { label: 'ENTRADA', color: 'text-pinnacle-navy', bg: 'bg-blue-50', icon: Shield };
       case 'ROUTE_INCIDENT':
         return {
           label: 'INCIDENCIA',
-          color: 'text-[#0f2a44]',
+          color: 'text-pinnacle-navy',
           bg: 'bg-rose-50',
           icon: AlertTriangle,
         };
       case 'ADMIN_EDIT':
         return {
           label: 'CORRECCIÓN',
-          color: 'text-[#0f2a44]',
+          color: 'text-pinnacle-navy',
           bg: 'bg-rose-50',
           icon: Shield,
         };
       default:
-        return { label: 'EVENTO', color: 'text-[#0f2a44]', bg: 'bg-gray-50', icon: Clock };
+        return { label: 'EVENTO', color: 'text-pinnacle-navy', bg: 'bg-gray-50', icon: Clock };
     }
   };
 
@@ -158,13 +163,13 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
       className={`animate-in fade-in duration-700 w-full !p-0 !m-0 ${unitId ? '' : 'space-y-6'}`}
     >
       {!hideHeader && !unitId && (
-        <div className="flex items-center gap-3 px-6 py-4 bg-white/50 glass-card-pro rounded-[4px] border border-[#0f2a44]/5 mx-8">
+        <div className="flex items-center gap-3 px-6 py-4 bg-white/50 rounded-[4px] border border-pinnacle-navy/5 mx-8">
           <Shield className="text-amber-500" size={24} />
           <div>
-            <h2 className="text-lg font-black text-[#0f2a44] uppercase tracking-tighter leading-none">
+            <h2 className="text-lg font-black text-pinnacle-navy uppercase tracking-tighter leading-none">
               Journal de Activos
             </h2>
-            <p className="text-[10px] font-bold text-[#0f2a44] opacity-40 uppercase tracking-widest">
+            <p className="text-[10px] font-bold text-pinnacle-navy opacity-40 uppercase tracking-widest">
               Rastro Inmutable de Operaciones y Desgaste
             </p>
           </div>
@@ -199,13 +204,13 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
               return (
                 <tr key={log.id} className={isIncident ? 'forensic-incident-row' : ''}>
                   <td className="py-4">
-                    <span className="text-[11px] font-black text-[#0f2a44]">
+                    <span className="text-[11px] font-black text-pinnacle-navy">
                       {formatDateTime(log.created_at)}
                     </span>
                   </td>
 
                   <td className="py-4">
-                    <span className="text-[9px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-1.5 py-0.5 rounded border border-[#0f2a44]/10 uppercase tracking-tighter">
+                    <span className="text-[9px] font-black text-pinnacle-navy bg-pinnacle-navy/5 px-1.5 py-0.5 rounded border border-pinnacle-navy/10 uppercase tracking-tighter">
                       {String(log.id).substring(0, 8)}
                     </span>
                   </td>
@@ -213,7 +218,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                   {!unitId && (
                     <td className="py-4">
                       <div className="flex flex-col items-center">
-                        <span className="text-[11px] font-black bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-[#0f2a44]">
+                        <span className="text-[11px] font-black bg-pinnacle-navy/5 px-2 py-0.5 rounded-[4px] text-pinnacle-navy">
                           {log.unit_id}
                         </span>
                         <span className="text-[9px] font-bold opacity-40 uppercase">
@@ -317,7 +322,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                               </div>
                             )}
                             <p
-                              className={`text-[10px] font-bold leading-tight text-center w-full text-[#0f2a44] ${
+                              className={`text-[10px] font-bold leading-tight text-center w-full text-pinnacle-navy ${
                                 isIncident ? 'not-italic px-3 py-1' : 'opacity-70 italic'
                               } ${
                                 isAnomalous
@@ -339,13 +344,13 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                       {log.reading_before !== null &&
                         log.reading_after !== null &&
                         Number(log.reading_before) !== Number(log.reading_after) && (
-                          <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
-                            <Activity size={10} className="text-[#0f2a44] opacity-50" />
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                          <div className="flex items-center gap-2 bg-pinnacle-navy/5 px-2 py-1 rounded-[4px]">
+                            <Activity size={10} className="text-pinnacle-navy opacity-50" />
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {log.reading_before?.toLocaleString()}
                             </span>
                             <ArrowRight size={10} className="opacity-30" />
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {log.reading_after?.toLocaleString()}
                             </span>
                             <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded-sm">
@@ -360,11 +365,11 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         Number(log.fuel_before) !== Number(log.fuel_after) && (
                           <div className="flex items-center gap-2 bg-amber-50/50 border border-amber-100 px-2 py-1 rounded-[4px]">
                             <Fuel size={10} className="text-amber-600" />
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {Number(log.fuel_before).toFixed(1)} L
                             </span>
                             <ArrowRight size={10} className="opacity-30" />
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {Number(log.fuel_after).toFixed(1)} L
                             </span>
                           </div>
@@ -376,11 +381,11 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         Number(log.fuel_level_before) !== Number(log.fuel_level_after) && (
                           <div className="flex items-center gap-2 bg-amber-50/50 border border-amber-100 px-2 py-1 rounded-[4px]">
                             <Fuel size={10} className="text-amber-600" />
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {Number(log.fuel_level_before).toFixed(0)}%
                             </span>
                             <ArrowRight size={10} className="opacity-30" />
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {Number(log.fuel_level_after).toFixed(0)}%
                             </span>
                           </div>
@@ -392,14 +397,14 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         Number(log.fuel_amount_before) !== Number(log.fuel_amount_after) && (
                           <div className="flex items-center gap-2 bg-emerald-50/50 border border-emerald-100 px-2 py-1 rounded-[4px]">
                             <span className="text-[10px] font-black text-emerald-600">$</span>
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {Number(log.fuel_amount_before).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                               })}
                             </span>
                             <ArrowRight size={10} className="opacity-30" />
                             <span className="text-[10px] font-black text-emerald-600">$</span>
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {Number(log.fuel_amount_after).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                               })}
@@ -476,12 +481,12 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                               return (
                                 <div
                                   key={key}
-                                  className="flex items-center gap-1.5 bg-[#0f2a44]/[0.03] border border-[#0f2a44]/5 px-2 py-0.5 rounded-[4px]"
+                                  className="flex items-center gap-1.5 bg-pinnacle-navy/[0.03] border border-pinnacle-navy/5 px-2 py-0.5 rounded-[4px]"
                                 >
-                                  <span className="text-[8px] font-black text-[#0f2a44] opacity-40 uppercase">
+                                  <span className="text-[8px] font-black text-pinnacle-navy opacity-40 uppercase">
                                     {label}:
                                   </span>
-                                  <span className="text-[9px] font-bold text-[#0f2a44] opacity-50 line-through">
+                                  <span className="text-[9px] font-bold text-pinnacle-navy opacity-50 line-through">
                                     {prefix}
                                     {formatVal(valBefore, key)}
                                     {suffix}
@@ -503,13 +508,13 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                       {log.status_before !== log.status_after &&
                         log.status_before &&
                         log.status_after && (
-                          <div className="flex items-center gap-2 bg-[#0f2a44]/5 px-2 py-1 rounded-[4px]">
-                            <Shield size={10} className="text-[#0f2a44] opacity-50" />
-                            <span className="text-[10px] font-black text-[#0f2a44] opacity-40">
+                          <div className="flex items-center gap-2 bg-pinnacle-navy/5 px-2 py-1 rounded-[4px]">
+                            <Shield size={10} className="text-pinnacle-navy opacity-50" />
+                            <span className="text-[10px] font-black text-pinnacle-navy opacity-40">
                               {log.status_before}
                             </span>
                             <ArrowRight size={10} className="opacity-30" />
-                            <span className="text-[10px] font-black text-[#0f2a44]">
+                            <span className="text-[10px] font-black text-pinnacle-navy">
                               {log.status_after}
                             </span>
                           </div>
@@ -524,7 +529,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                         (!log.fuel_amount_before ||
                           Number(log.fuel_amount_before) === Number(log.fuel_amount_after)) &&
                         (!log.status_before || log.status_before === log.status_after) && (
-                          <span className="text-[10px] font-black text-[#0f2a44] opacity-20">
+                          <span className="text-[10px] font-black text-pinnacle-navy opacity-20">
                             —
                           </span>
                         )}
@@ -533,7 +538,9 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
                   <td className="py-4">
                     <div className="text-center">
-                      <p className="text-[11px] font-black text-[#0f2a44]">{log.operatorName}</p>
+                      <p className="text-[11px] font-black text-pinnacle-navy">
+                        {log.operatorName}
+                      </p>
                       <p className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">
                         Certified Audit
                       </p>

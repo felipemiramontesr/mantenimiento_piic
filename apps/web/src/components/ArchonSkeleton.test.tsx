@@ -23,7 +23,7 @@ describe('ArchonSkeleton Components', () => {
 
   it('renders ArchonCardSkeleton', (): void => {
     const { container } = render(<ArchonCardSkeleton />);
-    expect(container.querySelector('.glass-card-pro')).toBeInTheDocument();
+    expect(container.querySelector('.card-archon-sovereign')).toBeInTheDocument();
   });
 
   it('renders ArchonTableSkeleton with default rows', (): void => {

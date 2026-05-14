@@ -65,7 +65,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
       <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-2">
         <div className="archon-grid-2 gap-8">
           {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
-          <div className="glass-card-pro p-6 space-y-2 bg-white">
+          <div className="card-archon-sovereign p-6 space-y-4 bg-white [--card-accent:#0f2a44]">
             <RouteIdentityPanel
               formData={formData}
               updateForm={updateForm}
@@ -95,7 +95,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
           </div>
 
           {/* COLUMNA 2: CIERRE Y EVIDENCIA */}
-          <div className="glass-card-pro p-6 space-y-2 bg-white">
+          <div className="card-archon-sovereign p-6 space-y-4 bg-white [--card-accent:#f2b705]">
             {isEdit ? (
               <RouteClosurePanel
                 formData={formData}
@@ -122,7 +122,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         </div>
 
         {/* 🔱 SOVEREIGN GLOBAL ACTION BAR - Aligned with Axial Grid for Uniformity */}
-        <div className="archon-grid-2 gap-8 pt-8 mt-4 border-t border-[#0f2a44]/5">
+        <div className="archon-grid-2 gap-8 pt-8 mt-4 border-t border-pinnacle-navy/5">
           {/* Left Panel Action: Danger Zone */}
           <div className="flex items-center">
             {isEdit && (
