@@ -141,7 +141,7 @@ const LoginPage: React.FC = () => {
                     placeholder="ID de Archon"
                     value={username}
                     onChange={(e): void => setUsername(e.target.value)}
-                    className="w-full bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 py-3.5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+                    className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
                     disabled={loading}
                     required
                   />
@@ -157,13 +157,17 @@ const LoginPage: React.FC = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e): void => setPassword(e.target.value)}
-                    className="w-full bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 py-3.5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
+                    className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"
                     disabled={loading}
                     required
                   />
                 </div>
 
-                <button type="submit" disabled={loading} className="btn-archon-primary">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-archon-primary w-full !md:w-full"
+                >
                   {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
                 </button>
 
