@@ -11,22 +11,23 @@ const LogsModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<LogsPanel>('FORENSIC');
 
-  // 🚀 SYNC SOVEREIGN HEADER
-  useEffect(() => {
-    setSectionData('Logs de Seguridad', 'Auditoría y Vigilancia de Acceso al Sistema');
-  }, [setSectionData]);
-
   const handlePanelChange = (panel: LogsPanel): void => {
     setActivePanel(panel);
   };
+
+  useEffect(() => {
+    setSectionData(
+      'Logs de Seguridad',
+      'Auditoría y Vigilancia de Acceso al Sistema',
+      <LogsManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+    );
+  }, [activePanel, setSectionData]);
 
   return (
     <div className="animate-in fade-in duration-700">
       {/* 📊 BODY MODULAR (Zen Skeleton) */}
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container flex flex-col gap-12 w-full max-w-full">
-          <LogsManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
-
           {/* Futuro panel de contenido irá aquí dependiendo del activePanel */}
         </div>
       </section>

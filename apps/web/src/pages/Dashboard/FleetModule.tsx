@@ -86,16 +86,6 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const fleetController = useFleetForm();
   const { formData, registrationSuccess, setRegistrationSuccess } = fleetController;
 
-  // 🚀 SYNC SOVEREIGN HEADER
-  useEffect(() => {
-    setSectionData(
-      editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades',
-      editingUnit
-        ? 'Protocolo de Gestión Forense Archon'
-        : 'Administración de Activos, Registro Técnico & Optimización de Flota'
-    );
-  }, [editingUnit, setSectionData]);
-
   const handlePanelChange = (panel: ManagementPanel): void => {
     setActivePanel(panel);
     setRegistrationSuccess(false);
@@ -130,14 +120,22 @@ const FleetModule: React.FC = (): React.ReactElement => {
     }
   };
 
+  useEffect(() => {
+    setSectionData(
+      editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades',
+      editingUnit
+        ? 'Protocolo de Gestión Forense Archon'
+        : 'Administración de Activos, Registro Técnico & Optimización de Flota',
+      <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+    );
+  }, [editingUnit, activePanel, setSectionData]);
+
   return (
     <div className="animate-in fade-in duration-700">
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis w-full max-w-full overflow-hidden">
         {/* 🔱 AXIAL SYNC CONTAINER */}
         <div className="archon-axial-container flex flex-col gap-12 w-full max-w-full">
-          <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
-
           <div ref={panelRef}>
             {registrationSuccess ? (
               <FleetSuccessView formData={formData} />

@@ -14,17 +14,17 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<MaintenancePanel>('HISTORY');
 
-  // 🚀 SYNC SOVEREIGN HEADER
-  useEffect(() => {
-    setSectionData(
-      'Administrar Mantenimientos',
-      'Control de Servicios, Mantenimiento Preventivo & Correctivo'
-    );
-  }, [setSectionData]);
-
   const handlePanelChange = (panel: MaintenancePanel): void => {
     setActivePanel(panel);
   };
+
+  useEffect(() => {
+    setSectionData(
+      'Administrar Mantenimientos',
+      'Control de Servicios, Mantenimiento Preventivo & Correctivo',
+      <MaintenanceManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+    );
+  }, [activePanel, setSectionData]);
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -32,8 +32,6 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
       <section className="archon-workspace-chassis">
         {/* 🔱 AXIAL SYNC CONTAINER */}
         <div className="archon-axial-container flex flex-col gap-12">
-          <MaintenanceManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
-
           <div className="flex items-center justify-center min-h-[30vh]">
             <h3 className="text-[#0f2a44] text-xl font-black tracking-tight animate-in fade-in duration-1000">
               {activePanel === 'HISTORY'

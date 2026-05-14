@@ -18,11 +18,11 @@ const UsersModule: React.FC = (): React.JSX.Element => {
   const { setSectionData } = useSovereignLayout();
   const panelRef = React.useRef<HTMLDivElement>(null);
 
-  // 🚀 SYNC SOVEREIGN HEADER
   useEffect(() => {
     setSectionData(
       'Administrar Personal',
-      'Gestión de Identidades, Roles Industriales & Auditoría de Acceso'
+      'Gestión de Identidades, Roles Industriales & Auditoría de Acceso',
+      <UserManagementCards />
     );
   }, [setSectionData]);
 
@@ -47,8 +47,6 @@ const UsersModule: React.FC = (): React.JSX.Element => {
       <section className="archon-workspace-chassis">
         {/* 🔱 AXIAL SYNC CONTAINER */}
         <div className="archon-axial-container flex flex-col gap-12">
-          <UserManagementCards />
-
           <div ref={panelRef}>
             {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
           </div>

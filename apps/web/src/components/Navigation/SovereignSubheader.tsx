@@ -3,9 +3,9 @@ import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 
 /**
  * 🔱 Archon Component: SovereignSubheader
- * Implementation: Local Section Navigation & Actions
+ * Implementation: Local Section Navigation & Actions (V.78.100.89)
  * Objective: Slot for internal section cards, view switchers, and filters.
- * v.1.1.0 - Context Aware
+ * Refactor: 100% Pure Tailwind Atomic Architecture.
  */
 
 const SovereignSubheader: React.FC = () => {
@@ -14,20 +14,8 @@ const SovereignSubheader: React.FC = () => {
   if (!layoutData.subheaderActions) return null;
 
   return (
-    <div
-      className="sovereign-subheader animate-in fade-in duration-500"
-      style={{
-        padding: '16px 40px', // Synchronized with Workspace Header
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(15, 42, 68, 0.05)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        minHeight: '64px',
-      }}
-    >
-      {layoutData.subheaderActions}
+    <div className="sovereign-subheader animate-in fade-in duration-500 px-10 py-4 bg-white/50 backdrop-blur-md border-b border-pinnacle-navy/5 flex items-center min-h-[64px]">
+      <div className="w-full">{layoutData.subheaderActions}</div>
     </div>
   );
 };

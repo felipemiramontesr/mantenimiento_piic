@@ -84,6 +84,10 @@
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr;
   }
 
+  .archon-grid-2-sovereign {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-10 w-full;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;

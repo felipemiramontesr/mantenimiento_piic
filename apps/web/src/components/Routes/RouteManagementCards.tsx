@@ -15,40 +15,38 @@ const RouteManagementCards: React.FC<RouteManagementCardsProps> = ({
   onPanelChange,
   onAction,
 }) => (
-  <div className="archon-central-axis animate-in fade-in slide-in-from-top-4 duration-700">
-    <div className="archon-grid-2 gap-8 mb-8">
-      <ArchonManagementCard
-        variant="navy"
-        headerTitle="Logística & Auditoría"
-        HeaderIcon={History}
-        PayloadIcon={Shield}
-        actionTitle="Administración"
-        description="Histórico • Journal Forense"
-        buttonText="Ver Bitácora"
-        isActive={activePanel === 'LOGS' || activePanel === 'JOURNAL'}
-        onClick={(e: React.MouseEvent): void => {
-          e.stopPropagation();
-          if (onAction) onAction('BITACORA');
-          onPanelChange('LOGS');
-        }}
-      />
+  <div className="archon-grid-2-sovereign animate-in fade-in slide-in-from-top-4 duration-700">
+    <ArchonManagementCard
+      variant="navy"
+      headerTitle="Logística & Auditoría"
+      HeaderIcon={History}
+      PayloadIcon={Shield}
+      actionTitle="Administración"
+      description="Histórico • Journal Forense"
+      buttonText="Ver Bitácora"
+      isActive={activePanel === 'LOGS' || activePanel === 'JOURNAL'}
+      onClick={(e: React.MouseEvent): void => {
+        e.stopPropagation();
+        if (onAction) onAction('BITACORA');
+        onPanelChange('LOGS');
+      }}
+    />
 
-      <ArchonManagementCard
-        variant="emerald"
-        headerTitle="Control de Tránsito"
-        HeaderIcon={MapPin}
-        PayloadIcon={MapPin}
-        actionTitle="Asignación de Ruta"
-        description="Nueva Asignación"
-        buttonText="Iniciar"
-        isActive={activePanel === 'DISPATCH'}
-        onClick={(e: React.MouseEvent): void => {
-          e.stopPropagation();
-          if (onAction) onAction('DESPACHO');
-          onPanelChange('DISPATCH');
-        }}
-      />
-    </div>
+    <ArchonManagementCard
+      variant="emerald"
+      headerTitle="Control de Tránsito"
+      HeaderIcon={MapPin}
+      PayloadIcon={MapPin}
+      actionTitle="Asignación de Ruta"
+      description="Nueva Asignación"
+      buttonText="Iniciar"
+      isActive={activePanel === 'DISPATCH'}
+      onClick={(e: React.MouseEvent): void => {
+        e.stopPropagation();
+        if (onAction) onAction('DESPACHO');
+        onPanelChange('DISPATCH');
+      }}
+    />
   </div>
 );
 

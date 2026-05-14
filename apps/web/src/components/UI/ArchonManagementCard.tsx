@@ -1,6 +1,13 @@
 import React from 'react';
 import { ArrowRight, LucideIcon } from 'lucide-react';
 
+/**
+ * 🔱 Archon UI Component: ArchonManagementCard
+ * Implementation: Sovereign Management Strategy Card (V.78.100.89)
+ * Objective: High-performance navigational orchestration within modules.
+ * Migration: 100% Sovereign Card Architecture (DRY).
+ */
+
 export type ArchonCardVariant = 'navy' | 'emerald' | 'red' | 'yellow' | 'sky' | 'violet' | 'blue';
 
 export interface ArchonManagementCardProps {
@@ -37,27 +44,6 @@ const getVariantColor = (variant: ArchonCardVariant): string => {
   }
 };
 
-const getActiveButtonClass = (variant: ArchonCardVariant): string => {
-  switch (variant) {
-    case 'navy':
-      return '!bg-[#0f2a44] !text-white';
-    case 'emerald':
-      return '!bg-emerald-600 !text-white';
-    case 'red':
-      return '!bg-red-600 !text-white';
-    case 'yellow':
-      return '!bg-[#d9a404] !text-[#0f2a44]';
-    case 'sky':
-      return '!bg-sky-600 !text-white';
-    case 'violet':
-      return '!bg-violet-600 !text-white';
-    case 'blue':
-      return '!bg-blue-600 !text-white';
-    default:
-      return '!bg-[#0f2a44] !text-white';
-  }
-};
-
 const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
   variant,
   headerTitle,
@@ -76,52 +62,52 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className="glass-card-pro archon-instrument-tile cursor-pointer transition-all duration-500"
-      style={{ borderTop: `4px solid ${hexColor}` }}
+      className={`
+        card-archon-sovereign cursor-pointer animate-in fade-in duration-500
+        ${isActive ? 'ring-2 ring-pinnacle-yellow/20 shadow-xl' : ''}
+      `}
+      style={{ '--card-accent': hexColor } as React.CSSProperties}
     >
-      <div className="flex items-center justify-center gap-3 mb-4 w-full">
-        <HeaderIcon size={20} style={{ color: hexColor }} />
-        <span className="text-instrument-header text-[#0f2a44] opacity-80 uppercase tracking-widest">
-          {headerTitle}
-        </span>
+      {/* 🔱 HEADER */}
+      <div className="card-sovereign-header">
+        <HeaderIcon size={18} style={{ color: hexColor }} />
+        <span className="card-sovereign-title">{headerTitle}</span>
       </div>
 
-      <div className="archon-tile-payload space-y-8 pb-16">
+      {/* 📦 PAYLOAD */}
+      <div className="flex-1 flex flex-col items-center justify-center space-y-6 pb-8">
         <div
+          className="w-20 h-20 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300"
           style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '4px',
-            backgroundColor: `${hexColor}1a`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: `2px solid ${hexColor}66`,
+            backgroundColor: `${hexColor}15`,
+            borderColor: `${hexColor}30`,
           }}
         >
-          <PayloadIcon size={40} style={{ color: hexColor }} />
+          <PayloadIcon size={32} style={{ color: hexColor }} />
         </div>
-        <div className="flex flex-col items-center space-y-1 mb-12">
-          <h3 className="text-[#0f2a44] font-black uppercase tracking-[0.15em] text-[14px]">
+
+        <div className="flex flex-col items-center space-y-1 text-center">
+          <h3 className="text-pinnacle-navy font-black uppercase tracking-[0.15em] text-[13px]">
             {actionTitle}
           </h3>
-          <p className="text-[10px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44]">
+          <p className="text-[9px] font-bold opacity-40 uppercase tracking-[0.25em] text-pinnacle-navy">
             {description}
           </p>
         </div>
       </div>
 
-      <div className="archon-tile-action">
-        <button
-          data-testid={testId}
-          className={`btn-sentinel btn-sentinel-${variant} w-full ${
-            isActive ? getActiveButtonClass(variant) : ''
-          }`}
-        >
-          {buttonText}{' '}
-          <ArrowRight size={10} className={`${isYellow ? 'text-[#0f2a44]' : 'text-white'} ml-2`} />
-        </button>
-      </div>
+      {/* 🔘 ACTION */}
+      <button
+        data-testid={testId}
+        className={`
+          btn-archon-card-action
+          ${isActive ? 'brightness-110 shadow-inner ring-1 ring-white/20' : ''}
+          ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
+        `}
+      >
+        <span className="mr-2">{buttonText}</span>
+        <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
+      </button>
     </div>
   );
 };

@@ -17,16 +17,6 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
   const [editingRoute, setEditingRoute] = useState<RouteLog | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
-  // 🚀 SYNC SOVEREIGN HEADER
-  useEffect(() => {
-    setSectionData(
-      editingRoute ? `Rectificación: ${editingRoute.id}` : 'Administrar Rutas',
-      editingRoute
-        ? 'Protocolo de Rectificación Logística Archon'
-        : 'Despacho Logístico, Control de Tránsito & Auditoría Forense'
-    );
-  }, [editingRoute, setSectionData]);
-
   const scrollToPanel = (): void => {
     const element = panelRef.current;
     if (element) {
@@ -72,20 +62,28 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
     setActivePanel('LOGS');
   };
 
+  useEffect(() => {
+    setSectionData(
+      editingRoute ? `Rectificación: ${editingRoute.id}` : 'Administrar Rutas',
+      editingRoute
+        ? 'Protocolo de Rectificación Logística Archon'
+        : 'Despacho Logístico, Control de Tránsito & Auditoría Forense',
+      <RouteManagementCards
+        activePanel={activePanel}
+        onPanelChange={(p): void => {
+          setActivePanel(p);
+          scrollToPanel();
+        }}
+        onAction={handleAction}
+      />
+    );
+  }, [editingRoute, activePanel, setSectionData]);
+
   return (
     <div className="animate-in fade-in duration-700">
       {/* 📊 BODY MODULAR (Action Cards) */}
       <section className="archon-workspace-chassis">
         <div className="flex flex-col gap-4 pb-[60vh]">
-          <RouteManagementCards
-            activePanel={activePanel}
-            onPanelChange={(p): void => {
-              setActivePanel(p);
-              scrollToPanel();
-            }}
-            onAction={handleAction}
-          />
-
           {/* 📊 CONTENIDO DINÁMICO DE PANEL INTEGRADO */}
           <div ref={panelRef} className="scroll-mt-6">
             {activePanel === 'LOGS' && <RouteLogTable onEdit={handleEdit} />}
