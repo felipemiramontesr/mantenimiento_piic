@@ -64,7 +64,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
       onClick={onClick}
       className={`
         card-archon-sovereign cursor-pointer animate-in fade-in duration-500 group
-        ${isActive ? 'ring-2 ring-pinnacle-yellow/20 shadow-xl' : ''}
+        ${isActive ? 'border-slate-300' : ''}
       `}
       style={
         {
@@ -111,7 +111,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
         data-testid={testId}
         className={`
           btn-archon-card-action
-          ${isActive ? 'brightness-110 shadow-inner ring-1 ring-white/20' : ''}
+          ${isActive ? 'brightness-110 ring-1 ring-white/20' : ''}
           ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
         `}
       >
