@@ -10,6 +10,7 @@ export default {
         pinnacle: {
           navy: '#0F2A44',
           yellow: '#F2B705',
+          white: '#F8FAFC',
           bg: '#F2F4F7',
           secondary: '#2E2E2E',
           text: '#1A1A1A',

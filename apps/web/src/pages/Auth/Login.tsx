@@ -120,10 +120,11 @@ const LoginPage: React.FC = () => {
       {/* 🏙️ HERO CONTENT (Cinematic Brand Narrative - 2/3 Width) */}
       <section className="relative z-20 hidden md:flex flex-col md:col-span-2 min-h-screen p-0 transition-all duration-500 overflow-hidden font-display">
         <main className="flex-1 flex flex-col justify-center px-6 md:px-20 gap-8 animate-in fade-in slide-in-from-bottom duration-1000 delay-200">
-          <h1 className="text-white font-black text-3xl md:text-4xl lg:text-5xl leading-[1.1] max-w-[720px] text-center md:text-left">
-            Suministro industrial, tecnológico y comercial para operaciones que no pueden detenerse
+          <h1 className="text-pinnacle-white font-black text-3xl md:text-4xl lg:text-5xl leading-[1.1] max-w-[850px] text-center md:text-left">
+            Suministro industrial, tecnológico y comercial para <br className="hidden lg:block" />{' '}
+            operaciones que no pueden detenerse
           </h1>
-          <p className="text-white/70 text-lg md:text-xl max-w-none text-center md:text-left whitespace-nowrap font-sans">
+          <p className="text-pinnacle-white/70 text-lg md:text-xl max-w-none text-center md:text-left whitespace-nowrap font-sans">
             Respuesta rápida y suministro confiable para el sector minero e industrial.
           </p>
 
@@ -132,7 +133,7 @@ const LoginPage: React.FC = () => {
               href="https://wa.me/5214929421780"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-[#f2b705] text-[#0f2a44] w-full md:w-72 h-16 rounded-[4px] font-black text-base shadow-lg hover:bg-[#d9a404] transition-all"
+              className="btn-archon-primary"
             >
               Contactar a un asesor
             </a>
@@ -140,7 +141,7 @@ const LoginPage: React.FC = () => {
               href="https://piic.com.mx/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-white/5 text-white backdrop-blur-md w-full md:w-72 h-16 rounded-[4px] font-black text-base hover:bg-white hover:text-[#0f2a44] transition-all"
+              className="btn-archon-ghost"
             >
               Ver sitio Web
             </a>
