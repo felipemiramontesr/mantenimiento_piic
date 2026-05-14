@@ -15,6 +15,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import ArchonLogo from '../Logo/ArchonLogo';
 import usePermissions from '../../hooks/usePermissions';
 
+/**
+ * 🔱 Archon Component: Sidebar
+ * Implementation: Sovereign Navigation Hub (V.78.100.88)
+ * Objective: High-performance navigational orchestration.
+ * Refactor: 100% Pure Tailwind Atomic Architecture (Mirror DNA).
+ */
+
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
@@ -35,31 +42,33 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
       onClick={(): void => navigate(path)}
       role="button"
       tabIndex={0}
-      style={{
-        padding: isCollapsed ? '16px 0' : '16px 24px',
-        margin: '4px 0',
-        borderRadius: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: isCollapsed ? 'center' : 'flex-start',
-        gap: isCollapsed ? '0' : '16px',
-        transition: 'all 0.2s ease',
-        borderLeft: active ? '3px solid #f2b705' : '3px solid transparent',
-        backgroundColor: active ? 'rgba(242, 183, 5, 0.05)' : 'transparent',
-      }}
-      className="nav-item-pro cursor-pointer group"
+      className={`
+        nav-item-pro cursor-pointer group flex items-center transition-all duration-200 rounded-[4px] my-1
+        ${isCollapsed ? 'justify-center py-4' : 'justify-start py-4 px-6 gap-4'}
+        ${
+          active
+            ? 'border-l-[3px] border-pinnacle-yellow bg-pinnacle-yellow/5'
+            : 'border-l-[3px] border-transparent bg-transparent hover:bg-white/5'
+        }
+      `}
       title={isCollapsed ? label : ''}
       data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <div style={{ color: active ? '#f2b705' : 'rgba(255,255,255,0.4)' }}>{icon}</div>
+      <div
+        className={`${
+          active
+            ? 'text-pinnacle-yellow'
+            : 'text-white/40 group-hover:text-white/70 transition-colors'
+        }`}
+      >
+        {icon}
+      </div>
       {!isCollapsed && (
         <span
-          style={{
-            fontSize: '13px',
-            fontWeight: 500,
-            color: active ? '#ffffff' : 'rgba(255,255,255,0.7)',
-            letterSpacing: '-0.01em',
-          }}
+          className={`
+            text-[13px] font-medium tracking-tight transition-colors
+            ${active ? 'text-white' : 'text-white/70 group-hover:text-white'}
+          `}
         >
           {label}
         </span>
@@ -78,68 +87,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   };
 
   return (
-    <aside
-      style={{
-        backgroundColor: '#0f2a44',
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        boxShadow: '4px 0 20px rgba(0,0,0,0.2)',
-      }}
-      className="sidebar-solid-pro shrink-0 transition-all duration-300 ease-in-out"
-    >
+    <aside className="relative z-50 flex flex-col w-full h-full bg-pinnacle-navy shadow-[4px_0_20px_rgba(0,0,0,0.2)] shrink-0 transition-all duration-300 ease-in-out">
+      {/* 📏 AXIAL BORDER */}
       <div className="absolute top-0 right-0 w-[1px] h-full bg-white/5" />
 
+      {/* 🔘 COLLAPSE TRIGGER */}
       <button
         onClick={onToggle}
-        style={{
-          position: 'absolute',
-          right: '-28px', // Stuck to the border (projecting outward)
-          top: '50%',
-          transform: 'translateY(-50%)',
-          backgroundColor: '#f2b705',
-          color: '#0f2a44',
-          width: '28px',
-          height: '48px',
-          borderRadius: '0 4px 4px 0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: 'none',
-          boxShadow: '4px 0 10px rgba(0,0,0,0.3)',
-          zIndex: 100,
-          cursor: 'pointer',
-        }}
-        className="hover:translate-x-1 transition-transform"
+        className="absolute -right-7 top-1/2 -translate-y-1/2 w-7 h-12 bg-pinnacle-yellow text-pinnacle-navy rounded-r-[4px] flex items-center justify-center shadow-lg z-[100] cursor-pointer hover:translate-x-1 transition-all"
       >
         {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
 
-      {/* Header (10%) */}
-      <div
-        style={{
-          height: '10%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-          padding: isCollapsed ? '0' : '0 24px',
-        }}
+      {/* 🔱 HEADER (10%) */}
+      <header
+        className={`
+          h-[10%] flex items-center justify-center border-b border-white/5
+          ${isCollapsed ? 'p-0' : 'px-6'}
+        `}
       >
         <ArchonLogo isCollapsed={isCollapsed} size={isCollapsed ? 28 : 32} />
-      </div>
+      </header>
 
-      {/* Body (80%) */}
-      <div
-        style={{
-          height: '80%',
-          padding: '24px 12px',
-          overflowY: 'auto',
-        }}
-      >
-        <nav style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* 🗺️ BODY (80%) */}
+      <main className="h-[80%] py-6 px-3 overflow-y-auto custom-scrollbar">
+        <nav className="flex flex-col">
           <NavItem
             icon={<LayoutDashboard size={20} />}
             label="Comando"
@@ -202,40 +174,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             />
           )}
         </nav>
-      </div>
+      </main>
 
-      {/* Footer (10%) */}
-      <div
-        style={{
-          height: '10%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0 24px',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
-        }}
-      >
+      {/* ⚙️ FOOTER (10%) */}
+      <footer className="h-[10%] flex items-center justify-center px-6 border-t border-white/5">
         {hasPermission('user:admin') && (
           <button
             onClick={goToSettings}
-            style={{
-              backgroundColor: location.pathname === '/dashboard/settings' ? '#ffffff' : '#f2b705',
-              color: '#0f2a44',
-              width: '100%',
-              padding: '10px',
-              borderRadius: '4px',
-              fontWeight: 700,
-              fontSize: '11px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
+            className={`
+              w-full h-10 flex items-center justify-center gap-2 rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all cursor-pointer
+              ${
+                location.pathname === '/dashboard/settings'
+                  ? 'bg-white text-pinnacle-navy'
+                  : 'bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110 shadow-md'
+              }
+            `}
             title="Configuración de Sistema"
             data-testid="nav-item-settings"
           >
@@ -243,7 +196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             {!isCollapsed && <span>Configuración</span>}
           </button>
         )}
-      </div>
+      </footer>
     </aside>
   );
 };
