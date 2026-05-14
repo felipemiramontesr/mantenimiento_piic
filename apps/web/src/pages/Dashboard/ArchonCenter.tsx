@@ -20,9 +20,9 @@ import AccessControlSlideOver from '../../components/Identity/AccessControlSlide
 
 /**
  * 🔱 Archon Component: ArchonCenter
- * Implementation: Sovereign Command Center View
+ * Implementation: Sovereign Command Center View (V.78.100.83)
  * Objective: High-density predictive analytics and fleet health orchestration.
- * v.78.100.50 - Sovereign Layout Integrated
+ * Migration: 100% Sovereign Card Grid & DRY Architecture.
  */
 
 const ArchonCenter: React.FC = (): React.ReactElement => {
@@ -32,13 +32,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const [isAccessControlOpen, setIsAccessControlOpen] = useState<boolean>(false);
 
-  // Set Section Metadata on Mount
   useEffect(() => {
-    setSectionData(
-      'Centro de Comando',
-      'Análisis Predictivo de Segmentos Operativos',
-      null // No subheader actions for this view yet
-    );
+    setSectionData('Centro de Comando', 'Análisis Predictivo de Segmentos Operativos', null);
   }, [setSectionData]);
 
   const activePersonnelCount = users.filter((u) => u.is_active && u.username !== 'Archon').length;
@@ -49,50 +44,40 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     Icon: React.ElementType,
     color: string,
     description: string,
-    variant: 'navy' | 'violet' | 'emerald' | 'sky' | 'yellow' | 'red',
     path?: string
   ): React.ReactElement => (
     <div
-      className="glass-card-pro archon-instrument-tile animate-in fade-in duration-500"
-      style={{ borderTop: `4px solid ${color}` }}
+      className="card-archon-sovereign animate-in fade-in duration-500"
+      style={{ '--card-accent': color } as React.CSSProperties}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          marginBottom: '20px',
-          width: '100%',
-        }}
-      >
-        <Icon size={24} style={{ color }} />
-        <span className="text-instrument-header text-[#0f2a44] opacity-90">{label}</span>
+      <div className="flex items-center justify-center gap-3 mb-6 w-full">
+        <Icon size={20} style={{ color }} />
+        <span className="font-display font-black text-[10px] uppercase tracking-[0.2em] text-pinnacle-navy opacity-70">
+          {label}
+        </span>
       </div>
 
-      <div className="archon-tile-payload flex flex-col items-center justify-center pb-6">
+      <div className="flex-1 flex flex-col items-center justify-center pb-8">
         {loading ? (
-          <div className="archon-shimmer h-24 w-full rounded" />
+          <div className="w-full h-12 bg-pinnacle-navy/5 animate-pulse rounded-[4px]" />
         ) : (
-          <div className="flex flex-col items-center justify-center text-center w-full space-y-2">
-            <h3 className="text-kpi-black text-[#0f2a44] text-center w-full">{value}</h3>
-            <p className="text-[12px] font-bold opacity-60 uppercase tracking-[0.2em] text-[#0f2a44] text-center w-full">
+          <div className="flex flex-col items-center justify-center text-center w-full space-y-1">
+            <h3 className="text-4xl font-black text-pinnacle-navy tracking-tighter">{value}</h3>
+            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-pinnacle-navy/40">
               {description}
             </p>
           </div>
         )}
       </div>
 
-      <div className="archon-tile-action">
-        <button
-          onClick={(): void => {
-            if (path) navigate(path);
-          }}
-          className={`btn-sentinel btn-sentinel-${variant} w-full text-[11px] font-black py-3`}
-        >
-          VER REPORTE <ArrowRight size={12} className="text-white ml-2" />
-        </button>
-      </div>
+      <button
+        onClick={(): void => {
+          if (path) navigate(path);
+        }}
+        className="btn-archon-card-action"
+      >
+        VER REPORTE <ArrowRight size={12} className="ml-2" />
+      </button>
     </div>
   );
 
@@ -127,169 +112,148 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
 
     return (
       <div
-        className="glass-card-pro archon-instrument-tile animate-in fade-in duration-700"
-        style={{ borderTop: '4px solid #0f2a44' }}
+        className="card-archon-sovereign animate-in fade-in duration-700"
+        style={{ '--card-accent': accentColor } as React.CSSProperties}
       >
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-6">
           <div
+            className="w-14 h-14 rounded-[4px] flex items-center justify-center border-2"
             style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '4px',
-              backgroundColor: `${accentColor}15`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: `2px solid ${accentColor}40`,
+              backgroundColor: `${accentColor}10`,
+              borderColor: `${accentColor}30`,
             }}
           >
-            <Icon size={26} style={{ color: accentColor }} />
+            <Icon size={24} style={{ color: accentColor }} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-[#0f2a44]">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-pinnacle-navy opacity-40">
               Segmento Operativo
             </span>
-            <h3 className="text-xl font-black text-[#0f2a44] tracking-tight">{title}</h3>
+            <h3 className="text-lg font-black text-pinnacle-navy tracking-tight">{title}</h3>
           </div>
           <div className="ml-auto flex flex-col items-end">
-            <span className="text-3xl font-black text-[#0f2a44]">{data.count}</span>
-            <span className="text-[9px] font-black uppercase opacity-30">Activos</span>
+            <span className="text-2xl font-black text-pinnacle-navy">{data.count}</span>
+            <span className="text-[8px] font-black uppercase opacity-30">Activos</span>
           </div>
         </div>
 
-        <div
-          className="analytics-grid-quadrant"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            borderTop: '1px solid rgba(15, 42, 68, 0.05)',
-            marginBottom: '16px',
-          }}
-        >
-          <div
-            className="quadrant-item border-r border-b flex flex-col items-center justify-center text-center"
-            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
-          >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
+        <div className="grid grid-cols-2 border-t border-pinnacle-navy/5 mb-6">
+          <div className="p-4 border-r border-b border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               Disponibilidad
             </span>
-            <div className="flex items-center justify-center gap-2 w-full">
-              <span className="text-2xl font-black text-[#0f2a44]">{data.availablePercent}%</span>
-              <div className={`w-2 h-2 rounded-[4px] transition-all duration-500 ${dotColor}`} />
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-black text-pinnacle-navy">
+                {data.availablePercent}%
+              </span>
+              <div className={`w-2 h-2 rounded-full ${dotColor}`} />
             </div>
           </div>
-          <div
-            className="quadrant-item border-b flex flex-col items-center justify-center text-center"
-            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
-          >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
+          <div className="p-4 border-b border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               Estado Crítico
             </span>
-            <span className="text-2xl font-black text-red-500 w-full">{data.maintenanceCount}</span>
+            <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
           </div>
-          <div
-            className="quadrant-item border-r flex flex-col items-center justify-center text-center"
-            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
-          >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
+          <div className="p-4 border-r border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               MTBF Promedio
             </span>
-            <div className="flex items-center justify-center gap-1 w-full">
-              <Activity size={12} className="text-sky-500" />
-              <span className="text-lg font-black text-[#0f2a44]">
+            <div className="flex items-center gap-1">
+              <Activity size={10} className="text-sky-500" />
+              <span className="text-base font-black text-pinnacle-navy">
                 {formatTimeMetric(data.avgMtbf)}
               </span>
             </div>
           </div>
-          <div
-            className="quadrant-item flex flex-col items-center justify-center text-center"
-            style={{ padding: '20px', borderColor: 'rgba(15, 42, 68, 0.05)' }}
-          >
-            <span className="text-[11px] font-black uppercase tracking-widest opacity-40 block mb-2 w-full">
+          <div className="p-4 border-pinnacle-navy/5 flex flex-col items-center justify-center text-center">
+            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
               MTTR Táctico
             </span>
-            <div className="flex items-center justify-center gap-1 w-full">
-              <History size={12} className="text-amber-500" />
-              <span className="text-lg font-black text-[#0f2a44]">
+            <div className="flex items-center gap-1">
+              <History size={10} className="text-amber-500" />
+              <span className="text-base font-black text-pinnacle-navy">
                 {formatTimeMetric(data.avgMttr)}
               </span>
             </div>
           </div>
         </div>
+
+        <button
+          onClick={(): void => navigate(`/inventory?type=${categoryKey}`)}
+          className="btn-archon-card-action"
+        >
+          VER DETALLES <ArrowRight size={12} className="ml-2" />
+        </button>
       </div>
     );
   };
 
   return (
-    <div className="archon-axial-container animate-in fade-in duration-700">
-      <div className="archon-grid-3">
+    <div className="w-full animate-in fade-in duration-700">
+      <div className="archon-grid-sovereign">
         {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
         {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
         {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
+
         {renderKPI(
           'Fuerza Operativa',
           activePersonnelCount,
           Users,
           '#0f2a44',
-          'Personal habilitado en sitio',
-          'navy'
+          'Personal habilitado en sitio'
         )}
         {renderKPI(
           'Salud de Flota',
           `${stats.maintenanceIndex}%`,
           Gauge,
           '#0f2a44',
-          'Índice global de operatividad',
-          'navy'
+          'Índice global de operatividad'
         )}
         {renderKPI(
           'Activos Totales',
           stats.total,
           Truck,
           '#0f2a44',
-          'Unidades totales en inventario',
-          'navy'
+          'Unidades totales en inventario'
         )}
+
         {renderKPI(
           'Disponibilidad',
           stats.available,
           ShieldCheck,
           '#10b981',
-          'Unidades listas para operación',
-          'emerald'
+          'Unidades listas para operación'
         )}
         {renderKPI(
           'Despliegue en Ruta',
           stats.inRoute,
           Navigation,
           '#0ea5e9',
-          'Unidades en tránsito operativo',
-          'sky'
+          'Unidades en tránsito operativo'
         )}
         {renderKPI(
           'Mantenimiento',
           stats.maintenance,
           Wrench,
           '#f2b705',
-          'Unidades en mantenimiento activo',
-          'yellow'
+          'Unidades en mantenimiento activo'
         )}
+
         {renderKPI(
-          'Incidencias en Ruta',
+          'Incidencias',
           stats.openIncidents,
           ShieldAlert,
           '#ef4444',
-          'Alertas Sentinel sin resolver',
-          'red',
+          'Alertas Sentinel activas',
           '/routes'
         )}
         {renderKPI(
-          'Mermas Operativas',
+          'Mermas',
           stats.totalInactive,
           ShieldAlert,
           '#8b5cf6',
-          'Unidades fuera de servicio',
-          'violet'
+          'Unidades fuera de servicio'
         )}
       </div>
 
