@@ -171,6 +171,56 @@ describe('Fleet Integration Endpoints', () => {
     });
   });
 
+  describe('GET /v1/fleet/:id', () => {
+    it('should return 200 and full unit data including images', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          {
+            id: 'ASM-001',
+            uuid: 'uuid-1',
+            images: JSON.stringify(['data:image/png;base64,123']),
+          },
+        ],
+        undefined,
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.id).toBe('ASM-001');
+      expect(body.data.images).toHaveLength(1);
+    });
+
+    it('should return 404 if unit does not exist', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet/MISSING',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('should return 500 on db failure', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+      });
+
+      expect(response.statusCode).toBe(500);
+    });
+  });
+
   describe('PATCH /v1/fleet/:id', () => {
     it('should update unit successfully with falsy values for branch coverage', async (): Promise<void> => {
       mockConnection.execute
