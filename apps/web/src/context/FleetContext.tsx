@@ -63,31 +63,66 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           2: 'Maquinaria',
           3: 'Herramienta',
         };
-        const fuelTypeMap: Record<number, string> = {
+        const fuelMap: Record<number, string> = {
           10: 'Diésel',
           11: 'Gasolina',
           12: 'Eléctrico',
-          219: 'Mezcla 2T',
-          1040: 'Gas LP',
+          219: 'Mezcla (2 Tiempos)',
+          220: 'Batería (Li-Ion)',
+          221: 'Neumático (Aire)',
+          1040: 'Gas LP / Natural',
         };
         const deptMap: Record<number, string> = {
           222: 'Administración',
           223: 'Exploración',
           224: 'Geología',
           225: 'Laboratorio',
-          226: 'Mant. Eléctrico',
-          227: 'Mant. Planta',
+          226: 'Mantenimiento Eléctrico',
+          227: 'Mantenimiento Planta',
           228: 'Medio Ambiente',
           229: 'Operación Mina',
           230: 'Operación Planta',
+          231: 'Planeación',
+          232: 'Relaciones Comunitarias',
+          233: 'Seguridad Patrimonial',
+          234: 'Seguridad Industrial',
         };
         const engineMap: Record<number, string> = {
-          1024: 'L4 2.8L Turbo',
-          1026: 'L4 2.5L DOHC',
-          1027: 'V8 6.4L HEMI',
-          1028: 'L4 2.4L MIVEC',
-          1029: 'L4 2.0L CTI',
-          1030: 'L4 1.4L TSI',
+          1024: 'L4 2.8L Turbo Intercooled',
+          1026: 'L4 2.5L DOHC Multipunto',
+          1027: 'V8 6.4L HEMI MDS',
+          1028: 'L4 2.4L MIVEC Turbo',
+          1029: 'L4 2.0L CTI Turbo',
+          1030: 'L4 1.4L TSI Turbo',
+          1031: 'L4 1.3L Firefly',
+          1032: 'L4 1.6L DOHC',
+          1033: 'L4 1.5L DOHC',
+          1034: 'L6 6.7L Cummins Turbo',
+          1035: 'Electric Dual-Motor',
+          1036: 'L4 2.5L Turbo (2KD-FTV)',
+        };
+        const colorMap: Record<number, string> = {
+          1000: 'Blanco',
+          1001: 'Negro',
+          1002: 'Gris',
+          1003: 'Rojo',
+          1004: 'Azul',
+          1005: 'Verde',
+          1006: 'Amarillo',
+          1007: 'Naranja',
+          1008: 'Café',
+          1009: 'Beige',
+          1010: 'Plateado',
+          1011: 'Dorado',
+        };
+        const tireBrandMap: Record<number, string> = {
+          243: 'MICHELIN',
+          244: 'BF GOODRICH',
+          264: 'ZMAX',
+          265: 'PIRELLI',
+          266: 'BRIDGESTONE',
+          267: 'YOKOHAMA',
+          268: 'GOODYEAR',
         };
 
         return data.map((item: unknown) => {
@@ -108,6 +143,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             tireBrandId: getVal('tireBrandId', 'tire_brand_id') as number,
             tireSpec: getVal('tireSpec', 'tire_spec') as string,
             tireBrand: getVal('tireBrand', 'tire_brand') as string,
+            placas: getVal('placas', 'placas') as string,
             circulationCardNumber: getVal(
               'circulationCardNumber',
               'circulation_card_number'
@@ -144,24 +180,30 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             // 🔱 Normalization Tier (Labels)
             assetType:
               normalizedUnit.assetType || assetTypeMap[normalizedUnit.assetTypeId!] || 'S/D',
-            fuelType: normalizedUnit.fuelType || fuelTypeMap[normalizedUnit.fuelTypeId!] || 'S/D',
+            fuelType: normalizedUnit.fuelType || fuelMap[normalizedUnit.fuelTypeId!] || 'S/D',
             departamento:
               normalizedUnit.departamento || deptMap[normalizedUnit.departmentId!] || 'General',
             motor: normalizedUnit.motor || engineMap[normalizedUnit.engineTypeId!] || 'S/D',
+            color: normalizedUnit.color || colorMap[normalizedUnit.colorId!] || 'S/D',
             tireBrand:
-              normalizedUnit.tireBrand ||
-              (Number(normalizedUnit.tireBrandId) === 243 ? 'MICHELIN' : 'S/D'),
+              normalizedUnit.tireBrand || tireBrandMap[normalizedUnit.tireBrandId!] || 'S/D',
 
-            // 🔱 Forensic Image Parser
+            // 🔱 Forensic Image Parser (Base64 & Path Support)
             images: ((): string[] => {
               const rawImages = getVal('images', 'images');
-              if (!rawImages) return [];
+              if (!rawImages) return ['/img/archon-blueprint.png'];
               if (Array.isArray(rawImages)) return rawImages as string[];
               try {
                 const parsed = JSON.parse(rawImages as string);
-                return Array.isArray(parsed) ? (parsed as string[]) : [];
+                return Array.isArray(parsed) && parsed.length > 0
+                  ? (parsed as string[])
+                  : ['/img/archon-blueprint.png'];
               } catch (e) {
-                return [];
+                // If it's not JSON, it might be a single string path or base64
+                if (typeof rawImages === 'string' && rawImages.length > 0) {
+                  return [rawImages];
+                }
+                return ['/img/archon-blueprint.png'];
               }
             })(),
           };
