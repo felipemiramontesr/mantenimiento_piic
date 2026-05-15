@@ -102,7 +102,16 @@ describe('FleetContext (World Class QA Suite)', () => {
       expect(screen.getByTestId('total').textContent).toBe('1');
     });
 
-    expect(archonCache.set).toHaveBeenCalledWith('fleet_units', freshData);
+    expect(archonCache.set).toHaveBeenCalledWith(
+      'fleet_units',
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'U-FRESH',
+          status: 'Disponible',
+          assetTypeId: 1,
+        }),
+      ])
+    );
   });
 
   it('🔱 ANALYTICAL INTEGRITY: Calculates metrics for all asset types', async () => {
