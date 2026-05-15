@@ -106,6 +106,8 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             traccionId: getVal('traccionId', 'traccion_id') as number,
             transmisionId: getVal('transmisionId', 'transmision_id') as number,
             tireBrandId: getVal('tireBrandId', 'tire_brand_id') as number,
+            tireSpec: getVal('tireSpec', 'tire_spec') as string,
+            tireBrand: getVal('tireBrand', 'tire_brand') as string,
             circulationCardNumber: getVal(
               'circulationCardNumber',
               'circulation_card_number'

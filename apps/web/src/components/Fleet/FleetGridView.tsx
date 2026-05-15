@@ -219,7 +219,7 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         </div>
       </div>
       <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase">
-        <Truck size={12} className="text-slate-300" /> {unit.tireSpec || '255/70 R16'} /{' '}
+        <Truck size={12} className="text-slate-300" /> {unit.tireSpec || 'S/D'} /{' '}
         <span className="text-navy-600 font-black">{unit.tireBrand || '---'}</span>
       </div>
       <div className="flex flex-col gap-1.5 w-full border-t border-gray-100 pt-2 mt-1">
