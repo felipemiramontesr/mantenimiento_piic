@@ -367,6 +367,9 @@ const FleetUnitRow = ({
             className="w-48 h-48 rounded-[4px] shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
             onClick={(): void => onSelectImage(unit)}
             alt={unit.id}
+            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+              e.currentTarget.src = '/img/archon-blueprint.png';
+            }}
           />
         ) : (
           <div className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center text-gray-300 border border-dashed border-gray-200">

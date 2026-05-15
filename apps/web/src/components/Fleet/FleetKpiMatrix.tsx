@@ -102,20 +102,20 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
       </div>
 
       {/* 🔱 Archon Health Index Bar */}
-      <div className="space-y-1">
+      <div className="space-y-1.5 mt-1">
         <div className="flex justify-between items-center px-1">
-          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">
+          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
             Health Index
           </span>
           <span
-            className={`text-[8px] font-black ${
-              daysRemaining !== undefined && daysRemaining < 0 ? 'text-rose-600' : 'text-slate-600'
+            className={`text-[9px] font-black ${
+              daysRemaining !== undefined && daysRemaining < 0 ? 'text-rose-600' : 'text-navy-700'
             }`}
           >
-            {healthScore}% {daysRemaining !== undefined && `/ ${daysRemaining} días`}
+            {healthScore}% {daysRemaining !== undefined && `/ ${daysRemaining}d`}
           </span>
         </div>
-        <div className="h-1 w-full bg-slate-100 rounded-[4px] overflow-hidden">
+        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
           <div
             className={`h-full transition-all duration-1000 ${
               daysRemaining !== undefined && daysRemaining < 0

@@ -59,6 +59,76 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   } = useSilkHydration<FleetUnit>({
     key: 'fleet_units',
     endpoint: '/fleet',
+    transform: (raw: unknown): FleetUnit[] => {
+      const data = Array.isArray(raw) ? raw : [];
+      
+      // 🔱 ARCHON CATALOG MAPPING (Safety Shield)
+      const assetTypeMap: Record<number, string> = { 1: 'Vehiculo', 2: 'Maquinaria', 3: 'Herramienta' };
+      const fuelTypeMap: Record<number, string> = { 10: 'Diésel', 11: 'Gasolina', 12: 'Eléctrico', 219: 'Mezcla 2T', 1040: 'Gas LP' };
+      const deptMap: Record<number, string> = { 
+        222: 'Administración', 223: 'Exploración', 224: 'Geología', 
+        225: 'Laboratorio', 226: 'Mant. Eléctrico', 227: 'Mant. Planta',
+        228: 'Medio Ambiente', 229: 'Operación Mina', 230: 'Operación Planta'
+      };
+      const engineMap: Record<number, string> = {
+        1024: 'L4 2.8L Turbo', 1026: 'L4 2.5L DOHC', 1027: 'V8 6.4L HEMI',
+        1028: 'L4 2.4L MIVEC', 1029: 'L4 2.0L CTI', 1030: 'L4 1.4L TSI'
+      };
+
+      return data.map((unit: Record<string, any>) => {
+        // 🔱 SOVEREIGN CASE NORMALIZER (Resilience Layer)
+        const getVal = (camel: string, snake: string): any => unit[camel] !== undefined ? unit[camel] : unit[snake];
+
+        const normalizedUnit: FleetUnit = {
+          ...unit as any,
+          assetTypeId: getVal('assetTypeId', 'asset_type_id'),
+          departmentId: getVal('departmentId', 'department_id'),
+          fuelTypeId: getVal('fuelTypeId', 'fuel_type_id'),
+          engineTypeId: getVal('engineTypeId', 'engine_type_id'),
+          colorId: getVal('colorId', 'color_id'),
+          traccionId: getVal('traccionId', 'traccion_id'),
+          transmisionId: getVal('transmisionId', 'transmision_id'),
+          tireBrandId: getVal('tireBrandId', 'tire_brand_id'),
+          circulationCardNumber: getVal('circulationCardNumber', 'circulation_card_number'),
+          numeroSerie: getVal('numeroSerie', 'numero_serie'),
+          lastServiceReading: getVal('lastServiceReading', 'last_service_reading'),
+          lastServiceDate: getVal('lastServiceDate', 'last_service_date'),
+          nextServiceReading: getVal('nextServiceReading', 'next_service_reading'),
+          maintIntervalDays: getVal('maintIntervalDays', 'maint_interval_days'),
+          maintIntervalKm: getVal('maintIntervalKm', 'maint_interval_km'),
+          dailyUsageAvg: getVal('dailyUsageAvg', 'daily_usage_avg'),
+          accountingAccount: getVal('accountingAccount', 'accounting_account'),
+          insurancePolicyNumber: getVal('insurancePolicyNumber', 'insurance_policy_number'),
+          lastEnvironmentalVerification: getVal('lastEnvironmentalVerification', 'last_environmental_verification'),
+          lastMechanicalVerification: getVal('lastMechanicalVerification', 'last_mechanical_verification'),
+          environmentalHologram: getVal('environmentalHologram', 'environmental_hologram'),
+          insuranceExpiryDate: getVal('insuranceExpiryDate', 'insurance_expiry_date'),
+        };
+
+        return {
+          ...normalizedUnit,
+          // 🔱 Normalization Tier (Labels)
+          assetType: normalizedUnit.assetType || assetTypeMap[normalizedUnit.assetTypeId!] || 'S/D',
+          fuelType: normalizedUnit.fuelType || fuelTypeMap[normalizedUnit.fuelTypeId!] || 'S/D',
+          departamento: normalizedUnit.departamento || deptMap[normalizedUnit.departmentId!] || 'General',
+          motor: normalizedUnit.motor || engineMap[normalizedUnit.engineTypeId!] || 'S/D',
+          tireBrand: normalizedUnit.tireBrand || (Number(normalizedUnit.tireBrandId) === 243 ? 'MICHELIN' : 'S/D'),
+          
+          // 🔱 Forensic Image Parser
+          images: ((): string[] => {
+            const rawImages = getVal('images', 'images');
+            if (!rawImages) return [];
+            if (Array.isArray(rawImages)) return rawImages;
+            try {
+              const parsed = JSON.parse(rawImages);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+              return [];
+            }
+          })(),
+        };
+      });
+    },
   });
 
   const { data: incidents, refresh: refreshIncidents } = useSilkHydration<{ status: string }>({
