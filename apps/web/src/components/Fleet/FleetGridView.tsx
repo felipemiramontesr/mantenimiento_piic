@@ -368,7 +368,8 @@ const FleetUnitRow = ({
             onClick={(): void => onSelectImage(unit)}
             alt={unit.id}
             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
-              e.currentTarget.src = '/img/archon-blueprint.png';
+              const imgElement = e.currentTarget;
+              imgElement.src = '/img/archon-blueprint.png';
             }}
           />
         ) : (
