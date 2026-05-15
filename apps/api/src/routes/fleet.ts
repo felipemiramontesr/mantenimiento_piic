@@ -93,6 +93,21 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
   });
 
   /**
+   * GET /api/v1/fleet/:id
+   */
+  fastify.get('/fleet/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      const unit = await FleetService.getUnitById(id, fastify.log);
+      if (!unit) return reply.code(404).send({ error: 'Unit not found' });
+      return reply.send({ success: true, data: unit });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Failure retrieving unit details' });
+    }
+  });
+
+  /**
    * POST /api/v1/fleet
    * Plan Omega: Base64 images are part of the main payload.
    */

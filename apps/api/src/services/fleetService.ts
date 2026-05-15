@@ -1,4 +1,5 @@
 import { RowDataPacket } from 'mysql2';
+import { FastifyBaseLogger } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import EncryptionService from './encryption';
@@ -19,11 +20,12 @@ export default class FleetService {
   }): Promise<Record<string, unknown>[]> {
     const query = `
       SELECT 
-        f.*,
-        f.lastServiceReading AS lastServiceReading,
-        f.lastServiceDate AS lastServiceDate,
-        f.maintIntervalKm AS maintIntervalKm,
-        f.maintIntervalDays AS maintIntervalDays,
+        f.id, f.uuid, f.assetTypeId, f.brandId, f.modelId, f.year, f.fuelTypeId, 
+        f.departmentId, f.operationalUseId, f.locationId, f.placas, f.numeroSerie, 
+        f.maintIntervalDays, f.maintIntervalKm, f.lastServiceReading, f.lastServiceDate, 
+        f.odometer, f.status, f.createdAt, f.updatedAt,
+        f.capacityCarga, f.fuelTankCapacity, f.colorId, f.transmisionId, f.traccionId, 
+        f.engineTypeId, f.description,
         c_at.label AS assetType,
         c_at.code AS assetTypeCode,
         c_brand.label AS marca,
@@ -73,6 +75,39 @@ export default class FleetService {
 
     const [rows] = await db.execute<FleetUnit[]>(query);
     return rows.map((unit) => FleetIntelligenceEngine.processUnit(unit, logger));
+  }
+
+  /**
+   * Retrieves a single unit by ID with full technical profile (including images).
+   */
+  static async getUnitById(
+    id: string,
+    logger: FastifyBaseLogger
+  ): Promise<Record<string, unknown> | null> {
+    const query = `
+      SELECT f.*, 
+        c_at.label AS assetType, c_brand.label AS marca, c_model.label AS modelo,
+        c_dept.label AS departamento, c_use.label AS uso, c_ft.label AS fuelType,
+        c_tr.label AS traccion, c_ts.label AS transmision, c_tire_brand.label AS tireBrand,
+        c_color.label AS color, c_eng.label AS motor
+      FROM fleet_units f
+      LEFT JOIN common_catalogs c_at ON f.assetTypeId = c_at.id AND c_at.category = 'ASSET_TYPE'
+      LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id AND c_brand.category = 'BRAND'
+      LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id AND c_model.category = 'MODEL'
+      LEFT JOIN common_catalogs c_dept ON f.departmentId = c_dept.id AND c_dept.category = 'DEPARTMENT'
+      LEFT JOIN common_catalogs c_use ON f.operationalUseId = c_use.id AND c_use.category = 'OPERATIONAL_USE'
+      LEFT JOIN common_catalogs c_ft ON f.fuelTypeId = c_ft.id AND c_ft.category = 'FUEL'
+      LEFT JOIN common_catalogs c_tr ON f.traccionId = c_tr.id AND c_tr.category = 'DRIVE_TYPE'
+      LEFT JOIN common_catalogs c_ts ON f.transmisionId = c_ts.id AND c_ts.category = 'TRANSMISSION'
+      LEFT JOIN common_catalogs c_tire_brand ON f.tireBrandId = c_tire_brand.id AND c_tire_brand.category = 'TIRE_BRAND'
+      LEFT JOIN common_catalogs c_color ON f.colorId = c_color.id AND c_color.category = 'VEHICLE_COLOR'
+      LEFT JOIN common_catalogs c_eng ON f.engineTypeId = c_eng.id AND c_eng.category = 'ENGINE_TYPE'
+      WHERE f.id = ?
+    `;
+
+    const [rows] = await db.execute<FleetUnit[]>(query, [id]);
+    if (rows.length === 0) return null;
+    return FleetIntelligenceEngine.processUnit(rows[0], logger);
   }
 
   /**

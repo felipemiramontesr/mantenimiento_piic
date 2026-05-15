@@ -7,6 +7,7 @@ import { FleetUnit, CreateFleetUnit } from '../../types/fleet';
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
 import FleetManagementCards, { ManagementPanel } from '../../components/Fleet/FleetManagementCards';
 import FleetGridView from '../../components/Fleet/FleetGridView';
+import api from '../../api/client';
 import FleetRegistrationForm from '../../components/Fleet/FleetRegistrationForm';
 import FleetSuccessView from '../../components/Fleet/FleetSuccessView';
 import useFleetForm from '../../hooks/useFleetForm';
@@ -103,20 +104,29 @@ const FleetModule: React.FC = (): React.ReactElement => {
     setRegistrationSuccess(false);
   };
 
-  const handleEditUnit = (unit: FleetUnit): void => {
-    setEditingUnit(unit);
-    setActivePanel('EXPANSION');
-    setRegistrationSuccess(false);
+  const handleEditUnit = async (unit: FleetUnit): Promise<void> => {
+    try {
+      // 🔱 Lazy Load: Fetch full unit profile (including heavy assets)
+      const response = await api.get(`/fleet/${unit.id}`);
+      const fullUnit = response.data.data;
 
-    // 🔱 HYDRATE CONTROLLER
-    fleetController.setFormData(mapUnitToFormData(unit));
-    if (unit.assetTypeId) fleetController.handleAssetTypeChange(unit.assetTypeId);
-    if (unit.brandId) fleetController.handleMarcaChange(unit.brandId);
+      setEditingUnit(fullUnit);
+      setActivePanel('EXPANSION');
+      setRegistrationSuccess(false);
 
-    if (panelRef.current?.scrollIntoView) {
-      setTimeout((): void => {
-        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+      // 🔱 HYDRATE CONTROLLER
+      fleetController.setFormData(mapUnitToFormData(fullUnit));
+      if (fullUnit.assetTypeId) fleetController.handleAssetTypeChange(fullUnit.assetTypeId);
+      if (fullUnit.brandId) fleetController.handleMarcaChange(fullUnit.brandId);
+
+      if (panelRef.current?.scrollIntoView) {
+        setTimeout((): void => {
+          panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load full unit profile:', error);
     }
   };
 
