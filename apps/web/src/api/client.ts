@@ -26,7 +26,6 @@ const api = axios.create({
 // 🛡️ Zero-Noise Test Shield
 /* istanbul ignore next */
 if (typeof process === 'undefined' || (process.env.NODE_ENV !== 'test' && !process.env.VITEST)) {
-  // eslint-disable-next-line no-console
   console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
 }
 
@@ -73,7 +72,6 @@ api.interceptors.response.use(
 
     if (!isTest) {
       /* istanbul ignore next */
-      // eslint-disable-next-line no-console
       console.error('🌐 [Archon API Client] Networking Error:', {
         message: error.message,
         status: error.response?.status,
@@ -85,7 +83,6 @@ api.interceptors.response.use(
       if (!isTest) {
         // 🕵️ Forensic Log: Catch the culprit before redirect
         /* istanbul ignore next */
-        // eslint-disable-next-line no-console
         console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
           url: error.config?.url,
           method: error.config?.method,

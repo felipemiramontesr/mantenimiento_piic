@@ -115,7 +115,6 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
       const isTest =
         typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
       if (!isTest) {
-        // eslint-disable-next-line no-console
         console.error(`[Archon Alpha] Fetch Failure: ${category}`, err);
       }
       return [];
@@ -260,7 +259,6 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     } catch (err) {
       // Release lock on error to allow retry
       hasHydratedRef.current = false;
-      // eslint-disable-next-line no-console
       console.error('[Archon Alpha] Critical Hydration Failure', err);
     } finally {
       if (isMountedRef.current) setIsLoading(false);
@@ -363,7 +361,6 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
         throw new Error(res.data.error || 'Server Internal Error');
       }
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errorMsg = (err as any).response?.data?.error || (err as Error).message;
       setError(errorMsg);
       throw new Error(errorMsg);
