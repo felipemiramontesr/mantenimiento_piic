@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { LucideIcon } from 'lucide-react';
 
 /**
  * 🔱 Archon Context: SovereignLayoutContext
@@ -14,10 +15,10 @@ interface LayoutData {
   headerAction?: {
     variant: 'navy' | 'emerald' | 'red' | 'yellow' | 'sky' | 'violet' | 'blue';
     headerTitle: string;
-    HeaderIcon: React.ElementType;
+    HeaderIcon: LucideIcon;
     actionTitle: string;
     description: string;
-    PayloadIcon: React.ElementType;
+    PayloadIcon: LucideIcon;
     buttonText: string;
     isActive: boolean;
     onClick: () => void;
