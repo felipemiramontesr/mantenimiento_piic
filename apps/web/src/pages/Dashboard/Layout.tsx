@@ -7,8 +7,6 @@ import SovereignFooter from '../../components/Navigation/SovereignFooter';
 import { FleetProvider } from '../../context/FleetContext';
 import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 
-import { ArchonDoctor } from '../../ArchonDoctor';
-
 /**
  * 🏛️ Archon Component: DashboardLayout
  * Implementation: Sovereign Architectural Grid (V.78.100.120)
@@ -23,7 +21,7 @@ const DashboardLayout: React.FC = () => {
       <FleetProvider>
         <div
           className={`grid h-screen w-screen overflow-hidden bg-[#0f2a44] transition-all duration-300 ease-in-out ${
-            isCollapsed ? 'grid-cols-[80px_minmax(0,1fr)]' : 'grid-cols-[260px_minmax(0,1fr)]'
+            isCollapsed ? 'grid-cols-[80px_minmax(0,1fr)]' : 'grid-cols-[200px_minmax(0,1fr)]'
           }`}
         >
           {/* 🔱 Navigation Chassis */}
@@ -34,16 +32,15 @@ const DashboardLayout: React.FC = () => {
             <SovereignHeader />
             <SovereignSubheader />
 
-            <div className="h-[80vh] overflow-y-auto px-10 py-[26px] custom-scrollbar flex-1">
+            <div className="h-[80vh] overflow-y-auto px-10 pt-0 pb-[26px] custom-scrollbar flex-1 relative">
               <Outlet />
             </div>
 
             <SovereignFooter />
           </main>
         </div>
-        
+
         {/* 🔱 Forensic Telemetry Overlay */}
-        <ArchonDoctor />
       </FleetProvider>
     </SovereignLayoutProvider>
   );

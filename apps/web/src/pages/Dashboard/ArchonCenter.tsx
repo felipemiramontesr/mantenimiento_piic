@@ -186,72 +186,77 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
   };
 
   return (
-    <div className="w-full animate-in fade-in duration-700">
-      <div className="archon-grid-sovereign">
-        {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
-        {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
-        {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
+    <div className="animate-in fade-in duration-700">
+      {/* 📊 COMMAND CENTER CHASSIS */}
+      <section className="archon-workspace-chassis">
+        <div className="archon-axial-container">
+          <div className="archon-grid-sovereign">
+            {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
+            {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
+            {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
 
-        {renderKPI(
-          'Fuerza Operativa',
-          activePersonnelCount,
-          Users,
-          '#0f2a44',
-          'Personal habilitado en sitio'
-        )}
-        {renderKPI(
-          'Salud de Flota',
-          `${stats.maintenanceIndex}%`,
-          Gauge,
-          '#0f2a44',
-          'Índice global de operatividad'
-        )}
-        {renderKPI(
-          'Activos Totales',
-          stats.total,
-          Truck,
-          '#0f2a44',
-          'Unidades totales en inventario'
-        )}
+            {renderKPI(
+              'Fuerza Operativa',
+              activePersonnelCount,
+              Users,
+              '#0f2a44',
+              'Personal habilitado en sitio'
+            )}
+            {renderKPI(
+              'Salud de Flota',
+              `${stats.maintenanceIndex}%`,
+              Gauge,
+              '#0f2a44',
+              'Índice global de operatividad'
+            )}
+            {renderKPI(
+              'Activos Totales',
+              stats.total,
+              Truck,
+              '#0f2a44',
+              'Unidades totales en inventario'
+            )}
 
-        {renderKPI(
-          'Disponibilidad',
-          stats.available,
-          ShieldCheck,
-          '#10b981',
-          'Unidades listas para operación'
-        )}
-        {renderKPI(
-          'Despliegue en Ruta',
-          stats.inRoute,
-          Navigation,
-          '#0ea5e9',
-          'Unidades en tránsito operativo'
-        )}
-        {renderKPI(
-          'Mantenimiento',
-          stats.maintenance,
-          Wrench,
-          '#f2b705',
-          'Unidades en mantenimiento activo'
-        )}
+            {renderKPI(
+              'Disponibilidad',
+              stats.available,
+              ShieldCheck,
+              '#10b981',
+              'Unidades listas para operación'
+            )}
+            {renderKPI(
+              'Despliegue en Ruta',
+              stats.inRoute,
+              Navigation,
+              '#0ea5e9',
+              'Unidades en tránsito operativo'
+            )}
+            {renderKPI(
+              'Mantenimiento',
+              stats.maintenance,
+              Wrench,
+              '#f2b705',
+              'Unidades en mantenimiento activo'
+            )}
 
-        {renderKPI(
-          'Incidencias en Ruta',
-          stats.openIncidents,
-          ShieldAlert,
-          '#ef4444',
-          'Alertas Sentinel activas',
-          '/routes'
-        )}
-        {renderKPI(
-          'Mermas Operativas',
-          stats.totalInactive,
-          ShieldAlert,
-          '#8b5cf6',
-          'Unidades fuera de servicio'
-        )}
-      </div>
+            {renderKPI(
+              'Incidencias en Ruta',
+              stats.openIncidents,
+              ShieldAlert,
+              '#ef4444',
+              'Alertas Sentinel activas',
+              '/routes'
+            )}
+            {renderKPI(
+              'Mermas Operativas',
+              stats.totalInactive,
+              ShieldAlert,
+              '#8b5cf6',
+              'Unidades fuera de servicio'
+            )}
+          </div>
+        </div>
+      </section>
 
       <AccessControlSlideOver
         isOpen={isAccessControlOpen}

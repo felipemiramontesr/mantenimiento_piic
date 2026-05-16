@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { PlusCircle, ShieldAlert } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
-
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import { FleetUnit, CreateFleetUnit } from '../../types/fleet';
+import { FleetUnit, CreateFleetUnit, ManagementPanel } from '../../types/fleet';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
-import FleetManagementCards, { ManagementPanel } from '../../components/Fleet/FleetManagementCards';
 import FleetGridView from '../../components/Fleet/FleetGridView';
 import api from '../../api/client';
 import FleetRegistrationForm from '../../components/Fleet/FleetRegistrationForm';
@@ -137,16 +136,36 @@ const FleetModule: React.FC = (): React.ReactElement => {
       editingUnit
         ? 'Protocolo de Gestión Forense Archon'
         : 'Administración de Activos, Registro Técnico & Optimización de Flota',
-      <FleetManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
+      null,
+      {
+        variant: activePanel === 'EXPANSION' || !!editingUnit ? 'navy' : 'emerald',
+        headerTitle:
+          activePanel === 'EXPANSION' || !!editingUnit ? 'Cancelar' : 'Expansión de Flota',
+        HeaderIcon: activePanel === 'EXPANSION' || !!editingUnit ? ShieldAlert : PlusCircle,
+        PayloadIcon: activePanel === 'EXPANSION' || !!editingUnit ? ShieldAlert : PlusCircle,
+        actionTitle: activePanel === 'EXPANSION' || !!editingUnit ? 'Retorno' : 'Registrar',
+        description:
+          activePanel === 'EXPANSION' || !!editingUnit ? 'Cancelar Registro' : 'Alta de Activos',
+        buttonText:
+          activePanel === 'EXPANSION' || !!editingUnit ? 'Cerrar Formulario' : 'Iniciar Registro',
+        isActive: activePanel === 'EXPANSION' || !!editingUnit,
+        onClick: () => {
+          if (editingUnit) {
+            handleReturnToGrid();
+          } else {
+            handlePanelChange(activePanel === 'EXPANSION' ? 'STRATEGY' : 'EXPANSION');
+          }
+        },
+      }
     );
   }, [editingUnit, activePanel, setSectionData]);
 
   return (
     <div className="animate-in fade-in duration-700">
       {/* 📊 BODY MODULAR */}
-      <section className="archon-workspace-chassis w-full max-w-full overflow-hidden">
+      <section className="archon-workspace-chassis">
         {/* 🔱 AXIAL SYNC CONTAINER */}
-        <div className="archon-axial-container flex flex-col gap-12 w-full max-w-full">
+        <div className="archon-axial-container">
           <div ref={panelRef}>
             {registrationSuccess ? (
               <FleetSuccessView formData={formData} />

@@ -10,10 +10,13 @@ import {
   Wallet,
   ChevronLeft,
   ChevronRight,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import ArchonLogo from '../Logo/ArchonLogo';
 import usePermissions from '../../hooks/usePermissions';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api/client';
 
 /**
  * 🔱 Archon Component: Sidebar
@@ -44,7 +47,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
       tabIndex={0}
       className={`
         nav-item-pro cursor-pointer group flex items-center transition-all duration-200 rounded-[4px] my-1
-        ${isCollapsed ? 'justify-center py-4' : 'justify-start py-4 px-6 gap-4'}
+        ${isCollapsed ? 'justify-center py-4' : 'justify-start py-4 px-4 gap-3'}
         ${
           active
             ? 'border-l-[3px] border-pinnacle-yellow bg-pinnacle-yellow/5'
@@ -81,6 +84,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { hasPermission } = usePermissions();
+  const { currentUser, logout } = useAuth();
+
+  const resolveImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    const baseUrl = (api.defaults.baseURL || '').replace(/\/+$/, '');
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
 
   const goToSettings = (): void => {
     navigate('/dashboard/settings');
@@ -102,11 +115,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       {/* 🔱 HEADER (10%) */}
       <header
         className={`
-          h-[10%] flex items-center justify-center border-b border-white/5
-          ${isCollapsed ? 'p-0' : 'px-6'}
+          h-[10%] flex items-center border-b border-white/5 overflow-hidden transition-all duration-300
+          ${isCollapsed ? 'justify-center p-0' : 'justify-start px-4 gap-3'}
         `}
       >
-        <ArchonLogo isCollapsed={isCollapsed} size={isCollapsed ? 28 : 32} />
+        <div className="w-8 h-8 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10">
+          {fullImageUrl ? (
+            <img
+              src={fullImageUrl}
+              alt="Profile"
+              className="w-full h-full object-cover"
+              onError={(e): void => {
+                const target = e.target as HTMLImageElement;
+                target.src = '';
+              }}
+            />
+          ) : (
+            <UserIcon size={16} />
+          )}
+        </div>
+        <div
+          className={`
+          transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+          ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100'}
+        `}
+        >
+          <span className="font-black text-sm tracking-tighter text-white uppercase truncate">
+            {currentUser?.username || 'Soberano'}
+          </span>
+        </div>
       </header>
 
       {/* 🗺️ BODY (80%) */}
@@ -176,25 +213,56 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </nav>
       </main>
 
-      {/* ⚙️ FOOTER (10%) */}
-      <footer className="h-[10%] flex items-center justify-center px-6 border-t border-white/5">
+      {/* ⚙️ FOOTER (15%) */}
+      <footer className="h-[15%] flex flex-col items-center justify-center px-4 gap-2 border-t border-white/5">
         {hasPermission('user:admin') && (
-          <button
-            onClick={goToSettings}
-            className={`
-              w-full h-10 flex items-center justify-center gap-2 rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all cursor-pointer
-              ${
-                location.pathname === '/dashboard/settings'
-                  ? 'bg-white text-pinnacle-navy'
-                  : 'bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110 shadow-md'
-              }
-            `}
-            title="Configuración de Sistema"
-            data-testid="nav-item-settings"
-          >
-            <Settings size={14} />
-            {!isCollapsed && <span>Configuración</span>}
-          </button>
+          <>
+            <button
+              onClick={goToSettings}
+              className={`
+                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all cursor-pointer shadow-md border-none outline-none overflow-hidden
+                ${
+                  location.pathname === '/dashboard/settings'
+                    ? 'bg-white text-pinnacle-navy'
+                    : 'bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110'
+                }
+                ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
+              `}
+              title="Ajustes de Sistema"
+              data-testid="nav-item-settings"
+            >
+              <Settings size={14} className="shrink-0" />
+              <div
+                className={`
+                transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
+              `}
+              >
+                <span>Ajustes</span>
+              </div>
+            </button>
+
+            <button
+              onClick={logout}
+              className={`
+                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all cursor-pointer shadow-md border-none outline-none overflow-hidden
+                bg-pinnacle-yellow text-pinnacle-navy
+                ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
+              `}
+              title="Cerrar Sesión"
+              data-testid="nav-item-logout"
+            >
+              <LogOut size={14} className="shrink-0" />
+              <div
+                className={`
+                transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
+              `}
+              >
+                <span>Cerrar Sesión</span>
+              </div>
+            </button>
+          </>
         )}
       </footer>
     </aside>

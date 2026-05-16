@@ -87,6 +87,14 @@
     @apply grid grid-cols-1 md:grid-cols-2 gap-10 w-full;
   }
 
+  .archon-workspace-chassis {
+    @apply w-full max-w-full overflow-visible;
+  }
+
+  .archon-axial-container {
+    @apply flex flex-col gap-12 w-full max-w-full;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;

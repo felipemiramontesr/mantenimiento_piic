@@ -11,11 +11,27 @@ interface LayoutData {
   title: string;
   description: string;
   subheaderActions?: React.ReactNode;
+  headerAction?: {
+    variant: 'navy' | 'emerald' | 'red' | 'yellow' | 'sky' | 'violet' | 'blue';
+    headerTitle: string;
+    HeaderIcon: React.ElementType;
+    actionTitle: string;
+    description: string;
+    PayloadIcon: React.ElementType;
+    buttonText: string;
+    isActive: boolean;
+    onClick: () => void;
+  } | null;
 }
 
 interface SovereignLayoutContextType {
   layoutData: LayoutData;
-  setSectionData: (title: string, description: string, subheaderActions?: React.ReactNode) => void;
+  setSectionData: (
+    title: string,
+    description: string,
+    subheaderActions?: React.ReactNode,
+    headerAction?: LayoutData['headerAction']
+  ) => void;
 }
 
 const SovereignLayoutContext = createContext<SovereignLayoutContextType | undefined>(undefined);
@@ -25,11 +41,17 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
     title: 'Sovereign System',
     description: 'Industrial Logistics Management Console',
     subheaderActions: null,
+    headerAction: null,
   });
 
   const setSectionData = useCallback(
-    (title: string, description: string, subheaderActions?: React.ReactNode): void => {
-      setLayoutData({ title, description, subheaderActions });
+    (
+      title: string,
+      description: string,
+      subheaderActions?: React.ReactNode,
+      headerAction?: LayoutData['headerAction']
+    ): void => {
+      setLayoutData({ title, description, subheaderActions, headerAction });
     },
     []
   );

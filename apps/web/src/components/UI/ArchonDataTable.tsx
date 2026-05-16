@@ -7,6 +7,7 @@ export interface ArchonTableHeader {
   label: string;
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
+  width?: string;
 }
 
 interface ArchonDataTableProps<T> {
@@ -72,14 +73,14 @@ export function ArchonDataTable<T>({
 
   const containerClasses =
     variant === 'master'
-      ? `bg-white overflow-hidden border border-pinnacle-navy/5 rounded-[4px] custom-scrollbar animate-in fade-in duration-700 relative w-full ${className}`
+      ? `bg-white overflow-visible border border-pinnacle-navy/5 animate-in fade-in duration-700 relative w-full ${className}`
       : `w-full !p-0 !m-0 !rounded-none !border-none overflow-x-auto custom-scrollbar relative ${className}`;
 
   return (
     <div className={containerClasses}>
-      <table data-testid={testId} className="w-full border-collapse">
-        <thead>
-          <tr className="bg-pinnacle-navy border-b border-pinnacle-navy/10">
+      <table data-testid={testId} className="w-full border-collapse table-fixed">
+        <thead className="sticky top-0 z-20">
+          <tr className="bg-pinnacle-navy border-b border-pinnacle-navy/10 shadow-md">
             {headers.map((header) => (
               <th
                 key={header.key}
@@ -88,8 +89,9 @@ export function ArchonDataTable<T>({
                     onSort(header.key);
                   }
                 }}
+                style={header.width ? { width: header.width } : {}}
                 className={`
-                  h-14 px-6 text-white text-[10px] font-black uppercase tracking-[0.15em]
+                  h-14 px-3 text-white text-[10px] font-black uppercase tracking-[0.15em] whitespace-nowrap
                   ${
                     header.sortable
                       ? 'cursor-pointer hover:bg-pinnacle-navy/90 transition-colors'

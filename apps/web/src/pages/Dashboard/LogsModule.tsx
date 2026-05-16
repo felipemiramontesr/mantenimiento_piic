@@ -1,34 +1,54 @@
 import React, { useState, useEffect } from 'react';
+import { ShieldCheck, AlertTriangle, Flame } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import LogsManagementCards, { LogsPanel } from '../../components/Logs/LogsManagementCards';
+
+export type LogsPanel = 'FORENSIC' | 'INCIDENTS';
 
 /**
- * 🚀 ARCHON LOGS MODULE
- * Version: 7.0.0.3 - Sovereign Security Standard
- * Refinement: Centralized Header/Footer via SovereignLayoutContext
+ * 🚀 ARCHON LOGS MODULE (v.7.2.0)
+ * Architecture: Sovereign Instrumental Node
+ * Principles: SOLID, DRY, DIP
+ * Refinement: Single Mutating Header Card (Mirror FleetModule DNA)
  */
 const LogsModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<LogsPanel>('FORENSIC');
-
-  const handlePanelChange = (panel: LogsPanel): void => {
-    setActivePanel(panel);
-  };
+  const panelRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSectionData(
-      'Logs de Seguridad',
-      'Auditoría y Vigilancia de Acceso al Sistema',
-      <LogsManagementCards activePanel={activePanel} onPanelChange={handlePanelChange} />
-    );
+    const isIncidents = activePanel === 'INCIDENTS';
+
+    setSectionData('Logs de Seguridad', 'Auditoría y Vigilancia de Acceso al Sistema', null, {
+      variant: isIncidents ? 'red' : 'emerald',
+      headerTitle: isIncidents ? 'Incidencias' : 'Auditoría Forense',
+      HeaderIcon: isIncidents ? Flame : ShieldCheck,
+      PayloadIcon: isIncidents ? AlertTriangle : ShieldCheck,
+      actionTitle: isIncidents ? 'Anomalías' : 'Trazabilidad',
+      description: isIncidents ? 'Reporte de Anomalías' : 'Eventos del Sistema',
+      buttonText: isIncidents ? 'Ver Incidencias' : 'Ver Bitácora',
+      isActive: isIncidents,
+      onClick: () => {
+        setActivePanel(isIncidents ? 'FORENSIC' : 'INCIDENTS');
+        if (panelRef.current?.scrollIntoView) {
+          setTimeout((): void => {
+            panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
+        }
+      },
+    });
   }, [activePanel, setSectionData]);
 
   return (
     <div className="animate-in fade-in duration-700">
-      {/* 📊 BODY MODULAR (Zen Skeleton) */}
+      {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
-        <div className="archon-axial-container flex flex-col gap-12 w-full max-w-full">
-          {/* Futuro panel de contenido irá aquí dependiendo del activePanel */}
+        {/* 🔱 AXIAL SYNC CONTAINER */}
+        <div className="archon-axial-container">
+          <div ref={panelRef}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              {/* Futuro panel de contenido irá aquí dependiendo del activePanel */}
+            </div>
+          </div>
         </div>
       </section>
     </div>

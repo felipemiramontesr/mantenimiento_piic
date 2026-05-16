@@ -1,8 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import {
   Settings,
-  LogOut,
-  User as UserIcon,
   LayoutDashboard,
   Zap,
   Truck,
@@ -18,10 +16,8 @@ import {
   AlertTriangle,
   Navigation,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import api from '../../api/client';
+import ArchonManagementCard from '../UI/ArchonManagementCard';
 
 /**
  * 🔱 Archon Component: SovereignHeader
@@ -31,37 +27,7 @@ import api from '../../api/client';
  */
 
 const SovereignHeader: React.FC = () => {
-  const { currentUser, logout } = useAuth();
   const { layoutData } = useSovereignLayout();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
-
-  const handleSettings = (): void => {
-    setIsMenuOpen(false);
-    navigate('/dashboard/settings');
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const resolveImageUrl = (url: string | null | undefined): string | null => {
-    if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
-    const baseUrl = (api.defaults.baseURL || '').replace(/\/+$/, '');
-    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
-  };
-
-  const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
 
   // 🛡️ Icon Mapping Engine
   const getHeaderIcons = (title: string): { main: React.ElementType; sub: React.ElementType } => {
@@ -82,9 +48,9 @@ const SovereignHeader: React.FC = () => {
   const { main: MainIcon, sub: SubIcon } = getHeaderIcons(layoutData.title);
 
   return (
-    <header className="flex flex-row items-center justify-between w-full border-b border-pinnacle-navy/5 px-10 min-h-[10vh] h-auto bg-white relative z-50">
+    <header className="flex flex-row items-center w-full border-b border-pinnacle-navy/5 px-10 min-h-[10vh] py-2 bg-white relative z-50 mt-[10px]">
       {/* 🛡️ Section Identification (Col Alfa) */}
-      <div className="flex flex-col items-start">
+      <div className="w-1/2 flex flex-col items-start justify-center">
         <div className="flex items-center gap-3">
           <MainIcon size={20} className="text-pinnacle-yellow" strokeWidth={2.5} />
           <h2 className="text-pinnacle-navy tracking-tighter font-black text-2xl m-0 p-0 leading-[0.9]">
@@ -99,59 +65,24 @@ const SovereignHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* 👤 Sovereign Identity (Col Beta) */}
-      <div className="flex items-center gap-6 relative" ref={menuRef}>
-        <h1 className="text-pinnacle-navy font-black text-sm tracking-tighter hidden md:block opacity-80 uppercase">
-          {currentUser?.username || 'Soberano'}
-        </h1>
-
-        <div className="relative">
-          <button
-            onClick={toggleMenu}
-            className={`
-              w-[44px] h-[44px] rounded-[4px] flex items-center justify-center transition-all duration-300 overflow-hidden border border-transparent bg-transparent outline-none
-              ${isMenuOpen ? 'border-pinnacle-yellow' : 'hover:border-pinnacle-yellow'}
-            `}
-          >
-            {fullImageUrl ? (
-              <img
-                src={fullImageUrl}
-                alt="Profile"
-                className="w-full h-full object-cover"
-                onError={(e): void => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '';
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-pinnacle-navy flex items-center justify-center text-pinnacle-yellow">
-                <UserIcon size={20} />
-              </div>
-            )}
-          </button>
-
-          {isMenuOpen && (
-            <div className="absolute top-[50px] right-0 w-[180px] bg-white rounded-[4px] shadow-[0_10px_40px_rgba(15,42,68,0.12)] py-4 animate-in fade-in slide-in-from-top-1 duration-200 z-[110]">
-              <button
-                onClick={handleSettings}
-                className="w-full px-6 py-3 flex items-center gap-3 hover:bg-pinnacle-yellow/5 text-pinnacle-navy transition-colors text-left border-none bg-transparent outline-none cursor-pointer"
-              >
-                <Settings size={14} className="text-pinnacle-yellow" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Ajustes</span>
-              </button>
-
-              <button
-                onClick={logout}
-                className="w-full px-6 py-3 flex items-center gap-3 hover:bg-rose-50/50 text-rose-600 transition-colors text-left border-none bg-transparent outline-none cursor-pointer"
-              >
-                <LogOut size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">
-                  Cerrar Sesión
-                </span>
-              </button>
-            </div>
-          )}
-        </div>
+      {/* ⚡ Dynamic Action Button (Col Beta) */}
+      <div className="w-1/2 flex justify-end items-center">
+        {layoutData.headerAction && (
+          <div className="w-full">
+            <ArchonManagementCard
+              variant={layoutData.headerAction.variant}
+              layout="horizontal"
+              headerTitle={layoutData.headerAction.headerTitle}
+              HeaderIcon={layoutData.headerAction.HeaderIcon}
+              PayloadIcon={layoutData.headerAction.PayloadIcon}
+              actionTitle={layoutData.headerAction.actionTitle}
+              description={layoutData.headerAction.description}
+              buttonText={layoutData.headerAction.buttonText}
+              isActive={layoutData.headerAction.isActive}
+              onClick={layoutData.headerAction.onClick}
+            />
+          </div>
+        )}
       </div>
     </header>
   );

@@ -47,7 +47,7 @@ export const ArchonDoctor: React.FC = () => {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-[9999] bg-pinnacle-navy text-pinnacle-yellow px-4 py-2 rounded-full font-display font-black text-xs shadow-pinnacle hover:scale-105 transition-transform flex items-center gap-2 border border-pinnacle-yellow/20"
+        className="relative z-[9999] bg-pinnacle-navy text-pinnacle-yellow px-4 py-2 rounded-full font-display font-black text-[10px] shadow-pinnacle hover:scale-105 transition-all flex items-center gap-2 border border-pinnacle-yellow/20 uppercase tracking-widest"
       >
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pinnacle-yellow opacity-75"></span>

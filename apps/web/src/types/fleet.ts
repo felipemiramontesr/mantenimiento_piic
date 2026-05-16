@@ -14,6 +14,7 @@ export type Traccion = '4x2' | '4x4' | 'Doble Tracción' | 'AWD' | 'Oruga' | 'No
 export type Transmision = 'Automática' | 'Estándar (Manual)' | 'CVT' | 'Hidrostática' | 'No Aplica';
 export type FuelType = 'Gasolina' | 'Diesel' | 'Eléctrico' | 'Híbrido' | 'No Aplica';
 export type CentroMantenimiento = 'PIIC' | 'Archon Core';
+export type ManagementPanel = 'STRATEGY' | 'EXPANSION';
 
 export interface CatalogOption {
   id: number;

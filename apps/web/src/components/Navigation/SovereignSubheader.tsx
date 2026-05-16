@@ -11,7 +11,9 @@ import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 const SovereignSubheader: React.FC = () => {
   const { layoutData } = useSovereignLayout();
 
-  if (!layoutData.subheaderActions) return null;
+  if (!layoutData.subheaderActions) {
+    return <div className="w-full h-0 overflow-hidden" />;
+  }
 
   return (
     <div className="sovereign-subheader animate-in fade-in duration-500 px-10 py-2 bg-white/50 backdrop-blur-md border-b border-pinnacle-navy/5 block w-full min-h-[64px]">

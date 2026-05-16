@@ -283,11 +283,11 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
             {unit.insuranceExpiryDate ? formatDate(new Date(unit.insuranceExpiryDate)) : '---'}
           </span>
         </div>
-        <div className="flex flex-col items-end -mt-1">
-          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">
-            PÓLIZA:
+        <div className="flex items-center justify-between text-[8px] font-black uppercase -mt-0.5 mb-1">
+          <span className="text-slate-400 tracking-wider">Póliza</span>
+          <span className="text-[9px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-[2px] border border-slate-200/60 tracking-tight shadow-sm whitespace-nowrap">
+            {poliza || '---'}
           </span>
-          <span className="text-[9px] font-mono text-slate-400">{poliza || '---'}</span>
         </div>
         <div className="flex items-center justify-between mt-1 text-[9px] font-black uppercase">
           <div className="flex items-center gap-2">
@@ -416,15 +416,15 @@ const FleetUnitRow = React.memo(
     return (
       <tr
         data-testid={`fleet-row-${unit.id.toLowerCase()}`}
-        className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.025] ${
-          isOverdue ? 'bg-red-50/40' : ''
+        className={`transition-all duration-300 ${
+          isOverdue ? 'bg-red-50/40' : 'odd:bg-white even:bg-slate-100'
         }`}
       >
-        <td className="py-16 text-center">
+        <td className="py-4 px-2 text-center">
           {unit.images?.[0] ? (
             <img
               src={unit.images[0]}
-              className="w-48 h-48 rounded-[4px] shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
+              className="w-20 h-20 block mx-auto rounded-[4px] shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
               onClick={(): void => onSelectImage(unit)}
               alt={unit.id}
               onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
@@ -434,7 +434,7 @@ const FleetUnitRow = React.memo(
             />
           ) : (
             <div
-              className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center border border-dashed border-gray-200 cursor-pointer overflow-hidden relative"
+              className="w-20 h-20 mx-auto rounded-[4px] bg-gray-50 flex items-center justify-center border border-dashed border-gray-200 cursor-pointer overflow-hidden relative"
               onClick={(): void => onSelectImage(unit)}
             >
               <img
@@ -446,7 +446,7 @@ const FleetUnitRow = React.memo(
           )}
         </td>
 
-        <td className="text-center px-6">
+        <td className="text-center px-3">
           <div className="flex flex-col items-center gap-2">
             <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded tracking-[0.2em]">
               {unit.id}
@@ -471,11 +471,11 @@ const FleetUnitRow = React.memo(
           </div>
         </td>
 
-        <td className="text-center px-6">
+        <td className="text-center px-3">
           <IdentityCluster unit={unit} tarjeta={unit.circulationCardNumber || '---'} />
         </td>
 
-        <td className="text-center px-6 border-x border-slate-50/50">
+        <td className="text-center px-3 border-x border-slate-50/50">
           <LogisticsCluster
             unit={unit}
             cuenta={unit.accountingAccount || '---'}
@@ -483,7 +483,7 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="py-12 px-2 min-w-[140px]">
+        <td className="py-4 px-2 min-w-[140px]">
           <OdometerCluster
             unit={unit}
             usageUnit={usageUnit}
@@ -492,19 +492,19 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="py-12 px-2 min-w-[180px]">
+        <td className="py-4 px-2 min-w-[180px]">
           <SpecCluster unit={unit} />
         </td>
 
-        <td className="text-center px-6">
+        <td className="text-center px-3">
           <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
         </td>
 
-        <td className="text-center px-6">
+        <td className="text-center px-3">
           <HealthStatusCluster forecast={forecast} />
         </td>
 
-        <td className="text-center px-6">
+        <td className="text-center px-3">
           <FleetKpiMatrix
             availability={unit.availabilityIndex ?? 100}
             mtbf={unit.mtbfHours ?? 0}
@@ -519,7 +519,7 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="text-center px-6">
+        <td className="text-center px-3">
           <div className="flex gap-2 justify-center">
             <button
               onClick={(): void => onEdit(unit)}
@@ -616,16 +616,16 @@ export const FleetGridView = ({
   }, [sanitizedUnits, sortConfig]);
 
   const headers: ArchonTableHeader[] = [
-    { key: 'activo', label: 'ACTIVO' },
-    { key: 'unidad', label: 'UNIDAD / MODELO', sortable: true },
-    { key: 'identidad', label: 'IDENTIDAD' },
-    { key: 'logistica', label: 'LOGÍSTICA' },
-    { key: 'odometria', label: 'ODOMETRÍA' },
-    { key: 'configuracion', label: 'CONFIGURACIÓN' },
-    { key: 'programacion', label: 'KM RESTANTES', sortable: true },
-    { key: 'pronostico', label: 'PRONÓSTICO (FECHA)', sortable: true },
-    { key: 'salud', label: 'SALUD' },
-    { key: 'acciones', label: 'ACCIONES' },
+    { key: 'activo', label: 'ACTIVO', width: '100px' },
+    { key: 'unidad', label: 'UNIDAD', sortable: true, width: '105px' },
+    { key: 'identidad', label: 'IDENTIDAD', width: '145px' },
+    { key: 'logistica', label: 'LOGÍSTICA', width: '125px' },
+    { key: 'odometria', label: 'ODOMETRÍA', width: '130px' },
+    { key: 'configuracion', label: 'CONFIGURACIÓN', width: '210px' },
+    { key: 'programacion', label: 'KM RESTANTES', sortable: true, width: '120px' },
+    { key: 'pronostico', label: 'PRONÓSTICO', sortable: true, width: '110px' },
+    { key: 'salud', label: 'SALUD', width: '100px' },
+    { key: 'acciones', label: 'ACCIONES', width: '105px' },
   ];
 
   return (
