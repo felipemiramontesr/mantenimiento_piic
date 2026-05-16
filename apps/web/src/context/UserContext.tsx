@@ -69,25 +69,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
+  const usersOptions = useMemo(() => ({
+    key: 'users_directory',
+    endpoint: '/auth/users',
+    transform: usersTransform,
+  }), [usersTransform]);
+
   const {
     data: users,
     isSyncing: usersSyncing,
     refresh: fetchUsers,
-  } = useSilkHydration<UserIndustrial>({
-    key: 'users_directory',
-    endpoint: '/auth/users',
-    transform: usersTransform,
-  });
+  } = useSilkHydration<UserIndustrial>(usersOptions);
 
-  const { data: departmentsData } = useSilkHydration<CatalogOption>({
+  const departmentsOptions = useMemo(() => ({
     key: 'system_departments',
     endpoint: '/catalogs/DEPARTMENT',
-  });
+  }), []);
 
-  const { data: rolesData } = useSilkHydration<CatalogOption>({
+  const { data: departmentsData } = useSilkHydration<CatalogOption>(departmentsOptions);
+
+  const rolesOptions = useMemo(() => ({
     key: 'system_roles',
     endpoint: '/auth/roles',
-  });
+  }), []);
+
+  const { data: rolesData } = useSilkHydration<CatalogOption>(rolesOptions);
 
   const [activePanel, setActivePanel] = useState<UserPanel>('DIRECTORY');
   const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);

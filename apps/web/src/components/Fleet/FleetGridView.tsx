@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Image as ImageIcon,
   CalendarDays,
@@ -26,6 +26,7 @@ import {
 import { formatDateTime } from '../../utils/dateUtils';
 import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
+import { useFleet } from '../../context/FleetContext';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
 // Visual Impact Update: 100% Data Parity with Master Source
@@ -65,7 +66,12 @@ const IdentityCluster = ({
             </div>
           )}
         </div>
-        <span className="text-[10px] font-mono text-slate-400 uppercase">TC: {tarjeta}</span>
+        <div className="flex flex-col items-center">
+          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">T. CIRCULACIÓN:</span>
+          <span className="text-[10px] font-mono text-slate-400 font-bold">
+            {tarjeta || '---'}
+          </span>
+        </div>
       </div>
       {restriction.isRestricted && (
         <span className="text-[8px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 uppercase tracking-tighter">
@@ -229,19 +235,26 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
             {unit.insuranceExpiryDate ? formatDate(new Date(unit.insuranceExpiryDate)) : '---'}
           </span>
         </div>
-        <span className="text-[9px] font-mono text-slate-400 text-right -mt-1 uppercase tracking-tighter">
-          POL: {poliza}
-        </span>
+        <div className="flex flex-col items-end -mt-1">
+          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">PÓLIZA:</span>
+          <span className="text-[9px] font-mono text-slate-400">
+            {poliza || '---'}
+          </span>
+        </div>
         <div className="flex items-center justify-between mt-1 text-[9px] font-black uppercase">
           <div className="flex items-center gap-2">
-            <span className="text-emerald-600">Verif</span>
+            <span className="text-emerald-600">VERIFICACIÓN</span>
             <HologramBadge hologram={unit.environmentalHologram || null} />
           </div>
-          <span className="text-navy-800 text-[10px]">{formatDate(verifDate)}</span>
+          <span className="text-navy-800 text-[10px]">
+            {verifDate ? formatDate(verifDate) : '---'}
+          </span>
         </div>
         <div className="flex items-center justify-between text-[9px] font-black uppercase">
-          <span className="text-sky-600">Mecánica</span>
-          <span className="text-navy-800 text-[10px]">{formatDate(mechDate)}</span>
+          <span className="text-sky-600">MECÁNICA</span>
+          <span className="text-navy-800 text-[10px]">
+            {mechDate ? formatDate(mechDate) : '---'}
+          </span>
         </div>
       </div>
     </div>
@@ -328,9 +341,9 @@ const getUnitForecast = (unit: FleetUnit): MaintenanceForecast | null =>
   );
 
 // ============================================================================
-// COMPONENT: FleetUnitRow (SOLID: SRP)
+// COMPONENT: FleetUnitRow (SOLID: SRP + Performance Optimization)
 // ============================================================================
-const FleetUnitRow = ({
+const FleetUnitRow = React.memo(({
   unit,
   onSelectImage,
   onEdit,
@@ -344,14 +357,6 @@ const FleetUnitRow = ({
 
   const usageUnit =
     unit.assetType?.toLowerCase().includes('veh') || unit.assetType === 'Vehiculo' ? 'KM' : 'HRS';
-
-  const mockData = {
-    vin: unit.numeroSerie || '---',
-    tarjeta: unit.circulationCardNumber || '---',
-    cuenta: unit.accountingAccount || '---',
-    carga: unit.capacidadCarga || 0,
-    tanque: unit.fuelTankCapacity || 0,
-  };
 
   return (
     <tr
@@ -369,12 +374,19 @@ const FleetUnitRow = ({
             alt={unit.id}
             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
               const imgElement = e.currentTarget;
-              imgElement.src = '/img/archon-blueprint.png';
+              imgElement.src = '/img/archon-unit-placeholder.png';
             }}
           />
         ) : (
-          <div className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center text-gray-300 border border-dashed border-gray-200">
-            <ImageIcon size={48} />
+          <div 
+            className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center border border-dashed border-gray-200 cursor-pointer overflow-hidden relative"
+            onClick={(): void => onSelectImage(unit)}
+          >
+            <img 
+              src="/img/archon-unit-placeholder.png" 
+              alt="Archon Unit Placeholder" 
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
       </td>
@@ -389,33 +401,33 @@ const FleetUnitRow = ({
               {unit.marca} {unit.modelo}
             </span>
             <span className="text-[11px] font-bold text-slate-500 mt-0.5">
-              ({unit.year || '---'}) • {unit.color || 'S/C'}
+              ({unit.year || 'SIN REGISTRO'}) • {unit.color || 'SIN REGISTRO'}
             </span>
           </div>
           <div className="flex flex-col items-center opacity-80 pt-1">
             <span className="text-[10px] font-black text-navy-400 uppercase tracking-widest flex items-center gap-1.5">
               <Wrench size={12} />
-              {unit.departamento}
+              {unit.departamento || 'SIN REGISTRO'}
             </span>
-            <span className="text-[9px] font-mono text-slate-400 mt-1">VIN: {mockData.vin}</span>
+            <span className="text-[9px] font-mono text-slate-400 mt-1">VIN: {unit.numeroSerie || '---'}</span>
           </div>
         </div>
       </td>
 
       <td className="text-center px-6">
-        <IdentityCluster unit={unit} tarjeta={mockData.tarjeta} />
+        <IdentityCluster unit={unit} tarjeta={unit.circulationCardNumber || '---'} />
       </td>
 
       <td className="text-center px-6 border-x border-slate-50/50">
-        <LogisticsCluster unit={unit} cuenta={mockData.cuenta} usageUnit={usageUnit} />
+        <LogisticsCluster unit={unit} cuenta={unit.accountingAccount || '---'} usageUnit={usageUnit} />
       </td>
 
       <td className="py-12 px-2 min-w-[140px]">
         <OdometerCluster
           unit={unit}
           usageUnit={usageUnit}
-          carga={mockData.carga}
-          tanque={mockData.tanque}
+          carga={unit.capacidadCarga || 0}
+          tanque={unit.fuelTankCapacity || 0}
         />
       </td>
 
@@ -459,7 +471,7 @@ const FleetUnitRow = ({
       </td>
     </tr>
   );
-};
+});
 
 // ============================================================================
 // MAIN COMPONENT: FleetGridView
@@ -469,16 +481,40 @@ export const FleetGridView = ({
   loading = false,
   onEdit,
 }: FleetGridViewProps): React.JSX.Element => {
+  const { getUnitDetails } = useFleet();
   const [selectedGalleryUnit, setSelectedGalleryUnit] = useState<FleetUnit | null>(null);
+  const [isFetchingImages, setIsFetchingImages] = useState(false);
+
+  // 🛡️ Data Integrity Sentinel: Filter out invalid records to prevent render crashes
+  const sanitizedUnits = React.useMemo(() => {
+    return (units || []).filter(u => u && u.id);
+  }, [units]);
+
+  const handleSelectImage = useCallback(async (unit: FleetUnit): Promise<void> => {
+    // 🔱 Atomic Hydration Trigger
+    if (!unit.images || unit.images.length === 0) {
+      setIsFetchingImages(true);
+      const fullUnit = await getUnitDetails(unit.id);
+      setIsFetchingImages(false);
+      if (fullUnit) {
+        setSelectedGalleryUnit(fullUnit);
+      } else {
+        setSelectedGalleryUnit(unit); // Fallback to original
+      }
+    } else {
+      setSelectedGalleryUnit(unit);
+    }
+  }, [getUnitDetails]);
+
   const [sortConfig, setSortConfig] = useState<{
     field: 'unidad' | 'programacion' | 'pronostico' | null;
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
 
   const sortedUnits = React.useMemo((): FleetUnit[] => {
-    if (!sortConfig.field) return units;
+    if (!sortConfig.field) return sanitizedUnits;
 
-    const unitsWithForecast = units.map(
+    const unitsWithForecast = sanitizedUnits.map(
       (u: FleetUnit): { unit: FleetUnit; forecast: MaintenanceForecast | null } => ({
         unit: u,
         forecast: getUnitForecast(u),
@@ -509,7 +545,7 @@ export const FleetGridView = ({
         }
       )
       .map((i: { unit: FleetUnit; forecast: MaintenanceForecast | null }): FleetUnit => i.unit);
-  }, [units, sortConfig]);
+  }, [sanitizedUnits, sortConfig]);
 
   const headers: ArchonTableHeader[] = [
     { key: 'activo', label: 'ACTIVO' },
@@ -549,13 +585,19 @@ export const FleetGridView = ({
         sortConfig={sortConfig}
         renderRow={(unit): React.ReactElement => (
           <FleetUnitRow
-            key={unit.uuid}
+            key={unit.id}
             unit={unit}
-            onSelectImage={setSelectedGalleryUnit}
+            onSelectImage={handleSelectImage}
             onEdit={onEdit}
           />
         )}
       />
+      {isFetchingImages && (
+        <div className="fixed bottom-10 right-10 bg-navy-900 text-white px-6 py-3 rounded-full shadow-2xl animate-bounce z-[100] flex items-center gap-3">
+          <RefreshCcw size={20} className="animate-spin text-yellow-400" />
+          <span className="text-xs font-black uppercase tracking-widest">Hidratando Activos...</span>
+        </div>
+      )}
     </div>
   );
 };

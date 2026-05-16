@@ -46,8 +46,9 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     secret: process.env.JWT_SECRET || 'dev-secret',
   });
 
+  // 🔱 Rate Limiting: Environment-Aware Shield
   fastify.register(rateLimit, {
-    max: 100,
+    max: process.env.NODE_ENV === 'development' ? 5000 : 100,
     timeWindow: '1 minute',
   });
 

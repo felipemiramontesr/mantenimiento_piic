@@ -33,6 +33,7 @@ export interface FleetUnit extends RowDataPacket {
   circulationCardNumber?: string | null;
   environmentalHologram?: string | null;
   dailyUsageAvg?: number;
+  healthScore?: number;
 }
 
 export interface UnitHealth {
@@ -100,30 +101,23 @@ export class FleetIntelligenceEngine {
     };
   }
 
-  static processUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<string, unknown> {
-    process.stderr.write(`🔱 [processUnit] ID: ${unit.id}\n`);
+  public static processUnit(unit: FleetUnit, logger: FastifyBaseLogger): Record<string, any> {
     const decrypted = this.decryptSensitiveData(unit);
-    process.stderr.write(`🔱 [processUnit] Decryption done\n`);
     const health = this.computeHealth(decrypted);
-    process.stderr.write(`🔱 [processUnit] Health computed: ${JSON.stringify(health)}\n`);
 
     return {
-      ...(decrypted as unknown as Record<string, unknown>),
+      ...(decrypted as unknown as Record<string, any>),
       images: this.parseImages(unit.images, unit.id, logger),
       healthScore: health.healthScore,
       healthStatus: health.healthStatus,
       healthColor: health.healthColor,
       daysSinceService: health.lastServiceDate
-        ? Math.floor(
-            (health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24)
-          )
+        ? Math.floor((health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24))
         : null,
       unitsSinceService: health.odometer - health.lastReading,
       nextServiceReading: health.lastReading + health.kmLimit,
       forecastDate: this.computeForecast(decrypted),
-      // 🔱 Legacy Compatibility: Map odometer to currentReading
       currentReading: health.odometer,
-      odometer: health.odometer,
     };
   }
 
@@ -131,11 +125,9 @@ export class FleetIntelligenceEngine {
     const lastDate = unit.lastServiceDate ? new Date(unit.lastServiceDate) : null;
     if (!lastDate || !unit.maintIntervalDays) return null;
 
-    // 🔱 Forecast by Time
     const timeForecast = new Date(lastDate);
     timeForecast.setDate(timeForecast.getDate() + unit.maintIntervalDays);
 
-    // 🔱 Forecast by Usage (If metrics available)
     const intServi = unit.maintIntervalKm || 0;
     const dailyAvg = unit.dailyUsageAvg || 0;
     const currentOdometer = unit.odometer || 0;
@@ -147,7 +139,6 @@ export class FleetIntelligenceEngine {
       const usageForecast = new Date();
       usageForecast.setDate(usageForecast.getDate() + daysToService);
 
-      // Return the soonest date (Sovereign Caution)
       return usageForecast < timeForecast ? usageForecast : timeForecast;
     }
 
@@ -158,12 +149,8 @@ export class FleetIntelligenceEngine {
     return {
       ...unit,
       placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
-      numeroSerie: unit.numeroSerie
-        ? EncryptionService.decrypt(unit.numeroSerie)
-        : unit.numeroSerie,
-      circulationCardNumber: unit.circulationCardNumber
-        ? EncryptionService.decrypt(unit.circulationCardNumber)
-        : unit.circulationCardNumber,
+      numeroSerie: unit.numeroSerie ? EncryptionService.decrypt(unit.numeroSerie) : unit.numeroSerie,
+      circulationCardNumber: unit.circulationCardNumber ? EncryptionService.decrypt(unit.circulationCardNumber) : unit.circulationCardNumber,
       availabilityIndex: Number(unit.availabilityIndex || ARCHON_DEFAULTS.AVAILABILITY),
       mtbfHours: Number(unit.mtbfHours || 0),
       mttrHours: Number(unit.mttrHours || 0),
@@ -175,7 +162,6 @@ export class FleetIntelligenceEngine {
     if (!raw) return [];
     try {
       const filenames = typeof raw === 'string' ? JSON.parse(raw) : (raw as string[]);
-      // 🔱 Logic-Gated Asset URL Transformation
       return filenames.map((f: string) =>
         f.startsWith('http') || f.startsWith('data:') ? f : `/v1/fleet/asset/${f}`
       );

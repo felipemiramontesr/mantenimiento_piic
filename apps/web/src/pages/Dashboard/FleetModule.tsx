@@ -84,7 +84,8 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
-  const fleetController = useFleetForm();
+  // Deferred Hydration: Only start catalog sync when expansion panel is requested
+  const fleetController = useFleetForm(activePanel === 'EXPANSION' || !!editingUnit);
   const { formData, registrationSuccess, setRegistrationSuccess } = fleetController;
 
   const handlePanelChange = (panel: ManagementPanel): void => {

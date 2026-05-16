@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useEffect, useCallback } from 'react';
 import api from '../api/client';
 import { FleetUnit } from '../types/fleet';
 import useSilkHydration from '../hooks/useSilkHydration';
+
+import {
+  ASSET_TYPE_MAP,
+  FUEL_TYPE_MAP,
+  DEPT_MAP,
+  ENGINE_MAP,
+} from '../constants/fleetConstants';
 
 interface CategorizedMetrics {
   count: number;
@@ -37,6 +44,7 @@ interface FleetContextType {
   stats: FleetStats;
   loading: boolean;
   refreshUnits: () => Promise<void>;
+  error: Error | null;
   startRoute: (payload: import('../types/route').StartRoutePayload) => Promise<void>;
   finishRoute: (
     uuid: string,
@@ -46,6 +54,7 @@ interface FleetContextType {
     uuid: string,
     payload: import('../types/route').ReportIncidentPayload
   ) => Promise<void>;
+  getUnitDetails: (id: string) => Promise<FleetUnit | null>;
 }
 
 export const FleetContext = createContext<FleetContextType | undefined>(undefined);
@@ -55,75 +64,12 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const transformUnits = useMemo(
     () =>
       (raw: unknown): FleetUnit[] => {
-        const data = Array.isArray(raw) ? raw : [];
-
-        // 🔱 ARCHON CATALOG MAPPING (Safety Shield)
-        const assetTypeMap: Record<number, string> = {
-          1: 'Vehiculo',
-          2: 'Maquinaria',
-          3: 'Herramienta',
-        };
-        const fuelMap: Record<number, string> = {
-          10: 'Diésel',
-          11: 'Gasolina',
-          12: 'Eléctrico',
-          219: 'Mezcla (2 Tiempos)',
-          220: 'Batería (Li-Ion)',
-          221: 'Neumático (Aire)',
-          1040: 'Gas LP / Natural',
-        };
-        const deptMap: Record<number, string> = {
-          222: 'Administración',
-          223: 'Exploración',
-          224: 'Geología',
-          225: 'Laboratorio',
-          226: 'Mantenimiento Eléctrico',
-          227: 'Mantenimiento Planta',
-          228: 'Medio Ambiente',
-          229: 'Operación Mina',
-          230: 'Operación Planta',
-          231: 'Planeación',
-          232: 'Relaciones Comunitarias',
-          233: 'Seguridad Patrimonial',
-          234: 'Seguridad Industrial',
-        };
-        const engineMap: Record<number, string> = {
-          1024: 'L4 2.8L Turbo Intercooled',
-          1026: 'L4 2.5L DOHC Multipunto',
-          1027: 'V8 6.4L HEMI MDS',
-          1028: 'L4 2.4L MIVEC Turbo',
-          1029: 'L4 2.0L CTI Turbo',
-          1030: 'L4 1.4L TSI Turbo',
-          1031: 'L4 1.3L Firefly',
-          1032: 'L4 1.6L DOHC',
-          1033: 'L4 1.5L DOHC',
-          1034: 'L6 6.7L Cummins Turbo',
-          1035: 'Electric Dual-Motor',
-          1036: 'L4 2.5L Turbo (2KD-FTV)',
-        };
-        const colorMap: Record<number, string> = {
-          1000: 'Blanco',
-          1001: 'Negro',
-          1002: 'Gris',
-          1003: 'Rojo',
-          1004: 'Azul',
-          1005: 'Verde',
-          1006: 'Amarillo',
-          1007: 'Naranja',
-          1008: 'Café',
-          1009: 'Beige',
-          1010: 'Plateado',
-          1011: 'Dorado',
-        };
-        const tireBrandMap: Record<number, string> = {
-          243: 'MICHELIN',
-          244: 'BF GOODRICH',
-          264: 'ZMAX',
-          265: 'PIRELLI',
-          266: 'BRIDGESTONE',
-          267: 'YOKOHAMA',
-          268: 'GOODYEAR',
-        };
+        // 🔱 SOVEREIGN DATA EXTRACTION (Resilience Tier)
+        const data = Array.isArray(raw) 
+          ? raw 
+          : (raw && typeof raw === 'object' && Array.isArray((raw as any).data)) 
+            ? (raw as any).data 
+            : [];
 
         return data.map((item: unknown) => {
           const unit = item as Record<string, unknown>;
@@ -143,7 +89,6 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             tireBrandId: getVal('tireBrandId', 'tire_brand_id') as number,
             tireSpec: getVal('tireSpec', 'tire_spec') as string,
             tireBrand: getVal('tireBrand', 'tire_brand') as string,
-            placas: getVal('placas', 'placas') as string,
             circulationCardNumber: getVal(
               'circulationCardNumber',
               'circulation_card_number'
@@ -173,37 +118,35 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               'environmental_hologram'
             ) as string,
             insuranceExpiryDate: getVal('insuranceExpiryDate', 'insurance_expiry_date') as string,
+            capacidadCarga: getVal('capacidadCarga', 'capacidad_carga') as number,
+            fuelTankCapacity: getVal('fuelTankCapacity', 'fuel_tank_capacity') as number,
           };
 
           return {
             ...normalizedUnit,
             // 🔱 Normalization Tier (Labels)
             assetType:
-              normalizedUnit.assetType || assetTypeMap[normalizedUnit.assetTypeId!] || 'S/D',
-            fuelType: normalizedUnit.fuelType || fuelMap[normalizedUnit.fuelTypeId!] || 'S/D',
+              normalizedUnit.assetType || ASSET_TYPE_MAP[normalizedUnit.assetTypeId!] || 'S/D',
+            fuelType: normalizedUnit.fuelType || FUEL_TYPE_MAP[normalizedUnit.fuelTypeId!] || 'S/D',
             departamento:
-              normalizedUnit.departamento || deptMap[normalizedUnit.departmentId!] || 'General',
-            motor: normalizedUnit.motor || engineMap[normalizedUnit.engineTypeId!] || 'S/D',
-            color: normalizedUnit.color || colorMap[normalizedUnit.colorId!] || 'S/D',
+              normalizedUnit.departamento || DEPT_MAP[normalizedUnit.departmentId!] || 'General',
+            motor: normalizedUnit.motor || ENGINE_MAP[normalizedUnit.engineTypeId!] || 'S/D',
             tireBrand:
-              normalizedUnit.tireBrand || tireBrandMap[normalizedUnit.tireBrandId!] || 'S/D',
+              normalizedUnit.tireBrand ||
+              (Number(normalizedUnit.tireBrandId) === 243 ? 'MICHELIN' : 'S/D'),
+            status: String(normalizedUnit.status || 'Disponible'),
+            placas: String(normalizedUnit.placas || 'S/P'),
 
-            // 🔱 Forensic Image Parser (Base64 & Path Support)
+            // 🔱 Forensic Image Parser
             images: ((): string[] => {
               const rawImages = getVal('images', 'images');
-              if (!rawImages) return ['/img/archon-blueprint.png'];
+              if (!rawImages) return [];
               if (Array.isArray(rawImages)) return rawImages as string[];
               try {
                 const parsed = JSON.parse(rawImages as string);
-                return Array.isArray(parsed) && parsed.length > 0
-                  ? (parsed as string[])
-                  : ['/img/archon-blueprint.png'];
+                return Array.isArray(parsed) ? (parsed as string[]) : [];
               } catch (e) {
-                // If it's not JSON, it might be a single string path or base64
-                if (typeof rawImages === 'string' && rawImages.length > 0) {
-                  return [rawImages];
-                }
-                return ['/img/archon-blueprint.png'];
+                return [];
               }
             })(),
           };
@@ -213,116 +156,154 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   // 1. World Class Data Sourcing (DRY Protocol)
-  const {
-    data: units,
-    isSyncing: unitsSyncing,
-    refresh: refreshUnits,
-  } = useSilkHydration<FleetUnit>({
+  const unitsOptions = useMemo(() => ({
     key: 'fleet_units',
     endpoint: '/fleet',
     transform: transformUnits,
-  });
+  }), [transformUnits]);
 
-  const { data: incidents, refresh: refreshIncidents } = useSilkHydration<{ status: string }>({
+  const {
+    data: units,
+    setData: setUnits,
+    isSyncing: unitsSyncing,
+    refresh: refreshUnits,
+    error: unitsError,
+  } = useSilkHydration<FleetUnit>(unitsOptions);
+
+  const incidentsOptions = useMemo(() => ({
     key: 'system_incidents',
     endpoint: '/incidents',
-  });
+  }), []);
+
+  const { 
+    data: incidents, 
+    refresh: refreshIncidents,
+    error: incidentsError,
+  } = useSilkHydration<{ status: string }>(incidentsOptions);
 
   const loading = unitsSyncing && !units.length;
 
   const incidentsCount = useMemo(
-    () => incidents.filter((i) => i.status === 'OPEN').length,
+    () => (Array.isArray(incidents) ? incidents.filter((i: any) => i.status === 'OPEN').length : 0),
     [incidents]
   );
 
+  // 🔱 ARCHITECTURAL REFACTOR: Defensive Aggregation Engine (v.23.0.0)
   const stats = useMemo((): FleetStats => {
-    const total = units.length;
-    const available = units.filter((u: FleetUnit): boolean => {
-      const s = (u.status || '').trim();
-      return s === 'Disponible' || s === 'Asignada' || s === '';
-    }).length;
-    const inRoute = units.filter(
-      (u: FleetUnit): boolean => (u.status || '').trim() === 'En Ruta'
-    ).length;
-    const maintenance = units.filter(
-      (u: FleetUnit): boolean => (u.status || '').trim() === 'En Mantenimiento'
-    ).length;
-    const discontinued = units.filter(
-      (u: FleetUnit): boolean => (u.status || '').trim() === 'Descontinuada'
-    ).length;
-
-    const maintenanceIndex = total > 0 ? Math.round(((available + inRoute) / total) * 100) : 0;
-    const openIncidents = incidentsCount;
-
-    // 🛡️ ANALYTICAL AGGREGATION ENGINE (v.22.1.2)
-    const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
-      const count = subset.length;
-      const maintenanceCount = subset.filter(
-        (u: FleetUnit): boolean => (u.status || '').trim() === 'En Mantenimiento'
-      ).length;
-      const availableCount = subset.filter((u: FleetUnit): boolean => {
-        const s = (u.status || '').trim();
-        return s === 'Disponible' || s === 'Asignada' || s === '';
-      }).length;
-      const availablePercent = count > 0 ? Math.round((availableCount / count) * 100) : 0;
-
-      const validMTBF = subset.filter((u: FleetUnit): boolean => (u.mtbfHours || 0) > 0);
-      const validMTTR = subset.filter((u: FleetUnit): boolean => (u.mttrHours || 0) > 0);
-
-      const avgMtbf =
-        validMTBF.length > 0
-          ? Math.round(
-              validMTBF.reduce((acc: number, u: FleetUnit): number => acc + (u.mtbfHours || 0), 0) /
-                validMTBF.length
-            )
-          : 0;
-
-      const avgMttr =
-        validMTTR.length > 0
-          ? Number(
-              (
-                validMTTR.reduce(
-                  (acc: number, u: FleetUnit): number => acc + (u.mttrHours || 0),
-                  0
-                ) / validMTTR.length
-              ).toFixed(1)
-            )
-          : 0;
-
-      const backlog = subset.reduce(
-        (acc: number, u: FleetUnit): number => acc + (u.backlogCount || 0),
-        0
-      );
-
-      return { count, availablePercent, maintenanceCount, avgMtbf, avgMttr, backlog };
-    };
-
-    const globalMetrics = computeAverages(units);
-
-    // Grouping by Asset Type (v.21.3.1 Relational Architecture - Using Catalog IDs)
-    const vehiculos = units.filter((u: FleetUnit): boolean => u.assetTypeId === 1);
-    const maquinaria = units.filter((u: FleetUnit): boolean => u.assetTypeId === 2);
-    const herramienta = units.filter((u: FleetUnit): boolean => u.assetTypeId === 3);
-
-    return {
-      total,
-      available,
-      inRoute,
-      maintenance,
-      discontinued,
-      totalInactive: discontinued,
-      maintenanceIndex,
-      openIncidents,
-      globalMTBF: globalMetrics.avgMtbf,
-      globalMTTR: globalMetrics.avgMttr,
-      globalAvailability: globalMetrics.availablePercent,
+    // 🛡️ Safe-Baseline (Zero-Noise)
+    const initialStats: FleetStats = {
+      total: 0,
+      available: 0,
+      inRoute: 0,
+      maintenance: 0,
+      discontinued: 0,
+      totalInactive: 0,
+      maintenanceIndex: 0,
+      openIncidents: incidentsCount,
+      globalMTBF: 0,
+      globalMTTR: 0,
+      globalAvailability: 0,
       categories: {
-        vehiculo: computeAverages(vehiculos),
-        maquinaria: computeAverages(maquinaria),
-        herramienta: computeAverages(herramienta),
+        vehiculo: { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 },
+        maquinaria: { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 },
+        herramienta: { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 },
       },
     };
+
+    if (!Array.isArray(units) || units.length === 0) {
+      return initialStats;
+    }
+
+    try {
+      const total = units.length;
+      
+      const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
+        const count = subset.length;
+        if (count === 0) return { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 };
+
+        const maintenanceCount = subset.filter((u) => 
+          ['Mantenimiento', 'En Mantenimiento'].includes(String(u?.status || '').trim())
+        ).length;
+        
+        const availableCount = subset.filter((u) => {
+          const s = String(u?.status || '').trim();
+          return s === 'Disponible' || s === 'Asignada' || s === '';
+        }).length;
+
+        const availablePercent = Math.round((availableCount / count) * 100);
+
+        const validMTBF = subset.filter((u) => (Number(u?.mtbfHours) || 0) > 0);
+        const validMTTR = subset.filter((u) => (Number(u?.mttrHours) || 0) > 0);
+
+        const avgMtbf = validMTBF.length > 0
+          ? Math.round(validMTBF.reduce((acc, u) => acc + (Number(u.mtbfHours) || 0), 0) / validMTBF.length)
+          : 0;
+
+        const avgMttr = validMTTR.length > 0
+          ? Number((validMTTR.reduce((acc, u) => acc + (Number(u.mttrHours) || 0), 0) / validMTTR.length).toFixed(1))
+          : 0;
+
+        const backlog = subset.reduce((acc, u) => acc + (Number(u?.backlogCount) || 0), 0);
+
+        return { count, availablePercent, maintenanceCount, avgMtbf, avgMttr, backlog };
+      };
+
+      const globalMetrics = computeAverages(units);
+      const available = units.filter(u => ['Disponible', 'Asignada', ''].includes(String(u?.status || '').trim())).length;
+      const inRoute = units.filter(u => String(u?.status || '').trim() === 'En Ruta').length;
+      const maintenance = units.filter(u => ['Mantenimiento', 'En Mantenimiento'].includes(String(u?.status || '').trim())).length;
+      const discontinued = units.filter(u => String(u?.status || '').trim() === 'Descontinuada').length;
+
+      return {
+        total,
+        available,
+        inRoute,
+        maintenance,
+        discontinued,
+        totalInactive: discontinued,
+        maintenanceIndex: globalMetrics.availablePercent,
+        openIncidents: incidentsCount,
+        globalMTBF: globalMetrics.avgMtbf,
+        globalMTTR: globalMetrics.avgMttr,
+        globalAvailability: globalMetrics.availablePercent,
+        categories: {
+          vehiculo: computeAverages(units.filter(u => Number(u?.assetTypeId) === 1)),
+          maquinaria: computeAverages(units.filter(u => Number(u?.assetTypeId) === 2)),
+          herramienta: computeAverages(units.filter(u => Number(u?.assetTypeId) === 3)),
+        },
+      };
+    } catch (err) {
+      console.error('🔱 [Archon Stats] Aggregation Failure:', err);
+      return initialStats;
+    }
   }, [units, incidentsCount]);
+
+  // 🔱 Forensic Bridge Injection (Doctor V4 Support)
+  useEffect(() => {
+    const integrity = {
+      total: units.length,
+      corrupt: 0, // Placeholder for future logic
+      lastValidId: units[0]?.id || 'N/A',
+    };
+
+    (window as any).__ARCHON_FLEET_CONTEXT__ = {
+      units,
+      stats,
+      integrity,
+      isSyncing: unitsSyncing,
+      lastUpdate: new Date().toLocaleTimeString(),
+    };
+  }, [units, stats, unitsSyncing]);
+
+  const value = {
+    units,
+    stats,
+    loading,
+    error: unitsError,
+    refreshUnits,
+  };
+
+
 
   const startRoute = async (payload: import('../types/route').StartRoutePayload): Promise<void> => {
     await api.post('/routes/start', payload);
@@ -345,9 +326,36 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await refreshIncidents();
   };
 
+  /**
+   * 🔱 Atomic Hydration Engine
+   * Fetches full unit data (including images) on demand.
+   */
+  const getUnitDetails = useCallback(async (id: string): Promise<FleetUnit | null> => {
+    try {
+      const response = await api.get(`/fleet/${id}`);
+      const rawUnit = response.data?.data;
+      if (!rawUnit) return null;
+
+      // 🔱 Atomic Data Injection
+      const transformed = transformUnits([rawUnit]);
+      const fullUnit = transformed[0];
+
+      if (fullUnit) {
+        setUnits((prev: FleetUnit[]) => 
+          prev.map((u: FleetUnit) => u.id === id ? { ...u, images: fullUnit.images } : u)
+        );
+      }
+
+      return fullUnit || null;
+    } catch (error) {
+      console.error(`[Archon FleetContext] Failed to fetch unit details for ${id}:`, error);
+      return null;
+    }
+  }, [transformUnits, setUnits]);
+
   return (
     <FleetContext.Provider
-      value={{ units, stats, loading, refreshUnits, startRoute, finishRoute, reportIncident }}
+      value={{ units, stats, loading, refreshUnits, error: unitsError, startRoute, finishRoute, reportIncident, getUnitDetails }}
     >
       {children}
     </FleetContext.Provider>

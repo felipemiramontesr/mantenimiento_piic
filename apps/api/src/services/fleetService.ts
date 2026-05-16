@@ -24,7 +24,7 @@ export default class FleetService {
         f.departmentId, f.operationalUseId, f.locationId, f.placas, f.numeroSerie, 
         f.maintIntervalDays, f.maintIntervalKm, f.lastServiceReading, f.lastServiceDate, 
         f.odometer, f.status, f.createdAt, f.updatedAt,
-        f.capacityCarga, f.fuelTankCapacity, f.colorId, f.transmisionId, f.traccionId, 
+        f.capacidadCarga, f.fuelTankCapacity, f.colorId, f.transmisionId, f.traccionId, 
         f.engineTypeId, f.description,
         c_at.label AS assetType,
         c_at.code AS assetTypeCode,

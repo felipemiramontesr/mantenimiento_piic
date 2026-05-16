@@ -7,9 +7,11 @@ import SovereignFooter from '../../components/Navigation/SovereignFooter';
 import { FleetProvider } from '../../context/FleetContext';
 import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 
+import { ArchonDoctor } from '../../ArchonDoctor';
+
 /**
  * 🏛️ Archon Component: DashboardLayout
- * Implementation: Sovereign Architectural Grid (V.78.100.50)
+ * Implementation: Sovereign Architectural Grid (V.78.100.120)
  * Objective: High-performance structural orchestration for industrial modules.
  */
 
@@ -39,6 +41,9 @@ const DashboardLayout: React.FC = () => {
             <SovereignFooter />
           </main>
         </div>
+        
+        {/* 🔱 Forensic Telemetry Overlay */}
+        <ArchonDoctor />
       </FleetProvider>
     </SovereignLayoutProvider>
   );

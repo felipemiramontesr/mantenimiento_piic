@@ -49,7 +49,7 @@ interface CatalogsState {
   routeOrigins: CatalogOption[];
 }
 
-const useFleetForm = (): UseFleetFormReturn => {
+export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFormReturn {
   const [formData, setFormData] = useState<CreateFleetUnit>(getInitialFleetForm());
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -125,7 +125,10 @@ const useFleetForm = (): UseFleetFormReturn => {
    * 🏗️ Foundation Hydration
    */
   const hydrate = useCallback(async (): Promise<void> => {
-    if (hasHydratedRef.current) return;
+    // 🛡️ EAGER LOCK: Prevent overlapping hydration attempts immediately
+    if (hasHydratedRef.current || isLoading) return;
+    hasHydratedRef.current = true;
+    
     setIsLoading(true);
 
     try {
@@ -252,9 +255,10 @@ const useFleetForm = (): UseFleetFormReturn => {
             (prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, assetTypeId: assetList[0].id })
           );
         }
-        hasHydratedRef.current = true;
       }
     } catch (err) {
+      // Release lock on error to allow retry
+      hasHydratedRef.current = false;
       // eslint-disable-next-line no-console
       console.error('[Archon Alpha] Critical Hydration Failure', err);
     } finally {
@@ -262,12 +266,18 @@ const useFleetForm = (): UseFleetFormReturn => {
     }
   }, []);
 
+  // 3. Lifecycle & Initialization
   useEffect(() => {
-    hydrate();
+    if (shouldHydrate && isMountedRef.current && !hasHydratedRef.current && !isLoading) {
+      hydrate();
+    }
+  }, [hydrate, shouldHydrate]);
+
+  useEffect(() => {
     return (): void => {
       isMountedRef.current = false;
     };
-  }, [hydrate]);
+  }, []);
 
   /**
    * 🔱 CASCADE HANDLERS
@@ -407,6 +417,4 @@ const useFleetForm = (): UseFleetFormReturn => {
       setFormData((prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, images: base64Files }));
     },
   };
-};
-
-export default useFleetForm;
+}
