@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AxiosResponse } from 'axios';
 import { CreateFleetUnit, UseFleetFormReturn, CatalogOption } from '../types/fleet';

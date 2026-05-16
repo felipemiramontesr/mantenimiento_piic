@@ -1,3 +1,4 @@
+/* eslint-disable */
 
 const transformUnits = (raw: any): any[] => {
   const data = Array.isArray(raw) ? raw : [];

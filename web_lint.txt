@@ -1,0 +1,42 @@
+
+> @mantenimiento/web@1.0.0 lint
+> eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
+
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\api\client.ts
+  29:3  error  Unused eslint-disable directive (no problems were reported from 'no-console')
+  76:7  error  Unused eslint-disable directive (no problems were reported from 'no-console')
+  88:9  error  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\hooks\useFleetForm.ts
+   52:38  error  Type boolean trivially inferred from a boolean literal, remove type annotation                         @typescript-eslint/no-inferrable-types
+  276:19  error  Unexpected block statement surrounding arrow body; move the returned value immediately after the `=>`  arrow-body-style
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\hooks\useSilkHydration.ts
+   47:5   error  Unexpected dangling '_' in '__ARCHON_FLEET__'                    no-underscore-dangle
+   47:16  error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   74:9   error  Unexpected console statement                                     no-console
+  109:31  error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  118:5   error  Definition for rule 'react-hooks/exhaustive-deps' was not found  react-hooks/exhaustive-deps
+
+C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web\src\scripts\testTransform.ts
+   2:30  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   2:36  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  11:26  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  13:52  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  16:27  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  33:1   error  Unexpected console statement                          no-console
+  37:5   error  'freshData' is never reassigned. Use 'const' instead  prefer-const
+  37:37  error  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  38:1   error  Unexpected console statement                          no-console
+
+✖ 19 problems (19 errors, 0 warnings)
+  6 errors and 0 warnings potentially fixable with the `--fix` option.
+
+npm error Lifecycle script `lint` failed with error:
+npm error code 1
+npm error path C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web
+npm error workspace @mantenimiento/web@1.0.0
+npm error location C:\Users\felip\OneDrive\Documentos\felipe\03_Desarrollo_Web\mantenimiento.piic.com.mx\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0

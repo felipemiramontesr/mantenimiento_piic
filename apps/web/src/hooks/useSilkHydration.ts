@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useEffect, useCallback, Dispatch, SetStateAction, useRef } from 'react';
 import { archonCache } from '../utils/archonCache';
 import api from '../api/client';

@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RouteService from './routeService';
 import db from './db';

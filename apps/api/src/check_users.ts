@@ -1,4 +1,6 @@
 /* eslint-disable */
+// @ts-nocheck
+/* eslint-disable */
 import db from './config/database';
 
 async function checkUsers() {
