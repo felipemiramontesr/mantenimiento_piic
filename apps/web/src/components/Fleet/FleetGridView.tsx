@@ -67,10 +67,10 @@ const IdentityCluster = ({
           )}
         </div>
         <div className="flex flex-col items-center">
-          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">T. CIRCULACIÓN:</span>
-          <span className="text-[10px] font-mono text-slate-400 font-bold">
-            {tarjeta || '---'}
+          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">
+            T. CIRCULACIÓN:
           </span>
+          <span className="text-[10px] font-mono text-slate-400 font-bold">{tarjeta || '---'}</span>
         </div>
       </div>
       {restriction.isRestricted && (
@@ -236,10 +236,10 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           </span>
         </div>
         <div className="flex flex-col items-end -mt-1">
-          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">PÓLIZA:</span>
-          <span className="text-[9px] font-mono text-slate-400">
-            {poliza || '---'}
+          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">
+            PÓLIZA:
           </span>
+          <span className="text-[9px] font-mono text-slate-400">{poliza || '---'}</span>
         </div>
         <div className="flex items-center justify-between mt-1 text-[9px] font-black uppercase">
           <div className="flex items-center gap-2">
@@ -343,135 +343,145 @@ const getUnitForecast = (unit: FleetUnit): MaintenanceForecast | null =>
 // ============================================================================
 // COMPONENT: FleetUnitRow (SOLID: SRP + Performance Optimization)
 // ============================================================================
-const FleetUnitRow = React.memo(({
-  unit,
-  onSelectImage,
-  onEdit,
-}: {
-  unit: FleetUnit;
-  onSelectImage: (u: FleetUnit) => void;
-  onEdit: (u: FleetUnit) => void;
-}): React.JSX.Element => {
-  const forecast = getUnitForecast(unit);
-  const isOverdue = !!forecast?.isOverdue;
+const FleetUnitRow = React.memo(
+  ({
+    unit,
+    onSelectImage,
+    onEdit,
+  }: {
+    unit: FleetUnit;
+    onSelectImage: (u: FleetUnit) => void;
+    onEdit: (u: FleetUnit) => void;
+  }): React.JSX.Element => {
+    const forecast = getUnitForecast(unit);
+    const isOverdue = !!forecast?.isOverdue;
 
-  const usageUnit =
-    unit.assetType?.toLowerCase().includes('veh') || unit.assetType === 'Vehiculo' ? 'KM' : 'HRS';
+    const usageUnit = unit.usageUnitName || 'KM';
 
-  return (
-    <tr
-      data-testid={`fleet-row-${unit.id.toLowerCase()}`}
-      className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.025] ${
-        isOverdue ? 'bg-red-50/40' : ''
-      }`}
-    >
-      <td className="py-16 text-center">
-        {unit.images?.[0] ? (
-          <img
-            src={unit.images[0]}
-            className="w-48 h-48 rounded-[4px] shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
-            onClick={(): void => onSelectImage(unit)}
-            alt={unit.id}
-            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
-              const imgElement = e.currentTarget;
-              imgElement.src = '/img/archon-unit-placeholder.png';
-            }}
-          />
-        ) : (
-          <div 
-            className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center border border-dashed border-gray-200 cursor-pointer overflow-hidden relative"
-            onClick={(): void => onSelectImage(unit)}
-          >
-            <img 
-              src="/img/archon-unit-placeholder.png" 
-              alt="Archon Unit Placeholder" 
-              className="w-full h-full object-cover"
+    return (
+      <tr
+        data-testid={`fleet-row-${unit.id.toLowerCase()}`}
+        className={`transition-all duration-300 hover:bg-[#0f2a44]/[0.025] ${
+          isOverdue ? 'bg-red-50/40' : ''
+        }`}
+      >
+        <td className="py-16 text-center">
+          {unit.images?.[0] ? (
+            <img
+              src={unit.images[0]}
+              className="w-48 h-48 rounded-[4px] shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
+              onClick={(): void => onSelectImage(unit)}
+              alt={unit.id}
+              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+                const imgElement = e.currentTarget;
+                imgElement.src = '/img/archon-unit-placeholder.png';
+              }}
             />
-          </div>
-        )}
-      </td>
+          ) : (
+            <div
+              className="w-48 h-48 rounded-[4px] bg-gray-50 flex items-center justify-center border border-dashed border-gray-200 cursor-pointer overflow-hidden relative"
+              onClick={(): void => onSelectImage(unit)}
+            >
+              <img
+                src="/img/archon-unit-placeholder.png"
+                alt="Archon Unit Placeholder"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </td>
 
-      <td className="text-center px-6">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded shadow-lg tracking-[0.2em]">
-            {unit.id}
-          </span>
-          <div className="flex flex-col items-center">
-            <span className="text-[14px] font-black text-navy-900 uppercase tracking-tight">
-              {unit.marca} {unit.modelo}
+        <td className="text-center px-6">
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded shadow-lg tracking-[0.2em]">
+              {unit.id}
             </span>
-            <span className="text-[11px] font-bold text-slate-500 mt-0.5">
-              ({unit.year || 'SIN REGISTRO'}) • {unit.color || 'SIN REGISTRO'}
-            </span>
+            <div className="flex flex-col items-center">
+              <span className="text-[14px] font-black text-navy-900 uppercase tracking-tight">
+                {unit.marca} {unit.modelo}
+              </span>
+              <span className="text-[11px] font-bold text-slate-500 mt-0.5">
+                ({unit.year || 'SIN REGISTRO'}) • {unit.color || 'SIN REGISTRO'}
+              </span>
+            </div>
+            <div className="flex flex-col items-center opacity-80 pt-1">
+              <span className="text-[10px] font-black text-navy-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Wrench size={12} />
+                {unit.departamento || 'SIN REGISTRO'}
+              </span>
+              <span className="text-[9px] font-mono text-slate-400 mt-1">
+                VIN: {unit.numeroSerie || '---'}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col items-center opacity-80 pt-1">
-            <span className="text-[10px] font-black text-navy-400 uppercase tracking-widest flex items-center gap-1.5">
-              <Wrench size={12} />
-              {unit.departamento || 'SIN REGISTRO'}
-            </span>
-            <span className="text-[9px] font-mono text-slate-400 mt-1">VIN: {unit.numeroSerie || '---'}</span>
+        </td>
+
+        <td className="text-center px-6">
+          <IdentityCluster unit={unit} tarjeta={unit.circulationCardNumber || '---'} />
+        </td>
+
+        <td className="text-center px-6 border-x border-slate-50/50">
+          <LogisticsCluster
+            unit={unit}
+            cuenta={unit.accountingAccount || '---'}
+            usageUnit={usageUnit}
+          />
+        </td>
+
+        <td className="py-12 px-2 min-w-[140px]">
+          <OdometerCluster
+            unit={unit}
+            usageUnit={usageUnit}
+            carga={unit.capacidadCarga || 0}
+            tanque={unit.fuelTankCapacity || 0}
+          />
+        </td>
+
+        <td className="py-12 px-2 min-w-[180px]">
+          <SpecCluster unit={unit} />
+        </td>
+
+        <td className="text-center px-6">
+          <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
+        </td>
+
+        <td className="text-center px-6">
+          <HealthStatusCluster forecast={forecast} />
+        </td>
+
+        <td className="text-center px-6">
+          <FleetKpiMatrix
+            availability={unit.availabilityIndex ?? 100}
+            mtbf={unit.mtbfHours ?? 0}
+            mttr={unit.mttrHours ?? 0}
+            backlog={unit.backlogCount ?? 0}
+            healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
+            daysRemaining={
+              forecast
+                ? Math.ceil((forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                : undefined
+            }
+          />
+        </td>
+
+        <td className="text-center px-6">
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={(): void => onEdit(unit)}
+              title="Editar Activo (Auditado)"
+              className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+            >
+              <Pencil
+                size={18}
+                className="transition-transform duration-300 group-hover:rotate-12"
+              />
+            </button>
           </div>
-        </div>
-      </td>
-
-      <td className="text-center px-6">
-        <IdentityCluster unit={unit} tarjeta={unit.circulationCardNumber || '---'} />
-      </td>
-
-      <td className="text-center px-6 border-x border-slate-50/50">
-        <LogisticsCluster unit={unit} cuenta={unit.accountingAccount || '---'} usageUnit={usageUnit} />
-      </td>
-
-      <td className="py-12 px-2 min-w-[140px]">
-        <OdometerCluster
-          unit={unit}
-          usageUnit={usageUnit}
-          carga={unit.capacidadCarga || 0}
-          tanque={unit.fuelTankCapacity || 0}
-        />
-      </td>
-
-      <td className="py-12 px-2 min-w-[180px]">
-        <SpecCluster unit={unit} />
-      </td>
-
-      <td className="text-center px-6">
-        <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
-      </td>
-
-      <td className="text-center px-6">
-        <HealthStatusCluster forecast={forecast} />
-      </td>
-
-      <td className="text-center px-6">
-        <FleetKpiMatrix
-          availability={unit.availabilityIndex ?? 100}
-          mtbf={unit.mtbfHours ?? 0}
-          mttr={unit.mttrHours ?? 0}
-          backlog={unit.backlogCount ?? 0}
-          healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
-          daysRemaining={
-            forecast
-              ? Math.ceil((forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-              : undefined
-          }
-        />
-      </td>
-
-      <td className="text-center px-6">
-        <div className="flex gap-2 justify-center">
-          <button
-            onClick={(): void => onEdit(unit)}
-            title="Editar Activo (Auditado)"
-            className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
-          >
-            <Pencil size={18} className="transition-transform duration-300 group-hover:rotate-12" />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-});
+        </td>
+      </tr>
+    );
+  }
+);
 
 // ============================================================================
 // MAIN COMPONENT: FleetGridView
@@ -487,24 +497,27 @@ export const FleetGridView = ({
 
   // 🛡️ Data Integrity Sentinel: Filter out invalid records to prevent render crashes
   const sanitizedUnits = React.useMemo(() => {
-    return (units || []).filter(u => u && u.id);
+    return (units || []).filter((u) => u && u.id);
   }, [units]);
 
-  const handleSelectImage = useCallback(async (unit: FleetUnit): Promise<void> => {
-    // 🔱 Atomic Hydration Trigger
-    if (!unit.images || unit.images.length === 0) {
-      setIsFetchingImages(true);
-      const fullUnit = await getUnitDetails(unit.id);
-      setIsFetchingImages(false);
-      if (fullUnit) {
-        setSelectedGalleryUnit(fullUnit);
+  const handleSelectImage = useCallback(
+    async (unit: FleetUnit): Promise<void> => {
+      // 🔱 Atomic Hydration Trigger
+      if (!unit.images || unit.images.length === 0) {
+        setIsFetchingImages(true);
+        const fullUnit = await getUnitDetails(unit.id);
+        setIsFetchingImages(false);
+        if (fullUnit) {
+          setSelectedGalleryUnit(fullUnit);
+        } else {
+          setSelectedGalleryUnit(unit); // Fallback to original
+        }
       } else {
-        setSelectedGalleryUnit(unit); // Fallback to original
+        setSelectedGalleryUnit(unit);
       }
-    } else {
-      setSelectedGalleryUnit(unit);
-    }
-  }, [getUnitDetails]);
+    },
+    [getUnitDetails]
+  );
 
   const [sortConfig, setSortConfig] = useState<{
     field: 'unidad' | 'programacion' | 'pronostico' | null;
@@ -595,7 +608,9 @@ export const FleetGridView = ({
       {isFetchingImages && (
         <div className="fixed bottom-10 right-10 bg-navy-900 text-white px-6 py-3 rounded-full shadow-2xl animate-bounce z-[100] flex items-center gap-3">
           <RefreshCcw size={20} className="animate-spin text-yellow-400" />
-          <span className="text-xs font-black uppercase tracking-widest">Hidratando Activos...</span>
+          <span className="text-xs font-black uppercase tracking-widest">
+            Hidratando Activos...
+          </span>
         </div>
       )}
     </div>

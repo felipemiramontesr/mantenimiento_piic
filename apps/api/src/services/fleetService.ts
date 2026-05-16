@@ -22,12 +22,7 @@ export default class FleetService {
   }): Promise<Record<string, unknown>[]> {
     const query = `
       SELECT 
-        f.id, f.uuid, f.assetTypeId, f.brandId, f.modelId, f.year, f.fuelTypeId, 
-        f.departmentId, f.operationalUseId, f.locationId, f.placas, f.numeroSerie, 
-        f.maintIntervalDays, f.maintIntervalKm, f.lastServiceReading, f.lastServiceDate, 
-        f.odometer, f.status, f.createdAt, f.updatedAt,
-        f.capacidadCarga, f.fuelTankCapacity, f.colorId, f.transmisionId, f.traccionId, 
-        f.engineTypeId, f.description,
+        f.*,
         c_at.label AS assetType,
         c_at.code AS assetTypeCode,
         c_brand.label AS marca,
