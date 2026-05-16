@@ -1,6 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  Image as ImageIcon,
   CalendarDays,
   Gauge,
   Zap,

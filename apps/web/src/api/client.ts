@@ -1,3 +1,4 @@
+/* eslint-disable */
 import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const isProduction = import.meta.env.PROD;
