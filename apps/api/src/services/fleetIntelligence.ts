@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FastifyBaseLogger } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import EncryptionService from './encryption';
@@ -112,7 +113,9 @@ export class FleetIntelligenceEngine {
       healthStatus: health.healthStatus,
       healthColor: health.healthColor,
       daysSinceService: health.lastServiceDate
-        ? Math.floor((health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24))
+        ? Math.floor(
+            (health.today.getTime() - health.lastServiceDate.getTime()) / (1000 * 3600 * 24)
+          )
         : null,
       unitsSinceService: health.odometer - health.lastReading,
       nextServiceReading: health.lastReading + health.kmLimit,
@@ -149,8 +152,12 @@ export class FleetIntelligenceEngine {
     return {
       ...unit,
       placas: unit.placas ? EncryptionService.decrypt(unit.placas) : unit.placas,
-      numeroSerie: unit.numeroSerie ? EncryptionService.decrypt(unit.numeroSerie) : unit.numeroSerie,
-      circulationCardNumber: unit.circulationCardNumber ? EncryptionService.decrypt(unit.circulationCardNumber) : unit.circulationCardNumber,
+      numeroSerie: unit.numeroSerie
+        ? EncryptionService.decrypt(unit.numeroSerie)
+        : unit.numeroSerie,
+      circulationCardNumber: unit.circulationCardNumber
+        ? EncryptionService.decrypt(unit.circulationCardNumber)
+        : unit.circulationCardNumber,
       availabilityIndex: Number(unit.availabilityIndex || ARCHON_DEFAULTS.AVAILABILITY),
       mtbfHours: Number(unit.mtbfHours || 0),
       mttrHours: Number(unit.mttrHours || 0),

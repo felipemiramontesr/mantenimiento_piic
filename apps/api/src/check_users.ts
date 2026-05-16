@@ -1,4 +1,5 @@
-import db from './services/db';
+/* eslint-disable */
+import db from './config/database';
 
 async function checkUsers() {
   try {
