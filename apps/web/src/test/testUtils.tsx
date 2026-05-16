@@ -81,6 +81,14 @@ const LayoutMetadataObserver = (): ReactElement => {
       <h1 data-testid="layout-title">{layoutData.title}</h1>
       <p data-testid="layout-description">{layoutData.description}</p>
       {layoutData.subheaderActions}
+      {layoutData.headerAction && (
+        <div data-testid="sovereign-layout-header-action" onClick={layoutData.headerAction.onClick}>
+          <span>{layoutData.headerAction.headerTitle}</span>
+          <button onClick={layoutData.headerAction.onClick}>
+            {layoutData.headerAction.buttonText}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -228,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 }
                 ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
               `}
-              title="Ajustes de Sistema"
+              title="Configuración de Sistema"
               data-testid="nav-item-settings"
             >
               <Settings size={14} className="shrink-0" />
@@ -238,7 +238,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
               `}
               >
-                <span>Ajustes</span>
+                <span>Configuración</span>
               </div>
             </button>
 

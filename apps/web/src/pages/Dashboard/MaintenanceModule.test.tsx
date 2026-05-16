@@ -32,7 +32,7 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     ).toBeInTheDocument();
 
     // Switch to SCHEDULE
-    const scheduleCard = screen.getByText('Gestión de Servicios');
+    const scheduleCard = screen.getByText('Programar Servicio');
     fireEvent.click(scheduleCard);
 
     expect(

@@ -161,8 +161,8 @@ describe('FleetModule Orchestrator', () => {
     vi.mocked(useFleetForm).mockReturnValue(baseMock);
     renderModule();
     fireEvent.click(screen.getByText(/Iniciar Registro/i));
-    // Clicking the Strategy card should return to the inventory table
-    fireEvent.click(screen.getByText(/Estrategia Operativa/i));
+    // Clicking the header action card should return to the inventory table
+    fireEvent.click(screen.getByText(/Cerrar Formulario/i));
     expect(await screen.findByText('Administrar Unidades')).toBeInTheDocument();
   });
 

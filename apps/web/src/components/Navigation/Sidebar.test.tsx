@@ -22,6 +22,16 @@ vi.mock('../../hooks/usePermissions', () => ({
   }),
 }));
 
+vi.mock('../../context/AuthContext', () => ({
+  useAuth: (): {
+    currentUser: { username: string; imageUrl: string | null };
+    logout: () => void;
+  } => ({
+    currentUser: { username: 'Soberano', imageUrl: null },
+    logout: vi.fn(),
+  }),
+}));
+
 describe('Sidebar Component (Archon Core)', () => {
   const navigateMock = vi.fn();
 
@@ -37,8 +47,7 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Archon/i)).toBeDefined();
-    expect(screen.getByText(/Core/i)).toBeDefined();
+    expect(screen.getByText(/Soberano/i)).toBeDefined();
 
     expect(screen.getByText('Comando')).toBeDefined();
     expect(screen.getByText('Unidades')).toBeDefined();

@@ -180,6 +180,11 @@ const UsersGridView = (): React.JSX.Element => {
 
   return (
     <div className="w-full text-pinnacle-navy">
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="text-[12px] font-black uppercase tracking-widest text-pinnacle-navy/60">
+          Directorio Maestro
+        </h4>
+      </div>
       <ArchonDataTable
         loading={isLoading}
         loadingMessage="Sincronizando Identidades..."

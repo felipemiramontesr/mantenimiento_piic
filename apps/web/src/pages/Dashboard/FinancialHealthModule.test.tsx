@@ -50,7 +50,7 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
     expect(screen.getByText('Auditoría de Egresos lista-')).toBeInTheDocument();
 
     // Switch to OPTIMIZATION
-    const optCard = screen.getByText('Optimización de ROI');
+    const optCard = screen.getByText('Auditoría de Costos');
     fireEvent.click(optCard);
 
     expect(screen.getByText('Motor de ROI listo-')).toBeInTheDocument();
