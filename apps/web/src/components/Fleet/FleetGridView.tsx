@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   RefreshCcw,
   Pencil,
+  Settings,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -420,7 +421,7 @@ const FleetUnitRow = React.memo(
           isOverdue ? 'bg-red-50/40' : 'odd:bg-white even:bg-slate-100'
         }`}
       >
-        <td className="py-4 px-2 text-center">
+        <td className="py-4 px-2 text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
           {unit.images?.[0] ? (
             <img
               src={unit.images[0]}
@@ -446,7 +447,7 @@ const FleetUnitRow = React.memo(
           )}
         </td>
 
-        <td className="text-center px-3">
+        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <div className="flex flex-col items-center gap-2">
             <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded tracking-[0.2em]">
               {unit.id}
@@ -471,11 +472,11 @@ const FleetUnitRow = React.memo(
           </div>
         </td>
 
-        <td className="text-center px-3">
+        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <IdentityCluster unit={unit} tarjeta={unit.circulationCardNumber || '---'} />
         </td>
 
-        <td className="text-center px-3 border-x border-slate-50/50">
+        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <LogisticsCluster
             unit={unit}
             cuenta={unit.accountingAccount || '---'}
@@ -483,7 +484,7 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="py-4 px-2 min-w-[140px]">
+        <td className="py-4 px-2 min-w-[140px] border-t border-solid border-slate-200 border-x-0 border-b-0">
           <OdometerCluster
             unit={unit}
             usageUnit={usageUnit}
@@ -492,19 +493,19 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="py-4 px-2 min-w-[180px]">
+        <td className="py-4 px-2 min-w-[180px] border-t border-solid border-slate-200 border-x-0 border-b-0">
           <SpecCluster unit={unit} />
         </td>
 
-        <td className="text-center px-3">
+        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <ServiceForecastCluster forecast={forecast} usageUnit={usageUnit} />
         </td>
 
-        <td className="text-center px-3">
+        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <HealthStatusCluster forecast={forecast} />
         </td>
 
-        <td className="text-center px-3">
+        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <FleetKpiMatrix
             availability={unit.availabilityIndex ?? 100}
             mtbf={unit.mtbfHours ?? 0}
@@ -519,7 +520,7 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="text-center px-3">
+        <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <div className="flex gap-2 justify-center">
             <button
               onClick={(): void => onEdit(unit)}
@@ -557,15 +558,17 @@ export const FleetGridView = ({
 
   const handleSelectImage = useCallback(
     async (unit: FleetUnit): Promise<void> => {
-      // 🔱 Atomic Hydration Trigger
+      // 🔱 Atomic Hydration Trigger with Defensive Fail-Safe
       if (!unit.images || unit.images.length === 0) {
         setIsFetchingImages(true);
-        const fullUnit = await getUnitDetails(unit.id);
-        setIsFetchingImages(false);
-        if (fullUnit) {
-          setSelectedGalleryUnit(fullUnit);
-        } else {
-          setSelectedGalleryUnit(unit); // Fallback to original
+        try {
+          const fullUnit = await getUnitDetails(unit.id);
+          setSelectedGalleryUnit(fullUnit || unit);
+        } catch (error) {
+          console.error('[Archon Visualizer] Failed to hydrate unit images:', error);
+          setSelectedGalleryUnit(unit); // Fallback to local unit details
+        } finally {
+          setIsFetchingImages(false);
         }
       } else {
         setSelectedGalleryUnit(unit);
@@ -624,15 +627,23 @@ export const FleetGridView = ({
     { key: 'configuracion', label: 'CONFIGURACIÓN', width: '210px' },
     { key: 'programacion', label: 'KM RESTANTES', sortable: true, width: '120px' },
     { key: 'pronostico', label: 'PRONÓSTICO', sortable: true, width: '110px' },
-    { key: 'salud', label: 'SALUD', width: '100px' },
-    { key: 'acciones', label: 'ACCIONES', width: '105px' },
+    { key: 'salud', label: 'SALUD', width: '140px' },
+    {
+      key: 'acciones',
+      label: <Settings size={15} className="mx-auto opacity-70" />,
+      width: '65px',
+    },
   ];
 
   return (
     <div className="animate-in fade-in duration-700 space-y-[20px] text-[#0f2a44]">
       {selectedGalleryUnit && (
         <ArchonGalleryOverlay
-          images={selectedGalleryUnit.images || []}
+          images={
+            selectedGalleryUnit.images && selectedGalleryUnit.images.length > 0
+              ? selectedGalleryUnit.images
+              : ['/img/archon-unit-placeholder.png']
+          }
           assetId={selectedGalleryUnit.id}
           onClose={(): void => setSelectedGalleryUnit(null)}
         />

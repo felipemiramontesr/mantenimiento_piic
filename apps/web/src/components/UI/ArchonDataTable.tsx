@@ -4,7 +4,7 @@ import { ArchonTableSkeleton } from '../ArchonSkeleton';
 
 export interface ArchonTableHeader {
   key: string;
-  label: string;
+  label: string | React.ReactNode;
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
   width?: string;
@@ -122,7 +122,7 @@ export function ArchonDataTable<T>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
+        <tbody className="bg-white [&>tr>td]:border-t [&>tr>td]:border-slate-200">
           {data.length > 0 ? (
             data.map((item, index) => renderRow(item, index))
           ) : (
