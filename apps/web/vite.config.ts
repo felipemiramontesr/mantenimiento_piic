@@ -10,10 +10,10 @@ export default defineConfig({
     reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
-    pool: 'forks',
+    globalTeardown: './src/test/globalTeardown.ts',
     poolOptions: {
-      forks: {
-        maxForks: 1,
+      threads: {
+        singleThread: true,
       },
     },
     coverage: {
