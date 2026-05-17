@@ -14,7 +14,7 @@ export interface SearchSuggestion {
   subtitle: string;    // Primary detail (e.g., "Modelo: Aveo")
   metaLabel: string;   // Matched attribute key/label (e.g., "Placas")
   metaValue: string;   // Matched attribute value (e.g., "XYZ-987")
-  rawItem: any;        // Polymorphic reference to the original object
+  rawItem: unknown;    // Polymorphic reference to the original object
 }
 
 export interface UniversalSearchConfig {

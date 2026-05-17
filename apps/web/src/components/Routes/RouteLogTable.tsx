@@ -18,7 +18,9 @@ import useRouteLogs from '../../hooks/useRouteLogs';
 import IncidentReportForm from './IncidentReportForm';
 import ForensicJournalTable from './ForensicJournalTable';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
-import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLayoutContext';
+import { UserIndustrial } from '../../types/user';
+import { FleetUnit } from '../../types/fleet';
 
 export interface RouteLog {
   id: string;
@@ -351,45 +353,63 @@ const RouteLogRow = ({
   );
 };
 
+const matchOperator = (
+  operator: UserIndustrial | undefined,
+  query: string
+): { label: string; value: string } | null => {
+  if (!operator) return null;
+  if (operator.fullName?.toLowerCase().includes(query)) {
+    return { label: 'Operador', value: operator.fullName };
+  }
+  if (operator.employeeNumber?.toLowerCase().includes(query)) {
+    return { label: 'No. Operador', value: operator.employeeNumber };
+  }
+  return null;
+};
+
+const matchUnitDetails = (
+  unit: FleetUnit | undefined,
+  query: string
+): { label: string; value: string } | null => {
+  if (!unit) return null;
+  if (unit.marca?.toLowerCase().includes(query)) {
+    return { label: 'Marca', value: unit.marca };
+  }
+  if (unit.modelo?.toLowerCase().includes(query)) {
+    return { label: 'Modelo', value: unit.modelo };
+  }
+  if (unit.sede?.toLowerCase().includes(query)) {
+    return { label: 'Sede', value: unit.sede };
+  }
+  return null;
+};
+
 const matchFieldInRoute = (
   log: RouteLog,
   query: string,
-  users: any[],
-  units: any[]
+  users: UserIndustrial[],
+  units: FleetUnit[]
 ): { label: string; value: string } | null => {
   if (log.unit_id.toLowerCase().includes(query)) {
     return { label: 'Unidad', value: log.unit_id };
   }
   const operator = users.find((u) => u.id === String(log.operator_id));
-  if (operator) {
-    if (operator.fullName && operator.fullName.toLowerCase().includes(query)) {
-      return { label: 'Operador', value: operator.fullName };
-    }
-    if (operator.employeeNumber && operator.employeeNumber.toLowerCase().includes(query)) {
-      return { label: 'No. Operador', value: operator.employeeNumber };
-    }
-  }
+  const operatorMatch = matchOperator(operator, query);
+  if (operatorMatch) return operatorMatch;
+
   if (log.origin.toLowerCase().includes(query)) {
     return { label: 'Origen', value: log.origin };
   }
   if (log.destination.toLowerCase().includes(query)) {
     return { label: 'Destino', value: log.destination };
   }
-  if (log.description && log.description.toLowerCase().includes(query)) {
+  if (log.description?.toLowerCase().includes(query)) {
     return { label: 'Misión', value: log.description };
   }
   const unit = units.find((u) => u.id === log.unit_id);
-  if (unit) {
-    if (unit.marca && unit.marca.toLowerCase().includes(query)) {
-      return { label: 'Marca', value: unit.marca };
-    }
-    if (unit.modelo && unit.modelo.toLowerCase().includes(query)) {
-      return { label: 'Modelo', value: unit.modelo };
-    }
-    if (unit.sede && unit.sede.toLowerCase().includes(query)) {
-      return { label: 'Sede', value: unit.sede };
-    }
-  }
+  const unitMatch = matchUnitDetails(unit, query);
+  if (unitMatch) return unitMatch;
+
   return null;
 };
 
@@ -421,10 +441,10 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
               rawItem: log,
             };
           })
-          .filter((s): s is any => s !== null);
+          .filter((s): s is SearchSuggestion => s !== null);
       },
       onSuggestionSelect: (suggestion) => {
-        setSearchTerm(suggestion.rawItem.unit_id);
+        setSearchTerm((suggestion.rawItem as RouteLog).unit_id);
       },
     });
 
@@ -434,11 +454,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   }, [logs, users, units, setSearchConfig, setSearchTerm]);
 
   // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
-  React.useEffect(() => {
-    return () => {
-      setSearchTerm('');
-    };
-  }, [setSearchTerm]);
+  React.useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
 
   const filteredLogs = React.useMemo(() => {
     if (!searchTerm.trim()) return logs;

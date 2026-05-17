@@ -150,7 +150,7 @@ const UserRegistryRow = ({
   );
 };
 
-const UsersGridView = (): React.JSX.Element => {
+const UsersGridView: React.FC = () => {
   const { users, isLoading, setEditingUser, setActivePanel } = useUsers();
   const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
   const [sortConfig, setSortConfig] = React.useState<{
@@ -177,7 +177,7 @@ const UsersGridView = (): React.JSX.Element => {
               rawItem: u,
             };
           })
-          .filter((s): s is any => s !== null);
+          .filter((s): s is SearchSuggestion => s !== null);
       },
       onSuggestionSelect: (suggestion) => {
         setSearchTerm(suggestion.id);
@@ -190,11 +190,7 @@ const UsersGridView = (): React.JSX.Element => {
   }, [users, setSearchConfig, setSearchTerm]);
 
   // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
-  React.useEffect(() => {
-    return () => {
-      setSearchTerm('');
-    };
-  }, [setSearchTerm]);
+  React.useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
 
   const handleSort = (key: string): void => {
     const field = key as 'username' | 'identity' | 'role' | 'status';
