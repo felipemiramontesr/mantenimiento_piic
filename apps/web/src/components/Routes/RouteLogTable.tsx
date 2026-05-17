@@ -425,10 +425,10 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   React.useEffect(() => {
     setSearchConfig({
       placeholder: 'Buscar por unidad, operador, origen, destino o marca...',
-      getSuggestions: (term: string) => {
+      getSuggestions: (term: string): SearchSuggestion[] => {
         const query = term.toLowerCase().trim();
         return (logs || [])
-          .map((log) => {
+          .map((log): SearchSuggestion | null => {
             const match = matchFieldInRoute(log, query, users, units);
             if (!match) return null;
             const operator = users.find((u) => u.id === String(log.operator_id));

@@ -162,10 +162,10 @@ const UsersGridView: React.FC = () => {
   React.useEffect(() => {
     setSearchConfig({
       placeholder: 'Buscar por empleado, nombre, email, rol o departamento...',
-      getSuggestions: (term: string) => {
+      getSuggestions: (term: string): SearchSuggestion[] => {
         const query = term.toLowerCase().trim();
         return (users || [])
-          .map((u) => {
+          .map((u): SearchSuggestion | null => {
             const match = matchFieldInUser(u, query);
             if (!match) return null;
             return {
