@@ -5,7 +5,7 @@ import { LucideIcon } from 'lucide-react';
  * 🔱 Archon Context: SovereignLayoutContext
  * Implementation: Global Layout Metadata Orchestration
  * Objective: Centralize section titles and technical descriptions for the Sovereign Header.
- * v.1.1.0 - Hardened with useCallback to prevent infinite loops
+ * v.1.2.0 - Extended with shared search state for zero-noise inputs.
  */
 
 interface LayoutData {
@@ -27,6 +27,8 @@ interface LayoutData {
 
 interface SovereignLayoutContextType {
   layoutData: LayoutData;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
   setSectionData: (
     title: string,
     description: string,
@@ -44,6 +46,7 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
     subheaderActions: null,
     headerAction: null,
   });
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const setSectionData = useCallback(
     (
@@ -58,7 +61,7 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
   );
 
   return (
-    <SovereignLayoutContext.Provider value={{ layoutData, setSectionData }}>
+    <SovereignLayoutContext.Provider value={{ layoutData, searchTerm, setSearchTerm, setSectionData }}>
       {children}
     </SovereignLayoutContext.Provider>
   );

@@ -28,6 +28,7 @@ import { formatDateTime } from '../../utils/dateUtils';
 import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useFleet } from '../../context/FleetContext';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
 // Visual Impact Update: 100% Data Parity with Master Source
@@ -548,8 +549,16 @@ export const FleetGridView = ({
   onEdit,
 }: FleetGridViewProps): React.JSX.Element => {
   const { getUnitDetails } = useFleet();
+  const { searchTerm, setSearchTerm } = useSovereignLayout();
   const [selectedGalleryUnit, setSelectedGalleryUnit] = useState<FleetUnit | null>(null);
   const [isFetchingImages, setIsFetchingImages] = useState(false);
+
+  // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
+  React.useEffect(() => {
+    return () => {
+      setSearchTerm('');
+    };
+  }, [setSearchTerm]);
 
   // 🛡️ Data Integrity Sentinel: Filter out invalid records to prevent render crashes
   const sanitizedUnits = React.useMemo(() => {
@@ -618,6 +627,89 @@ export const FleetGridView = ({
       .map((i: { unit: FleetUnit; forecast: MaintenanceForecast | null }): FleetUnit => i.unit);
   }, [sanitizedUnits, sortConfig]);
 
+  // 🔍 Multicriteria Filter Logic (ACOP Compliant & Offline Resilient)
+  const filteredUnits = React.useMemo((): FleetUnit[] => {
+    if (!searchTerm.trim()) return sortedUnits;
+    const term = searchTerm.toLowerCase().trim();
+
+    const queryableKeys: { key: keyof FleetUnit; type: 'string' | 'numeric' }[] = [
+      { key: 'placas', type: 'string' },
+      { key: 'marca', type: 'string' },
+      { key: 'modelo', type: 'string' },
+      { key: 'sede', type: 'string' },
+      { key: 'departamento', type: 'string' },
+      { key: 'owner', type: 'string' },
+      { key: 'complianceStatus', type: 'string' },
+      { key: 'status', type: 'string' },
+      { key: 'assetType', type: 'string' },
+      { key: 'fuelType', type: 'string' },
+      { key: 'traccion', type: 'string' },
+      { key: 'transmision', type: 'string' },
+      { key: 'numeroSerie', type: 'string' },
+      { key: 'circulationCardNumber', type: 'string' },
+      { key: 'accountingAccount', type: 'string' },
+      { key: 'insurancePolicyNumber', type: 'string' },
+      { key: 'motor', type: 'string' },
+      { key: 'tireBrand', type: 'string' },
+      { key: 'tireSpec', type: 'string' },
+      { key: 'color', type: 'string' },
+      // Numeric
+      { key: 'monthlyLeasePayment', type: 'numeric' },
+      { key: 'odometer', type: 'numeric' },
+      { key: 'lastServiceReading', type: 'numeric' },
+      { key: 'nextServiceReading', type: 'numeric' },
+      { key: 'capacidadCarga', type: 'numeric' },
+      { key: 'fuelTankCapacity', type: 'numeric' },
+      { key: 'maintIntervalKm', type: 'numeric' },
+      { key: 'maintIntervalDays', type: 'numeric' },
+      { key: 'dailyUsageAvg', type: 'numeric' },
+    ];
+
+    return sortedUnits.filter((u) => {
+      // 1. Calculate Dynamic remaining kilometers
+      const forecast = calculateMaintForecast(
+        u.maintIntervalDays,
+        u.maintIntervalKm,
+        u.dailyUsageAvg || 0,
+        u.odometer,
+        u.lastServiceReading || 0,
+        u.lastServiceDate || null
+      );
+
+      let matchesKmPara = false;
+      if (forecast) {
+        const kmPara = forecast.kmParaServicio;
+        const numStr = String(kmPara);
+        const formattedStr = Number(kmPara).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
+        matchesKmPara = numStr.includes(term) || formattedStr.toLowerCase().includes(term);
+      }
+
+      // 2. Scan structured database keys
+      const matchesKey = queryableKeys.some((cfg) => {
+        const val = u[cfg.key];
+        if (val === null || val === undefined) return false;
+
+        if (cfg.type === 'string') {
+          return String(val).toLowerCase().includes(term);
+        } else {
+          const numStr = String(val);
+          const formattedStr = Number(val).toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          });
+          return numStr.includes(term) || formattedStr.toLowerCase().includes(term);
+        }
+      });
+      
+      const matchesId = u.id && u.id.toLowerCase().includes(term);
+      const matchesYear = u.year && String(u.year).includes(term);
+      return matchesId || matchesYear || matchesKmPara || matchesKey;
+    });
+  }, [sortedUnits, searchTerm]);
+
   const headers: ArchonTableHeader[] = [
     { key: 'activo', label: 'ACTIVO', width: '100px' },
     { key: 'unidad', label: 'UNIDAD', sortable: true, width: '105px' },
@@ -652,7 +744,8 @@ export const FleetGridView = ({
         testId="fleet-inventory-table"
         loading={loading}
         loadingMessage="Sincronizando Activos..."
-        data={sortedUnits}
+        data={filteredUnits}
+        emptyMessage={searchTerm ? `Ningún activo coincide con: "${searchTerm.toUpperCase()}"` : "No hay registros disponibles-"}
         headers={headers}
         onSort={(key): void => {
           const field = key as 'unidad' | 'programacion' | 'pronostico';
