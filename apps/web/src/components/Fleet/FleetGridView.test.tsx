@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '../../test/testUtils';
-import FleetGridView from './FleetGridView';
+import { FleetGridView } from './FleetGridView';
 import { FleetUnit } from '../../types/fleet';
 import * as layoutContext from '../../context/SovereignLayoutContext';
 
 /**
  * 🔱 Archon Test Suite: FleetGridView QA
  * Objective: 100% test coverage of FleetGridView including universal quantitative searching.
- * v.1.0.1 - Spy-Based Context Isolation Compliant
+ * v.1.0.2 - Spy-Based Context Isolation Compliant
  */
 
 let mockSearchTerm = '';
@@ -63,6 +63,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       layoutData: { title: 'Administrar Unidades', description: 'GESTIÓN' },
       searchTerm: mockSearchTerm,
       setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
   });
@@ -80,6 +82,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       layoutData: { title: 'Administrar Unidades', description: 'GESTIÓN' },
       searchTerm: mockSearchTerm,
       setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -91,6 +95,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       layoutData: { title: 'Administrar Unidades', description: 'GESTIÓN' },
       searchTerm: mockSearchTerm,
       setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -104,6 +110,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       layoutData: { title: 'Administrar Unidades', description: 'GESTIÓN' },
       searchTerm: mockSearchTerm,
       setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -115,6 +123,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       layoutData: { title: 'Administrar Unidades', description: 'GESTIÓN' },
       searchTerm: mockSearchTerm,
       setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -128,6 +138,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       layoutData: { title: 'Administrar Unidades', description: 'GESTIÓN' },
       searchTerm: mockSearchTerm,
       setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 

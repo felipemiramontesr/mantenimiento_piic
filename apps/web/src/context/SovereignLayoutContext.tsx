@@ -4,9 +4,24 @@ import { LucideIcon } from 'lucide-react';
 /**
  * 🔱 Archon Context: SovereignLayoutContext
  * Implementation: Global Layout Metadata Orchestration
- * Objective: Centralize section titles and technical descriptions for the Sovereign Header.
- * v.1.2.0 - Extended with shared search state for zero-noise inputs.
+ * Objective: Centralize section titles, technical descriptions, and generic search state.
+ * v.2.0.0 - Polymorphic / Universal Search Integration (DRY Compliant)
  */
+
+export interface SearchSuggestion {
+  id: string;          // Unique ID for React rendering and lookup
+  title: string;       // Primary search result title (e.g., "ASM-002")
+  subtitle: string;    // Primary detail (e.g., "Modelo: Aveo")
+  metaLabel: string;   // Matched attribute key/label (e.g., "Placas")
+  metaValue: string;   // Matched attribute value (e.g., "XYZ-987")
+  rawItem: any;        // Polymorphic reference to the original object
+}
+
+export interface UniversalSearchConfig {
+  placeholder: string;
+  getSuggestions: (term: string) => SearchSuggestion[];
+  onSuggestionSelect: (suggestion: SearchSuggestion) => void;
+}
 
 interface LayoutData {
   title: string;
@@ -29,6 +44,8 @@ interface SovereignLayoutContextType {
   layoutData: LayoutData;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  searchConfig: UniversalSearchConfig | null;
+  setSearchConfig: (config: UniversalSearchConfig | null) => void;
   setSectionData: (
     title: string,
     description: string,
@@ -47,6 +64,7 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
     headerAction: null,
   });
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchConfig, setSearchConfig] = useState<UniversalSearchConfig | null>(null);
 
   const setSectionData = useCallback(
     (
@@ -61,7 +79,16 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
   );
 
   return (
-    <SovereignLayoutContext.Provider value={{ layoutData, searchTerm, setSearchTerm, setSectionData }}>
+    <SovereignLayoutContext.Provider
+      value={{
+        layoutData,
+        searchTerm,
+        setSearchTerm,
+        searchConfig,
+        setSearchConfig,
+        setSectionData,
+      }}
+    >
       {children}
     </SovereignLayoutContext.Provider>
   );

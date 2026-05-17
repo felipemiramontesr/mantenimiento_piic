@@ -19,125 +19,16 @@ import {
 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import ArchonManagementCard from '../UI/ArchonManagementCard';
-import { useFleet } from '../../context/FleetContext';
-import { FleetUnit } from '../../types/fleet';
-import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
 
 /**
  * 🔱 Archon Component: SovereignHeader
- * Implementation: Sovereign Identity & Section Metadata Orchestration
- * Objective: High-density header with dynamic titles and predictive numeric search.
- * v.1.6.2 - Quantitative Universal Engine with Dynamic Forecast Matching
+ * Implementation: Sovereign Identity & Section Metadata Orchestration (Polymorphic)
+ * Objective: High-density header with dynamic titles and universal predictive search.
+ * v.2.0.0 - Universal Predictive Search (DRY Compliant)
  */
 
-interface SearchConfig {
-  key: keyof FleetUnit;
-  label: string;
-  type: 'string' | 'numeric';
-  suffix?: string;
-}
-
-// 📐 Specification Matrix for Universal Search (String & Numeric Columns)
-const SEARCH_CONFIGS: SearchConfig[] = [
-  { key: 'placas', label: 'Placas', type: 'string' },
-  { key: 'marca', label: 'Marca', type: 'string' },
-  { key: 'modelo', label: 'Modelo', type: 'string' },
-  { key: 'sede', label: 'Sede', type: 'string' },
-  { key: 'departamento', label: 'Depto', type: 'string' },
-  { key: 'owner', label: 'Propietario', type: 'string' },
-  { key: 'complianceStatus', label: 'Cumplimiento', type: 'string' },
-  { key: 'status', label: 'Estado', type: 'string' },
-  { key: 'assetType', label: 'Tipo', type: 'string' },
-  { key: 'fuelType', label: 'Combustible', type: 'string' },
-  { key: 'traccion', label: 'Tracción', type: 'string' },
-  { key: 'transmision', label: 'Transmisión', type: 'string' },
-  { key: 'numeroSerie', label: 'VIN/Serie', type: 'string' },
-  { key: 'circulationCardNumber', label: 'Tarjeta Circ.', type: 'string' },
-  { key: 'accountingAccount', label: 'Cta. Contable', type: 'string' },
-  { key: 'insurancePolicyNumber', label: 'Póliza Seguro', type: 'string' },
-  { key: 'motor', label: 'Motor', type: 'string' },
-  { key: 'tireBrand', label: 'Llantas Marca', type: 'string' },
-  { key: 'tireSpec', label: 'Llantas Medida', type: 'string' },
-  { key: 'color', label: 'Color', type: 'string' },
-  // Quantitative/Numeric Fields
-  { key: 'monthlyLeasePayment', label: 'Leasing', type: 'numeric', suffix: ' USD' },
-  { key: 'odometer', label: 'Odómetro', type: 'numeric', suffix: ' KM/Hrs' },
-  { key: 'lastServiceReading', label: 'Último Servicio', type: 'numeric', suffix: ' KM/Hrs' },
-  { key: 'nextServiceReading', label: 'Objetivo Servicio', type: 'numeric', suffix: ' KM/Hrs' },
-  { key: 'capacidadCarga', label: 'Carga', type: 'numeric', suffix: ' KG' },
-  { key: 'fuelTankCapacity', label: 'Tanque', type: 'numeric', suffix: ' L' },
-  { key: 'maintIntervalKm', label: 'Frec. Uso', type: 'numeric', suffix: ' KM/Hrs' },
-  { key: 'maintIntervalDays', label: 'Frec. Tiempo', type: 'numeric', suffix: ' Días' },
-  { key: 'dailyUsageAvg', label: 'Uso Diario', type: 'numeric', suffix: ' U/D' },
-];
-
-// ⚙️ Reusable Matcher Engine with Dynamic Projections
-const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: string } | null => {
-  if (u.id && u.id.toLowerCase().includes(query)) {
-    return { label: 'Código', value: u.id };
-  }
-
-  // 1. Calculate Predictive Remaining Kilometers dynamically
-  const forecast = calculateMaintForecast(
-    u.maintIntervalDays,
-    u.maintIntervalKm,
-    u.dailyUsageAvg || 0,
-    u.odometer,
-    u.lastServiceReading || 0,
-    u.lastServiceDate || null
-  );
-
-  if (forecast) {
-    const kmPara = forecast.kmParaServicio;
-    const usageUnit = u.usageUnitName || 'KM';
-    const numStr = String(kmPara);
-    const formattedStr = Number(kmPara).toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-    if (numStr.includes(query) || formattedStr.toLowerCase().includes(query)) {
-      return { label: 'Km. Restantes', value: `${formattedStr} ${usageUnit}` };
-    }
-  }
-
-  // 2. Iterate over other structured static keys
-  const foundConfig = SEARCH_CONFIGS.find((cfg) => {
-    const val = u[cfg.key];
-    if (val === null || val === undefined) return false;
-
-    if (cfg.type === 'string') {
-      return String(val).toLowerCase().includes(query);
-    }
-    const numStr = String(val);
-    const formattedStr = Number(val).toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-    return numStr.includes(query) || formattedStr.toLowerCase().includes(query);
-  });
-
-  if (foundConfig) {
-    const val = u[foundConfig.key];
-    const formattedValue = foundConfig.type === 'string'
-      ? String(val)
-      : `${Number(val).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}${foundConfig.suffix || ''}`;
-
-    return { label: foundConfig.label, value: formattedValue };
-  }
-
-  if (u.year && String(u.year).includes(query)) {
-    return { label: 'Año', value: String(u.year) };
-  }
-
-  return null;
-};
-
 const SovereignHeader: React.FC = () => {
-  const { layoutData, searchTerm, setSearchTerm } = useSovereignLayout();
-  const { units } = useFleet();
+  const { layoutData, searchTerm, setSearchTerm, searchConfig } = useSovereignLayout();
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -167,25 +58,11 @@ const SovereignHeader: React.FC = () => {
     };
   }, []);
 
-  // 🔍 Predictive Suggestions Engine (ACOP Compliant & Offline-First)
+  // 🔍 Dynamic Suggestions matching the current search config
   const suggestions = React.useMemo(() => {
-    if (!searchTerm.trim()) return [];
-    const query = searchTerm.toLowerCase().trim();
-
-    return units
-      .map((u) => {
-        const match = matchFieldInUnit(u, query);
-        if (!match) return null;
-
-        const labelSuffix = ` (${match.label}: ${match.value})`;
-        return {
-          id: u.id,
-          label: `${u.id}${labelSuffix}`,
-        };
-      })
-      .filter((s): s is { id: string; label: string } => s !== null)
-      .slice(0, 8);
-  }, [units, searchTerm]);
+    if (!searchConfig || !searchTerm.trim()) return [];
+    return searchConfig.getSuggestions(searchTerm.trim()).slice(0, 8);
+  }, [searchConfig, searchTerm]);
 
   // 🛡️ Icon Mapping Engine
   const getHeaderIcons = (title: string): { main: React.ElementType; sub: React.ElementType } => {
@@ -209,7 +86,7 @@ const SovereignHeader: React.FC = () => {
     <header className="flex flex-row items-center w-full border-b border-pinnacle-navy/5 px-10 min-h-[10vh] py-2 bg-white relative z-50 mt-[10px]">
       {/* 🛡️ Section Identification (Col Alfa) */}
       <div className={`w-1/2 flex flex-col pr-10 ${
-        layoutData.title === 'Administrar Unidades' 
+        searchConfig 
           ? 'justify-between h-[105px] py-0.5' 
           : 'justify-center'
       }`}>
@@ -228,8 +105,8 @@ const SovereignHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* 🔍 PREMIUM ARCHON AUTOCOMPLETE PREDICTIVE SEARCH BAR */}
-        {layoutData.title === 'Administrar Unidades' && (
+        {/* 🔍 UNIVERSAL ARCHON AUTOCOMPLETE PREDICTIVE SEARCH BAR */}
+        {searchConfig && (
           <div ref={containerRef} className="group relative w-full mt-3 animate-in fade-in slide-in-from-top-1 duration-500 z-[999]">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
               <Search 
@@ -239,7 +116,7 @@ const SovereignHeader: React.FC = () => {
             </span>
             <input
               type="text"
-              placeholder="Buscar por placas, marca, modelo, sede o departamento..."
+              placeholder={searchConfig.placeholder}
               value={searchTerm}
               onChange={(e): void => {
                 setSearchTerm(e.target.value);
@@ -278,12 +155,14 @@ const SovereignHeader: React.FC = () => {
                   <li
                     key={s.id}
                     onClick={(): void => {
-                      setSearchTerm(s.id);
+                      searchConfig.onSuggestionSelect(s);
                       setIsOpen(false);
                     }}
                     className="px-4 py-2.5 text-[11px] font-bold text-[#0f2a44] hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors duration-150 uppercase"
                   >
-                    <span className="tracking-tight">{s.label}</span>
+                    <span className="tracking-tight">
+                      {s.title} ({s.metaLabel}: {s.metaValue})
+                    </span>
                     <span className="text-[9px] font-black text-slate-400 tracking-wider">SELECCIONAR</span>
                   </li>
                 ))}

@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SovereignHeader from './SovereignHeader';
 import * as layoutContext from '../../context/SovereignLayoutContext';
-import * as fleetContext from '../../context/FleetContext';
 
 /**
  * 🔱 SovereignHeader QA Suite (TypeScript & Vitest Spy Compliant)
@@ -65,6 +64,54 @@ const mockUnits = [
   },
 ];
 
+// Define a reusable mock search config
+let mockSearchConfig = {
+  placeholder: 'Buscar por placas, marca, modelo, sede o departamento...',
+  getSuggestions: vi.fn((term: string) => {
+    const query = term.toLowerCase().trim();
+    if (query === 'aveo') {
+      return [
+        {
+          id: 'ASM-002',
+          title: 'ASM-002',
+          subtitle: 'Chevrolet Aveo',
+          metaLabel: 'Modelo',
+          metaValue: 'Aveo',
+          rawItem: mockUnits[0],
+        },
+      ];
+    }
+    if (query === '15,800') {
+      return [
+        {
+          id: 'ASM-002',
+          title: 'ASM-002',
+          subtitle: 'Chevrolet Aveo',
+          metaLabel: 'Leasing',
+          metaValue: '15,800.5 USD',
+          rawItem: mockUnits[0],
+        },
+      ];
+    }
+    if (query === '7,650') {
+      return [
+        {
+          id: 'ASM-002',
+          title: 'ASM-002',
+          subtitle: 'Chevrolet Aveo',
+          metaLabel: 'Km. Restantes',
+          metaValue: '7,650 KM',
+          rawItem: mockUnits[0],
+        },
+      ];
+    }
+    return [];
+  }),
+  onSuggestionSelect: vi.fn((s) => {
+    mockSetSearchTerm(s.id);
+  }),
+};
+
 describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,26 +132,62 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       },
     };
 
+    mockSearchConfig = {
+      placeholder: 'Buscar por placas, marca, modelo, sede o departamento...',
+      getSuggestions: vi.fn((term: string) => {
+        const query = term.toLowerCase().trim();
+        if (query === 'aveo') {
+          return [
+            {
+              id: 'ASM-002',
+              title: 'ASM-002',
+              subtitle: 'Chevrolet Aveo',
+              metaLabel: 'Modelo',
+              metaValue: 'Aveo',
+              rawItem: mockUnits[0],
+            },
+          ];
+        }
+        if (query === '15,800') {
+          return [
+            {
+              id: 'ASM-002',
+              title: 'ASM-002',
+              subtitle: 'Chevrolet Aveo',
+              metaLabel: 'Leasing',
+              metaValue: '15,800.5 USD',
+              rawItem: mockUnits[0],
+            },
+          ];
+        }
+        if (query === '7,650') {
+          return [
+            {
+              id: 'ASM-002',
+              title: 'ASM-002',
+              subtitle: 'Chevrolet Aveo',
+              metaLabel: 'Km. Restantes',
+              metaValue: '7,650 KM',
+              rawItem: mockUnits[0],
+            },
+          ];
+        }
+        return [];
+      }),
+      onSuggestionSelect: vi.fn((s) => {
+        mockSetSearchTerm(s.id);
+      }),
+    };
+
     // 🔱 Spy on Layout Hook to mock value cleanly without breaking imports
     vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
-
-    // 🔱 Spy on Fleet Hook to return mock units
-    vi.spyOn(fleetContext, 'useFleet').mockReturnValue({
-      units: mockUnits as any,
-      stats: {} as any,
-      loading: false,
-      refreshUnits: vi.fn(),
-      startRoute: vi.fn(),
-      finishRoute: vi.fn(),
-      reportIncident: vi.fn(),
-      error: null,
-      getUnitDetails: vi.fn(),
-    } as any);
   });
 
   it('renders section title, description and header action card correctly', () => {
@@ -135,14 +218,23 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     });
   });
 
-  it('renders the search bar only when section title matches Administrar Unidades', () => {
+  it('renders the search bar only when searchConfig is present', () => {
     const { unmount: unmount1 } = render(<SovereignHeader />);
     expect(
       screen.getByPlaceholderText('Buscar por placas, marca, modelo, sede o departamento...')
     ).toBeInTheDocument();
     unmount1();
 
-    mockLayoutData.title = 'Salud Financiera';
+    // Re-spy with null searchConfig
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: mockSearchTerm,
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+    });
+
     const { unmount: unmount2 } = render(<SovereignHeader />);
     expect(
       screen.queryByPlaceholderText('Buscar por placas, marca, modelo, sede o departamento...')
@@ -157,6 +249,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -177,6 +271,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -197,6 +293,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -217,6 +315,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -230,7 +330,7 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     const suggestion = screen.getByText('ASM-002 (Modelo: Aveo)');
     fireEvent.click(suggestion);
 
-    expect(mockSetSearchTerm).toHaveBeenCalledWith('ASM-002');
+    expect(mockSearchConfig.onSuggestionSelect).toHaveBeenCalled();
   });
 
   it('closes suggestions when clicking outside the input container', () => {
@@ -240,6 +340,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -264,6 +366,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
@@ -288,6 +392,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       layoutData: mockLayoutData as any,
       searchTerm: mockSearchTerm,
       setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
     });
 
