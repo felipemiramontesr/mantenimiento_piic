@@ -28,7 +28,7 @@ describe('UsersModule Component', () => {
   it('should display the core personnel instruments', async (): Promise<void> => {
     renderModule();
     // Updated to match Archon Standard labels (v.28.24.0)
-    expect(screen.getByText(/Directorio Maestro/i)).toBeInTheDocument();
+    expect(screen.getByText(/EMPLEADO/i)).toBeInTheDocument();
     expect(screen.getByText(/Alta de Personal/i)).toBeInTheDocument();
   });
 });
