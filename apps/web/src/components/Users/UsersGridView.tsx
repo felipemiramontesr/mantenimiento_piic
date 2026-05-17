@@ -3,6 +3,7 @@ import { User, Mail, Activity, Pencil, Hash, Briefcase, Image as ImageIcon } fro
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 
 /**
  * 🔱 Archon Component: UsersGridView
@@ -10,6 +11,28 @@ import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
  * Objective: Personnel Administration with Zero-Noise Aesthetic.
  * Refactor: 100% Pure Tailwind (Eradicated all Hex Codes).
  */
+
+const matchFieldInUser = (u: UserIndustrial, query: string): { label: string; value: string } | null => {
+  if (u.username.toLowerCase().includes(query)) {
+    return { label: 'Empleado', value: u.username };
+  }
+  if (u.fullName && u.fullName.toLowerCase().includes(query)) {
+    return { label: 'Nombre', value: u.fullName };
+  }
+  if (u.email.toLowerCase().includes(query)) {
+    return { label: 'Email', value: u.email };
+  }
+  if (u.employeeNumber && u.employeeNumber.toLowerCase().includes(query)) {
+    return { label: 'No. Empleado', value: u.employeeNumber };
+  }
+  if (u.roleName && u.roleName.toLowerCase().includes(query)) {
+    return { label: 'Rol', value: u.roleName };
+  }
+  if (u.department && u.department.toLowerCase().includes(query)) {
+    return { label: 'Depto', value: u.department };
+  }
+  return null;
+};
 
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
   let styles = 'bg-slate-100 text-slate-600';
@@ -129,10 +152,49 @@ const UserRegistryRow = ({
 
 const UsersGridView = (): React.JSX.Element => {
   const { users, isLoading, setEditingUser, setActivePanel } = useUsers();
+  const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
   const [sortConfig, setSortConfig] = React.useState<{
     field: 'username' | 'identity' | 'role' | 'status' | null;
     direction: 'asc' | 'desc';
   }>({ field: null, direction: 'asc' });
+
+  // 🛡️ Dynamic Register for Universal Search Protocol (DRY Compliant)
+  React.useEffect(() => {
+    setSearchConfig({
+      placeholder: 'Buscar por empleado, nombre, email, rol o departamento...',
+      getSuggestions: (term: string) => {
+        const query = term.toLowerCase().trim();
+        return (users || [])
+          .map((u) => {
+            const match = matchFieldInUser(u, query);
+            if (!match) return null;
+            return {
+              id: u.username,
+              title: u.username,
+              subtitle: u.fullName || 'Empleado General',
+              metaLabel: match.label,
+              metaValue: match.value,
+              rawItem: u,
+            };
+          })
+          .filter((s): s is any => s !== null);
+      },
+      onSuggestionSelect: (suggestion) => {
+        setSearchTerm(suggestion.id);
+      },
+    });
+
+    return () => {
+      setSearchConfig(null);
+    };
+  }, [users, setSearchConfig, setSearchTerm]);
+
+  // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
+  React.useEffect(() => {
+    return () => {
+      setSearchTerm('');
+    };
+  }, [setSearchTerm]);
 
   const handleSort = (key: string): void => {
     const field = key as 'username' | 'identity' | 'role' | 'status';
@@ -168,6 +230,12 @@ const UsersGridView = (): React.JSX.Element => {
     });
   }, [users, sortConfig]);
 
+  const filteredUsers = React.useMemo(() => {
+    if (!searchTerm.trim()) return sortedUsers;
+    const query = searchTerm.toLowerCase().trim();
+    return sortedUsers.filter((u) => matchFieldInUser(u, query) !== null);
+  }, [sortedUsers, searchTerm]);
+
   const headers: ArchonTableHeader[] = [
     { key: 'avatar', label: 'ACTIVO' },
     { key: 'username', label: 'EMPLEADO', sortable: true },
@@ -188,7 +256,7 @@ const UsersGridView = (): React.JSX.Element => {
       <ArchonDataTable
         loading={isLoading}
         loadingMessage="Sincronizando Identidades..."
-        data={sortedUsers}
+        data={filteredUsers}
         headers={headers}
         onSort={handleSort}
         sortConfig={sortConfig}

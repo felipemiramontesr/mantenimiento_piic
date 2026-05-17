@@ -18,6 +18,7 @@ import useRouteLogs from '../../hooks/useRouteLogs';
 import IncidentReportForm from './IncidentReportForm';
 import ForensicJournalTable from './ForensicJournalTable';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 
 export interface RouteLog {
   id: string;
@@ -350,10 +351,103 @@ const RouteLogRow = ({
   );
 };
 
+const matchFieldInRoute = (
+  log: RouteLog,
+  query: string,
+  users: any[],
+  units: any[]
+): { label: string; value: string } | null => {
+  if (log.unit_id.toLowerCase().includes(query)) {
+    return { label: 'Unidad', value: log.unit_id };
+  }
+  const operator = users.find((u) => u.id === String(log.operator_id));
+  if (operator) {
+    if (operator.fullName && operator.fullName.toLowerCase().includes(query)) {
+      return { label: 'Operador', value: operator.fullName };
+    }
+    if (operator.employeeNumber && operator.employeeNumber.toLowerCase().includes(query)) {
+      return { label: 'No. Operador', value: operator.employeeNumber };
+    }
+  }
+  if (log.origin.toLowerCase().includes(query)) {
+    return { label: 'Origen', value: log.origin };
+  }
+  if (log.destination.toLowerCase().includes(query)) {
+    return { label: 'Destino', value: log.destination };
+  }
+  if (log.description && log.description.toLowerCase().includes(query)) {
+    return { label: 'Misión', value: log.description };
+  }
+  const unit = units.find((u) => u.id === log.unit_id);
+  if (unit) {
+    if (unit.marca && unit.marca.toLowerCase().includes(query)) {
+      return { label: 'Marca', value: unit.marca };
+    }
+    if (unit.modelo && unit.modelo.toLowerCase().includes(query)) {
+      return { label: 'Modelo', value: unit.modelo };
+    }
+    if (unit.sede && unit.sede.toLowerCase().includes(query)) {
+      return { label: 'Sede', value: unit.sede };
+    }
+  }
+  return null;
+};
+
 const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { logs, isSyncing, refresh } = useRouteLogs();
+  const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
+  const { users } = useUsers();
+  const { units } = useFleet();
   const [reportingRoute, setReportingRoute] = React.useState<RouteLog | null>(null);
   const [expandedRowId, setExpandedRowId] = React.useState<string | null>(null);
+
+  // 🛡️ Dynamic Register for Universal Search Protocol (DRY Compliant)
+  React.useEffect(() => {
+    setSearchConfig({
+      placeholder: 'Buscar por unidad, operador, origen, destino o marca...',
+      getSuggestions: (term: string) => {
+        const query = term.toLowerCase().trim();
+        return (logs || [])
+          .map((log) => {
+            const match = matchFieldInRoute(log, query, users, units);
+            if (!match) return null;
+            const operator = users.find((u) => u.id === String(log.operator_id));
+            return {
+              id: log.uuid,
+              title: `${log.unit_id} ➔ ${log.destination}`,
+              subtitle: operator?.fullName || 'Operador General',
+              metaLabel: match.label,
+              metaValue: match.value,
+              rawItem: log,
+            };
+          })
+          .filter((s): s is any => s !== null);
+      },
+      onSuggestionSelect: (suggestion) => {
+        setSearchTerm(suggestion.rawItem.unit_id);
+      },
+    });
+
+    return () => {
+      setSearchConfig(null);
+    };
+  }, [logs, users, units, setSearchConfig, setSearchTerm]);
+
+  // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
+  React.useEffect(() => {
+    return () => {
+      setSearchTerm('');
+    };
+  }, [setSearchTerm]);
+
+  const filteredLogs = React.useMemo(() => {
+    if (!searchTerm.trim()) return logs;
+    const query = searchTerm.toLowerCase().trim();
+    return logs.filter((log) => {
+      if (log.uuid.toLowerCase() === query) return true;
+      return matchFieldInRoute(log, query, users, units) !== null;
+    });
+  }, [logs, searchTerm, users, units]);
 
   const handleToggle = (id: string): void => {
     setExpandedRowId(expandedRowId === id ? null : id);
@@ -400,7 +494,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
         testId="archon-route-log-table"
         loading={isSyncing && logs.length === 0}
         loadingMessage="Sincronizando Rutas..."
-        data={logs}
+        data={filteredLogs}
         headers={headers}
         renderRow={(log, index): React.ReactNode => (
           <RouteLogRow
