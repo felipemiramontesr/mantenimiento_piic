@@ -3,7 +3,7 @@ import { User, Mail, Activity, Pencil, Hash, Briefcase, Image as ImageIcon } fro
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
-import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLayoutContext';
 
 /**
  * 🔱 Archon Component: UsersGridView
