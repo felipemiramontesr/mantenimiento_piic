@@ -10,14 +10,15 @@ import useFleetForm from '../../hooks/useFleetForm';
  * Implementation: Production-Grade Type Parity (v.21.0.0)
  */
 
-// Mock specialized context
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const stableUnits: any[] = [];
 vi.mock('../../context/FleetContext', async () => {
   const actual = await vi.importActual('../../context/FleetContext');
   return {
     ...actual,
     useFleet: (): Record<string, unknown> => ({
       refreshUnits: vi.fn(async (): Promise<void> => Promise.resolve()),
-      units: [],
+      units: stableUnits,
       loading: false,
     }),
   };

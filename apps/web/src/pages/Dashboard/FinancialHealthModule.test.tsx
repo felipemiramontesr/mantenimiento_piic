@@ -8,16 +8,16 @@ import FinancialHealthModule from './FinancialHealthModule';
  * Implementation: Sovereign Financial Intelligence (v.1.0.0)
  */
 
-// Mock specialized context
+const stableUnits = [
+  { id: '1', monthlyLeasePayment: 1000 },
+  { id: '2', monthlyLeasePayment: '2000' }, // Test string concatenation bug fix
+];
 vi.mock('../../context/FleetContext', async () => {
   const actual = await vi.importActual('../../context/FleetContext');
   return {
     ...actual,
     useFleet: (): Record<string, unknown> => ({
-      units: [
-        { id: '1', monthlyLeasePayment: 1000 },
-        { id: '2', monthlyLeasePayment: '2000' }, // Test string concatenation bug fix
-      ],
+      units: stableUnits,
       stats: {
         maintenanceIndex: 85,
       },
