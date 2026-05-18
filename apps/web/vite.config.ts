@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    vmMemoryLimit: '3GB',
     clearMocks: true,
     mockReset: true,
     teardownTimeout: 1000,
