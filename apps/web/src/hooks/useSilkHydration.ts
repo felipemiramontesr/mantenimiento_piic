@@ -51,8 +51,8 @@ export default function useSilkHydration<T>({
       lastUpdate: new Date().toISOString(),
       metadata: {
         version: SYSTEM_VERSION,
-        engine: 'Silk Hydration v.2.0.0'
-      }
+        engine: 'Silk Hydration v.2.0.0',
+      },
     };
   }, [data, isSyncing]);
 
@@ -65,59 +65,70 @@ export default function useSilkHydration<T>({
     };
   }, []);
 
+  // 🔱 Stable Callback References: Prevent unstable inline function closures from triggering recursive renders
+  const transformRef = useRef(transform);
+  transformRef.current = transform;
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
   // 2. Atomic Sync Engine (Sovereign Revalidation)
-  const sync = useCallback(async (isSilent = false): Promise<void> => {
-    if (!isMounted.current || isSyncing) return;
+  const sync = useCallback(
+    async (isSilent = false): Promise<void> => {
+      if (!isMounted.current || isSyncing) return;
 
-    // 🛡️ FAILSAFE TIMEOUT: Force IDLE state after 15s
-    const failsafe = setTimeout(() => {
-      if (isMounted.current && isSyncing) {
-        console.warn(`⚠️ [Archon Silk] Failsafe for ${key}.`);
-        setIsSyncing(false);
-      }
-    }, 15000);
+      // 🛡️ FAILSAFE TIMEOUT: Force IDLE state after 15s
+      const failsafe = setTimeout(() => {
+        if (isMounted.current && isSyncing) {
+          console.warn(`⚠️ [Archon Silk] Failsafe for ${key}.`);
+          setIsSyncing(false);
+        }
+      }, 15000);
 
-    // DETERMINISTIC LOADING: Only show if cache is empty AND not a silent sync
-    // We use a functional check to avoid closure staleness without adding data to deps
-    let shouldShowLoading = false;
-    setData(prev => {
-      if (!isSilent && prev.length === 0) {
-        shouldShowLoading = true;
-      }
-      return prev;
-    });
-    
-    if (shouldShowLoading) {
-      setIsSyncing(true);
-    }
-    
-    setError(null);
-    try {
-      const response = await api.get(endpoint);
-      let freshData = response.data?.data || response.data || [];
+      // DETERMINISTIC LOADING: Only show if cache is empty AND not a silent sync
+      // We use a functional check to avoid closure staleness without adding data to deps
+      let shouldShowLoading = false;
+      setData((prev) => {
+        if (!isSilent && prev.length === 0) {
+          shouldShowLoading = true;
+        }
+        return prev;
+      });
 
-      if (transform) {
-        freshData = transform(freshData);
+      if (shouldShowLoading) {
+        setIsSyncing(true);
       }
 
-      if (isMounted.current) {
-        setData(freshData);
-        archonCache.set(key, freshData);
-        if (onSuccess) onSuccess(freshData);
+      setError(null);
+      try {
+        const response = await api.get(endpoint);
+        let freshData = response.data?.data || response.data || [];
+
+        if (transformRef.current) {
+          freshData = transformRef.current(freshData);
+        }
+
+        if (isMounted.current) {
+          setData(freshData);
+          archonCache.set(key, freshData);
+          if (onSuccessRef.current) onSuccessRef.current(freshData);
+        }
+      } catch (err: unknown) {
+        if (isMounted.current) {
+          const is429 = (err as any)?.response?.status === 429;
+          setError(
+            err instanceof Error ? err : new Error(is429 ? 'RATE_LIMIT_EXCEEDED' : 'Sync failed')
+          );
+        }
+      } finally {
+        if (failsafe) clearTimeout(failsafe);
+        if (isMounted.current) {
+          setIsSyncing(false);
+        }
       }
-    } catch (err: unknown) {
-      if (isMounted.current) {
-        const is429 = (err as any)?.response?.status === 429;
-        setError(err instanceof Error ? err : new Error(is429 ? 'RATE_LIMIT_EXCEEDED' : 'Sync failed'));
-      }
-    } finally {
-      if (failsafe) clearTimeout(failsafe);
-      if (isMounted.current) {
-        setIsSyncing(false);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, endpoint, transform, onSuccess]); // data.length removed to break the loop
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [key, endpoint]
+  ); // transform and onSuccess removed to break the loop
 
   // 3. Auto-Hydration on Mount (Stale-While-Revalidate)
   useEffect(() => {

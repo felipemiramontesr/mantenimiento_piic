@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, react/display-name */
 import '@testing-library/jest-dom';
 import React from 'react';
 import { beforeAll, afterEach, afterAll, vi } from 'vitest';
@@ -7,6 +7,11 @@ import server from './server';
 // 🔱 Polyfills for MSW/Axios (v.17.0.0 CI fix)
 if (typeof global.ProgressEvent === 'undefined') {
   (global as any).ProgressEvent = class ProgressEvent extends Event {};
+}
+
+// 🔱 scrollIntoView Polyfill for JSDOM
+if (typeof window !== 'undefined' && !window.HTMLElement.prototype.scrollIntoView) {
+  window.HTMLElement.prototype.scrollIntoView = vi.fn();
 }
 
 /**
@@ -30,15 +35,16 @@ console.warn = (...args: any[]): void => {
 /* eslint-enable no-console */
 
 // 🔱 Motion Suppression (v.1.0.0 CI Stability)
-// Use a Proxy to handle any motion[tag] automatically
+// Use a Proxy to handle any motion[tag] automatically with forwardRef support
 vi.mock('framer-motion', () => ({
   motion: new Proxy(
     {},
     {
-      get:
-        (_target, tag: string): any =>
-        ({ children, ...props }: any): React.ReactElement =>
-          React.createElement(tag, props, children),
+      get: (_target, tag: string): any =>
+        React.forwardRef(
+          ({ children, ...props }: any, ref: any): React.ReactElement =>
+            React.createElement(tag, { ...props, ref }, children)
+        ),
     }
   ),
   AnimatePresence: ({ children }: any): any => children,
