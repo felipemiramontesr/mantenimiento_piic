@@ -54,11 +54,12 @@ jobs:
           include_passed: true
 
   frontend-validation:
-    name: 🎨 Frontend (Web) Verification
+    name: 🎨 Frontend (Web) Verification (Shard ${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
-    outputs:
-      tests: ${{ steps.results.outputs.tests }}
-      passed: ${{ steps.results.outputs.passed }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v5
       - name: Setup Node.js
@@ -68,22 +69,14 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Lint and Test
+      - name: Lint
+        if: matrix.shard == 1
+        run: npm run lint --workspace=@mantenimiento/web
+      - name: Test Shard
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
-          npm run lint --workspace=@mantenimiento/web
-          npm run test --workspace=@mantenimiento/web
-      - name: Extract Results
-        id: results
-        if: always()
-        run: |
-          # Simple extraction from JUnit XML
-          TESTS=$(grep -oP 'tests="\K[^"]+' apps/web/test-results.xml | head -1 || echo "0")
-          FAILURES=$(grep -oP 'failures="\K[^"]+' apps/web/test-results.xml | head -1 || echo "0")
-          PASSED=$((TESTS - FAILURES))
-          echo "tests=$TESTS" >> $GITHUB_OUTPUT
-          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          npm run test --workspace=@mantenimiento/web -- --shard=${{ matrix.shard }}/2 --reporter=default --reporter=junit
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v6
         if: always()
@@ -91,6 +84,12 @@ jobs:
           report_paths: 'apps/web/test-results.xml'
           detailed_summary: true
           include_passed: true
+      - name: Upload Shard Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-results-shard-${{ matrix.shard }}
+          path: apps/web/test-results.xml
 
   database-validation:
     name: 🏛️ Database (SQL) Verification
@@ -112,12 +111,28 @@ jobs:
     needs: [backend-validation, frontend-validation, database-validation]
     runs-on: ubuntu-latest
     steps:
+      - name: Download Shard Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
       - name: Generate Certification Dashboard
         run: |
           B_TESTS=${{ needs.backend-validation.outputs.tests }}
           B_PASSED=${{ needs.backend-validation.outputs.passed }}
-          F_TESTS=${{ needs.frontend-validation.outputs.tests }}
-          F_PASSED=${{ needs.frontend-validation.outputs.passed }}
+          
+          # Sum up frontend shards
+          F_TESTS=0
+          F_PASSED=0
+          
+          for file in all-results/frontend-results-shard-*/test-results.xml; do
+            if [ -f "$file" ]; then
+              TESTS=$(grep -oP 'tests="\K[^"]+' "$file" | head -1 || echo "0")
+              FAILURES=$(grep -oP 'failures="\K[^"]+' "$file" | head -1 || echo "0")
+              PASSED=$((TESTS - FAILURES))
+              F_TESTS=$((F_TESTS + TESTS))
+              F_PASSED=$((F_PASSED + PASSED))
+            fi
+          done
           
           TOTAL_TESTS=$((B_TESTS + F_TESTS))
           TOTAL_PASSED=$((B_PASSED + F_PASSED))
