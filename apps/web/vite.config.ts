@@ -12,7 +12,6 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     globalTeardown: './src/test/globalTeardown.ts',
     pool: 'threads',
-    maxWorkers: process.env.GITHUB_ACTIONS ? 1 : undefined,
     coverage: {
       provider: 'v8',
       all: true,
