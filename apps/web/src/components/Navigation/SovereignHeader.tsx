@@ -85,11 +85,11 @@ const SovereignHeader: React.FC = () => {
   return (
     <header className="flex flex-row items-center w-full border-b border-pinnacle-navy/5 px-10 min-h-[10vh] py-2 bg-white relative z-50 mt-[10px]">
       {/* 🛡️ Section Identification (Col Alfa) */}
-      <div className={`w-1/2 flex flex-col pr-10 ${
-        searchConfig 
-          ? 'justify-between h-[105px] py-0.5' 
-          : 'justify-center'
-      }`}>
+      <div
+        className={`w-1/2 flex flex-col pr-10 ${
+          searchConfig ? 'justify-between h-[105px] py-0.5' : 'justify-center'
+        }`}
+      >
         <div>
           <div className="flex items-center gap-3">
             <MainIcon size={20} className="text-pinnacle-yellow" strokeWidth={2.5} />
@@ -107,11 +107,14 @@ const SovereignHeader: React.FC = () => {
 
         {/* 🔍 UNIVERSAL ARCHON AUTOCOMPLETE PREDICTIVE SEARCH BAR */}
         {searchConfig && (
-          <div ref={containerRef} className="group relative w-full mt-3 animate-in fade-in slide-in-from-top-1 duration-500 z-[999]">
+          <div
+            ref={containerRef}
+            className="group relative w-full mt-3 animate-in fade-in slide-in-from-top-1 duration-500 z-[999]"
+          >
             <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-              <Search 
-                size={13} 
-                className="text-slate-400 group-focus-within:text-[#0f2a44] transition-colors duration-300" 
+              <Search
+                size={13}
+                className="text-slate-400 group-focus-within:text-[#0f2a44] transition-colors duration-300"
               />
             </span>
             <input
@@ -123,11 +126,16 @@ const SovereignHeader: React.FC = () => {
                 setIsOpen(true);
               }}
               onFocus={(): void => setIsOpen(true)}
+              onKeyDown={(e): void => {
+                if (e.key === 'Enter') {
+                  setIsOpen(false);
+                }
+              }}
               style={{
                 border: '1px solid rgba(15, 42, 68, 0.2)',
                 borderRadius: '4px',
               }}
-              className="w-full pl-9 pr-9 py-2 text-[11px] font-bold text-[#0f2a44] bg-white focus:outline-none placeholder-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
+              className="w-full pl-9 pr-9 py-3 text-[11px] font-bold text-[#0f2a44] bg-white focus:outline-none placeholder-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
             />
             {searchTerm && (
               <button
@@ -144,7 +152,7 @@ const SovereignHeader: React.FC = () => {
 
             {/* 🔱 Dropdown Suggestions */}
             {isOpen && searchTerm.trim() && suggestions.length > 0 && (
-              <ul 
+              <ul
                 style={{
                   border: '1px solid rgba(15, 42, 68, 0.2)',
                   borderRadius: '4px',
@@ -163,7 +171,9 @@ const SovereignHeader: React.FC = () => {
                     <span className="tracking-tight">
                       {s.title} ({s.metaLabel}: {s.metaValue})
                     </span>
-                    <span className="text-[9px] font-black text-slate-400 tracking-wider">SELECCIONAR</span>
+                    <span className="text-[9px] font-black text-slate-400 tracking-wider">
+                      SELECCIONAR
+                    </span>
                   </li>
                 ))}
               </ul>

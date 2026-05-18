@@ -404,4 +404,28 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
 
     expect(mockSetSearchTerm).toHaveBeenCalledWith('');
   });
+
+  it('closes suggestions when enter key is pressed on the input', () => {
+    mockSearchTerm = 'aveo';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: mockSearchTerm,
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+    });
+
+    render(<SovereignHeader />);
+
+    const input = screen.getByPlaceholderText(
+      'Buscar por placas, marca, modelo, sede o departamento...'
+    );
+    fireEvent.focus(input);
+
+    expect(screen.getByText('ASM-002 (Modelo: Aveo)')).toBeInTheDocument();
+
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+    expect(screen.queryByText('ASM-002 (Modelo: Aveo)')).not.toBeInTheDocument();
+  });
 });
