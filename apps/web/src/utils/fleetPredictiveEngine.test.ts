@@ -100,13 +100,12 @@ describe('FleetPredictiveEngine - Mathematical Integrity', () => {
   });
 
   it('should handle NaN values gracefully', () => {
-    // @ts-expect-error - Testing NaN inputs
     const result = calculateMaintForecast(
-      'invalid',
-      'invalid',
-      'invalid',
-      'invalid',
-      'invalid',
+      'invalid' as unknown as number,
+      'invalid' as unknown as number,
+      'invalid' as unknown as number,
+      'invalid' as unknown as number,
+      'invalid' as unknown as number,
       new Date()
     );
     expect(result?.kmParaServicio).toBe(0);
