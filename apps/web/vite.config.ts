@@ -9,6 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     clearMocks: true,
     mockReset: true,
+    teardownTimeout: 1000,
     reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
@@ -18,7 +19,7 @@ export default defineConfig({
       forks: {
         minForks: 1,
         maxForks: process.env.GITHUB_ACTIONS ? 1 : 2,
-        execArgv: ['--max-old-space-size=4096', '--expose-gc'],
+        execArgv: ['--max-old-space-size=6144', '--expose-gc'],
       },
     },
     logHeapUsage: true,
