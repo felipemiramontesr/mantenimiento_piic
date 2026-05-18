@@ -11,7 +11,15 @@ export default defineConfig({
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
     globalTeardown: './src/test/globalTeardown.ts',
-    pool: 'threads',
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        minForks: 1,
+        maxForks: process.env.GITHUB_ACTIONS ? 1 : 2,
+        execArgv: ['--max-old-space-size=4096', '--expose-gc'],
+      },
+    },
+    logHeapUsage: true,
     coverage: {
       provider: 'v8',
       all: true,
