@@ -129,44 +129,49 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
         type="button"
         id={id}
         onClick={(): void => setIsOpen((prev) => !prev)}
-        className="archon-input"
+        className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold transition-all duration-300 outline-none flex items-center justify-between cursor-pointer text-left"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-          textAlign: 'left',
-          width: '100%',
           color: value ? '#0f2a44' : '#94a3b8',
         }}
       >
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px' }}>
+        <span className="font-sans text-[13px] font-bold">
           {value ? formatDisplay(value) : placeholder}
         </span>
-        <Calendar size={16} style={{ color: '#f2b705', flexShrink: 0, marginLeft: '8px' }} />
+        <Calendar size={16} className="text-[#f2b705] shrink-0 ml-2" />
       </button>
 
       {/* ── Calendar Popup ────────────────────────────────────────────── */}
       {isOpen && (
-        <div className="archon-datepicker-popup">
+        <div className="absolute top-full left-0 w-full mt-2 bg-white border border-[#0f2a44]/10 rounded-[4px] shadow-2xl p-4 z-[500] flex flex-col">
           {/* Header: Month Navigation */}
-          <div className="archon-datepicker-header">
-            <button type="button" onClick={handlePrevMonth} className="archon-datepicker-nav">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#0f2a44]/5">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="p-1 hover:bg-[#0f2a44]/5 rounded transition-colors text-[#0f2a44]/60 hover:text-[#0f2a44] flex items-center justify-center cursor-pointer border-none bg-transparent"
+            >
               <ChevronLeft size={16} />
             </button>
-            <span className="archon-datepicker-title">
+            <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-wider">
               {MONTHS_ES[viewMonth]} {viewYear}
             </span>
-            <button type="button" onClick={handleNextMonth} className="archon-datepicker-nav">
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="p-1 hover:bg-[#0f2a44]/5 rounded transition-colors text-[#0f2a44]/60 hover:text-[#0f2a44] flex items-center justify-center cursor-pointer border-none bg-transparent"
+            >
               <ChevronRight size={16} />
             </button>
           </div>
 
           {/* Day Names */}
-          <div className="archon-datepicker-grid">
+          <div className="grid grid-cols-7 gap-1 text-center mb-1">
             {DAYS_ES.map(
               (d: string): React.ReactElement => (
-                <div key={d} className="archon-datepicker-dayname">
+                <div
+                  key={d}
+                  className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-widest py-1"
+                >
                   {d}
                 </div>
               )
@@ -174,7 +179,7 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
           </div>
 
           {/* Day Cells */}
-          <div className="archon-datepicker-grid">
+          <div className="grid grid-cols-7 gap-1 text-center">
             {cells.map(
               (day: number | null, i: number): React.ReactElement => (
                 <div key={i}>
@@ -182,20 +187,22 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
                     <button
                       type="button"
                       onClick={(): void => handleSelectDay(day)}
-                      className={[
-                        'archon-datepicker-day',
-                        isSelectedDay(day) ? 'archon-datepicker-day--selected' : '',
-                        isTodayDay(day) && !isSelectedDay(day)
-                          ? 'archon-datepicker-day--today'
-                          : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
+                      className={((): string => {
+                        const base =
+                          'w-full aspect-square flex items-center justify-center text-xs font-bold rounded-[4px] transition-all duration-200 cursor-pointer border-none';
+                        if (isSelectedDay(day)) {
+                          return `${base} bg-[#f2b705] text-[#0f2a44] font-black shadow-[0_0_8px_rgba(242,183,5,0.4)]`;
+                        }
+                        if (isTodayDay(day)) {
+                          return `${base} bg-[#0f2a44]/5 text-[#f2b705] font-black`;
+                        }
+                        return `${base} bg-transparent text-[#0f2a44] hover:bg-[#0f2a44]/5 hover:text-[#0f2a44]`;
+                      })()}
                     >
                       {day}
                     </button>
                   ) : (
-                    <div />
+                    <div className="w-full aspect-square" />
                   )}
                 </div>
               )

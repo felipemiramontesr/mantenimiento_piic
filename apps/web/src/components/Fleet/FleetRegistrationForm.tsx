@@ -26,6 +26,7 @@ import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
 import AuditJustificationModal from '../Common/AuditJustificationModal';
 import api from '../../api/client';
 import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
+import { predecirHologramaYEngomado } from '../../utils/fleetCompliance';
 import { UseFleetFormReturn, CatalogOption, CreateFleetUnit } from '../../types/fleet';
 
 /**
@@ -96,6 +97,7 @@ const getPronosticoArchon = (
   return result;
 };
 
+/* eslint-disable-next-line sonarjs/cognitive-complexity */
 const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   controller,
   onSuccess,
@@ -142,6 +144,37 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   );
 
   const { pronosticoText, pronosticoDateStr, isPronosticoReady } = getPronosticoArchon(formData);
+
+  // 🔱 Asistente Predictivo de Cumplimiento Ambiental (Hoy No Circula)
+  const [prediction, setPrediction] = React.useState<{
+    hologramaSugerido: string;
+    engomadoColor: string;
+    mesesVerificacion: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    const selectedAssetType = assetTypes.find((t) => t.id === formData.assetTypeId);
+    const assetTypeCode = selectedAssetType?.code || null;
+
+    if (formData.placas) {
+      const pred = predecirHologramaYEngomado(
+        formData.placas,
+        formData.year || null,
+        assetTypeCode
+      );
+      setPrediction(pred);
+
+      // Auto-completar el holograma únicamente si el usuario aún no lo ha seleccionado o está vacío
+      if (!formData.environmentalHologram) {
+        setFormData((prev) => ({
+          ...prev,
+          environmentalHologram: pred.hologramaSugerido,
+        }));
+      }
+    } else {
+      setPrediction(null);
+    }
+  }, [formData.placas, formData.year, formData.assetTypeId, assetTypes]);
 
   const handleConfirmDelete = async (reason: string): Promise<void> => {
     setIsProcessing(true);
@@ -199,7 +232,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   return (
     <form
       onSubmit={handleFormSubmit}
-      className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-40 space-y-8"
+      className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full pb-40 space-y-8"
     >
       <ArchonFeedbackBanner message={error || ''} type="error" onClear={resetError} />
 
@@ -256,7 +289,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   required
                   type="text"
                   placeholder="Ej: VEH-001"
-                  className="archon-input font-bold text-lg tracking-widest text-pinnacle-navy"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-bold text-lg tracking-widest text-[#0f2a44]"
                   value={formData.id}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, id: e.target.value })
@@ -282,7 +315,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 <input
                   type="text"
                   placeholder="Ej: XX-1234-A"
-                  className="archon-input uppercase font-mono"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none uppercase font-mono"
                   value={formData.placas ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, placas: e.target.value.toUpperCase() })
@@ -293,7 +326,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 <input
                   type="text"
                   placeholder="Ej: 3VW... (17 caracteres)"
-                  className="archon-input font-mono"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono"
                   value={formData.numeroSerie ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, numeroSerie: e.target.value })
@@ -357,7 +390,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 <input
                   type="text"
                   placeholder="Ej: POL-2024-XXXX"
-                  className="archon-input font-mono"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono"
                   value={formData.insurancePolicyNumber || ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, insurancePolicyNumber: e.target.value })
@@ -391,7 +424,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 <input
                   type="text"
                   placeholder="Ej: 123456789"
-                  className="archon-input font-mono"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono"
                   value={formData.circulationCardNumber || ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({ ...formData, circulationCardNumber: e.target.value })
@@ -443,6 +476,51 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   setFormData({ ...formData, environmentalHologram: val })
                 }
               />
+              {prediction && (
+                <div className="mt-2.5 p-3 rounded bg-[#0f2a44]/5 border border-[#0f2a44]/10 flex items-center justify-between text-xs transition-all duration-300">
+                  <div className="flex items-center gap-2.5">
+                    {/* Engomado Color Preview Badge */}
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-black/10 inline-block shrink-0 shadow-sm"
+                      style={{
+                        backgroundColor: ((): string => {
+                          const colors = {
+                            Amarillo: '#facc15',
+                            Rosa: '#ec4899',
+                            Rojo: '#ef4444',
+                            Verde: '#22c55e',
+                            Azul: '#3b82f6',
+                            Exento: '#10b981',
+                          };
+                          return colors[prediction.engomadoColor] || '#94a3b8';
+                        })(),
+                      }}
+                    />
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-[#0f2a44] tracking-wider">
+                        Calendario: {prediction.engomadoColor}
+                      </p>
+                      <p className="text-[9px] text-[#0f2a44]/60 font-bold uppercase tracking-wider">
+                        Verificación: {prediction.mesesVerificacion}
+                      </p>
+                    </div>
+                  </div>
+                  {formData.environmentalHologram !== prediction.hologramaSugerido && (
+                    <button
+                      type="button"
+                      onClick={(): void =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          environmentalHologram: prediction.hologramaSugerido,
+                        }))
+                      }
+                      className="text-[9px] font-black uppercase text-[#f2b705] hover:text-[#f2b705]/80 bg-transparent border-0 cursor-pointer p-0 underline tracking-wider"
+                    >
+                      Usar Sugerido (H-{prediction.hologramaSugerido})
+                    </button>
+                  )}
+                </div>
+              )}
             </ArchonField>
 
             {/* 💰 GESTIÓN FINANCIERA */}
@@ -452,7 +530,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   <input
                     type="text"
                     placeholder="8019-XXX-XXX"
-                    className="archon-input font-mono"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono"
                     value={formData.accountingAccount || ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -513,7 +591,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   min={1990}
                   max={2030}
                   placeholder="Ej: 2024"
-                  className="archon-input font-mono"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono"
                   value={formData.year ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({
@@ -595,7 +673,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="number"
                     step="0.1"
                     placeholder="Ej: 1500.0"
-                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-14 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.capacidadCarga ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -618,7 +696,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="number"
                     step="0.1"
                     placeholder="Ej: 80.0"
-                    className="archon-input font-mono w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none text-pinnacle-yellow font-bold placeholder:text-pinnacle-navy/20 placeholder:font-normal"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-14 rounded-[4px] text-[13px] font-bold text-[#f2b705] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-bold placeholder:text-[#0f2a44]/20 placeholder:font-normal"
                     value={formData.fuelTankCapacity ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -645,7 +723,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   <input
                     type="text"
                     placeholder="Ej: 265/65 R17"
-                    className="archon-input font-mono"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono"
                     value={formData.tireSpec ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -682,7 +760,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             <ArchonField label="Notas Técnicas de Fábrica" icon={FileText}>
               <textarea
                 placeholder="Ingresar especificaciones críticas de este activo..."
-                className="archon-input min-h-[100px] p-4 resize-none leading-relaxed"
+                className="w-full bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none min-h-[100px] py-4 resize-none leading-relaxed"
                 value={formData.description ?? ''}
                 onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                   setFormData({ ...formData, description: e.target.value })
@@ -717,7 +795,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="number"
                     step="0.1"
                     placeholder="Ej: 45000"
-                    className="archon-input font-mono text-navy-800 w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-14 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.odometer ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -748,7 +826,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   <input
                     type="number"
                     placeholder="Ej: 90"
-                    className="archon-input font-mono text-navy-800 w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-16 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.maintIntervalDays ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -772,7 +850,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   <input
                     type="number"
                     placeholder="Ej: 5000"
-                    className="archon-input font-mono text-navy-800 w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-16 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.maintIntervalKm ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -813,7 +891,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="number"
                     step="0.1"
                     placeholder="Ej: 40000"
-                    className="archon-input font-mono text-navy-800 w-full pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-14 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.lastServiceReading ?? ''}
                     onChange={(
                       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -857,7 +935,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   type="number"
                   step="0.1"
                   placeholder="Ej: 50.5"
-                  className="archon-input font-mono text-emerald-600 font-bold w-full pr-16 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-pinnacle-navy/20 placeholder:font-normal"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-16 rounded-[4px] text-[13px] font-bold text-emerald-600 transition-all duration-300 placeholder:text-[#0f2a44]/20 outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-bold placeholder:text-[#0f2a44]/20 placeholder:font-normal"
                   value={formData.dailyUsageAvg ?? ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                     setFormData({

@@ -74,3 +74,80 @@ export const checkHoyNoCircula = (
 
   return { isRestricted: false, reason: 'Circula sin restricciones', color: 'emerald' };
 };
+
+export const predecirHologramaYEngomado = (
+  placas: string | null,
+  year: number | null,
+  assetTypeCode: string | null
+): { hologramaSugerido: string; engomadoColor: string; mesesVerificacion: string } => {
+  if (!placas) {
+    return {
+      hologramaSugerido: '0',
+      engomadoColor: 'Gris',
+      mesesVerificacion: 'Captura placas...',
+    };
+  }
+
+  const cleanPlaca = placas.toUpperCase().trim();
+
+  // 1. Detección de Eléctricos / Híbridos (Ecológicos)
+  const esEcologico =
+    cleanPlaca.startsWith('E') || assetTypeCode === 'AT_ELEC' || cleanPlaca.includes('ECOL');
+  if (esEcologico) {
+    return {
+      hologramaSugerido: 'Exento',
+      engomadoColor: 'Exento',
+      mesesVerificacion: 'No aplica (Exento)',
+    };
+  }
+
+  // 2. Detección de Foráneos
+  const esForaneo =
+    cleanPlaca.includes('FOR') ||
+    cleanPlaca.startsWith('F') ||
+    (cleanPlaca.length > 2 && !/\d/.test(cleanPlaca));
+  if (esForaneo) {
+    return {
+      hologramaSugerido: 'Foráneo',
+      engomadoColor: 'Foráneo',
+      mesesVerificacion: 'No aplica (Foráneo)',
+    };
+  }
+
+  // 3. Obtener el último dígito para deducir Engomado y Calendario
+  const lastDigitMatch = cleanPlaca.match(/\d(?=[^\d]*$)/);
+  let lastDigit = 9; // Fallback
+  if (lastDigitMatch) {
+    lastDigit = parseInt(lastDigitMatch[0], 10);
+  }
+
+  const calendarioEngomado: Record<number, { color: string; meses: string }> = {
+    5: { color: 'Amarillo', meses: 'Julio / Agosto' },
+    6: { color: 'Amarillo', meses: 'Julio / Agosto' },
+    7: { color: 'Rosa', meses: 'Agosto / Septiembre' },
+    8: { color: 'Rosa', meses: 'Agosto / Septiembre' },
+    3: { color: 'Rojo', meses: 'Septiembre / Octubre' },
+    4: { color: 'Rojo', meses: 'Septiembre / Octubre' },
+    1: { color: 'Verde', meses: 'Octubre / Noviembre' },
+    2: { color: 'Verde', meses: 'Octubre / Noviembre' },
+    9: { color: 'Azul', meses: 'Noviembre / Diciembre' },
+    0: { color: 'Azul', meses: 'Noviembre / Diciembre' },
+  };
+
+  const infoPlaca = calendarioEngomado[lastDigit] || { color: 'Gris', meses: 'No determinado' };
+
+  // 4. Pre-selección heurística del Holograma basada en el Año
+  let hologramaSugerido = '0';
+  if (year) {
+    if (year >= 2023) hologramaSugerido = '00';
+    else if (year >= 2018) hologramaSugerido = '0';
+    else if (year >= 2016) hologramaSugerido = '1';
+    else hologramaSugerido = '2';
+  }
+
+  return {
+    hologramaSugerido,
+    engomadoColor: infoPlaca.color,
+    mesesVerificacion: infoPlaca.meses,
+  };
+};

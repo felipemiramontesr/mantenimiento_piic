@@ -267,7 +267,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         data-testid="registration-form"
         name="registration-form"
         onSubmit={handleFormSubmit}
-        className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-40 space-y-8"
+        className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full pb-40 space-y-8"
       >
         {error && (
           <div

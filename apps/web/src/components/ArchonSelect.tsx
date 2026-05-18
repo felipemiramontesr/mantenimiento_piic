@@ -91,9 +91,11 @@ export default function ArchonSelect({
     <div className="relative w-full" ref={containerRef}>
       {/* Trigger Area */}
       <div
-        className={`archon-select flex items-center justify-between transition-all duration-300 rounded-[4px] ${
-          disabled ? 'opacity-40 cursor-not-allowed bg-[rgba(15,42,68,0.05)]' : 'cursor-pointer'
-        } ${isOpen ? 'border-b-[#f2b705] bg-white shadow-sm' : ''}`}
+        className={`w-full h-11 bg-[#0f2a44]/5 px-4 flex items-center justify-between transition-all duration-300 rounded-[4px] ${
+          disabled
+            ? 'opacity-40 cursor-not-allowed bg-[rgba(15,42,68,0.05)]'
+            : 'cursor-pointer hover:bg-[#0f2a44]/8'
+        } ${isOpen ? 'border-b-[#f2b705] bg-white shadow-[0_4px_12px_rgba(15,42,68,0.05)]' : ''}`}
         onClick={(): void => {
           if (!disabled) setIsOpen(!isOpen);
         }}

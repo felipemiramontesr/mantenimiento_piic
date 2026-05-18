@@ -132,7 +132,7 @@ const SovereignHeader: React.FC = () => {
                 }
               }}
               style={{
-                border: '1px solid rgba(15, 42, 68, 0.2)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
                 borderRadius: '4px',
               }}
               className="w-full pl-9 pr-9 py-3 text-[11px] font-bold text-[#0f2a44] bg-white focus:outline-none placeholder-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
