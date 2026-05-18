@@ -11,11 +11,8 @@ export default defineConfig({
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
     globalTeardown: './src/test/globalTeardown.ts',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    pool: 'threads',
+    maxWorkers: process.env.GITHUB_ACTIONS ? 1 : undefined,
     coverage: {
       provider: 'v8',
       all: true,

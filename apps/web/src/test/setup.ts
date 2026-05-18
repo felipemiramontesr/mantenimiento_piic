@@ -21,7 +21,13 @@ if (typeof window !== 'undefined' && !window.HTMLElement.prototype.scrollIntoVie
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+afterAll(() => {
+  server.close();
+  // 🔱 Memory Hardening: Force V8 Garbage Collection in forks to reclaim JSDOM allocations
+  if (typeof global.gc === 'function') {
+    global.gc();
+  }
+});
 
 // 🔱 React Router Noise Shield (v.7.0.0 Readiness)
 /* eslint-disable no-console */
@@ -35,16 +41,25 @@ console.warn = (...args: any[]): void => {
 /* eslint-enable no-console */
 
 // 🔱 Motion Suppression (v.1.0.0 CI Stability)
-// Use a Proxy to handle any motion[tag] automatically with forwardRef support
+// Use a Proxy with cache to handle any motion[tag] automatically with forwardRef support and avoid memory allocation leaks
+const mockMotionCache = new Map<string, any>();
+
 vi.mock('framer-motion', () => ({
   motion: new Proxy(
     {},
     {
-      get: (_target, tag: string): any =>
-        React.forwardRef(
-          ({ children, ...props }: any, ref: any): React.ReactElement =>
-            React.createElement(tag, { ...props, ref }, children)
-        ),
+      get: (_target, tag: string): any => {
+        if (!mockMotionCache.has(tag)) {
+          mockMotionCache.set(
+            tag,
+            React.forwardRef(
+              ({ children, ...props }: any, ref: any): React.ReactElement =>
+                React.createElement(tag, { ...props, ref }, children)
+            )
+          );
+        }
+        return mockMotionCache.get(tag);
+      },
     }
   ),
   AnimatePresence: ({ children }: any): any => children,
