@@ -1,13 +1,9 @@
+import './polyfills';
 /* eslint-disable @typescript-eslint/no-explicit-any, react/display-name */
 import '@testing-library/jest-dom';
 import React from 'react';
 import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import server from './server';
-
-// 🔱 Polyfills for MSW/Axios (v.17.0.0 CI fix)
-if (typeof global.ProgressEvent === 'undefined') {
-  (global as any).ProgressEvent = class ProgressEvent extends Event {};
-}
 
 // 🔱 scrollIntoView Polyfill for JSDOM
 if (typeof window !== 'undefined' && !window.HTMLElement.prototype.scrollIntoView) {
@@ -23,6 +19,11 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => {
   server.close();
+  // 🔱 Memory Hardening: Clear JSDOM body/head to release native DOM node references
+  if (typeof document !== 'undefined') {
+    document.body.innerHTML = '';
+    document.head.innerHTML = '';
+  }
   // 🔱 Memory Hardening: Force V8 Garbage Collection in forks to reclaim JSDOM allocations
   if (typeof global.gc === 'function') {
     global.gc();

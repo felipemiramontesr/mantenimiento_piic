@@ -1,5 +1,6 @@
 /* eslint-disable */
 import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { redirectUserToLogin } from './navigation';
 
 const isProduction = import.meta.env.PROD;
 const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
@@ -35,11 +36,11 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig): InternalAxios
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
+
   // Update Telemetry
   currentTelemetry.lastEndpoint = config.url || 'NONE';
   (config as any)._startTime = Date.now();
-  
+
   return config;
 });
 
@@ -90,7 +91,7 @@ api.interceptors.response.use(
         });
       }
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      redirectUserToLogin();
     }
     return Promise.reject(error);
   }

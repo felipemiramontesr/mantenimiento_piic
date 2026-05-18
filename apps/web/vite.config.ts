@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    clearMocks: true,
+    mockReset: true,
     reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',

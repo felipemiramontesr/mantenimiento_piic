@@ -1,5 +1,11 @@
+/**
+ * @vitest-environment node
+ */
 import { describe, it, expect } from 'vitest';
-import { calculateMaintForecast, formatDate as formatDatePredictive } from './fleetPredictiveEngine';
+import {
+  calculateMaintForecast,
+  formatDate as formatDatePredictive,
+} from './fleetPredictiveEngine';
 
 /**
  * 🔱 Archon Test Suite: FleetPredictiveEngine
@@ -87,7 +93,7 @@ describe('FleetPredictiveEngine - Mathematical Integrity', () => {
     const lastDate = new Date();
     lastDate.setDate(lastDate.getDate() - 300); // Very overdue
     const result = calculateMaintForecast(180, 10000, 10, 20000, 5000, lastDate);
-    
+
     expect(result?.isOverdue).toBe(true);
     expect(result?.overdueIntensity).toBeGreaterThan(0);
     expect(result?.overdueIntensity).toBeLessThanOrEqual(1);
@@ -95,7 +101,14 @@ describe('FleetPredictiveEngine - Mathematical Integrity', () => {
 
   it('should handle NaN values gracefully', () => {
     // @ts-expect-error - Testing NaN inputs
-    const result = calculateMaintForecast("invalid", "invalid", "invalid", "invalid", "invalid", new Date());
+    const result = calculateMaintForecast(
+      'invalid',
+      'invalid',
+      'invalid',
+      'invalid',
+      'invalid',
+      new Date()
+    );
     expect(result?.kmParaServicio).toBe(0);
     expect(result?.nextServiceKm).toBe(0);
   });
@@ -104,7 +117,7 @@ describe('FleetPredictiveEngine - Mathematical Integrity', () => {
     expect(formatDatePredictive(null)).toBe('---');
     expect(formatDatePredictive(undefined)).toBe('---');
     expect(formatDatePredictive(new Date('invalid'))).toBe('---');
-    
+
     const validDate = new Date('2026-05-04T00:00:00Z');
     const formatted = formatDatePredictive(validDate);
     expect(formatted).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);

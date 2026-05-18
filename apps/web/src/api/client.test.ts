@@ -1,25 +1,18 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
 import api from './client';
+import { redirectUserToLogin } from './navigation';
+
+// 🔱 Mock the Navigation Bridge to prevent JSDOM proxy context crashes
+vi.mock('./navigation', () => ({
+  redirectUserToLogin: vi.fn(),
+}));
 
 describe('Axios API Client (ARCHON CORE)', () => {
-  const originalLocation = window.location;
-
   beforeEach(() => {
     vi.clearAllMocks();
     Storage.prototype.getItem = vi.fn();
     Storage.prototype.removeItem = vi.fn();
-
-    // Bypass strict TS window location safety explicitly for test env
-    // @ts-expect-error Mocking DOM for tests
-    delete window.location;
-    // @ts-expect-error Mocking DOM for tests
-    window.location = { ...originalLocation, href: '' };
-  });
-
-  afterEach(() => {
-    // @ts-expect-error Mocking DOM for tests
-    window.location = originalLocation;
   });
 
   it('should add Authorization header if token exists in localStorage', async () => {
@@ -54,7 +47,7 @@ describe('Axios API Client (ARCHON CORE)', () => {
     await expect(responseInterceptorError(errorWith401)).rejects.toEqual(errorWith401);
 
     expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
-    expect(window.location.href).toBe('/login');
+    expect(redirectUserToLogin).toHaveBeenCalled();
   });
 
   it('should just reject if error is not 401', async () => {
@@ -66,6 +59,6 @@ describe('Axios API Client (ARCHON CORE)', () => {
     await expect(responseInterceptorError(errorWith500)).rejects.toEqual(errorWith500);
 
     expect(localStorage.removeItem).not.toHaveBeenCalled();
-    expect(window.location.href).not.toBe('/login');
+    expect(redirectUserToLogin).not.toHaveBeenCalled();
   });
 });

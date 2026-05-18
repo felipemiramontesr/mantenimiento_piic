@@ -61,7 +61,7 @@ describe('UserContext (Silk Hydration Suite)', () => {
     vi.mocked(api.get).mockImplementation(
       () =>
         new Promise((resolve) => {
-          setTimeout(() => resolve({ data: { success: true, data: [] } }), 100);
+          setTimeout(() => resolve({ data: { success: true, data: [] } }), 2000);
         })
     );
 
