@@ -76,6 +76,7 @@ export interface FleetUnit {
   insurancePolicyNumber?: string | null;
   insuranceCompany?: string | null;
   insuranceCompanyId: number | null;
+  insuranceCost?: number | null;
   lastEnvironmentalVerification?: string | null;
   lastMechanicalVerification?: string | null;
   environmentalHologram?: string | null;
@@ -128,6 +129,7 @@ export interface FleetUnit {
   color?: string | null;
   nextServiceReading?: number | null;
   lastFuelLevel?: number;
+  initialFuelLevel?: number;
 }
 
 export interface CreateFleetUnit {
@@ -169,6 +171,7 @@ export interface CreateFleetUnit {
   insuranceExpiryDate?: string;
   insurancePolicyNumber?: string;
   insuranceCompanyId?: number | null;
+  insuranceCost?: number | null;
   lastEnvironmentalVerification?: string;
   lastMechanicalVerification?: string;
   environmentalHologram?: string;
@@ -184,6 +187,7 @@ export interface CreateFleetUnit {
   dailyUsageAvg?: number | null;
   insurance_company_id?: number | null;
   lastFuelLevel?: number;
+  initialFuelLevel?: number;
 }
 
 export interface UseFleetFormReturn {
@@ -216,6 +220,7 @@ export interface UseFleetFormReturn {
   maintenanceCenters: CatalogOption[];
   insuranceCompanies: CatalogOption[];
   routeOrigins: CatalogOption[];
+  environmentalHolograms: CatalogOption[];
   setFormData: React.Dispatch<React.SetStateAction<CreateFleetUnit>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   setRegistrationSuccess: React.Dispatch<React.SetStateAction<boolean>>;
@@ -225,4 +230,5 @@ export interface UseFleetFormReturn {
   handleSubmit: (e: React.FormEvent, onSuccess?: () => Promise<void>) => Promise<void>;
   resetForm: () => void;
   setSelectedFiles: (files: File[]) => Promise<void>;
+  hydrateEditUnit: (mappedData: CreateFleetUnit) => Promise<void>;
 }

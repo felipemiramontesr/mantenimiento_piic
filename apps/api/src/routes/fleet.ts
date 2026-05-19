@@ -37,6 +37,8 @@ const createFleetSchema = z.object({
   capacidadCarga: z.number().min(0).optional(),
   fuelTankCapacity: z.number().min(0),
   odometer: z.number().min(0).default(0),
+  initialFuelLevel: z.number().min(0).max(100).default(100),
+  lastFuelLevel: z.number().min(0).max(100).optional(),
   maintenanceCenterId: z.number().int().optional().nullable(),
   protocolStartDate: z.string().optional().nullable(),
   tarjetaCirculacion: z.string().max(100).optional(),
@@ -62,6 +64,7 @@ const createFleetSchema = z.object({
   insuranceCompanyId: z.number().int().optional().nullable(),
   environmentalHologram: z.string().max(10).optional().nullable(),
   monthlyLeasePayment: z.number().min(0).default(0),
+  insuranceCost: z.number().min(0).optional().nullable().default(0),
 });
 
 const updateFleetSchema = createFleetSchema.partial();

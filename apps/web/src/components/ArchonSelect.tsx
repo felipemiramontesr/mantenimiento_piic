@@ -108,8 +108,8 @@ export default function ArchonSelect({
             <Icon size={16} className={isOpen ? 'text-[#f2b705]' : 'text-[#0f2a44] opacity-40'} />
           )}
           <span
-            className={`truncate ${
-              !value ? 'text-[#0f2a44] opacity-20 font-medium' : 'text-[#0f2a44]'
+            className={`truncate text-[13px] font-bold ${
+              !value ? 'text-[#0f2a44] opacity-30' : 'text-[#0f2a44]'
             }`}
           >
             {currentLabel()}

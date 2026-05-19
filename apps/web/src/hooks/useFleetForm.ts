@@ -48,6 +48,7 @@ interface CatalogsState {
   maintenanceCenters: CatalogOption[];
   insuranceCompanies: CatalogOption[];
   routeOrigins: CatalogOption[];
+  environmentalHolograms: CatalogOption[];
 }
 
 export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFormReturn {
@@ -83,6 +84,7 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     maintenanceCenters: [],
     insuranceCompanies: [],
     routeOrigins: [],
+    environmentalHolograms: [],
   });
 
   const resetError = useCallback(() => setError(null), []);
@@ -128,7 +130,7 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     // 🛡️ EAGER LOCK: Prevent overlapping hydration attempts immediately
     if (hasHydratedRef.current || isLoading) return;
     hasHydratedRef.current = true;
-    
+
     setIsLoading(true);
 
     try {
@@ -154,6 +156,7 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
         maintCentersRes,
         insuranceRes,
         originsRes,
+        environmentalRes,
       ] = await Promise.all([
         api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
           `/catalogs/ASSET_TYPE?_cb=${ts}`
@@ -215,6 +218,9 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
         api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
           `/catalogs/ROUTE_ORIGIN?_cb=${ts}`
         ),
+        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+          `/catalogs/ENVIRONMENTAL_HOLOGRAM?_cb=${ts}`
+        ),
       ]);
 
       const assetList = extractCatalogData(asset);
@@ -245,15 +251,17 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
             maintenanceCenters: extractCatalogData(maintCentersRes),
             insuranceCompanies: extractCatalogData(insuranceRes),
             routeOrigins: extractCatalogData(originsRes),
+            environmentalHolograms: extractCatalogData(environmentalRes),
             marcas:
               brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
           })
         );
 
         if (assetList.length > 0) {
-          setFormData(
-            (prev: CreateFleetUnit): CreateFleetUnit => ({ ...prev, assetTypeId: assetList[0].id })
-          );
+          setFormData((prev: CreateFleetUnit): CreateFleetUnit => {
+            if (prev.assetTypeId) return prev;
+            return { ...prev, assetTypeId: assetList[0].id };
+          });
         }
       }
     } catch (err) {
@@ -273,6 +281,7 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
   }, [hydrate, shouldHydrate]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return (): void => {
       isMountedRef.current = false;
     };
@@ -375,6 +384,40 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     setError(null);
   };
 
+  const hydrateEditUnit = async (mappedData: CreateFleetUnit): Promise<void> => {
+    setIsLoading(true);
+    setFormData(mappedData);
+
+    const promises: Promise<CatalogOption[]>[] = [];
+
+    if (mappedData.assetTypeId) {
+      promises.push(fetchCategory('BRAND', mappedData.assetTypeId));
+    } else {
+      promises.push(Promise.resolve([]));
+    }
+
+    if (mappedData.brandId) {
+      promises.push(fetchCategory('MODEL', mappedData.brandId));
+    } else {
+      promises.push(Promise.resolve([]));
+    }
+
+    try {
+      const [brands, models] = await Promise.all(promises);
+      setCatalogs(
+        (prev: CatalogsState): CatalogsState => ({
+          ...prev,
+          marcas: brands.length > 0 ? brands : (EMERGENCY_BRANDS as CatalogOption[]),
+          modelos: models,
+        })
+      );
+    } catch (err) {
+      console.error('[Archon Alpha] Edit Unit Hydration Cascade Failure:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     ...catalogs,
     formData,
@@ -382,6 +425,18 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     isSubmitting,
     isLoading,
     registrationSuccess,
+    assetTypes: catalogs.assetTypes,
+    fuelTypes: catalogs.fuelTypes,
+    driveTypes: catalogs.driveTypes,
+    transmissionTypes: catalogs.transmissionTypes,
+    marcas: catalogs.marcas,
+    modelos: catalogs.modelos,
+    owners: catalogs.owners,
+    complianceStatuses: catalogs.complianceStatuses,
+    colors: catalogs.colors,
+    maintenanceCenters: catalogs.maintenanceCenters,
+    insuranceCompanies: catalogs.insuranceCompanies,
+    routeOrigins: catalogs.routeOrigins,
     freqTime: catalogs.freqTime,
     freqUsage: catalogs.freqUsage,
     departments: catalogs.departments,
@@ -392,6 +447,7 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     filterBrands: catalogs.filterBrands,
     engineTypes: catalogs.engineTypes,
     terrainTypes: catalogs.terrainTypes,
+    environmentalHolograms: catalogs.environmentalHolograms,
     setFormData,
     setRegistrationSuccess,
     setError,
@@ -401,6 +457,7 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     handleSubmit,
     resetError,
     resetForm,
+    hydrateEditUnit,
     setSelectedFiles: async (files: File[]): Promise<void> => {
       const base64Files = await Promise.all(
         files.map(

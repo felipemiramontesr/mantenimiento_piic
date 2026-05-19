@@ -41,6 +41,8 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   lubeType: '',
   filterBrand: '',
   description: '',
+  initialFuelLevel: 100,
+  lastFuelLevel: 100,
   // 🔱 Sovereign Asset Management (v.39.0.0)
   ownerId: null,
   complianceStatusId: null,
@@ -54,6 +56,7 @@ export const getInitialFleetForm = (): CreateFleetUnit => ({
   environmentalHologram: '',
   circulationCardNumber: '',
   monthlyLeasePayment: undefined,
+  insuranceCost: undefined,
   // 🔱 Archon Intelligence (v.18.0.0)
   maintenanceTimeFreqId: null,
   maintenanceUsageFreqId: null,

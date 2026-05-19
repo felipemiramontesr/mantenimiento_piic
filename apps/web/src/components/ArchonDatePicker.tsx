@@ -131,7 +131,7 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
         onClick={(): void => setIsOpen((prev) => !prev)}
         className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold transition-all duration-300 outline-none flex items-center justify-between cursor-pointer text-left"
         style={{
-          color: value ? '#0f2a44' : '#94a3b8',
+          color: value ? '#0f2a44' : 'rgba(15, 42, 68, 0.3)',
         }}
       >
         <span className="font-sans text-[13px] font-bold">

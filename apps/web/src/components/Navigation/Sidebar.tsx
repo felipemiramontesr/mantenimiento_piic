@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       {/* 🔘 COLLAPSE TRIGGER */}
       <button
         onClick={onToggle}
-        className="absolute -right-7 top-1/2 -translate-y-1/2 w-7 h-12 bg-pinnacle-yellow text-pinnacle-navy rounded-r-[4px] flex items-center justify-center shadow-lg z-[100] cursor-pointer hover:translate-x-1 transition-all"
+        className="absolute -right-7 top-1/2 -translate-y-1/2 w-7 h-12 bg-pinnacle-yellow text-pinnacle-navy rounded-r-[4px] flex items-center justify-center shadow-lg z-[100] cursor-pointer hover:brightness-110 transition-all duration-200"
       >
         {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
@@ -119,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           ${isCollapsed ? 'justify-center p-0' : 'justify-start px-4 gap-3'}
         `}
       >
-        <div className="w-8 h-8 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10">
+        <div className="w-10 h-10 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10">
           {fullImageUrl ? (
             <img
               src={fullImageUrl}
@@ -131,7 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               }}
             />
           ) : (
-            <UserIcon size={16} />
+            <UserIcon size={20} />
           )}
         </div>
         <div
@@ -220,10 +220,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <button
               onClick={goToSettings}
               className={`
-                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all cursor-pointer shadow-md border-none outline-none overflow-hidden
+                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
                 ${
                   location.pathname === '/dashboard/settings'
-                    ? 'bg-white text-pinnacle-navy'
+                    ? 'bg-white text-pinnacle-navy hover:brightness-95'
                     : 'bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110'
                 }
                 ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
@@ -245,8 +245,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <button
               onClick={logout}
               className={`
-                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all cursor-pointer shadow-md border-none outline-none overflow-hidden
-                bg-pinnacle-yellow text-pinnacle-navy
+                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
+                bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110
                 ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
               `}
               title="Cerrar Sesión"

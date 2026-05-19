@@ -49,6 +49,8 @@ const mapOperationalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
   lastServiceDate: unit.lastServiceDate || undefined,
   lastServiceReading: unit.lastServiceReading || 0,
   dailyUsageAvg: unit.dailyUsageAvg || undefined,
+  initialFuelLevel: unit.initialFuelLevel ?? 100,
+  lastFuelLevel: unit.lastFuelLevel ?? 100,
 });
 
 const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
@@ -60,6 +62,7 @@ const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
   insuranceCompanyId: unit.insuranceCompanyId || undefined,
   environmentalHologram: unit.environmentalHologram || undefined,
   monthlyLeasePayment: unit.monthlyLeasePayment || 0,
+  insuranceCost: unit.insuranceCost || 0,
   ownerId: unit.ownerId || undefined,
   complianceStatusId: unit.complianceStatusId || undefined,
 });
@@ -115,9 +118,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
       setRegistrationSuccess(false);
 
       // 🔱 HYDRATE CONTROLLER
-      fleetController.setFormData(mapUnitToFormData(fullUnit));
-      if (fullUnit.assetTypeId) fleetController.handleAssetTypeChange(fullUnit.assetTypeId);
-      if (fullUnit.brandId) fleetController.handleMarcaChange(fullUnit.brandId);
+      await fleetController.hydrateEditUnit(mapUnitToFormData(fullUnit));
 
       if (panelRef.current?.scrollIntoView) {
         setTimeout((): void => {

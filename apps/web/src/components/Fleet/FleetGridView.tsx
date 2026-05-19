@@ -187,11 +187,29 @@ const OdometerCluster = ({
     <div className="flex items-center gap-4 pt-2 border-t border-slate-100 w-full justify-center">
       <div className="flex flex-col items-center">
         <span className="text-[8px] font-black text-slate-400 uppercase">Carga</span>
-        <span className="text-[10px] font-black text-navy-800">{carga} KG</span>
+        <span className="text-[10px] font-black text-navy-800">
+          {Number(carga || 0).toLocaleString('en-US')} KG
+        </span>
       </div>
       <div className="flex flex-col items-center">
         <span className="text-[8px] font-black text-slate-400 uppercase">Tanque</span>
-        <span className="text-[10px] font-black text-navy-800">{tanque} L</span>
+        <span className="text-[10px] font-black text-navy-800">
+          {(() => {
+            const percent =
+              unit.lastFuelLevel !== undefined && unit.lastFuelLevel !== null
+                ? Number(unit.lastFuelLevel)
+                : 100;
+            const cap = Number(tanque || 0);
+            const currentLiters = (percent / 100) * cap;
+            return `${currentLiters.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} / ${cap.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} L`;
+          })()}
+        </span>
       </div>
     </div>
   </div>
@@ -627,12 +645,13 @@ const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: 
 
   if (foundConfig) {
     const val = u[foundConfig.key];
-    const formattedValue = foundConfig.type === 'string'
-      ? String(val)
-      : `${Number(val).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}${foundConfig.suffix || ''}`;
+    const formattedValue =
+      foundConfig.type === 'string'
+        ? String(val)
+        : `${Number(val).toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}${foundConfig.suffix || ''}`;
 
     return { label: foundConfig.label, value: formattedValue };
   }
@@ -839,7 +858,7 @@ export const FleetGridView = ({
           return numStr.includes(term) || formattedStr.toLowerCase().includes(term);
         }
       });
-      
+
       const matchesId = u.id && u.id.toLowerCase().includes(term);
       const matchesYear = u.year && String(u.year).includes(term);
       return matchesId || matchesYear || matchesKmPara || matchesKey;
@@ -881,7 +900,11 @@ export const FleetGridView = ({
         loading={loading}
         loadingMessage="Sincronizando Activos..."
         data={filteredUnits}
-        emptyMessage={searchTerm ? `Ningún activo coincide con: "${searchTerm.toUpperCase()}"` : "No hay registros disponibles-"}
+        emptyMessage={
+          searchTerm
+            ? `Ningún activo coincide con: "${searchTerm.toUpperCase()}"`
+            : 'No hay registros disponibles-'
+        }
         headers={headers}
         onSort={(key): void => {
           const field = key as 'unidad' | 'programacion' | 'pronostico';

@@ -33,8 +33,11 @@ export interface FleetUnit extends RowDataPacket {
   images: string | null;
   circulationCardNumber?: string | null;
   environmentalHologram?: string | null;
+  insuranceCost?: number | null;
   dailyUsageAvg?: number;
   healthScore?: number;
+  initialFuelLevel?: number;
+  lastFuelLevel?: number;
 }
 
 export interface UnitHealth {

@@ -453,7 +453,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           </div>
         </div>
 
-        <div className="archon-grid-2-sovereign">
+        <div className="archon-grid-2-sovereign mt-5 pt-0 border-t border-pinnacle-navy/5">
           <div className="flex gap-4">
             {editingUser && (
               <button
@@ -462,27 +462,27 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   setAuditAction('DELETE');
                   setIsAuditModalOpen(true);
                 }}
-                className="btn-sentinel-red"
+                className="btn-sentinel-red w-full"
               >
                 <Trash2 size={16} /> Eliminar Personal
               </button>
             )}
           </div>
-          <div className="flex items-center justify-end gap-6">
+          <div className="grid grid-cols-2 gap-4 w-full">
             <button
               type="button"
               onClick={(): void => {
                 setEditingUser(null);
                 setActivePanel('DIRECTORY');
               }}
-              className="btn-sentinel-red"
+              className="btn-sentinel-red w-full"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !canSubmit}
-              className={`btn-sentinel-emerald ${
+              className={`btn-sentinel-emerald w-full ${
                 !canSubmit ? 'opacity-50 grayscale cursor-not-allowed' : ''
               }`}
             >

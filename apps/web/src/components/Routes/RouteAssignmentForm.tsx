@@ -63,27 +63,33 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-4">
       <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-2">
-        <div className="archon-grid-2 gap-8">
-          {/* COLUMNA 1: IDENTIDAD Y MISIÓN */}
-          <div className="card-archon-sovereign p-6 space-y-4 bg-white [--card-accent:#0f2a44]">
-            <RouteIdentityPanel
-              formData={formData}
-              updateForm={updateForm}
-              isEdit={isEdit}
-              isFinished={isFinished}
-              availableUnits={availableUnits}
-              operatorOptions={operatorOptions}
-              selectedUnitData={selectedUnitData}
-            />
-            <RouteMissionPanel
-              formData={formData}
-              updateForm={updateForm}
-              isEdit={isEdit}
-              origins={origins}
-            />
+        <div className="archon-grid-2-sovereign items-stretch">
+          {/* PANEL 1: REGISTRO DE DESPACHO (Fase I & II) */}
+          <div className="card-archon-sovereign p-8 space-y-8 bg-white [--card-accent:#0f2a44] flex flex-col justify-between">
+            <div className="space-y-8">
+              <RouteIdentityPanel
+                formData={formData}
+                updateForm={updateForm}
+                isEdit={isEdit}
+                isFinished={isFinished}
+                availableUnits={availableUnits}
+                operatorOptions={operatorOptions}
+                selectedUnitData={selectedUnitData}
+              />
+              <div className="pt-6 border-t border-[#0f2a44]/5">
+                <RouteMissionPanel
+                  formData={formData}
+                  updateForm={updateForm}
+                  isEdit={isEdit}
+                  origins={origins}
+                />
+              </div>
+            </div>
+          </div>
 
-            {/* FASE III: TELEMETRÍA - Integrated in left panel */}
-            <div className="pt-4 border-t border-slate-100">
+          {/* PANEL 2: TELEMETRÍA & CIERRE (Fase III & IV) */}
+          <div className="card-archon-sovereign p-8 space-y-8 bg-white [--card-accent:#0f2a44] flex flex-col justify-between">
+            <div className="space-y-8">
               <RouteTelemetryPanel
                 formData={formData}
                 updateForm={updateForm}
@@ -91,38 +97,21 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
                 tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
                 startReadingDisplay={startReadingDisplay}
               />
-            </div>
-          </div>
 
-          {/* COLUMNA 2: CIERRE Y EVIDENCIA */}
-          <div className="card-archon-sovereign p-6 space-y-4 bg-white [--card-accent:#f2b705]">
-            {isEdit ? (
-              <RouteClosurePanel
-                formData={formData}
-                updateForm={updateForm}
-                isEdit={isEdit}
-                tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full opacity-30 space-y-4 py-20">
-                <div className="bg-slate-100 p-6 rounded-full">
-                  <ChevronRight size={48} className="text-slate-400" />
-                </div>
-                <div className="text-center">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em]">
-                    Fase IV Bloqueada
-                  </h4>
-                  <p className="text-[8px] font-bold uppercase tracking-widest mt-1">
-                    Disponible solo en modo edición/retorno
-                  </p>
-                </div>
-              </div>
-            )}
+              {isEdit && (
+                <RouteClosurePanel
+                  formData={formData}
+                  updateForm={updateForm}
+                  isEdit={isEdit}
+                  tankCapacity={selectedUnitData?.fuelTankCapacity || 0}
+                />
+              )}
+            </div>
           </div>
         </div>
 
         {/* 🔱 SOVEREIGN GLOBAL ACTION BAR - Aligned with Axial Grid for Uniformity */}
-        <div className="archon-grid-2 gap-8 pt-8 mt-4 border-t border-pinnacle-navy/5">
+        <div className="archon-grid-2-sovereign pt-8 mt-4 border-t border-pinnacle-navy/5">
           {/* Left Panel Action: Danger Zone */}
           <div className="flex items-center">
             {isEdit && (

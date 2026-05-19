@@ -84,6 +84,7 @@ vi.mock('../../hooks/useFleetForm', () => ({
     maintenanceCenters: [] as CatalogOption[],
     insuranceCompanies: [] as CatalogOption[],
     routeOrigins: [] as CatalogOption[],
+    environmentalHolograms: [] as CatalogOption[],
   })),
 }));
 
@@ -136,6 +137,7 @@ describe('FleetModule Orchestrator', () => {
     maintenanceCenters: [] as CatalogOption[],
     insuranceCompanies: [] as CatalogOption[],
     routeOrigins: [] as CatalogOption[],
+    environmentalHolograms: [] as CatalogOption[],
   } as unknown as UseFleetFormReturn;
 
   const renderModule = (): RenderResult =>

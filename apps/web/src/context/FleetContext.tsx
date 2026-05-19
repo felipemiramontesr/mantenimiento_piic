@@ -4,12 +4,7 @@ import api from '../api/client';
 import { FleetUnit } from '../types/fleet';
 import useSilkHydration from '../hooks/useSilkHydration';
 
-import {
-  ASSET_TYPE_MAP,
-  FUEL_TYPE_MAP,
-  DEPT_MAP,
-  ENGINE_MAP,
-} from '../constants/fleetConstants';
+import { ASSET_TYPE_MAP, FUEL_TYPE_MAP, DEPT_MAP, ENGINE_MAP } from '../constants/fleetConstants';
 
 interface CategorizedMetrics {
   count: number;
@@ -66,11 +61,11 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     () =>
       (raw: unknown): FleetUnit[] => {
         // 🔱 SOVEREIGN DATA EXTRACTION (Resilience Tier)
-        const data = Array.isArray(raw) 
-          ? raw 
-          : (raw && typeof raw === 'object' && Array.isArray((raw as any).data)) 
-            ? (raw as any).data 
-            : [];
+        const data = Array.isArray(raw)
+          ? raw
+          : raw && typeof raw === 'object' && Array.isArray((raw as any).data)
+          ? (raw as any).data
+          : [];
 
         return data.map((item: unknown) => {
           const unit = item as Record<string, unknown>;
@@ -119,8 +114,26 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               'environmental_hologram'
             ) as string,
             insuranceExpiryDate: getVal('insuranceExpiryDate', 'insurance_expiry_date') as string,
-            capacidadCarga: getVal('capacidadCarga', 'capacidad_carga') as number,
-            fuelTankCapacity: getVal('fuelTankCapacity', 'fuel_tank_capacity') as number,
+            capacidadCarga:
+              getVal('capacidadCarga', 'capacidad_carga') != null
+                ? Number(getVal('capacidadCarga', 'capacidad_carga'))
+                : 0,
+            fuelTankCapacity:
+              getVal('fuelTankCapacity', 'fuel_tank_capacity') != null
+                ? Number(getVal('fuelTankCapacity', 'fuel_tank_capacity'))
+                : 0,
+            initialFuelLevel:
+              getVal('initialFuelLevel', 'initial_fuel_level') != null
+                ? Number(getVal('initialFuelLevel', 'initial_fuel_level'))
+                : getVal('initialFuelLevel', 'initialFuelLevel') != null
+                ? Number(getVal('initialFuelLevel', 'initialFuelLevel'))
+                : 0,
+            lastFuelLevel:
+              getVal('lastFuelLevel', 'last_fuel_level') != null
+                ? Number(getVal('lastFuelLevel', 'last_fuel_level'))
+                : getVal('lastFuelLevel', 'lastFuelLevel') != null
+                ? Number(getVal('lastFuelLevel', 'lastFuelLevel'))
+                : 0,
           };
 
           return {
@@ -157,11 +170,14 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   // 1. World Class Data Sourcing (DRY Protocol)
-  const unitsOptions = useMemo(() => ({
-    key: 'fleet_units',
-    endpoint: '/fleet',
-    transform: transformUnits,
-  }), [transformUnits]);
+  const unitsOptions = useMemo(
+    () => ({
+      key: 'fleet_units',
+      endpoint: '/fleet',
+      transform: transformUnits,
+    }),
+    [transformUnits]
+  );
 
   const {
     data: units,
@@ -171,13 +187,16 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     error: unitsError,
   } = useSilkHydration<FleetUnit>(unitsOptions);
 
-  const incidentsOptions = useMemo(() => ({
-    key: 'system_incidents',
-    endpoint: '/incidents',
-  }), []);
+  const incidentsOptions = useMemo(
+    () => ({
+      key: 'system_incidents',
+      endpoint: '/incidents',
+    }),
+    []
+  );
 
-  const { 
-    data: incidents, 
+  const {
+    data: incidents,
     refresh: refreshIncidents,
     error: incidentsError,
   } = useSilkHydration<{ status: string }>(incidentsOptions);
@@ -205,9 +224,30 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       globalMTTR: 0,
       globalAvailability: 0,
       categories: {
-        vehiculo: { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 },
-        maquinaria: { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 },
-        herramienta: { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 },
+        vehiculo: {
+          count: 0,
+          availablePercent: 0,
+          maintenanceCount: 0,
+          avgMtbf: 0,
+          avgMttr: 0,
+          backlog: 0,
+        },
+        maquinaria: {
+          count: 0,
+          availablePercent: 0,
+          maintenanceCount: 0,
+          avgMtbf: 0,
+          avgMttr: 0,
+          backlog: 0,
+        },
+        herramienta: {
+          count: 0,
+          availablePercent: 0,
+          maintenanceCount: 0,
+          avgMtbf: 0,
+          avgMttr: 0,
+          backlog: 0,
+        },
       },
     };
 
@@ -217,15 +257,23 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       const total = units.length;
-      
+
       const computeAverages = (subset: FleetUnit[]): CategorizedMetrics => {
         const count = subset.length;
-        if (count === 0) return { count: 0, availablePercent: 0, maintenanceCount: 0, avgMtbf: 0, avgMttr: 0, backlog: 0 };
+        if (count === 0)
+          return {
+            count: 0,
+            availablePercent: 0,
+            maintenanceCount: 0,
+            avgMtbf: 0,
+            avgMttr: 0,
+            backlog: 0,
+          };
 
-        const maintenanceCount = subset.filter((u) => 
+        const maintenanceCount = subset.filter((u) =>
           ['Mantenimiento', 'En Mantenimiento'].includes(String(u?.status || '').trim())
         ).length;
-        
+
         const availableCount = subset.filter((u) => {
           const s = String(u?.status || '').trim();
           return s === 'Disponible' || s === 'Asignada' || s === '';
@@ -236,13 +284,22 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const validMTBF = subset.filter((u) => (Number(u?.mtbfHours) || 0) > 0);
         const validMTTR = subset.filter((u) => (Number(u?.mttrHours) || 0) > 0);
 
-        const avgMtbf = validMTBF.length > 0
-          ? Math.round(validMTBF.reduce((acc, u) => acc + (Number(u.mtbfHours) || 0), 0) / validMTBF.length)
-          : 0;
+        const avgMtbf =
+          validMTBF.length > 0
+            ? Math.round(
+                validMTBF.reduce((acc, u) => acc + (Number(u.mtbfHours) || 0), 0) / validMTBF.length
+              )
+            : 0;
 
-        const avgMttr = validMTTR.length > 0
-          ? Number((validMTTR.reduce((acc, u) => acc + (Number(u.mttrHours) || 0), 0) / validMTTR.length).toFixed(1))
-          : 0;
+        const avgMttr =
+          validMTTR.length > 0
+            ? Number(
+                (
+                  validMTTR.reduce((acc, u) => acc + (Number(u.mttrHours) || 0), 0) /
+                  validMTTR.length
+                ).toFixed(1)
+              )
+            : 0;
 
         const backlog = subset.reduce((acc, u) => acc + (Number(u?.backlogCount) || 0), 0);
 
@@ -250,10 +307,16 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
 
       const globalMetrics = computeAverages(units);
-      const available = units.filter(u => ['Disponible', 'Asignada', ''].includes(String(u?.status || '').trim())).length;
-      const inRoute = units.filter(u => String(u?.status || '').trim() === 'En Ruta').length;
-      const maintenance = units.filter(u => ['Mantenimiento', 'En Mantenimiento'].includes(String(u?.status || '').trim())).length;
-      const discontinued = units.filter(u => String(u?.status || '').trim() === 'Descontinuada').length;
+      const available = units.filter((u) =>
+        ['Disponible', 'Asignada', ''].includes(String(u?.status || '').trim())
+      ).length;
+      const inRoute = units.filter((u) => String(u?.status || '').trim() === 'En Ruta').length;
+      const maintenance = units.filter((u) =>
+        ['Mantenimiento', 'En Mantenimiento'].includes(String(u?.status || '').trim())
+      ).length;
+      const discontinued = units.filter(
+        (u) => String(u?.status || '').trim() === 'Descontinuada'
+      ).length;
 
       return {
         total,
@@ -268,9 +331,9 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         globalMTTR: globalMetrics.avgMttr,
         globalAvailability: globalMetrics.availablePercent,
         categories: {
-          vehiculo: computeAverages(units.filter(u => Number(u?.assetTypeId) === 1)),
-          maquinaria: computeAverages(units.filter(u => Number(u?.assetTypeId) === 2)),
-          herramienta: computeAverages(units.filter(u => Number(u?.assetTypeId) === 3)),
+          vehiculo: computeAverages(units.filter((u) => Number(u?.assetTypeId) === 1)),
+          maquinaria: computeAverages(units.filter((u) => Number(u?.assetTypeId) === 2)),
+          herramienta: computeAverages(units.filter((u) => Number(u?.assetTypeId) === 3)),
         },
       };
     } catch (err) {
@@ -304,8 +367,6 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     refreshUnits,
   };
 
-
-
   const startRoute = async (payload: import('../types/route').StartRoutePayload): Promise<void> => {
     await api.post('/routes/start', payload);
     await refreshUnits(); // Automatic sync of unit status to "En Ruta"
@@ -331,32 +392,45 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
    * 🔱 Atomic Hydration Engine
    * Fetches full unit data (including images) on demand.
    */
-  const getUnitDetails = useCallback(async (id: string): Promise<FleetUnit | null> => {
-    try {
-      const response = await api.get(`/fleet/${id}`);
-      const rawUnit = response.data?.data;
-      if (!rawUnit) return null;
+  const getUnitDetails = useCallback(
+    async (id: string): Promise<FleetUnit | null> => {
+      try {
+        const response = await api.get(`/fleet/${id}`);
+        const rawUnit = response.data?.data;
+        if (!rawUnit) return null;
 
-      // 🔱 Atomic Data Injection
-      const transformed = transformUnits([rawUnit]);
-      const fullUnit = transformed[0];
+        // 🔱 Atomic Data Injection
+        const transformed = transformUnits([rawUnit]);
+        const fullUnit = transformed[0];
 
-      if (fullUnit) {
-        setUnits((prev: FleetUnit[]) => 
-          prev.map((u: FleetUnit) => u.id === id ? { ...u, images: fullUnit.images } : u)
-        );
+        if (fullUnit) {
+          setUnits((prev: FleetUnit[]) =>
+            prev.map((u: FleetUnit) => (u.id === id ? { ...u, images: fullUnit.images } : u))
+          );
+        }
+
+        return fullUnit || null;
+      } catch (error) {
+        console.error(`[Archon FleetContext] Failed to fetch unit details for ${id}:`, error);
+        return null;
       }
-
-      return fullUnit || null;
-    } catch (error) {
-      console.error(`[Archon FleetContext] Failed to fetch unit details for ${id}:`, error);
-      return null;
-    }
-  }, [transformUnits, setUnits]);
+    },
+    [transformUnits, setUnits]
+  );
 
   return (
     <FleetContext.Provider
-      value={{ units, stats, loading, refreshUnits, error: unitsError, startRoute, finishRoute, reportIncident, getUnitDetails }}
+      value={{
+        units,
+        stats,
+        loading,
+        refreshUnits,
+        error: unitsError,
+        startRoute,
+        finishRoute,
+        reportIncident,
+        getUnitDetails,
+      }}
     >
       {children}
     </FleetContext.Provider>

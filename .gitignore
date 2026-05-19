@@ -47,4 +47,8 @@ apps/web/public/uploads/
 checkpoints.md
 
 # 📜 INTERNAL PROTOCOLS & CLIENT DATA
-datosCliente/
+datosCliente/
+# Scratch directories
+**/scratch/
+apps/api/scratch/
+apps/web/scratch/

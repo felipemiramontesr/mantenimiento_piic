@@ -140,6 +140,7 @@ export default class FleetService {
       ...payload,
       id,
       uuid,
+      lastFuelLevel: payload.lastFuelLevel ?? payload.initialFuelLevel ?? 100,
     };
 
     const fields = Object.keys(intelligencePayload);
