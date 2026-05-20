@@ -60,13 +60,16 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateF
           Calle
         </label>
         <div className="relative">
-          <Home size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30" />
           <input
             type="text"
             placeholder="Calle o Avenida..."
             value={formData.calle || ''}
             onChange={(e): void => updateForm({ calle: e.target.value })}
-            className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+            className="peer w-full h-11 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pl-10 text-[13px] font-bold text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-all duration-300 rounded-[4px]"
+          />
+          <Home
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 peer-focus:text-[#f2b705] transition-colors pointer-events-none"
           />
         </div>
       </div>
@@ -76,13 +79,16 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateF
           Número
         </label>
         <div className="relative">
-          <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30" />
           <input
             type="text"
             placeholder="Ext."
             value={formData.numero || ''}
             onChange={(e): void => updateForm({ numero: e.target.value })}
-            className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+            className="peer w-full h-11 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pl-10 text-[13px] font-bold text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-all duration-300 rounded-[4px]"
+          />
+          <Hash
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 peer-focus:text-[#f2b705] transition-colors pointer-events-none"
           />
         </div>
       </div>
@@ -92,13 +98,16 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateF
           Num. Int.
         </label>
         <div className="relative">
-          <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30" />
           <input
             type="text"
             placeholder="Opcional"
             value={formData.numeroInterior || ''}
             onChange={(e): void => updateForm({ numeroInterior: e.target.value })}
-            className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+            className="peer w-full h-11 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pl-10 text-[13px] font-bold text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-all duration-300 rounded-[4px]"
+          />
+          <Hash
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30 peer-focus:text-[#f2b705] transition-colors pointer-events-none"
           />
         </div>
       </div>
