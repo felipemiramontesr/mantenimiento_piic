@@ -35,7 +35,7 @@ interface ComboboxProps<T> {
   disabled?: boolean;
   getOptionLabel: (opt: T) => string;
   getOptionValue: (opt: T) => number;
-  getOptionSecondary?: (opt: T) => string;
+  getOptionSecondary?: (opt: T) => string | undefined;
   initialOptions?: T[];
 }
 
@@ -184,7 +184,7 @@ function Combobox<T>({
                   >
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{getOptionLabel(option)}</span>
-                      {getOptionSecondary && (
+                      {getOptionSecondary && getOptionSecondary(option) && (
                         <span className="text-[9px] font-black opacity-30 uppercase tracking-widest truncate mt-0.5">
                           {getOptionSecondary(option)}
                         </span>
