@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Home, Hash } from 'lucide-react';
 import ArchonSelect from '../../ArchonSelect';
 import ArchonGeoSelector from './ArchonGeoSelector';
 import { RouteAssignmentPanelProps } from './types';
@@ -52,6 +52,57 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateF
         </>
       }
     />
+
+    {/* Dirección de Destino Detallada (Fila 3) */}
+    <div className="grid grid-cols-4 gap-4 pt-2">
+      <div className="col-span-2 space-y-1.5">
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+          Calle
+        </label>
+        <div className="relative">
+          <Home size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30" />
+          <input
+            type="text"
+            placeholder="Calle o Avenida..."
+            value={formData.calle || ''}
+            onChange={(e): void => updateForm({ calle: e.target.value })}
+            className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+          />
+        </div>
+      </div>
+
+      <div className="col-span-1 space-y-1.5">
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+          Número
+        </label>
+        <div className="relative">
+          <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30" />
+          <input
+            type="text"
+            placeholder="Ext."
+            value={formData.numero || ''}
+            onChange={(e): void => updateForm({ numero: e.target.value })}
+            className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+          />
+        </div>
+      </div>
+
+      <div className="col-span-1 space-y-1.5">
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+          Num. Int.
+        </label>
+        <div className="relative">
+          <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30" />
+          <input
+            type="text"
+            placeholder="Opcional"
+            value={formData.numeroInterior || ''}
+            onChange={(e): void => updateForm({ numeroInterior: e.target.value })}
+            className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 );
 

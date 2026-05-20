@@ -103,7 +103,18 @@ export default class RouteService {
         );
         if (coloniaRows.length > 0) {
           const row = coloniaRows[0];
-          finalDestination = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+          const suffix = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+          if (destination && destination !== suffix) {
+            const parts = destination.split(row.colonia);
+            const prefix = parts[0].trim().replace(/,\s*$/, '');
+            if (prefix) {
+              finalDestination = `${prefix}, ${suffix}`;
+            } else {
+              finalDestination = suffix;
+            }
+          } else {
+            finalDestination = suffix;
+          }
         }
       }
 
@@ -403,7 +414,19 @@ export default class RouteService {
           );
           if (coloniaRows.length > 0) {
             const row = coloniaRows[0];
-            data.destination = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+            const suffix = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+            const inputDest = data.destination || '';
+            if (inputDest && inputDest !== suffix) {
+              const parts = inputDest.split(row.colonia);
+              const prefix = parts[0].trim().replace(/,\s*$/, '');
+              if (prefix) {
+                data.destination = `${prefix}, ${suffix}`;
+              } else {
+                data.destination = suffix;
+              }
+            } else {
+              data.destination = suffix;
+            }
           }
         }
       }

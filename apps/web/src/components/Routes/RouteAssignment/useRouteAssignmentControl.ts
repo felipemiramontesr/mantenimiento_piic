@@ -28,6 +28,71 @@ interface RouteAssignmentControl {
   triggerAuditDelete: () => void;
 }
 
+interface ParsedAddress {
+  calle: string;
+  numero: string;
+  numeroInterior: string;
+}
+
+export const parseAddress = (destinationStr: string): ParsedAddress => {
+  const parts = destinationStr.split(',').map((p) => p.trim());
+  let parsedCalle = '';
+  let parsedNumero = '';
+  let parsedNumeroInterior = '';
+
+  if (parts.length >= 4) {
+    const streetPart = parts[0];
+    const intMatch = streetPart.match(/[\s,]+(?:Int\.?|int\.?|INT\.?)\s*([^\s]+.*)$/i);
+    let mainStreet = streetPart;
+    if (intMatch) {
+      parsedNumeroInterior = intMatch[1].trim();
+      mainStreet = streetPart.substring(0, intMatch.index).trim();
+    }
+
+    const numMatch = mainStreet.match(/[\s,]+#(No\.?|N°|N\.?)?\s*([^\s]+)$/i);
+    if (numMatch) {
+      parsedNumero = numMatch[2].trim();
+      parsedCalle = mainStreet.substring(0, numMatch.index).trim();
+    } else {
+      const numEndMatch = mainStreet.match(/[\s,]+([0-9]+[a-zA-Z]?)$/);
+      if (numEndMatch) {
+        parsedNumero = numEndMatch[1].trim();
+        parsedCalle = mainStreet.substring(0, numEndMatch.index).trim();
+      } else {
+        parsedCalle = mainStreet;
+      }
+    }
+  }
+
+  return { calle: parsedCalle, numero: parsedNumero, numeroInterior: parsedNumeroInterior };
+};
+
+export const getFinalDestination = (formData: RouteAssignmentFormData): string => {
+  let finalDest = formData.destination;
+  const calle = formData.calle?.trim();
+  const numero = formData.numero?.trim();
+  const numeroInterior = formData.numeroInterior?.trim();
+
+  if (calle) {
+    let streetDetails = calle;
+    if (numero) {
+      streetDetails += ` #${numero}`;
+    }
+    if (numeroInterior) {
+      streetDetails += ` Int. ${numeroInterior}`;
+    }
+    const destParts = formData.destination.split(',').map((p) => p.trim());
+    let suffix = formData.destination;
+    if (destParts.length >= 4) {
+      suffix = destParts.slice(1).join(', ');
+    } else if (destParts.length === 3) {
+      suffix = destParts.join(', ');
+    }
+    finalDest = `${streetDetails}, ${suffix}`;
+  }
+  return finalDest;
+};
+
 /**
  * 🔱 Archon Hook: useRouteAssignmentControl
  * Purpose: Centralizes the mission control logic, state management and forensics.
@@ -60,6 +125,9 @@ export const useRouteAssignmentControl = (
     additivesCheck: false,
     tirePressureJson: '',
     checklistJson: '',
+    calle: '',
+    numero: '',
+    numeroInterior: '',
   });
 
   const [origins, setOrigins] = useState<CatalogOption[]>(
@@ -89,6 +157,13 @@ export const useRouteAssignmentControl = (
       const loadIncrement = (liters / capacity) * 100;
       const arrivalBase = isFinished ? Math.max(0, fuelVal - loadIncrement) : fuelVal;
 
+      const destinationStr = route.destination || '';
+      const {
+        calle: parsedCalle,
+        numero: parsedNumero,
+        numeroInterior: parsedNumeroInterior,
+      } = parseAddress(destinationStr);
+
       setFormData({
         unitId,
         operatorId: String(route.operator_id || ''),
@@ -111,6 +186,9 @@ export const useRouteAssignmentControl = (
         additivesCheck: Boolean(route.additives_check),
         tirePressureJson: route.tire_pressure_json || '',
         checklistJson: route.checklist_json || '',
+        calle: parsedCalle,
+        numero: parsedNumero,
+        numeroInterior: parsedNumeroInterior,
       });
     },
     [units, origins, isFinished]
@@ -138,6 +216,9 @@ export const useRouteAssignmentControl = (
         additivesCheck: false,
         tirePressureJson: '',
         checklistJson: '',
+        calle: '',
+        numero: '',
+        numeroInterior: '',
       });
       setError(null);
     }
@@ -261,9 +342,19 @@ export const useRouteAssignmentControl = (
 
   const getForensicPayload = (): Record<string, unknown> => {
     const originId = origins.find((o) => o.label === formData.origin)?.id;
-    const { origin: _origin, ...rest } = formData;
+    const {
+      origin: _origin,
+      calle: _calle,
+      numero: _numero,
+      numeroInterior: _numeroInterior,
+      ...rest
+    } = formData;
+
+    const finalDest = getFinalDestination(formData);
+
     return {
       ...rest,
+      destination: finalDest,
       operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
       originId: originId ? Number(originId) : undefined,
       destinationColoniaId: formData.destinationColoniaId
@@ -344,6 +435,55 @@ export const useRouteAssignmentControl = (
     return true;
   }, [isEdit, routeToEdit, formData.endReading, formData.startReading, selectedUnitData]);
 
+  const handleFinishMission = async (): Promise<void> => {
+    if (!routeToEdit) return;
+    await finishRoute(routeToEdit.uuid, {
+      endReading: Number(formData.endReading),
+      fuelLevelEnd: Number(formData.fuelLevel),
+      fuelLitersLoaded: Number(formData.fuelLitersLoaded),
+      fuelAmount: Number(formData.fuelAmount),
+      fuelTicketImage: formData.fuelTicketImage || undefined,
+      additivesCheck: formData.additivesCheck,
+      tirePressureJson: formData.tirePressureJson || undefined,
+      checklistJson: formData.checklistJson || undefined,
+    });
+  };
+
+  const handleCorrectActiveMission = async (finalDest: string): Promise<void> => {
+    if (!routeToEdit) return;
+    const { origin: _origin, calle: _c, numero: _n, numeroInterior: _ni, ...rest } = formData;
+    await api.put(`/routes/${routeToEdit.uuid}`, {
+      data: {
+        ...rest,
+        destination: finalDest,
+        destinationColoniaId: formData.destinationColoniaId
+          ? Number(formData.destinationColoniaId)
+          : null,
+        operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
+        originId: origins.find((o) => o.label === formData.origin)?.id
+          ? Number(origins.find((o) => o.label === formData.origin)?.id)
+          : undefined,
+      },
+    });
+    await refreshUnits();
+  };
+
+  const handleNewDispatch = async (finalDest: string): Promise<void> => {
+    await startRoute({
+      unitId: formData.unitId,
+      driverId: Number(formData.operatorId),
+      startReading: Number(formData.startReading),
+      fuelLevelStart: Number(formData.fuelLevel),
+      destination: finalDest,
+      destinationColoniaId: formData.destinationColoniaId
+        ? Number(formData.destinationColoniaId)
+        : undefined,
+      originId: origins.find((o) => o.label === formData.origin)?.id
+        ? Number(origins.find((o) => o.label === formData.origin)?.id)
+        : undefined,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (isFinished) {
@@ -361,39 +501,16 @@ export const useRouteAssignmentControl = (
     }
 
     try {
+      const finalDest = getFinalDestination(formData);
+
       if (isEdit && routeToEdit) {
         if (Number(formData.endReading) > 0) {
-          // 🏁 Finish Mission: End kilometer provided
-          await finishRoute(routeToEdit.uuid, {
-            endReading: Number(formData.endReading),
-            fuelLevelEnd: Number(formData.fuelLevel),
-            fuelLitersLoaded: Number(formData.fuelLitersLoaded),
-            fuelAmount: Number(formData.fuelAmount),
-            fuelTicketImage: formData.fuelTicketImage || undefined,
-            additivesCheck: formData.additivesCheck,
-            tirePressureJson: formData.tirePressureJson || undefined,
-            checklistJson: formData.checklistJson || undefined,
-          });
+          await handleFinishMission();
         } else {
-          // 📝 Correct Active Mission: Typos, operator change, etc.
-          await api.put(`/routes/${routeToEdit.uuid}`, { data: formData });
-          await refreshUnits();
+          await handleCorrectActiveMission(finalDest);
         }
       } else {
-        // 🚀 New Dispatch
-        await startRoute({
-          unitId: formData.unitId,
-          driverId: Number(formData.operatorId),
-          startReading: Number(formData.startReading),
-          fuelLevelStart: Number(formData.fuelLevel),
-          destination: formData.destination,
-          destinationColoniaId: formData.destinationColoniaId
-            ? Number(formData.destinationColoniaId)
-            : undefined,
-          originId: origins.find((o) => o.label === formData.origin)?.id
-            ? Number(origins.find((o) => o.label === formData.origin)?.id)
-            : undefined,
-        });
+        await handleNewDispatch(finalDest);
       }
       onClose();
     } catch (err: unknown) {

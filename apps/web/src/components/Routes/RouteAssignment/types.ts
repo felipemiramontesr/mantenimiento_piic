@@ -18,6 +18,9 @@ export interface RouteAssignmentFormData {
   additivesCheck: boolean;
   tirePressureJson: string;
   checklistJson: string;
+  calle?: string;
+  numero?: string;
+  numeroInterior?: string;
 }
 
 export interface RouteAssignmentPanelProps {
