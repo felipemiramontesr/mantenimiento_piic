@@ -67,14 +67,16 @@ function Combobox<T>({
 
   useEffect((): void => {
     if (value) {
-      const match = options.find((opt) => getOptionValue(opt) === value);
+      const match =
+        options.find((opt) => getOptionValue(opt) === value) ||
+        initialOptions.find((opt) => getOptionValue(opt) === value);
       if (match) {
         setSelectedLabel(getOptionLabel(match));
       }
     } else {
       setSelectedLabel('');
     }
-  }, [value, options, getOptionValue, getOptionLabel]);
+  }, [value, options, initialOptions, getOptionValue, getOptionLabel]);
 
   useEffect((): (() => void) => {
     const clickOutside = (e: MouseEvent): void => {
@@ -205,6 +207,9 @@ function Combobox<T>({
   );
 }
 
+const getStateLabel = (o: StateOption): string => o.nombre;
+const getStateValue = (o: StateOption): number => o.id;
+
 const getMunicipioLabel = (o: MunicipioOption): string => o.nombre;
 const getMunicipioValue = (o: MunicipioOption): number => o.id;
 
@@ -333,6 +338,17 @@ export default function ArchonGeoSelector({
     [selectedState, selectedMunicipio, states, onChange]
   );
 
+  const searchStates = useCallback(
+    async (search: string): Promise<StateOption[]> => {
+      const term = search.toLowerCase().trim();
+      if (!term) {
+        return states;
+      }
+      return states.filter((s) => s.nombre.toLowerCase().includes(term));
+    },
+    [states]
+  );
+
   const searchMunicipalities = useCallback(
     async (search: string): Promise<MunicipioOption[]> => {
       if (!selectedState) {
@@ -379,23 +395,16 @@ export default function ArchonGeoSelector({
         <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
           Estado
         </label>
-        <select
+        <Combobox<StateOption>
+          value={selectedState}
+          onChange={handleStateChange}
+          onSearch={searchStates}
+          initialOptions={states}
           disabled={disabled || loadingHydration}
-          value={selectedState || ''}
-          onChange={(e): void => handleStateChange(Number(e.target.value))}
-          className="w-full bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors rounded-[4px] h-11"
-        >
-          <option value="" disabled>
-            Seleccionar Estado...
-          </option>
-          {states.map(
-            (s): React.JSX.Element => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            )
-          )}
-        </select>
+          placeholder="Buscar Estado..."
+          getOptionLabel={getStateLabel}
+          getOptionValue={getStateValue}
+        />
       </div>
 
       <div className="space-y-2">

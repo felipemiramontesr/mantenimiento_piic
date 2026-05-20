@@ -65,7 +65,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
       <form key={routeToEdit?.uuid || 'new'} onSubmit={handleSubmit} className="space-y-2">
         <div className="archon-grid-2-sovereign items-stretch">
           {/* PANEL 1: REGISTRO DE DESPACHO (Fase I & II) */}
-          <div className="card-archon-sovereign p-8 space-y-8 bg-white [--card-accent:#0f2a44] flex flex-col justify-between">
+          <div className="card-archon-sovereign !overflow-visible p-8 space-y-8 bg-white [--card-accent:#0f2a44] flex flex-col justify-between">
             <div className="space-y-8">
               <RouteIdentityPanel
                 formData={formData}
