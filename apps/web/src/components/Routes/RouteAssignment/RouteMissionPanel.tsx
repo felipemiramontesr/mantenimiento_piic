@@ -30,35 +30,28 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateF
       </div>
     </div>
 
-    <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-          Origen
-        </label>
-        <ArchonSelect
-          options={origins.map((o) => ({ value: o.label, label: o.label }))}
-          value={formData.origin}
-          onChange={(val): void => updateForm({ origin: val })}
-          icon={MapPin}
-        />
-      </div>
-      {/* Dynamic Destination Selector Spans remaining column or full grid */}
-    </div>
-
-    <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-        Destino
-      </label>
-      <ArchonGeoSelector
-        value={formData.destinationColoniaId}
-        onChange={(coloniaId: number | undefined, destStr: string): void => {
-          updateForm({
-            destinationColoniaId: coloniaId,
-            destination: destStr,
-          });
-        }}
-      />
-    </div>
+    <ArchonGeoSelector
+      value={formData.destinationColoniaId}
+      onChange={(coloniaId: number | undefined, destStr: string): void => {
+        updateForm({
+          destinationColoniaId: coloniaId,
+          destination: destStr,
+        });
+      }}
+      originNode={
+        <>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+            Origen
+          </label>
+          <ArchonSelect
+            options={origins.map((o) => ({ value: o.label, label: o.label }))}
+            value={formData.origin}
+            onChange={(val): void => updateForm({ origin: val })}
+            icon={MapPin}
+          />
+        </>
+      }
+    />
 
     <div className="space-y-2">
       <textarea

@@ -24,6 +24,7 @@ interface ArchonGeoSelectorProps {
   value?: number; // destinationColoniaId
   onChange: (coloniaId: number | undefined, destinationString: string) => void;
   disabled?: boolean;
+  originNode?: React.ReactNode;
 }
 
 interface ComboboxProps<T> {
@@ -222,6 +223,7 @@ export default function ArchonGeoSelector({
   value,
   onChange,
   disabled = false,
+  originNode,
 }: ArchonGeoSelectorProps): React.JSX.Element {
   const [states, setStates] = useState<StateOption[]>([]);
   const [selectedState, setSelectedState] = useState<number | undefined>(undefined);
@@ -388,6 +390,63 @@ export default function ArchonGeoSelector({
     },
     [selectedMunicipio]
   );
+
+  if (originNode) {
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">{originNode}</div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+            Destino
+          </label>
+          <Combobox<StateOption>
+            value={selectedState}
+            onChange={handleStateChange}
+            onSearch={searchStates}
+            initialOptions={states}
+            disabled={disabled || loadingHydration}
+            placeholder="Buscar Estado..."
+            getOptionLabel={getStateLabel}
+            getOptionValue={getStateValue}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+            Municipio
+          </label>
+          <Combobox<MunicipioOption>
+            value={selectedMunicipio}
+            onChange={handleMunicipioChange}
+            onSearch={searchMunicipalities}
+            initialOptions={municipalities}
+            disabled={disabled || !selectedState || loadingHydration}
+            placeholder="Buscar Municipio..."
+            getOptionLabel={getMunicipioLabel}
+            getOptionValue={getMunicipioValue}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+            Colonia / Código Postal
+          </label>
+          <Combobox<ColoniaOption>
+            value={value}
+            onChange={handleColoniaChange}
+            onSearch={searchColonias}
+            initialOptions={hydratedColonia ? [hydratedColonia] : undefined}
+            disabled={disabled || !selectedMunicipio || loadingHydration}
+            placeholder="Buscar Colonia..."
+            getOptionLabel={getColoniaLabel}
+            getOptionValue={getColoniaValue}
+            getOptionSecondary={getColoniaSecondary}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-3 gap-4">
