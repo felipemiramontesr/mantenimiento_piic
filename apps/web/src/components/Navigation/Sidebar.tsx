@@ -149,22 +149,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       {/* 🗺️ BODY (80%) */}
       <main className="h-[80%] py-6 px-3 overflow-y-auto custom-scrollbar">
         <nav className="flex flex-col">
-          <NavItem
-            icon={<LayoutDashboard size={20} />}
-            label="Comando"
-            path="/dashboard"
-            active={location.pathname === '/dashboard'}
-            isCollapsed={isCollapsed}
-          />
-          {hasPermission('fleet:view') && (
-            <NavItem
-              icon={<Truck size={20} />}
-              label="Unidades"
-              path="/dashboard/fleet"
-              active={location.pathname === '/dashboard/fleet'}
-              isCollapsed={isCollapsed}
-            />
-          )}
           {hasPermission('financial:view') && (
             <NavItem
               icon={<Wallet size={20} />}
@@ -174,6 +158,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               isCollapsed={isCollapsed}
             />
           )}
+          {hasPermission('fleet:view') && (
+            <NavItem
+              icon={<Truck size={20} />}
+              label="Unidades"
+              path="/dashboard/fleet"
+              active={location.pathname === '/dashboard/fleet'}
+              isCollapsed={isCollapsed}
+            />
+          )}
+          <NavItem
+            icon={<LayoutDashboard size={20} />}
+            label="Comando"
+            path="/dashboard"
+            active={location.pathname === '/dashboard'}
+            isCollapsed={isCollapsed}
+          />
           {hasPermission('fleet:view') && (
             <NavItem
               icon={<Navigation size={20} />}
