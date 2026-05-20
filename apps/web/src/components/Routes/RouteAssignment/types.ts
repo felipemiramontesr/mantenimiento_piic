@@ -6,6 +6,7 @@ export interface RouteAssignmentFormData {
   operatorId: string;
   origin: string;
   destination: string;
+  destinationColoniaId?: number;
   description: string;
   fuelLevel: number | string;
   arrivalFuelLevel: number | string;

@@ -40,8 +40,8 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
       className="space-y-8 pt-8 border-t border-[#0f2a44]/5"
     >
       <div className="flex items-center gap-3">
-        <div className="bg-amber-500 p-2 rounded-[4px]">
-          <Camera size={20} className="text-white" />
+        <div className="bg-[#f2b705] p-2 rounded-[4px]">
+          <Camera size={20} className="text-[#0f2a44]" />
         </div>
         <div>
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 opacity-50">

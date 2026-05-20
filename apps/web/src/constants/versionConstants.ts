@@ -1,6 +1,6 @@
-export const SYSTEM_VERSION = '78.100.151';
-export const BRANDING_NAME = 'Archon Fleet System | V.78.100.151';
-export const CACHE_PREFIX = 'archon_v78_100_151_hardened';
+export const SYSTEM_VERSION = '78.100.153';
+export const BRANDING_NAME = 'Archon Fleet System | V.78.100.153';
+export const CACHE_PREFIX = 'archon_v78_100_153_hardened';
 export const SOVEREIGN_MODE = true;
 export const LAST_SYNC = new Date().toISOString();
 export const ENABLE_DEBUG = true;

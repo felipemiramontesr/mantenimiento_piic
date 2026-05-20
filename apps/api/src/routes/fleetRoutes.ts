@@ -16,6 +16,7 @@ const startRouteSchema = z.object({
   fuelLevelStart: z.number().min(0).max(100),
   destination: z.string().min(2).max(255),
   originId: z.number().int().optional(),
+  destinationColoniaId: z.number().int().optional(),
   description: z.string().optional(),
 });
 
@@ -53,7 +54,8 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         data.fuelLevelStart,
         data.destination,
         data.originId,
-        data.description
+        data.description,
+        data.destinationColoniaId
       );
 
       return reply.code(201).send({

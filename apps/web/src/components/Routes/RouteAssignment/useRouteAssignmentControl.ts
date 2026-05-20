@@ -48,6 +48,7 @@ export const useRouteAssignmentControl = (
     operatorId: '',
     origin: 'Arian Silver Zacatecas',
     destination: '',
+    destinationColoniaId: undefined,
     description: '',
     fuelLevel: 100,
     arrivalFuelLevel: 100,
@@ -96,6 +97,9 @@ export const useRouteAssignmentControl = (
           route.origin ||
           'Arian Silver Zacatecas',
         destination: route.destination || '',
+        destinationColoniaId: route.destination_colonia_id
+          ? Number(route.destination_colonia_id)
+          : undefined,
         description: route.description || '',
         fuelLevel: fuelVal,
         arrivalFuelLevel: arrivalBase,
@@ -122,6 +126,7 @@ export const useRouteAssignmentControl = (
         operatorId: '',
         origin: 'Arian Silver Zacatecas',
         destination: '',
+        destinationColoniaId: undefined,
         description: '',
         fuelLevel: 100,
         arrivalFuelLevel: 100,
@@ -261,6 +266,9 @@ export const useRouteAssignmentControl = (
       ...rest,
       operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
       originId: originId ? Number(originId) : undefined,
+      destinationColoniaId: formData.destinationColoniaId
+        ? Number(formData.destinationColoniaId)
+        : null,
       fuelLevel: Number(formData.fuelLevel || 0),
       fuelLitersLoaded: Number(formData.fuelLitersLoaded || 0),
       fuelAmount: Number(formData.fuelAmount || 0),
@@ -379,6 +387,9 @@ export const useRouteAssignmentControl = (
           startReading: Number(formData.startReading),
           fuelLevelStart: Number(formData.fuelLevel),
           destination: formData.destination,
+          destinationColoniaId: formData.destinationColoniaId
+            ? Number(formData.destinationColoniaId)
+            : undefined,
           originId: origins.find((o) => o.label === formData.origin)?.id
             ? Number(origins.find((o) => o.label === formData.origin)?.id)
             : undefined,

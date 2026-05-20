@@ -17,6 +17,7 @@ export interface RouteEntry {
   unit_id: string;
   driver_id: number;
   origin_id?: number;
+  destination_colonia_id?: number;
   destination: string;
   status: RouteStatus;
   start_reading: number;
@@ -66,7 +67,8 @@ export default class RouteService {
     fuelLevelStart: number,
     destination: string,
     originId?: number,
-    description?: string
+    description?: string,
+    destinationColoniaId?: number
   ): Promise<string> {
     const connection = await db.getConnection();
     const routeUuid = randomUUID();
@@ -88,17 +90,35 @@ export default class RouteService {
         );
       }
 
+      // 1.1 Resolve destination if destinationColoniaId is provided
+      let finalDestination = destination;
+      if (destinationColoniaId) {
+        const [coloniaRows] = await connection.execute<RowDataPacket[]>(
+          `SELECT c.nombre AS colonia, m.nombre AS municipio, e.nombre AS estado 
+           FROM colonias c
+           JOIN municipios m ON c.municipio = m.id
+           JOIN estados e ON m.estado = e.id
+           WHERE c.id = ?`,
+          [destinationColoniaId]
+        );
+        if (coloniaRows.length > 0) {
+          const row = coloniaRows[0];
+          finalDestination = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+        }
+      }
+
       // 2. Create the Route
       await connection.execute(
         `INSERT INTO fleet_routes 
-        (uuid, unit_id, driver_id, origin_id, destination, status, start_reading, fuel_level_start, description, start_at) 
-        VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, NOW())`,
+        (uuid, unit_id, driver_id, origin_id, destination_colonia_id, destination, status, start_reading, fuel_level_start, description, start_at) 
+        VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, NOW())`,
         [
           routeUuid,
           unitId,
           driverId,
           originId || null,
-          destination,
+          destinationColoniaId || null,
+          finalDestination,
           startReading,
           fuelLevelStart,
           description || null,
@@ -355,6 +375,7 @@ export default class RouteService {
         unitId: 'unit_id',
         operatorId: 'driver_id',
         originId: 'origin_id',
+        destinationColoniaId: 'destination_colonia_id',
         destination: 'destination',
         status: 'status',
         startReading: 'start_reading',
@@ -368,6 +389,24 @@ export default class RouteService {
         checklistJson: 'checklist_json',
         description: 'description',
       };
+
+      // 2.0 Resolve destination if destinationColoniaId is updated
+      if (data.destinationColoniaId !== undefined) {
+        if (data.destinationColoniaId) {
+          const [coloniaRows] = await connection.execute<RowDataPacket[]>(
+            `SELECT c.nombre AS colonia, m.nombre AS municipio, e.nombre AS estado 
+             FROM colonias c
+             JOIN municipios m ON c.municipio = m.id
+             JOIN estados e ON m.estado = e.id
+             WHERE c.id = ?`,
+            [data.destinationColoniaId]
+          );
+          if (coloniaRows.length > 0) {
+            const row = coloniaRows[0];
+            data.destination = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+          }
+        }
+      }
 
       const fieldsToUpdate: string[] = [];
       const values: unknown[] = [];

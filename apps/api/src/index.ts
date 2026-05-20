@@ -13,6 +13,7 @@ import fleetRoutes from './routes/fleet';
 import journeyRoutes from './routes/fleetRoutes';
 import catalogRoutes from './routes/catalogs';
 import userRoutes from './routes/users';
+import geolocationRoutes from './routes/geolocation';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -72,6 +73,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(journeyRoutes, { prefix: '/v1' });
   fastify.register(catalogRoutes, { prefix: '/v1/catalogs' });
   fastify.register(userRoutes, { prefix: '/v1' });
+  fastify.register(geolocationRoutes, { prefix: '/v1/geolocation' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(

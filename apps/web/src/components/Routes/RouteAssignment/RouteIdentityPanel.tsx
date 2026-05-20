@@ -20,8 +20,8 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
   <div className="space-y-4">
     {/* Header */}
     <div className="flex items-center gap-3">
-      <div className="bg-[#0f2a44] p-2 rounded-[4px]">
-        <ShieldCheck size={20} className="text-white" />
+      <div className="bg-[#f2b705] p-2 rounded-[4px]">
+        <ShieldCheck size={20} className="text-[#0f2a44]" />
       </div>
       <div>
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">

@@ -29,6 +29,7 @@ export interface RouteLog {
   operator_id: string;
   origin: string;
   destination: string;
+  destination_colonia_id?: number;
   description?: string;
   fuelLevel?: number;
   fuel_level_start?: number;

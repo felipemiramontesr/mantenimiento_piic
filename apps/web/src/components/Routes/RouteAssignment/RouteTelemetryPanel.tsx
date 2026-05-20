@@ -47,8 +47,8 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-[#0f2a44] p-2 rounded-[4px]">
-            <Gauge size={20} className="text-white" />
+          <div className="bg-[#f2b705] p-2 rounded-[4px]">
+            <Gauge size={20} className="text-[#0f2a44]" />
           </div>
           <div>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
