@@ -180,6 +180,17 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
             </div>
           )}
         </div>
+
+        {/* Observations Section */}
+        <div className="space-y-2 pt-4 border-t border-[#0f2a44]/5">
+          <textarea
+            rows={2}
+            placeholder="Observaciones de la misión..."
+            value={formData.description}
+            onChange={(e): void => updateForm({ description: e.target.value })}
+            className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-[#f2b705] p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] disabled:opacity-50"
+          />
+        </div>
       </div>
     </div>
   );
