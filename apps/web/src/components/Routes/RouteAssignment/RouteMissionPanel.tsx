@@ -47,7 +47,7 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateF
 
     <div className="space-y-2">
       <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
-        Destino Relacional Cascaded Selector (Estado ➔ Municipio ➔ Colonia)
+        Destino
       </label>
       <ArchonGeoSelector
         value={formData.destinationColoniaId}
