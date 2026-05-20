@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor, act, render, mockStartRoute } from '../../test/testUtils';
 import RouteAssignmentForm from './RouteAssignmentForm';
@@ -9,6 +10,22 @@ vi.mock('../../api/client', () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
+}));
+
+interface MockSelectorProps {
+  value?: number;
+  onChange: (coloniaId: number | undefined, destinationString: string) => void;
+  disabled?: boolean;
+}
+
+vi.mock('./RouteAssignment/ArchonGeoSelector', () => ({
+  default: ({ onChange, disabled }: MockSelectorProps): React.JSX.Element => (
+    <input
+      placeholder="Ej: Mina Nivel 400"
+      disabled={disabled}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>): void => onChange(123, e.target.value)}
+    />
+  ),
 }));
 
 describe('RouteAssignmentForm (Apex Refactor)', () => {

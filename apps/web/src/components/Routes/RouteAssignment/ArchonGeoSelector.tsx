@@ -38,6 +38,8 @@ interface ComboboxProps<T> {
   initialOptions?: T[];
 }
 
+const EMPTY_ARRAY: unknown[] = [];
+
 function Combobox<T>({
   value,
   onChange,
@@ -47,7 +49,7 @@ function Combobox<T>({
   getOptionLabel,
   getOptionValue,
   getOptionSecondary,
-  initialOptions = [],
+  initialOptions = EMPTY_ARRAY as T[],
 }: ComboboxProps<T>): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,8 +60,10 @@ function Combobox<T>({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect((): void => {
-    setOptions(initialOptions);
-  }, [initialOptions]);
+    if (!isOpen) {
+      setOptions(initialOptions);
+    }
+  }, [initialOptions, isOpen]);
 
   useEffect((): void => {
     if (value) {
@@ -218,6 +222,8 @@ export default function ArchonGeoSelector({
   const [selectedState, setSelectedState] = useState<number | undefined>(undefined);
   const [selectedMunicipio, setSelectedMunicipio] = useState<number | undefined>(undefined);
   const [loadingHydration, setLoadingHydration] = useState(false);
+  const [municipalities, setMunicipalities] = useState<MunicipioOption[]>([]);
+  const [hydratedColonia, setHydratedColonia] = useState<ColoniaOption | undefined>(undefined);
 
   useEffect((): void => {
     const loadStates = async (): Promise<void> => {
@@ -240,9 +246,28 @@ export default function ArchonGeoSelector({
   }, []);
 
   useEffect((): void => {
+    if (!selectedState) {
+      setMunicipalities([]);
+      return;
+    }
+    const loadMunicipalities = async (): Promise<void> => {
+      try {
+        const res = await api.get(`/geolocation/states/${selectedState}/municipalities`);
+        const data = res.data?.data || res.data || [];
+        setMunicipalities(data);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load municipalities', err);
+      }
+    };
+    loadMunicipalities();
+  }, [selectedState]);
+
+  useEffect((): void => {
     if (!value) {
       setSelectedState(undefined);
       setSelectedMunicipio(undefined);
+      setHydratedColonia(undefined);
       return;
     }
 
@@ -254,6 +279,11 @@ export default function ArchonGeoSelector({
         if (data) {
           setSelectedState(data.stateId);
           setSelectedMunicipio(data.municipioId);
+          setHydratedColonia({
+            id: data.id,
+            nombre: data.nombre,
+            codigoPostal: data.codigoPostal,
+          });
         }
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -376,6 +406,7 @@ export default function ArchonGeoSelector({
           value={selectedMunicipio}
           onChange={handleMunicipioChange}
           onSearch={searchMunicipalities}
+          initialOptions={municipalities}
           disabled={disabled || !selectedState || loadingHydration}
           placeholder="Buscar Municipio..."
           getOptionLabel={getMunicipioLabel}
@@ -391,6 +422,7 @@ export default function ArchonGeoSelector({
           value={value}
           onChange={handleColoniaChange}
           onSearch={searchColonias}
+          initialOptions={hydratedColonia ? [hydratedColonia] : undefined}
           disabled={disabled || !selectedMunicipio || loadingHydration}
           placeholder="Buscar Colonia..."
           getOptionLabel={getColoniaLabel}
