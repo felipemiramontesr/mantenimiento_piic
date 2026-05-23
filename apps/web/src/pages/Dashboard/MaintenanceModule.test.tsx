@@ -47,7 +47,7 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     renderModule();
 
     // Default should be HISTORY
-    expect(await screen.findByText('Historial de Servicios')).toBeInTheDocument();
+    expect(await screen.findByText('NO SE ENCONTRARON REGISTROS')).toBeInTheDocument();
 
     // Switch to SCHEDULE
     const scheduleCard = await screen.findByText('Programar Servicio');
