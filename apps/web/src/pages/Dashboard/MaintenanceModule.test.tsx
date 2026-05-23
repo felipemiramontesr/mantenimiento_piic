@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { render, screen, fireEvent } from '../../test/testUtils';
 import { http, HttpResponse } from 'msw';
+import { render, screen, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
 import MaintenanceModule from './MaintenanceModule';
 
@@ -14,18 +14,18 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
   // Mock standard API dependencies
   beforeEach(() => {
     server.use(
-      http.get('*/maintenance', () => {
-        return HttpResponse.json({
+      http.get('*/maintenance', () =>
+        HttpResponse.json({
           success: true,
-          data: []
-        });
-      }),
-      http.get('*/fleet', () => {
-        return HttpResponse.json({
+          data: [],
+        })
+      ),
+      http.get('*/fleet', () =>
+        HttpResponse.json({
           success: true,
-          data: []
-        });
-      })
+          data: [],
+        })
+      )
     );
   });
 
@@ -47,16 +47,12 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     renderModule();
 
     // Default should be HISTORY
-    expect(
-      await screen.findByText('Historial de Servicios')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Historial de Servicios')).toBeInTheDocument();
 
     // Switch to SCHEDULE
     const scheduleCard = await screen.findByText('Programar Servicio');
     fireEvent.click(scheduleCard);
 
-    expect(
-      await screen.findByText('CONFIGURACIÓN')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('CONFIGURACIÓN')).toBeInTheDocument();
   });
 });

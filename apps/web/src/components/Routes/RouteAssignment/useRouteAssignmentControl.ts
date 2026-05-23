@@ -126,10 +126,10 @@ export const validateDistance = (formData: RouteAssignmentFormData): string | nu
   const start = Number(formData.startReading || 0);
 
   if (end === 0) {
-    return "Error Forense: Debe ingresar la lectura de odómetro final para cerrar la ruta.";
+    return 'Error Forense: Debe ingresar la lectura de odómetro final para cerrar la ruta.';
   }
   if (end === start) {
-    return "Error Forense: La lectura final no puede ser igual a la lectura inicial (el viaje debe registrar movimiento).";
+    return 'Error Forense: La lectura final no puede ser igual a la lectura inicial (el viaje debe registrar movimiento).';
   }
   const distance = end - start;
   if (distance > 5000) {
@@ -154,31 +154,33 @@ export const validateFuelCoherency = (
   const amount = Number(formData.fuelAmount || 0);
 
   if (liters < 0) {
-    return "Error Forense: Los litros de combustible cargados no pueden ser negativos.";
+    return 'Error Forense: Los litros de combustible cargados no pueden ser negativos.';
   }
   if (amount < 0) {
-    return "Error Forense: El costo total del combustible no puede ser negativo.";
+    return 'Error Forense: El costo total del combustible no puede ser negativo.';
   }
 
   if (liters > 0 && amount <= 0) {
-    return "Error Forense: Coherencia de Combustible - Si se cargaron litros de combustible, el costo total (Monto del Ticket) debe ser mayor a cero.";
+    return 'Error Forense: Coherencia de Combustible - Si se cargaron litros de combustible, el costo total (Monto del Ticket) debe ser mayor a cero.';
   }
   if (amount > 0 && liters <= 0) {
-    return "Error Forense: Coherencia de Combustible - Si se registró un costo de combustible, los litros cargados deben ser mayores a cero.";
+    return 'Error Forense: Coherencia de Combustible - Si se registró un costo de combustible, los litros cargados deben ser mayores a cero.';
   }
 
   const unitCapacity = selectedUnitData?.fuelTankCapacity || 0;
   const maxAllowedLiters = unitCapacity > 0 ? unitCapacity * 1.2 : 400;
   if (liters > maxAllowedLiters) {
     return `Error Forense: Los litros de combustible cargados (${liters} L) exceden el límite realista permitido para esta unidad (${maxAllowedLiters} L${
-      unitCapacity > 0 ? ` basado en una capacidad de tanque de ${unitCapacity} L` : ' como límite fallback'
+      unitCapacity > 0
+        ? ` basado en una capacidad de tanque de ${unitCapacity} L`
+        : ' como límite fallback'
     }).`;
   }
   return null;
 };
 
 export const validateTirePressures = (formData: RouteAssignmentFormData): string | null => {
-  let tires: Record<string, any> = {};
+  let tires: Record<string, unknown> = {};
   try {
     tires = JSON.parse(formData.tirePressureJson || '{}');
   } catch (e) {
@@ -409,12 +411,9 @@ export const useRouteAssignmentControl = (
   }, [users, activeRoutes, isEdit, routeToEdit]);
 
   // 📝 Actions
-  const updateForm = useCallback(
-    (updates: Partial<RouteAssignmentFormData>): void => {
-      setFormData((prev) => ({ ...prev, ...updates }));
-    },
-    []
-  );
+  const updateForm = useCallback((updates: Partial<RouteAssignmentFormData>): void => {
+    setFormData((prev) => ({ ...prev, ...updates }));
+  }, []);
 
   const getForensicPayload = (): Record<string, unknown> => {
     const originId = origins.find((o) => o.label === formData.origin)?.id;
@@ -451,7 +450,12 @@ export const useRouteAssignmentControl = (
   const validateTelemetry = useCallback((): boolean => {
     const isClosingOrFinished = isFinished || (isEdit && Number(formData.endReading || 0) > 0);
 
-    const odometerErr = validateReadingFailsafe(formData, selectedUnitData, isEdit, routeToEdit || null);
+    const odometerErr = validateReadingFailsafe(
+      formData,
+      selectedUnitData,
+      isEdit,
+      routeToEdit || null
+    );
     if (odometerErr) {
       setError(odometerErr);
       return false;
@@ -484,13 +488,7 @@ export const useRouteAssignmentControl = (
     }
 
     return true;
-  }, [
-    isEdit,
-    isFinished,
-    routeToEdit,
-    formData,
-    selectedUnitData,
-  ]);
+  }, [isEdit, isFinished, routeToEdit, formData, selectedUnitData]);
 
   const handleConfirmAudit = async (reason: string): Promise<void> => {
     if (!reason || reason.length < 5) {
@@ -538,8 +536,6 @@ export const useRouteAssignmentControl = (
     setAuditAction('DELETE');
     setIsAuditModalOpen(true);
   };
-
-
 
   const handleFinishMission = async (): Promise<void> => {
     if (!routeToEdit) return;

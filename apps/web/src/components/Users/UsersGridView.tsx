@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Activity, Pencil, Hash, Briefcase, Image as ImageIcon } from 'lucide-react';
+import { User, Mail, Activity, Pencil, Hash, Briefcase } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -13,7 +13,10 @@ import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLay
  * Refactor: 100% Pure Tailwind (Eradicated all Hex Codes).
  */
 
-const matchFieldInUser = (u: UserIndustrial, query: string): { label: string; value: string } | null => {
+const matchFieldInUser = (
+  u: UserIndustrial,
+  query: string
+): { label: string; value: string } | null => {
   if (u.username.toLowerCase().includes(query)) {
     return { label: 'Empleado', value: u.username };
   }
@@ -38,13 +41,15 @@ const matchFieldInUser = (u: UserIndustrial, query: string): { label: string; va
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
   let styles = 'bg-slate-100 text-slate-600';
   const name = roleName.toLowerCase();
-  
+
   if (name.includes('archon')) styles = 'bg-pinnacle-navy text-white';
   else if (name.includes('gerente')) styles = 'bg-emerald-100 text-emerald-700';
   else if (name.includes('superintendente')) styles = 'bg-sky-100 text-sky-700';
-  else if (name.includes('jefe') || name.includes('mantenimiento')) styles = 'bg-violet-100 text-violet-700';
+  else if (name.includes('jefe') || name.includes('mantenimiento'))
+    styles = 'bg-violet-100 text-violet-700';
   else if (name.includes('planeador')) styles = 'bg-amber-100 text-amber-700';
-  else if (name.includes('técnico') || name.includes('tecnico')) styles = 'bg-cyan-100 text-cyan-700';
+  else if (name.includes('técnico') || name.includes('tecnico'))
+    styles = 'bg-cyan-100 text-cyan-700';
   else if (name.includes('operador')) styles = 'bg-slate-100 text-slate-500';
 
   return (
@@ -90,7 +95,6 @@ const UserRegistryRow = ({
       transition={{ delay: index * 0.04 }}
       className="transition-all duration-300 hover:bg-pinnacle-navy/[0.015] border-y border-solid border-slate-200/50"
     >
-
       <td className="py-6 text-center px-4">
         <div className="flex items-center justify-center gap-2 text-pinnacle-navy opacity-80">
           <User size={12} className="text-pinnacle-yellow" />

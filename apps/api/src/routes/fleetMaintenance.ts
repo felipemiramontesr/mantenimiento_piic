@@ -8,14 +8,22 @@ const createMaintenanceSchema = z.object({
   unitId: z.string().min(2).max(50),
   serviceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   odometerAtService: z.number().min(0),
-  serviceType: z.enum(['BASIC_10K', 'INTERMEDIATE_20K', 'MAJOR_30K', 'ADVANCED_50K', 'MINOR_MINING']),
+  serviceType: z.enum([
+    'BASIC_10K',
+    'INTERMEDIATE_20K',
+    'MAJOR_30K',
+    'ADVANCED_50K',
+    'MINOR_MINING',
+  ]),
   cost: z.number().min(0),
   technician: z.string().min(2).max(100),
-  details: z.array(z.object({
-    taskCode: z.string().min(1).max(50),
-    status: z.enum(['PASS', 'FAIL', 'REPLACED', 'N_A']),
-    notes: z.string().max(255).optional().nullable(),
-  })),
+  details: z.array(
+    z.object({
+      taskCode: z.string().min(1).max(50),
+      status: z.enum(['PASS', 'FAIL', 'REPLACED', 'N_A']),
+      notes: z.string().max(255).optional().nullable(),
+    })
+  ),
 });
 
 function getRecommendedServiceType(odometer: number): string {
@@ -32,13 +40,13 @@ function getRecommendedServiceType(odometer: number): string {
   ];
   let bestType = 'BASIC_10K';
   let minDistance = Infinity;
-  for (const m of milestones) {
+  milestones.forEach((m) => {
     const distance = Math.abs(relativeKm - m.value);
     if (distance < minDistance) {
       minDistance = distance;
       bestType = m.type;
     }
-  }
+  });
   return bestType;
 }
 
@@ -48,7 +56,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     try {
       const { cursor, limit = '50' } = request.query as { cursor?: string; limit?: string };
       const parsedLimit = parseInt(limit, 10);
-      
+
       let query = `
         SELECT 
           m.id, m.uuid, m.unit_id, m.service_date, m.odometer_at_service, m.service_type, 
@@ -70,11 +78,13 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       params.push(parsedLimit + 1);
 
       const [rows] = await db.execute<RowDataPacket[]>(query, params);
-      
+
       let nextCursor = null;
       if (rows.length > parsedLimit) {
         const lastItem = rows[parsedLimit - 1];
-        nextCursor = Buffer.from(`${(lastItem.created_at as Date).toISOString()}|${lastItem.id}`).toString('base64');
+        nextCursor = Buffer.from(
+          `${(lastItem.created_at as Date).toISOString()}|${lastItem.id}`
+        ).toString('base64');
         rows.pop(); // Remove the extra item
       }
 
@@ -89,21 +99,26 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
   fastify.get('/maintenance/template/:unitId', async (request, reply) => {
     try {
       const { unitId } = request.params as { unitId: string };
-      const { isMining, serviceType, odometer } = request.query as { isMining?: string; serviceType?: string; odometer?: string };
-      
+      const { isMining, serviceType, odometer } = request.query as {
+        isMining?: string;
+        serviceType?: string;
+        odometer?: string;
+      };
+
       const [units] = await db.execute<RowDataPacket[]>(
         'SELECT brandId, fuelTypeId, maintIntervalKm, odometer FROM fleet_units WHERE id = ?',
         [unitId]
       );
-      
+
       if (units.length === 0) {
         return reply.code(404).send({ success: false, message: 'Unit not found' });
       }
-      
+
       const unit = units[0];
-      
-      const currentOdometer = odometer !== undefined ? Number(odometer) : Number(unit.odometer || 0);
-      
+
+      const currentOdometer =
+        odometer !== undefined ? Number(odometer) : Number(unit.odometer || 0);
+
       // Deduce service type if not provided
       let queryServiceType = serviceType;
       if (!queryServiceType) {
@@ -116,7 +131,11 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       }
       if (isMining === 'true' && queryServiceType === 'MINOR_MINING') {
         const standardServiceType = getRecommendedServiceType(currentOdometer);
-        if (standardServiceType && standardServiceType !== 'MINOR_MINING' && !serviceTypes.includes(standardServiceType)) {
+        if (
+          standardServiceType &&
+          standardServiceType !== 'MINOR_MINING' &&
+          !serviceTypes.includes(standardServiceType)
+        ) {
           serviceTypes.push(standardServiceType);
         }
       }
@@ -144,7 +163,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         unit.fuelTypeId,
       ]);
 
-      const tasks = rows.map(r => ({
+      const tasks = rows.map((r) => ({
         code: r.code,
         label: r.label,
         isCritical: Boolean(r.isCritical),
@@ -178,7 +197,15 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         `INSERT INTO fleet_maintenance_logs 
           (uuid, unit_id, service_date, odometer_at_service, service_type, cost, technician)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [logUuid, data.unitId, data.serviceDate, data.odometerAtService, data.serviceType, data.cost, data.technician]
+        [
+          logUuid,
+          data.unitId,
+          data.serviceDate,
+          data.odometerAtService,
+          data.serviceType,
+          data.cost,
+          data.technician,
+        ]
       );
       const maintenanceId = insertLog.insertId;
 
@@ -203,7 +230,9 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       );
 
       await connection.commit();
-      return reply.code(201).send({ success: true, message: 'Maintenance registered successfully', uuid: logUuid });
+      return reply
+        .code(201)
+        .send({ success: true, message: 'Maintenance registered successfully', uuid: logUuid });
     } catch (error) {
       await connection.rollback();
       fastify.log.error(error);

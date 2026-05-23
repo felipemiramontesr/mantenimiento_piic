@@ -11,7 +11,11 @@ import {
   Save,
   X,
 } from 'lucide-react';
-import { MaintenanceSchedulePayload, MaintenanceTemplateTask, ServiceType } from '../../types/maintenance';
+import {
+  MaintenanceSchedulePayload,
+  MaintenanceTemplateTask,
+  ServiceType,
+} from '../../types/maintenance';
 import api from '../../api/client';
 import { FleetUnit } from '../../types/fleet';
 import ArchonField from '../ArchonField';
@@ -46,13 +50,13 @@ const getRecommendedService = (odometer: number, isMining: boolean): ServiceType
   let bestType: ServiceType = 'BASIC_10K';
   let minDistance = Infinity;
 
-  for (const m of milestones) {
+  milestones.forEach((m) => {
     const distance = Math.abs(relativeKm - m.value);
     if (distance < minDistance) {
       minDistance = distance;
       bestType = m.type;
     }
-  }
+  });
 
   return bestType;
 };
@@ -62,7 +66,10 @@ const getRecommendedService = (odometer: number, isMining: boolean): ServiceType
  * Sovereign UI: Industrial 2x2 Axial Architecture
  * Uses ArchonField + ArchonSelect combobox pattern
  */
-const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = ({ onSuccess, onCancel }) => {
+const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = ({
+  onSuccess,
+  onCancel,
+}) => {
   const [units, setUnits] = useState<FleetUnit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>('');
   const [isMining, setIsMining] = useState<boolean>(false);
@@ -109,7 +116,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      serviceType: isMining ? 'MINOR_MINING' : getRecommendedService(prev.odometerAtService || 0, false),
+      serviceType: isMining
+        ? 'MINOR_MINING'
+        : getRecommendedService(prev.odometerAtService || 0, false),
     }));
   }, [isMining, formData.odometerAtService]);
 
@@ -117,19 +126,26 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   useEffect(() => {
     if (selectedUnit && formData.serviceType) {
       setLoading(true);
-      api.get(`/maintenance/template/${selectedUnit}?isMining=${isMining}&serviceType=${formData.serviceType}&odometer=${formData.odometerAtService || 0}`).then((res) => {
-        if (res.data.success) {
-          setTemplate(res.data.tasks);
-          setFormData((prev) => ({
-            ...prev,
-            details: res.data.tasks.map((t: MaintenanceTemplateTask) => ({
-              taskCode: t.code,
-              status: 'PASS',
-              notes: '',
-            })),
-          }));
-        }
-      }).finally(() => setLoading(false));
+      api
+        .get(
+          `/maintenance/template/${selectedUnit}?isMining=${isMining}&serviceType=${
+            formData.serviceType
+          }&odometer=${formData.odometerAtService || 0}`
+        )
+        .then((res) => {
+          if (res.data.success) {
+            setTemplate(res.data.tasks);
+            setFormData((prev) => ({
+              ...prev,
+              details: res.data.tasks.map((t: MaintenanceTemplateTask) => ({
+                taskCode: t.code,
+                status: 'PASS',
+                notes: '',
+              })),
+            }));
+          }
+        })
+        .finally(() => setLoading(false));
     }
   }, [selectedUnit, isMining, formData.serviceType, formData.odometerAtService]);
 
@@ -137,37 +153,39 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const unitOptions: SelectOption[] = units.map((u) => ({
     value: u.id,
     label: `${u.id} - ${u.marca || ''} ${u.modelo || ''}`.trim(),
-    secondaryLabel: `ODO: ${Number(u.odometer || 0).toLocaleString()} KM | ${u.placas || 'Sin placas'}`,
+    secondaryLabel: `ODO: ${Number(u.odometer || 0).toLocaleString()} KM | ${
+      u.placas || 'Sin placas'
+    }`,
     searchTerms: `${u.marca || ''} ${u.modelo || ''} ${u.placas || ''} ${u.departamento || ''}`,
   }));
 
   // Sovereign Dynamic Service Type options with visual Recommended badges
   const recommendedService = getRecommendedService(formData.odometerAtService || 0, isMining);
   const serviceTypeOptions: SelectOption[] = [
-    { 
-      value: 'BASIC_10K', 
-      label: 'Básico 10,000 km' + (recommendedService === 'BASIC_10K' ? ' ✨' : ''), 
-      secondaryLabel: recommendedService === 'BASIC_10K' ? 'RECOMENDADO' : 'PREVENTIVO' 
+    {
+      value: 'BASIC_10K',
+      label: `Básico 10,000 km${recommendedService === 'BASIC_10K' ? ' ✨' : ''}`,
+      secondaryLabel: recommendedService === 'BASIC_10K' ? 'RECOMENDADO' : 'PREVENTIVO',
     },
-    { 
-      value: 'INTERMEDIATE_20K', 
-      label: 'Intermedio 20,000 km' + (recommendedService === 'INTERMEDIATE_20K' ? ' ✨' : ''), 
-      secondaryLabel: recommendedService === 'INTERMEDIATE_20K' ? 'RECOMENDADO' : 'PREVENTIVO' 
+    {
+      value: 'INTERMEDIATE_20K',
+      label: `Intermedio 20,000 km${recommendedService === 'INTERMEDIATE_20K' ? ' ✨' : ''}`,
+      secondaryLabel: recommendedService === 'INTERMEDIATE_20K' ? 'RECOMENDADO' : 'PREVENTIVO',
     },
-    { 
-      value: 'MAJOR_30K', 
-      label: 'Mayor 30,000 km' + (recommendedService === 'MAJOR_30K' ? ' ✨' : ''), 
-      secondaryLabel: recommendedService === 'MAJOR_30K' ? 'RECOMENDADO' : 'PREVENTIVO' 
+    {
+      value: 'MAJOR_30K',
+      label: `Mayor 30,000 km${recommendedService === 'MAJOR_30K' ? ' ✨' : ''}`,
+      secondaryLabel: recommendedService === 'MAJOR_30K' ? 'RECOMENDADO' : 'PREVENTIVO',
     },
-    { 
-      value: 'ADVANCED_50K', 
-      label: 'Avanzado 50,000 km' + (recommendedService === 'ADVANCED_50K' ? ' ✨' : ''), 
-      secondaryLabel: recommendedService === 'ADVANCED_50K' ? 'RECOMENDADO' : 'PREVENTIVO' 
+    {
+      value: 'ADVANCED_50K',
+      label: `Avanzado 50,000 km${recommendedService === 'ADVANCED_50K' ? ' ✨' : ''}`,
+      secondaryLabel: recommendedService === 'ADVANCED_50K' ? 'RECOMENDADO' : 'PREVENTIVO',
     },
-    { 
-      value: 'MINOR_MINING', 
-      label: 'Servicio Menor - Mina' + (recommendedService === 'MINOR_MINING' ? ' ✨' : ''), 
-      secondaryLabel: recommendedService === 'MINOR_MINING' ? 'RECOMENDADO' : 'MINA' 
+    {
+      value: 'MINOR_MINING',
+      label: `Servicio Menor - Mina${recommendedService === 'MINOR_MINING' ? ' ✨' : ''}`,
+      secondaryLabel: recommendedService === 'MINOR_MINING' ? 'RECOMENDADO' : 'MINA',
     },
   ];
 
@@ -211,10 +229,16 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     }
   };
 
-  const canSubmit = Boolean(selectedUnit && formData.technician && formData.odometerAtService && formData.odometerAtService > 0);
+  const canSubmit = Boolean(
+    selectedUnit &&
+      formData.technician &&
+      formData.odometerAtService &&
+      formData.odometerAtService > 0
+  );
 
   // Sovereign input class token (mirrored from FleetRegistrationForm)
-  const inputClass = 'w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal outline-none';
+  const inputClass =
+    'w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal outline-none';
 
   return (
     <form
@@ -245,7 +269,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
               <ArchonSelect
                 options={serviceTypeOptions}
                 value={formData.serviceType || ''}
-                onChange={(val: string): void => setFormData({ ...formData, serviceType: val as ServiceType })}
+                onChange={(val: string): void =>
+                  setFormData({ ...formData, serviceType: val as ServiceType })
+                }
                 placeholder="Seleccionar tipo..."
                 icon={Settings}
               />
@@ -256,7 +282,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                 <input
                   type="checkbox"
                   checked={isMining}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setIsMining(e.target.checked)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setIsMining(e.target.checked)
+                  }
                   className="w-4 h-4 text-[#f2b705] rounded border-[#0f2a44]/20 focus:ring-[#f2b705]"
                 />
                 <span className="text-[13px] font-bold text-[#0f2a44]">Servicio Menor — Mina</span>
@@ -273,7 +301,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                     placeholder="Ej: 125000"
                     className={`${inputClass} font-mono pr-14`}
                     value={formData.odometerAtService || ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setFormData({ ...formData, odometerAtService: e.target.valueAsNumber })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                      setFormData({ ...formData, odometerAtService: e.target.valueAsNumber })
+                    }
                   />
                   <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                     KM
@@ -286,7 +316,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                   type="date"
                   className={`${inputClass} font-mono`}
                   value={formData.serviceDate}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setFormData({ ...formData, serviceDate: e.target.value })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, serviceDate: e.target.value })
+                  }
                 />
               </ArchonField>
             </div>
@@ -308,7 +340,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                 placeholder="Ej: Ing. J. Pérez"
                 className={`${inputClass}`}
                 value={formData.technician}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setFormData({ ...formData, technician: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, technician: e.target.value })
+                }
               />
             </ArchonField>
 
@@ -322,7 +356,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                   placeholder="Ej: 3,450.00"
                   className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-[13px] font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal"
                   value={formData.cost || ''}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setFormData({ ...formData, cost: e.target.valueAsNumber })}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, cost: e.target.valueAsNumber })
+                  }
                 />
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                   MXN
@@ -354,14 +390,19 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           {!loading && template.length > 0 && (
             <div className="divide-y divide-[#0f2a44]/5">
               {template.map((task, idx) => (
-                <div key={task.code} className="px-10 py-5 flex items-center gap-6 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200">
+                <div
+                  key={task.code}
+                  className="px-10 py-5 flex items-center gap-6 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
+                >
                   {/* Task info */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-bold text-[#0f2a44] truncate">{task.label}</div>
-                    <div className="text-[9px] font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">{task.code}</div>
+                    <div className="text-[13px] font-bold text-[#0f2a44] truncate">
+                      {task.label}
+                    </div>
+                    <div className="text-[9px] font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
+                      {task.code}
+                    </div>
                   </div>
-
-
 
                   {/* Status selector */}
                   <div className="shrink-0 w-44">
@@ -378,7 +419,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                     type="text"
                     placeholder="Notas..."
                     value={formData.details![idx]?.notes || ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void => handleDetailChange(idx, 'notes', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                      handleDetailChange(idx, 'notes', e.target.value)
+                    }
                     className="shrink-0 w-48 h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] outline-none"
                   />
                 </div>
