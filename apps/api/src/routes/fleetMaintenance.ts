@@ -106,7 +106,9 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       };
 
       const [units] = await db.execute<RowDataPacket[]>(
-        'SELECT brandId, fuelTypeId, maintIntervalKm, odometer FROM fleet_units WHERE id = ?',
+        `SELECT brandId, fuelTypeId, maintIntervalKm, odometer, 
+                last_chassis_inspection_odometer, last_distribution_change_odometer 
+         FROM fleet_units WHERE id = ?`,
         [unitId]
       );
 
@@ -169,6 +171,26 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         isCritical: Boolean(r.isCritical),
       }));
 
+      // 🔱 Delta Stateful Rebase Trigger Logic (Prevents Omission Vulnerability)
+      const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
+      const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
+
+      if (currentOdometer - lastChassisOdo >= 80000) {
+        tasks.push({
+          code: 'CHASSIS_SHOCKS_HEAVY',
+          label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
+          isCritical: true,
+        });
+      }
+
+      if (currentOdometer - lastDistOdo >= 100000) {
+        tasks.push({
+          code: 'DISTRIBUTION_KIT_WATER_PUMP',
+          label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
+          isCritical: true,
+        });
+      }
+
       return reply.send({ success: true, tasks });
     } catch (error) {
       fastify.log.error(error);
@@ -221,12 +243,51 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const nextServiceReading = data.odometerAtService + (unit.maintIntervalKm || 10000);
       const finalOdometer = Math.max(unit.odometer, data.odometerAtService);
 
+      // Track reset conditions for predictive delta milestones
+      let updateChassisOdo = false;
+      let updateDistributionOdo = false;
+
+      data.details.forEach((detail) => {
+        if (
+          detail.taskCode === 'CHASSIS_SHOCKS_HEAVY' &&
+          (detail.status === 'PASS' || detail.status === 'REPLACED')
+        ) {
+          updateChassisOdo = true;
+        }
+        if (
+          detail.taskCode === 'DISTRIBUTION_KIT_WATER_PUMP' &&
+          (detail.status === 'PASS' || detail.status === 'REPLACED')
+        ) {
+          updateDistributionOdo = true;
+        }
+      });
+
+      // 🔱 Deterministic Tuple-Based Update Mapping (EAL6+ Safety Standards)
+      const updates: [string, string | number][] = [
+        ['odometer', finalOdometer],
+        ['lastServiceReading', data.odometerAtService],
+        ['lastServiceDate', data.serviceDate],
+        ['nextServiceReading_forecast', nextServiceReading],
+        ['status', 'Disponible'],
+      ];
+
+      if (updateChassisOdo) {
+        updates.push(['last_chassis_inspection_odometer', data.odometerAtService]);
+      }
+      if (updateDistributionOdo) {
+        updates.push(['last_distribution_change_odometer', data.odometerAtService]);
+      }
+
+      // Safe, synchronous query and parameter reconstruction
+      const setClause = `${updates.map(([col]) => `${col} = ?`).join(', ')}, updatedAt = CURRENT_TIMESTAMP`;
+      const queryParams = updates.map(([, val]) => val);
+      
+      // Infallibly push unit ID to the final parameter position
+      queryParams.push(data.unitId);
+
       await connection.execute(
-        `UPDATE fleet_units SET 
-          odometer = ?, lastServiceReading = ?, lastServiceDate = ?, 
-          nextServiceReading_forecast = ?, status = 'Disponible', updatedAt = CURRENT_TIMESTAMP
-         WHERE id = ?`,
-        [finalOdometer, data.odometerAtService, data.serviceDate, nextServiceReading, data.unitId]
+        `UPDATE fleet_units SET ${setClause} WHERE id = ?`,
+        queryParams
       );
 
       await connection.commit();
