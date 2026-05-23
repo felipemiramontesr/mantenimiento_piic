@@ -167,12 +167,12 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
   if (error) return <div className="p-4 text-[#C12020] font-mono text-sm">{error}</div>;
 
   const headers: ArchonTableHeader[] = [
-    { key: 'id', label: 'ID', sortable: true, width: '100px', align: 'left' },
-    { key: 'unit_id', label: 'UNIDAD', sortable: true, align: 'left' },
-    { key: 'service_type', label: 'TIPO SERVICIO', sortable: true, align: 'left' },
-    { key: 'odometer_at_service', label: 'ODÓMETRO', sortable: true, align: 'left' },
-    { key: 'service_date', label: 'FECHA', sortable: true, align: 'left' },
-    { key: 'cost', label: 'COSTO', sortable: true, align: 'right' },
+    { key: 'id', label: 'ID', sortable: true, width: '100px', align: 'center' },
+    { key: 'unit_id', label: 'UNIDAD', sortable: true, align: 'center' },
+    { key: 'service_type', label: 'TIPO SERVICIO', sortable: true, align: 'center' },
+    { key: 'odometer_at_service', label: 'ODÓMETRO', sortable: true, align: 'center' },
+    { key: 'service_date', label: 'FECHA', sortable: true, align: 'center' },
+    { key: 'cost', label: 'COSTO', sortable: true, align: 'center' },
   ];
 
   return (
@@ -193,12 +193,12 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
             transition={{ delay: index * 0.04 }}
             className="bg-transparent hover:bg-pinnacle-navy/[0.015] border-y border-solid border-slate-200/50 transition-colors"
           >
-            <td className="py-4 px-3 font-mono text-xs opacity-60">#{log.id}</td>
-            <td className="py-4 px-3">
-              <div className="font-black">{log.unit_id}</div>
-              <div className="text-[10px] opacity-60 uppercase">{log.placas}</div>
+            <td className="py-4 px-3 font-mono text-xs opacity-60 text-center">#{log.id}</td>
+            <td className="py-4 px-3 text-center">
+              <div className="font-black text-center">{log.unit_id}</div>
+              <div className="text-[10px] opacity-60 uppercase text-center">{log.placas}</div>
             </td>
-            <td className="py-4 px-3">
+            <td className="py-4 px-3 text-center">
               {log.service_type === 'MINOR_MINING' ? (
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 text-xs font-bold border border-emerald-500/20">
                   Mina Menor
@@ -209,11 +209,13 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                 </span>
               )}
             </td>
-            <td className="py-4 px-3 font-mono text-xs">
+            <td className="py-4 px-3 font-mono text-xs text-center">
               {Number(log.odometer_at_service).toLocaleString()} km
             </td>
-            <td className="py-4 px-3 whitespace-nowrap">{formatDate(log.service_date)}</td>
-            <td className="py-4 px-3 text-right font-mono font-black text-emerald-700">
+            <td className="py-4 px-3 whitespace-nowrap text-center">
+              {formatDate(log.service_date)}
+            </td>
+            <td className="py-4 px-3 text-center font-mono font-black text-emerald-700">
               {`$${Number(log.cost).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
