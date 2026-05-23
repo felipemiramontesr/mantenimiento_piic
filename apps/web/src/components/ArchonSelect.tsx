@@ -188,12 +188,12 @@ export default function ArchonSelect({
                           : 'border-transparent text-[#0f2a44] hover:bg-[rgba(15,42,68,0.02)] hover:border-[rgba(15,42,68,0.2)]'
                       }`}
                     >
-                      <div className="flex flex-col min-w-0">
-                        <span className="truncate">{option.label}</span>
+                      <div className="flex flex-col gap-1.5 min-w-0">
+                        <div className="truncate">{option.label}</div>
                         {option.secondaryLabel && (
-                          <span className="text-[9px] font-black opacity-30 uppercase tracking-widest truncate">
+                          <div className="text-[9px] font-black opacity-30 uppercase tracking-widest truncate mt-0.5">
                             {option.secondaryLabel}
-                          </span>
+                          </div>
                         )}
                       </div>
                       {isSelected && (

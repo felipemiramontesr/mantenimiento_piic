@@ -20,6 +20,7 @@ import api from '../../api/client';
 import { FleetUnit } from '../../types/fleet';
 import ArchonField from '../ArchonField';
 import ArchonSelect, { SelectOption } from '../ArchonSelect';
+import { useUsers } from '../../context/UserContext';
 
 interface MaintenanceRegistrationFormProps {
   onSuccess: () => void;
@@ -74,6 +75,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const [selectedUnit, setSelectedUnit] = useState<string>('');
   const [isMining, setIsMining] = useState<boolean>(false);
   const [template, setTemplate] = useState<MaintenanceTemplateTask[]>([]);
+  const { users } = useUsers();
 
   const [formData, setFormData] = useState<Partial<MaintenanceSchedulePayload>>({
     serviceDate: new Date().toISOString().split('T')[0],
@@ -196,6 +198,21 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     { value: 'FAIL', label: 'Falla / Revisión' },
     { value: 'N_A', label: 'No Aplica' },
   ];
+
+  // Technician options filtered by Técnico Especialista role (Case-Insensitive)
+  const technicianOptions: SelectOption[] = (users || [])
+    .filter(
+      (u) =>
+        u.is_active &&
+        (u.roleName?.toLowerCase().includes('técnico especialista') ||
+          u.roleName?.toLowerCase().includes('tecnico especialista'))
+    )
+    .map((u) => ({
+      value: u.fullName || u.username,
+      label: u.fullName || u.username,
+      secondaryLabel: `NÓMINA: ${u.employeeNumber || 'S/N'} | ${u.department || 'GENERAL'}`,
+      searchTerms: `${u.fullName || ''} ${u.username || ''} ${u.employeeNumber || ''}`,
+    }));
 
   const handleDetailChange = (index: number, field: string, value: string): void => {
     const newDetails = [...(formData.details || [])];
@@ -334,15 +351,12 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
 
           <div className="space-y-6 relative z-10">
             <ArchonField label="Técnico Ejecutor" icon={User} required>
-              <input
-                required
-                type="text"
-                placeholder="Ej: Ing. J. Pérez"
-                className={`${inputClass}`}
-                value={formData.technician}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, technician: e.target.value })
-                }
+              <ArchonSelect
+                options={technicianOptions}
+                value={formData.technician || ''}
+                onChange={(val: string): void => setFormData({ ...formData, technician: val })}
+                placeholder="Buscar técnico..."
+                icon={User}
               />
             </ArchonField>
 
@@ -371,7 +385,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
 
       {/* ── CHECKLIST OPERATIVO (Full Width) ───────────────────────────── */}
       {selectedUnit && (
-        <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#0f2a44]">
+        <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#0f2a44] !pb-2">
           <div className="card-sovereign-header p-10 pb-0">
             <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
             <h3 className="card-sovereign-title text-[14px] opacity-100">CHECKLIST OPERATIVO</h3>
@@ -392,10 +406,10 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
               {template.map((task, idx) => (
                 <div
                   key={task.code}
-                  className="px-10 py-5 flex items-center gap-6 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
+                  className="px-10 py-5 archon-grid-2-sovereign gap-10 items-center hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
                 >
-                  {/* Task info */}
-                  <div className="flex-1 min-w-0">
+                  {/* Task info (Left column) */}
+                  <div className="min-w-0 pr-6">
                     <div className="text-[13px] font-bold text-[#0f2a44] truncate">
                       {task.label}
                     </div>
@@ -404,26 +418,31 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                     </div>
                   </div>
 
-                  {/* Status selector */}
-                  <div className="shrink-0 w-44">
-                    <ArchonSelect
-                      options={statusOptions}
-                      value={formData.details![idx]?.status || 'PASS'}
-                      onChange={(val: string): void => handleDetailChange(idx, 'status', val)}
-                      searchable={false}
-                    />
-                  </div>
+                  {/* Right side elements (Right column) */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Status selector (25% of total, which is 50% of the right side container) */}
+                    <div className="w-full">
+                      <ArchonSelect
+                        options={statusOptions}
+                        value={formData.details![idx]?.status || 'PASS'}
+                        onChange={(val: string): void => handleDetailChange(idx, 'status', val)}
+                        searchable={false}
+                      />
+                    </div>
 
-                  {/* Notes */}
-                  <input
-                    type="text"
-                    placeholder="Notas..."
-                    value={formData.details![idx]?.notes || ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                      handleDetailChange(idx, 'notes', e.target.value)
-                    }
-                    className="shrink-0 w-48 h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] outline-none"
-                  />
+                    {/* Notes (25% of total, which is 50% of the right side container) */}
+                    <div className="w-full">
+                      <input
+                        type="text"
+                        placeholder="Notas..."
+                        value={formData.details![idx]?.notes || ''}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                          handleDetailChange(idx, 'notes', e.target.value)
+                        }
+                        className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -432,23 +451,22 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
       )}
 
       {/* ── SOVEREIGN ACTION BAR ──────────────────────────────────────── */}
-      <div className="flex justify-end gap-4 pt-6 border-t-2 border-[#0f2a44]/5">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-11 px-8 rounded-[4px] text-[11px] font-black text-[#0f2a44]/50 hover:bg-[#0f2a44]/5 uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2"
-        >
-          <X size={14} />
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={submitting || !canSubmit}
-          className="h-11 px-10 rounded-[4px] bg-[#0f2a44] text-white text-[11px] font-black uppercase tracking-[0.15em] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#0f2a44]/90 transition-all duration-300 flex items-center gap-2.5 shadow-[0_4px_12px_rgba(15,42,68,0.15)]"
-        >
-          <Save size={14} />
-          {submitting ? 'Procesando...' : 'Asentar Servicio'}
-        </button>
+      <div className="archon-grid-2-sovereign gap-10 !mt-5 pt-0">
+        <div></div>
+        <div className="grid grid-cols-2 gap-4">
+          <button type="button" onClick={onCancel} className="btn-sentinel-red w-full">
+            <X size={14} />
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={submitting || !canSubmit}
+            className="btn-sentinel-emerald w-full"
+          >
+            <Save size={14} />
+            {submitting ? 'Procesando...' : 'Asentar Servicio'}
+          </button>
+        </div>
       </div>
     </form>
   );

@@ -17,7 +17,22 @@ export const mockStartRoute = vi.fn();
 export const mockFinishRoute = vi.fn();
 
 const MockUserContext = {
-  users: [{ id: '1', fullName: 'Juan Perez', username: 'juan.perez', roleName: 'Operador' }],
+  users: [
+    {
+      id: '1',
+      fullName: 'Juan Perez',
+      username: 'juan.perez',
+      roleName: 'Operador',
+      is_active: true,
+    },
+    {
+      id: '2',
+      fullName: 'Pedro Técnico',
+      username: 'pedro.tecnico',
+      roleName: 'Técnico Especialista',
+      is_active: true,
+    },
+  ],
   isLoading: false,
   activePanel: 'DIRECTORY' as const,
   setActivePanel: vi.fn(),
