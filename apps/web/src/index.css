@@ -149,3 +149,20 @@
   margin: 0;
   padding: 0;
 }
+
+/* 🔱 Archon Sovereign Grid Expanded Focus Borders (Horizontal-Only) */
+.expanded-row-cell {
+  border-top: 0px solid transparent !important;
+  border-left: 0px solid transparent !important;
+  border-right: 0px solid transparent !important;
+  border-bottom: 0px solid transparent !important;
+  box-shadow: inset 0 2px 0 0 #0f2a44 !important;
+}
+
+.expanded-accordion-carrier {
+  border-bottom: 2px solid #0f2a44 !important;
+  border-top: 0px solid transparent !important;
+  border-left: 0px solid transparent !important;
+  border-right: 0px solid transparent !important;
+  box-shadow: none !important;
+}

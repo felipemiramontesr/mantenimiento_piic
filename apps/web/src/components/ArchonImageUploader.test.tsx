@@ -146,4 +146,13 @@ describe('ArchonImageUploader Component', () => {
     const slots = container.querySelectorAll('.aspect-square');
     expect(slots.length).toBe(4);
   });
+
+  it('should render with reduced height when reducedHeight is true', () => {
+    const { container } = render(
+      <ArchonImageUploader images={[]} onChange={mockOnChange} reducedHeight={true} />
+    );
+    const dropzone = container.querySelector('.border-dashed');
+    expect(dropzone).toHaveClass('p-6');
+    expect(dropzone).toHaveClass('gap-2');
+  });
 });

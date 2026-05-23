@@ -31,10 +31,10 @@ const RouteMissionPanel: React.FC<RouteMissionPanelProps> = ({ formData, updateF
     </div>
 
     <ArchonGeoSelector
-      value={formData.destinationColoniaId}
-      onChange={(coloniaId: number | undefined, destStr: string): void => {
+      value={formData.destinationNeighborhoodId}
+      onChange={(neighborhoodId: number | undefined, destStr: string): void => {
         updateForm({
-          destinationColoniaId: coloniaId,
+          destinationNeighborhoodId: neighborhoodId,
           destination: destStr,
         });
       }}

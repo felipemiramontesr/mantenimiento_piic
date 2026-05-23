@@ -47,7 +47,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
       const hasOdometer = Number(formData.endReading) > 0;
       return {
         text: hasOdometer ? 'Finalizar Misión' : 'Actualizar Trayecto',
-        className: hasOdometer ? 'btn-sentinel-amber-static' : 'btn-sentinel-sky-static',
+        className: 'btn-sentinel-emerald-static',
       };
     }
     return {
@@ -111,7 +111,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
         </div>
 
         {/* 🔱 SOVEREIGN GLOBAL ACTION BAR - Aligned with Axial Grid for Uniformity */}
-        <div className="archon-grid-2-sovereign pt-8 mt-4 border-t border-pinnacle-navy/5">
+        <div className="archon-grid-2-sovereign pt-[20px] mt-[20px] border-t border-pinnacle-navy/5">
           {/* Left Panel Action: Danger Zone */}
           <div className="flex items-center">
             {isEdit && (

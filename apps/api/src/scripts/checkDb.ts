@@ -1,4 +1,7 @@
 /* eslint-disable */
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.join(__dirname, '../../../../.env') });
 import db from '../services/db';
 
 async function check() {
@@ -11,9 +14,8 @@ async function check() {
     );
     console.log('Catalogs counts:', catalogs);
 
-    const [sample] = await db.execute('SELECT * FROM fleet_units LIMIT 1');
-    console.log('Sample unit:', sample);
-
+    const [brands] = await db.execute("SELECT id, code, label FROM common_catalogs WHERE category = 'BRAND'");
+    console.log('Brands:', brands);
     process.exit(0);
   } catch (err) {
     console.error('Database check failed:', err);

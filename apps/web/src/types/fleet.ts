@@ -128,6 +128,7 @@ export interface FleetUnit {
   // 🔱 Dynamic Analytical Fields (v.45.6.0)
   color?: string | null;
   nextServiceReading?: number | null;
+  nextServiceKmTarget?: number | null;
   lastFuelLevel?: number;
   initialFuelLevel?: number;
 }

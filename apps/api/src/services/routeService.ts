@@ -17,7 +17,7 @@ export interface RouteEntry {
   unit_id: string;
   driver_id: number;
   origin_id?: number;
-  destination_colonia_id?: number;
+  destination_neighborhood_id?: number;
   destination: string;
   status: RouteStatus;
   start_reading: number;
@@ -68,7 +68,7 @@ export default class RouteService {
     destination: string,
     originId?: number,
     description?: string,
-    destinationColoniaId?: number
+    destinationNeighborhoodId?: number
   ): Promise<string> {
     const connection = await db.getConnection();
     const routeUuid = randomUUID();
@@ -90,22 +90,22 @@ export default class RouteService {
         );
       }
 
-      // 1.1 Resolve destination if destinationColoniaId is provided
+      // 1.1 Resolve destination if destinationNeighborhoodId is provided
       let finalDestination = destination;
-      if (destinationColoniaId) {
+      if (destinationNeighborhoodId) {
         const [coloniaRows] = await connection.execute<RowDataPacket[]>(
-          `SELECT c.nombre AS colonia, m.nombre AS municipio, e.nombre AS estado 
-           FROM colonias c
-           JOIN municipios m ON c.municipio = m.id
-           JOIN estados e ON m.estado = e.id
+          `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state 
+           FROM neighborhoods c
+           JOIN municipalities m ON c.municipality_id = m.id
+           JOIN states e ON m.state_id = e.id
            WHERE c.id = ?`,
-          [destinationColoniaId]
+          [destinationNeighborhoodId]
         );
         if (coloniaRows.length > 0) {
           const row = coloniaRows[0];
-          const suffix = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+          const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
           if (destination && destination !== suffix) {
-            const parts = destination.split(row.colonia);
+            const parts = destination.split(row.neighborhood);
             const prefix = parts[0].trim().replace(/,\s*$/, '');
             if (prefix) {
               finalDestination = `${prefix}, ${suffix}`;
@@ -121,14 +121,14 @@ export default class RouteService {
       // 2. Create the Route
       await connection.execute(
         `INSERT INTO fleet_routes 
-        (uuid, unit_id, driver_id, origin_id, destination_colonia_id, destination, status, start_reading, fuel_level_start, description, start_at) 
+        (uuid, unit_id, driver_id, origin_id, destination_neighborhood_id, destination, status, start_reading, fuel_level_start, description, start_at) 
         VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, NOW())`,
         [
           routeUuid,
           unitId,
           driverId,
           originId || null,
-          destinationColoniaId || null,
+          destinationNeighborhoodId || null,
           finalDestination,
           startReading,
           fuelLevelStart,
@@ -386,7 +386,7 @@ export default class RouteService {
         unitId: 'unit_id',
         operatorId: 'driver_id',
         originId: 'origin_id',
-        destinationColoniaId: 'destination_colonia_id',
+        destinationNeighborhoodId: 'destination_neighborhood_id',
         destination: 'destination',
         status: 'status',
         startReading: 'start_reading',
@@ -401,23 +401,23 @@ export default class RouteService {
         description: 'description',
       };
 
-      // 2.0 Resolve destination if destinationColoniaId is updated
-      if (data.destinationColoniaId !== undefined) {
-        if (data.destinationColoniaId) {
+      // 2.0 Resolve destination if destinationNeighborhoodId is updated
+      if (data.destinationNeighborhoodId !== undefined) {
+        if (data.destinationNeighborhoodId) {
           const [coloniaRows] = await connection.execute<RowDataPacket[]>(
-            `SELECT c.nombre AS colonia, m.nombre AS municipio, e.nombre AS estado 
-             FROM colonias c
-             JOIN municipios m ON c.municipio = m.id
-             JOIN estados e ON m.estado = e.id
+            `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state 
+             FROM neighborhoods c
+             JOIN municipalities m ON c.municipality_id = m.id
+             JOIN states e ON m.state_id = e.id
              WHERE c.id = ?`,
-            [data.destinationColoniaId]
+            [data.destinationNeighborhoodId]
           );
           if (coloniaRows.length > 0) {
             const row = coloniaRows[0];
-            const suffix = `${row.colonia}, ${row.municipio}, ${row.estado}`;
+            const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
             const inputDest = data.destination || '';
             if (inputDest && inputDest !== suffix) {
-              const parts = inputDest.split(row.colonia);
+              const parts = inputDest.split(row.neighborhood);
               const prefix = parts[0].trim().replace(/,\s*$/, '');
               if (prefix) {
                 data.destination = `${prefix}, ${suffix}`;

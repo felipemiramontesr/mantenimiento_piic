@@ -306,6 +306,31 @@ export default class FleetService {
       payload.placas = EncryptionService.encrypt(payload.placas);
     }
 
+    // 🔱 Dynamic Catalog Frequency Auto-Sync (Omega Protocol)
+    if (payload.maintIntervalDays !== undefined) {
+      const days = payload.maintIntervalDays !== null ? Number(payload.maintIntervalDays) : 0;
+      if (days === 90) {
+        payload.maintenanceTimeFreqId = 1048;
+      } else if (days === 180) {
+        payload.maintenanceTimeFreqId = 1044;
+      } else if (days === 365) {
+        payload.maintenanceTimeFreqId = 1045;
+      } else {
+        payload.maintenanceTimeFreqId = null;
+      }
+    }
+
+    if (payload.maintIntervalKm !== undefined) {
+      const km = payload.maintIntervalKm !== null ? Number(payload.maintIntervalKm) : 0;
+      if (km === 5000) {
+        payload.maintenanceUsageFreqId = 1046;
+      } else if (km === 10000) {
+        payload.maintenanceUsageFreqId = 1047;
+      } else {
+        payload.maintenanceUsageFreqId = null;
+      }
+    }
+
     return payload;
   }
 }

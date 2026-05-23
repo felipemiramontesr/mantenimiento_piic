@@ -93,6 +93,114 @@ export const getFinalDestination = (formData: RouteAssignmentFormData): string =
   return finalDest;
 };
 
+export const roundToTwo = (val: number | string | undefined | null): number => {
+  if (val === undefined || val === null || val === '') return 0;
+  const num = Number(val);
+  return Number.isNaN(num) ? 0 : Math.round(num * 100) / 100;
+};
+
+export const validateReadingFailsafe = (
+  formData: RouteAssignmentFormData,
+  selectedUnitData: FleetUnit | null,
+  isEdit: boolean,
+  routeToEdit: RouteLog | null
+): string | null => {
+  const end = Number(formData.endReading || 0);
+  const start = Number(formData.startReading || 0);
+
+  if (isEdit && routeToEdit) {
+    if (end > 0 && end < start) {
+      return `Error Forense: La lectura final (${end} KM) no puede ser menor a la inicial (${start} KM).`;
+    }
+  } else if (!isEdit && selectedUnitData) {
+    const unitOdo = Number(selectedUnitData.odometer || 0);
+    if (start < unitOdo) {
+      return `Error Forense: El inicio de ruta (${start} KM) no puede ser menor al odómetro actual de la unidad (${unitOdo} KM).`;
+    }
+  }
+  return null;
+};
+
+export const validateDistance = (formData: RouteAssignmentFormData): string | null => {
+  const end = Number(formData.endReading || 0);
+  const start = Number(formData.startReading || 0);
+
+  if (end === 0) {
+    return "Error Forense: Debe ingresar la lectura de odómetro final para cerrar la ruta.";
+  }
+  if (end === start) {
+    return "Error Forense: La lectura final no puede ser igual a la lectura inicial (el viaje debe registrar movimiento).";
+  }
+  const distance = end - start;
+  if (distance > 5000) {
+    return `Error Forense: La distancia recorrida no puede superar los 5,000 km en una sola misión (${distance.toLocaleString()} km detectados).`;
+  }
+  return null;
+};
+
+export const validateFuelLevel = (formData: RouteAssignmentFormData): string | null => {
+  const arrivalFuel = Number(formData.arrivalFuelLevel);
+  if (Number.isNaN(arrivalFuel) || arrivalFuel < 0 || arrivalFuel > 100) {
+    return `Error Forense: El nivel de combustible de llegada debe estar exactamente entre 0% y 100% (${arrivalFuel}% detectado).`;
+  }
+  return null;
+};
+
+export const validateFuelCoherency = (
+  formData: RouteAssignmentFormData,
+  selectedUnitData: FleetUnit | null
+): string | null => {
+  const liters = Number(formData.fuelLitersLoaded || 0);
+  const amount = Number(formData.fuelAmount || 0);
+
+  if (liters < 0) {
+    return "Error Forense: Los litros de combustible cargados no pueden ser negativos.";
+  }
+  if (amount < 0) {
+    return "Error Forense: El costo total del combustible no puede ser negativo.";
+  }
+
+  if (liters > 0 && amount <= 0) {
+    return "Error Forense: Coherencia de Combustible - Si se cargaron litros de combustible, el costo total (Monto del Ticket) debe ser mayor a cero.";
+  }
+  if (amount > 0 && liters <= 0) {
+    return "Error Forense: Coherencia de Combustible - Si se registró un costo de combustible, los litros cargados deben ser mayores a cero.";
+  }
+
+  const unitCapacity = selectedUnitData?.fuelTankCapacity || 0;
+  const maxAllowedLiters = unitCapacity > 0 ? unitCapacity * 1.2 : 400;
+  if (liters > maxAllowedLiters) {
+    return `Error Forense: Los litros de combustible cargados (${liters} L) exceden el límite realista permitido para esta unidad (${maxAllowedLiters} L${
+      unitCapacity > 0 ? ` basado en una capacidad de tanque de ${unitCapacity} L` : ' como límite fallback'
+    }).`;
+  }
+  return null;
+};
+
+export const validateTirePressures = (formData: RouteAssignmentFormData): string | null => {
+  let tires: Record<string, any> = {};
+  try {
+    tires = JSON.parse(formData.tirePressureJson || '{}');
+  } catch (e) {
+    // Ignored
+  }
+
+  let errorMsg = null;
+  ['DI', 'DD', 'TI', 'TD'].some((pos) => {
+    const valStr = tires[pos];
+    if (valStr !== undefined && valStr !== null && valStr.trim() !== '') {
+      const val = Number(valStr);
+      if (Number.isNaN(val) || val < 20 || val > 100) {
+        errorMsg = `Error Forense: La presión del neumático ${pos} debe ser un valor realista entre 20 PSI y 100 PSI (detectado: "${valStr}").`;
+        return true;
+      }
+    }
+    return false;
+  });
+
+  return errorMsg;
+};
+
 /**
  * 🔱 Archon Hook: useRouteAssignmentControl
  * Purpose: Centralizes the mission control logic, state management and forensics.
@@ -113,7 +221,7 @@ export const useRouteAssignmentControl = (
     operatorId: '',
     origin: 'Arian Silver Zacatecas',
     destination: '',
-    destinationColoniaId: undefined,
+    destinationNeighborhoodId: undefined,
     description: '',
     fuelLevel: 100,
     arrivalFuelLevel: 100,
@@ -145,17 +253,11 @@ export const useRouteAssignmentControl = (
   const hydrateRouteData = useCallback(
     (route: RouteLog) => {
       const unitId = route.unit_id || '';
-      const unit = units.find((u) => u.id === unitId);
-      const capacity = unit?.fuelTankCapacity || 80;
 
-      // Determinamos el nivel de combustible a mostrar basado en el estatus
-      const fuelVal = isFinished
-        ? Number(route.fuel_level_end ?? route.fuel_level_start ?? 100)
-        : Number(route.fuel_level_start ?? 100);
+      const startFuel = Number(route.fuel_level_start ?? 100);
+      const arrivalFuel = Number(route.fuel_level_end ?? route.fuel_level_start ?? 100);
 
       const liters = Number(route.fuel_liters_loaded || 0);
-      const loadIncrement = (liters / capacity) * 100;
-      const arrivalBase = isFinished ? Math.max(0, fuelVal - loadIncrement) : fuelVal;
 
       const destinationStr = route.destination || '';
       const {
@@ -172,12 +274,12 @@ export const useRouteAssignmentControl = (
           route.origin ||
           'Arian Silver Zacatecas',
         destination: route.destination || '',
-        destinationColoniaId: route.destination_colonia_id
-          ? Number(route.destination_colonia_id)
+        destinationNeighborhoodId: route.destination_neighborhood_id
+          ? Number(route.destination_neighborhood_id)
           : undefined,
         description: route.description || '',
-        fuelLevel: fuelVal,
-        arrivalFuelLevel: arrivalBase,
+        fuelLevel: startFuel,
+        arrivalFuelLevel: arrivalFuel,
         startReading: Number(route.start_km ?? 0),
         endReading: Number(route.end_km ?? 0),
         fuelLitersLoaded: liters,
@@ -191,7 +293,7 @@ export const useRouteAssignmentControl = (
         numeroInterior: parsedNumeroInterior,
       });
     },
-    [units, origins, isFinished]
+    [units, origins]
   );
 
   useEffect((): void => {
@@ -204,7 +306,7 @@ export const useRouteAssignmentControl = (
         operatorId: '',
         origin: 'Arian Silver Zacatecas',
         destination: '',
-        destinationColoniaId: undefined,
+        destinationNeighborhoodId: undefined,
         description: '',
         fuelLevel: 100,
         arrivalFuelLevel: 100,
@@ -262,6 +364,7 @@ export const useRouteAssignmentControl = (
           ...prev,
           startReading: Number(unit.odometer || 0),
           fuelLevel: Number(unit.lastFuelLevel ?? 100),
+          arrivalFuelLevel: Number(unit.lastFuelLevel ?? 100),
         }));
       }
 
@@ -308,36 +411,9 @@ export const useRouteAssignmentControl = (
   // 📝 Actions
   const updateForm = useCallback(
     (updates: Partial<RouteAssignmentFormData>): void => {
-      setFormData((prev) => {
-        const next = { ...prev, ...updates };
-
-        // 🔱 Reactive Telemetry Linking (v.78.96.8)
-        // Whenever Arrival Level or Liters Loaded change, recalculate total FuelLevel
-        // 🧪 Consolidated Update Logic (Total-to-Arrival Conversion)
-        if ('fuelLevel' in updates && !('arrivalFuelLevel' in updates)) {
-          const total = Number(next.fuelLevel || 0);
-          const liters = Number(next.fuelLitersLoaded || 0);
-          const capacity = selectedUnitData?.fuelTankCapacity || 80;
-          const increment = (liters / capacity) * 100;
-          next.arrivalFuelLevel = Math.max(0, total - increment);
-        }
-
-        // 🧪 Arrival/Load-to-Total Conversion
-        if (
-          ('arrivalFuelLevel' in updates || 'fuelLitersLoaded' in updates) &&
-          selectedUnitData?.fuelTankCapacity
-        ) {
-          const base = Number(next.arrivalFuelLevel || 0);
-          const liters = Number(next.fuelLitersLoaded || 0);
-          const capacity = selectedUnitData.fuelTankCapacity;
-          const increment = (liters / capacity) * 100;
-          next.fuelLevel = Math.min(100, base + increment);
-        }
-
-        return next;
-      });
+      setFormData((prev) => ({ ...prev, ...updates }));
     },
-    [selectedUnitData]
+    []
   );
 
   const getForensicPayload = (): Record<string, unknown> => {
@@ -351,18 +427,19 @@ export const useRouteAssignmentControl = (
     } = formData;
 
     const finalDest = getFinalDestination(formData);
+    const fuelValToSend = isFinished ? formData.arrivalFuelLevel : formData.fuelLevel;
 
     return {
       ...rest,
       destination: finalDest,
       operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
       originId: originId ? Number(originId) : undefined,
-      destinationColoniaId: formData.destinationColoniaId
-        ? Number(formData.destinationColoniaId)
+      destinationNeighborhoodId: formData.destinationNeighborhoodId
+        ? Number(formData.destinationNeighborhoodId)
         : null,
-      fuelLevel: Number(formData.fuelLevel || 0),
-      fuelLitersLoaded: Number(formData.fuelLitersLoaded || 0),
-      fuelAmount: Number(formData.fuelAmount || 0),
+      fuelLevel: roundToTwo(fuelValToSend),
+      fuelLitersLoaded: roundToTwo(formData.fuelLitersLoaded),
+      fuelAmount: roundToTwo(formData.fuelAmount),
       startReading: Number(formData.startReading || 0),
       endReading: Number(formData.endReading || 0),
       additivesCheck: formData.additivesCheck ? 1 : 0,
@@ -371,9 +448,57 @@ export const useRouteAssignmentControl = (
     };
   };
 
+  const validateTelemetry = useCallback((): boolean => {
+    const isClosingOrFinished = isFinished || (isEdit && Number(formData.endReading || 0) > 0);
+
+    const odometerErr = validateReadingFailsafe(formData, selectedUnitData, isEdit, routeToEdit || null);
+    if (odometerErr) {
+      setError(odometerErr);
+      return false;
+    }
+
+    if (isClosingOrFinished) {
+      const distanceErr = validateDistance(formData);
+      if (distanceErr) {
+        setError(distanceErr);
+        return false;
+      }
+
+      const fuelLvlErr = validateFuelLevel(formData);
+      if (fuelLvlErr) {
+        setError(fuelLvlErr);
+        return false;
+      }
+
+      const fuelCohErr = validateFuelCoherency(formData, selectedUnitData);
+      if (fuelCohErr) {
+        setError(fuelCohErr);
+        return false;
+      }
+
+      const tireErr = validateTirePressures(formData);
+      if (tireErr) {
+        setError(tireErr);
+        return false;
+      }
+    }
+
+    return true;
+  }, [
+    isEdit,
+    isFinished,
+    routeToEdit,
+    formData,
+    selectedUnitData,
+  ]);
+
   const handleConfirmAudit = async (reason: string): Promise<void> => {
     if (!reason || reason.length < 5) {
       setError('La justificación debe tener al menos 5 caracteres.');
+      return;
+    }
+
+    if (auditAction === 'UPDATE' && !validateTelemetry()) {
       return;
     }
 
@@ -387,6 +512,9 @@ export const useRouteAssignmentControl = (
       } else {
         await api.delete(`/routes/${routeToEdit?.uuid}`, { data: { reason } });
       }
+
+      // Clear forensic logs cache to enforce a fresh download
+      archonCache.clear('forensic_journal_logs');
 
       // 🔱 Global Synchronization: Ensure Fleet Inventory reflects forensic changes
       await refreshUnits();
@@ -411,37 +539,15 @@ export const useRouteAssignmentControl = (
     setIsAuditModalOpen(true);
   };
 
-  const validateTelemetry = useCallback((): boolean => {
-    // 🛡️ Forensic Failsafe: Prevent logical telemetry errors
-    if (isEdit && routeToEdit) {
-      const end = Number(formData.endReading);
-      const start = Number(formData.startReading);
-      if (end < start) {
-        setError(
-          `Error Forense: La lectura final (${end}) no puede ser menor a la inicial (${start}).`
-        );
-        return false;
-      }
-    } else if (!isEdit && selectedUnitData) {
-      const start = Number(formData.startReading);
-      const unitOdo = Number(selectedUnitData.odometer);
-      if (start < unitOdo) {
-        setError(
-          `Error Forense: El inicio de ruta (${start}) no puede ser menor al odómetro actual de la unidad (${unitOdo}).`
-        );
-        return false;
-      }
-    }
-    return true;
-  }, [isEdit, routeToEdit, formData.endReading, formData.startReading, selectedUnitData]);
+
 
   const handleFinishMission = async (): Promise<void> => {
     if (!routeToEdit) return;
     await finishRoute(routeToEdit.uuid, {
       endReading: Number(formData.endReading),
-      fuelLevelEnd: Number(formData.fuelLevel),
-      fuelLitersLoaded: Number(formData.fuelLitersLoaded),
-      fuelAmount: Number(formData.fuelAmount),
+      fuelLevelEnd: roundToTwo(formData.arrivalFuelLevel),
+      fuelLitersLoaded: roundToTwo(formData.fuelLitersLoaded),
+      fuelAmount: roundToTwo(formData.fuelAmount),
       fuelTicketImage: formData.fuelTicketImage || undefined,
       additivesCheck: formData.additivesCheck,
       tirePressureJson: formData.tirePressureJson || undefined,
@@ -456,13 +562,16 @@ export const useRouteAssignmentControl = (
       data: {
         ...rest,
         destination: finalDest,
-        destinationColoniaId: formData.destinationColoniaId
-          ? Number(formData.destinationColoniaId)
+        destinationNeighborhoodId: formData.destinationNeighborhoodId
+          ? Number(formData.destinationNeighborhoodId)
           : null,
         operatorId: formData.operatorId ? Number(formData.operatorId) : undefined,
         originId: origins.find((o) => o.label === formData.origin)?.id
           ? Number(origins.find((o) => o.label === formData.origin)?.id)
           : undefined,
+        fuelLevel: roundToTwo(formData.fuelLevel),
+        fuelLitersLoaded: roundToTwo(formData.fuelLitersLoaded),
+        fuelAmount: roundToTwo(formData.fuelAmount),
       },
     });
     await refreshUnits();
@@ -473,10 +582,10 @@ export const useRouteAssignmentControl = (
       unitId: formData.unitId,
       driverId: Number(formData.operatorId),
       startReading: Number(formData.startReading),
-      fuelLevelStart: Number(formData.fuelLevel),
+      fuelLevelStart: roundToTwo(formData.fuelLevel),
       destination: finalDest,
-      destinationColoniaId: formData.destinationColoniaId
-        ? Number(formData.destinationColoniaId)
+      destinationNeighborhoodId: formData.destinationNeighborhoodId
+        ? Number(formData.destinationNeighborhoodId)
         : undefined,
       originId: origins.find((o) => o.label === formData.origin)?.id
         ? Number(origins.find((o) => o.label === formData.origin)?.id)
@@ -486,6 +595,9 @@ export const useRouteAssignmentControl = (
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+    if (!validateTelemetry()) {
+      return;
+    }
     if (isFinished) {
       setAuditAction('UPDATE');
       setIsAuditModalOpen(true);
@@ -494,11 +606,6 @@ export const useRouteAssignmentControl = (
 
     setSubmitting(true);
     setError(null);
-
-    if (!validateTelemetry()) {
-      setSubmitting(false);
-      return;
-    }
 
     try {
       const finalDest = getFinalDestination(formData);
@@ -512,6 +619,10 @@ export const useRouteAssignmentControl = (
       } else {
         await handleNewDispatch(finalDest);
       }
+
+      // Clear forensic logs cache to enforce fresh reload
+      archonCache.clear('forensic_journal_logs');
+
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error en la operación';

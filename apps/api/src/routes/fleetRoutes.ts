@@ -16,7 +16,7 @@ const startRouteSchema = z.object({
   fuelLevelStart: z.number().min(0).max(100),
   destination: z.string().min(2).max(255),
   originId: z.number().int().optional(),
-  destinationColoniaId: z.number().int().optional(),
+  destinationNeighborhoodId: z.number().int().optional(),
   description: z.string().optional(),
 });
 
@@ -25,7 +25,7 @@ const finishRouteSchema = z.object({
   fuelLevelEnd: z.number().min(0).max(100),
   fuelLitersLoaded: z.number().min(0).optional(),
   fuelAmount: z.number().min(0).optional(),
-  fuelTicketImage: z.string().optional(), // Base64
+  fuelTicketImage: z.string().max(15 * 1024 * 1024, { message: 'Image size exceeds maximum limit' }).optional(), // Base64
   additivesCheck: z.boolean().optional(),
   tirePressureJson: z.string().optional(),
   checklistJson: z.string().optional(),
@@ -55,7 +55,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         data.destination,
         data.originId,
         data.description,
-        data.destinationColoniaId
+        data.destinationNeighborhoodId
       );
 
       return reply.code(201).send({
@@ -126,7 +126,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const [rows] = await db.execute<RowDataPacket[]>(
         `SELECT 
-          r.id, r.uuid, r.unit_id, r.driver_id as operator_id, r.origin_id, r.destination, r.status,
+          r.id, r.uuid, r.unit_id, r.driver_id as operator_id, r.origin_id, r.destination_neighborhood_id, r.destination, r.status,
           r.start_reading as start_km, r.end_reading as end_km,
           r.start_at as start_time, r.end_at as end_time,
           r.fuel_level_start, r.fuel_level_end,
@@ -169,10 +169,16 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           c_origin.label as route_origin_label
         FROM (
           SELECT 
-            id, unit_id, event_type, reference_id, 
+            CONVERT(id USING utf8mb4) COLLATE utf8mb4_general_ci as id, 
+            unit_id COLLATE utf8mb4_general_ci as unit_id, 
+            event_type COLLATE utf8mb4_general_ci as event_type, 
+            reference_id COLLATE utf8mb4_general_ci as reference_id, 
             reading_before, reading_after, 
-            status_before, status_after, 
-            description, created_by, created_at,
+            status_before COLLATE utf8mb4_general_ci as status_before, 
+            status_after COLLATE utf8mb4_general_ci as status_after, 
+            description COLLATE utf8mb4_general_ci as description, 
+            created_by, 
+            created_at,
             NULL as fuel_before,
             NULL as fuel_after,
             NULL as fuel_level_before,
@@ -186,10 +192,10 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           UNION ALL
           
           SELECT 
-            a.id, 
-            COALESCE(JSON_VALUE(a.snapshot_after, '$.unit_id'), r.unit_id) as unit_id,
-            'ADMIN_EDIT' as event_type,
-            a.entity_id as reference_id,
+            CONVERT(a.uuid USING utf8mb4) COLLATE utf8mb4_general_ci as id, 
+            CONVERT(COALESCE(JSON_VALUE(a.snapshot_after, '$.unit_id'), r.unit_id) USING utf8mb4) COLLATE utf8mb4_general_ci as unit_id,
+            'ADMIN_EDIT' COLLATE utf8mb4_general_ci as event_type,
+            CONVERT(a.entity_id USING utf8mb4) COLLATE utf8mb4_general_ci as reference_id,
             -- Detect which reading changed (End vs Start) with NULL-safe logic
             CAST(
               CASE 
@@ -217,9 +223,9 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
                 ELSE COALESCE(JSON_VALUE(a.snapshot_after, '$.end_reading'), JSON_VALUE(a.snapshot_after, '$.start_reading'))
               END AS DECIMAL(12,2)
             ) as reading_after,
-            JSON_VALUE(a.snapshot_before, '$.status') as status_before,
-            JSON_VALUE(a.snapshot_after, '$.status') as status_after,
-            a.reason as description,
+            CONVERT(JSON_VALUE(a.snapshot_before, '$.status') USING utf8mb4) COLLATE utf8mb4_general_ci as status_before,
+            CONVERT(JSON_VALUE(a.snapshot_after, '$.status') USING utf8mb4) COLLATE utf8mb4_general_ci as status_after,
+            CONVERT(a.reason USING utf8mb4) COLLATE utf8mb4_general_ci as description,
             a.user_id as created_by,
             a.created_at,
             CAST(JSON_VALUE(a.snapshot_before, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_before,

@@ -73,12 +73,12 @@ export function ArchonDataTable<T>({
 
   const containerClasses =
     variant === 'master'
-      ? `bg-white overflow-visible border border-pinnacle-navy/5 animate-in fade-in duration-700 relative w-full ${className}`
+      ? `bg-white overflow-visible border-y border-pinnacle-navy/5 animate-in fade-in duration-700 relative w-full ${className}`
       : `w-full !p-0 !m-0 !rounded-none !border-none overflow-x-auto custom-scrollbar relative ${className}`;
 
   return (
-    <div className={containerClasses}>
-      <table data-testid={testId} className="w-full border-collapse table-fixed">
+    <div className={containerClasses} style={{ borderLeft: 'none', borderRight: 'none' }}>
+      <table data-testid={testId} style={{ borderLeft: 'none', borderRight: 'none' }} className="w-full border-collapse table-fixed [&_td]:!border-x-0 [&_th]:!border-x-0 [&_tr]:!border-x-0">
         <thead className="sticky top-0 z-20">
           <tr className="bg-pinnacle-navy border-b border-pinnacle-navy/10 shadow-md">
             {headers.map((header) => (

@@ -9,16 +9,16 @@ import server from '../test/server';
  * 🔱 Archon Test Suite: useFleetForm
  * Implementation: 100% Core Logic Coverage (Pillar 2 - v.18.0.0)
  */
-describe.skip('useFleetForm Hook', () => {
+describe('useFleetForm Hook', () => {
   it('should initialize with default fleet form data', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.formData.id).toBe('');
     expect(result.current.formData.assetTypeId).toBe(1); // VEH is 1
   });
 
   it('should handle asset type changes correctly', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async (): Promise<void> => {
       await result.current.handleAssetTypeChange(2);
@@ -29,7 +29,7 @@ describe.skip('useFleetForm Hook', () => {
   });
 
   it('should handle marca changes and update available models', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
 
     // Wait for initial brands to load
     await waitFor(() => {
@@ -57,7 +57,7 @@ describe.skip('useFleetForm Hook', () => {
 
   it('should successfully submit form and set success state', async (): Promise<void> => {
     const onSuccess = vi.fn(async (): Promise<void> => Promise.resolve());
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
 
     // Wait for initial hydration to avoid act warnings
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -86,7 +86,7 @@ describe.skip('useFleetForm Hook', () => {
   });
 
   it('should throw error when submitting with missing required fields', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     // Initial state is already missing fields, so it should throw
@@ -112,7 +112,7 @@ describe.skip('useFleetForm Hook', () => {
       )
     );
 
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     // Populate required fields to bypass client-side validation first
@@ -141,7 +141,7 @@ describe.skip('useFleetForm Hook', () => {
   });
 
   it('should reset form state to initial values', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async (): Promise<void> => {
@@ -158,7 +158,7 @@ describe.skip('useFleetForm Hook', () => {
   });
 
   it('should handle modelo changes correctly', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async (): Promise<void> => {
       result.current.handleModeloChange(301);
@@ -167,7 +167,7 @@ describe.skip('useFleetForm Hook', () => {
   });
 
   it('should reset error state', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async (): Promise<void> => {
       result.current.setError('Sample Error');
@@ -180,7 +180,7 @@ describe.skip('useFleetForm Hook', () => {
   });
 
   it('should convert files to base64 strings', async (): Promise<void> => {
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
     const file = new File(['foo'], 'foo.txt', { type: 'text/plain' });
 
     await act(async (): Promise<void> => {
@@ -195,7 +195,7 @@ describe.skip('useFleetForm Hook', () => {
     // Force empty response for brands
     server.use(http.get('*/catalogs/BRAND', () => HttpResponse.json({ success: true, data: [] })));
 
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
 
     await waitFor(() => {
       expect(result.current.marcas).toContainEqual(
@@ -207,7 +207,7 @@ describe.skip('useFleetForm Hook', () => {
   it('should handle fetch failure in fetchCategory', async () => {
     server.use(http.get('*/catalogs/BRAND', () => HttpResponse.error()));
 
-    const { result } = renderHook(() => useFleetForm());
+    const { result } = renderHook(() => useFleetForm(true));
 
     await act(async () => {
       await result.current.handleAssetTypeChange(1);

@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent } from '../../test/testUtils';
+import { http, HttpResponse } from 'msw';
+import server from '../../test/server';
 import MaintenanceModule from './MaintenanceModule';
 
 /**
@@ -9,6 +11,24 @@ import MaintenanceModule from './MaintenanceModule';
  */
 
 describe('MaintenanceModule (Sovereign Maintenance)', () => {
+  // Mock standard API dependencies
+  beforeEach(() => {
+    server.use(
+      http.get('*/maintenance', () => {
+        return HttpResponse.json({
+          success: true,
+          data: []
+        });
+      }),
+      http.get('*/fleet', () => {
+        return HttpResponse.json({
+          success: true,
+          data: []
+        });
+      })
+    );
+  });
+
   const renderModule = (): void => {
     render(
       <MemoryRouter>
@@ -23,20 +43,20 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     expect(await screen.findByText(/Mantenimiento Preventivo/i)).toBeInTheDocument();
   });
 
-  it('transitions between History and Schedule panels', () => {
+  it('transitions between History and Schedule panels', async () => {
     renderModule();
 
     // Default should be HISTORY
     expect(
-      screen.getByText('Bitácora de Servicios lista para recibir información-')
+      await screen.findByText('Historial de Servicios')
     ).toBeInTheDocument();
 
     // Switch to SCHEDULE
-    const scheduleCard = screen.getByText('Programar Servicio');
+    const scheduleCard = await screen.findByText('Programar Servicio');
     fireEvent.click(scheduleCard);
 
     expect(
-      screen.getByText('Módulo de Programación listo para recibir información-')
+      await screen.findByText('CONFIGURACIÓN')
     ).toBeInTheDocument();
   });
 });

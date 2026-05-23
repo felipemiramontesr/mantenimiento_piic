@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import {
   CalendarDays,
   Gauge,
@@ -178,7 +179,7 @@ const OdometerCluster = ({
         OBJETIVO {usageUnit}
       </span>
       <span className="text-[13px] font-black text-amber-800">
-        {Number(unit.nextServiceReading || 0).toLocaleString('en-US', {
+        {Number(unit.nextServiceKmTarget ?? unit.nextServiceReading ?? 0).toLocaleString('en-US', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}
@@ -421,10 +422,12 @@ const getUnitForecast = (unit: FleetUnit): MaintenanceForecast | null =>
 const FleetUnitRow = React.memo(
   ({
     unit,
+    index,
     onSelectImage,
     onEdit,
   }: {
     unit: FleetUnit;
+    index: number;
     onSelectImage: (u: FleetUnit) => void;
     onEdit: (u: FleetUnit) => void;
   }): React.JSX.Element => {
@@ -434,11 +437,12 @@ const FleetUnitRow = React.memo(
     const usageUnit = unit.usageUnitName || 'KM';
 
     return (
-      <tr
+      <motion.tr
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.04 }}
         data-testid={`fleet-row-${unit.id.toLowerCase()}`}
-        className={`transition-all duration-300 ${
-          isOverdue ? 'bg-red-50/40' : 'odd:bg-white even:bg-slate-100'
-        }`}
+        className={`bg-transparent border-y border-solid border-slate-200/50 hover:bg-slate-50/50 transition-all duration-300`}
       >
         <td className="py-4 px-2 text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
           {unit.images?.[0] ? (
@@ -553,7 +557,7 @@ const FleetUnitRow = React.memo(
             </button>
           </div>
         </td>
-      </tr>
+      </motion.tr>
     );
   }
 );
@@ -594,6 +598,7 @@ const SEARCH_CONFIGS: SearchConfig[] = [
   { key: 'odometer', label: 'Odómetro', type: 'numeric', suffix: ' KM/Hrs' },
   { key: 'lastServiceReading', label: 'Último Servicio', type: 'numeric', suffix: ' KM/Hrs' },
   { key: 'nextServiceReading', label: 'Objetivo Servicio', type: 'numeric', suffix: ' KM/Hrs' },
+  { key: 'nextServiceKmTarget', label: 'Objetivo Servicio Target', type: 'numeric', suffix: ' KM/Hrs' },
   { key: 'capacidadCarga', label: 'Carga', type: 'numeric', suffix: ' KG' },
   { key: 'fuelTankCapacity', label: 'Tanque', type: 'numeric', suffix: ' L' },
   { key: 'maintIntervalKm', label: 'Frec. Uso', type: 'numeric', suffix: ' KM/Hrs' },
@@ -914,10 +919,11 @@ export const FleetGridView = ({
           }));
         }}
         sortConfig={sortConfig}
-        renderRow={(unit): React.ReactElement => (
+        renderRow={(unit, index): React.ReactElement => (
           <FleetUnitRow
             key={unit.id}
             unit={unit}
+            index={index}
             onSelectImage={handleSelectImage}
             onEdit={onEdit}
           />

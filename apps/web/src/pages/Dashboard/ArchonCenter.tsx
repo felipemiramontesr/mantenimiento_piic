@@ -190,7 +190,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
       {/* 📊 COMMAND CENTER CHASSIS */}
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container">
-          <div className="archon-grid-sovereign">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="archon-grid-sovereign">
             {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
             {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
             {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
@@ -254,6 +255,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
               '#8b5cf6',
               'Unidades fuera de servicio'
             )}
+          </div>
           </div>
         </div>
       </section>

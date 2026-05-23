@@ -24,7 +24,9 @@ const SettingsModule: React.FC = (): React.ReactElement => {
       {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container">
-          <ArchonProfilePanel />
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <ArchonProfilePanel />
+          </div>
         </div>
       </section>
     </div>

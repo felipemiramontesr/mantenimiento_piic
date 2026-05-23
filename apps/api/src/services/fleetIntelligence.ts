@@ -38,6 +38,7 @@ export interface FleetUnit extends RowDataPacket {
   healthScore?: number;
   initialFuelLevel?: number;
   lastFuelLevel?: number;
+  year?: number | null;
 }
 
 export interface UnitHealth {
@@ -122,6 +123,7 @@ export class FleetIntelligenceEngine {
         : null,
       unitsSinceService: health.odometer - health.lastReading,
       nextServiceReading: health.lastReading + health.kmLimit,
+      nextServiceKmTarget: health.lastReading + health.kmLimit,
       forecastDate: this.computeForecast(decrypted),
       currentReading: health.odometer,
     };
@@ -165,6 +167,7 @@ export class FleetIntelligenceEngine {
       mtbfHours: Number(unit.mtbfHours || 0),
       mttrHours: Number(unit.mttrHours || 0),
       backlogCount: Number(unit.backlogCount || 0),
+      year: unit.year ? Number(unit.year) : null,
     };
   }
 

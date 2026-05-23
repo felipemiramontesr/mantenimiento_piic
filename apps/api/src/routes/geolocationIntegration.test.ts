@@ -3,7 +3,7 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Geolocation Routes
+ * 🔱 Archon Integration Test: Geolocation Routes (English Schema)
  * Implementation: 100% Path & Branch Coverage
  */
 
@@ -27,8 +27,8 @@ describe('Geolocation Integration Endpoints', () => {
   describe('GET /v1/geolocation/states', () => {
     it('should fetch all states successfully', async (): Promise<void> => {
       const mockStates = [
-        { id: 1, nombre: 'Aguascalientes' },
-        { id: 2, nombre: 'Jalisco' },
+        { id: 1, name: 'Aguascalientes' },
+        { id: 2, name: 'Jalisco' },
       ];
       (db.execute as Mock).mockResolvedValueOnce([mockStates]);
 
@@ -40,7 +40,7 @@ describe('Geolocation Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body)).toEqual(mockStates);
       expect(db.execute).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT id, nombre FROM estados')
+        expect.stringContaining('SELECT id, name FROM states')
       );
     });
 
@@ -59,7 +59,7 @@ describe('Geolocation Integration Endpoints', () => {
 
   describe('GET /v1/geolocation/states/:stateId/municipalities', () => {
     it('should fetch municipalities by state successfully', async (): Promise<void> => {
-      const mockMun = [{ id: 10, nombre: 'Zapopan' }];
+      const mockMun = [{ id: 10, name: 'Zapopan' }];
       (db.execute as Mock).mockResolvedValueOnce([mockMun]);
 
       const response = await app.inject({
@@ -70,7 +70,7 @@ describe('Geolocation Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body)).toEqual(mockMun);
       expect(db.execute).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT id, nombre FROM municipios WHERE estado = ?'),
+        expect.stringContaining('SELECT id, name FROM municipalities WHERE state_id = ?'),
         ['2']
       );
     });
@@ -84,7 +84,7 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('AND nombre LIKE ?'), [
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('AND name LIKE ?'), [
         '2',
         '%Zapo%',
       ]);
@@ -103,88 +103,88 @@ describe('Geolocation Integration Endpoints', () => {
     });
   });
 
-  describe('GET /v1/geolocation/municipalities/:municipioId/colonias', () => {
-    it('should fetch colonias by municipality successfully', async (): Promise<void> => {
-      const mockCol = [{ id: 100, nombre: 'Centro', codigoPostal: 44100, ciudad: 'Guadalajara' }];
+  describe('GET /v1/geolocation/municipalities/:municipalityId/neighborhoods', () => {
+    it('should fetch neighborhoods by municipality successfully', async (): Promise<void> => {
+      const mockCol = [{ id: 100, name: 'Centro', postalCode: 44100, city: 'Guadalajara' }];
       (db.execute as Mock).mockResolvedValueOnce([mockCol]);
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/geolocation/municipalities/10/colonias',
+        url: '/v1/geolocation/municipalities/10/neighborhoods',
       });
 
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body)).toEqual(mockCol);
       expect(db.execute).toHaveBeenCalledWith(
         expect.stringContaining(
-          'SELECT id, nombre, codigo_postal as codigoPostal, ciudad FROM colonias WHERE municipio = ?'
+          'SELECT id, name, postal_code as postalCode, city FROM neighborhoods WHERE municipality_id = ?'
         ),
         ['10']
       );
     });
 
-    it('should search colonias with search query by name or zip code', async (): Promise<void> => {
+    it('should search neighborhoods with search query by name or zip code', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([[]]);
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/geolocation/municipalities/10/colonias?q=441',
+        url: '/v1/geolocation/municipalities/10/neighborhoods?q=441',
       });
 
       expect(response.statusCode).toBe(200);
       expect(db.execute).toHaveBeenCalledWith(
-        expect.stringContaining('AND (nombre LIKE ? OR codigo_postal LIKE ?)'),
+        expect.stringContaining('AND (name LIKE ? OR postal_code LIKE ?)'),
         ['10', '%441%', '%441%']
       );
     });
 
-    it('should handle database errors on colonias fetch', async (): Promise<void> => {
+    it('should handle database errors on neighborhoods fetch', async (): Promise<void> => {
       (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/geolocation/municipalities/10/colonias',
+        url: '/v1/geolocation/municipalities/10/neighborhoods',
       });
 
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe('Failed to fetch colonias');
+      expect(JSON.parse(response.body).error).toBe('Failed to fetch neighborhoods');
     });
   });
 
-  describe('GET /v1/geolocation/colonias/:coloniaId', () => {
-    it('should fetch colonia details by ID successfully', async (): Promise<void> => {
+  describe('GET /v1/geolocation/neighborhoods/:neighborhoodId', () => {
+    it('should fetch neighborhood details by ID successfully', async (): Promise<void> => {
       const mockDetail = {
         id: 100,
-        nombre: 'Centro',
-        codigoPostal: 44100,
-        municipioId: 10,
+        name: 'Centro',
+        postalCode: 44100,
+        municipalityId: 10,
         stateId: 2,
       };
       (db.execute as Mock).mockResolvedValueOnce([[mockDetail]]);
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/geolocation/colonias/100',
+        url: '/v1/geolocation/neighborhoods/100',
       });
 
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body)).toEqual(mockDetail);
       expect(db.execute).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT c.id, c.nombre, c.codigo_postal as codigoPostal'),
+        expect.stringContaining('SELECT c.id, c.name, c.postal_code as postalCode'),
         ['100']
       );
     });
 
-    it('should return 404 when colonia details are not found', async (): Promise<void> => {
+    it('should return 404 when neighborhood details are not found', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([[]]);
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/geolocation/colonias/999',
+        url: '/v1/geolocation/neighborhoods/999',
       });
 
       expect(response.statusCode).toBe(404);
-      expect(JSON.parse(response.body).error).toBe('Colonia not found');
+      expect(JSON.parse(response.body).error).toBe('Neighborhood not found');
     });
 
     it('should handle database errors on details fetch', async (): Promise<void> => {
@@ -192,11 +192,11 @@ describe('Geolocation Integration Endpoints', () => {
 
       const response = await app.inject({
         method: 'GET',
-        url: '/v1/geolocation/colonias/100',
+        url: '/v1/geolocation/neighborhoods/100',
       });
 
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe('Failed to fetch colonia details');
+      expect(JSON.parse(response.body).error).toBe('Failed to fetch neighborhood details');
     });
   });
 });

@@ -4,6 +4,7 @@ import api from '../../api/client';
 import { formatDateTime } from '../../utils/dateUtils';
 import { useFleet } from '../../context/FleetContext';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
+import { archonCache } from '../../utils/archonCache';
 
 interface ActivityLog {
   id: string;
@@ -77,30 +78,58 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
     return evidenceMap;
   }, [logs]);
 
-  const fetchLogs = async (): Promise<void> => {
+  const fetchLogs = async (useCache = true): Promise<void> => {
+    // 🧠 Silk Hydration Phase 1: Cache-First
+    if (useCache) {
+      const cached = archonCache.get<ActivityLog[]>('forensic_journal_logs');
+      if (cached) {
+        let data = [...cached];
+        if (routeUuid) {
+          data = data.filter((l: ActivityLog) => l.reference_id === routeUuid);
+          data = data.filter(
+            (l: ActivityLog) => l.event_type !== 'ROUTE_START' && l.event_type !== 'ROUTE_FINISH'
+          );
+        } else if (unitId) {
+          data = data.filter((l: ActivityLog) => l.unit_id === unitId);
+        }
+        data.sort(
+          (a: ActivityLog, b: ActivityLog) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setLogs(data);
+        setLoading(false);
+      }
+    }
+
+    // 🧠 Silk Hydration Phase 2: Silent Sync
     try {
       const res = await api.get('/unit-logs');
-      let data = res.data?.data || [];
+      const freshData = res.data?.data || [];
+      archonCache.set('forensic_journal_logs', freshData);
 
+      let data = [...freshData];
       if (routeUuid) {
-        // 🔱 Route-Scoped Filter: Only show forensic events linked to this specific route
         data = data.filter((l: ActivityLog) => l.reference_id === routeUuid);
-
-        // 🔱 Clean Redundancy: Focus exclusively on anomalies/incidents
         data = data.filter(
           (l: ActivityLog) => l.event_type !== 'ROUTE_START' && l.event_type !== 'ROUTE_FINISH'
         );
       } else if (unitId) {
         data = data.filter((l: ActivityLog) => l.unit_id === unitId);
       }
-
-      // 🔱 Chronological Sequencing (Descending Order: Newest First)
       data.sort(
         (a: ActivityLog, b: ActivityLog) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      setLogs(data);
+      // Deep reference comparison to prevent unnecessary DOM flash
+      setLogs((prev) => {
+        const prevIds = prev.map((l) => l.id).join(',');
+        const nextIds = data.map((l) => l.id).join(',');
+        if (prevIds === nextIds && prev.length === data.length) {
+          return prev;
+        }
+        return data;
+      });
     } catch (err) {
       // Sovereign silence
     } finally {
@@ -109,7 +138,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
   };
 
   useEffect(() => {
-    fetchLogs();
+    fetchLogs(true);
   }, [unitId, routeUuid]);
 
   const getEventStyle = (
@@ -177,14 +206,28 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
       )}
 
       <div className={unitId ? '!w-full !px-0' : 'mx-8'}>
-        {logs.length === 0 && routeUuid && !loading ? (
-          <div className="w-full py-4 bg-emerald-50/50 border-y border-emerald-100 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-            <Activity size={16} className="text-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.3em]">
-              Ruta Saludable
-            </span>
-          </div>
-        ) : (
+        {((): React.ReactNode => {
+          if (loading && routeUuid) {
+            return (
+              <div className="w-full py-4 bg-slate-50/50 border-y border-slate-100 flex items-center justify-center gap-3 animate-pulse">
+                <Activity size={16} className="text-slate-300 animate-spin" />
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                  Verificando Salud de Ruta...
+                </span>
+              </div>
+            );
+          }
+          if (logs.length === 0 && routeUuid && !loading) {
+            return (
+              <div className="w-full py-4 bg-emerald-50/50 border-y border-emerald-100 flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                <Activity size={16} className="text-emerald-500 animate-pulse" />
+                <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.3em]">
+                  Ruta Saludable
+                </span>
+              </div>
+            );
+          }
+          return (
           <ArchonDataTable
             className={unitId ? '!w-full !shadow-none !rounded-none !border-none' : ''}
             testId="forensic-journal-table"
@@ -203,21 +246,21 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
 
               return (
                 <tr key={log.id} className={isIncident ? 'forensic-incident-row' : ''}>
-                  <td className="py-4">
+                  <td className="py-4 text-center">
                     <span className="text-[11px] font-black text-pinnacle-navy">
                       {formatDateTime(log.created_at)}
                     </span>
                   </td>
 
-                  <td className="py-4">
+                  <td className="py-4 text-center">
                     <span className="text-[9px] font-black text-pinnacle-navy bg-pinnacle-navy/5 px-1.5 py-0.5 rounded border border-pinnacle-navy/10 uppercase tracking-tighter">
                       {String(log.id).substring(0, 8)}
                     </span>
                   </td>
 
                   {!unitId && (
-                    <td className="py-4">
-                      <div className="flex flex-col items-center">
+                    <td className="py-4 text-center">
+                      <div className="flex flex-col items-center justify-center">
                         <span className="text-[11px] font-black bg-pinnacle-navy/5 px-2 py-0.5 rounded-[4px] text-pinnacle-navy">
                           {log.unit_id}
                         </span>
@@ -228,7 +271,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </td>
                   )}
 
-                  <td className="py-4">
+                  <td className="py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <div className={`p-1.5 rounded-[4px] ${style.bg}`}>
                         <EventIcon size={12} className={style.color} />
@@ -241,7 +284,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
                       {((): React.ReactNode => {
                         let displayDesc = log.description || '';
@@ -338,7 +381,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4">
+                  <td className="py-4 text-center">
                     <div className="flex flex-col items-center justify-center gap-1.5">
                       {/* 🚗 READING IMPACT (KM/HRS) */}
                       {log.reading_before !== null &&
@@ -536,7 +579,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="py-4">
+                  <td className="py-4 text-center">
                     <div className="text-center">
                       <p className="text-[11px] font-black text-pinnacle-navy">
                         {log.operatorName}
@@ -550,7 +593,8 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
               );
             }}
           />
-        )}
+        );
+      })()}
       </div>
     </div>
   );

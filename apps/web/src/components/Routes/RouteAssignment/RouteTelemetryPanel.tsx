@@ -42,6 +42,14 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
 
   const isReturn = isEdit;
 
+  const fuelPct = isEdit ? formData.arrivalFuelLevel : formData.fuelLevel;
+
+  const litersValue = ((): number | string => {
+    if (tankCapacity <= 0) return '';
+    if (fuelPct === undefined || fuelPct === null || fuelPct === '') return '';
+    return Number(((Number(fuelPct) / 100) * tankCapacity).toFixed(1));
+  })();
+
   return (
     <div className="space-y-4">
       {/* HEADER */}
@@ -146,22 +154,51 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
               {isEdit ? 'Nivel al Llegar (%)' : 'Nivel de Salida (%)'}
             </label>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs bg-[#0f2a44]/20 text-[#0f2a44] px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
-                {Number(formData.fuelLevel).toFixed(1)}%
+              <span className="font-mono text-[11px] bg-[#0f2a44]/5 text-[#0f2a44]/60 px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
+                {Number(isEdit ? formData.arrivalFuelLevel : formData.fuelLevel).toFixed(1)}%
               </span>
+              
+              {/* 🔱 Archon Dual-Input: Liters Selector with Safe Guards */}
+              {tankCapacity > 0 ? (
+                <div className="flex items-center gap-1 bg-[#0f2a44]/5 px-2 py-0.5 rounded border border-[#0f2a44]/10 focus-within:border-[#f2b705] focus-within:bg-white transition-all">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max={tankCapacity}
+                    value={litersValue}
+                    onChange={(e): void => {
+                      const inputVal = e.target.value;
+                      if (inputVal === '') {
+                        updateForm(isEdit ? { arrivalFuelLevel: 0 } : { fuelLevel: 0 });
+                        return;
+                      }
+                      const liters = Math.max(0, Math.min(tankCapacity, Number(inputVal)));
+                      const newPct = (liters / tankCapacity) * 100;
+                      if (isEdit) {
+                        updateForm({ arrivalFuelLevel: newPct });
+                      } else {
+                        updateForm({ fuelLevel: newPct });
+                      }
+                    }}
+                    className="w-12 bg-transparent font-mono text-xs text-[#0f2a44] font-black focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-tight select-none">L</span>
+                </div>
+              ) : (
+                <span className="text-[8px] font-black text-rose-500 bg-rose-50 px-2 py-1 rounded border border-rose-200 uppercase tracking-wider">
+                  Falta Capacidad Tanque
+                </span>
+              )}
             </div>
           </div>
 
           <div className="px-2">
             <ArchonFuelSensor
-              value={Number(formData.fuelLevel)}
+              value={Number(fuelPct)}
               onChange={(val: number): void => {
                 if (isEdit) {
-                  // Calculate arrival level from desired final level
-                  const liters = Number(formData.fuelLitersLoaded || 0);
-                  const increment = (liters / tankCapacity) * 100;
-                  const newArrival = Math.max(0, val - increment);
-                  updateForm({ arrivalFuelLevel: newArrival });
+                  updateForm({ arrivalFuelLevel: val });
                 } else {
                   updateForm({ fuelLevel: val });
                 }
@@ -173,24 +210,15 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
           {tankCapacity > 0 && (
             <div className="pt-2 border-t border-[#0f2a44]/5">
               <FuelVolumeChart
-                currentLevel={Number(formData.fuelLevel)}
+                currentLevel={Number(fuelPct)}
                 totalCapacity={tankCapacity}
-                color={Number(formData.fuelLevel) > 20 ? '#0f2a44' : '#ef4444'}
+                color={Number(fuelPct) > 20 ? '#0f2a44' : '#ef4444'}
               />
             </div>
           )}
         </div>
 
-        {/* Observations Section */}
-        <div className="space-y-2 pt-4 border-t border-[#0f2a44]/5">
-          <textarea
-            rows={2}
-            placeholder="Observaciones de la misión..."
-            value={formData.description}
-            onChange={(e): void => updateForm({ description: e.target.value })}
-            className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-[#f2b705] p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] disabled:opacity-50"
-          />
-        </div>
+
       </div>
     </div>
   );

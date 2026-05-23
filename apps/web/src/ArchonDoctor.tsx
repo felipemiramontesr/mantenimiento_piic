@@ -225,7 +225,7 @@ export const ArchonDoctor: React.FC = () => {
 
       {/* Footer Info */}
       <div className="p-3 bg-black/20 text-[9px] text-pinnacle-white/30 flex justify-between items-center border-t border-pinnacle-yellow/5">
-        <span>SOVEREIGN CORE V.78.100.150</span>
+        <span>SOVEREIGN CORE V.78.100.184</span>
         <span className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 bg-green-500 rounded-full" />
           STABLE

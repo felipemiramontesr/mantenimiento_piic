@@ -96,7 +96,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     username: '',
     fullName: '',
     email: '',
-    roleId: roles.find((r) => r.label === 'Operador')?.id.toString() || '',
+    roleId: roles.find((r) => r.label.toLowerCase().includes('operador'))?.id.toString() || '',
     department: '',
     employeeNumber: '',
     imageUrl: '',
@@ -334,6 +334,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
             <div className="pt-8 mt-4 border-t border-pinnacle-navy/5">
               <ArchonField label="Fotografía de Identidad" icon={ImageIcon}>
                 <ArchonImageUploader
+                  reducedHeight={true}
                   images={formData.imageUrl ? [formData.imageUrl] : []}
                   onChange={(imgs: string[]): void =>
                     setFormData({ ...formData, imageUrl: imgs[0] || '' })

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Droplets, AlertTriangle } from 'lucide-react';
+import { Camera, Droplets } from 'lucide-react';
 import ArchonImageUploader from '../../ArchonImageUploader';
 import { RouteClosurePanelProps } from './types';
 
@@ -13,13 +13,20 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
   updateForm,
   tankCapacity,
 }) => {
-  const hasTelemetryAnomaly = React.useMemo(() => {
-    if (!tankCapacity) return false;
-    const base = Number(formData.arrivalFuelLevel || 0);
-    const liters = Number(formData.fuelLitersLoaded || 0);
-    const increment = (liters / tankCapacity) * 100;
-    return base + increment > 100.1; // Small buffer for floats
-  }, [formData.arrivalFuelLevel, formData.fuelLitersLoaded, tankCapacity]);
+
+    const consumedLiters = React.useMemo(() => {
+    if (tankCapacity <= 0) return null;
+    const startPct = Number(formData.fuelLevel || 0);
+    const endPct = Number(formData.arrivalFuelLevel || 0);
+    const loadedLiters = Number(formData.fuelLitersLoaded || 0);
+
+    const startLiters = (startPct / 100) * tankCapacity;
+    const endLiters = (endPct / 100) * tankCapacity;
+
+    const consumed = startLiters - endLiters + loadedLiters;
+    return Math.max(0, consumed);
+  }, [formData.fuelLevel, formData.arrivalFuelLevel, formData.fuelLitersLoaded, tankCapacity]);
+
   const tireData = React.useMemo(() => {
     try {
       return JSON.parse(formData.tirePressureJson || '{}');
@@ -27,6 +34,19 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
       return {};
     }
   }, [formData.tirePressureJson]);
+
+  const fuelImages = React.useMemo(() => {
+    const val = formData.fuelTicketImage;
+    if (!val) return [];
+    if (val.startsWith('[')) {
+      try {
+        return JSON.parse(val) as string[];
+      } catch {
+        return [val];
+      }
+    }
+    return [val];
+  }, [formData.fuelTicketImage]);
 
   const updateTire = (pos: string, val: string): void => {
     const newTires = { ...tireData, [pos]: val };
@@ -73,21 +93,28 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
                   const val = e.target.value.replace(/[^0-9.]/g, '');
                   updateForm({ fuelLitersLoaded: val });
                 }}
-                className={`w-full bg-white border-b-2 ${
-                  hasTelemetryAnomaly ? 'border-amber-500' : 'border-[#0f2a44]/10'
-                } focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]`}
+                className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
               />
             </div>
-            {hasTelemetryAnomaly && (
-              <motion.p
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-[9px] font-bold text-amber-600 flex items-center gap-1 mt-1"
-              >
-                <AlertTriangle size={10} />
-                Advertencia: El volumen excede la capacidad teórica. La discrepancia será
-                registrada.
-              </motion.p>
+            {/* 🔱 Archon Premium: Consumo de Combustible Calculado */}
+            {tankCapacity > 0 ? (
+              <div className="flex items-center justify-between bg-[#0f2a44]/5 border border-[#0f2a44]/10 p-2 rounded-[4px] mt-1.5 select-none">
+                <span className="text-[9px] font-black uppercase tracking-wider text-[#0f2a44]/60 flex items-center gap-1">
+                  🔱 Consumo de Ruta
+                </span>
+                <span className="font-mono text-xs font-black text-[#0f2a44]">
+                  {consumedLiters !== null ? `${consumedLiters.toFixed(1)} L` : '--'}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-rose-50 border border-rose-200/50 p-2 rounded-[4px] mt-1.5 select-none">
+                <span className="text-[9px] font-black uppercase tracking-wider text-rose-600/70">
+                  🔱 Consumo de Ruta
+                </span>
+                <span className="text-[8px] font-bold text-rose-500 uppercase tracking-wider">
+                  Sin Capacidad de Tanque
+                </span>
+              </div>
             )}
           </div>
 
@@ -123,10 +150,13 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
             Ticket de Combustible (Evidencia)
           </label>
           <ArchonImageUploader
-            images={formData.fuelTicketImage ? [formData.fuelTicketImage] : []}
-            onChange={(imgs: string[]): void => updateForm({ fuelTicketImage: imgs[0] || '' })}
+            images={fuelImages}
+            onChange={(imgs: string[]): void => {
+              updateForm({ fuelTicketImage: imgs.length > 0 ? JSON.stringify(imgs) : '' });
+            }}
             title="Capturar Ticket"
-            maxImages={1}
+            maxImages={4}
+            reducedHeight={true}
           />
         </div>
 
@@ -173,6 +203,20 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Observations Section */}
+      <div className="space-y-2 pt-4 border-t border-[#0f2a44]/5">
+        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+          Observaciones de la misión
+        </label>
+        <textarea
+          rows={3}
+          placeholder="Observaciones de la misión..."
+          value={formData.description}
+          onChange={(e): void => updateForm({ description: e.target.value })}
+          className="w-full bg-white border-2 border-[#0f2a44]/5 focus:border-[#f2b705] p-3 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] disabled:opacity-50"
+        />
       </div>
     </motion.div>
   );

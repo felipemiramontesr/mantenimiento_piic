@@ -7,6 +7,7 @@ import { Image as ImageIcon, X, UploadCloud } from 'lucide-react';
 
 interface ArchonImageUploaderProps {
   compact?: boolean;
+  reducedHeight?: boolean;
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
@@ -29,9 +30,25 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   variant = 'square',
   disabled = false,
   compact = false,
+  reducedHeight = false,
 }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ⚡ ARCHON LINT COMPLIANT CLASS RESOLUTION
+  let containerSpacingClasses = 'flex-col items-center justify-center gap-12 p-24';
+  if (compact) {
+    containerSpacingClasses = 'flex-row items-center justify-center gap-4 p-3 h-14';
+  } else if (reducedHeight) {
+    containerSpacingClasses = 'flex-col items-center justify-center gap-2 p-6';
+  }
+
+  let iconPaddingClasses = 'p-12';
+  if (compact) {
+    iconPaddingClasses = 'p-2';
+  } else if (reducedHeight) {
+    iconPaddingClasses = 'p-3';
+  }
 
   const handleFiles = (files: FileList | File[]): void => {
     let newImages = [...images];
@@ -112,11 +129,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
         className={`
           relative border-2 border-dashed rounded-[4px] transition-all duration-300
           ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-          flex ${
-            compact
-              ? 'flex-row items-center justify-center gap-4 p-3 h-14'
-              : 'flex-col items-center justify-center gap-12 p-24'
-          } group
+          flex ${containerSpacingClasses} group
           ${
             isDragging
               ? 'border-[#f2b705] bg-[#f2b705]/5 shadow-[0_0_20px_rgba(242,183,5,0.1)]'
@@ -139,7 +152,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
         <div
           className={`
           rounded-[4px] transition-transform duration-500
-          ${compact ? 'p-2' : 'p-12'}
+          ${iconPaddingClasses}
           ${
             isDragging
               ? 'bg-[#f2b705] text-[#0f2a44] scale-110'
@@ -155,7 +168,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
             {isDragging ? '¡Suelta para capturar!' : title}
           </p>
           {!compact && (
-            <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4">
+            <p className={`text-[10px] uppercase tracking-widest opacity-40 ${reducedHeight ? 'mt-1' : 'mt-4'}`}>
               Máximo {maxImages} fotos • {allowedFormats}
             </p>
           )}

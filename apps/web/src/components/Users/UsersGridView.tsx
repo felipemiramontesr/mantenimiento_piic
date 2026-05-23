@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { User, Mail, Activity, Pencil, Hash, Briefcase, Image as ImageIcon } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
@@ -36,11 +37,15 @@ const matchFieldInUser = (u: UserIndustrial, query: string): { label: string; va
 
 const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
   let styles = 'bg-slate-100 text-slate-600';
-  if (roleName === 'Archon') styles = 'bg-pinnacle-navy text-white';
-  if (roleName === 'Administrador') styles = 'bg-sky-100 text-sky-700';
-  if (roleName === 'Auditor') styles = 'bg-violet-100 text-violet-700';
-  if (roleName === 'Técnico') styles = 'bg-cyan-100 text-cyan-700';
-  if (roleName === 'Operador') styles = 'bg-emerald-100 text-emerald-700';
+  const name = roleName.toLowerCase();
+  
+  if (name.includes('archon')) styles = 'bg-pinnacle-navy text-white';
+  else if (name.includes('gerente')) styles = 'bg-emerald-100 text-emerald-700';
+  else if (name.includes('superintendente')) styles = 'bg-sky-100 text-sky-700';
+  else if (name.includes('jefe') || name.includes('mantenimiento')) styles = 'bg-violet-100 text-violet-700';
+  else if (name.includes('planeador')) styles = 'bg-amber-100 text-amber-700';
+  else if (name.includes('técnico') || name.includes('tecnico')) styles = 'bg-cyan-100 text-cyan-700';
+  else if (name.includes('operador')) styles = 'bg-slate-100 text-slate-500';
 
   return (
     <span
@@ -69,31 +74,24 @@ const UserIdentityCluster = ({ user }: { user: UserIndustrial }): React.JSX.Elem
 
 const UserRegistryRow = ({
   user,
+  index,
   onEdit,
 }: {
   user: UserIndustrial;
+  index: number;
   onEdit: (u: UserIndustrial) => void;
 }): React.JSX.Element => {
   const { toggleUserStatus } = useUsers();
 
   return (
-    <tr className="transition-all duration-300 hover:bg-pinnacle-navy/[0.015]">
-      <td className="py-6 text-center">
-        <div className="flex justify-center items-center">
-          {user.imageUrl ? (
-            <img
-              src={user.imageUrl}
-              className="w-12 h-12 rounded-[4px] object-cover border border-slate-100 shadow-sm"
-              alt={user.username}
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-[4px] bg-slate-50 flex items-center justify-center text-slate-300 border border-dashed border-slate-200">
-              <ImageIcon size={20} className="opacity-40" />
-            </div>
-          )}
-        </div>
-      </td>
-      <td className="text-center px-4">
+    <motion.tr
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      className="transition-all duration-300 hover:bg-pinnacle-navy/[0.015] border-y border-solid border-slate-200/50"
+    >
+
+      <td className="py-6 text-center px-4">
         <div className="flex items-center justify-center gap-2 text-pinnacle-navy opacity-80">
           <User size={12} className="text-pinnacle-yellow" />
           <span className="text-[11px] font-black tracking-widest">
@@ -101,10 +99,10 @@ const UserRegistryRow = ({
           </span>
         </div>
       </td>
-      <td className="text-center px-4">
+      <td className="py-6 text-center px-4">
         <UserIdentityCluster user={user} />
       </td>
-      <td className="text-center px-4">
+      <td className="py-6 text-center px-4">
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-[4px]">
             <Mail size={11} />
@@ -112,7 +110,7 @@ const UserRegistryRow = ({
           </div>
         </div>
       </td>
-      <td className="text-center px-4">
+      <td className="py-6 text-center px-4">
         <div className="flex flex-col items-center gap-1.5">
           <RoleBadge roleName={user.roleName || 'Usuario'} />
           <div className="flex items-center gap-1 opacity-40">
@@ -121,7 +119,7 @@ const UserRegistryRow = ({
           </div>
         </div>
       </td>
-      <td className="text-center px-4">
+      <td className="py-6 text-center px-4">
         <div className="flex flex-col items-center">
           <button
             onClick={(): Promise<void> => toggleUserStatus(user.id, user.is_active)}
@@ -136,7 +134,7 @@ const UserRegistryRow = ({
           </button>
         </div>
       </td>
-      <td className="text-center px-4">
+      <td className="py-6 text-center px-4">
         <div className="flex justify-center gap-2">
           <button
             onClick={(): void => onEdit(user)}
@@ -146,7 +144,7 @@ const UserRegistryRow = ({
           </button>
         </div>
       </td>
-    </tr>
+    </motion.tr>
   );
 };
 
@@ -233,7 +231,6 @@ const UsersGridView: React.FC = () => {
   }, [sortedUsers, searchTerm]);
 
   const headers: ArchonTableHeader[] = [
-    { key: 'avatar', label: 'ACTIVO' },
     { key: 'username', label: 'EMPLEADO', sortable: true },
     { key: 'identity', label: 'IDENTIDAD', sortable: true },
     { key: 'contact', label: 'CANAL DE CONTACTO' },
@@ -251,10 +248,11 @@ const UsersGridView: React.FC = () => {
         headers={headers}
         onSort={handleSort}
         sortConfig={sortConfig}
-        renderRow={(item: UserIndustrial): React.JSX.Element => (
+        renderRow={(item: UserIndustrial, index): React.JSX.Element => (
           <UserRegistryRow
             key={item.id}
             user={item}
+            index={index}
             onEdit={(u): void => {
               setEditingUser(u);
               setActivePanel('SIGNUP');

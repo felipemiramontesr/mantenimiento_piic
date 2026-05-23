@@ -41,9 +41,10 @@ const createFleetSchema = z.object({
   lastFuelLevel: z.number().min(0).max(100).optional(),
   maintenanceCenterId: z.number().int().optional().nullable(),
   protocolStartDate: z.string().optional().nullable(),
-  tarjetaCirculacion: z.string().max(100).optional(),
   vencimientoVerificacion: z.string().optional().nullable(),
   circulationCardNumber: z.string().max(100).optional(),
+  lastEnvironmentalVerification: z.string().optional().nullable(),
+  lastMechanicalVerification: z.string().optional().nullable(),
   status: z
     .enum(['Disponible', 'En Ruta', 'En Mantenimiento', 'Descontinuada'])
     .default('Disponible'),

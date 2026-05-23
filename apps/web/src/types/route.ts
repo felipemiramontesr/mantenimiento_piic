@@ -6,7 +6,7 @@ export interface ArchonRoute {
   unit_id: string;
   driver_id: number;
   origin_id?: number;
-  destination_colonia_id?: number;
+  destination_neighborhood_id?: number;
   destination: string;
   status: RouteStatus;
   start_reading: number;
@@ -27,7 +27,7 @@ export interface StartRoutePayload {
   fuelLevelStart: number;
   destination: string;
   originId?: number;
-  destinationColoniaId?: number;
+  destinationNeighborhoodId?: number;
 }
 
 export interface FinishRoutePayload {

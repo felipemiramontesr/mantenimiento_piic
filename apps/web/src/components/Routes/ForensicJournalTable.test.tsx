@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor, render } from '../../test/testUtils';
 import ForensicJournalTable from './ForensicJournalTable';
 import api from '../../api/client';
+import { archonCache } from '../../utils/archonCache';
 
 vi.mock('../../api/client', () => ({
   default: {
@@ -10,6 +11,9 @@ vi.mock('../../api/client', () => ({
 }));
 
 describe('ForensicJournalTable (Apex Standard)', () => {
+  beforeEach(() => {
+    archonCache.clear();
+  });
   const mockLogs = [
     {
       id: 'uuid-12345678',

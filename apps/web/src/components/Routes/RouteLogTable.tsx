@@ -7,7 +7,6 @@ import {
   Gauge,
   Pencil,
   CheckCircle2,
-  Truck,
   AlertTriangle,
   Fuel,
 } from 'lucide-react';
@@ -29,7 +28,7 @@ export interface RouteLog {
   operator_id: string;
   origin: string;
   destination: string;
-  destination_colonia_id?: number;
+  destination_neighborhood_id?: number;
   description?: string;
   fuelLevel?: number;
   fuel_level_start?: number;
@@ -78,20 +77,47 @@ const RouteLogRow = ({
   const operator = users.find((u) => u.id === String(log.operator_id));
   const unit = units.find((u) => u.id === log.unit_id);
 
+  // 🔱 Dynamic Refined Focus Border Class (Protocolo L Ruleset)
+  const borderTopClass = isExpanded ? 'expanded-row-cell' : '';
+
+  const consumedLiters = React.useMemo(() => {
+    if (!log.end_time) return null;
+    const tankCap = unit?.fuelTankCapacity || 0;
+    if (tankCap <= 0) return null;
+    const startPct = Number(log.fuel_level_start || 0);
+    const endPct = Number(log.fuel_level_end ?? log.fuel_level_start ?? 100);
+    const loadedLiters = Number(log.fuel_liters_loaded || 0);
+
+    const startLiters = (startPct / 100) * tankCap;
+    const endLiters = (endPct / 100) * tankCap;
+
+    const consumed = startLiters - endLiters + loadedLiters;
+    return Math.max(0, consumed);
+  }, [log.end_time, log.fuel_level_start, log.fuel_level_end, log.fuel_liters_loaded, unit?.fuelTankCapacity]);
+
   const getStatus = (l: RouteLog): { label: string; color: string; bg: string; border: string } => {
-    if (!l.end_time)
+    if (l.incident_count && l.incident_count > 0) {
       return {
-        label: 'EN RUTA',
-        color: 'text-emerald-500',
-        bg: 'bg-emerald-500/10',
-        border: 'border-emerald-500/20',
+        label: l.end_time ? 'FINALIZADA' : 'EN RUTA',
+        color: 'text-[#ef4444]',
+        bg: 'bg-[#ef444415]',
+        border: 'border-[#ef4444]/25',
       };
+    }
+    if (!l.end_time) {
+      return {
+         label: 'EN RUTA',
+        color: 'text-[#3b82f6]',
+        bg: 'bg-[#3b82f615]',
+        border: 'border-[#3b82f6]/25',
+      };
+    }
     return {
-      label: 'FINALIZADA',
-      color: 'text-[#0f2a44]',
-      bg: 'bg-[#0f2a44]/5',
-      border: 'border-[#0f2a44]/10',
-    };
+        label: 'FINALIZADA',
+        color: 'text-[#10b981]',
+        bg: 'bg-[#10b98115]',
+        border: 'border-[#10b981]/25',
+      };
   };
 
   const status = getStatus(log);
@@ -100,24 +126,45 @@ const RouteLogRow = ({
     <>
       <motion.tr
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
-        onClick={onToggle}
-        className={`${isExpanded ? 'expanded-focus-sovereign' : ''} ${
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      onClick={onToggle}
+      className={`${isExpanded ? 'expanded-focus-sovereign' : ''} ${
           log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''
-        }`}
+        } bg-transparent border-y border-solid border-slate-200/50 hover:bg-slate-50/50 transition-all duration-300 cursor-pointer`}
       >
         {/* Activo */}
-        <td className="py-6">
+        <td className={`py-6 ${borderTopClass}`}>
           <div className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-[4px] bg-slate-50 flex items-center justify-center mb-2 border border-slate-100 relative group">
-              <Truck size={24} className="text-slate-300" />
-              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0">
-                NO MEDIA
-              </span>
-            </div>
+            {unit?.images?.[0] ? (
+              <img
+                src={unit.images[0]}
+                className="w-20 h-20 block mx-auto rounded-[4px] shadow-sm object-cover mb-2"
+                alt={log.unit_id}
+                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+                  const imgElement = e.currentTarget;
+                  imgElement.src = '/img/archon-unit-placeholder.png';
+                }}
+              />
+            ) : (
+              <div
+                className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden relative"
+              >
+                <img
+                  src="/img/archon-unit-placeholder.png"
+                  alt="Archon Unit Placeholder"
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0 pointer-events-none">
+                  NO MEDIA
+                </span>
+              </div>
+            )}
             <span className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px]">
               {log.unit_id}
+            </span>
+            <span className="text-[8px] font-black text-white bg-[#0f2a44] px-1.5 py-0.5 rounded-[3px] mt-1 tracking-wider uppercase shadow-sm">
+              RT-{String(log.id).padStart(5, '0')}
             </span>
             <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
               {unit?.marca} {unit?.modelo}
@@ -126,46 +173,59 @@ const RouteLogRow = ({
         </td>
 
         {/* Operador */}
-        <td className="py-6">
-          <div className="flex items-center justify-center gap-3">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-[#0f2a44]/5 flex items-center justify-center border border-[#0f2a44]/10">
+        <td className={`py-6 ${borderTopClass}`}>
+          <div className="flex flex-col items-center">
+            <div className="relative mb-2">
+              <div className="w-10 h-10 rounded-full bg-[#0f2a44]/5 flex items-center justify-center border border-[#0f2a44]/10 overflow-hidden relative">
                 <User size={18} className="text-[#0f2a44]" />
+                {operator?.imageUrl && (
+                  <img
+                    src={operator.imageUrl}
+                    className="absolute inset-0 w-full h-full rounded-full object-cover"
+                    alt={operator.fullName || 'Operator'}
+                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+                      const imgElement = e.currentTarget;
+                      imgElement.style.display = 'none';
+                    }}
+                  />
+                )}
               </div>
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center">
                 <span className="text-[6px] text-white font-black">A</span>
               </div>
             </div>
-            <div className="text-left">
-              <p className="text-[13px] font-black text-[#0f2a44] leading-tight">
-                {operator?.fullName || 'Staff No Identificado'}
-              </p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                ID: {operator?.employeeNumber || 'OPE-999'}
-              </p>
-            </div>
+            <span className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px] text-center max-w-[150px] truncate" title={operator?.fullName || 'Staff No Identificado'}>
+              {operator?.fullName || 'Staff No Identificado'}
+            </span>
+            <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+              ID: {operator?.employeeNumber || 'OPE-999'}
+            </span>
           </div>
         </td>
 
         {/* Misión */}
-        <td className="py-6">
+        <td className={`py-6 ${borderTopClass}`}>
           <div className="flex flex-col items-start gap-1 px-4">
             {/* SALIDA RECORD */}
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter w-[45px]">
-                Salida:
-              </span>
-              <div className="flex items-center gap-2">
-                <Clock size={10} className="text-[#0f2a44] opacity-30" />
-                <span className="text-[10px] font-bold text-[#0f2a44]">
-                  {formatDateTime(log.start_time)}
+            <div className="w-full flex flex-col items-start gap-1">
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter w-[45px]">
+                  Salida:
                 </span>
-                <span className="text-[10px] font-black text-[#0f2a44] opacity-40">—</span>
-                <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter">
-                  {unit?.sede || 'BASE'}
-                </span>
-                <ArrowRight size={10} className="opacity-20" />
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">
+                <div className="flex items-center gap-2">
+                  <Clock size={10} className="text-[#0f2a44] opacity-30" />
+                  <span className="text-[10px] font-bold text-[#0f2a44]">
+                    {formatDateTime(log.start_time)}
+                  </span>
+                  <span className="text-[10px] font-black text-[#0f2a44] opacity-40">—</span>
+                  <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter">
+                    {unit?.sede || 'BASE'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 pl-[53px] w-full">
+                <ArrowRight size={10} className="text-emerald-500 mt-0.5 shrink-0 opacity-40" />
+                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter break-words text-left leading-relaxed w-full pr-4">
                   {log.destination}
                 </span>
               </div>
@@ -174,28 +234,32 @@ const RouteLogRow = ({
             {/* LLEGADA RECORD */}
             {log.end_time && (
               <>
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter w-[45px]">
-                    Llegada:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Clock size={10} className="text-[#0f2a44] opacity-30" />
-                    <span className="text-[10px] font-bold text-[#0f2a44]">
-                      {formatDateTime(log.end_time)}
+                <div className="w-full flex flex-col items-start gap-1 mt-1.5 border-t border-[#0f2a44]/5 pt-1.5">
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter w-[45px]">
+                      Llegada:
                     </span>
-                    <span className="text-[10px] font-black text-[#0f2a44] opacity-40">—</span>
-                    <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter opacity-70">
+                    <div className="flex items-center gap-2">
+                      <Clock size={10} className="text-[#0f2a44] opacity-30" />
+                      <span className="text-[10px] font-bold text-[#0f2a44]">
+                        {formatDateTime(log.end_time)}
+                      </span>
+                      <span className="text-[10px] font-black text-[#0f2a44] opacity-40">—</span>
+                      <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter opacity-70">
+                        {unit?.sede || 'BASE'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 pl-[53px] w-full">
+                    <ArrowRight size={10} className="text-blue-500 mt-0.5 shrink-0 opacity-40 rotate-180" />
+                    <span className="text-[10px] font-bold text-[#0f2a44] uppercase tracking-tighter opacity-80 break-words text-left leading-relaxed w-full pr-4">
                       {log.destination}
-                    </span>
-                    <ArrowRight size={10} className="opacity-20" />
-                    <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter opacity-70">
-                      {unit?.sede || 'BASE'}
                     </span>
                   </div>
                 </div>
 
                 {/* TIEMPO TOTAL */}
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-2 pl-[53px]">
                   <span className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest opacity-40">
                     Tiempo Total:
                   </span>
@@ -209,7 +273,7 @@ const RouteLogRow = ({
         </td>
 
         {/* Telemetría */}
-        <td className="py-6">
+        <td className={`py-6 ${borderTopClass}`}>
           <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-2 text-slate-400">
               <Gauge size={14} />
@@ -229,7 +293,7 @@ const RouteLogRow = ({
         </td>
 
         {/* Combustible */}
-        <td className="py-6">
+        <td className={`py-6 ${borderTopClass}`}>
           <div className="flex flex-col items-center">
             {((): React.JSX.Element => {
               const currentPercent = log.end_time ? log.fuel_level_end : log.fuel_level_start;
@@ -259,7 +323,7 @@ const RouteLogRow = ({
         </td>
 
         {/* Delta */}
-        <td className="py-6">
+        <td className={`py-6 ${borderTopClass}`}>
           <div className="flex flex-col items-center">
             {log.end_km !== null && log.end_km !== undefined ? (
               ((): React.JSX.Element => {
@@ -287,8 +351,40 @@ const RouteLogRow = ({
           </div>
         </td>
 
+        {/* Consumo */}
+        <td className={`py-6 ${borderTopClass}`}>
+          <div className="flex flex-col items-center">
+            {consumedLiters !== null ? (
+              <div className="flex items-center gap-1 text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-full border border-[#0f2a44]/10">
+                <span className="text-[11px] font-black tracking-tight">
+                  {consumedLiters.toFixed(1)}
+                </span>
+                <span className="text-[8px] font-bold opacity-60 ml-0.5">L</span>
+              </div>
+            ) : (
+              <span className="text-[11px] font-black text-slate-300">---</span>
+            )}
+          </div>
+        </td>
+
+        {/* Costo */}
+        <td className={`py-6 ${borderTopClass}`}>
+          <div className="flex flex-col items-center">
+            {log.end_time ? (
+              <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                <span className="text-[10px] font-black opacity-70">$</span>
+                <span className="text-[11px] font-black tracking-tight">
+                  {Number(log.fuel_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            ) : (
+              <span className="text-[11px] font-black text-slate-300">---</span>
+            )}
+          </div>
+        </td>
+
         {/* Estado */}
-        <td className="py-6">
+        <td className={`py-6 ${borderTopClass}`}>
           <div className="flex justify-center">
             <span
               className={`px-3 py-1.5 rounded-[4px] text-[9px] font-black uppercase tracking-widest border ${status.bg} ${status.color} ${status.border}`}
@@ -299,7 +395,7 @@ const RouteLogRow = ({
         </td>
 
         {/* Ajustes */}
-        <td className="py-6">
+        <td className={`py-6 ${borderTopClass}`}>
           <div className="flex items-center justify-center gap-2">
             {!log.end_time && (
               <button
@@ -340,7 +436,7 @@ const RouteLogRow = ({
       </motion.tr>
 
       <tr className={isExpanded ? 'accordion-row-carrier' : ''}>
-        <td colSpan={8} className="accordion-carrier !p-0 !m-0">
+        <td colSpan={10} className={`accordion-carrier !p-0 !m-0 ${isExpanded ? 'expanded-accordion-carrier' : ''}`}>
           <div className={`accordion-content ${isExpanded ? 'expanded' : ''} !bg-transparent`}>
             <div className="accordion-inner !p-0 !m-0">
               {isExpanded && (
@@ -421,6 +517,21 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const { units } = useFleet();
   const [reportingRoute, setReportingRoute] = React.useState<RouteLog | null>(null);
   const [expandedRowId, setExpandedRowId] = React.useState<string | null>(null);
+  const [sortConfig, setSortConfig] = React.useState<{
+    field: string | null;
+    direction: 'asc' | 'desc';
+  }>({
+    field: null,
+    direction: 'asc',
+  });
+
+  const handleSort = (key: string): void => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.field === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ field: key, direction });
+  };
 
   // 🛡️ Dynamic Register for Universal Search Protocol (DRY Compliant)
   React.useEffect(() => {
@@ -458,27 +569,41 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   React.useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
 
   const filteredLogs = React.useMemo(() => {
-    if (!searchTerm.trim()) return logs;
-    const query = searchTerm.toLowerCase().trim();
-    return logs.filter((log) => {
-      if (log.uuid.toLowerCase() === query) return true;
-      return matchFieldInRoute(log, query, users, units) !== null;
-    });
-  }, [logs, searchTerm, users, units]);
+    let result = logs;
+    if (searchTerm.trim()) {
+      const query = searchTerm.toLowerCase().trim();
+      result = logs.filter((log) => {
+        if (log.uuid.toLowerCase() === query) return true;
+        return matchFieldInRoute(log, query, users, units) !== null;
+      });
+    }
+
+    if (sortConfig.field === 'activo') {
+      result = [...result].sort((a, b) => {
+        const idA = Number(a.id || 0);
+        const idB = Number(b.id || 0);
+        return sortConfig.direction === 'asc' ? idA - idB : idB - idA;
+      });
+    }
+
+    return result;
+  }, [logs, searchTerm, users, units, sortConfig]);
 
   const handleToggle = (id: string): void => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
 
   const headers: ArchonTableHeader[] = [
-    { key: 'activo', label: 'ACTIVO / UNIDAD' },
-    { key: 'operador', label: 'OPERADOR' },
-    { key: 'mision', label: 'MISIÓN / TRAYECTO' },
-    { key: 'telemetria', label: 'TELEMETRÍA' },
-    { key: 'combustible', label: 'COMBUSTIBLE' },
-    { key: 'delta', label: 'DELTA' },
-    { key: 'estado', label: 'ESTADO' },
-    { key: 'ajustes', label: 'AJUSTES' },
+    { key: 'activo', label: 'UNIDAD', width: '10%', sortable: true },
+    { key: 'operador', label: 'OPERADOR', width: '15%' },
+    { key: 'mision', label: 'MISIÓN / TRAYECTO', width: '25%' },
+    { key: 'telemetria', label: 'TELEMETRÍA', width: '10%' },
+    { key: 'combustible', label: 'COMBUSTIBLE', width: '10%' },
+    { key: 'delta', label: 'DELTA', width: '6%' },
+    { key: 'consumo', label: 'CONSUMO', width: '8%' },
+    { key: 'costo', label: 'COSTO TOTAL', width: '8%' },
+    { key: 'estado', label: 'ESTADO', width: '8%' },
+    { key: 'ajustes', label: 'AJUSTES', width: '10%' },
   ];
 
   if (reportingRoute) {
@@ -513,6 +638,8 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
         loadingMessage="Sincronizando Rutas..."
         data={filteredLogs}
         headers={headers}
+        onSort={handleSort}
+        sortConfig={sortConfig}
         renderRow={(log, index): React.ReactNode => (
           <RouteLogRow
             key={log.uuid}

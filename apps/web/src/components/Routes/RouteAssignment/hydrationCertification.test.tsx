@@ -47,8 +47,9 @@ describe('useRouteAssignmentControl (Hydration Certification)', () => {
     const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), completedRoute));
 
     await waitFor(() => {
-      // Should respect 0% fuel at end of route
-      expect(result.current.formData.fuelLevel).toBe(0);
+      // Should respect 0% fuel at end of route and 100% fuel at start of route
+      expect(result.current.formData.arrivalFuelLevel).toBe(0);
+      expect(result.current.formData.fuelLevel).toBe(100);
     });
   });
 
@@ -64,7 +65,8 @@ describe('useRouteAssignmentControl (Hydration Certification)', () => {
     const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), completedRoute));
 
     await waitFor(() => {
-      expect(result.current.formData.fuelLevel).toBe(83);
+      expect(result.current.formData.arrivalFuelLevel).toBe(83);
+      expect(result.current.formData.fuelLevel).toBe(100);
     });
   });
 
@@ -81,6 +83,7 @@ describe('useRouteAssignmentControl (Hydration Certification)', () => {
 
     await waitFor(() => {
       expect(result.current.formData.fuelLevel).toBe(75);
+      expect(result.current.formData.arrivalFuelLevel).toBe(75); // Should fallback to start fuel level
     });
   });
 });

@@ -1,5 +1,5 @@
-import { screen, waitFor, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import RouteLogTable from './RouteLogTable';
 import { render } from '../../test/testUtils';
 import api from '../../api/client';
@@ -51,6 +51,12 @@ describe('RouteLogTable (Logistics Standard)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    if (typeof localStorage !== 'undefined') {
+      localStorage.clear();
+    }
+    if (typeof window !== 'undefined' && window.HTMLElement) {
+      window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    }
     vi.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/routes') return Promise.resolve({ data: { success: true, data: mockRoutes } });
       if (url === '/auth/users')
@@ -58,6 +64,10 @@ describe('RouteLogTable (Logistics Standard)', () => {
       if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('renders route logs correctly and handles NO MEDIA branch', async () => {

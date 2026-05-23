@@ -93,6 +93,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             lastServiceReading: getVal('lastServiceReading', 'last_service_reading') as number,
             lastServiceDate: getVal('lastServiceDate', 'last_service_date') as string,
             nextServiceReading: getVal('nextServiceReading', 'next_service_reading') as number,
+            nextServiceKmTarget: getVal('nextServiceKmTarget', 'next_service_km_target') as number,
             maintIntervalDays: getVal('maintIntervalDays', 'maint_interval_days') as number,
             maintIntervalKm: getVal('maintIntervalKm', 'maint_interval_km') as number,
             dailyUsageAvg: getVal('dailyUsageAvg', 'daily_usage_avg') as number,

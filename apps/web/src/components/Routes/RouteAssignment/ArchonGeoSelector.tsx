@@ -5,24 +5,24 @@ import { archonCache } from '../../../utils/archonCache';
 
 interface StateOption {
   id: number;
-  nombre: string;
+  name: string;
 }
 
 interface MunicipioOption {
   id: number;
-  nombre: string;
+  name: string;
 }
 
-interface ColoniaOption {
+interface NeighborhoodOption {
   id: number;
-  nombre: string;
-  codigoPostal: string;
-  ciudad?: string;
+  name: string;
+  postalCode: string;
+  city?: string;
 }
 
 interface ArchonGeoSelectorProps {
-  value?: number; // destinationColoniaId
-  onChange: (coloniaId: number | undefined, destinationString: string) => void;
+  value?: number; // destinationNeighborhoodId
+  onChange: (neighborhoodId: number | undefined, destinationString: string) => void;
   disabled?: boolean;
   originNode?: React.ReactNode;
 }
@@ -208,16 +208,16 @@ function Combobox<T>({
   );
 }
 
-const getStateLabel = (o: StateOption): string => o.nombre;
+const getStateLabel = (o: StateOption): string => o.name;
 const getStateValue = (o: StateOption): number => o.id;
 
-const getMunicipioLabel = (o: MunicipioOption): string => o.nombre;
+const getMunicipioLabel = (o: MunicipioOption): string => o.name;
 const getMunicipioValue = (o: MunicipioOption): number => o.id;
 
-const getColoniaLabel = (o: ColoniaOption): string => o.nombre;
-const getColoniaValue = (o: ColoniaOption): number => o.id;
-const getColoniaSecondary = (o: ColoniaOption): string | undefined =>
-  o.codigoPostal ? `CP: ${o.codigoPostal}` : undefined;
+const getNeighborhoodLabel = (o: NeighborhoodOption): string => o.name;
+const getNeighborhoodValue = (o: NeighborhoodOption): number => o.id;
+const getNeighborhoodSecondary = (o: NeighborhoodOption): string | undefined =>
+  o.postalCode ? `CP: ${o.postalCode}` : undefined;
 
 export default function ArchonGeoSelector({
   value,
@@ -227,10 +227,10 @@ export default function ArchonGeoSelector({
 }: ArchonGeoSelectorProps): React.JSX.Element {
   const [states, setStates] = useState<StateOption[]>([]);
   const [selectedState, setSelectedState] = useState<number | undefined>(undefined);
-  const [selectedMunicipio, setSelectedMunicipio] = useState<number | undefined>(undefined);
+  const [selectedMunicipality, setSelectedMunicipality] = useState<number | undefined>(undefined);
   const [loadingHydration, setLoadingHydration] = useState(false);
   const [municipalities, setMunicipalities] = useState<MunicipioOption[]>([]);
-  const [hydratedColonia, setHydratedColonia] = useState<ColoniaOption | undefined>(undefined);
+  const [hydratedNeighborhood, setHydratedNeighborhood] = useState<NeighborhoodOption | undefined>(undefined);
 
   useEffect((): void => {
     const loadStates = async (): Promise<void> => {
@@ -273,28 +273,28 @@ export default function ArchonGeoSelector({
   useEffect((): void => {
     if (!value) {
       setSelectedState(undefined);
-      setSelectedMunicipio(undefined);
-      setHydratedColonia(undefined);
+      setSelectedMunicipality(undefined);
+      setHydratedNeighborhood(undefined);
       return;
     }
 
     const hydrateValue = async (): Promise<void> => {
       setLoadingHydration(true);
       try {
-        const res = await api.get(`/geolocation/colonias/${value}`);
+        const res = await api.get(`/geolocation/neighborhoods/${value}`);
         const { data } = res;
         if (data) {
           setSelectedState(data.stateId);
-          setSelectedMunicipio(data.municipioId);
-          setHydratedColonia({
+          setSelectedMunicipality(data.municipalityId);
+          setHydratedNeighborhood({
             id: data.id,
-            nombre: data.nombre,
-            codigoPostal: data.codigoPostal,
+            name: data.name,
+            postalCode: data.postalCode,
           });
         }
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('Failed to hydrate colonia details', err);
+        console.error('Failed to hydrate neighborhood details', err);
       } finally {
         setLoadingHydration(false);
       }
@@ -306,38 +306,38 @@ export default function ArchonGeoSelector({
   const handleStateChange = useCallback(
     (stateId: number): void => {
       setSelectedState(stateId);
-      setSelectedMunicipio(undefined);
+      setSelectedMunicipality(undefined);
       onChange(undefined, '');
     },
     [onChange]
   );
 
   const handleMunicipioChange = useCallback(
-    (municipioId: number): void => {
-      setSelectedMunicipio(municipioId);
+    (municipalityId: number): void => {
+      setSelectedMunicipality(municipalityId);
       onChange(undefined, '');
     },
     [onChange]
   );
 
-  const handleColoniaChange = useCallback(
-    async (coloniaId: number, coloniaName: string): Promise<void> => {
+  const handleNeighborhoodChange = useCallback(
+    async (neighborhoodId: number, neighborhoodName: string): Promise<void> => {
       try {
         const stateObj = states.find((s) => s.id === selectedState);
         const resMun = await api.get(`/geolocation/states/${selectedState}/municipalities`);
         const { data } = resMun;
         const munList = data?.data || data || [];
-        const munObj = munList.find((m: MunicipioOption) => m.id === selectedMunicipio);
+        const munObj = munList.find((m: MunicipioOption) => m.id === selectedMunicipality);
 
-        const destinationString = `${coloniaName}, ${munObj?.nombre || ''}, ${
-          stateObj?.nombre || ''
+        const destinationString = `${neighborhoodName}, ${munObj?.name || ''}, ${
+          stateObj?.name || ''
         }`;
-        onChange(coloniaId, destinationString);
+        onChange(neighborhoodId, destinationString);
       } catch (err) {
-        onChange(coloniaId, coloniaName);
+        onChange(neighborhoodId, neighborhoodName);
       }
     },
-    [selectedState, selectedMunicipio, states, onChange]
+    [selectedState, selectedMunicipality, states, onChange]
   );
 
   const searchStates = useCallback(
@@ -346,7 +346,7 @@ export default function ArchonGeoSelector({
       if (!term) {
         return states;
       }
-      return states.filter((s) => s.nombre.toLowerCase().includes(term));
+      return states.filter((s) => s.name.toLowerCase().includes(term));
     },
     [states]
   );
@@ -371,13 +371,13 @@ export default function ArchonGeoSelector({
     [selectedState]
   );
 
-  const searchColonias = useCallback(
-    async (search: string): Promise<ColoniaOption[]> => {
-      if (!selectedMunicipio) {
+  const searchNeighborhoods = useCallback(
+    async (search: string): Promise<NeighborhoodOption[]> => {
+      if (!selectedMunicipality) {
         return [];
       }
       try {
-        const res = await api.get(`/geolocation/municipalities/${selectedMunicipio}/colonias`, {
+        const res = await api.get(`/geolocation/municipalities/${selectedMunicipality}/neighborhoods`, {
           params: { search },
         });
         const { data } = res;
@@ -388,7 +388,7 @@ export default function ArchonGeoSelector({
         return [];
       }
     },
-    [selectedMunicipio]
+    [selectedMunicipality]
   );
 
   if (originNode) {
@@ -417,7 +417,7 @@ export default function ArchonGeoSelector({
             Municipio
           </label>
           <Combobox<MunicipioOption>
-            value={selectedMunicipio}
+            value={selectedMunicipality}
             onChange={handleMunicipioChange}
             onSearch={searchMunicipalities}
             initialOptions={municipalities}
@@ -432,16 +432,16 @@ export default function ArchonGeoSelector({
           <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
             Colonia / Código Postal
           </label>
-          <Combobox<ColoniaOption>
+          <Combobox<NeighborhoodOption>
             value={value}
-            onChange={handleColoniaChange}
-            onSearch={searchColonias}
-            initialOptions={hydratedColonia ? [hydratedColonia] : undefined}
-            disabled={disabled || !selectedMunicipio || loadingHydration}
+            onChange={handleNeighborhoodChange}
+            onSearch={searchNeighborhoods}
+            initialOptions={hydratedNeighborhood ? [hydratedNeighborhood] : undefined}
+            disabled={disabled || !selectedMunicipality || loadingHydration}
             placeholder="Buscar Colonia..."
-            getOptionLabel={getColoniaLabel}
-            getOptionValue={getColoniaValue}
-            getOptionSecondary={getColoniaSecondary}
+            getOptionLabel={getNeighborhoodLabel}
+            getOptionValue={getNeighborhoodValue}
+            getOptionSecondary={getNeighborhoodSecondary}
           />
         </div>
       </div>
@@ -471,7 +471,7 @@ export default function ArchonGeoSelector({
           Municipio
         </label>
         <Combobox<MunicipioOption>
-          value={selectedMunicipio}
+          value={selectedMunicipality}
           onChange={handleMunicipioChange}
           onSearch={searchMunicipalities}
           initialOptions={municipalities}
@@ -486,16 +486,16 @@ export default function ArchonGeoSelector({
         <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
           Colonia / Código Postal
         </label>
-        <Combobox<ColoniaOption>
+        <Combobox<NeighborhoodOption>
           value={value}
-          onChange={handleColoniaChange}
-          onSearch={searchColonias}
-          initialOptions={hydratedColonia ? [hydratedColonia] : undefined}
-          disabled={disabled || !selectedMunicipio || loadingHydration}
+          onChange={handleNeighborhoodChange}
+          onSearch={searchNeighborhoods}
+          initialOptions={hydratedNeighborhood ? [hydratedNeighborhood] : undefined}
+          disabled={disabled || !selectedMunicipality || loadingHydration}
           placeholder="Buscar Colonia..."
-          getOptionLabel={getColoniaLabel}
-          getOptionValue={getColoniaValue}
-          getOptionSecondary={getColoniaSecondary}
+          getOptionLabel={getNeighborhoodLabel}
+          getOptionValue={getNeighborhoodValue}
+          getOptionSecondary={getNeighborhoodSecondary}
         />
       </div>
     </div>
