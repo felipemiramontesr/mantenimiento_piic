@@ -10,7 +10,7 @@
 
 > ⚠️ **IMPERATIVO:** ANTES de proponer o ejecutar cualquier operación de Git (Commit o Push), Antigravity DEBE leer este documento y **actualizar el tag de versión de la línea inferior** incrementándolo de acuerdo al cambio técnico realizado.
 
-**VERSIÓN ACTUAL:** `V.78.100.196_Implemented_Chronological_Sorting_And_Consumption_Telemetry_Metrics`
+**VERSIÓN ACTUAL:** `V.78.100.197_Implemented_Type_Safe_String_Coercion_For_Tire_Pressure_Validation`
 
 ---
 
