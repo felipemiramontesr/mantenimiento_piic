@@ -96,7 +96,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     username: '',
     fullName: '',
     email: '',
-    roleId: roles.find((r) => r.label.toLowerCase().includes('operador'))?.id.toString() || '',
+    roleId: roles.find((r) => r.label?.toLowerCase().includes('operador'))?.id.toString() || '',
     department: '',
     employeeNumber: '',
     imageUrl: '',

@@ -17,13 +17,13 @@ const matchFieldInUser = (
   u: UserIndustrial,
   query: string
 ): { label: string; value: string } | null => {
-  if (u.username.toLowerCase().includes(query)) {
+  if (u.username?.toLowerCase().includes(query)) {
     return { label: 'Empleado', value: u.username };
   }
   if (u.fullName && u.fullName.toLowerCase().includes(query)) {
     return { label: 'Nombre', value: u.fullName };
   }
-  if (u.email.toLowerCase().includes(query)) {
+  if (u.email?.toLowerCase().includes(query)) {
     return { label: 'Email', value: u.email };
   }
   if (u.employeeNumber && u.employeeNumber.toLowerCase().includes(query)) {

@@ -93,7 +93,34 @@ const RouteLogRow = ({
 
     const consumed = startLiters - endLiters + loadedLiters;
     return Math.max(0, consumed);
-  }, [log.end_time, log.fuel_level_start, log.fuel_level_end, log.fuel_liters_loaded, unit?.fuelTankCapacity]);
+  }, [
+    log.end_time,
+    log.fuel_level_start,
+    log.fuel_level_end,
+    log.fuel_liters_loaded,
+    unit?.fuelTankCapacity,
+  ]);
+
+  const kmPerLiter = React.useMemo(() => {
+    if (log.end_km === null || log.end_km === undefined || !consumedLiters || consumedLiters <= 0)
+      return null;
+    const distance = log.end_km - log.start_km;
+    if (distance <= 0) return null;
+    return distance / consumedLiters;
+  }, [log.end_km, log.start_km, consumedLiters]);
+
+  const costPerKm = React.useMemo(() => {
+    if (
+      log.end_km === null ||
+      log.end_km === undefined ||
+      log.fuel_amount === null ||
+      log.fuel_amount === undefined
+    )
+      return null;
+    const distance = log.end_km - log.start_km;
+    if (distance <= 0) return null;
+    return log.fuel_amount / distance;
+  }, [log.end_km, log.start_km, log.fuel_amount]);
 
   const getStatus = (l: RouteLog): { label: string; color: string; bg: string; border: string } => {
     if (l.incident_count && l.incident_count > 0) {
@@ -106,18 +133,18 @@ const RouteLogRow = ({
     }
     if (!l.end_time) {
       return {
-         label: 'EN RUTA',
+        label: 'EN RUTA',
         color: 'text-[#3b82f6]',
         bg: 'bg-[#3b82f615]',
         border: 'border-[#3b82f6]/25',
       };
     }
     return {
-        label: 'FINALIZADA',
-        color: 'text-[#10b981]',
-        bg: 'bg-[#10b98115]',
-        border: 'border-[#10b981]/25',
-      };
+      label: 'FINALIZADA',
+      color: 'text-[#10b981]',
+      bg: 'bg-[#10b98115]',
+      border: 'border-[#10b981]/25',
+    };
   };
 
   const status = getStatus(log);
@@ -126,10 +153,10 @@ const RouteLogRow = ({
     <>
       <motion.tr
         initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      onClick={onToggle}
-      className={`${isExpanded ? 'expanded-focus-sovereign' : ''} ${
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        onClick={onToggle}
+        className={`${isExpanded ? 'expanded-focus-sovereign' : ''} ${
           log.incident_count && log.incident_count > 0 ? 'route-incident-row' : ''
         } bg-transparent border-y border-solid border-slate-200/50 hover:bg-slate-50/50 transition-all duration-300 cursor-pointer`}
       >
@@ -147,9 +174,7 @@ const RouteLogRow = ({
                 }}
               />
             ) : (
-              <div
-                className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden relative"
-              >
+              <div className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden relative">
                 <img
                   src="/img/archon-unit-placeholder.png"
                   alt="Archon Unit Placeholder"
@@ -194,7 +219,10 @@ const RouteLogRow = ({
                 <span className="text-[6px] text-white font-black">A</span>
               </div>
             </div>
-            <span className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px] text-center max-w-[150px] truncate" title={operator?.fullName || 'Staff No Identificado'}>
+            <span
+              className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px] text-center max-w-[150px] truncate"
+              title={operator?.fullName || 'Staff No Identificado'}
+            >
               {operator?.fullName || 'Staff No Identificado'}
             </span>
             <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
@@ -251,7 +279,10 @@ const RouteLogRow = ({
                     </div>
                   </div>
                   <div className="flex items-start gap-2 pl-[53px] w-full">
-                    <ArrowRight size={10} className="text-blue-500 mt-0.5 shrink-0 opacity-40 rotate-180" />
+                    <ArrowRight
+                      size={10}
+                      className="text-blue-500 mt-0.5 shrink-0 opacity-40 rotate-180"
+                    />
                     <span className="text-[10px] font-bold text-[#0f2a44] uppercase tracking-tighter opacity-80 break-words text-left leading-relaxed w-full pr-4">
                       {log.destination}
                     </span>
@@ -355,12 +386,19 @@ const RouteLogRow = ({
         <td className={`py-6 ${borderTopClass}`}>
           <div className="flex flex-col items-center">
             {consumedLiters !== null ? (
-              <div className="flex items-center gap-1 text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-full border border-[#0f2a44]/10">
-                <span className="text-[11px] font-black tracking-tight">
-                  {consumedLiters.toFixed(1)}
-                </span>
-                <span className="text-[8px] font-bold opacity-60 ml-0.5">L</span>
-              </div>
+              <>
+                <div className="flex items-center gap-1 text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-full border border-[#0f2a44]/10">
+                  <span className="text-[11px] font-black tracking-tight">
+                    {consumedLiters.toFixed(1)}
+                  </span>
+                  <span className="text-[8px] font-bold opacity-60 ml-0.5">L</span>
+                </div>
+                {kmPerLiter !== null && (
+                  <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                    {kmPerLiter.toFixed(2)} KM/L
+                  </span>
+                )}
+              </>
             ) : (
               <span className="text-[11px] font-black text-slate-300">---</span>
             )}
@@ -371,12 +409,22 @@ const RouteLogRow = ({
         <td className={`py-6 ${borderTopClass}`}>
           <div className="flex flex-col items-center">
             {log.end_time ? (
-              <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-                <span className="text-[10px] font-black opacity-70">$</span>
-                <span className="text-[11px] font-black tracking-tight">
-                  {Number(log.fuel_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
+              <>
+                <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                  <span className="text-[10px] font-black opacity-70">$</span>
+                  <span className="text-[11px] font-black tracking-tight">
+                    {Number(log.fuel_amount || 0).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                {costPerKm !== null && (
+                  <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                    ${costPerKm.toFixed(2)}/KM
+                  </span>
+                )}
+              </>
             ) : (
               <span className="text-[11px] font-black text-slate-300">---</span>
             )}
@@ -436,7 +484,12 @@ const RouteLogRow = ({
       </motion.tr>
 
       <tr className={isExpanded ? 'accordion-row-carrier' : ''}>
-        <td colSpan={10} className={`accordion-carrier !p-0 !m-0 ${isExpanded ? 'expanded-accordion-carrier' : ''}`}>
+        <td
+          colSpan={10}
+          className={`accordion-carrier !p-0 !m-0 ${
+            isExpanded ? 'expanded-accordion-carrier' : ''
+          }`}
+        >
           <div className={`accordion-content ${isExpanded ? 'expanded' : ''} !bg-transparent`}>
             <div className="accordion-inner !p-0 !m-0">
               {isExpanded && (
@@ -487,17 +540,17 @@ const matchFieldInRoute = (
   users: UserIndustrial[],
   units: FleetUnit[]
 ): { label: string; value: string } | null => {
-  if (log.unit_id.toLowerCase().includes(query)) {
+  if (log.unit_id?.toLowerCase().includes(query)) {
     return { label: 'Unidad', value: log.unit_id };
   }
   const operator = users.find((u) => u.id === String(log.operator_id));
   const operatorMatch = matchOperator(operator, query);
   if (operatorMatch) return operatorMatch;
 
-  if (log.origin.toLowerCase().includes(query)) {
+  if (log.origin?.toLowerCase().includes(query)) {
     return { label: 'Origen', value: log.origin };
   }
-  if (log.destination.toLowerCase().includes(query)) {
+  if (log.destination?.toLowerCase().includes(query)) {
     return { label: 'Destino', value: log.destination };
   }
   if (log.description?.toLowerCase().includes(query)) {
@@ -573,7 +626,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
     if (searchTerm.trim()) {
       const query = searchTerm.toLowerCase().trim();
       result = logs.filter((log) => {
-        if (log.uuid.toLowerCase() === query) return true;
+        if (log.uuid?.toLowerCase() === query) return true;
         return matchFieldInRoute(log, query, users, units) !== null;
       });
     }
@@ -583,6 +636,26 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
         const idA = Number(a.id || 0);
         const idB = Number(b.id || 0);
         return sortConfig.direction === 'asc' ? idA - idB : idB - idA;
+      });
+    }
+
+    if (sortConfig.field === 'estado') {
+      result = [...result].sort((a, b) => {
+        const labelA = a.end_time ? 'FINALIZADA' : 'EN RUTA';
+        const labelB = b.end_time ? 'FINALIZADA' : 'EN RUTA';
+        return sortConfig.direction === 'asc'
+          ? labelA.localeCompare(labelB)
+          : labelB.localeCompare(labelA);
+      });
+    }
+
+    if (sortConfig.field === 'mision') {
+      result = [...result].sort((a, b) => {
+        const dateA = a.start_time ? new Date(a.start_time).getTime() : 0;
+        const dateB = b.start_time ? new Date(b.start_time).getTime() : 0;
+        const timeA = Number.isNaN(dateA) ? 0 : dateA;
+        const timeB = Number.isNaN(dateB) ? 0 : dateB;
+        return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
       });
     }
 
@@ -596,13 +669,13 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   const headers: ArchonTableHeader[] = [
     { key: 'activo', label: 'UNIDAD', width: '10%', sortable: true },
     { key: 'operador', label: 'OPERADOR', width: '15%' },
-    { key: 'mision', label: 'MISIÓN / TRAYECTO', width: '25%' },
+    { key: 'mision', label: 'MISIÓN / TRAYECTO', width: '25%', sortable: true },
     { key: 'telemetria', label: 'TELEMETRÍA', width: '10%' },
     { key: 'combustible', label: 'COMBUSTIBLE', width: '10%' },
     { key: 'delta', label: 'DELTA', width: '6%' },
     { key: 'consumo', label: 'CONSUMO', width: '8%' },
     { key: 'costo', label: 'COSTO TOTAL', width: '8%' },
-    { key: 'estado', label: 'ESTADO', width: '8%' },
+    { key: 'estado', label: 'ESTADO', width: '8%', sortable: true },
     { key: 'ajustes', label: 'AJUSTES', width: '10%' },
   ];
 

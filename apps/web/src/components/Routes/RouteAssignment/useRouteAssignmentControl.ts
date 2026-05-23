@@ -189,12 +189,15 @@ export const validateTirePressures = (formData: RouteAssignmentFormData): string
 
   let errorMsg = null;
   ['DI', 'DD', 'TI', 'TD'].some((pos) => {
-    const valStr = tires[pos];
-    if (valStr !== undefined && valStr !== null && valStr.trim() !== '') {
-      const val = Number(valStr);
-      if (Number.isNaN(val) || val < 20 || val > 100) {
-        errorMsg = `Error Forense: La presión del neumático ${pos} debe ser un valor realista entre 20 PSI y 100 PSI (detectado: "${valStr}").`;
-        return true;
+    const val = tires[pos];
+    if (val !== undefined && val !== null) {
+      const valStr = String(val);
+      if (valStr.trim() !== '') {
+        const numVal = Number(valStr);
+        if (Number.isNaN(numVal) || numVal < 20 || numVal > 100) {
+          errorMsg = `Error Forense: La presión del neumático ${pos} debe ser un valor realista entre 20 PSI y 100 PSI (detectado: "${valStr}").`;
+          return true;
+        }
       }
     }
     return false;
