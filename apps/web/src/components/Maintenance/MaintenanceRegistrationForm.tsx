@@ -35,7 +35,7 @@ interface MaintenanceRegistrationFormProps {
 /**
  * 🔱 Archon Odometer-Based Mathematical Service Milestone Prediction Logic
  * Evaluates standard intervals and returns the closest first-to-expire service milestone.
- * Single source of truth � mirrors backend getRecommendedServiceType().
+ * Single source of truth — mirrors backend getRecommendedServiceType().
  */
 const getRecommendedService = (odometer: number, isMining: boolean): ServiceType => {
   if (isMining) return 'MINOR_MINING';
@@ -65,7 +65,7 @@ const getRecommendedService = (odometer: number, isMining: boolean): ServiceType
 /**
  * 🔱 Compliance Hierarchy Engine
  * Derives serviceMode from the ordinal comparison of userSelected vs systemRecommended.
- * MINOR_MINING (rank 0) is a parallel protocol � always FULL_COMPLIANCE.
+ * MINOR_MINING (rank 0) is a parallel protocol — always FULL_COMPLIANCE.
  */
 const deriveServiceMode = (
   userSelected: ServiceType,
@@ -80,15 +80,15 @@ const deriveServiceMode = (
 
 /** Human-readable label map for service types (es-MX) */
 const SERVICE_LABELS: Record<ServiceType, string> = {
-  BASIC_10K: 'B�sico 10,000 km',
+  BASIC_10K: 'Básico 10,000 km',
   INTERMEDIATE_20K: 'Intermedio 20,000 km',
   MAJOR_30K: 'Mayor 30,000 km',
   ADVANCED_50K: 'Avanzado 50,000 km',
-  MINOR_MINING: 'Servicio Menor � Mina',
+  MINOR_MINING: 'Servicio Menor — Mina',
 };
 
 /**
- * 🔱 Archon Maintenance Registration Form (v.3.0.0 � Compliance Hierarchy)
+ * 🔱 Archon Maintenance Registration Form (v.3.0.0 — Compliance Hierarchy)
  * Sovereign UI: Industrial 2x2 Axial Architecture
  * Dual-state engine: systemRecommended (immutable) + userSelected (mutable)
  */
@@ -201,7 +201,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const statusOptions: SelectOption[] = [
     { value: 'PASS', label: 'Correcto' },
     { value: 'REPLACED', label: 'Reemplazado' },
-    { value: 'FAIL', label: 'Falla / Revisi�n' },
+    { value: 'FAIL', label: 'Falla / Revisión' },
     { value: 'N_A', label: 'No Aplica' },
   ];
 
@@ -209,13 +209,13 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     .filter(
       (u) =>
         u.is_active &&
-        (u.roleName?.toLowerCase().includes('t�cnico especialista') ||
+        (u.roleName?.toLowerCase().includes('técnico especialista') ||
           u.roleName?.toLowerCase().includes('tecnico especialista'))
     )
     .map((u) => ({
       value: u.fullName || u.username,
       label: u.fullName || u.username,
-      secondaryLabel: `N�MINA: ${u.employeeNumber || 'S/N'} | ${u.department || 'GENERAL'}`,
+      secondaryLabel: `NÓMINA: ${u.employeeNumber || 'S/N'} | ${u.department || 'GENERAL'}`,
       searchTerms: `${u.fullName || ''} ${u.username || ''} ${u.employeeNumber || ''}`,
     }));
 
@@ -225,7 +225,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     setDetails(newDetails);
   };
 
-  /** Internal submit logic � called after confirmation if needed */
+  /** Internal submit logic — called after confirmation if needed */
   const executeSubmit = async (): Promise<void> => {
     setSubmitting(true);
     try {
@@ -284,10 +284,10 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
               </div>
               <div>
                 <p className="text-[11px] font-black text-amber-700 uppercase tracking-[0.15em]">
-                  Confirmar Ejecuci�n Parcial
+                  Confirmar Ejecución Parcial
                 </p>
                 <p className="text-[10px] text-amber-600/70 font-mono mt-0.5">
-                  PARTIAL_EXECUTION � Trazabilidad Forense Requerida
+                  PARTIAL_EXECUTION · Trazabilidad Forense Requerida
                 </p>
               </div>
             </div>
@@ -296,7 +296,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
               <p className="text-[13px] text-[#0f2a44] font-medium leading-relaxed">
                 El sistema recomienda{' '}
                 <strong className="text-amber-700">{SERVICE_LABELS[systemRecommended]}</strong>{' '}
-                seg�n odometr�a, pero ha seleccionado ejecutar{' '}
+                según odometría, pero ha seleccionado ejecutar{' '}
                 <strong className="text-[#0f2a44]">{SERVICE_LABELS[userSelected]}</strong>.
               </p>
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
@@ -304,16 +304,16 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                   Consecuencia registrada:
                 </p>
                 <p className="text-[11px] text-amber-600/90 leading-relaxed">
-                  El registro quedar� con estado{' '}
+                  El registro quedará con estado{' '}
                   <span className="font-black font-mono">PARTIAL_EXECUTION</span>. El preventivo
-                  mayor permanecer� como{' '}
+                  mayor permanecerá como{' '}
                   <span className="font-black font-mono">PENDING_MAINTENANCE</span> en el historial
-                  del activo y ser� visible en las alertas de deuda t�cnica.
+                  del activo y será visible en las alertas de deuda técnica.
                 </p>
               </div>
               <p className="text-[11px] text-[#0f2a44]/50 font-mono">
-                T�cnico responsable:{' '}
-                <strong className="text-[#0f2a44]/70">{technician || '�'}</strong>
+                Técnico responsable:{' '}
+                <strong className="text-[#0f2a44]/70">{technician || '—'}</strong>
               </p>
             </div>
             {/* Modal actions */}
