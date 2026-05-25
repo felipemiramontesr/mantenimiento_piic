@@ -64,8 +64,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         SELECT
           m.id, m.uuid, m.unit_id, m.service_date, m.odometer_at_service, m.service_type,
           m.service_mode, m.system_recommended_type,
-          m.cost, m.technician, m.created_at,
-          u.id AS unit_name, u.brandId, u.modelId, u.placas
+          m.cost, m.technician, m.created_at
         FROM fleet_maintenance_logs m
         JOIN fleet_units u ON m.unit_id = u.id
       `;

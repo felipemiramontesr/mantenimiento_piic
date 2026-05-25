@@ -39,8 +39,6 @@ export type MaintenanceLog = {
   id: number;
   uuid: string;
   unit_id: string;
-  unit_name?: string;
-  placas?: string;
   service_date: string;
   odometer_at_service: number;
   service_type: ServiceType;

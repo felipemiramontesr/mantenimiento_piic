@@ -22,9 +22,6 @@ const matchFieldInMaintenance = (
   if (log.unit_id.toLowerCase().includes(query)) {
     return { label: 'Unidad', value: log.unit_id };
   }
-  if (log.placas?.toLowerCase().includes(query)) {
-    return { label: 'Placas', value: log.placas };
-  }
   if (log.service_type.toLowerCase().includes(query)) {
     return {
       label: 'Tipo',
@@ -196,7 +193,6 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
             <td className="py-4 px-3 font-mono text-xs opacity-60 text-center">#{log.id}</td>
             <td className="py-4 px-3 text-center">
               <div className="font-black text-center">{log.unit_id}</div>
-              <div className="text-[10px] opacity-60 uppercase text-center">{log.placas}</div>
             </td>
             <td className="py-4 px-3 text-center">
               {log.service_type === 'MINOR_MINING' ? (
