@@ -54,7 +54,7 @@ const RoleBadge = ({ roleName }: { roleName: string }): React.JSX.Element => {
 
   return (
     <span
-      className={`px-2.5 py-1 rounded-[4px] text-[9px] font-black uppercase tracking-widest ${styles}`}
+      className={`px-2.5 py-1 rounded-[4px] text-archon-sm font-black uppercase tracking-widest ${styles}`}
     >
       {roleName}
     </span>

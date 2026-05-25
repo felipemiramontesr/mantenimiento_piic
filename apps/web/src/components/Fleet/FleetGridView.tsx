@@ -30,6 +30,7 @@ import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import AT from '../../styles/archonTypography';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
 // Visual Impact Update: 100% Data Parity with Master Source
@@ -115,7 +116,7 @@ const LogisticsCluster = ({
       </span>
     </div>
     <div className="flex flex-col items-center gap-1.5">
-      <span className="flex items-center gap-1.5 text-[11px] font-black text-navy-800 uppercase tracking-tighter">
+      <span className={`flex items-center gap-1.5 ${AT.cellValue} uppercase tracking-tighter`}>
         <RefreshCcw size={11} className="text-sky-500" />
         {unit.usageFreqLabel ||
           `${Number(unit.maintIntervalKm || 10000).toLocaleString('en-US', {
@@ -598,7 +599,12 @@ const SEARCH_CONFIGS: SearchConfig[] = [
   { key: 'odometer', label: 'Odómetro', type: 'numeric', suffix: ' KM/Hrs' },
   { key: 'lastServiceReading', label: 'Último Servicio', type: 'numeric', suffix: ' KM/Hrs' },
   { key: 'nextServiceReading', label: 'Objetivo Servicio', type: 'numeric', suffix: ' KM/Hrs' },
-  { key: 'nextServiceKmTarget', label: 'Objetivo Servicio Target', type: 'numeric', suffix: ' KM/Hrs' },
+  {
+    key: 'nextServiceKmTarget',
+    label: 'Objetivo Servicio Target',
+    type: 'numeric',
+    suffix: ' KM/Hrs',
+  },
   { key: 'capacidadCarga', label: 'Carga', type: 'numeric', suffix: ' KG' },
   { key: 'fuelTankCapacity', label: 'Tanque', type: 'numeric', suffix: ' L' },
   { key: 'maintIntervalKm', label: 'Frec. Uso', type: 'numeric', suffix: ' KM/Hrs' },

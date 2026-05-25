@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
+import AT from '../../styles/archonTypography';
 import { formatDateTime, calculateDuration } from '../../utils/dateUtils';
 import useRouteLogs from '../../hooks/useRouteLogs';
 import IncidentReportForm from './IncidentReportForm';
@@ -161,7 +162,7 @@ const RouteLogRow = ({
         } bg-transparent border-y border-solid border-slate-200/50 hover:bg-slate-50/50 transition-all duration-300 cursor-pointer`}
       >
         {/* Activo */}
-        <td className={`py-6 ${borderTopClass}`}>
+        <td className={`py-4 ${borderTopClass}`}>
           <div className="flex flex-col items-center">
             {unit?.images?.[0] ? (
               <img
@@ -174,31 +175,26 @@ const RouteLogRow = ({
                 }}
               />
             ) : (
-              <div className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden relative">
+              <div className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden">
                 <img
                   src="/img/archon-unit-placeholder.png"
                   alt="Archon Unit Placeholder"
                   className="w-full h-full object-cover"
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-slate-300 opacity-0 pointer-events-none">
-                  NO MEDIA
-                </span>
               </div>
             )}
-            <span className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px]">
+            <span className="text-archon-base font-black text-[#0f2a44] bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px]">
               {log.unit_id}
             </span>
-            <span className="text-[8px] font-black text-white bg-[#0f2a44] px-1.5 py-0.5 rounded-[3px] mt-1 tracking-wider uppercase shadow-sm">
-              RT-{String(log.id).padStart(5, '0')}
-            </span>
-            <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+            <span className={`${AT.idBadge} mt-1`}>RT-{String(log.id).padStart(5, '0')}</span>
+            <span className={AT.cellMeta}>
               {unit?.marca} {unit?.modelo}
             </span>
           </div>
         </td>
 
         {/* Operador */}
-        <td className={`py-6 ${borderTopClass}`}>
+        <td className={`py-4 ${borderTopClass}`}>
           <div className="flex flex-col items-center">
             <div className="relative mb-2">
               <div className="w-10 h-10 rounded-full bg-[#0f2a44]/5 flex items-center justify-center border border-[#0f2a44]/10 overflow-hidden relative">
@@ -220,14 +216,12 @@ const RouteLogRow = ({
               </div>
             </div>
             <span
-              className="text-[11px] font-black text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-[4px] text-center max-w-[150px] truncate"
+              className="text-archon-base font-black text-[#0f2a44] bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-center"
               title={operator?.fullName || 'Staff No Identificado'}
             >
               {operator?.fullName || 'Staff No Identificado'}
             </span>
-            <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
-              ID: {operator?.employeeNumber || 'OPE-999'}
-            </span>
+            <span className={AT.cellMeta}>ID: {operator?.employeeNumber || 'OPE-999'}</span>
           </div>
         </td>
 
@@ -377,7 +371,7 @@ const RouteLogRow = ({
                 );
               })()
             ) : (
-              <span className="text-[11px] font-black text-slate-300">---</span>
+              <span className={AT.cellValueMuted}>---</span>
             )}
           </div>
         </td>
@@ -400,7 +394,7 @@ const RouteLogRow = ({
                 )}
               </>
             ) : (
-              <span className="text-[11px] font-black text-slate-300">---</span>
+              <span className={AT.cellValueMuted}>---</span>
             )}
           </div>
         </td>
@@ -426,7 +420,7 @@ const RouteLogRow = ({
                 )}
               </>
             ) : (
-              <span className="text-[11px] font-black text-slate-300">---</span>
+              <span className={AT.cellValueMuted}>---</span>
             )}
           </div>
         </td>
@@ -667,16 +661,16 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
   };
 
   const headers: ArchonTableHeader[] = [
-    { key: 'activo', label: 'UNIDAD', width: '10%', sortable: true },
-    { key: 'operador', label: 'OPERADOR', width: '15%' },
-    { key: 'mision', label: 'MISIÓN / TRAYECTO', width: '25%', sortable: true },
-    { key: 'telemetria', label: 'TELEMETRÍA', width: '10%' },
-    { key: 'combustible', label: 'COMBUSTIBLE', width: '10%' },
+    { key: 'activo', label: 'UNIDAD', width: '9%', sortable: true },
+    { key: 'operador', label: 'OPERADOR', width: '10%' },
+    { key: 'mision', label: 'MISIÓN / TRAYECTO', width: '26%', sortable: true },
+    { key: 'telemetria', label: 'TELEMETRÍA', width: '8%' },
+    { key: 'combustible', label: 'COMBUSTIBLE', width: '9%' },
     { key: 'delta', label: 'DELTA', width: '6%' },
     { key: 'consumo', label: 'CONSUMO', width: '8%' },
     { key: 'costo', label: 'COSTO TOTAL', width: '8%' },
     { key: 'estado', label: 'ESTADO', width: '8%', sortable: true },
-    { key: 'ajustes', label: 'AJUSTES', width: '10%' },
+    { key: 'ajustes', label: 'AJUSTES', width: '8%' },
   ];
 
   if (reportingRoute) {
