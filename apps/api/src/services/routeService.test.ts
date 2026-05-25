@@ -29,13 +29,15 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
 
   describe('startRoute', () => {
     it('should successfully start a route and impact the unit state', async () => {
-      // 1. Mock Unit Check
+      // 1. Unit availability check
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'Disponible', odometer: 1000 }]]);
-      // 2. Mock Insert Route
+      // 2. INSERT fleet_movements (CTI base) — needs insertId
+      mockConnection.execute.mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }]);
+      // 3. INSERT fleet_route_extensions (CTI child)
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      // 3. Mock Update Unit
+      // 4. UPDATE fleet_units status → En Ruta
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      // 4. Mock Activity Log
+      // 5. INSERT unit_activity_logs
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       const uuid = await RouteService.startRoute('UNIT-001', 1, 1000, 100, 'Mina 1');
@@ -44,7 +46,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       expect(mockConnection.beginTransaction).toHaveBeenCalled();
       expect(mockConnection.commit).toHaveBeenCalled();
       expect(mockConnection.release).toHaveBeenCalled();
-      expect(mockConnection.execute).toHaveBeenCalledTimes(4);
+      expect(mockConnection.execute).toHaveBeenCalledTimes(5);
     });
 
     it('should throw error if unit is not found', async () => {
@@ -71,6 +73,14 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       );
     });
 
+    it('should throw error if unit is under maintenance (Downtime)', async () => {
+      mockConnection.execute.mockResolvedValueOnce([[{ status: 'Downtime', odometer: 1000 }]]);
+
+      await expect(RouteService.startRoute('DOWN', 1, 1000, 100, 'Dest')).rejects.toThrow(
+        /Unit DOWN is under maintenance/
+      );
+    });
+
     it('should throw error if start reading is lower than unit odometer', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'Disponible', odometer: 2000 }]]);
 
@@ -83,19 +93,22 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
   describe('finishRoute', () => {
     it('should complete journey and update unit telemetry', async () => {
       const mockRoute = {
+        id: 10,
         unit_id: 'UNIT-001',
         start_reading: 1000,
         status: 'ACTIVE',
         driver_id: 1,
       };
 
-      // 1. Mock Route Context
+      // 1. SELECT fm JOIN fre FOR UPDATE
       mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
-      // 2. Mock Update Route
+      // 2. UPDATE fleet_movements (telemetry)
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      // 3. Mock Update Unit
+      // 3. UPDATE fleet_route_extensions (logistics fields)
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      // 4. Mock Final Log
+      // 4. UPDATE fleet_units
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      // 5. INSERT unit_activity_logs
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       await RouteService.finishRoute('UUID-123', {
@@ -165,9 +178,9 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         driver_id: 1,
       };
 
-      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // SELECT fm JOIN fre
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT incident
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT log
 
       await RouteService.reportIncident('UUID-123', 'MECANICA', 'Test', 'LOW');
 
@@ -183,10 +196,10 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         driver_id: 1,
       };
 
-      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Unit Status
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       await RouteService.reportIncident('UUID-123', 'MECANICA', 'Critical Fail', 'CRITICAL');
 
@@ -204,10 +217,10 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         driver_id: 1,
       };
 
-      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Unit Status
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       await RouteService.reportIncident('UUID-123', 'SINIESTRO', 'Total Loss', 'HIGH');
 
@@ -225,13 +238,12 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         driver_id: 1,
       };
 
-      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // Get Route
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Incident
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Insert Log
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       await RouteService.reportIncident('UUID-123', 'OTRA', 'Completed Route Issue', 'LOW');
 
-      // status_before should be 'Disponible' because route is COMPLETED
       expect(mockConnection.execute).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO unit_activity_logs'),
         expect.arrayContaining(['Disponible', 'Disponible'])
@@ -269,12 +281,25 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
 
   describe('updateRoute & deleteRoute (Forensic Audit)', () => {
     it('should successfully update an active route with correct column mapping', async () => {
-      const mockBefore = { uuid: 'UUID-1', status: 'ACTIVE' };
-      const mockAfter = { uuid: 'UUID-1', status: 'ACTIVE', destination: 'New Dest' };
+      // CTI: mockBefore must include id (movement_id for extension UPDATE)
+      const mockBefore = { uuid: 'UUID-1', status: 'ACTIVE', id: 42, unit_id: 'ASM-001' };
+      const mockAfter = {
+        uuid: 'UUID-1',
+        status: 'ACTIVE',
+        destination: 'New Dest',
+        id: 42,
+        unit_id: 'ASM-001',
+      };
 
-      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]); // Snapshot Before
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update
-      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]); // Snapshot After
+      // 1. SELECT snapshot before (fm JOIN fre FOR UPDATE)
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]);
+      // 2. UPDATE fleet_movements (fuelLevel → fuel_level_start when ACTIVE)
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      // 3. UPDATE fleet_route_extensions (destination)
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      // 4. SELECT snapshot after
+      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]);
+      // 5. syncUnitState SELECT → empty → no further update
 
       await RouteService.updateRoute(
         'UUID-1',
@@ -283,40 +308,51 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         1
       );
 
+      // fuelLevel → fleet_movements
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_movements SET fuel_level_start = ? WHERE uuid = ?'),
+        [80, 'UUID-1']
+      );
+      // destination → fleet_route_extensions (movement_id = snapshotBefore.id)
       expect(mockConnection.execute).toHaveBeenCalledWith(
         expect.stringContaining(
-          'UPDATE fleet_routes SET destination = ?, fuel_level_start = ? WHERE uuid = ?'
+          'UPDATE fleet_route_extensions SET destination = ? WHERE movement_id = ?'
         ),
-        ['New Dest', 80, 'UUID-1']
+        ['New Dest', 42]
       );
       expect(mockConnection.commit).toHaveBeenCalled();
     });
 
     it('should update fuel_level_end if route is COMPLETED and propagate to unit', async () => {
-      const mockBefore = { uuid: 'UUID-1', status: 'COMPLETED', unit_id: 'ASM-001' };
+      const mockBefore = { uuid: 'UUID-1', status: 'COMPLETED', unit_id: 'ASM-001', id: 42 };
       const mockAfter = {
         uuid: 'UUID-1',
         status: 'COMPLETED',
-        end_time: '2026-05-10T00:00:00Z',
         end_reading: 1500,
         fuel_level_end: 75,
         unit_id: 'ASM-001',
+        id: 42,
       };
 
-      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]); // Snapshot Before
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Route
-      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]); // Snapshot After
-      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]); // syncUnitState SELECT
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update Unit (Chain of Custody)
+      // 1. Snapshot before
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]);
+      // 2. UPDATE fleet_movements (fuelLevel → fuel_level_end when COMPLETED)
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      // 3. Snapshot after
+      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]);
+      // 4. syncUnitState SELECT → returns mockAfter so unit gets updated
+      mockConnection.execute.mockResolvedValueOnce([[mockAfter]]);
+      // 5. UPDATE fleet_units (Chain of Custody)
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       await RouteService.updateRoute('UUID-1', { fuelLevel: 75 }, 'Reason', 1);
 
+      // fuelLevel maps to fleet_movements (fuel_level_end when COMPLETED)
       expect(mockConnection.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_routes SET fuel_level_end = ? WHERE uuid = ?'),
+        expect.stringContaining('UPDATE fleet_movements SET fuel_level_end = ? WHERE uuid = ?'),
         [75, 'UUID-1']
       );
-
-      // Verify Chain of Custody propagation to Unit
+      // Chain of Custody propagation to unit
       expect(mockConnection.execute).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE fleet_units SET odometer = ?, lastFuelLevel = ?'),
         [1500, 75, 'ASM-001']
@@ -324,35 +360,47 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     });
 
     it('should handle additivesCheck boolean mapping', async () => {
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+      const mockSnapshot = { status: 'ACTIVE', id: 42, unit_id: 'ASM-001' };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockSnapshot]]); // Snapshot before
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // UPDATE fleet_route_extensions
+      mockConnection.execute.mockResolvedValueOnce([[mockSnapshot]]); // Snapshot after
+      // syncUnitState uses default [[], []] → no unit update
 
       await RouteService.updateRoute('UUID-1', { additivesCheck: true }, 'Reason', 1);
 
       expect(mockConnection.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_routes SET additives_check = ? WHERE uuid = ?'),
-        [1, 'UUID-1']
+        expect.stringContaining(
+          'UPDATE fleet_route_extensions SET additives_check = ? WHERE movement_id = ?'
+        ),
+        [1, 42]
       );
     });
 
     it('should handle additivesCheck false mapping', async () => {
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+      const mockSnapshot = { status: 'ACTIVE', id: 42, unit_id: 'ASM-001' };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockSnapshot]]);
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+      mockConnection.execute.mockResolvedValueOnce([[mockSnapshot]]);
 
       await RouteService.updateRoute('UUID-1', { additivesCheck: false }, 'Reason', 1);
 
       expect(mockConnection.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_routes SET additives_check = ? WHERE uuid = ?'),
-        [0, 'UUID-1']
+        expect.stringContaining(
+          'UPDATE fleet_route_extensions SET additives_check = ? WHERE movement_id = ?'
+        ),
+        [0, 42]
       );
     });
 
     it('should ignore unmapped fields', async () => {
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
-      mockConnection.execute.mockResolvedValueOnce([[{ status: 'ACTIVE' }]]);
+      const mockSnapshot = { status: 'ACTIVE', id: 42, unit_id: 'ASM-001' };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockSnapshot]]); // Snapshot before
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // UPDATE fleet_route_extensions
+      mockConnection.execute.mockResolvedValueOnce([[mockSnapshot]]); // Snapshot after
+      // syncUnitState → default empty
 
       await RouteService.updateRoute(
         'UUID-1',
@@ -361,9 +409,12 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         1
       );
 
+      // unknownField ignored; destination → fleet_route_extensions
       expect(mockConnection.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_routes SET destination = ? WHERE uuid = ?'),
-        ['Dest', 'UUID-1']
+        expect.stringContaining(
+          'UPDATE fleet_route_extensions SET destination = ? WHERE movement_id = ?'
+        ),
+        ['Dest', 42]
       );
     });
 
@@ -381,8 +432,14 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     });
 
     it('should throw error if end reading is lower than start reading during update', async () => {
-      const mockBefore = { uuid: 'UUID-1', start_reading: 5000, end_reading: 6000 };
-      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]); // Snapshot Before
+      const mockBefore = {
+        uuid: 'UUID-1',
+        start_reading: 5000,
+        end_reading: 6000,
+        id: 42,
+        unit_id: 'ASM-001',
+      };
+      mockConnection.execute.mockResolvedValueOnce([[mockBefore]]);
 
       await expect(
         RouteService.updateRoute('UUID-1', { endReading: 4000 }, 'Reason', 1)
@@ -390,13 +447,17 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
     });
 
     it('should successfully delete a route and log audit', async () => {
-      mockConnection.execute.mockResolvedValueOnce([[{ uuid: 'UUID-DEL' }]]); // Snapshot Before
-      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // Delete
+      // CTI: SELECT fm JOIN fre FOR UPDATE, then DELETE fleet_movements (CASCADE removes extension)
+      mockConnection.execute.mockResolvedValueOnce([
+        [{ uuid: 'UUID-DEL', unit_id: 'ASM-001', id: 1 }],
+      ]); // Snapshot before
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // DELETE fleet_movements
+      // syncUnitState SELECT → default [[], []] → unit_id present but no COMPLETED route → no UPDATE
 
       await RouteService.deleteRoute('UUID-DEL', 'Cleanup', 1);
 
       expect(mockConnection.execute).toHaveBeenCalledWith(
-        expect.stringContaining('DELETE FROM fleet_routes WHERE uuid = ?'),
+        expect.stringContaining('DELETE FROM fleet_movements WHERE uuid = ?'),
         ['UUID-DEL']
       );
       expect(mockConnection.commit).toHaveBeenCalled();
