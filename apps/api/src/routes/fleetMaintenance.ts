@@ -86,7 +86,10 @@ function computeServiceType(odometer: number, maintIntervalKm: number | string):
   let minDist = Infinity;
   milestones.forEach((m) => {
     const dist = Math.abs(residuo - m.value);
-    if (dist < minDist) { minDist = dist; best = m.type; }
+    if (dist < minDist) {
+      minDist = dist;
+      best = m.type;
+    }
   });
   return best;
 }
@@ -215,22 +218,22 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
 
       // Cumulative cascade — each tier inherits all tasks from lower tiers
       const cumulativeMap: Record<ServiceType, ServiceType[]> = {
-        BASIC_10K:        ['BASIC_10K'],
+        BASIC_10K: ['BASIC_10K'],
         INTERMEDIATE_20K: ['INTERMEDIATE_20K', 'BASIC_10K'],
-        MAJOR_30K:        ['MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
-        ADVANCED_50K:     ['ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
-        MINOR_MINING:     ['MINOR_MINING'],
+        MAJOR_30K: ['MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
+        ADVANCED_50K: ['ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
+        MINOR_MINING: ['MINOR_MINING'],
       };
 
       const serviceTypes: string[] = [...cumulativeMap[resolvedType]];
 
-      // Mine units run MINOR_MINING + concurrent agency milestone (also cumulative)
-      if (isMineUnit && resolvedType === 'MINOR_MINING') {
-        const agencyType = computeServiceType(currentOdometer, 10000);
-        if (agencyType !== 'MINOR_MINING') {
-          cumulativeMap[agencyType].forEach((t) => {
-            if (!serviceTypes.includes(t)) serviceTypes.push(t);
-          });
+      // Unidades de mina siempre ejecutan MINOR_MINING (cada 5k).
+      // Si el hito resuelto es de agencia (ej. MAJOR_30K), nos aseguramos de agregar MINOR_MINING.
+      // Si el hito resuelto es MINOR_MINING (ej. 15k, 25k), no agregamos hitos de agencia
+      // porque no están dentro de la ventana de tolerancia de ±1000km.
+      if (isMineUnit) {
+        if (!serviceTypes.includes('MINOR_MINING')) {
+          serviceTypes.push('MINOR_MINING');
         }
       }
 
