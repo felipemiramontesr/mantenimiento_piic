@@ -4,17 +4,21 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
 import db from '../services/db';
 
+const SERVICE_TYPE_ENUM = [
+  'BASIC_10K',
+  'INTERMEDIATE_20K',
+  'MAJOR_30K',
+  'ADVANCED_50K',
+  'MINOR_MINING',
+] as const;
+
 const createMaintenanceSchema = z.object({
   unitId: z.string().min(2).max(50),
   serviceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   odometerAtService: z.number().min(0),
-  serviceType: z.enum([
-    'BASIC_10K',
-    'INTERMEDIATE_20K',
-    'MAJOR_30K',
-    'ADVANCED_50K',
-    'MINOR_MINING',
-  ]),
+  serviceType: z.enum(SERVICE_TYPE_ENUM),
+  serviceMode: z.enum(['FULL_COMPLIANCE', 'PARTIAL_EXECUTION']).default('FULL_COMPLIANCE'),
+  systemRecommendedType: z.enum(SERVICE_TYPE_ENUM).optional(),
   cost: z.number().min(0),
   technician: z.string().min(2).max(100),
   details: z.array(
@@ -56,38 +60,32 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     try {
       const { cursor, limit = '50' } = request.query as { cursor?: string; limit?: string };
       const parsedLimit = parseInt(limit, 10);
-
       let query = `
-        SELECT 
-          m.id, m.uuid, m.unit_id, m.service_date, m.odometer_at_service, m.service_type, 
+        SELECT
+          m.id, m.uuid, m.unit_id, m.service_date, m.odometer_at_service, m.service_type,
+          m.service_mode, m.system_recommended_type,
           m.cost, m.technician, m.created_at,
           u.id AS unit_name, u.brandId, u.modelId, u.placas
         FROM fleet_maintenance_logs m
         JOIN fleet_units u ON m.unit_id = u.id
       `;
       const params: (string | number)[] = [];
-
       if (cursor) {
-        // Decode cursor (created_at_iso|id)
         const [cursorDate, cursorId] = Buffer.from(cursor, 'base64').toString('ascii').split('|');
         query += ` WHERE (m.created_at < ?) OR (m.created_at = ? AND m.id < ?) `;
         params.push(cursorDate, cursorDate, parseInt(cursorId, 10));
       }
-
       query += ` ORDER BY m.created_at DESC, m.id DESC LIMIT ? `;
       params.push(parsedLimit + 1);
-
       const [rows] = await db.execute<RowDataPacket[]>(query, params);
-
       let nextCursor = null;
       if (rows.length > parsedLimit) {
         const lastItem = rows[parsedLimit - 1];
         nextCursor = Buffer.from(
           `${(lastItem.created_at as Date).toISOString()}|${lastItem.id}`
         ).toString('base64');
-        rows.pop(); // Remove the extra item
+        rows.pop();
       }
-
       return reply.send({ success: true, data: rows, nextCursor });
     } catch (error) {
       fastify.log.error(error);
@@ -104,29 +102,22 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         serviceType?: string;
         odometer?: string;
       };
-
       const [units] = await db.execute<RowDataPacket[]>(
-        `SELECT brandId, fuelTypeId, maintIntervalKm, odometer, 
-                last_chassis_inspection_odometer, last_distribution_change_odometer 
+        `SELECT brandId, fuelTypeId, maintIntervalKm, odometer,
+                last_chassis_inspection_odometer, last_distribution_change_odometer
          FROM fleet_units WHERE id = ?`,
         [unitId]
       );
-
       if (units.length === 0) {
         return reply.code(404).send({ success: false, message: 'Unit not found' });
       }
-
       const unit = units[0];
-
       const currentOdometer =
         odometer !== undefined ? Number(odometer) : Number(unit.odometer || 0);
-
-      // Deduce service type if not provided
       let queryServiceType = serviceType;
       if (!queryServiceType) {
         queryServiceType = getRecommendedServiceType(currentOdometer);
       }
-
       const serviceTypes: string[] = [queryServiceType];
       if (isMining === 'true' && !serviceTypes.includes('MINOR_MINING')) {
         serviceTypes.push('MINOR_MINING');
@@ -141,56 +132,47 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           serviceTypes.push(standardServiceType);
         }
       }
-
       const placeholders = serviceTypes.map(() => '?').join(', ');
-
-      // Execute optimized UNION query to fetch standard plan tasks + brand/fuel-specific rules
       const query = `
         SELECT DISTINCT t.code, t.label, t.is_critical AS isCritical
         FROM (
           SELECT task_code FROM maintenance_plan_tasks WHERE service_type IN (${placeholders})
           UNION
-          SELECT task_code FROM maintenance_brand_rules 
-          WHERE service_type IN (${placeholders}) 
+          SELECT task_code FROM maintenance_brand_rules
+          WHERE service_type IN (${placeholders})
             AND (brand_id = ? OR brand_id IS NULL)
             AND (fuel_type_id = ? OR fuel_type_id IS NULL)
         ) combined
         JOIN maintenance_tasks t ON combined.task_code = t.code
       `;
-
       const [rows] = await db.execute<RowDataPacket[]>(query, [
         ...serviceTypes,
         ...serviceTypes,
         unit.brandId,
         unit.fuelTypeId,
       ]);
-
       const tasks = rows.map((r) => ({
         code: r.code,
         label: r.label,
         isCritical: Boolean(r.isCritical),
       }));
-
       // 🔱 Delta Stateful Rebase Trigger Logic (Prevents Omission Vulnerability)
       const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
       const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
-
       if (currentOdometer - lastChassisOdo >= 80000) {
         tasks.push({
           code: 'CHASSIS_SHOCKS_HEAVY',
-          label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
+          label: 'Inspecci�n de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
           isCritical: true,
         });
       }
-
       if (currentOdometer - lastDistOdo >= 100000) {
         tasks.push({
           code: 'DISTRIBUTION_KIT_WATER_PUMP',
-          label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
+          label: 'Reemplazo de kit de distribuci�n y bomba de agua (Alerta Predictiva Delta)',
           isCritical: true,
         });
       }
-
       return reply.send({ success: true, tasks });
     } catch (error) {
       fastify.log.error(error);
@@ -198,39 +180,51 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     }
   });
 
-  // POST /v1/maintenance - Create log
+  // POST /v1/maintenance - Create log with Compliance Hierarchy
   fastify.post('/maintenance', async (request, reply) => {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
-
       const data = createMaintenanceSchema.parse(request.body);
       const logUuid = crypto.randomUUID();
-
+      // 🔱 Forensic audit: log PARTIAL_EXECUTION events to the server audit trail
+      if (data.serviceMode === 'PARTIAL_EXECUTION') {
+        fastify.log.warn(
+          {
+            event: 'COMPLIANCE_PARTIAL_EXECUTION',
+            unitId: data.unitId,
+            userSelected: data.serviceType,
+            systemRecommended: data.systemRecommendedType,
+            odometer: data.odometerAtService,
+            technician: data.technician,
+          },
+          '⚠ PARTIAL_EXECUTION: Asset has pending major service debt — preventive maintenance deferred'
+        );
+      }
       const [units] = await connection.execute<RowDataPacket[]>(
         'SELECT id, odometer, maintIntervalKm FROM fleet_units WHERE id = ? FOR UPDATE',
         [data.unitId]
       );
-
       if (units.length === 0) throw new Error('Fleet unit not found');
       const unit = units[0];
-
       const [insertLog] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO fleet_maintenance_logs 
-          (uuid, unit_id, service_date, odometer_at_service, service_type, cost, technician)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO fleet_maintenance_logs
+          (uuid, unit_id, service_date, odometer_at_service, service_type,
+           service_mode, system_recommended_type, cost, technician)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           logUuid,
           data.unitId,
           data.serviceDate,
           data.odometerAtService,
           data.serviceType,
+          data.serviceMode,
+          data.systemRecommendedType ?? null,
           data.cost,
           data.technician,
         ]
       );
       const maintenanceId = insertLog.insertId;
-
       await Promise.all(
         data.details.map((detail) =>
           connection.execute(
@@ -239,29 +233,22 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           )
         )
       );
-
       const nextServiceReading = data.odometerAtService + (unit.maintIntervalKm || 10000);
       const finalOdometer = Math.max(unit.odometer, data.odometerAtService);
-
-      // Track reset conditions for predictive delta milestones
       let updateChassisOdo = false;
       let updateDistributionOdo = false;
-
       data.details.forEach((detail) => {
         if (
           detail.taskCode === 'CHASSIS_SHOCKS_HEAVY' &&
           (detail.status === 'PASS' || detail.status === 'REPLACED')
-        ) {
+        )
           updateChassisOdo = true;
-        }
         if (
           detail.taskCode === 'DISTRIBUTION_KIT_WATER_PUMP' &&
           (detail.status === 'PASS' || detail.status === 'REPLACED')
-        ) {
+        )
           updateDistributionOdo = true;
-        }
       });
-
       // 🔱 Deterministic Tuple-Based Update Mapping (EAL6+ Safety Standards)
       const updates: [string, string | number][] = [
         ['odometer', finalOdometer],
@@ -270,26 +257,16 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         ['nextServiceReading_forecast', nextServiceReading],
         ['status', 'Disponible'],
       ];
-
-      if (updateChassisOdo) {
+      if (updateChassisOdo)
         updates.push(['last_chassis_inspection_odometer', data.odometerAtService]);
-      }
-      if (updateDistributionOdo) {
+      if (updateDistributionOdo)
         updates.push(['last_distribution_change_odometer', data.odometerAtService]);
-      }
-
-      // Safe, synchronous query and parameter reconstruction
-      const setClause = `${updates.map(([col]) => `${col} = ?`).join(', ')}, updatedAt = CURRENT_TIMESTAMP`;
+      const setClause = `${updates
+        .map(([col]) => `${col} = ?`)
+        .join(', ')}, updatedAt = CURRENT_TIMESTAMP`;
       const queryParams = updates.map(([, val]) => val);
-      
-      // Infallibly push unit ID to the final parameter position
       queryParams.push(data.unitId);
-
-      await connection.execute(
-        `UPDATE fleet_units SET ${setClause} WHERE id = ?`,
-        queryParams
-      );
-
+      await connection.execute(`UPDATE fleet_units SET ${setClause} WHERE id = ?`, queryParams);
       await connection.commit();
       return reply
         .code(201)
