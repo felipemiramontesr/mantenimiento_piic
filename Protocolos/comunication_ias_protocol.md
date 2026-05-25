@@ -8,13 +8,13 @@
 
 ## 1. IDENTIDAD DE LOS AGENTES
 
-| Atributo                | Antigravity (AG)                                                                                | Claude Code (CC)                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Plataforma**          | Google Gemini Advanced / Antigravity IDE                                                        | Anthropic Claude · VS Code Extension                                                               |
-| **Acceso principal**    | Chat web + terminal integrada (PowerShell)                                                      | VS Code · acceso directo a archivos y terminal                                                     |
-| **Fortaleza**           | Planificación arquitectónica, análisis multi-capa, generación de planes detallados, Protocolo L | Edición de archivos in-place, refactoring local, navegación de codebase, auditoría de DB           |
-| **Limitación**          | Escritura de archivos vía scripts intermedios (PowerShell + Node.js)                            | Sin memoria persistente entre sesiones salvo contexto de ventana                                   |
-| **Compromisos activos** | Protocolo L, Protocolo Commit, reglas de versionado                                             | Linting on-save, formatting con Prettier, TypeScript strict                                        |
+| Atributo                | Antigravity (AG)                                                                                | Claude Code (CC)                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Plataforma**          | Google Gemini Advanced / Antigravity IDE                                                        | Anthropic Claude · VS Code Extension                                                     |
+| **Acceso principal**    | Chat web + terminal integrada (PowerShell)                                                      | VS Code · acceso directo a archivos y terminal                                           |
+| **Fortaleza**           | Planificación arquitectónica, análisis multi-capa, generación de planes detallados, Protocolo L | Edición de archivos in-place, refactoring local, navegación de codebase, auditoría de DB |
+| **Limitación**          | Escritura de archivos vía scripts intermedios (PowerShell + Node.js)                            | Sin memoria persistente entre sesiones salvo contexto de ventana                         |
+| **Compromisos activos** | Protocolo L, Protocolo Commit, reglas de versionado                                             | Linting on-save, formatting con Prettier, TypeScript strict                              |
 
 ---
 
@@ -47,51 +47,22 @@ Cuando Felipe cambia de IA, el agente saliente (o el usuario) actualiza la secci
 
 ## 🟢 ESTADO ACTIVO
 
-> **Última actualización:** 2026-05-25 · Sesión AG
+> **Última actualización:** 2026-05-25 · Handoff AG → CC
 > **Agente saliente:** Antigravity (AG)
-> **Agente entrante:** —
+> **Agente entrante:** Claude Code (CC)
 > **Última versión committeada:** `V.78.100.214_Maintenance_Lifecycle_CTI_Cyclic_Engine_Cumulative_Checklist`
 
-### Trabajo completado en esta sesión (sin commit aún):
+### Trabajo completado en la última sesión (AG):
 
-- [x] **Ciclo de vida completo de Mantenimiento (Option C Hybrid)**
-  - `fleet_movements` + `fleet_maintenance_extensions` (CTI — Class Table Inheritance)
-  - `is_in_progress = false` → COMPLETED inmediato (In Situ)
-  - `is_in_progress = true` → ACTIVE + unidad en `Downtime` → cierre posterior via PATCH
-- [x] **Motor cíclico `computeServiceType`** — mod-60,000 km con ventanas ±1,000 km
-  - Reemplaza el antiguo `getRecommendedServiceType` completamente
-  - Unidades mina (maintIntervalKm=5000) → `MINOR_MINING` en midpoints no-agencia
-  - Unidades agencia (maintIntervalKm=10000) → milestone más cercano
-  - Frontend y backend son copia exacta (single source of truth)
-- [x] **`SERVICE_CUMULATIVE_MAP`** en GET /maintenance/template
-  - `ADVANCED_50K` hereda `[ADVANCED, MAJOR, INTERMEDIATE, BASIC]`
-  - `MAJOR_30K` hereda `[MAJOR, INTERMEDIATE, BASIC]`
-  - `INTERMEDIATE_20K` hereda `[INTERMEDIATE, BASIC]`
-  - `BASIC_10K` → solo sí mismo
-  - `MINOR_MINING` → protocolo paralelo, sin herencia de agencia
-  - Las brand_rules también se expanden con el mismo mapa acumulativo
-- [x] **`is_in_progress` automático derivado de `computedServiceType`**
-  - `MINOR_MINING → false` (In Situ — campo)
-  - Todos los hitos de agencia → `true` (Taller → Downtime)
-  - Eliminados los botones manuales de selección de modo
-- [x] **`MaintenanceCompletionPanel`** — nuevo componente para cierre de orden ACTIVE
-  - PATCH `/maintenance/:uuid/complete`
-  - Recalcula `serviceType` del odómetro final (no confía en el cliente)
-  - Fuerza `FULL_COMPLIANCE` siempre
-- [x] **Limpieza de deuda técnica**
-  - Eliminado: `PARTIAL_EXECUTION`, `SERVICE_HIERARCHY`, `ComplianceState`, modal de confirmación, banners de divergencia, toggle `isMining`, `userSelected`, `deriveServiceMode`
-  - `serviceType`, `serviceMode`, `systemRecommendedType` removidos de ambos payloads (Schedule + Completion)
-  - DB: sin cambios estructurales
+- [x] Validación de código (Linter / TypeScript) del bloque de Mantenimiento.
+- [x] Corrección de error de Linter `no-restricted-syntax` (for...of → forEach) en `apps/api/src/routes/fleetMaintenance.ts` (Patrón 6.3).
+- [x] Commit y Push de la versión `V.78.100.214` a `origin/main`.
+- [x] Actualización del registro de sesiones en el protocolo Dual-IA.
 
-### Archivos modificados (pendientes de commit):
+### Archivos modificados en progreso:
 
 ```
-apps/api/src/routes/fleetMaintenance.ts
-apps/web/src/types/maintenance.ts
-apps/web/src/components/Maintenance/MaintenanceRegistrationForm.tsx
-apps/web/src/components/Maintenance/MaintenanceGridView.tsx
-apps/web/src/components/Maintenance/MaintenanceCompletionPanel.tsx  ← NUEVO
-apps/web/src/pages/Dashboard/MaintenanceModule.tsx
+(Ninguno - Árbol limpio)
 ```
 
 ### Próxima tarea sugerida:
@@ -223,14 +194,14 @@ list.forEach((item) => { ... });
 
 ### 6.4 Componentes UI críticos
 
-| Componente                    | Ubicación                                        | Notas                                                                       |
-| ----------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------- |
-| `ArchonSelect`                | `apps/web/src/components/ArchonSelect.tsx`       | React Portal en `#archon-select-portal`, siempre abre hacia abajo           |
-| `ArchonField`                 | `apps/web/src/components/ArchonField.tsx`        | Wrapper de label + input con icono                                          |
-| `ArchonDataTable`             | `apps/web/src/components/UI/ArchonDataTable.tsx` | Tabla con sorting y loading state                                           |
-| `MaintenanceRegistrationForm` | `apps/web/src/components/Maintenance/`           | Cyclic Engine v4.0 — computeServiceType + is_in_progress automático         |
-| `MaintenanceCompletionPanel`  | `apps/web/src/components/Maintenance/`           | Cierre de orden ACTIVE → PATCH /maintenance/:uuid/complete                  |
-| `MaintenanceGridView`         | `apps/web/src/components/Maintenance/`           | Filas ACTIVE en ámbar · botón "Finalizar Servicio" en columna UNIDAD        |
+| Componente                    | Ubicación                                        | Notas                                                                |
+| ----------------------------- | ------------------------------------------------ | -------------------------------------------------------------------- |
+| `ArchonSelect`                | `apps/web/src/components/ArchonSelect.tsx`       | React Portal en `#archon-select-portal`, siempre abre hacia abajo    |
+| `ArchonField`                 | `apps/web/src/components/ArchonField.tsx`        | Wrapper de label + input con icono                                   |
+| `ArchonDataTable`             | `apps/web/src/components/UI/ArchonDataTable.tsx` | Tabla con sorting y loading state                                    |
+| `MaintenanceRegistrationForm` | `apps/web/src/components/Maintenance/`           | Cyclic Engine v4.0 — computeServiceType + is_in_progress automático  |
+| `MaintenanceCompletionPanel`  | `apps/web/src/components/Maintenance/`           | Cierre de orden ACTIVE → PATCH /maintenance/:uuid/complete           |
+| `MaintenanceGridView`         | `apps/web/src/components/Maintenance/`           | Filas ACTIVE en ámbar · botón "Finalizar Servicio" en columna UNIDAD |
 
 ---
 
@@ -238,22 +209,22 @@ list.forEach((item) => { ... });
 
 ### 7.1 Módulos activos (en producción local)
 
-| Módulo          | Ruta API          | Estado                                                               |
-| --------------- | ----------------- | -------------------------------------------------------------------- |
-| Fleet (Flota)   | `/v1/fleet`       | ✅ Estable                                                           |
-| Mantenimiento   | `/v1/maintenance` | ✅ Lifecycle completo — CTI + Cyclic Engine + Cumulative Checklist   |
-| Rutas           | `/v1/routes`      | ✅ Estable                                                           |
-| Usuarios        | `/v1/auth/users`  | ✅ Estable                                                           |
-| Telemetría      | `/v1/telemetry`   | ✅ Estable                                                           |
-| Geolocalización | `/v1/geolocation` | ✅ Estable                                                           |
-| Catálogos       | `/v1/catalogs`    | ✅ Estable                                                           |
+| Módulo          | Ruta API          | Estado                                                             |
+| --------------- | ----------------- | ------------------------------------------------------------------ |
+| Fleet (Flota)   | `/v1/fleet`       | ✅ Estable                                                         |
+| Mantenimiento   | `/v1/maintenance` | ✅ Lifecycle completo — CTI + Cyclic Engine + Cumulative Checklist |
+| Rutas           | `/v1/routes`      | ✅ Estable                                                         |
+| Usuarios        | `/v1/auth/users`  | ✅ Estable                                                         |
+| Telemetría      | `/v1/telemetry`   | ✅ Estable                                                         |
+| Geolocalización | `/v1/geolocation` | ✅ Estable                                                         |
+| Catálogos       | `/v1/catalogs`    | ✅ Estable                                                         |
 
 ### 7.2 Módulos en desarrollo / deuda técnica identificada
 
-| Módulo / Tarea                   | Descripción                                                                                          | Prioridad |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- | --------- |
-| Scheduling por tiempo            | Trigger de mantenimiento por días (90/180) además de km — actualmente ignorado en el motor cíclico  | Media     |
-| Alertas de deuda técnica         | Unidades con km > nextServiceReading_forecast sin servicio registrado                                | Media     |
+| Módulo / Tarea           | Descripción                                                                                        | Prioridad |
+| ------------------------ | -------------------------------------------------------------------------------------------------- | --------- |
+| Scheduling por tiempo    | Trigger de mantenimiento por días (90/180) además de km — actualmente ignorado en el motor cíclico | Media     |
+| Alertas de deuda técnica | Unidades con km > nextServiceReading_forecast sin servicio registrado                              | Media     |
 
 ---
 
@@ -300,6 +271,7 @@ Fuera de ventanas:
 ```
 
 ⚠️ **Esta función existe en DOS archivos. Modificar siempre ambos:**
+
 - `apps/api/src/routes/fleetMaintenance.ts` (función `computeServiceType`)
 - `apps/web/src/components/Maintenance/MaintenanceRegistrationForm.tsx` (función `computeServiceType`)
 
@@ -450,14 +422,14 @@ MINOR_MINING     → emerald
 
 ## 13. REGISTRO DE SESIONES
 
-| Fecha      | Agente | Versión      | Descripción                                                                   |
-| ---------- | ------ | ------------ | ----------------------------------------------------------------------------- |
-| 2026-05-25 | AG     | V.78.100.208 | Compliance Hierarchy Engine — dual state, modal confirmación, auditoría       |
-| 2026-05-25 | AG     | V.78.100.209 | Hotfix UTF-8 — restauración de diacríticos en español (21 chars)              |
-| 2026-05-25 | AG     | V.78.100.210 | ArchonSelect Portal Architecture — z-index/overflow fix                       |
-| 2026-05-25 | AG     | V.78.100.211 | ArchonSelect — enforce always open downward                                   |
-| 2026-05-25 | AG     | V.78.100.212 | Remove encrypted placas ciphertext from maintenance UI                        |
-| 2026-05-25 | CC     | V.78.100.213 | Add Dual IA Communication Protocol AG+CC Pair Programming                     |
+| Fecha      | Agente | Versión      | Descripción                                                                                |
+| ---------- | ------ | ------------ | ------------------------------------------------------------------------------------------ |
+| 2026-05-25 | AG     | V.78.100.208 | Compliance Hierarchy Engine — dual state, modal confirmación, auditoría                    |
+| 2026-05-25 | AG     | V.78.100.209 | Hotfix UTF-8 — restauración de diacríticos en español (21 chars)                           |
+| 2026-05-25 | AG     | V.78.100.210 | ArchonSelect Portal Architecture — z-index/overflow fix                                    |
+| 2026-05-25 | AG     | V.78.100.211 | ArchonSelect — enforce always open downward                                                |
+| 2026-05-25 | AG     | V.78.100.212 | Remove encrypted placas ciphertext from maintenance UI                                     |
+| 2026-05-25 | CC     | V.78.100.213 | Add Dual IA Communication Protocol AG+CC Pair Programming                                  |
 | 2026-05-25 | AG     | V.78.100.214 | Maintenance lifecycle CTI + Cyclic Engine + Cumulative Checklist + Auto-mode (Fix CC Lint) |
 
 ---
