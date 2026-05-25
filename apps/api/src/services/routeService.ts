@@ -1,13 +1,13 @@
 /* eslint-disable */
 // @ts-nocheck
-import { RowDataPacket, PoolConnection } from 'mysql2';
+import { RowDataPacket, PoolConnection, ResultSetHeader } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import { recordAuditLog } from './auditService';
 
 /**
- * 🔱 Archon RouteService
- * Handles journey lifecycles and their sovereign impact on fleet units.
+ * 🔱 Archon RouteService — CTI Architecture (V2)
+ * All journey data lives in fleet_movements (base) + fleet_route_extensions (child).
  */
 export type RouteStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
@@ -27,6 +27,7 @@ export interface RouteEntry {
   fuel_level_start: number;
   fuel_level_end?: number;
   fuel_liters_loaded?: number;
+  fuel_amount?: number;
   fuel_ticket_image?: string;
   additives_check?: boolean;
   tire_pressure_json?: string;
@@ -36,15 +37,15 @@ export interface RouteEntry {
 
 export default class RouteService {
   /**
-   * Internal helper to synchronize the unit's odometer and fuel with the latest journey data.
+   * Syncs unit odometer/fuel from the most recent completed ROUTE movement.
    */
   private static async syncUnitState(connection: PoolConnection, unitId: string): Promise<void> {
     if (!unitId) return;
 
     const [rows] = await connection.execute<RowDataPacket[]>(
-      `SELECT end_reading, fuel_level_end 
-       FROM fleet_routes 
-       WHERE unit_id = ? AND status = 'COMPLETED' 
+      `SELECT end_reading, fuel_level_end
+       FROM fleet_movements
+       WHERE unit_id = ? AND movement_type = 'ROUTE' AND status = 'COMPLETED'
        ORDER BY end_at DESC, id DESC LIMIT 1`,
       [unitId]
     );
@@ -58,7 +59,7 @@ export default class RouteService {
   }
 
   /**
-   * Starts a journey: Atomic transaction impacting unit and logs.
+   * Starts a journey: creates fleet_movements + fleet_route_extensions atomically.
    */
   static async startRoute(
     unitId: string,
@@ -76,7 +77,7 @@ export default class RouteService {
     try {
       await connection.beginTransaction();
 
-      // 1. Validate Unit availability
+      // 1. Validate unit availability
       const [units] = await connection.execute<RowDataPacket[]>(
         'SELECT status, odometer FROM fleet_units WHERE id = ? FOR UPDATE',
         [unitId]
@@ -84,17 +85,18 @@ export default class RouteService {
 
       if (units.length === 0) throw new Error(`Unit ${unitId} not found`);
       if (units[0].status === 'En Ruta') throw new Error(`Unit ${unitId} is already in transit`);
+      if (units[0].status === 'Downtime') throw new Error(`Unit ${unitId} is under maintenance`);
       if (startReading < units[0].odometer) {
         throw new Error(
           `Start reading (${startReading} KM) cannot be lower than the unit's current odometer (${units[0].odometer} KM)`
         );
       }
 
-      // 1.1 Resolve destination if destinationNeighborhoodId is provided
+      // 1.1 Resolve destination via neighborhood catalog if ID provided
       let finalDestination = destination;
       if (destinationNeighborhoodId) {
         const [coloniaRows] = await connection.execute<RowDataPacket[]>(
-          `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state 
+          `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state
            FROM neighborhoods c
            JOIN municipalities m ON c.municipality_id = m.id
            JOIN states e ON m.state_id = e.id
@@ -107,42 +109,43 @@ export default class RouteService {
           if (destination && destination !== suffix) {
             const parts = destination.split(row.neighborhood);
             const prefix = parts[0].trim().replace(/,\s*$/, '');
-            if (prefix) {
-              finalDestination = `${prefix}, ${suffix}`;
-            } else {
-              finalDestination = suffix;
-            }
+            finalDestination = prefix ? `${prefix}, ${suffix}` : suffix;
           } else {
             finalDestination = suffix;
           }
         }
       }
 
-      // 2. Create the Route
+      // 2. Insert CTI base record
+      const [movementResult] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO fleet_movements
+        (uuid, unit_id, movement_type, status, start_reading, fuel_level_start, description, start_at)
+        VALUES (?, ?, 'ROUTE', 'ACTIVE', ?, ?, ?, NOW())`,
+        [routeUuid, unitId, startReading, fuelLevelStart, description || null]
+      );
+      const movementId = movementResult.insertId;
+
+      // 3. Insert CTI route extension
       await connection.execute(
-        `INSERT INTO fleet_routes 
-        (uuid, unit_id, driver_id, origin_id, destination_neighborhood_id, destination, status, start_reading, fuel_level_start, description, start_at) 
-        VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, NOW())`,
+        `INSERT INTO fleet_route_extensions
+        (movement_id, driver_id, origin_id, destination_neighborhood_id, destination)
+        VALUES (?, ?, ?, ?, ?)`,
         [
-          routeUuid,
-          unitId,
+          movementId,
           driverId,
           originId || null,
           destinationNeighborhoodId || null,
           finalDestination,
-          startReading,
-          fuelLevelStart,
-          description || null,
         ]
       );
 
-      // 3. Update Unit Status (Impact)
+      // 4. Update unit status
       await connection.execute('UPDATE fleet_units SET status = "En Ruta" WHERE id = ?', [unitId]);
 
-      // 4. Create Impact Log
+      // 5. Forensic log
       await connection.execute(
-        `INSERT INTO unit_activity_logs 
-        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by) 
+        `INSERT INTO unit_activity_logs
+        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by)
         VALUES (?, ?, 'ROUTE_START', ?, ?, ?, 'En Ruta', ?)`,
         [randomUUID(), unitId, routeUuid, units[0].odometer, units[0].status, driverId]
       );
@@ -158,7 +161,7 @@ export default class RouteService {
   }
 
   /**
-   * Completes a journey: Updates odometer, status and records forensics.
+   * Completes a journey: updates fleet_movements + fleet_route_extensions + fleet_units.
    */
   static async finishRoute(
     routeUuid: string,
@@ -190,9 +193,12 @@ export default class RouteService {
     try {
       await connection.beginTransaction();
 
-      // 1. Get Route and Unit Context
+      // 1. Get movement + extension context
       const [routes] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM fleet_routes WHERE uuid = ? FOR UPDATE',
+        `SELECT fm.*, fre.driver_id
+         FROM fleet_movements fm
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         WHERE fm.uuid = ? FOR UPDATE`,
         [routeUuid]
       );
 
@@ -203,12 +209,12 @@ export default class RouteService {
         throw new Error('End reading cannot be lower than start reading');
       }
 
-      // 2. Update Route
+      // 2. Update movement (telemetry fields)
       await connection.execute(
-        `UPDATE fleet_routes 
-        SET status = 'COMPLETED', end_reading = ?, end_at = NOW(), 
+        `UPDATE fleet_movements
+        SET status = 'COMPLETED', end_reading = ?, end_at = NOW(),
             fuel_level_end = ?, fuel_liters_loaded = ?, fuel_amount = ?, fuel_ticket_image = ?,
-            additives_check = ?, tire_pressure_json = ?, checklist_json = ?, description = COALESCE(?, description)
+            description = COALESCE(?, description)
         WHERE uuid = ?`,
         [
           endReading,
@@ -216,24 +222,29 @@ export default class RouteService {
           fuelLiters,
           fuelAmount,
           fuelImage || null,
-          additivesCheck,
-          tirePressureJson || null,
-          checklistJson || null,
           description || null,
           routeUuid,
         ]
       );
 
-      // 3. Update Unit (The massive impact)
+      // 3. Update route extension (logistics fields)
+      await connection.execute(
+        `UPDATE fleet_route_extensions
+        SET additives_check = ?, tire_pressure_json = ?, checklist_json = ?
+        WHERE movement_id = ?`,
+        [additivesCheck, tirePressureJson || null, checklistJson || null, route.id]
+      );
+
+      // 4. Update unit
       await connection.execute(
         'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ?, status = "Disponible" WHERE id = ?',
         [endReading, fuelLevelEnd, route.unit_id]
       );
 
-      // 4. Create Final Log
+      // 5. Forensic log
       await connection.execute(
-        `INSERT INTO unit_activity_logs 
-        (uuid, unit_id, event_type, reference_id, reading_before, reading_after, status_before, status_after, created_by) 
+        `INSERT INTO unit_activity_logs
+        (uuid, unit_id, event_type, reference_id, reading_before, reading_after, status_before, status_after, created_by)
         VALUES (?, ?, 'ROUTE_FINISH', ?, ?, ?, 'En Ruta', 'Disponible', ?)`,
         [randomUUID(), route.unit_id, routeUuid, route.start_reading, endReading, route.driver_id]
       );
@@ -248,18 +259,22 @@ export default class RouteService {
   }
 
   /**
-   * Fetches active route for a unit
+   * Returns the active ROUTE movement for a unit, with extension fields merged.
    */
   static async getActiveRoute(unitId: string): Promise<RouteEntry | null> {
     const [rows] = await db.execute<RowDataPacket[]>(
-      'SELECT * FROM fleet_routes WHERE unit_id = ? AND status = "ACTIVE" LIMIT 1',
+      `SELECT fm.*, fre.driver_id, fre.origin_id, fre.destination_neighborhood_id,
+              fre.destination, fre.additives_check, fre.tire_pressure_json, fre.checklist_json
+       FROM fleet_movements fm
+       JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+       WHERE fm.unit_id = ? AND fm.movement_type = 'ROUTE' AND fm.status = 'ACTIVE' LIMIT 1`,
       [unitId]
     );
     return rows.length > 0 ? (rows[0] as RouteEntry) : null;
   }
 
   /**
-   * Records an incident during a journey
+   * Records an incident during a journey.
    */
   static async reportIncident(
     routeUuid: string,
@@ -272,23 +287,26 @@ export default class RouteService {
     try {
       await connection.beginTransaction();
 
-      // 1. Get Route context
+      // 1. Get movement + driver context
       const [routes] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM fleet_routes WHERE uuid = ?',
+        `SELECT fm.*, fre.driver_id
+         FROM fleet_movements fm
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         WHERE fm.uuid = ?`,
         [routeUuid]
       );
       if (routes.length === 0) throw new Error('Route not found');
       const route = routes[0];
 
-      // 2. Insert Incident
+      // 2. Insert incident
       await connection.execute(
-        `INSERT INTO route_incidents 
-        (route_uuid, category, description, severity, evidence_image, status) 
+        `INSERT INTO route_incidents
+        (route_uuid, category, description, severity, evidence_image, status)
         VALUES (?, ?, ?, ?, ?, 'OPEN')`,
         [routeUuid, category, description, severity, evidenceImage || null]
       );
 
-      // 3. Determine if unit status needs to change (Industrial Safety Protocol)
+      // 3. Determine unit status impact (Industrial Safety Protocol)
       let nextStatus = route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible';
       if (severity === 'CRITICAL') {
         nextStatus = 'En Mantenimiento';
@@ -296,10 +314,10 @@ export default class RouteService {
         nextStatus = 'Descontinuada';
       }
 
-      // 4. Log the incident in the forensic journal
+      // 4. Forensic journal entry
       await connection.execute(
-        `INSERT INTO unit_activity_logs 
-        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, description, created_by) 
+        `INSERT INTO unit_activity_logs
+        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, description, created_by)
         VALUES (?, ?, 'ROUTE_INCIDENT', ?, ?, ?, ?, ?, ?)`,
         [
           randomUUID(),
@@ -313,7 +331,7 @@ export default class RouteService {
         ]
       );
 
-      // 5. Apply unit status impact if necessary
+      // 5. Apply unit status impact if it changed
       if (nextStatus !== (route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible')) {
         await connection.execute('UPDATE fleet_units SET status = ? WHERE id = ?', [
           nextStatus,
@@ -331,7 +349,7 @@ export default class RouteService {
   }
 
   /**
-   * Fetches incidents for a specific route
+   * Fetches incidents for a specific route UUID.
    */
   static async getIncidents(routeUuid: string): Promise<RowDataPacket[]> {
     const [rows] = await db.execute<RowDataPacket[]>(
@@ -342,24 +360,25 @@ export default class RouteService {
   }
 
   /**
-   * Fetches all incidents across the fleet
+   * Fetches all incidents across the fleet.
    */
   static async getAllIncidents(): Promise<RowDataPacket[]> {
     const [rows] = await db.execute<RowDataPacket[]>(
-      `SELECT 
-        i.*, 
-        r.unit_id, 
-        u.full_name as driver_name 
-      FROM route_incidents i 
-      JOIN fleet_routes r ON i.route_uuid = r.uuid 
-      JOIN users u ON r.driver_id = u.id 
+      `SELECT
+        i.*,
+        fm.unit_id,
+        u.full_name as driver_name
+      FROM route_incidents i
+      JOIN fleet_movements fm ON i.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
+      JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+      JOIN users u ON fre.driver_id = u.id
       ORDER BY i.reported_at DESC`
     );
     return rows;
   }
 
   /**
-   * Updates a route entry with forensic audit.
+   * Updates a route entry (split across fleet_movements + fleet_route_extensions) with forensic audit.
    */
   static async updateRoute(
     uuid: string,
@@ -373,21 +392,54 @@ export default class RouteService {
     try {
       await connection.beginTransaction();
 
-      // 1. Get snapshot before
+      // 1. Get full snapshot before (joined)
       const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM fleet_routes WHERE uuid = ? FOR UPDATE',
+        `SELECT fm.*, fre.driver_id, fre.origin_id, fre.destination_neighborhood_id,
+                fre.destination, fre.additives_check, fre.tire_pressure_json, fre.checklist_json
+         FROM fleet_movements fm
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         WHERE fm.uuid = ? FOR UPDATE`,
         [uuid]
       );
       if (rows.length === 0) throw new Error('Route not found');
       const snapshotBefore = rows[0];
 
-      // 2. Perform Update with Column Mapping (Frontend camelCase -> DB snake_case)
-      const columnMap: Record<string, string> = {
+      // 2. Resolve destination if neighborhoodId is being updated
+      if (data.destinationNeighborhoodId !== undefined && data.destinationNeighborhoodId) {
+        const [coloniaRows] = await connection.execute<RowDataPacket[]>(
+          `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state
+           FROM neighborhoods c
+           JOIN municipalities m ON c.municipality_id = m.id
+           JOIN states e ON m.state_id = e.id
+           WHERE c.id = ?`,
+          [data.destinationNeighborhoodId]
+        );
+        if (coloniaRows.length > 0) {
+          const row = coloniaRows[0];
+          const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
+          const inputDest = data.destination || '';
+          if (inputDest && inputDest !== suffix) {
+            const parts = inputDest.split(row.neighborhood);
+            const prefix = parts[0].trim().replace(/,\s*$/, '');
+            data.destination = prefix ? `${prefix}, ${suffix}` : suffix;
+          } else {
+            data.destination = suffix;
+          }
+        }
+      }
+
+      // 3. Telemetry validation
+      const nextStartReading = data.startReading ?? snapshotBefore.start_reading;
+      const nextEndReading = data.endReading ?? snapshotBefore.end_reading;
+      if (nextEndReading !== null && nextEndReading < nextStartReading) {
+        throw new Error(
+          `Telemetry Disparity: End reading (${nextEndReading} KM) cannot be lower than start reading (${nextStartReading} KM).`
+        );
+      }
+
+      // 4. Split fields between fleet_movements and fleet_route_extensions
+      const movementColumnMap: Record<string, string> = {
         unitId: 'unit_id',
-        operatorId: 'driver_id',
-        originId: 'origin_id',
-        destinationNeighborhoodId: 'destination_neighborhood_id',
-        destination: 'destination',
         status: 'status',
         startReading: 'start_reading',
         endReading: 'end_reading',
@@ -395,83 +447,60 @@ export default class RouteService {
         fuelLitersLoaded: 'fuel_liters_loaded',
         fuelAmount: 'fuel_amount',
         fuelTicketImage: 'fuel_ticket_image',
-        additivesCheck: 'additives_check',
-        tirePressureJson: 'tire_pressure_json',
-        checklistJson: 'checklist_json',
         description: 'description',
       };
 
-      // 2.0 Resolve destination if destinationNeighborhoodId is updated
-      if (data.destinationNeighborhoodId !== undefined) {
-        if (data.destinationNeighborhoodId) {
-          const [coloniaRows] = await connection.execute<RowDataPacket[]>(
-            `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state 
-             FROM neighborhoods c
-             JOIN municipalities m ON c.municipality_id = m.id
-             JOIN states e ON m.state_id = e.id
-             WHERE c.id = ?`,
-            [data.destinationNeighborhoodId]
-          );
-          if (coloniaRows.length > 0) {
-            const row = coloniaRows[0];
-            const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
-            const inputDest = data.destination || '';
-            if (inputDest && inputDest !== suffix) {
-              const parts = inputDest.split(row.neighborhood);
-              const prefix = parts[0].trim().replace(/,\s*$/, '');
-              if (prefix) {
-                data.destination = `${prefix}, ${suffix}`;
-              } else {
-                data.destination = suffix;
-              }
-            } else {
-              data.destination = suffix;
-            }
-          }
-        }
-      }
+      const extensionColumnMap: Record<string, string> = {
+        operatorId: 'driver_id',
+        originId: 'origin_id',
+        destinationNeighborhoodId: 'destination_neighborhood_id',
+        destination: 'destination',
+        additivesCheck: 'additives_check',
+        tirePressureJson: 'tire_pressure_json',
+        checklistJson: 'checklist_json',
+      };
 
-      const fieldsToUpdate: string[] = [];
-      const values: unknown[] = [];
-
-      // 2.1 Enforce telemetry logic (Failsafe)
-      const nextStartReading = data.startReading ?? snapshotBefore.start_reading;
-      const nextEndReading = data.endReading ?? snapshotBefore.end_reading;
-
-      if (nextEndReading !== null && nextEndReading < nextStartReading) {
-        throw new Error(
-          `Telemetry Disparity: End reading (${nextEndReading} KM) cannot be lower than start reading (${nextStartReading} KM).`
-        );
-      }
+      const movementFields: string[] = [];
+      const movementValues: unknown[] = [];
+      const extensionFields: string[] = [];
+      const extensionValues: unknown[] = [];
 
       Object.entries(data).forEach(([key, value]) => {
-        const column = columnMap[key];
-        if (column) {
-          fieldsToUpdate.push(`${column} = ?`);
-          // Special handling for booleans/numeric types if necessary
-          if (key === 'additivesCheck') {
-            values.push(value ? 1 : 0);
-          } else {
-            values.push(value);
-          }
+        if (movementColumnMap[key]) {
+          movementFields.push(`${movementColumnMap[key]} = ?`);
+          movementValues.push(value);
+        } else if (extensionColumnMap[key]) {
+          extensionFields.push(`${extensionColumnMap[key]} = ?`);
+          extensionValues.push(key === 'additivesCheck' ? (value ? 1 : 0) : value);
         }
       });
 
-      if (fieldsToUpdate.length > 0) {
+      if (movementFields.length > 0) {
         await connection.execute(
-          `UPDATE fleet_routes SET ${fieldsToUpdate.join(', ')} WHERE uuid = ?`,
-          [...values, uuid]
+          `UPDATE fleet_movements SET ${movementFields.join(', ')} WHERE uuid = ?`,
+          [...movementValues, uuid]
         );
       }
 
-      // 3. Get snapshot after
+      if (extensionFields.length > 0) {
+        await connection.execute(
+          `UPDATE fleet_route_extensions SET ${extensionFields.join(', ')} WHERE movement_id = ?`,
+          [...extensionValues, snapshotBefore.id]
+        );
+      }
+
+      // 5. Get snapshot after (joined)
       const [rowsAfter] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM fleet_routes WHERE uuid = ?',
+        `SELECT fm.*, fre.driver_id, fre.origin_id, fre.destination_neighborhood_id,
+                fre.destination, fre.additives_check, fre.tire_pressure_json, fre.checklist_json
+         FROM fleet_movements fm
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         WHERE fm.uuid = ?`,
         [uuid]
       );
       const snapshotAfter = rowsAfter[0];
 
-      // 4. Record Audit Log
+      // 6. Forensic audit log
       await recordAuditLog({
         entity_type: 'route_log',
         entity_id: uuid,
@@ -482,7 +511,7 @@ export default class RouteService {
         user_id: adminId,
       });
 
-      // 5. Chain of Custody (X=Y Protocol): Propagate changes to Unit if this is the most recent reading
+      // 7. Chain of Custody: propagate telemetry to unit
       await this.syncUnitState(connection, snapshotAfter.unit_id);
 
       await connection.commit();
@@ -496,7 +525,7 @@ export default class RouteService {
   }
 
   /**
-   * Deletes a route entry with forensic audit.
+   * Deletes a route movement (cascades to fleet_route_extensions) with forensic audit.
    */
   static async deleteRoute(uuid: string, reason: string, adminId: number): Promise<void> {
     const connection = await db.getConnection();
@@ -505,16 +534,18 @@ export default class RouteService {
 
       // 1. Get snapshot before
       const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM fleet_routes WHERE uuid = ? FOR UPDATE',
+        `SELECT fm.*, fre.driver_id FROM fleet_movements fm
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         WHERE fm.uuid = ? FOR UPDATE`,
         [uuid]
       );
       if (rows.length === 0) throw new Error('Route not found');
       const snapshotBefore = rows[0];
 
-      // 2. Perform Delete
-      await connection.execute('DELETE FROM fleet_routes WHERE uuid = ?', [uuid]);
+      // 2. Delete base record (CASCADE removes fleet_route_extensions)
+      await connection.execute('DELETE FROM fleet_movements WHERE uuid = ?', [uuid]);
 
-      // 3. Record Audit Log
+      // 3. Forensic audit log
       await recordAuditLog({
         entity_type: 'route_log',
         entity_id: uuid,
@@ -524,7 +555,7 @@ export default class RouteService {
         user_id: adminId,
       });
 
-      // 4. Chain of Custody: Recalculate unit state in case we deleted the latest record
+      // 4. Chain of Custody: recalculate unit state
       await this.syncUnitState(connection, snapshotBefore.unit_id);
 
       await connection.commit();

@@ -5,8 +5,8 @@ import db from '../services/db';
 import RouteService from '../services/routeService';
 
 /**
- * 🔱 Archon Fleet Routes
- * Management of journey lifecycles and unit impact transactions.
+ * 🔱 Archon Fleet Routes — CTI Architecture (V2)
+ * All journey queries target fleet_movements + fleet_route_extensions.
  */
 
 const startRouteSchema = z.object({
@@ -25,7 +25,10 @@ const finishRouteSchema = z.object({
   fuelLevelEnd: z.number().min(0).max(100),
   fuelLitersLoaded: z.number().min(0).optional(),
   fuelAmount: z.number().min(0).optional(),
-  fuelTicketImage: z.string().max(15 * 1024 * 1024, { message: 'Image size exceeds maximum limit' }).optional(), // Base64
+  fuelTicketImage: z
+    .string()
+    .max(15 * 1024 * 1024, { message: 'Image size exceeds maximum limit' })
+    .optional(),
   additivesCheck: z.boolean().optional(),
   tirePressureJson: z.string().optional(),
   checklistJson: z.string().optional(),
@@ -36,7 +39,7 @@ const reportIncidentSchema = z.object({
   category: z.enum(['MECANICA', 'SINIESTRO', 'LEGAL', 'OPERATIVA', 'OTRA']),
   description: z.string().min(5),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
-  evidenceImage: z.string().optional(), // Base64
+  evidenceImage: z.string().optional(),
 });
 
 async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
@@ -125,23 +128,32 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/routes', async (_request, reply) => {
     try {
       const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT 
-          r.id, r.uuid, r.unit_id, r.driver_id as operator_id, r.origin_id, r.destination_neighborhood_id, r.destination, r.status,
-          r.start_reading as start_km, r.end_reading as end_km,
-          r.start_at as start_time, r.end_at as end_time,
-          r.fuel_level_start, r.fuel_level_end,
-          r.fuel_liters_loaded, r.fuel_amount, r.fuel_ticket_image,
-          r.additives_check, r.tire_pressure_json, r.checklist_json,
-          r.description,
-          r.created_at,
+        `SELECT
+          fm.id, fm.uuid, fm.unit_id,
+          fre.driver_id AS operator_id,
+          fre.origin_id,
+          fre.destination_neighborhood_id,
+          fre.destination,
+          fm.status,
+          fm.start_reading AS start_km,
+          fm.end_reading AS end_km,
+          fm.start_at AS start_time,
+          fm.end_at AS end_time,
+          fm.fuel_level_start, fm.fuel_level_end,
+          fm.fuel_liters_loaded, fm.fuel_amount, fm.fuel_ticket_image,
+          fre.additives_check, fre.tire_pressure_json, fre.checklist_json,
+          fm.description,
+          fm.created_at,
           (
-            SELECT COUNT(*) FROM route_incidents i WHERE i.route_uuid = r.uuid
+            SELECT COUNT(*) FROM route_incidents i WHERE i.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
           ) + (
-            SELECT COUNT(*) FROM administrative_audit_logs a 
-            WHERE a.entity_id = r.uuid AND a.entity_type = 'route_log'
-          ) as incident_count
-        FROM fleet_routes r
-        ORDER BY r.created_at DESC`
+            SELECT COUNT(*) FROM administrative_audit_logs a
+            WHERE a.entity_id = fm.uuid COLLATE utf8mb4_unicode_ci AND a.entity_type = 'route_log'
+          ) AS incident_count
+        FROM fleet_movements fm
+        JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+        WHERE fm.movement_type = 'ROUTE'
+        ORDER BY fm.created_at DESC`
       );
       return reply.send({
         success: true,
@@ -159,25 +171,25 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/unit-logs', async (_request, reply) => {
     try {
       const query = `
-        SELECT 
+        SELECT
           l.*,
           u.full_name as operatorName,
           c_brand.label as marca,
           c_model.label as modelo,
           c_loc.label as unit_sede,
-          r.destination as route_destination,
+          rext.destination as route_destination,
           c_origin.label as route_origin_label
         FROM (
-          SELECT 
-            CONVERT(id USING utf8mb4) COLLATE utf8mb4_general_ci as id, 
-            unit_id COLLATE utf8mb4_general_ci as unit_id, 
-            event_type COLLATE utf8mb4_general_ci as event_type, 
-            reference_id COLLATE utf8mb4_general_ci as reference_id, 
-            reading_before, reading_after, 
-            status_before COLLATE utf8mb4_general_ci as status_before, 
-            status_after COLLATE utf8mb4_general_ci as status_after, 
-            description COLLATE utf8mb4_general_ci as description, 
-            created_by, 
+          SELECT
+            CONVERT(id USING utf8mb4) COLLATE utf8mb4_general_ci as id,
+            unit_id COLLATE utf8mb4_general_ci as unit_id,
+            event_type COLLATE utf8mb4_general_ci as event_type,
+            reference_id COLLATE utf8mb4_general_ci as reference_id,
+            reading_before, reading_after,
+            status_before COLLATE utf8mb4_general_ci as status_before,
+            status_after COLLATE utf8mb4_general_ci as status_after,
+            description COLLATE utf8mb4_general_ci as description,
+            created_by,
             created_at,
             NULL as fuel_before,
             NULL as fuel_after,
@@ -188,17 +200,16 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             NULL as snapshot_before,
             NULL as snapshot_after
           FROM unit_activity_logs
-          
+
           UNION ALL
-          
-          SELECT 
-            CONVERT(a.uuid USING utf8mb4) COLLATE utf8mb4_general_ci as id, 
+
+          SELECT
+            CONVERT(a.uuid USING utf8mb4) COLLATE utf8mb4_general_ci as id,
             CONVERT(COALESCE(JSON_VALUE(a.snapshot_after, '$.unit_id'), r.unit_id) USING utf8mb4) COLLATE utf8mb4_general_ci as unit_id,
             'ADMIN_EDIT' COLLATE utf8mb4_general_ci as event_type,
             CONVERT(a.entity_id USING utf8mb4) COLLATE utf8mb4_general_ci as reference_id,
-            -- Detect which reading changed (End vs Start) with NULL-safe logic
             CAST(
-              CASE 
+              CASE
                 WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading')
                      OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NOT NULL)
                      OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NULL)
@@ -211,7 +222,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
               END AS DECIMAL(12,2)
             ) as reading_before,
             CAST(
-              CASE 
+              CASE
                 WHEN JSON_VALUE(a.snapshot_before, '$.end_reading') <> JSON_VALUE(a.snapshot_after, '$.end_reading')
                      OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NOT NULL)
                      OR (JSON_VALUE(a.snapshot_before, '$.end_reading') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.end_reading') IS NULL)
@@ -230,9 +241,8 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             a.created_at,
             CAST(JSON_VALUE(a.snapshot_before, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_before,
             CAST(JSON_VALUE(a.snapshot_after, '$.fuel_liters_loaded') AS DECIMAL(10,2)) as fuel_after,
-            -- Detect which fuel level changed (End vs Start) with NULL-safe logic
             CAST(
-              CASE 
+              CASE
                 WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end')
                      OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NOT NULL)
                      OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NULL)
@@ -245,7 +255,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
               END AS DECIMAL(5,2)
             ) as fuel_level_before,
             CAST(
-              CASE 
+              CASE
                 WHEN JSON_VALUE(a.snapshot_before, '$.fuel_level_end') <> JSON_VALUE(a.snapshot_after, '$.fuel_level_end')
                      OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NOT NULL)
                      OR (JSON_VALUE(a.snapshot_before, '$.fuel_level_end') IS NOT NULL AND JSON_VALUE(a.snapshot_after, '$.fuel_level_end') IS NULL)
@@ -262,7 +272,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             a.snapshot_before,
             a.snapshot_after
           FROM administrative_audit_logs a
-          LEFT JOIN fleet_routes r ON a.entity_id = r.uuid
+          LEFT JOIN fleet_movements r ON a.entity_id = r.uuid COLLATE utf8mb4_unicode_ci AND r.movement_type = 'ROUTE'
           WHERE a.entity_type = 'route_log'
         ) l
         LEFT JOIN users u ON l.created_by = u.id
@@ -270,8 +280,9 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id AND c_loc.category = 'LOCATION'
         LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id AND c_brand.category = 'BRAND'
         LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id AND c_model.category = 'MODEL'
-        LEFT JOIN fleet_routes r ON l.reference_id = r.uuid
-        LEFT JOIN common_catalogs c_origin ON r.origin_id = c_origin.id AND c_origin.category = 'ROUTE_ORIGIN'
+        LEFT JOIN fleet_movements rm ON l.reference_id = rm.uuid COLLATE utf8mb4_unicode_ci AND rm.movement_type = 'ROUTE'
+        LEFT JOIN fleet_route_extensions rext ON rext.movement_id = rm.id
+        LEFT JOIN common_catalogs c_origin ON rext.origin_id = c_origin.id AND c_origin.category = 'ROUTE_ORIGIN'
         ORDER BY l.created_at DESC
       `;
       const [rows] = await db.execute<RowDataPacket[]>(query);
@@ -338,6 +349,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.code(400).send({ success: false, message: 'Error fetching global incidents' });
     }
   });
+
   /**
    * UPDATE ROUTE (FORENSIC)
    * PUT /v1/routes/:uuid

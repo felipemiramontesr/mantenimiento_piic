@@ -4,6 +4,8 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
 import db from '../services/db';
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
 const SERVICE_TYPE_ENUM = [
   'BASIC_10K',
   'INTERMEDIATE_20K',
@@ -12,6 +14,22 @@ const SERVICE_TYPE_ENUM = [
   'MINOR_MINING',
 ] as const;
 
+type ServiceType = (typeof SERVICE_TYPE_ENUM)[number];
+type MovementStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const detailSchema = z.object({
+  taskCode: z.string().min(1).max(50),
+  status: z.enum(['PASS', 'FAIL', 'REPLACED', 'N_A']),
+  notes: z.string().max(255).optional().nullable(),
+});
+
+/**
+ * Hybrid intake schema.
+ * is_in_progress = false → immediate COMPLETED registration (quick log, in-situ)
+ * is_in_progress = true  → opens ACTIVE movement + locks unit to Downtime
+ */
 const createMaintenanceSchema = z.object({
   unitId: z.string().min(2).max(50),
   serviceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -19,16 +37,31 @@ const createMaintenanceSchema = z.object({
   serviceType: z.enum(SERVICE_TYPE_ENUM),
   serviceMode: z.enum(['FULL_COMPLIANCE', 'PARTIAL_EXECUTION']).default('FULL_COMPLIANCE'),
   systemRecommendedType: z.enum(SERVICE_TYPE_ENUM).optional(),
-  cost: z.number().min(0),
+  cost: z.number().min(0).default(0),
   technician: z.string().min(2).max(100),
-  details: z.array(
-    z.object({
-      taskCode: z.string().min(1).max(50),
-      status: z.enum(['PASS', 'FAIL', 'REPLACED', 'N_A']),
-      notes: z.string().max(255).optional().nullable(),
-    })
-  ),
+  details: z.array(detailSchema).default([]),
+  is_in_progress: z.boolean().default(false),
 });
+
+/**
+ * Completion schema for PATCH /maintenance/:uuid/complete
+ * Receives final telemetry and closes the ACTIVE movement.
+ */
+const completeMaintenanceSchema = z.object({
+  odometerAtService: z.number().min(0),
+  cost: z.number().min(0),
+  serviceDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  serviceType: z.enum(SERVICE_TYPE_ENUM).optional(),
+  serviceMode: z.enum(['FULL_COMPLIANCE', 'PARTIAL_EXECUTION']).optional(),
+  systemRecommendedType: z.enum(SERVICE_TYPE_ENUM).optional(),
+  technician: z.string().min(2).max(100).optional(),
+  details: z.array(detailSchema).default([]),
+});
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getRecommendedServiceType(odometer: number): string {
   if (!odometer || odometer <= 0) return 'BASIC_10K';
@@ -54,27 +87,86 @@ function getRecommendedServiceType(odometer: number): string {
   return bestType;
 }
 
+/**
+ * Finalizes a MAINTENANCE movement: updates fleet_units odometer, forecast, and status.
+ * Shared by both the direct COMPLETED path and the PATCH complete path.
+ */
+async function applyMaintenanceCompletionToUnit(
+  connection: Awaited<ReturnType<typeof db.getConnection>>,
+  unitId: string,
+  odometerAtService: number,
+  serviceDate: string,
+  maintIntervalKm: number | string,
+  details: Array<{ taskCode: string; status: string }>
+): Promise<void> {
+  const [unitRows] = await connection.execute<RowDataPacket[]>(
+    'SELECT odometer FROM fleet_units WHERE id = ?',
+    [unitId]
+  );
+  const currentOdometer = Number((unitRows[0] as RowDataPacket).odometer || 0);
+
+  // Number() casting prevents string concatenation bug (ASM-021 incident)
+  const nextServiceReading = Number(odometerAtService) + Number(maintIntervalKm || 10000);
+  const finalOdometer = Math.max(currentOdometer, Number(odometerAtService));
+
+  let updateChassisOdo = false;
+  let updateDistributionOdo = false;
+  details.forEach((d) => {
+    if (d.taskCode === 'CHASSIS_SHOCKS_HEAVY' && (d.status === 'PASS' || d.status === 'REPLACED'))
+      updateChassisOdo = true;
+    if (
+      d.taskCode === 'DISTRIBUTION_KIT_WATER_PUMP' &&
+      (d.status === 'PASS' || d.status === 'REPLACED')
+    )
+      updateDistributionOdo = true;
+  });
+
+  const updates: [string, string | number][] = [
+    ['odometer', finalOdometer],
+    ['lastServiceReading', odometerAtService],
+    ['lastServiceDate', serviceDate],
+    ['nextServiceReading_forecast', nextServiceReading],
+    ['status', 'Disponible'],
+  ];
+  if (updateChassisOdo) updates.push(['last_chassis_inspection_odometer', odometerAtService]);
+  if (updateDistributionOdo) updates.push(['last_distribution_change_odometer', odometerAtService]);
+
+  const setClause = `${updates
+    .map(([col]) => `${col} = ?`)
+    .join(', ')}, updatedAt = CURRENT_TIMESTAMP`;
+  await connection.execute(`UPDATE fleet_units SET ${setClause} WHERE id = ?`, [
+    ...updates.map(([, val]) => val),
+    unitId,
+  ]);
+}
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+
 export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<void> {
-  // GET /v1/maintenance - Cursor paginated history
+  // GET /v1/maintenance — Cursor-paginated history (includes ACTIVE movements)
   fastify.get('/maintenance', async (request, reply) => {
     try {
       const { cursor, limit = '50' } = request.query as { cursor?: string; limit?: string };
       const parsedLimit = parseInt(limit, 10);
       let query = `
         SELECT
-          m.id, m.uuid, m.unit_id, m.service_date, m.odometer_at_service, m.service_type,
-          m.service_mode, m.system_recommended_type,
-          m.cost, m.technician, m.created_at
-        FROM fleet_maintenance_logs m
-        JOIN fleet_units u ON m.unit_id = u.id
+          fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
+          fme.service_date,
+          fm.start_reading AS odometer_at_service,
+          fme.service_type, fme.service_mode, fme.system_recommended_type,
+          fme.cost, fme.technician, fm.created_at, fm.start_at, fm.end_at
+        FROM fleet_movements fm
+        JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+        JOIN fleet_units u ON fm.unit_id = u.id
+        WHERE fm.movement_type = 'MAINTENANCE'
       `;
       const params: (string | number)[] = [];
       if (cursor) {
         const [cursorDate, cursorId] = Buffer.from(cursor, 'base64').toString('ascii').split('|');
-        query += ` WHERE (m.created_at < ?) OR (m.created_at = ? AND m.id < ?) `;
+        query += ` AND ((fm.created_at < ?) OR (fm.created_at = ? AND fm.id < ?)) `;
         params.push(cursorDate, cursorDate, parseInt(cursorId, 10));
       }
-      query += ` ORDER BY m.created_at DESC, m.id DESC LIMIT ? `;
+      query += ` ORDER BY fm.created_at DESC, fm.id DESC LIMIT ? `;
       params.push(parsedLimit + 1);
       const [rows] = await db.execute<RowDataPacket[]>(query, params);
       let nextCursor = null;
@@ -92,7 +184,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     }
   });
 
-  // GET /v1/maintenance/template/:unitId - Generate Checklist Logic
+  // GET /v1/maintenance/template/:unitId — Generate checklist for a unit
   fastify.get('/maintenance/template/:unitId', async (request, reply) => {
     try {
       const { unitId } = request.params as { unitId: string };
@@ -155,20 +247,19 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         label: r.label,
         isCritical: Boolean(r.isCritical),
       }));
-      // 🔱 Delta Stateful Rebase Trigger Logic (Prevents Omission Vulnerability)
       const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
       const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
       if (currentOdometer - lastChassisOdo >= 80000) {
         tasks.push({
           code: 'CHASSIS_SHOCKS_HEAVY',
-          label: 'Inspecci�n de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
+          label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
           isCritical: true,
         });
       }
       if (currentOdometer - lastDistOdo >= 100000) {
         tasks.push({
           code: 'DISTRIBUTION_KIT_WATER_PUMP',
-          label: 'Reemplazo de kit de distribuci�n y bomba de agua (Alerta Predictiva Delta)',
+          label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
           isCritical: true,
         });
       }
@@ -179,14 +270,19 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     }
   });
 
-  // POST /v1/maintenance - Create log with Compliance Hierarchy
+  /**
+   * POST /v1/maintenance — Hybrid intake (Option C)
+   *
+   * is_in_progress = false → COMPLETED immediately (quick log / in-situ)
+   * is_in_progress = true  → ACTIVE movement + unit locked to Downtime
+   */
   fastify.post('/maintenance', async (request, reply) => {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
       const data = createMaintenanceSchema.parse(request.body);
       const logUuid = crypto.randomUUID();
-      // 🔱 Forensic audit: log PARTIAL_EXECUTION events to the server audit trail
+
       if (data.serviceMode === 'PARTIAL_EXECUTION') {
         fastify.log.warn(
           {
@@ -197,25 +293,38 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
             odometer: data.odometerAtService,
             technician: data.technician,
           },
-          '⚠ PARTIAL_EXECUTION: Asset has pending major service debt — preventive maintenance deferred'
+          '⚠ PARTIAL_EXECUTION: Asset has pending major service debt'
         );
       }
+
       const [units] = await connection.execute<RowDataPacket[]>(
-        'SELECT id, odometer, maintIntervalKm FROM fleet_units WHERE id = ? FOR UPDATE',
+        'SELECT id, odometer, maintIntervalKm, status FROM fleet_units WHERE id = ? FOR UPDATE',
         [data.unitId]
       );
       if (units.length === 0) throw new Error('Fleet unit not found');
       const unit = units[0];
-      const [insertLog] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO fleet_maintenance_logs
-          (uuid, unit_id, service_date, odometer_at_service, service_type,
-           service_mode, system_recommended_type, cost, technician)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+
+      const movementStatus: MovementStatus = data.is_in_progress ? 'ACTIVE' : 'COMPLETED';
+
+      // 1. Insert CTI base record
+      const [movementResult] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO fleet_movements
+          (uuid, unit_id, movement_type, status, start_reading, start_at${
+            data.is_in_progress ? '' : ', end_at'
+          })
+         VALUES (?, ?, 'MAINTENANCE', ?, ?, ?${data.is_in_progress ? '' : ', NOW()'})`,
+        [logUuid, data.unitId, movementStatus, data.odometerAtService, data.serviceDate]
+      );
+      const movementId = movementResult.insertId;
+
+      // 2. Insert CTI maintenance extension
+      await connection.execute(
+        `INSERT INTO fleet_maintenance_extensions
+          (movement_id, service_date, service_type, service_mode, system_recommended_type, cost, technician)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
-          logUuid,
-          data.unitId,
+          movementId,
           data.serviceDate,
-          data.odometerAtService,
           data.serviceType,
           data.serviceMode,
           data.systemRecommendedType ?? null,
@@ -223,53 +332,154 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           data.technician,
         ]
       );
-      const maintenanceId = insertLog.insertId;
-      await Promise.all(
-        data.details.map((detail) =>
-          connection.execute(
-            `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status, notes) VALUES (?, ?, ?, ?)`,
-            [maintenanceId, detail.taskCode, detail.status, detail.notes || null]
+
+      // 3. Insert task details if provided
+      if (data.details.length > 0) {
+        await Promise.all(
+          data.details.map((detail) =>
+            connection.execute(
+              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status, notes) VALUES (?, ?, ?, ?)`,
+              [movementId, detail.taskCode, detail.status, detail.notes || null]
+            )
           )
-        )
+        );
+      }
+
+      if (data.is_in_progress) {
+        // 4a. Lock unit → Downtime (blocks route dispatch)
+        await connection.execute(
+          `UPDATE fleet_units SET status = 'Downtime', updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+          [data.unitId]
+        );
+        await connection.commit();
+        return reply.code(201).send({
+          success: true,
+          message: 'Maintenance order opened. Unit locked to Downtime.',
+          uuid: logUuid,
+          movement_status: 'ACTIVE',
+        });
+      }
+      // 4b. Apply completion immediately (in-situ / historical log)
+      await applyMaintenanceCompletionToUnit(
+        connection,
+        data.unitId,
+        data.odometerAtService,
+        data.serviceDate,
+        unit.maintIntervalKm,
+        data.details
       );
-      const nextServiceReading = data.odometerAtService + (unit.maintIntervalKm || 10000);
-      const finalOdometer = Math.max(unit.odometer, data.odometerAtService);
-      let updateChassisOdo = false;
-      let updateDistributionOdo = false;
-      data.details.forEach((detail) => {
-        if (
-          detail.taskCode === 'CHASSIS_SHOCKS_HEAVY' &&
-          (detail.status === 'PASS' || detail.status === 'REPLACED')
-        )
-          updateChassisOdo = true;
-        if (
-          detail.taskCode === 'DISTRIBUTION_KIT_WATER_PUMP' &&
-          (detail.status === 'PASS' || detail.status === 'REPLACED')
-        )
-          updateDistributionOdo = true;
-      });
-      // 🔱 Deterministic Tuple-Based Update Mapping (EAL6+ Safety Standards)
-      const updates: [string, string | number][] = [
-        ['odometer', finalOdometer],
-        ['lastServiceReading', data.odometerAtService],
-        ['lastServiceDate', data.serviceDate],
-        ['nextServiceReading_forecast', nextServiceReading],
-        ['status', 'Disponible'],
-      ];
-      if (updateChassisOdo)
-        updates.push(['last_chassis_inspection_odometer', data.odometerAtService]);
-      if (updateDistributionOdo)
-        updates.push(['last_distribution_change_odometer', data.odometerAtService]);
-      const setClause = `${updates
-        .map(([col]) => `${col} = ?`)
-        .join(', ')}, updatedAt = CURRENT_TIMESTAMP`;
-      const queryParams = updates.map(([, val]) => val);
-      queryParams.push(data.unitId);
-      await connection.execute(`UPDATE fleet_units SET ${setClause} WHERE id = ?`, queryParams);
       await connection.commit();
-      return reply
-        .code(201)
-        .send({ success: true, message: 'Maintenance registered successfully', uuid: logUuid });
+      return reply.code(201).send({
+        success: true,
+        message: 'Maintenance registered successfully.',
+        uuid: logUuid,
+        movement_status: 'COMPLETED',
+      });
+    } catch (error) {
+      await connection.rollback();
+      fastify.log.error(error);
+      return reply.code(400).send({ success: false, message: (error as Error).message });
+    } finally {
+      connection.release();
+    }
+  });
+
+  /**
+   * PATCH /v1/maintenance/:uuid/complete — Close an ACTIVE maintenance order
+   *
+   * Receives final telemetry, closes the movement, releases unit to Disponible.
+   */
+  fastify.patch('/maintenance/:uuid/complete', async (request, reply) => {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+      const { uuid } = request.params as { uuid: string };
+      const data = completeMaintenanceSchema.parse(request.body);
+
+      // 1. Verify movement exists and is ACTIVE MAINTENANCE
+      const [movements] = await connection.execute<RowDataPacket[]>(
+        `SELECT fm.id, fm.unit_id, fm.status, fme.service_date, fme.service_type,
+                fme.service_mode, fme.technician, fme.cost
+         FROM fleet_movements fm
+         JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+         WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE' FOR UPDATE`,
+        [uuid]
+      );
+      if (movements.length === 0) throw new Error('Maintenance order not found');
+      const movement = movements[0];
+      if (movement.status !== 'ACTIVE')
+        throw new Error(`Cannot complete: order is already ${movement.status}`);
+
+      const unitId = movement.unit_id as string;
+
+      // 2. Close movement
+      await connection.execute(
+        `UPDATE fleet_movements
+         SET status = 'COMPLETED', end_at = NOW(), start_reading = ?
+         WHERE uuid = ?`,
+        [data.odometerAtService, uuid]
+      );
+
+      // 3. Update extension with final values (override what changed)
+      const finalServiceDate = data.serviceDate ?? (movement.service_date as string);
+      const finalServiceType = (data.serviceType ?? movement.service_type) as ServiceType;
+      const finalServiceMode = data.serviceMode ?? movement.service_mode;
+      const finalTechnician = data.technician ?? movement.technician;
+      const finalCost = data.cost;
+
+      await connection.execute(
+        `UPDATE fleet_maintenance_extensions
+         SET service_date = ?, service_type = ?, service_mode = ?,
+             system_recommended_type = ?, cost = ?, technician = ?
+         WHERE movement_id = ?`,
+        [
+          finalServiceDate,
+          finalServiceType,
+          finalServiceMode,
+          data.systemRecommendedType ?? null,
+          finalCost,
+          finalTechnician,
+          movement.id,
+        ]
+      );
+
+      // 4. Insert final task details
+      if (data.details.length > 0) {
+        await Promise.all(
+          data.details.map((detail) =>
+            connection.execute(
+              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status, notes)
+               VALUES (?, ?, ?, ?)
+               ON DUPLICATE KEY UPDATE status = VALUES(status), notes = VALUES(notes)`,
+              [movement.id, detail.taskCode, detail.status, detail.notes || null]
+            )
+          )
+        );
+      }
+
+      // 5. Apply unit completion: odometer + forecast + status = Disponible
+      const [unitRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT maintIntervalKm FROM fleet_units WHERE id = ?',
+        [unitId]
+      );
+      const maintIntervalKm = (unitRows[0] as RowDataPacket)?.maintIntervalKm ?? 10000;
+
+      await applyMaintenanceCompletionToUnit(
+        connection,
+        unitId,
+        data.odometerAtService,
+        finalServiceDate,
+        maintIntervalKm,
+        data.details
+      );
+
+      await connection.commit();
+      return reply.send({
+        success: true,
+        message: 'Maintenance completed. Unit released to Disponible.',
+        uuid,
+        movement_status: 'COMPLETED',
+      });
     } catch (error) {
       await connection.rollback();
       fastify.log.error(error);
