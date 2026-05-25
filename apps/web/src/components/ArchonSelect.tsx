@@ -71,24 +71,18 @@ export default function ArchonSelect({
   };
 
   /**
-   * 🔱 Portal Position Engine
-   * Calculates viewport-relative position for the dropdown portal.
-   * Accounts for scroll offsets and flips to upward if insufficient space below.
+   * 🔱 Portal Position Engine — Always opens downward (design consistency).
+   * Page scroll handles any viewport overflow. No flip heuristic.
    */
   const updateDropdownPosition = (): void => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const dropdownHeight = 350;
-    const spaceBelow = viewportHeight - rect.bottom;
-    const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
-
     setDropdownStyle({
       position: 'fixed',
+      top: rect.bottom + 8,
       left: rect.left,
       width: rect.width,
       zIndex: 9999,
-      ...(openUpward ? { bottom: viewportHeight - rect.top + 8 } : { top: rect.bottom + 8 }),
     });
   };
 
