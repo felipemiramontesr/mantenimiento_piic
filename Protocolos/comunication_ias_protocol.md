@@ -47,22 +47,22 @@ Cuando Felipe cambia de IA, el agente saliente (o el usuario) actualiza la secci
 
 ## 🟢 ESTADO ACTIVO
 
-> **Última actualización:** 2026-05-25 · Handoff AG → CC
+> **Última actualización:** 2026-05-25 · Handoff AG → CC (Hotfix Branch)
 > **Agente saliente:** Antigravity (AG)
 > **Agente entrante:** Claude Code (CC)
-> **Última versión committeada:** `V.78.100.214_Maintenance_Lifecycle_CTI_Cyclic_Engine_Cumulative_Checklist`
+> **Última versión committeada:** `d782cdf` en rama `hotfix/core-mining-cumulative-patch`
 
 ### Trabajo completado en la última sesión (AG):
 
-- [x] Validación de código (Linter / TypeScript) del bloque de Mantenimiento.
-- [x] Corrección de error de Linter `no-restricted-syntax` (for...of → forEach) en `apps/api/src/routes/fleetMaintenance.ts` (Patrón 6.3).
-- [x] Commit y Push de la versión `V.78.100.214` a `origin/main`.
-- [x] Actualización del registro de sesiones en el protocolo Dual-IA.
+- [x] Validación forense de tareas vs PDF de cliente para MINOR_MINING y Reglas de Marca (colores).
+- [x] Corrección (Hotfix) de cascada acumulativa para MINOR_MINING en hitos de agencia.
+- [x] Validación de compilación estricta (`tsc --noEmit`) en `apps/api` exitosa.
+- [x] Commit de seguridad en la rama local `hotfix/core-mining-cumulative-patch` listo para revisión y merge de CC.
 
 ### Archivos modificados en progreso:
 
 ```
-(Ninguno - Árbol limpio)
+(Ninguno - Árbol limpio en la rama hotfix)
 ```
 
 ### Próxima tarea sugerida:
@@ -431,6 +431,7 @@ MINOR_MINING     → emerald
 | 2026-05-25 | AG     | V.78.100.212 | Remove encrypted placas ciphertext from maintenance UI                                     |
 | 2026-05-25 | CC     | V.78.100.213 | Add Dual IA Communication Protocol AG+CC Pair Programming                                  |
 | 2026-05-25 | AG     | V.78.100.214 | Maintenance lifecycle CTI + Cyclic Engine + Cumulative Checklist + Auto-mode (Fix CC Lint) |
+| 2026-05-25 | AG     | HOTFIX       | `hotfix/core-mining-cumulative-patch` — Force MINOR_MINING injection on agency milestones  |
 
 ---
 
