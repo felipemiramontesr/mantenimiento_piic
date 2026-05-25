@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npx vitest *)",
+      "Bash(mysql -u root archon -e \"SHOW TABLES;\")",
+      "Read(//c/Program Files/**)",
+      "Bash(node -e ' *)",
+      "Bash(mysql -h 127.0.0.1 -u root archon -e \"SELECT COUNT\\(*\\) as active_routes FROM fleet_routes WHERE status = 'ACTIVE';\")",
+      "PowerShell(Get-Command mysql -ErrorAction SilentlyContinue)",
+      "Read(//c//**)",
+      "Bash(curl -s http://localhost:3000/v1/routes)",
+      "Bash(curl -s http://localhost:3001/v1/routes)",
+      "Bash(curl -s http://localhost:4000/v1/routes)",
+      "Bash(curl -s http://localhost:8080/v1/routes)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const j=JSON.parse\\(d\\); console.log\\('success:', j.success, '| routes:', j.data?.length\\);\")",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess; if \\($proc\\) { Stop-Process -Id $proc -Force; Write-Host \"Killed PID $proc\" } else { Write-Host \"No process on 3001\" })",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);console.log\\('success:',j.success,'| routes:',j.data?.length\\);}\\)\")",
+      "Bash(curl -s http://localhost:5173)",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess; if \\($proc\\) { Stop-Process -Id $proc -Force; Write-Host \"Killed PID $proc\" })",
+      "Bash(curl -s http://localhost:3001/v1/maintenance)",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);console.log\\('GET /maintenance — success:',j.success,'| records:',j.data?.length,'| first status:',j.data?.[0]?.movement_status\\);}\\)\")",
+      "Bash(npx eslint *)"
+    ]
+  }
+}

@@ -1,28 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, ShieldAlert, PlusCircle } from 'lucide-react';
+import { Wrench, ShieldAlert, PlusCircle, CheckCircle2 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import { MaintenancePanel } from '../../types/maintenance';
+import { MaintenancePanel, MaintenanceLog } from '../../types/maintenance';
 import MaintenanceGridView from '../../components/Maintenance/MaintenanceGridView';
 import MaintenanceRegistrationForm from '../../components/Maintenance/MaintenanceRegistrationForm';
+import MaintenanceCompletionPanel from '../../components/Maintenance/MaintenanceCompletionPanel';
 
-/**
- * 🛠️ ARCHON MAINTENANCE MODULE (v.20.2.0)
- * Architecture: Sovereign Instrumental Node
- * Refinement: Backend-Driven UI (Template Engine API)
- */
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<MaintenancePanel>('HISTORY');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const [completingLog, setCompletingLog] = useState<MaintenanceLog | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollToTop = (): void => {
+    if (panelRef.current?.scrollIntoView) {
+      setTimeout((): void => {
+        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  };
 
   const handleReturnToGrid = (): void => {
     setActivePanel('HISTORY');
-    setRefreshTrigger(prev => prev + 1);
+    setCompletingLog(null);
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleCompleteRequest = (log: MaintenanceLog): void => {
+    setCompletingLog(log);
+    setActivePanel('COMPLETE');
+    scrollToTop();
   };
 
   useEffect(() => {
     const isScheduling = activePanel === 'SCHEDULE';
+    const isCompleting = activePanel === 'COMPLETE';
+
+    if (isCompleting) {
+      setSectionData(
+        'Finalizar Servicio',
+        `Cierre de Mantenimiento — ${completingLog?.unit_id ?? ''}`,
+        null,
+        {
+          variant: 'navy',
+          headerTitle: 'Cancelar Finalización',
+          HeaderIcon: ShieldAlert,
+          PayloadIcon: CheckCircle2,
+          actionTitle: 'Retorno',
+          description: 'Cancelar Cierre',
+          buttonText: 'Volver al Historial',
+          isActive: true,
+          onClick: handleReturnToGrid,
+        }
+      );
+      return;
+    }
 
     setSectionData(
       'Administrar Mantenimientos',
@@ -39,15 +72,11 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
         isActive: isScheduling,
         onClick: () => {
           setActivePanel(isScheduling ? 'HISTORY' : 'SCHEDULE');
-          if (panelRef.current?.scrollIntoView) {
-            setTimeout((): void => {
-              panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-          }
+          scrollToTop();
         },
       }
     );
-  }, [activePanel, setSectionData]);
+  }, [activePanel, completingLog, setSectionData]);
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -55,10 +84,25 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
         <div className="archon-axial-container">
           <div ref={panelRef}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              {activePanel === 'HISTORY' ? (
-                <MaintenanceGridView refreshTrigger={refreshTrigger} onNewRequest={(): void => setActivePanel('SCHEDULE')} />
-              ) : (
-                <MaintenanceRegistrationForm onSuccess={handleReturnToGrid} onCancel={handleReturnToGrid} />
+              {activePanel === 'HISTORY' && (
+                <MaintenanceGridView
+                  refreshTrigger={refreshTrigger}
+                  onNewRequest={(): void => setActivePanel('SCHEDULE')}
+                  onCompleteRequest={handleCompleteRequest}
+                />
+              )}
+              {activePanel === 'SCHEDULE' && (
+                <MaintenanceRegistrationForm
+                  onSuccess={handleReturnToGrid}
+                  onCancel={handleReturnToGrid}
+                />
+              )}
+              {activePanel === 'COMPLETE' && completingLog && (
+                <MaintenanceCompletionPanel
+                  log={completingLog}
+                  onSuccess={handleReturnToGrid}
+                  onCancel={handleReturnToGrid}
+                />
               )}
             </div>
           </div>

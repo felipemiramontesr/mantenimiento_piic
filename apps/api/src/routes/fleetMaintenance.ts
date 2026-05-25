@@ -26,17 +26,14 @@ const detailSchema = z.object({
 });
 
 /**
- * Hybrid intake schema.
- * is_in_progress = false → immediate COMPLETED registration (quick log, in-situ)
+ * Hybrid intake schema — service type is computed server-side from odometry.
+ * is_in_progress = false → immediate COMPLETED registration (in-situ)
  * is_in_progress = true  → opens ACTIVE movement + locks unit to Downtime
  */
 const createMaintenanceSchema = z.object({
   unitId: z.string().min(2).max(50),
   serviceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   odometerAtService: z.number().min(0),
-  serviceType: z.enum(SERVICE_TYPE_ENUM),
-  serviceMode: z.enum(['FULL_COMPLIANCE', 'PARTIAL_EXECUTION']).default('FULL_COMPLIANCE'),
-  systemRecommendedType: z.enum(SERVICE_TYPE_ENUM).optional(),
   cost: z.number().min(0).default(0),
   technician: z.string().min(2).max(100),
   details: z.array(detailSchema).default([]),
@@ -44,8 +41,7 @@ const createMaintenanceSchema = z.object({
 });
 
 /**
- * Completion schema for PATCH /maintenance/:uuid/complete
- * Receives final telemetry and closes the ACTIVE movement.
+ * Completion schema — service type recomputed from final odometry.
  */
 const completeMaintenanceSchema = z.object({
   odometerAtService: z.number().min(0),
@@ -54,37 +50,45 @@ const completeMaintenanceSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  serviceType: z.enum(SERVICE_TYPE_ENUM).optional(),
-  serviceMode: z.enum(['FULL_COMPLIANCE', 'PARTIAL_EXECUTION']).optional(),
-  systemRecommendedType: z.enum(SERVICE_TYPE_ENUM).optional(),
   technician: z.string().min(2).max(100).optional(),
   details: z.array(detailSchema).default([]),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getRecommendedServiceType(odometer: number): string {
+/**
+ * Cyclic service type engine — canonical rule for Archon fleet.
+ * Applies mod-60,000 km residue with strict ±1,000 km tolerance windows.
+ * Mine units (maintIntervalKm === 5000) fill non-agency midpoints with MINOR_MINING.
+ * Agency units fall back to the nearest agency milestone.
+ */
+function computeServiceType(odometer: number, maintIntervalKm: number | string): ServiceType {
   if (!odometer || odometer <= 0) return 'BASIC_10K';
-  const relativeKm = odometer % 60000;
-  const milestones = [
-    { type: 'ADVANCED_50K', value: 0 },
+  const residuo = odometer % 60000;
+  const isMineUnit = Number(maintIntervalKm) === 5000;
+
+  if (residuo <= 1000 || residuo >= 59000) return 'ADVANCED_50K';
+  if (residuo >= 49000 && residuo <= 51000) return 'ADVANCED_50K';
+  if (residuo >= 29000 && residuo <= 41000) return 'MAJOR_30K';
+  if (residuo >= 19000 && residuo <= 21000) return 'INTERMEDIATE_20K';
+  if (residuo >= 9000 && residuo <= 11000) return 'BASIC_10K';
+
+  if (isMineUnit) return 'MINOR_MINING';
+
+  const milestones: { type: ServiceType; value: number }[] = [
     { type: 'BASIC_10K', value: 10000 },
     { type: 'INTERMEDIATE_20K', value: 20000 },
     { type: 'MAJOR_30K', value: 30000 },
     { type: 'MAJOR_30K', value: 40000 },
     { type: 'ADVANCED_50K', value: 50000 },
-    { type: 'ADVANCED_50K', value: 60000 },
   ];
-  let bestType = 'BASIC_10K';
-  let minDistance = Infinity;
+  let best: ServiceType = 'BASIC_10K';
+  let minDist = Infinity;
   milestones.forEach((m) => {
-    const distance = Math.abs(relativeKm - m.value);
-    if (distance < minDistance) {
-      minDistance = distance;
-      bestType = m.type;
-    }
+    const dist = Math.abs(residuo - m.value);
+    if (dist < minDist) { minDist = dist; best = m.type; }
   });
-  return bestType;
+  return best;
 }
 
 /**
@@ -188,8 +192,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
   fastify.get('/maintenance/template/:unitId', async (request, reply) => {
     try {
       const { unitId } = request.params as { unitId: string };
-      const { isMining, serviceType, odometer } = request.query as {
-        isMining?: string;
+      const { serviceType, odometer } = request.query as {
         serviceType?: string;
         odometer?: string;
       };
@@ -205,24 +208,32 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const unit = units[0];
       const currentOdometer =
         odometer !== undefined ? Number(odometer) : Number(unit.odometer || 0);
-      let queryServiceType = serviceType;
-      if (!queryServiceType) {
-        queryServiceType = getRecommendedServiceType(currentOdometer);
-      }
-      const serviceTypes: string[] = [queryServiceType];
-      if (isMining === 'true' && !serviceTypes.includes('MINOR_MINING')) {
-        serviceTypes.push('MINOR_MINING');
-      }
-      if (isMining === 'true' && queryServiceType === 'MINOR_MINING') {
-        const standardServiceType = getRecommendedServiceType(currentOdometer);
-        if (
-          standardServiceType &&
-          standardServiceType !== 'MINOR_MINING' &&
-          !serviceTypes.includes(standardServiceType)
-        ) {
-          serviceTypes.push(standardServiceType);
+      const isMineUnit = Number(unit.maintIntervalKm) === 5000;
+      const resolvedType: ServiceType =
+        (serviceType as ServiceType | undefined) ??
+        computeServiceType(currentOdometer, unit.maintIntervalKm);
+
+      // Cumulative cascade — each tier inherits all tasks from lower tiers
+      const cumulativeMap: Record<ServiceType, ServiceType[]> = {
+        BASIC_10K:        ['BASIC_10K'],
+        INTERMEDIATE_20K: ['INTERMEDIATE_20K', 'BASIC_10K'],
+        MAJOR_30K:        ['MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
+        ADVANCED_50K:     ['ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
+        MINOR_MINING:     ['MINOR_MINING'],
+      };
+
+      const serviceTypes: string[] = [...cumulativeMap[resolvedType]];
+
+      // Mine units run MINOR_MINING + concurrent agency milestone (also cumulative)
+      if (isMineUnit && resolvedType === 'MINOR_MINING') {
+        const agencyType = computeServiceType(currentOdometer, 10000);
+        if (agencyType !== 'MINOR_MINING') {
+          cumulativeMap[agencyType].forEach((t) => {
+            if (!serviceTypes.includes(t)) serviceTypes.push(t);
+          });
         }
       }
+
       const placeholders = serviceTypes.map(() => '?').join(', ');
       const query = `
         SELECT DISTINCT t.code, t.label, t.is_critical AS isCritical
@@ -283,26 +294,13 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const data = createMaintenanceSchema.parse(request.body);
       const logUuid = crypto.randomUUID();
 
-      if (data.serviceMode === 'PARTIAL_EXECUTION') {
-        fastify.log.warn(
-          {
-            event: 'COMPLIANCE_PARTIAL_EXECUTION',
-            unitId: data.unitId,
-            userSelected: data.serviceType,
-            systemRecommended: data.systemRecommendedType,
-            odometer: data.odometerAtService,
-            technician: data.technician,
-          },
-          '⚠ PARTIAL_EXECUTION: Asset has pending major service debt'
-        );
-      }
-
       const [units] = await connection.execute<RowDataPacket[]>(
         'SELECT id, odometer, maintIntervalKm, status FROM fleet_units WHERE id = ? FOR UPDATE',
         [data.unitId]
       );
       if (units.length === 0) throw new Error('Fleet unit not found');
       const unit = units[0];
+      const serviceType = computeServiceType(data.odometerAtService, unit.maintIntervalKm);
 
       const movementStatus: MovementStatus = data.is_in_progress ? 'ACTIVE' : 'COMPLETED';
 
@@ -325,9 +323,9 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         [
           movementId,
           data.serviceDate,
-          data.serviceType,
-          data.serviceMode,
-          data.systemRecommendedType ?? null,
+          serviceType,
+          'FULL_COMPLIANCE',
+          serviceType,
           data.cost,
           data.technician,
         ]
@@ -420,10 +418,15 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         [data.odometerAtService, uuid]
       );
 
-      // 3. Update extension with final values (override what changed)
+      // 3. Fetch unit interval — drives cyclic service type + completion forecast
+      const [unitRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT maintIntervalKm FROM fleet_units WHERE id = ?',
+        [unitId]
+      );
+      const maintIntervalKm = (unitRows[0] as RowDataPacket)?.maintIntervalKm ?? 10000;
+
       const finalServiceDate = data.serviceDate ?? (movement.service_date as string);
-      const finalServiceType = (data.serviceType ?? movement.service_type) as ServiceType;
-      const finalServiceMode = data.serviceMode ?? movement.service_mode;
+      const finalServiceType = computeServiceType(data.odometerAtService, maintIntervalKm);
       const finalTechnician = data.technician ?? movement.technician;
       const finalCost = data.cost;
 
@@ -435,8 +438,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         [
           finalServiceDate,
           finalServiceType,
-          finalServiceMode,
-          data.systemRecommendedType ?? null,
+          'FULL_COMPLIANCE',
+          finalServiceType,
           finalCost,
           finalTechnician,
           movement.id,
@@ -458,12 +461,6 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       }
 
       // 5. Apply unit completion: odometer + forecast + status = Disponible
-      const [unitRows] = await connection.execute<RowDataPacket[]>(
-        'SELECT maintIntervalKm FROM fleet_units WHERE id = ?',
-        [unitId]
-      );
-      const maintIntervalKm = (unitRows[0] as RowDataPacket)?.maintIntervalKm ?? 10000;
-
       await applyMaintenanceCompletionToUnit(
         connection,
         unitId,

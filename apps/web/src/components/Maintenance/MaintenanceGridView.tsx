@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { User } from 'lucide-react';
+import { User, Wrench } from 'lucide-react';
 
 import { MaintenanceLog } from '../../types/maintenance';
 import api from '../../api/client';
@@ -14,6 +14,7 @@ import AT from '../../styles/archonTypography';
 interface MaintenanceGridViewProps {
   refreshTrigger: number;
   onNewRequest: () => void;
+  onCompleteRequest?: (log: MaintenanceLog) => void;
 }
 
 const matchFieldInMaintenance = (
@@ -38,6 +39,7 @@ const matchFieldInMaintenance = (
 const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
   refreshTrigger,
   onNewRequest: _onNewRequest,
+  onCompleteRequest,
 }) => {
   const { units } = useFleet();
   const { users } = useUsers();
@@ -188,13 +190,18 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
           const technician = users.find(
             (u) => u.fullName === log.technician || u.username === log.technician
           );
+          const isActive = log.movement_status === 'ACTIVE';
           return (
             <motion.tr
               key={log.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
-              className="bg-transparent hover:bg-pinnacle-navy/[0.015] border-y border-solid border-slate-200/50 transition-colors"
+              className={`border-y border-solid transition-colors ${
+                isActive
+                  ? 'bg-amber-50/50 hover:bg-amber-50/80 border-amber-200/50'
+                  : 'bg-transparent hover:bg-pinnacle-navy/[0.015] border-slate-200/50'
+              }`}
             >
               <td className="py-4 px-3">
                 <div className="flex flex-col items-center">
@@ -223,6 +230,23 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                   <span className={`${AT.idBadge} mt-1`}>
                     MNT-{String(log.id).padStart(5, '0')}
                   </span>
+                  {isActive && (
+                    <>
+                      <span className={`${AT.statusBadge} bg-amber-500/10 text-amber-700 border-amber-500/20 mt-0.5`}>
+                        EN TALLER
+                      </span>
+                      {onCompleteRequest && (
+                        <button
+                          type="button"
+                          onClick={(): void => onCompleteRequest(log)}
+                          className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-md transition-all duration-200 shadow-sm"
+                        >
+                          <Wrench size={9} />
+                          Finalizar Servicio
+                        </button>
+                      )}
+                    </>
+                  )}
                   <span className={AT.cellMeta}>
                     {unit?.marca} {unit?.modelo}
                   </span>
