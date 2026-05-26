@@ -59,6 +59,7 @@ Cuando Felipe cambia de IA, el agente saliente (o el usuario) actualiza la secci
 - [x] Refactorización de query SQL de marcas para aislar parámetros y hacer la evaluación 100% agnóstica (`brandId`, `fuelTypeId`).
 - [x] Ejecución y resguardo del script de hidratación masiva (`packages/database/scripts/run_084_seed_maintenance.js`) para normalizar la matriz de mantenimiento preventivo base y marcas.
 - [x] **Hotfix Estructural**: Transición definitiva del motor de plantillas a paquetes de mantenimiento discretos (1:1), desmantelando la herencia acumulativa jerárquica para eliminar el "ruido" en el checklist y adaptándose a la filosofía paramétrica real del negocio. Flujo aditivo de mina preservado.
+- [x] **Hotfix Predictivo**: Purga global de inyecciones duras. Las tareas `CHASSIS_SHOCKS_HEAVY` y `DISTRIBUTION_KIT_WATER_PUMP` fueron rigurosamente encapsuladas bajo el flag `isMineUnit`, liberando a los vehículos comerciales de este falso positivo.
 - [x] Validación de compilación estricta (`tsc --noEmit`) en `apps/api` exitosa en repetidas ocasiones.
 - [x] Commit y push de la rama `hotfix/core-mining-cumulative-patch` al repositorio remoto, lista para revisión y merge de CC.
 
@@ -438,6 +439,7 @@ MINOR_MINING     → emerald
 | 2026-05-25 | AG     | HOTFIX       | `7f258c2` — Refactor SQL query to isolate and strictly evaluate brand and fuel rules       |
 | 2026-05-25 | AG     | HOTFIX       | `e395d4f` — Chore: Add DB seeder script for maintenance matrix hydration                   |
 | 2026-05-25 | AG     | HOTFIX       | `9031d93` — Refactor: transition to 1:1 discrete milestone packages                        |
+| 2026-05-25 | AG     | HOTFIX       | `f982a5c` (approx) — Refactor: encapsulate predictive alerts strictly under isMineUnit flag|
 
 ---
 

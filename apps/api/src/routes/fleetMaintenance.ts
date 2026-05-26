@@ -255,19 +255,23 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       }));
       const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
       const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
-      if (currentOdometer - lastChassisOdo >= 80000) {
-        tasks.push({
-          code: 'CHASSIS_SHOCKS_HEAVY',
-          label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
-          isCritical: true,
-        });
-      }
-      if (currentOdometer - lastDistOdo >= 100000) {
-        tasks.push({
-          code: 'DISTRIBUTION_KIT_WATER_PUMP',
-          label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
-          isCritical: true,
-        });
+      
+      // Alertas Predictivas Delta: Exclusivas para el entorno severo de mina
+      if (isMineUnit) {
+        if (currentOdometer - lastChassisOdo >= 80000) {
+          tasks.push({
+            code: 'CHASSIS_SHOCKS_HEAVY',
+            label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
+            isCritical: true,
+          });
+        }
+        if (currentOdometer - lastDistOdo >= 100000) {
+          tasks.push({
+            code: 'DISTRIBUTION_KIT_WATER_PUMP',
+            label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
+            isCritical: true,
+          });
+        }
       }
       return reply.send({ success: true, tasks });
     } catch (error) {
