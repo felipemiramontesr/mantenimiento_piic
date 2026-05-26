@@ -439,7 +439,7 @@ MINOR_MINING     → emerald
 | 2026-05-25 | AG     | HOTFIX       | `7f258c2` — Refactor SQL query to isolate and strictly evaluate brand and fuel rules       |
 | 2026-05-25 | AG     | HOTFIX       | `e395d4f` — Chore: Add DB seeder script for maintenance matrix hydration                   |
 | 2026-05-25 | AG     | HOTFIX       | `9031d93` — Refactor: transition to 1:1 discrete milestone packages                        |
-| 2026-05-25 | AG     | HOTFIX       | `f982a5c` (approx) — Refactor: encapsulate predictive alerts strictly under isMineUnit flag|
+| 2026-05-25 | AG     | HOTFIX       | `92cbe7e` — Refactor: encapsulate predictive alerts strictly under isMineUnit flag         |
 
 ---
 
