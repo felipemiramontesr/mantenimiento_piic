@@ -21,7 +21,7 @@ type MovementStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
 const detailSchema = z.object({
   taskCode: z.string().min(1).max(50),
-  status: z.enum(['PASS', 'FAIL', 'REPLACED', 'N_A']),
+  status: z.string().min(1).max(50),
   notes: z.string().max(255).optional().nullable(),
 });
 
@@ -255,7 +255,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       }));
       const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
       const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
-      
+
       // Alertas Predictivas Delta: Exclusivas para el entorno severo de mina
       if (isMineUnit) {
         if (currentOdometer - lastChassisOdo >= 80000) {
@@ -335,7 +335,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         await Promise.all(
           data.details.map((detail) =>
             connection.execute(
-              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status, notes) VALUES (?, ?, ?, ?)`,
+              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status_code, notes) VALUES (?, ?, ?, ?)`,
               [movementId, detail.taskCode, detail.status, detail.notes || null]
             )
           )
@@ -450,9 +450,9 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         await Promise.all(
           data.details.map((detail) =>
             connection.execute(
-              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status, notes)
+              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status_code, notes)
                VALUES (?, ?, ?, ?)
-               ON DUPLICATE KEY UPDATE status = VALUES(status), notes = VALUES(notes)`,
+               ON DUPLICATE KEY UPDATE status_code = VALUES(status_code), notes = VALUES(notes)`,
               [movement.id, detail.taskCode, detail.status, detail.notes || null]
             )
           )

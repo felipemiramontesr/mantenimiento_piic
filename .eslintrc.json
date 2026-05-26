@@ -1,4 +1,5 @@
 {
+  "ignorePatterns": ["packages/database/scripts/"],
   "env": {
     "browser": true,
     "es2021": true,
