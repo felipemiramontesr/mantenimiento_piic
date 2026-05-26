@@ -86,7 +86,10 @@ function computeServiceType(odometer: number, maintIntervalKm: number | string):
   let minDist = Infinity;
   milestones.forEach((m) => {
     const dist = Math.abs(residuo - m.value);
-    if (dist < minDist) { minDist = dist; best = m.type; }
+    if (dist < minDist) {
+      minDist = dist;
+      best = m.type;
+    }
   });
   return best;
 }
@@ -213,24 +216,13 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         (serviceType as ServiceType | undefined) ??
         computeServiceType(currentOdometer, unit.maintIntervalKm);
 
-      // Cumulative cascade — each tier inherits all tasks from lower tiers
-      const cumulativeMap: Record<ServiceType, ServiceType[]> = {
-        BASIC_10K:        ['BASIC_10K'],
-        INTERMEDIATE_20K: ['INTERMEDIATE_20K', 'BASIC_10K'],
-        MAJOR_30K:        ['MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
-        ADVANCED_50K:     ['ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
-        MINOR_MINING:     ['MINOR_MINING'],
-      };
+      // Paquetes discretos 1:1 (eliminación de cascada acumulativa)
+      const serviceTypes: string[] = [resolvedType];
 
-      const serviceTypes: string[] = [...cumulativeMap[resolvedType]];
-
-      // Mine units run MINOR_MINING + concurrent agency milestone (also cumulative)
-      if (isMineUnit && resolvedType === 'MINOR_MINING') {
-        const agencyType = computeServiceType(currentOdometer, 10000);
-        if (agencyType !== 'MINOR_MINING') {
-          cumulativeMap[agencyType].forEach((t) => {
-            if (!serviceTypes.includes(t)) serviceTypes.push(t);
-          });
+      // Preservación del flujo aditivo para unidades de mina
+      if (isMineUnit) {
+        if (!serviceTypes.includes('MINOR_MINING')) {
+          serviceTypes.push('MINOR_MINING');
         }
       }
 
@@ -242,8 +234,11 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           UNION
           SELECT task_code FROM maintenance_brand_rules
           WHERE service_type IN (${placeholders})
-            AND (brand_id = ? OR brand_id IS NULL)
-            AND (fuel_type_id = ? OR fuel_type_id IS NULL)
+            AND (
+              brand_id = ? 
+              OR 
+              (brand_id IS NULL AND fuel_type_id = ?)
+            )
         ) combined
         JOIN maintenance_tasks t ON combined.task_code = t.code
       `;
@@ -260,19 +255,23 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       }));
       const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
       const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
-      if (currentOdometer - lastChassisOdo >= 80000) {
-        tasks.push({
-          code: 'CHASSIS_SHOCKS_HEAVY',
-          label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
-          isCritical: true,
-        });
-      }
-      if (currentOdometer - lastDistOdo >= 100000) {
-        tasks.push({
-          code: 'DISTRIBUTION_KIT_WATER_PUMP',
-          label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
-          isCritical: true,
-        });
+      
+      // Alertas Predictivas Delta: Exclusivas para el entorno severo de mina
+      if (isMineUnit) {
+        if (currentOdometer - lastChassisOdo >= 80000) {
+          tasks.push({
+            code: 'CHASSIS_SHOCKS_HEAVY',
+            label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
+            isCritical: true,
+          });
+        }
+        if (currentOdometer - lastDistOdo >= 100000) {
+          tasks.push({
+            code: 'DISTRIBUTION_KIT_WATER_PUMP',
+            label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
+            isCritical: true,
+          });
+        }
       }
       return reply.send({ success: true, tasks });
     } catch (error) {
