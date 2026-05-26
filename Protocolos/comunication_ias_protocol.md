@@ -56,8 +56,9 @@ Cuando Felipe cambia de IA, el agente saliente (o el usuario) actualiza la secci
 
 - [x] Validación forense de tareas vs PDF de cliente para MINOR_MINING y Reglas de Marca (colores).
 - [x] Corrección (Hotfix) de cascada acumulativa para MINOR_MINING en hitos de agencia.
-- [x] Validación de compilación estricta (`tsc --noEmit`) en `apps/api` exitosa.
-- [x] Commit de seguridad en la rama local `hotfix/core-mining-cumulative-patch` listo para revisión y merge de CC.
+- [x] Refactorización de query SQL de marcas para aislar parámetros y hacer la evaluación 100% agnóstica (`brandId`, `fuelTypeId`).
+- [x] Validación de compilación estricta (`tsc --noEmit`) en `apps/api` exitosa en repetidas ocasiones.
+- [x] Commit y push de la rama `hotfix/core-mining-cumulative-patch` al repositorio remoto, lista para revisión y merge de CC.
 
 ### Archivos modificados en progreso:
 
@@ -432,6 +433,7 @@ MINOR_MINING     → emerald
 | 2026-05-25 | CC     | V.78.100.213 | Add Dual IA Communication Protocol AG+CC Pair Programming                                  |
 | 2026-05-25 | AG     | V.78.100.214 | Maintenance lifecycle CTI + Cyclic Engine + Cumulative Checklist + Auto-mode (Fix CC Lint) |
 | 2026-05-25 | AG     | HOTFIX       | `hotfix/core-mining-cumulative-patch` — Force MINOR_MINING injection on agency milestones  |
+| 2026-05-25 | AG     | HOTFIX       | `7f258c2` — Refactor SQL query to isolate and strictly evaluate brand and fuel rules       |
 
 ---
 
