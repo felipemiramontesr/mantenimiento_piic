@@ -216,21 +216,10 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         (serviceType as ServiceType | undefined) ??
         computeServiceType(currentOdometer, unit.maintIntervalKm);
 
-      // Cumulative cascade — each tier inherits all tasks from lower tiers
-      const cumulativeMap: Record<ServiceType, ServiceType[]> = {
-        BASIC_10K: ['BASIC_10K'],
-        INTERMEDIATE_20K: ['INTERMEDIATE_20K', 'BASIC_10K'],
-        MAJOR_30K: ['MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
-        ADVANCED_50K: ['ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'],
-        MINOR_MINING: ['MINOR_MINING'],
-      };
+      // Paquetes discretos 1:1 (eliminación de cascada acumulativa)
+      const serviceTypes: string[] = [resolvedType];
 
-      const serviceTypes: string[] = [...cumulativeMap[resolvedType]];
-
-      // Unidades de mina siempre ejecutan MINOR_MINING (cada 5k).
-      // Si el hito resuelto es de agencia (ej. MAJOR_30K), nos aseguramos de agregar MINOR_MINING.
-      // Si el hito resuelto es MINOR_MINING (ej. 15k, 25k), no agregamos hitos de agencia
-      // porque no están dentro de la ventana de tolerancia de ±1000km.
+      // Preservación del flujo aditivo para unidades de mina
       if (isMineUnit) {
         if (!serviceTypes.includes('MINOR_MINING')) {
           serviceTypes.push('MINOR_MINING');
