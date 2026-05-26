@@ -58,6 +58,7 @@ Cuando Felipe cambia de IA, el agente saliente (o el usuario) actualiza la secci
 - [x] Corrección (Hotfix) de cascada acumulativa para MINOR_MINING en hitos de agencia.
 - [x] Refactorización de query SQL de marcas para aislar parámetros y hacer la evaluación 100% agnóstica (`brandId`, `fuelTypeId`).
 - [x] Validación de compilación estricta (`tsc --noEmit`) en `apps/api` exitosa en repetidas ocasiones.
+- [x] Ejecución y resguardo del script de hidratación masiva (`packages/database/scripts/run_084_seed_maintenance.js`) para normalizar la matriz de mantenimiento preventivo base y marcas.
 - [x] Commit y push de la rama `hotfix/core-mining-cumulative-patch` al repositorio remoto, lista para revisión y merge de CC.
 
 ### Archivos modificados en progreso:
@@ -434,6 +435,7 @@ MINOR_MINING     → emerald
 | 2026-05-25 | AG     | V.78.100.214 | Maintenance lifecycle CTI + Cyclic Engine + Cumulative Checklist + Auto-mode (Fix CC Lint) |
 | 2026-05-25 | AG     | HOTFIX       | `hotfix/core-mining-cumulative-patch` — Force MINOR_MINING injection on agency milestones  |
 | 2026-05-25 | AG     | HOTFIX       | `7f258c2` — Refactor SQL query to isolate and strictly evaluate brand and fuel rules       |
+| 2026-05-25 | AG     | HOTFIX       | `e395d4f` — Chore: Add DB seeder script for maintenance matrix hydration                   |
 
 ---
 
