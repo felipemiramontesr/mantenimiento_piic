@@ -244,19 +244,20 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           SELECT task_code FROM maintenance_plan_tasks WHERE service_type IN (${placeholders})
           UNION
           SELECT task_code FROM maintenance_brand_rules
-          WHERE 
-            (brand_id = ? AND service_type IN (${placeholders}))
-            OR 
-            (brand_id IS NULL AND fuel_type_id = ? AND service_type IN (${placeholders}))
+          WHERE service_type IN (${placeholders})
+            AND (
+              brand_id = ? 
+              OR 
+              (brand_id IS NULL AND fuel_type_id = ?)
+            )
         ) combined
         JOIN maintenance_tasks t ON combined.task_code = t.code
       `;
       const [rows] = await db.execute<RowDataPacket[]>(query, [
         ...serviceTypes,
+        ...serviceTypes,
         unit.brandId,
-        ...serviceTypes,
         unit.fuelTypeId,
-        ...serviceTypes,
       ]);
       const tasks = rows.map((r) => ({
         code: r.code,
