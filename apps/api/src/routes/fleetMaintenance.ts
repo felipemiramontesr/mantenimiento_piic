@@ -147,6 +147,91 @@ async function applyMaintenanceCompletionToUnit(
   ]);
 }
 
+// ─── Template Helpers ─────────────────────────────────────────────────────────
+
+type TemplateTask = {
+  code: string;
+  label: string;
+  isCritical: boolean;
+  isDeferredCarry: boolean;
+};
+
+function buildCascadeServiceTypes(resolvedType: ServiceType, isMineUnit: boolean): string[] {
+  const types: string[] = [];
+  if (resolvedType === 'ADVANCED_50K') {
+    types.push('ADVANCED_50K', 'BASIC_10K', 'INTERMEDIATE_20K');
+  } else if (resolvedType === 'MAJOR_30K') {
+    types.push('MAJOR_30K', 'BASIC_10K');
+  } else {
+    types.push(resolvedType);
+  }
+  if (isMineUnit && !types.includes('MINOR_MINING')) types.push('MINOR_MINING');
+  return types;
+}
+
+async function fetchDeferredTasks(
+  unitId: string,
+  existingCodes: Set<string>
+): Promise<TemplateTask[]> {
+  const [lastOrderRows] = await db.execute<RowDataPacket[]>(
+    `SELECT id FROM fleet_movements
+     WHERE unit_id = ? AND movement_type = 'MAINTENANCE' AND status = 'COMPLETED'
+     ORDER BY end_at DESC, id DESC LIMIT 1`,
+    [unitId]
+  );
+  if (lastOrderRows.length === 0) return [];
+  const lastOrderId = lastOrderRows[0].id as number;
+  const [deferredRows] = await db.execute<RowDataPacket[]>(
+    `SELECT fmd.task_code, mt.label, mt.is_critical AS isCritical
+     FROM fleet_maintenance_details fmd
+     JOIN maintenance_tasks mt ON fmd.task_code = mt.code
+     WHERE fmd.maintenance_id = ? AND fmd.status_code = 'DEFERRED'`,
+    [lastOrderId]
+  );
+  return deferredRows
+    .filter((row) => !existingCodes.has(row.task_code as string))
+    .map((row) => ({
+      code: row.task_code as string,
+      label: row.label as string,
+      isCritical: Boolean(row.isCritical),
+      isDeferredCarry: true,
+    }));
+}
+
+function applyMiningFuelFilter(tasks: TemplateTask[], fuelTypeId: number): void {
+  if (fuelTypeId === 11) {
+    const idx = tasks.findIndex((t) => t.code === 'WATER_SEPARATOR_MINING');
+    if (idx !== -1) tasks.splice(idx, 1);
+  } else if (fuelTypeId === 10) {
+    const idx = tasks.findIndex((t) => t.code === 'CABIN_FILTER_MINING');
+    if (idx !== -1) tasks.splice(idx, 1);
+  }
+}
+
+function appendPredictiveAlerts(
+  tasks: TemplateTask[],
+  currentOdometer: number,
+  lastChassisOdo: number,
+  lastDistOdo: number
+): void {
+  if (currentOdometer - lastChassisOdo >= 80000) {
+    tasks.push({
+      code: 'CHASSIS_SHOCKS_HEAVY',
+      label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
+      isCritical: true,
+      isDeferredCarry: false,
+    });
+  }
+  if (currentOdometer - lastDistOdo >= 100000) {
+    tasks.push({
+      code: 'DISTRIBUTION_KIT_WATER_PUMP',
+      label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
+      isCritical: true,
+      isDeferredCarry: false,
+    });
+  }
+}
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<void> {
@@ -216,15 +301,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         (serviceType as ServiceType | undefined) ??
         computeServiceType(currentOdometer, unit.maintIntervalKm);
 
-      // Paquetes discretos 1:1 (eliminación de cascada acumulativa)
-      const serviceTypes: string[] = [resolvedType];
-
-      // Preservación del flujo aditivo para unidades de mina
-      if (isMineUnit) {
-        if (!serviceTypes.includes('MINOR_MINING')) {
-          serviceTypes.push('MINOR_MINING');
-        }
-      }
+      // Cascada jerárquica: acumulación de paquetes por hito
+      const serviceTypes = buildCascadeServiceTypes(resolvedType, isMineUnit);
 
       const placeholders = serviceTypes.map(() => '?').join(', ');
       const query = `
@@ -235,8 +313,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           SELECT task_code FROM maintenance_brand_rules
           WHERE service_type IN (${placeholders})
             AND (
-              brand_id = ? 
-              OR 
+              brand_id = ?
+              OR
               (brand_id IS NULL AND fuel_type_id = ?)
             )
         ) combined
@@ -248,31 +326,24 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         unit.brandId,
         unit.fuelTypeId,
       ]);
-      const tasks = rows.map((r) => ({
+      const tasks: TemplateTask[] = rows.map((r) => ({
         code: r.code,
         label: r.label,
         isCritical: Boolean(r.isCritical),
+        isDeferredCarry: false,
       }));
+
+      if (isMineUnit) applyMiningFuelFilter(tasks, Number(unit.fuelTypeId));
+
       const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
       const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
+      if (isMineUnit) appendPredictiveAlerts(tasks, currentOdometer, lastChassisOdo, lastDistOdo);
 
-      // Alertas Predictivas Delta: Exclusivas para el entorno severo de mina
-      if (isMineUnit) {
-        if (currentOdometer - lastChassisOdo >= 80000) {
-          tasks.push({
-            code: 'CHASSIS_SHOCKS_HEAVY',
-            label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
-            isCritical: true,
-          });
-        }
-        if (currentOdometer - lastDistOdo >= 100000) {
-          tasks.push({
-            code: 'DISTRIBUTION_KIT_WATER_PUMP',
-            label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
-            isCritical: true,
-          });
-        }
-      }
+      // Inyección DEFERRED: tareas diferidas de la última orden cerrada
+      const existingCodes = new Set(tasks.map((t) => t.code));
+      const deferred = await fetchDeferredTasks(unitId, existingCodes);
+      deferred.forEach((t) => tasks.push(t));
+
       return reply.send({ success: true, tasks });
     } catch (error) {
       fastify.log.error(error);
