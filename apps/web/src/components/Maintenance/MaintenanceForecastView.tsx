@@ -88,6 +88,11 @@ const kmRemainingColor = (km: number): string => {
   return 'text-[#0f2a44]';
 };
 
+const formatDate = (iso: string): string => {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+};
+
 const daysColor = (days: number): string => {
   if (days <= 7) return 'text-red-500';
   if (days <= 30) return 'text-amber-600';
@@ -202,7 +207,7 @@ const MaintenanceForecastView: React.FC = () => {
               <td className="py-4 px-3 text-center">
                 <div className="flex items-center justify-center gap-1.5">
                   <Calendar size={11} className="text-[#0f2a44]/30 shrink-0" />
-                  <span className={AT.cellValue}>{row.nextServiceDate}</span>
+                  <span className={AT.cellValue}>{formatDate(row.nextServiceDate)}</span>
                 </div>
                 <p className={`${AT.cellMeta} ${daysColor(row.daysUntilService)}`}>
                   {row.daysUntilService} día{row.daysUntilService !== 1 ? 's' : ''}
