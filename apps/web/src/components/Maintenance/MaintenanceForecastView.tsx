@@ -1,0 +1,245 @@
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { AlertTriangle, Calendar, CheckCircle2, Clock, Gauge, Zap } from 'lucide-react';
+import { ForecastUrgency, MaintenanceForecastRow, ServiceType } from '../../types/maintenance';
+import api from '../../api/client';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
+import AT from '../../styles/archonTypography';
+
+const SERVICE_LABELS: Record<ServiceType, string> = {
+  BASIC_10K: 'Básico 10K',
+  INTERMEDIATE_20K: 'Intermedio 20K',
+  MAJOR_30K: 'Mayor 30K',
+  ADVANCED_50K: 'Avanzado 50K',
+  MINOR_MINING: 'Menor — Mina',
+};
+
+const SERVICE_BADGE: Record<ServiceType, { bg: string; text: string; border: string }> = {
+  BASIC_10K: { bg: 'bg-sky-500/10', text: 'text-sky-700', border: 'border-sky-500/20' },
+  INTERMEDIATE_20K: { bg: 'bg-blue-500/10', text: 'text-blue-700', border: 'border-blue-500/20' },
+  MAJOR_30K: { bg: 'bg-violet-500/10', text: 'text-violet-700', border: 'border-violet-500/20' },
+  ADVANCED_50K: { bg: 'bg-rose-500/10', text: 'text-rose-700', border: 'border-rose-500/20' },
+  MINOR_MINING: {
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-700',
+    border: 'border-emerald-500/20',
+  },
+};
+
+type UrgencyMeta = {
+  bg: string;
+  text: string;
+  border: string;
+  icon: React.ReactNode;
+  label: string;
+};
+
+const URGENCY_META: Record<ForecastUrgency, UrgencyMeta> = {
+  CRITICAL: {
+    bg: 'bg-red-500/10',
+    text: 'text-red-700',
+    border: 'border-red-500/20',
+    icon: <AlertTriangle size={10} />,
+    label: 'Crítico',
+  },
+  WARNING: {
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-700',
+    border: 'border-amber-400/30',
+    icon: <Clock size={10} />,
+    label: 'Próximo',
+  },
+  OK: {
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-700',
+    border: 'border-emerald-500/20',
+    icon: <CheckCircle2 size={10} />,
+    label: 'Al Día',
+  },
+};
+
+const headers: ArchonTableHeader[] = [
+  { key: 'unitId', label: 'UNIDAD', sortable: true, align: 'center', width: '18%' },
+  { key: 'departamento', label: 'DEPTO', sortable: false, align: 'center', width: '8%' },
+  { key: 'currentOdometer', label: 'ODÓMETRO', sortable: true, align: 'center', width: '14%' },
+  { key: 'kmRemaining', label: 'KM RESTANTES', sortable: true, align: 'center', width: '13%' },
+  {
+    key: 'nextServiceDate',
+    label: 'PRÓX. SERVICIO',
+    sortable: true,
+    align: 'center',
+    width: '14%',
+  },
+  {
+    key: 'projectedServiceType',
+    label: 'TIPO PROYECTADO',
+    sortable: false,
+    align: 'center',
+    width: '17%',
+  },
+  { key: 'urgency', label: 'URGENCIA', sortable: false, align: 'center', width: '16%' },
+];
+
+type SortField = keyof MaintenanceForecastRow | null;
+
+const kmRemainingColor = (km: number): string => {
+  if (km <= 500) return 'text-red-600';
+  if (km <= 2000) return 'text-amber-600';
+  return 'text-[#0f2a44]';
+};
+
+const daysColor = (days: number): string => {
+  if (days <= 7) return 'text-red-500';
+  if (days <= 30) return 'text-amber-600';
+  return '';
+};
+
+const MaintenanceForecastView: React.FC = () => {
+  const [data, setData] = useState<MaintenanceForecastRow[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ field: SortField; direction: 'asc' | 'desc' }>({
+    field: null,
+    direction: 'asc',
+  });
+
+  useEffect(() => {
+    setLoading(true);
+    api
+      .get('/maintenance/forecast')
+      .then((res) => {
+        if (res.data.success) setData(res.data.data as MaintenanceForecastRow[]);
+      })
+      .catch(() => setError('Error al recuperar pronósticos de mantenimiento.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSort = (key: string): void => {
+    const field = key as keyof MaintenanceForecastRow;
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const sorted = React.useMemo(() => {
+    if (!sortConfig.field) return data;
+    const f = sortConfig.field;
+    return [...data].sort((a, b) => {
+      const valA = a[f];
+      const valB = b[f];
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
+      }
+      const strA = String(valA ?? '');
+      const strB = String(valB ?? '');
+      return sortConfig.direction === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+    });
+  }, [data, sortConfig]);
+
+  if (error) return <div className="p-4 text-[#C12020] font-mono text-sm">{error}</div>;
+
+  return (
+    <div className="w-full text-pinnacle-navy">
+      <ArchonDataTable
+        loading={loading}
+        loadingMessage="Calculando pronósticos de flotilla..."
+        emptyMessage="NO SE ENCONTRARON UNIDADES ACTIVAS"
+        data={sorted}
+        headers={headers}
+        onSort={handleSort}
+        sortConfig={sortConfig}
+        renderRow={(row: MaintenanceForecastRow, index): React.JSX.Element => {
+          const svcBadge = SERVICE_BADGE[row.projectedServiceType];
+          const urgMeta = URGENCY_META[row.urgency];
+          return (
+            <motion.tr
+              key={row.unitId}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04 }}
+              className="border-y border-solid border-slate-200/50 bg-transparent hover:bg-pinnacle-navy/[0.015] transition-colors duration-300"
+            >
+              {/* UNIDAD */}
+              <td className="py-4 px-3 text-center">
+                <span className="text-archon-base font-black text-[#0f2a44] bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px]">
+                  {row.unitId}
+                </span>
+                <p className={AT.cellMeta}>
+                  {row.marca} {row.modelo}
+                </p>
+              </td>
+
+              {/* DEPTO */}
+              <td className="py-4 px-3 text-center">
+                <span
+                  className={`${AT.statusBadge} bg-[#0f2a44]/5 text-[#0f2a44] border-[#0f2a44]/10`}
+                >
+                  {row.departamento}
+                </span>
+              </td>
+
+              {/* ODÓMETRO */}
+              <td className={`py-4 px-3 text-center ${AT.cellMono}`}>
+                <div className="flex items-center justify-center gap-1.5">
+                  <Gauge size={11} className="text-[#0f2a44]/30 shrink-0" />
+                  {row.currentOdometer.toLocaleString()} km
+                </div>
+                <p className={AT.cellMeta}>{row.dailyUsageAvg.toLocaleString()} km/día</p>
+              </td>
+
+              {/* KM RESTANTES */}
+              <td className="py-4 px-3 text-center">
+                <span
+                  className={`font-mono text-[13px] font-bold ${kmRemainingColor(row.kmRemaining)}`}
+                >
+                  {row.kmRemaining.toLocaleString()} km
+                </span>
+                <p className={AT.cellMeta}>umbral: {row.nextKmReading.toLocaleString()} km</p>
+              </td>
+
+              {/* PRÓX. SERVICIO */}
+              <td className="py-4 px-3 text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Calendar size={11} className="text-[#0f2a44]/30 shrink-0" />
+                  <span className={AT.cellValue}>{row.nextServiceDate}</span>
+                </div>
+                <p className={`${AT.cellMeta} ${daysColor(row.daysUntilService)}`}>
+                  {row.daysUntilService} día{row.daysUntilService !== 1 ? 's' : ''}
+                </p>
+              </td>
+
+              {/* TIPO PROYECTADO */}
+              <td className="py-4 px-3 text-center">
+                <span
+                  className={`${AT.statusBadge} ${svcBadge.bg} ${svcBadge.text} ${svcBadge.border}`}
+                >
+                  {SERVICE_LABELS[row.projectedServiceType]}
+                </span>
+                <p className={AT.cellMeta}>odo: {row.projectedOdometer.toLocaleString()} km</p>
+              </td>
+
+              {/* URGENCIA */}
+              <td className="py-4 px-3 text-center">
+                <span
+                  className={`${AT.statusBadge} ${urgMeta.bg} ${urgMeta.text} ${urgMeta.border}`}
+                >
+                  {urgMeta.icon}
+                  {urgMeta.label}
+                </span>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <Zap size={8} className="text-[#0f2a44]/30 shrink-0" />
+                  <span className={AT.cellMeta}>
+                    {row.triggerType === 'KM' ? 'Kilometraje' : 'Fecha'}
+                  </span>
+                </div>
+              </td>
+            </motion.tr>
+          );
+        }}
+      />
+    </div>
+  );
+};
+
+export default MaintenanceForecastView;

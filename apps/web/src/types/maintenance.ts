@@ -1,4 +1,4 @@
-export type MaintenancePanel = 'HISTORY' | 'SCHEDULE' | 'COMPLETE' | 'HISTORY_DETAIL';
+export type MaintenancePanel = 'HISTORY' | 'FORECAST' | 'SCHEDULE' | 'COMPLETE' | 'HISTORY_DETAIL';
 
 export type MovementStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
@@ -70,4 +70,23 @@ export type MaintenanceCompletionPayload = {
   serviceDate?: string;
   technician?: string;
   details: MaintenanceDetail[];
+};
+
+export type ForecastUrgency = 'CRITICAL' | 'WARNING' | 'OK';
+
+export type MaintenanceForecastRow = {
+  unitId: string;
+  marca: string;
+  modelo: string;
+  departamento: string;
+  currentOdometer: number;
+  dailyUsageAvg: number;
+  nextKmReading: number;
+  kmRemaining: number;
+  nextServiceDate: string;
+  daysUntilService: number;
+  triggerType: 'KM' | 'DATE';
+  projectedOdometer: number;
+  projectedServiceType: ServiceType;
+  urgency: ForecastUrgency;
 };

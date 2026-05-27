@@ -353,6 +353,119 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     }
   });
 
+  // GET /v1/maintenance/forecast — Per-unit next service forecast (computed, no DB write)
+  fastify.get('/maintenance/forecast', async (_request, reply) => {
+    try {
+      const [units] = await db.execute<RowDataPacket[]>(`
+        SELECT
+          fu.id                                                        AS unitId,
+          c_brand.label                                                AS marca,
+          c_model.label                                                AS modelo,
+          c_dept.label                                                 AS departamento,
+          CAST(fu.odometer AS DECIMAL(12,2))                          AS currentOdometer,
+          CAST(COALESCE(fu.dailyUsageAvg, 0) AS DECIMAL(10,2))       AS dailyUsageAvg,
+          CAST(fu.maintIntervalKm AS DECIMAL(12,2))                   AS maintIntervalKm,
+          fu.maintIntervalDays,
+          CAST(COALESCE(fu.lastServiceReading, 0) AS DECIMAL(12,2))  AS lastServiceReading,
+          COALESCE(DATE(fu.lastServiceDate), DATE(fu.created_at))     AS lastServiceDate
+        FROM fleet_units fu
+        LEFT JOIN common_catalogs c_brand
+          ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
+        LEFT JOIN common_catalogs c_model
+          ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
+        LEFT JOIN common_catalogs c_dept
+          ON fu.departmentId = c_dept.id AND c_dept.category = 'DEPARTMENT'
+        WHERE fu.is_active = 1
+        ORDER BY fu.id
+      `);
+
+      type ForecastRow = {
+        unitId: string;
+        marca: string;
+        modelo: string;
+        departamento: string;
+        currentOdometer: number;
+        dailyUsageAvg: number;
+        nextKmReading: number;
+        kmRemaining: number;
+        nextServiceDate: string;
+        daysUntilService: number;
+        triggerType: 'KM' | 'DATE';
+        projectedOdometer: number;
+        projectedServiceType: ServiceType;
+        urgency: 'CRITICAL' | 'WARNING' | 'OK';
+      };
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const rows: ForecastRow[] = units.map((unit) => {
+        const currentOdometer = Number(unit.currentOdometer);
+        const dailyUsageAvg = Number(unit.dailyUsageAvg);
+        const maintIntervalKm = Number(unit.maintIntervalKm);
+        const maintIntervalDays = Number(unit.maintIntervalDays);
+        const lastServiceReading = Number(unit.lastServiceReading);
+
+        const lastSvcDate = new Date(unit.lastServiceDate as string);
+        lastSvcDate.setHours(0, 0, 0, 0);
+
+        const nextKmReading = lastServiceReading + maintIntervalKm;
+        const kmRemaining = Math.max(0, nextKmReading - currentOdometer);
+        const daysForKm = dailyUsageAvg > 0 ? kmRemaining / dailyUsageAvg : Infinity;
+
+        const nextSvcDate = new Date(lastSvcDate);
+        nextSvcDate.setDate(nextSvcDate.getDate() + maintIntervalDays);
+        const daysForDate = Math.max(
+          0,
+          Math.round((nextSvcDate.getTime() - today.getTime()) / 86400000)
+        );
+
+        const kmFinite = Number.isFinite(daysForKm);
+        const winnerDays = kmFinite ? Math.min(daysForKm, daysForDate) : daysForDate;
+        const triggerType: 'KM' | 'DATE' = kmFinite && daysForKm <= daysForDate ? 'KM' : 'DATE';
+        const projectedOdometer = Math.round(currentOdometer + winnerDays * dailyUsageAvg);
+        const projectedServiceType = computeServiceType(projectedOdometer, maintIntervalKm);
+
+        let urgency: 'CRITICAL' | 'WARNING' | 'OK';
+        if (winnerDays <= 7) {
+          urgency = 'CRITICAL';
+        } else if (winnerDays <= 30) {
+          urgency = 'WARNING';
+        } else {
+          urgency = 'OK';
+        }
+
+        return {
+          unitId: unit.unitId as string,
+          marca: (unit.marca as string) || '—',
+          modelo: (unit.modelo as string) || '—',
+          departamento: (unit.departamento as string) || '—',
+          currentOdometer,
+          dailyUsageAvg,
+          nextKmReading,
+          kmRemaining: Math.round(kmRemaining),
+          nextServiceDate: nextSvcDate.toISOString().split('T')[0],
+          daysUntilService: Math.round(winnerDays),
+          triggerType,
+          projectedOdometer,
+          projectedServiceType,
+          urgency,
+        };
+      });
+
+      const urgencyOrder: Record<string, number> = { CRITICAL: 0, WARNING: 1, OK: 2 };
+      rows.sort((a, b) => {
+        const uDiff = urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+        return uDiff !== 0 ? uDiff : a.daysUntilService - b.daysUntilService;
+      });
+
+      return reply.send({ success: true, data: rows });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ success: false, message: 'Forecast generation failed' });
+    }
+  });
+
   // GET /v1/maintenance/:uuid — Full detail of a single maintenance order with tasks
   fastify.get('/maintenance/:uuid', async (request, reply) => {
     try {

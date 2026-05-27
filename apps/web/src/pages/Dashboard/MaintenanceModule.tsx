@@ -6,6 +6,7 @@ import MaintenanceGridView from '../../components/Maintenance/MaintenanceGridVie
 import MaintenanceRegistrationForm from '../../components/Maintenance/MaintenanceRegistrationForm';
 import MaintenanceCompletionPanel from '../../components/Maintenance/MaintenanceCompletionPanel';
 import MaintenanceHistoryDetail from '../../components/Maintenance/MaintenanceHistoryDetail';
+import MaintenanceForecastView from '../../components/Maintenance/MaintenanceForecastView';
 
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
@@ -97,6 +98,32 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
         <div className="archon-axial-container">
           <div ref={panelRef}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              {(activePanel === 'HISTORY' || activePanel === 'FORECAST') && (
+                <div className="flex items-center gap-1 mb-6 p-1 bg-[#0f2a44]/5 rounded-lg w-fit">
+                  <button
+                    type="button"
+                    onClick={(): void => setActivePanel('HISTORY')}
+                    className={`px-4 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
+                      activePanel === 'HISTORY'
+                        ? 'bg-[#0f2a44] text-white shadow-sm'
+                        : 'text-[#0f2a44]/50 hover:text-[#0f2a44]'
+                    }`}
+                  >
+                    Historial
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(): void => setActivePanel('FORECAST')}
+                    className={`px-4 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
+                      activePanel === 'FORECAST'
+                        ? 'bg-[#0f2a44] text-white shadow-sm'
+                        : 'text-[#0f2a44]/50 hover:text-[#0f2a44]'
+                    }`}
+                  >
+                    Pronósticos
+                  </button>
+                </div>
+              )}
               {activePanel === 'HISTORY' && (
                 <MaintenanceGridView
                   refreshTrigger={refreshTrigger}
@@ -105,6 +132,7 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
                   onDetailRequest={handleDetailRequest}
                 />
               )}
+              {activePanel === 'FORECAST' && <MaintenanceForecastView />}
               {activePanel === 'SCHEDULE' && (
                 <MaintenanceRegistrationForm
                   onSuccess={handleReturnToGrid}
