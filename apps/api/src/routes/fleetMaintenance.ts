@@ -367,7 +367,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           CAST(fu.maintIntervalKm AS DECIMAL(12,2))                   AS maintIntervalKm,
           fu.maintIntervalDays,
           CAST(COALESCE(fu.lastServiceReading, 0) AS DECIMAL(12,2))  AS lastServiceReading,
-          COALESCE(DATE(fu.lastServiceDate), DATE(fu.created_at))     AS lastServiceDate
+          COALESCE(DATE(fu.lastServiceDate), DATE(fu.createdAt))      AS lastServiceDate
         FROM fleet_units fu
         LEFT JOIN common_catalogs c_brand
           ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
