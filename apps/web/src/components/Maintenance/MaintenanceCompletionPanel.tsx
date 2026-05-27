@@ -46,6 +46,8 @@ const statusOptions: SelectOption[] = [
   { value: 'REPLACED', label: 'Reemplazado' },
   { value: 'FAIL', label: 'Falla / Revisión' },
   { value: 'N_A', label: 'No Aplica' },
+  { value: 'SKIPPED_NA', label: 'Omitido — No Aplica' },
+  { value: 'DEFERRED', label: 'Diferido — Próxima Orden' },
 ];
 
 const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
@@ -66,14 +68,10 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isMining = log.service_type === 'MINOR_MINING';
-
   useEffect(() => {
     setLoadingTemplate(true);
     api
-      .get(
-        `/maintenance/template/${log.unit_id}?isMining=${isMining}&serviceType=${log.service_type}&odometer=${log.odometer_at_service}`
-      )
+      .get(`/maintenance/template/${log.unit_id}?odometer=${log.odometer_at_service}`)
       .then((res) => {
         if (res.data.success) {
           setTemplate(res.data.tasks);
@@ -87,7 +85,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
         }
       })
       .finally(() => setLoadingTemplate(false));
-  }, [log.unit_id, log.service_type, log.odometer_at_service, isMining]);
+  }, [log.unit_id, log.odometer_at_service]);
 
   const technicianOptions: SelectOption[] = (users || [])
     .filter(
@@ -124,7 +122,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
         technician: technician || undefined,
         details: details.map((d) => ({
           taskCode: d.taskCode,
-          status: d.status as 'PASS' | 'FAIL' | 'REPLACED' | 'N_A',
+          status: d.status,
           notes: d.notes || undefined,
         })),
       };
@@ -175,9 +173,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
             </span>
             <span
               className={`text-[11px] font-black ${
-                log.service_mode === 'PARTIAL_EXECUTION'
-                  ? 'text-amber-700'
-                  : 'text-emerald-700'
+                log.service_mode === 'PARTIAL_EXECUTION' ? 'text-amber-700' : 'text-emerald-700'
               }`}
             >
               {SERVICE_MODE_LABELS[log.service_mode]}
@@ -304,9 +300,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                   <div className="text-[13px] font-bold text-[#0f2a44] truncate">{task.label}</div>
                   <div className="text-[9px] font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
                     {task.code}
-                    {task.isCritical && (
-                      <span className="ml-2 text-red-500">● CRÍTICO</span>
-                    )}
+                    {task.isCritical && <span className="ml-2 text-red-500">● CRÍTICO</span>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

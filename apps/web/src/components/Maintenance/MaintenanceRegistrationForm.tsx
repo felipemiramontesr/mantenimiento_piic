@@ -56,7 +56,10 @@ const computeServiceType = (odometer: number, maintIntervalKm: number | string):
   let minDist = Infinity;
   milestones.forEach((m) => {
     const dist = Math.abs(residuo - m.value);
-    if (dist < minDist) { minDist = dist; best = m.type; }
+    if (dist < minDist) {
+      minDist = dist;
+      best = m.type;
+    }
   });
   return best;
 };
@@ -70,11 +73,15 @@ const SERVICE_LABELS: Record<ServiceType, string> = {
 };
 
 const SERVICE_BADGE_STYLE: Record<ServiceType, { bg: string; text: string; border: string }> = {
-  BASIC_10K:        { bg: 'bg-sky-500/10',     text: 'text-sky-700',     border: 'border-sky-500/20' },
-  INTERMEDIATE_20K: { bg: 'bg-blue-500/10',    text: 'text-blue-700',    border: 'border-blue-500/20' },
-  MAJOR_30K:        { bg: 'bg-violet-500/10',  text: 'text-violet-700',  border: 'border-violet-500/20' },
-  ADVANCED_50K:     { bg: 'bg-rose-500/10',    text: 'text-rose-700',    border: 'border-rose-500/20' },
-  MINOR_MINING:     { bg: 'bg-emerald-500/10', text: 'text-emerald-700', border: 'border-emerald-500/20' },
+  BASIC_10K: { bg: 'bg-sky-500/10', text: 'text-sky-700', border: 'border-sky-500/20' },
+  INTERMEDIATE_20K: { bg: 'bg-blue-500/10', text: 'text-blue-700', border: 'border-blue-500/20' },
+  MAJOR_30K: { bg: 'bg-violet-500/10', text: 'text-violet-700', border: 'border-violet-500/20' },
+  ADVANCED_50K: { bg: 'bg-rose-500/10', text: 'text-rose-700', border: 'border-rose-500/20' },
+  MINOR_MINING: {
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-700',
+    border: 'border-emerald-500/20',
+  },
 };
 
 const getSubmitBtnClass = (inProgress: boolean): string =>
@@ -127,9 +134,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     if (!selectedUnit) return;
     setLoading(true);
     api
-      .get(
-        `/maintenance/template/${selectedUnit}?serviceType=${computedServiceType}&odometer=${odometerAtService}`
-      )
+      .get(`/maintenance/template/${selectedUnit}?odometer=${odometerAtService}`)
       .then((res) => {
         if (res.data.success) {
           setTemplate(res.data.tasks);
@@ -143,7 +148,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
         }
       })
       .finally(() => setLoading(false));
-  }, [selectedUnit, computedServiceType, odometerAtService]);
+  }, [selectedUnit, odometerAtService]);
 
   const unitOptions: SelectOption[] = units.map((u) => ({
     value: u.id,
@@ -159,6 +164,8 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     { value: 'REPLACED', label: 'Reemplazado' },
     { value: 'FAIL', label: 'Falla / Revisión' },
     { value: 'N_A', label: 'No Aplica' },
+    { value: 'SKIPPED_NA', label: 'Omitido — No Aplica' },
+    { value: 'DEFERRED', label: 'Diferido — Próxima Orden' },
   ];
 
   const technicianOptions: SelectOption[] = (users || [])
@@ -193,7 +200,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
         technician,
         details: details.map((d) => ({
           taskCode: d.taskCode,
-          status: d.status as 'PASS' | 'FAIL' | 'REPLACED' | 'N_A',
+          status: d.status,
           notes: d.notes || undefined,
         })),
         is_in_progress: isInProgress,
@@ -248,7 +255,11 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
             >
               {isInProgress ? 'Ingreso a Taller — Downtime' : 'In Situ — Registro Inmediato'}
             </p>
-            <p className={`text-[10px] mt-0.5 ${isInProgress ? 'text-amber-600/70' : 'text-emerald-600/70'}`}>
+            <p
+              className={`text-[10px] mt-0.5 ${
+                isInProgress ? 'text-amber-600/70' : 'text-emerald-600/70'
+              }`}
+            >
               {isInProgress
                 ? 'La unidad entrará en Downtime. Cierre el servicio cuando esté listo.'
                 : 'Servicio en campo. La unidad regresa a Disponible al guardar.'}
@@ -442,7 +453,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           <button
             type="submit"
             disabled={submitting || !canSubmit}
-            className={`w-full h-11 flex items-center justify-center gap-2 px-4 rounded-lg text-[12px] font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50 ${getSubmitBtnClass(isInProgress)}`}
+            className={`w-full h-11 flex items-center justify-center gap-2 px-4 rounded-lg text-[12px] font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50 ${getSubmitBtnClass(
+              isInProgress
+            )}`}
           >
             {isInProgress ? <Warehouse size={14} /> : <Save size={14} />}
             {getSubmitLabel(isInProgress, submitting)}

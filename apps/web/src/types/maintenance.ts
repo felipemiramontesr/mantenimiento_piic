@@ -31,11 +31,12 @@ export type MaintenanceTemplateTask = {
   code: string;
   label: string;
   isCritical: boolean;
+  isDeferredCarry: boolean;
 };
 
 export type MaintenanceDetail = {
   taskCode: string;
-  status: 'PASS' | 'FAIL' | 'REPLACED' | 'N_A';
+  status: string;
   notes?: string;
 };
 
