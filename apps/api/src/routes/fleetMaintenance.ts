@@ -159,9 +159,11 @@ type TemplateTask = {
 function buildCascadeServiceTypes(resolvedType: ServiceType, isMineUnit: boolean): string[] {
   const types: string[] = [];
   if (resolvedType === 'ADVANCED_50K') {
-    types.push('ADVANCED_50K', 'BASIC_10K', 'INTERMEDIATE_20K');
+    types.push('ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K');
   } else if (resolvedType === 'MAJOR_30K') {
-    types.push('MAJOR_30K', 'BASIC_10K');
+    types.push('MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K');
+  } else if (resolvedType === 'INTERMEDIATE_20K') {
+    types.push('INTERMEDIATE_20K', 'BASIC_10K');
   } else {
     types.push(resolvedType);
   }
@@ -348,6 +350,41 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     } catch (error) {
       fastify.log.error(error);
       return reply.code(500).send({ success: false, message: 'Template generation failed' });
+    }
+  });
+
+  // GET /v1/maintenance/:uuid — Full detail of a single maintenance order with tasks
+  fastify.get('/maintenance/:uuid', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const [movements] = await db.execute<RowDataPacket[]>(
+        `SELECT fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
+                fme.service_date, fm.start_reading AS odometer_at_service,
+                fme.service_type, fme.service_mode, fme.system_recommended_type,
+                fme.cost, fme.technician, fm.created_at
+         FROM fleet_movements fm
+         JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+         WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE'`,
+        [uuid]
+      );
+      if (movements.length === 0)
+        return reply.code(404).send({ success: false, message: 'Order not found' });
+      const movement = movements[0];
+      const [details] = await db.execute<RowDataPacket[]>(
+        `SELECT fmd.task_code AS taskCode, fmd.status_code AS status, fmd.notes,
+                mt.label, mt.is_critical AS isCritical,
+                mts.label AS statusLabel
+         FROM fleet_maintenance_details fmd
+         JOIN maintenance_tasks mt ON fmd.task_code = mt.code
+         JOIN maintenance_task_statuses mts ON fmd.status_code = mts.code
+         WHERE fmd.maintenance_id = ?
+         ORDER BY mt.is_critical DESC, fmd.task_code`,
+        [movement.id]
+      );
+      return reply.send({ success: true, data: { ...movement, details } });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ success: false, message: 'Error retrieving order detail' });
     }
   });
 

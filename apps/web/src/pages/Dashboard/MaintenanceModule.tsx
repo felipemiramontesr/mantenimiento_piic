@@ -5,12 +5,14 @@ import { MaintenancePanel, MaintenanceLog } from '../../types/maintenance';
 import MaintenanceGridView from '../../components/Maintenance/MaintenanceGridView';
 import MaintenanceRegistrationForm from '../../components/Maintenance/MaintenanceRegistrationForm';
 import MaintenanceCompletionPanel from '../../components/Maintenance/MaintenanceCompletionPanel';
+import MaintenanceHistoryDetail from '../../components/Maintenance/MaintenanceHistoryDetail';
 
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const [activePanel, setActivePanel] = useState<MaintenancePanel>('HISTORY');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [completingLog, setCompletingLog] = useState<MaintenanceLog | null>(null);
+  const [detailLog, setDetailLog] = useState<MaintenanceLog | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToTop = (): void => {
@@ -30,6 +32,12 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
   const handleCompleteRequest = (log: MaintenanceLog): void => {
     setCompletingLog(log);
     setActivePanel('COMPLETE');
+    scrollToTop();
+  };
+
+  const handleDetailRequest = (log: MaintenanceLog): void => {
+    setDetailLog(log);
+    setActivePanel('HISTORY_DETAIL');
     scrollToTop();
   };
 
@@ -57,6 +65,11 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
       return;
     }
 
+    if (activePanel === 'HISTORY_DETAIL') {
+      setSectionData('Detalle de Servicio', `Historial — ${detailLog?.unit_id ?? ''}`, null, null);
+      return;
+    }
+
     setSectionData(
       'Administrar Mantenimientos',
       'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla',
@@ -76,7 +89,7 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
         },
       }
     );
-  }, [activePanel, completingLog, setSectionData]);
+  }, [activePanel, completingLog, detailLog, setSectionData]);
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -89,6 +102,7 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
                   refreshTrigger={refreshTrigger}
                   onNewRequest={(): void => setActivePanel('SCHEDULE')}
                   onCompleteRequest={handleCompleteRequest}
+                  onDetailRequest={handleDetailRequest}
                 />
               )}
               {activePanel === 'SCHEDULE' && (
@@ -103,6 +117,9 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
                   onSuccess={handleReturnToGrid}
                   onCancel={handleReturnToGrid}
                 />
+              )}
+              {activePanel === 'HISTORY_DETAIL' && detailLog && (
+                <MaintenanceHistoryDetail log={detailLog} onBack={handleReturnToGrid} />
               )}
             </div>
           </div>

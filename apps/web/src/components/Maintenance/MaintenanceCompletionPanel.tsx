@@ -297,7 +297,14 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                 className="px-10 py-5 archon-grid-2-sovereign gap-10 items-center hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
               >
                 <div className="min-w-0 pr-6">
-                  <div className="text-[13px] font-bold text-[#0f2a44] truncate">{task.label}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="text-[13px] font-bold text-[#0f2a44]">{task.label}</div>
+                    {task.isDeferredCarry && (
+                      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-400/30 text-[9px] font-black text-amber-600 uppercase tracking-[0.1em]">
+                        ↩ Diferido
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[9px] font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
                     {task.code}
                     {task.isCritical && <span className="ml-2 text-red-500">● CRÍTICO</span>}

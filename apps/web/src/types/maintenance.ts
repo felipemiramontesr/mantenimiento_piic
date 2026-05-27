@@ -1,4 +1,4 @@
-export type MaintenancePanel = 'HISTORY' | 'SCHEDULE' | 'COMPLETE';
+export type MaintenancePanel = 'HISTORY' | 'SCHEDULE' | 'COMPLETE' | 'HISTORY_DETAIL';
 
 export type MovementStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
@@ -38,6 +38,19 @@ export type MaintenanceDetail = {
   taskCode: string;
   status: string;
   notes?: string;
+};
+
+export type MaintenanceTaskDetail = {
+  taskCode: string;
+  label: string;
+  status: string;
+  statusLabel: string;
+  notes: string | null;
+  isCritical: boolean;
+};
+
+export type MaintenanceFullDetail = MaintenanceLog & {
+  details: MaintenanceTaskDetail[];
 };
 
 export type MaintenanceSchedulePayload = {
