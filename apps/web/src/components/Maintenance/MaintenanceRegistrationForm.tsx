@@ -164,7 +164,6 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     { value: 'REPLACED', label: 'Reemplazado' },
     { value: 'FAIL', label: 'Falla / Revisión' },
     { value: 'N_A', label: 'No Aplica' },
-    { value: 'SKIPPED_NA', label: 'Omitido — No Aplica' },
     { value: 'DEFERRED', label: 'Diferido — Próxima Orden' },
   ];
 

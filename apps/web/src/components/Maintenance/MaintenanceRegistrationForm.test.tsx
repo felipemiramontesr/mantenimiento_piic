@@ -292,7 +292,7 @@ describe('MaintenanceRegistrationForm', () => {
     const statusTrigger = screen.getByText('Correcto');
     fireEvent.click(statusTrigger);
 
-    expect(await screen.findByText('Omitido — No Aplica')).toBeInTheDocument();
-    expect(screen.getByText('Diferido — Próxima Orden')).toBeInTheDocument();
+    expect(await screen.findByText('Diferido — Próxima Orden')).toBeInTheDocument();
+    expect(screen.queryByText('Omitido — No Aplica')).not.toBeInTheDocument();
   });
 });
