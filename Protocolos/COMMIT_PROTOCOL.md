@@ -10,7 +10,7 @@
 
 > ⚠️ **IMPERATIVO:** ANTES de proponer o ejecutar cualquier operación de Git (Commit o Push), Antigravity DEBE leer este documento y **actualizar el tag de versión de la línea inferior** incrementándolo de acuerdo al cambio técnico realizado.
 
-**VERSIÓN ACTUAL:** V.78.100.206_Unified_Checklist_Row_Layout_With_Sovereign_Two_Column_Grid_For_Pixel_Perfect_Alignment
+**VERSIÓN ACTUAL:** V.78.100.215_Export_Pure_Maintenance_Business_Logic_And_Comprehensive_QA_Unit_Test_Coverage
 
 ---
 

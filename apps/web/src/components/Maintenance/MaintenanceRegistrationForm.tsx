@@ -26,6 +26,7 @@ import { useUsers } from '../../context/UserContext';
 interface MaintenanceRegistrationFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  initialUnitId?: string;
 }
 
 /**
@@ -95,9 +96,10 @@ const getSubmitLabel = (inProgress: boolean, isSubmitting: boolean): string => {
 const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = ({
   onSuccess,
   onCancel,
+  initialUnitId,
 }) => {
   const [units, setUnits] = useState<FleetUnit[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>(initialUnitId ?? '');
   const [template, setTemplate] = useState<MaintenanceTemplateTask[]>([]);
   const { users } = useUsers();
 
@@ -131,7 +133,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   }, [selectedUnit, units]);
 
   useEffect(() => {
-    if (!selectedUnit) return;
+    if (!selectedUnit || !odometerAtService || odometerAtService <= 0) return;
     setLoading(true);
     api
       .get(`/maintenance/template/${selectedUnit}?odometer=${odometerAtService}`)

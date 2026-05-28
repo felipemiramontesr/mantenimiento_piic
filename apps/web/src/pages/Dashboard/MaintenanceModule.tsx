@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, ShieldAlert, PlusCircle, CheckCircle2 } from 'lucide-react';
+import { BarChart3, ClipboardList, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { MaintenancePanel, MaintenanceLog } from '../../types/maintenance';
 import MaintenanceGridView from '../../components/Maintenance/MaintenanceGridView';
@@ -10,10 +10,11 @@ import MaintenanceForecastView from '../../components/Maintenance/MaintenanceFor
 
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
-  const [activePanel, setActivePanel] = useState<MaintenancePanel>('HISTORY');
+  const [activePanel, setActivePanel] = useState<MaintenancePanel>('FORECAST');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [completingLog, setCompletingLog] = useState<MaintenanceLog | null>(null);
   const [detailLog, setDetailLog] = useState<MaintenanceLog | null>(null);
+  const [scheduleInitialUnit, setScheduleInitialUnit] = useState<string>('');
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToTop = (): void => {
@@ -27,7 +28,14 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
   const handleReturnToGrid = (): void => {
     setActivePanel('HISTORY');
     setCompletingLog(null);
+    setScheduleInitialUnit('');
     setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleForecastSchedule = (unitId: string): void => {
+    setScheduleInitialUnit(unitId);
+    setActivePanel('SCHEDULE');
+    scrollToTop();
   };
 
   const handleCompleteRequest = (log: MaintenanceLog): void => {
@@ -71,21 +79,67 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
       return;
     }
 
+    if (isScheduling) {
+      setSectionData(
+        'Administrar Mantenimientos',
+        'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla',
+        null,
+        {
+          variant: 'navy',
+          headerTitle: 'Cancelar',
+          HeaderIcon: ShieldAlert,
+          PayloadIcon: ShieldAlert,
+          actionTitle: 'Retorno',
+          description: 'Cancelar Programación',
+          buttonText: 'Cerrar Formulario',
+          isActive: true,
+          onClick: () => {
+            setActivePanel('HISTORY');
+            scrollToTop();
+          },
+        }
+      );
+      return;
+    }
+
+    if (activePanel === 'FORECAST') {
+      setSectionData(
+        'Administrar Mantenimientos',
+        'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla',
+        null,
+        {
+          variant: 'emerald',
+          headerTitle: 'Historial de Servicios',
+          HeaderIcon: ClipboardList,
+          PayloadIcon: ClipboardList,
+          actionTitle: 'Historial',
+          description: 'Ver Historial de Servicios',
+          buttonText: 'Ver Historial',
+          isActive: false,
+          onClick: () => {
+            setActivePanel('HISTORY');
+            scrollToTop();
+          },
+        }
+      );
+      return;
+    }
+
     setSectionData(
       'Administrar Mantenimientos',
       'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla',
       null,
       {
-        variant: isScheduling ? 'navy' : 'emerald',
-        headerTitle: isScheduling ? 'Cancelar' : 'Programar Servicio',
-        HeaderIcon: isScheduling ? ShieldAlert : PlusCircle,
-        PayloadIcon: isScheduling ? ShieldAlert : Wrench,
-        actionTitle: isScheduling ? 'Retorno' : 'Programar',
-        description: isScheduling ? 'Cancelar Programación' : 'Alta de Servicio',
-        buttonText: isScheduling ? 'Cerrar Formulario' : 'Iniciar Registro',
-        isActive: isScheduling,
+        variant: 'navy',
+        headerTitle: 'Ver Pronósticos',
+        HeaderIcon: BarChart3,
+        PayloadIcon: BarChart3,
+        actionTitle: 'Pronósticos',
+        description: 'Panel de Pronósticos',
+        buttonText: 'Ver Pronósticos',
+        isActive: false,
         onClick: () => {
-          setActivePanel(isScheduling ? 'HISTORY' : 'SCHEDULE');
+          setActivePanel('FORECAST');
           scrollToTop();
         },
       }
@@ -98,32 +152,6 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
         <div className="archon-axial-container">
           <div ref={panelRef}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              {(activePanel === 'HISTORY' || activePanel === 'FORECAST') && (
-                <div className="flex items-center gap-1 mb-6 p-1 bg-[#0f2a44]/5 rounded-lg w-fit">
-                  <button
-                    type="button"
-                    onClick={(): void => setActivePanel('HISTORY')}
-                    className={`px-4 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                      activePanel === 'HISTORY'
-                        ? 'bg-[#0f2a44] text-white shadow-sm'
-                        : 'text-[#0f2a44]/50 hover:text-[#0f2a44]'
-                    }`}
-                  >
-                    Historial
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(): void => setActivePanel('FORECAST')}
-                    className={`px-4 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider transition-all duration-200 ${
-                      activePanel === 'FORECAST'
-                        ? 'bg-[#0f2a44] text-white shadow-sm'
-                        : 'text-[#0f2a44]/50 hover:text-[#0f2a44]'
-                    }`}
-                  >
-                    Pronósticos
-                  </button>
-                </div>
-              )}
               {activePanel === 'HISTORY' && (
                 <MaintenanceGridView
                   refreshTrigger={refreshTrigger}
@@ -132,11 +160,14 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
                   onDetailRequest={handleDetailRequest}
                 />
               )}
-              {activePanel === 'FORECAST' && <MaintenanceForecastView />}
+              {activePanel === 'FORECAST' && (
+                <MaintenanceForecastView onScheduleRequest={handleForecastSchedule} />
+              )}
               {activePanel === 'SCHEDULE' && (
                 <MaintenanceRegistrationForm
                   onSuccess={handleReturnToGrid}
                   onCancel={handleReturnToGrid}
+                  initialUnitId={scheduleInitialUnit}
                 />
               )}
               {activePanel === 'COMPLETE' && completingLog && (

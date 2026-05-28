@@ -467,11 +467,22 @@ describe('Fleet Integration Endpoints', () => {
       expect(rInvalid.statusCode).toBe(400);
 
       // Branch in intelligence: Corrupt JSON & Legacy filenames & Direct Arrays
+      // Each GET /fleet now makes 4 db.execute calls: 1 main + 3 KPI (MTTR/MTBF/BCK).
+      // Interleave empty-array KPI mocks between each real fleet-row mock.
       (db.execute as Mock).mockReset();
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ id: 'CORRUPT_01', images: '!!' }]])
-        .mockResolvedValueOnce([[{ id: 'LEGACY_01', images: JSON.stringify(['foto_vieja.jpg']) }]])
-        .mockResolvedValueOnce([[{ id: 'ARRAY_01', images: ['direct_array.jpg'] }]]);
+        .mockResolvedValueOnce([[{ id: 'CORRUPT_01', images: '!!' }]]) // GET 1 — main
+        .mockResolvedValueOnce([[], undefined]) // GET 1 — KPI MTTR
+        .mockResolvedValueOnce([[], undefined]) // GET 1 — KPI MTBF
+        .mockResolvedValueOnce([[], undefined]) // GET 1 — KPI BCK
+        .mockResolvedValueOnce([[{ id: 'LEGACY_01', images: JSON.stringify(['foto_vieja.jpg']) }]]) // GET 2
+        .mockResolvedValueOnce([[], undefined]) // GET 2 — KPI MTTR
+        .mockResolvedValueOnce([[], undefined]) // GET 2 — KPI MTBF
+        .mockResolvedValueOnce([[], undefined]) // GET 2 — KPI BCK
+        .mockResolvedValueOnce([[{ id: 'ARRAY_01', images: ['direct_array.jpg'] }]]) // GET 3
+        .mockResolvedValueOnce([[], undefined]) // GET 3 — KPI MTTR
+        .mockResolvedValueOnce([[], undefined]) // GET 3 — KPI MTBF
+        .mockResolvedValueOnce([[], undefined]); // GET 3 — KPI BCK
 
       // Test Corrupt
       await app.inject({ method: 'GET', url: '/v1/fleet', headers: authHeader() });

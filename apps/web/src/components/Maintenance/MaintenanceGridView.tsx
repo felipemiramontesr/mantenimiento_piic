@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Wrench } from 'lucide-react';
+import { Calendar, User, Wrench } from 'lucide-react';
 
 import { MaintenanceLog } from '../../types/maintenance';
 import api from '../../api/client';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
-import { formatDate } from '../../utils/dateUtils';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLayoutContext';
 import AT from '../../styles/archonTypography';
@@ -17,6 +16,32 @@ interface MaintenanceGridViewProps {
   onCompleteRequest?: (log: MaintenanceLog) => void;
   onDetailRequest?: (log: MaintenanceLog) => void;
 }
+
+const fmtDateTime = (dt: string | null | undefined): { date: string; time: string } => {
+  if (!dt) return { date: '—', time: '' };
+  let datePart: string;
+  let timePart = '';
+  if (dt.includes('T')) {
+    [datePart, timePart] = dt.split('T');
+    timePart = timePart.substring(0, 5);
+  } else if (dt.includes(' ')) {
+    [datePart, timePart] = dt.split(' ');
+    timePart = timePart.substring(0, 5);
+  } else {
+    datePart = dt;
+  }
+  const [y, m, day] = datePart.split('-');
+  return { date: `${day}/${m}/${y}`, time: timePart };
+};
+
+const daysBetween = (from: string | null | undefined, to: string | null | undefined): number => {
+  if (!from) return 0;
+  const start = new Date(from);
+  const end = to ? new Date(to) : new Date();
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
+};
 
 const matchFieldInMaintenance = (
   log: MaintenanceLog,
@@ -163,18 +188,19 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
   if (error) return <div className="p-4 text-[#C12020] font-mono text-sm">{error}</div>;
 
   const headers: ArchonTableHeader[] = [
-    { key: 'activo', label: 'UNIDAD', sortable: true, align: 'center', width: '20%' },
-    { key: 'tecnico', label: 'TÉCNICO', sortable: false, align: 'center', width: '20%' },
-    { key: 'service_type', label: 'TIPO SERVICIO', sortable: true, align: 'center', width: '15%' },
+    { key: 'activo', label: 'UNIDAD', sortable: true, align: 'center', width: '17%' },
+    { key: 'tecnico', label: 'TÉCNICO', sortable: false, align: 'center', width: '16%' },
+    { key: 'service_type', label: 'TIPO SERVICIO', sortable: true, align: 'center', width: '12%' },
     {
       key: 'odometer_at_service',
       label: 'ODÓMETRO',
       sortable: true,
       align: 'center',
-      width: '15%',
+      width: '11%',
     },
-    { key: 'service_date', label: 'FECHA', sortable: true, align: 'center', width: '15%' },
-    { key: 'cost', label: 'COSTO', sortable: true, align: 'center', width: '15%' },
+    { key: 'service_date', label: 'FECHAS', sortable: true, align: 'center', width: '22%' },
+    { key: 'cost', label: 'COSTO', sortable: true, align: 'center', width: '11%' },
+    { key: 'accion', label: 'ACCIÓN', sortable: false, align: 'center', width: '11%' },
   ];
 
   return (
@@ -239,23 +265,11 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                     MNT-{String(log.id).padStart(5, '0')}
                   </span>
                   {isActive && (
-                    <>
-                      <span
-                        className={`${AT.statusBadge} bg-amber-500/10 text-amber-700 border-amber-500/20 mt-0.5`}
-                      >
-                        EN TALLER
-                      </span>
-                      {onCompleteRequest && (
-                        <button
-                          type="button"
-                          onClick={(): void => onCompleteRequest(log)}
-                          className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-md transition-all duration-200 shadow-sm"
-                        >
-                          <Wrench size={9} />
-                          Finalizar Servicio
-                        </button>
-                      )}
-                    </>
+                    <span
+                      className={`${AT.statusBadge} bg-amber-500/10 text-amber-700 border-amber-500/20 mt-0.5`}
+                    >
+                      EN TALLER
+                    </span>
                   )}
                   <span className={AT.cellMeta}>
                     {unit?.marca} {unit?.modelo}
@@ -310,14 +324,93 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
               <td className={`py-4 px-3 text-center ${AT.cellMono}`}>
                 {Number(log.odometer_at_service).toLocaleString()} km
               </td>
-              <td className={`py-4 px-3 whitespace-nowrap text-center ${AT.cellValue}`}>
-                {formatDate(log.service_date)}
+              {/* FECHAS */}
+              <td className="py-4 px-3">
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="grid grid-cols-2 items-center gap-2">
+                    <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
+                      Entrada
+                    </span>
+                    {((): React.ReactElement => {
+                      const { date, time } = fmtDateTime(log.start_at ?? log.service_date);
+                      return (
+                        <div className="flex items-center gap-1">
+                          <Calendar size={9} className="text-[#0f2a44]/30 shrink-0" />
+                          <span className={AT.cellValue}>{date}</span>
+                          {time && (
+                            <span className="text-[9px] font-mono text-[#0f2a44]/40">{time}</span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div className="grid grid-cols-2 items-center gap-2">
+                    <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
+                      Salida
+                    </span>
+                    {isActive ? (
+                      <span
+                        className={`${AT.statusBadge} bg-amber-500/10 text-amber-700 border-amber-400/30 justify-self-start`}
+                      >
+                        En curso
+                      </span>
+                    ) : (
+                      ((): React.ReactElement => {
+                        const { date, time } = fmtDateTime(log.end_at);
+                        return (
+                          <div className="flex items-center gap-1">
+                            <Calendar size={9} className="text-emerald-500/60 shrink-0" />
+                            <span className={AT.cellValue}>{date}</span>
+                            {time && (
+                              <span className="text-[9px] font-mono text-emerald-600/50">
+                                {time}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 items-center gap-2">
+                    <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
+                      Días
+                    </span>
+                    <span
+                      className={`${AT.statusBadge} justify-self-start ${
+                        isActive
+                          ? 'bg-amber-500/10 text-amber-700 border-amber-400/30'
+                          : 'bg-[#0f2a44]/5 text-[#0f2a44] border-[#0f2a44]/10'
+                      }`}
+                    >
+                      {daysBetween(log.start_at ?? log.service_date, log.end_at)}d
+                    </span>
+                  </div>
+                </div>
               </td>
+
+              {/* COSTO */}
               <td className={`py-4 px-3 text-center ${AT.cellMono} text-emerald-700`}>
                 {`$${Number(log.cost).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}`}
+              </td>
+
+              {/* ACCIÓN */}
+              <td className="py-4 px-3 text-center">
+                {isActive && onCompleteRequest && (
+                  <button
+                    type="button"
+                    onClick={(e): void => {
+                      e.stopPropagation();
+                      onCompleteRequest(log);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-md transition-all duration-200 shadow-sm whitespace-nowrap"
+                  >
+                    <Wrench size={9} />
+                    Finalizar
+                  </button>
+                )}
               </td>
             </motion.tr>
           );

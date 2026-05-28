@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Calendar, CheckCircle2, Clock, Gauge, Zap } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle2, Clock, Gauge, PlusCircle, Zap } from 'lucide-react';
 import { ForecastUrgency, MaintenanceForecastRow, ServiceType } from '../../types/maintenance';
 import api from '../../api/client';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
+import { useFleet } from '../../context/FleetContext';
 
 const SERVICE_LABELS: Record<ServiceType, string> = {
   BASIC_10K: 'Básico 10K',
@@ -59,25 +60,26 @@ const URGENCY_META: Record<ForecastUrgency, UrgencyMeta> = {
 };
 
 const headers: ArchonTableHeader[] = [
-  { key: 'unitId', label: 'UNIDAD', sortable: true, align: 'center', width: '18%' },
-  { key: 'departamento', label: 'DEPTO', sortable: false, align: 'center', width: '8%' },
-  { key: 'currentOdometer', label: 'ODÓMETRO', sortable: true, align: 'center', width: '14%' },
-  { key: 'kmRemaining', label: 'KM RESTANTES', sortable: true, align: 'center', width: '13%' },
+  { key: 'unitId', label: 'UNIDAD', sortable: true, align: 'center', width: '15%' },
+  { key: 'departamento', label: 'DEPTO', sortable: false, align: 'center', width: '7%' },
+  { key: 'currentOdometer', label: 'ODÓMETRO', sortable: true, align: 'center', width: '12%' },
+  { key: 'kmRemaining', label: 'KM RESTANTES', sortable: true, align: 'center', width: '11%' },
   {
     key: 'nextServiceDate',
     label: 'PRÓX. SERVICIO',
     sortable: true,
     align: 'center',
-    width: '14%',
+    width: '12%',
   },
   {
     key: 'projectedServiceType',
     label: 'TIPO PROYECTADO',
     sortable: false,
     align: 'center',
-    width: '17%',
+    width: '14%',
   },
-  { key: 'urgency', label: 'URGENCIA', sortable: false, align: 'center', width: '16%' },
+  { key: 'urgency', label: 'URGENCIA', sortable: false, align: 'center', width: '13%' },
+  { key: 'action', label: 'ACCIÓN', sortable: false, align: 'center', width: '12%' },
 ];
 
 type SortField = keyof MaintenanceForecastRow | null;
@@ -99,7 +101,12 @@ const daysColor = (days: number): string => {
   return '';
 };
 
-const MaintenanceForecastView: React.FC = () => {
+interface MaintenanceForecastViewProps {
+  onScheduleRequest: (unitId: string) => void;
+}
+
+const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onScheduleRequest }) => {
+  const { units } = useFleet();
   const [data, setData] = useState<MaintenanceForecastRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +164,7 @@ const MaintenanceForecastView: React.FC = () => {
         renderRow={(row: MaintenanceForecastRow, index): React.JSX.Element => {
           const svcBadge = SERVICE_BADGE[row.projectedServiceType];
           const urgMeta = URGENCY_META[row.urgency];
+          const unit = units.find((u) => u.id === row.unitId);
           return (
             <motion.tr
               key={row.unitId}
@@ -166,13 +174,33 @@ const MaintenanceForecastView: React.FC = () => {
               className="border-y border-solid border-slate-200/50 bg-transparent hover:bg-pinnacle-navy/[0.015] transition-colors duration-300"
             >
               {/* UNIDAD */}
-              <td className="py-4 px-3 text-center">
-                <span className="text-archon-base font-black text-[#0f2a44] bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px]">
-                  {row.unitId}
-                </span>
-                <p className={AT.cellMeta}>
-                  {row.marca} {row.modelo}
-                </p>
+              <td className="py-4 px-3">
+                <div className="flex flex-col items-center">
+                  {unit?.images?.[0] ? (
+                    <img
+                      src={unit.images[0]}
+                      className="w-20 h-20 block mx-auto rounded-[4px] shadow-sm object-cover mb-2"
+                      alt={row.unitId}
+                      onError={({ currentTarget }): void => {
+                        currentTarget.setAttribute('src', '/img/archon-unit-placeholder.png');
+                      }}
+                    />
+                  ) : (
+                    <div className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden">
+                      <img
+                        src="/img/archon-unit-placeholder.png"
+                        alt="Archon Unit Placeholder"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <span className="text-archon-base font-black text-[#0f2a44] bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px]">
+                    {row.unitId}
+                  </span>
+                  <span className={AT.cellMeta}>
+                    {row.marca} {row.modelo}
+                  </span>
+                </div>
               </td>
 
               {/* DEPTO */}
@@ -238,6 +266,18 @@ const MaintenanceForecastView: React.FC = () => {
                     {row.triggerType === 'KM' ? 'Kilometraje' : 'Fecha'}
                   </span>
                 </div>
+              </td>
+
+              {/* ACCIÓN */}
+              <td className="py-4 px-3 text-center">
+                <button
+                  type="button"
+                  onClick={(): void => onScheduleRequest(row.unitId)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0f2a44] hover:bg-[#0f2a44]/85 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-md transition-all duration-200 shadow-sm whitespace-nowrap"
+                >
+                  <PlusCircle size={10} />
+                  Programar
+                </button>
               </td>
             </motion.tr>
           );

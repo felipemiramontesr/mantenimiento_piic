@@ -274,13 +274,43 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           FROM administrative_audit_logs a
           LEFT JOIN fleet_movements r ON a.entity_id = r.uuid COLLATE utf8mb4_unicode_ci AND r.movement_type = 'ROUTE'
           WHERE a.entity_type = 'route_log'
+
+          UNION ALL
+
+          SELECT
+            CONVERT(ri.uuid USING utf8mb4) COLLATE utf8mb4_general_ci as id,
+            CONVERT(fm.unit_id USING utf8mb4) COLLATE utf8mb4_general_ci as unit_id,
+            'ROUTE_INCIDENT' COLLATE utf8mb4_general_ci as event_type,
+            CONVERT(ri.route_uuid USING utf8mb4) COLLATE utf8mb4_general_ci as reference_id,
+            CAST(fm.start_reading AS DECIMAL(12,2)) as reading_before,
+            NULL as reading_after,
+            'En Ruta' COLLATE utf8mb4_general_ci as status_before,
+            'En Ruta' COLLATE utf8mb4_general_ci as status_after,
+            CONVERT(CONCAT(ri.category, ': ', SUBSTR(ri.description, 1, 100)) USING utf8mb4) COLLATE utf8mb4_general_ci as description,
+            NULL as created_by,
+            ri.reported_at as created_at,
+            NULL as fuel_before,
+            NULL as fuel_after,
+            NULL as fuel_level_before,
+            NULL as fuel_level_after,
+            NULL as fuel_amount_before,
+            NULL as fuel_amount_after,
+            NULL as snapshot_before,
+            NULL as snapshot_after
+          FROM route_incidents ri
+          JOIN fleet_movements fm ON fm.uuid = ri.route_uuid COLLATE utf8mb4_unicode_ci
+          WHERE NOT EXISTS (
+            SELECT 1 FROM unit_activity_logs ual
+            WHERE ual.reference_id = ri.route_uuid COLLATE utf8mb4_unicode_ci
+              AND ual.event_type = 'ROUTE_INCIDENT'
+          )
         ) l
         LEFT JOIN users u ON l.created_by = u.id
         LEFT JOIN fleet_units f ON l.unit_id = f.id
         LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id AND c_loc.category = 'LOCATION'
         LEFT JOIN common_catalogs c_brand ON f.brandId = c_brand.id AND c_brand.category = 'BRAND'
         LEFT JOIN common_catalogs c_model ON f.modelId = c_model.id AND c_model.category = 'MODEL'
-        LEFT JOIN fleet_movements rm ON l.reference_id = rm.uuid COLLATE utf8mb4_unicode_ci AND rm.movement_type = 'ROUTE'
+        LEFT JOIN fleet_movements rm ON l.reference_id = rm.uuid AND rm.movement_type = 'ROUTE'
         LEFT JOIN fleet_route_extensions rext ON rext.movement_id = rm.id
         LEFT JOIN common_catalogs c_origin ON rext.origin_id = c_origin.id AND c_origin.category = 'ROUTE_ORIGIN'
         ORDER BY l.created_at DESC

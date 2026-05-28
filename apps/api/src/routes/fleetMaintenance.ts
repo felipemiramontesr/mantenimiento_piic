@@ -28,7 +28,7 @@ const detailSchema = z.object({
 /**
  * Hybrid intake schema — service type is computed server-side from odometry.
  * is_in_progress = false → immediate COMPLETED registration (in-situ)
- * is_in_progress = true  → opens ACTIVE movement + locks unit to Downtime
+ * is_in_progress = true  → opens ACTIVE movement + locks unit to En Mantenimiento
  */
 const createMaintenanceSchema = z.object({
   unitId: z.string().min(2).max(50),
@@ -62,7 +62,10 @@ const completeMaintenanceSchema = z.object({
  * Mine units (maintIntervalKm === 5000) fill non-agency midpoints with MINOR_MINING.
  * Agency units fall back to the nearest agency milestone.
  */
-function computeServiceType(odometer: number, maintIntervalKm: number | string): ServiceType {
+export function computeServiceType(
+  odometer: number,
+  maintIntervalKm: number | string
+): ServiceType {
   if (!odometer || odometer <= 0) return 'BASIC_10K';
   const residuo = odometer % 60000;
   const isMineUnit = Number(maintIntervalKm) === 5000;
@@ -92,6 +95,10 @@ function computeServiceType(odometer: number, maintIntervalKm: number | string):
     }
   });
   return best;
+}
+
+export function resolveServiceMode(serviceType: ServiceType): 'IN_SITU' | 'WORKSHOP' {
+  return serviceType === 'MINOR_MINING' ? 'IN_SITU' : 'WORKSHOP';
 }
 
 /**
@@ -156,20 +163,26 @@ type TemplateTask = {
   isDeferredCarry: boolean;
 };
 
-function buildCascadeServiceTypes(resolvedType: ServiceType, isMineUnit: boolean): string[] {
-  const types: string[] = [];
-  if (resolvedType === 'ADVANCED_50K') {
-    types.push('ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K');
-  } else if (resolvedType === 'MAJOR_30K') {
-    types.push('MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K');
-  } else if (resolvedType === 'INTERMEDIATE_20K') {
-    types.push('INTERMEDIATE_20K', 'BASIC_10K');
-  } else {
-    types.push(resolvedType);
-  }
-  if (isMineUnit && !types.includes('MINOR_MINING')) types.push('MINOR_MINING');
-  return types;
+export function buildCascadeServiceTypes(resolvedType: ServiceType): string[] {
+  if (resolvedType === 'ADVANCED_50K')
+    return ['ADVANCED_50K', 'MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'];
+  if (resolvedType === 'MAJOR_30K') return ['MAJOR_30K', 'INTERMEDIATE_20K', 'BASIC_10K'];
+  if (resolvedType === 'INTERMEDIATE_20K') return ['INTERMEDIATE_20K', 'BASIC_10K'];
+  return [resolvedType];
 }
+
+/**
+ * Minor task → agency task that already covers the same operation.
+ * Tasks with no entry here have no agency equivalent and are always included.
+ */
+export const MINOR_AGENCY_EQUIV: Record<string, string> = {
+  OIL_CHANGE_MINING: 'OIL_CHANGE',
+  OIL_FILTER_MINING: 'OIL_FILTER',
+  AIR_FILTER_MINING: 'AIR_FILTER_CHANGE',
+  CABIN_FILTER_MINING: 'CABIN_FILTER_CHANGE',
+};
+
+export const MINOR_FRESHNESS_THRESHOLD = 0.2;
 
 async function fetchDeferredTasks(
   unitId: string,
@@ -198,16 +211,6 @@ async function fetchDeferredTasks(
       isCritical: Boolean(row.isCritical),
       isDeferredCarry: true,
     }));
-}
-
-function applyMiningFuelFilter(tasks: TemplateTask[], fuelTypeId: number): void {
-  if (fuelTypeId === 11) {
-    const idx = tasks.findIndex((t) => t.code === 'WATER_SEPARATOR_MINING');
-    if (idx !== -1) tasks.splice(idx, 1);
-  } else if (fuelTypeId === 10) {
-    const idx = tasks.findIndex((t) => t.code === 'CABIN_FILTER_MINING');
-    if (idx !== -1) tasks.splice(idx, 1);
-  }
 }
 
 function appendPredictiveAlerts(
@@ -279,6 +282,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
   });
 
   // GET /v1/maintenance/template/:unitId — Generate checklist for a unit
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   fastify.get('/maintenance/template/:unitId', async (request, reply) => {
     try {
       const { unitId } = request.params as { unitId: string };
@@ -287,8 +291,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         odometer?: string;
       };
       const [units] = await db.execute<RowDataPacket[]>(
-        `SELECT brandId, fuelTypeId, maintIntervalKm, odometer,
-                last_chassis_inspection_odometer, last_distribution_change_odometer
+        `SELECT brandId, fuelTypeId, maintIntervalKm, maintIntervalDays, odometer,
+                lastServiceReading, last_chassis_inspection_odometer, last_distribution_change_odometer
          FROM fleet_units WHERE id = ?`,
         [unitId]
       );
@@ -298,13 +302,13 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const unit = units[0];
       const currentOdometer =
         odometer !== undefined ? Number(odometer) : Number(unit.odometer || 0);
-      const isMineUnit = Number(unit.maintIntervalKm) === 5000;
+      const isMineUnit =
+        Number(unit.maintIntervalKm) === 5000 || Number(unit.maintIntervalDays) > 0;
       const resolvedType: ServiceType =
         (serviceType as ServiceType | undefined) ??
         computeServiceType(currentOdometer, unit.maintIntervalKm);
 
-      // Cascada jerárquica: acumulación de paquetes por hito
-      const serviceTypes = buildCascadeServiceTypes(resolvedType, isMineUnit);
+      const serviceTypes = buildCascadeServiceTypes(resolvedType);
 
       const placeholders = serviceTypes.map(() => '?').join(', ');
       const query = `
@@ -335,7 +339,55 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         isDeferredCarry: false,
       }));
 
-      if (isMineUnit) applyMiningFuelFilter(tasks, Number(unit.fuelTypeId));
+      // Minor service merge for mine units at agency milestones
+      if (isMineUnit && resolvedType !== 'MINOR_MINING') {
+        const kmSinceLastMinor = Math.max(
+          0,
+          currentOdometer - Number(unit.lastServiceReading || 0)
+        );
+        const isFresh = kmSinceLastMinor < Number(unit.maintIntervalKm) * MINOR_FRESHNESS_THRESHOLD;
+        const agencyCodes = new Set(tasks.map((t) => t.code));
+
+        const [minorRows] = await db.execute<RowDataPacket[]>(
+          `SELECT DISTINCT t.code, t.label, t.is_critical AS isCritical
+           FROM (
+             SELECT task_code FROM maintenance_plan_tasks WHERE service_type = 'MINOR_MINING'
+             UNION
+             SELECT task_code FROM maintenance_brand_rules
+             WHERE service_type = 'MINOR_MINING' AND brand_id IS NULL AND fuel_type_id = ?
+           ) combined
+           JOIN maintenance_tasks t ON combined.task_code = t.code`,
+          [unit.fuelTypeId]
+        );
+
+        minorRows.forEach((row) => {
+          const code = row.code as string;
+          const agencyEquiv = MINOR_AGENCY_EQUIV[code];
+          const isCoveredByAgency = agencyEquiv !== undefined && agencyCodes.has(agencyEquiv);
+          const isAlwaysInclude = agencyEquiv === undefined; // FUEL_FILTER_MINING, WATER_SEPARATOR_MINING
+
+          if (isAlwaysInclude || (!isCoveredByAgency && !isFresh)) {
+            tasks.push({
+              code,
+              label: row.label as string,
+              isCritical: Boolean(row.isCritical),
+              isDeferredCarry: false,
+            });
+          }
+        });
+      }
+
+      // Fuel-type exclusivity: remove the incorrect filter variant for mine units
+      if (isMineUnit) {
+        const fuelTypeId = Number(unit.fuelTypeId);
+        let remove: string | null = null;
+        if (fuelTypeId === 10) remove = 'CABIN_FILTER_MINING';
+        else if (fuelTypeId === 11) remove = 'WATER_SEPARATOR_MINING';
+        if (remove) {
+          const idx = tasks.findIndex((t) => t.code === remove);
+          if (idx !== -1) tasks.splice(idx, 1);
+        }
+      }
 
       const lastChassisOdo = Number(unit.last_chassis_inspection_odometer || 0);
       const lastDistOdo = Number(unit.last_distribution_change_odometer || 0);
@@ -521,6 +573,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       if (units.length === 0) throw new Error('Fleet unit not found');
       const unit = units[0];
       const serviceType = computeServiceType(data.odometerAtService, unit.maintIntervalKm);
+      const serviceMode = resolveServiceMode(serviceType);
 
       const movementStatus: MovementStatus = data.is_in_progress ? 'ACTIVE' : 'COMPLETED';
 
@@ -544,7 +597,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           movementId,
           data.serviceDate,
           serviceType,
-          'FULL_COMPLIANCE',
+          serviceMode,
           serviceType,
           data.cost,
           data.technician,
@@ -564,15 +617,15 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       }
 
       if (data.is_in_progress) {
-        // 4a. Lock unit → Downtime (blocks route dispatch)
+        // 4a. Lock unit → En Mantenimiento (blocks route dispatch)
         await connection.execute(
-          `UPDATE fleet_units SET status = 'Downtime', updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+          `UPDATE fleet_units SET status = 'En Mantenimiento', updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
           [data.unitId]
         );
         await connection.commit();
         return reply.code(201).send({
           success: true,
-          message: 'Maintenance order opened. Unit locked to Downtime.',
+          message: 'Maintenance order opened. Unit locked to En Mantenimiento.',
           uuid: logUuid,
           movement_status: 'ACTIVE',
         });
@@ -647,6 +700,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
 
       const finalServiceDate = data.serviceDate ?? (movement.service_date as string);
       const finalServiceType = computeServiceType(data.odometerAtService, maintIntervalKm);
+      const finalServiceMode = resolveServiceMode(finalServiceType);
       const finalTechnician = data.technician ?? movement.technician;
       const finalCost = data.cost;
 
@@ -658,7 +712,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         [
           finalServiceDate,
           finalServiceType,
-          'FULL_COMPLIANCE',
+          finalServiceMode,
           finalServiceType,
           finalCost,
           finalTechnician,

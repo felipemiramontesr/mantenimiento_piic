@@ -39,6 +39,8 @@ const SERVICE_LABELS: Record<ServiceType, string> = {
 const SERVICE_MODE_LABELS: Record<ServiceMode, string> = {
   FULL_COMPLIANCE: 'Cumplimiento Total',
   PARTIAL_EXECUTION: 'Ejecución Parcial',
+  IN_SITU: 'In Situ',
+  WORKSHOP: 'Taller',
 };
 
 const statusOptions: SelectOption[] = [

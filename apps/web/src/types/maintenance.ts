@@ -9,8 +9,7 @@ export type ServiceType =
   | 'ADVANCED_50K'
   | 'MINOR_MINING';
 
-/** Persisted compliance mode — always FULL_COMPLIANCE post-cyclic engine */
-export type ServiceMode = 'FULL_COMPLIANCE' | 'PARTIAL_EXECUTION';
+export type ServiceMode = 'FULL_COMPLIANCE' | 'PARTIAL_EXECUTION' | 'IN_SITU' | 'WORKSHOP';
 
 export type MaintenanceLog = {
   id: number;
@@ -24,6 +23,8 @@ export type MaintenanceLog = {
   cost: number;
   technician: string;
   created_at: string;
+  start_at: string | null;
+  end_at: string | null;
   movement_status?: MovementStatus;
 };
 

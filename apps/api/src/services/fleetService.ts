@@ -71,7 +71,13 @@ export default class FleetService {
     `;
 
     const [rows] = await db.execute<FleetUnit[]>(query);
-    return rows.map((unit) => FleetIntelligenceEngine.processUnit(unit, logger));
+    const unitIds = rows.map((u) => u.id);
+    const kpiMap = await FleetIntelligenceEngine.computeKpis(unitIds).catch(() => new Map());
+    return rows.map((unit) => {
+      const processed = FleetIntelligenceEngine.processUnit(unit, logger);
+      const kpi = kpiMap.get(unit.id);
+      return kpi ? { ...processed, ...kpi } : processed;
+    });
   }
 
   /**
@@ -104,7 +110,10 @@ export default class FleetService {
 
     const [rows] = await db.execute<FleetUnit[]>(query, [id]);
     if (rows.length === 0) return null;
-    return FleetIntelligenceEngine.processUnit(rows[0], logger);
+    const kpiMap = await FleetIntelligenceEngine.computeKpis([id]).catch(() => new Map());
+    const processed = FleetIntelligenceEngine.processUnit(rows[0], logger);
+    const kpi = kpiMap.get(id);
+    return kpi ? { ...processed, ...kpi } : processed;
   }
 
   /**
