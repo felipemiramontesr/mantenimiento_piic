@@ -1,5 +1,6 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
 import multipart from '@fastify/multipart';
@@ -27,15 +28,42 @@ dotenv.config({ path: '../../.env' });
  * 🔱 Archon API Factory: buildApp
  * Implementation: Silicon Valley Testable Architecture (v.17.0.0)
  */
+// Fail-fast: critical secrets must be present in production
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var is required in production');
+  if (!process.env.DB_ENCRYPTION_KEY)
+    throw new Error('DB_ENCRYPTION_KEY env var is required in production');
+}
+
+const ALLOWED_ORIGINS =
+  process.env.NODE_ENV === 'production'
+    ? [process.env.FRONTEND_URL ?? 'https://mantenimiento.piic.com.mx']
+    : true;
+
 const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   const fastify = Fastify({
     logger: true,
     ...opts,
   });
 
-  // Plugins Setup
+  // Security headers — must register before cors
+  fastify.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    hsts: { maxAge: 31536000, includeSubDomains: true },
+    frameguard: { action: 'deny' },
+  });
+
   fastify.register(cors, {
-    origin: true,
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     exposedHeaders: ['Authorization'],
@@ -45,7 +73,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   });
 
   fastify.register(jwt, {
-    secret: process.env.JWT_SECRET || 'dev-secret',
+    secret: process.env.JWT_SECRET ?? 'dev-secret-do-not-use-in-prod',
   });
 
   // 🔱 Rate Limiting: Environment-Aware Shield

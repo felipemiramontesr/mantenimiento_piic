@@ -38,7 +38,9 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body)).toEqual(mockStates);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.data).toEqual(mockStates);
       expect(db.execute).toHaveBeenCalledWith(
         expect.stringContaining('SELECT id, name FROM states')
       );
@@ -53,7 +55,8 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe('Failed to fetch states');
+      expect(JSON.parse(response.body).success).toBe(false);
+      expect(JSON.parse(response.body).code).toBe('INTERNAL_ERROR');
     });
   });
 
@@ -68,7 +71,9 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body)).toEqual(mockMun);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.data).toEqual(mockMun);
       expect(db.execute).toHaveBeenCalledWith(
         expect.stringContaining('SELECT id, name FROM municipalities WHERE state_id = ?'),
         ['2']
@@ -99,7 +104,8 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe('Failed to fetch municipalities');
+      expect(JSON.parse(response.body).success).toBe(false);
+      expect(JSON.parse(response.body).code).toBe('INTERNAL_ERROR');
     });
   });
 
@@ -114,7 +120,9 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body)).toEqual(mockCol);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.data).toEqual(mockCol);
       expect(db.execute).toHaveBeenCalledWith(
         expect.stringContaining(
           'SELECT id, name, postal_code as postalCode, city FROM neighborhoods WHERE municipality_id = ?'
@@ -147,7 +155,8 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe('Failed to fetch neighborhoods');
+      expect(JSON.parse(response.body).success).toBe(false);
+      expect(JSON.parse(response.body).code).toBe('INTERNAL_ERROR');
     });
   });
 
@@ -168,7 +177,9 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body)).toEqual(mockDetail);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.data).toEqual(mockDetail);
       expect(db.execute).toHaveBeenCalledWith(
         expect.stringContaining('SELECT c.id, c.name, c.postal_code as postalCode'),
         ['100']
@@ -184,7 +195,8 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(404);
-      expect(JSON.parse(response.body).error).toBe('Neighborhood not found');
+      expect(JSON.parse(response.body).success).toBe(false);
+      expect(JSON.parse(response.body).code).toBe('NOT_FOUND');
     });
 
     it('should handle database errors on details fetch', async (): Promise<void> => {
@@ -196,7 +208,8 @@ describe('Geolocation Integration Endpoints', () => {
       });
 
       expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe('Failed to fetch neighborhood details');
+      expect(JSON.parse(response.body).success).toBe(false);
+      expect(JSON.parse(response.body).code).toBe('INTERNAL_ERROR');
     });
   });
 });

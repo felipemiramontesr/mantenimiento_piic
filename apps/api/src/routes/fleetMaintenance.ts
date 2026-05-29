@@ -75,14 +75,14 @@ export function computeServiceType(
   maintIntervalKm: number | string
 ): ServiceType {
   if (!odometer || odometer <= 0) return 'BASIC_10K';
-  const residuo = odometer % 60000;
+  const remainder = odometer % 60000;
   const isMineUnit = Number(maintIntervalKm) === 5000;
 
-  if (residuo <= 1000 || residuo >= 59000) return 'ADVANCED_50K';
-  if (residuo >= 49000 && residuo <= 51000) return 'ADVANCED_50K';
-  if (residuo >= 29000 && residuo <= 41000) return 'MAJOR_30K';
-  if (residuo >= 19000 && residuo <= 21000) return 'INTERMEDIATE_20K';
-  if (residuo >= 9000 && residuo <= 11000) return 'BASIC_10K';
+  if (remainder <= 1000 || remainder >= 59000) return 'ADVANCED_50K';
+  if (remainder >= 49000 && remainder <= 51000) return 'ADVANCED_50K';
+  if (remainder >= 29000 && remainder <= 41000) return 'MAJOR_30K';
+  if (remainder >= 19000 && remainder <= 21000) return 'INTERMEDIATE_20K';
+  if (remainder >= 9000 && remainder <= 11000) return 'BASIC_10K';
 
   if (isMineUnit) return 'MINOR_MINING';
 
@@ -96,7 +96,7 @@ export function computeServiceType(
   let best: ServiceType = 'BASIC_10K';
   let minDist = Infinity;
   milestones.forEach((m) => {
-    const dist = Math.abs(residuo - m.value);
+    const dist = Math.abs(remainder - m.value);
     if (dist < minDist) {
       minDist = dist;
       best = m.type;

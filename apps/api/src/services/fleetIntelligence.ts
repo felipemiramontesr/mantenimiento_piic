@@ -144,13 +144,13 @@ export class FleetIntelligenceEngine {
     const timeForecast = new Date(lastDate);
     timeForecast.setDate(timeForecast.getDate() + unit.maintIntervalDays);
 
-    const intServi = unit.maintIntervalKm || 0;
+    const serviceInterval = unit.maintIntervalKm || 0;
     const dailyAvg = unit.dailyUsageAvg || 0;
     const currentOdometer = unit.odometer || 0;
     const lastReading = unit.lastServiceReading || 0;
 
-    if (intServi > 0 && dailyAvg > 0) {
-      const unitsRemaining = intServi - (currentOdometer - lastReading);
+    if (serviceInterval > 0 && dailyAvg > 0) {
+      const unitsRemaining = serviceInterval - (currentOdometer - lastReading);
       const daysToService = Math.max(0, unitsRemaining / dailyAvg);
       const usageForecast = new Date();
       usageForecast.setDate(usageForecast.getDate() + daysToService);

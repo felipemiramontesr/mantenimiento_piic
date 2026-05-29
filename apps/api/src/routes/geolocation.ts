@@ -11,10 +11,12 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
   fastify.get('/states', async (_request, reply) => {
     try {
       const [rows] = await db.execute('SELECT id, name FROM states ORDER BY name ASC');
-      return rows;
+      return reply.send({ success: true, data: rows });
     } catch (error) {
       fastify.log.error(error);
-      return reply.status(500).send({ error: 'Failed to fetch states' });
+      return reply
+        .status(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Failed to fetch states' });
     }
   });
 
@@ -43,10 +45,16 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
         query += ' ORDER BY name ASC';
 
         const [rows] = await db.execute(query, params);
-        return rows;
+        return reply.send({ success: true, data: rows });
       } catch (error) {
         fastify.log.error(error);
-        return reply.status(500).send({ error: 'Failed to fetch municipalities' });
+        return reply
+          .status(500)
+          .send({
+            success: false,
+            code: 'INTERNAL_ERROR',
+            message: 'Failed to fetch municipalities',
+          });
       }
     }
   );
@@ -77,10 +85,16 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
         query += ' ORDER BY name ASC LIMIT 250'; // Prevents out-of-memory or huge payloads
 
         const [rows] = await db.execute(query, params);
-        return rows;
+        return reply.send({ success: true, data: rows });
       } catch (error) {
         fastify.log.error(error);
-        return reply.status(500).send({ error: 'Failed to fetch neighborhoods' });
+        return reply
+          .status(500)
+          .send({
+            success: false,
+            code: 'INTERNAL_ERROR',
+            message: 'Failed to fetch neighborhoods',
+          });
       }
     }
   );
@@ -101,13 +115,21 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
         );
 
         if (rows.length === 0) {
-          return reply.status(404).send({ error: 'Neighborhood not found' });
+          return reply
+            .status(404)
+            .send({ success: false, code: 'NOT_FOUND', message: 'Neighborhood not found' });
         }
 
-        return rows[0];
+        return reply.send({ success: true, data: rows[0] });
       } catch (error) {
         fastify.log.error(error);
-        return reply.status(500).send({ error: 'Failed to fetch neighborhood details' });
+        return reply
+          .status(500)
+          .send({
+            success: false,
+            code: 'INTERNAL_ERROR',
+            message: 'Failed to fetch neighborhood details',
+          });
       }
     }
   );

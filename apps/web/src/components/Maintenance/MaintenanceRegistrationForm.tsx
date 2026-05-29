@@ -37,14 +37,14 @@ interface MaintenanceRegistrationFormProps {
  */
 const computeServiceType = (odometer: number, maintIntervalKm: number | string): ServiceType => {
   if (!odometer || odometer <= 0) return 'BASIC_10K';
-  const residuo = odometer % 60000;
+  const remainder = odometer % 60000;
   const isMineUnit = Number(maintIntervalKm) === 5000;
 
-  if (residuo <= 1000 || residuo >= 59000) return 'ADVANCED_50K';
-  if (residuo >= 49000 && residuo <= 51000) return 'ADVANCED_50K';
-  if (residuo >= 29000 && residuo <= 41000) return 'MAJOR_30K';
-  if (residuo >= 19000 && residuo <= 21000) return 'INTERMEDIATE_20K';
-  if (residuo >= 9000 && residuo <= 11000) return 'BASIC_10K';
+  if (remainder <= 1000 || remainder >= 59000) return 'ADVANCED_50K';
+  if (remainder >= 49000 && remainder <= 51000) return 'ADVANCED_50K';
+  if (remainder >= 29000 && remainder <= 41000) return 'MAJOR_30K';
+  if (remainder >= 19000 && remainder <= 21000) return 'INTERMEDIATE_20K';
+  if (remainder >= 9000 && remainder <= 11000) return 'BASIC_10K';
 
   if (isMineUnit) return 'MINOR_MINING';
 
@@ -58,7 +58,7 @@ const computeServiceType = (odometer: number, maintIntervalKm: number | string):
   let best: ServiceType = 'BASIC_10K';
   let minDist = Infinity;
   milestones.forEach((m) => {
-    const dist = Math.abs(residuo - m.value);
+    const dist = Math.abs(remainder - m.value);
     if (dist < minDist) {
       minDist = dist;
       best = m.type;
@@ -124,30 +124,38 @@ const FuelSection: React.FC<FuelSectionProps> = ({
   onFuelAmount,
   inputClass,
 }) => (
-  <div className="card-archon-sovereign bg-white p-10 [--card-accent:#f2b705]">
-    <div className="card-sovereign-header mb-8">
-      <Droplets className="text-[var(--card-accent)]" size={22} />
-      <h3 className="card-sovereign-title text-[14px] opacity-100">TELEMETRÍA DE COMBUSTIBLE</h3>
-    </div>
-    <div className="archon-grid-2-sovereign gap-10 items-start">
-      {/* COL IZQ — sensor */}
-      <div className="space-y-2">
-        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#0f2a44]/50">
-          {isInProgress ? 'Nivel Actual (Salida a Taller)' : 'Nivel Final del Tanque'}
-        </p>
+  <div className="archon-grid-2-sovereign items-start gap-10">
+    {/* CARD IZQ — Sensor de nivel */}
+    <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#f2b705]">
+      <div className="card-sovereign-header">
+        <Droplets className="text-[var(--card-accent)]" size={22} />
+        <h3 className="card-sovereign-title text-[14px] opacity-100">
+          {isInProgress ? 'NIVEL DE SALIDA' : 'NIVEL DE COMBUSTIBLE'}
+        </h3>
+      </div>
+      <div className="space-y-3">
         <ArchonFuelSensor
           value={fuelLevelEnd}
           onChange={isInProgress ? (): void => undefined : onFuelLevelEnd}
           disabled={isInProgress}
         />
         {isInProgress && (
-          <p className="text-[10px] text-[#0f2a44]/40 italic">
+          <p className="text-[10px] text-[#0f2a44]/40 italic pt-1">
             Nivel auto-heredado del sistema. El nivel de retorno se captura al cerrar el servicio.
           </p>
         )}
       </div>
+    </div>
 
-      {/* COL DER */}
+    {/* CARD DER — Datos numéricos */}
+    <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 [--card-accent:#f2b705]">
+      <div className="card-sovereign-header">
+        <Gauge className="text-[var(--card-accent)]" size={22} />
+        <h3 className="card-sovereign-title text-[14px] opacity-100">
+          {isInProgress ? 'ESTADO DE SALIDA' : 'DATOS DE SALIDA'}
+        </h3>
+      </div>
+
       {!isInProgress ? (
         <div className="space-y-6">
           <ArchonField label="Odómetro de Salida" icon={Gauge}>
@@ -207,22 +215,17 @@ const FuelSection: React.FC<FuelSectionProps> = ({
           </ArchonField>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-lg p-5 space-y-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#0f2a44]/50">
-              Estado de Salida (Auto-heredado)
-            </p>
-            <div className="flex items-center gap-2">
-              <Gauge size={14} className="text-[#0f2a44]/30 shrink-0" />
-              <span className="font-mono text-[13px] font-bold text-[#0f2a44]">
-                {Number(unit?.odometer ?? 0).toLocaleString()} km
-              </span>
-            </div>
-            <p className="text-[10px] text-[#0f2a44]/40">
-              Odómetro de entrada y nivel de combustible se registran automáticamente. Al retorno
-              del taller, capture el odómetro final y nivel en el formulario de cierre.
-            </p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Gauge size={14} className="text-[#0f2a44]/30 shrink-0" />
+            <span className="font-mono text-[13px] font-bold text-[#0f2a44]">
+              {Number(unit?.odometer ?? 0).toLocaleString()} km
+            </span>
           </div>
+          <p className="text-[10px] text-[#0f2a44]/40">
+            Odómetro de entrada y nivel de combustible se registran automáticamente. Al retorno del
+            taller, capture el odómetro final y nivel en el formulario de cierre.
+          </p>
         </div>
       )}
     </div>
