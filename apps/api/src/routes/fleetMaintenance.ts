@@ -15,7 +15,6 @@ const SERVICE_TYPE_ENUM = [
 ] as const;
 
 type ServiceType = (typeof SERVICE_TYPE_ENUM)[number];
-type MovementStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -38,10 +37,15 @@ const createMaintenanceSchema = z.object({
   technician: z.string().min(2).max(100),
   details: z.array(detailSchema).default([]),
   is_in_progress: z.boolean().default(false),
+  fuelLevelEnd: z.number().min(0).max(100).optional(),
+  fuelLitersLoaded: z.number().min(0).optional(),
+  fuelAmount: z.number().min(0).optional(),
+  endOdometer: z.number().min(0).optional(),
 });
 
 /**
  * Completion schema — service type recomputed from final odometry.
+ * endOdometer = post-service reading (test drives + return trip), defaults to odometerAtService.
  */
 const completeMaintenanceSchema = z.object({
   odometerAtService: z.number().min(0),
@@ -52,6 +56,10 @@ const completeMaintenanceSchema = z.object({
     .optional(),
   technician: z.string().min(2).max(100).optional(),
   details: z.array(detailSchema).default([]),
+  fuelLevelEnd: z.number().min(0).max(100).optional(),
+  fuelLitersLoaded: z.number().min(0).optional(),
+  fuelAmount: z.number().min(0).optional(),
+  endOdometer: z.number().min(0).optional(),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -111,7 +119,9 @@ async function applyMaintenanceCompletionToUnit(
   odometerAtService: number,
   serviceDate: string,
   maintIntervalKm: number | string,
-  details: Array<{ taskCode: string; status: string }>
+  details: Array<{ taskCode: string; status: string }>,
+  endOdometer?: number,
+  fuelLevelEnd?: number
 ): Promise<void> {
   const [unitRows] = await connection.execute<RowDataPacket[]>(
     'SELECT odometer FROM fleet_units WHERE id = ?',
@@ -121,7 +131,8 @@ async function applyMaintenanceCompletionToUnit(
 
   // Number() casting prevents string concatenation bug (ASM-021 incident)
   const nextServiceReading = Number(odometerAtService) + Number(maintIntervalKm || 10000);
-  const finalOdometer = Math.max(currentOdometer, Number(odometerAtService));
+  // endOdometer reflects post-service km (test drives + return trip); falls back to odometerAtService
+  const finalOdometer = Math.max(currentOdometer, Number(endOdometer ?? odometerAtService));
 
   let updateChassisOdo = false;
   let updateDistributionOdo = false;
@@ -142,6 +153,7 @@ async function applyMaintenanceCompletionToUnit(
     ['nextServiceReading_forecast', nextServiceReading],
     ['status', 'Disponible'],
   ];
+  if (fuelLevelEnd !== undefined) updates.push(['lastFuelLevel', fuelLevelEnd]);
   if (updateChassisOdo) updates.push(['last_chassis_inspection_odometer', odometerAtService]);
   if (updateDistributionOdo) updates.push(['last_distribution_change_odometer', odometerAtService]);
 
@@ -250,6 +262,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
           fme.service_date,
           fm.start_reading AS odometer_at_service,
+          fm.end_reading AS odometer_at_close,
+          fm.fuel_level_start, fm.fuel_level_end, fm.fuel_liters_loaded, fm.fuel_amount,
           fme.service_type, fme.service_mode, fme.system_recommended_type,
           fme.cost, fme.technician, fm.created_at, fm.start_at, fm.end_at
         FROM fleet_movements fm
@@ -524,7 +538,10 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const { uuid } = request.params as { uuid: string };
       const [movements] = await db.execute<RowDataPacket[]>(
         `SELECT fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
-                fme.service_date, fm.start_reading AS odometer_at_service,
+                fme.service_date,
+                fm.start_reading AS odometer_at_service,
+                fm.end_reading AS odometer_at_close,
+                fm.fuel_level_start, fm.fuel_level_end, fm.fuel_liters_loaded, fm.fuel_amount,
                 fme.service_type, fme.service_mode, fme.system_recommended_type,
                 fme.cost, fme.technician, fm.created_at
          FROM fleet_movements fm
@@ -567,7 +584,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const logUuid = crypto.randomUUID();
 
       const [units] = await connection.execute<RowDataPacket[]>(
-        'SELECT id, odometer, maintIntervalKm, status FROM fleet_units WHERE id = ? FOR UPDATE',
+        'SELECT id, odometer, maintIntervalKm, status, lastFuelLevel FROM fleet_units WHERE id = ? FOR UPDATE',
         [data.unitId]
       );
       if (units.length === 0) throw new Error('Fleet unit not found');
@@ -575,17 +592,38 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const serviceType = computeServiceType(data.odometerAtService, unit.maintIntervalKm);
       const serviceMode = resolveServiceMode(serviceType);
 
-      const movementStatus: MovementStatus = data.is_in_progress ? 'ACTIVE' : 'COMPLETED';
+      // Auto-inherit current fuel level from unit — no frontend input required
+      const fuelStart = unit.lastFuelLevel != null ? Number(unit.lastFuelLevel) : null;
 
       // 1. Insert CTI base record
-      const [movementResult] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO fleet_movements
-          (uuid, unit_id, movement_type, status, start_reading, start_at${
-            data.is_in_progress ? '' : ', end_at'
-          })
-         VALUES (?, ?, 'MAINTENANCE', ?, ?, ?${data.is_in_progress ? '' : ', NOW()'})`,
-        [logUuid, data.unitId, movementStatus, data.odometerAtService, data.serviceDate]
-      );
+      let movementResult: ResultSetHeader;
+      if (data.is_in_progress) {
+        [movementResult] = await connection.execute<ResultSetHeader>(
+          `INSERT INTO fleet_movements
+            (uuid, unit_id, movement_type, status, start_reading, start_at, fuel_level_start)
+           VALUES (?, ?, 'MAINTENANCE', 'ACTIVE', ?, ?, ?)`,
+          [logUuid, data.unitId, data.odometerAtService, data.serviceDate, fuelStart]
+        );
+      } else {
+        const endOdo = data.endOdometer ?? data.odometerAtService;
+        [movementResult] = await connection.execute<ResultSetHeader>(
+          `INSERT INTO fleet_movements
+            (uuid, unit_id, movement_type, status, start_reading, end_reading,
+             start_at, end_at, fuel_level_start, fuel_level_end, fuel_liters_loaded, fuel_amount)
+           VALUES (?, ?, 'MAINTENANCE', 'COMPLETED', ?, ?, ?, NOW(), ?, ?, ?, ?)`,
+          [
+            logUuid,
+            data.unitId,
+            data.odometerAtService,
+            endOdo,
+            data.serviceDate,
+            fuelStart,
+            data.fuelLevelEnd ?? null,
+            data.fuelLitersLoaded ?? null,
+            data.fuelAmount ?? null,
+          ]
+        );
+      }
       const movementId = movementResult.insertId;
 
       // 2. Insert CTI maintenance extension
@@ -637,7 +675,9 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         data.odometerAtService,
         data.serviceDate,
         unit.maintIntervalKm,
-        data.details
+        data.details,
+        data.endOdometer,
+        data.fuelLevelEnd
       );
       await connection.commit();
       return reply.code(201).send({
@@ -683,12 +723,21 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
 
       const unitId = movement.unit_id as string;
 
-      // 2. Close movement
+      // 2. Close movement — end_reading captures post-service km (test drives + return)
+      const endOdo = data.endOdometer ?? data.odometerAtService;
       await connection.execute(
         `UPDATE fleet_movements
-         SET status = 'COMPLETED', end_at = NOW(), start_reading = ?
+         SET status = 'COMPLETED', end_at = NOW(), start_reading = ?,
+             end_reading = ?, fuel_level_end = ?, fuel_liters_loaded = ?, fuel_amount = ?
          WHERE uuid = ?`,
-        [data.odometerAtService, uuid]
+        [
+          data.odometerAtService,
+          endOdo,
+          data.fuelLevelEnd ?? null,
+          data.fuelLitersLoaded ?? null,
+          data.fuelAmount ?? null,
+          uuid,
+        ]
       );
 
       // 3. Fetch unit interval — drives cyclic service type + completion forecast
@@ -734,14 +783,16 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         );
       }
 
-      // 5. Apply unit completion: odometer + forecast + status = Disponible
+      // 5. Apply unit completion: odometer + forecast + fuel + status = Disponible
       await applyMaintenanceCompletionToUnit(
         connection,
         unitId,
         data.odometerAtService,
         finalServiceDate,
         maintIntervalKm,
-        data.details
+        data.details,
+        data.endOdometer,
+        data.fuelLevelEnd
       );
 
       await connection.commit();

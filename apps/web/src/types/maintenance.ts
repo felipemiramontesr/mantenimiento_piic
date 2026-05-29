@@ -17,6 +17,11 @@ export type MaintenanceLog = {
   unit_id: string;
   service_date: string;
   odometer_at_service: number;
+  odometer_at_close?: number | null;
+  fuel_level_start?: number | null;
+  fuel_level_end?: number | null;
+  fuel_liters_loaded?: number | null;
+  fuel_amount?: number | null;
   service_type: ServiceType;
   service_mode: ServiceMode;
   system_recommended_type: ServiceType | null;
@@ -63,6 +68,11 @@ export type MaintenanceSchedulePayload = {
   details: MaintenanceDetail[];
   /** When true: unit enters Downtime; close later via PATCH /maintenance/:uuid/complete */
   is_in_progress?: boolean;
+  fuelLevelEnd?: number;
+  fuelLitersLoaded?: number;
+  fuelAmount?: number;
+  /** Post-service odometer (test drives + return trip). Defaults to odometerAtService. */
+  endOdometer?: number;
 };
 
 export type MaintenanceCompletionPayload = {
@@ -71,6 +81,11 @@ export type MaintenanceCompletionPayload = {
   serviceDate?: string;
   technician?: string;
   details: MaintenanceDetail[];
+  fuelLevelEnd?: number;
+  fuelLitersLoaded?: number;
+  fuelAmount?: number;
+  /** Post-service odometer (test drives + return trip). Defaults to odometerAtService. */
+  endOdometer?: number;
 };
 
 export type ForecastUrgency = 'CRITICAL' | 'WARNING' | 'OK';

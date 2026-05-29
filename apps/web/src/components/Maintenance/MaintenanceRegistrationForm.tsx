@@ -10,6 +10,7 @@ import {
   Save,
   X,
   Warehouse,
+  Droplets,
 } from 'lucide-react';
 import {
   MaintenanceSchedulePayload,
@@ -22,6 +23,7 @@ import { FleetUnit } from '../../types/fleet';
 import ArchonField from '../ArchonField';
 import ArchonSelect, { SelectOption } from '../ArchonSelect';
 import { useUsers } from '../../context/UserContext';
+import ArchonFuelSensor from '../Routes/ArchonFuelSensor';
 
 interface MaintenanceRegistrationFormProps {
   onSuccess: () => void;
@@ -93,6 +95,140 @@ const getSubmitLabel = (inProgress: boolean, isSubmitting: boolean): string => {
   return inProgress ? 'Registrar en Taller' : 'Asentar Servicio';
 };
 
+interface FuelSectionProps {
+  isInProgress: boolean;
+  unit: FleetUnit | undefined;
+  fuelLevelEnd: number;
+  onFuelLevelEnd: (v: number) => void;
+  endOdometer: number;
+  onEndOdometer: (v: number) => void;
+  odometerAtService: number;
+  fuelLitersLoaded: string;
+  onFuelLitersLoaded: (v: string) => void;
+  fuelAmount: string;
+  onFuelAmount: (v: string) => void;
+  inputClass: string;
+}
+
+const FuelSection: React.FC<FuelSectionProps> = ({
+  isInProgress,
+  unit,
+  fuelLevelEnd,
+  onFuelLevelEnd,
+  endOdometer,
+  onEndOdometer,
+  odometerAtService,
+  fuelLitersLoaded,
+  onFuelLitersLoaded,
+  fuelAmount,
+  onFuelAmount,
+  inputClass,
+}) => (
+  <div className="card-archon-sovereign bg-white p-10 [--card-accent:#f2b705]">
+    <div className="card-sovereign-header mb-8">
+      <Droplets className="text-[var(--card-accent)]" size={22} />
+      <h3 className="card-sovereign-title text-[14px] opacity-100">TELEMETRÍA DE COMBUSTIBLE</h3>
+    </div>
+    <div className="archon-grid-2-sovereign gap-10 items-start">
+      {/* COL IZQ — sensor */}
+      <div className="space-y-2">
+        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#0f2a44]/50">
+          {isInProgress ? 'Nivel Actual (Salida a Taller)' : 'Nivel Final del Tanque'}
+        </p>
+        <ArchonFuelSensor
+          value={fuelLevelEnd}
+          onChange={isInProgress ? (): void => undefined : onFuelLevelEnd}
+          disabled={isInProgress}
+        />
+        {isInProgress && (
+          <p className="text-[10px] text-[#0f2a44]/40 italic">
+            Nivel auto-heredado del sistema. El nivel de retorno se captura al cerrar el servicio.
+          </p>
+        )}
+      </div>
+
+      {/* COL DER */}
+      {!isInProgress ? (
+        <div className="space-y-6">
+          <ArchonField label="Odómetro de Salida" icon={Gauge}>
+            <div className="relative flex items-center">
+              <input
+                type="number"
+                min={odometerAtService}
+                placeholder="Ej: 125180"
+                className={`${inputClass} font-mono pr-14`}
+                value={endOdometer || ''}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  onEndOdometer(e.target.valueAsNumber)
+                }
+              />
+              <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                KM
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1 font-mono pl-1">
+              Incluye traslado y pruebas de campo
+            </p>
+          </ArchonField>
+          <ArchonField label="Litros Cargados" icon={Droplets}>
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                className={`${inputClass} font-mono pr-14`}
+                value={fuelLitersLoaded}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  onFuelLitersLoaded(e.target.value.replace(/[^0-9.]/g, ''))
+                }
+              />
+              <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                LTS
+              </span>
+            </div>
+          </ArchonField>
+          <ArchonField label="Monto del Ticket de Combustible" icon={DollarSign}>
+            <div className="flex items-center w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus-within:border-b-[#f2b705] focus-within:bg-white focus-within:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] transition-all duration-300">
+              <span className="text-[#0f2a44]/40 font-bold text-[13px]">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-[13px] font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal"
+                value={fuelAmount}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  onFuelAmount(e.target.value.replace(/[^0-9.]/g, ''))
+                }
+              />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                MXN
+              </span>
+            </div>
+          </ArchonField>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="bg-[#0f2a44]/5 border border-[#0f2a44]/10 rounded-lg p-5 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#0f2a44]/50">
+              Estado de Salida (Auto-heredado)
+            </p>
+            <div className="flex items-center gap-2">
+              <Gauge size={14} className="text-[#0f2a44]/30 shrink-0" />
+              <span className="font-mono text-[13px] font-bold text-[#0f2a44]">
+                {Number(unit?.odometer ?? 0).toLocaleString()} km
+              </span>
+            </div>
+            <p className="text-[10px] text-[#0f2a44]/40">
+              Odómetro de entrada y nivel de combustible se registran automáticamente. Al retorno
+              del taller, capture el odómetro final y nivel en el formulario de cierre.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = ({
   onSuccess,
   onCancel,
@@ -104,10 +240,14 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const { users } = useUsers();
 
   const [odometerAtService, setOdometerAtService] = useState<number>(0);
+  const [endOdometer, setEndOdometer] = useState<number>(0);
   const [serviceDate, setServiceDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [cost, setCost] = useState<number>(0);
   const [technician, setTechnician] = useState<string>('');
   const [details, setDetails] = useState<{ taskCode: string; status: string; notes: string }[]>([]);
+  const [fuelLevelEnd, setFuelLevelEnd] = useState<number>(50);
+  const [fuelLitersLoaded, setFuelLitersLoaded] = useState<string>('');
+  const [fuelAmount, setFuelAmount] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -129,6 +269,8 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   useEffect(() => {
     if (selectedUnit && unit) {
       setOdometerAtService(unit.odometer || 0);
+      setEndOdometer(unit.odometer || 0);
+      setFuelLevelEnd(Number(unit.lastFuelLevel ?? 50));
     }
   }, [selectedUnit, units]);
 
@@ -205,6 +347,14 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           notes: d.notes || undefined,
         })),
         is_in_progress: isInProgress,
+        ...(isInProgress
+          ? {}
+          : {
+              fuelLevelEnd,
+              fuelLitersLoaded: fuelLitersLoaded ? Number(fuelLitersLoaded) : undefined,
+              fuelAmount: fuelAmount ? Number(fuelAmount) : undefined,
+              endOdometer: endOdometer > odometerAtService ? endOdometer : undefined,
+            }),
       };
       const res = await api.post('/maintenance', payload);
       if (res.data.success) onSuccess();
@@ -380,6 +530,24 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           </div>
         </div>
       </div>
+
+      {/* ── TELEMETRÍA DE COMBUSTIBLE ──────────────────────────────────────── */}
+      {selectedUnit && (
+        <FuelSection
+          isInProgress={isInProgress}
+          unit={unit}
+          fuelLevelEnd={fuelLevelEnd}
+          onFuelLevelEnd={setFuelLevelEnd}
+          endOdometer={endOdometer}
+          onEndOdometer={setEndOdometer}
+          odometerAtService={odometerAtService}
+          fuelLitersLoaded={fuelLitersLoaded}
+          onFuelLitersLoaded={setFuelLitersLoaded}
+          fuelAmount={fuelAmount}
+          onFuelAmount={setFuelAmount}
+          inputClass={inputClass}
+        />
+      )}
 
       {/* ── CHECKLIST OPERATIVO ─────────────────────────────────────────────── */}
       {selectedUnit && (

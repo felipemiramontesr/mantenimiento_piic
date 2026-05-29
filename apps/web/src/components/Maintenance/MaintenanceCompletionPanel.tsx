@@ -9,6 +9,7 @@ import {
   X,
   CheckCircle2,
   ShieldCheck,
+  Droplets,
 } from 'lucide-react';
 import {
   MaintenanceLog,
@@ -21,6 +22,7 @@ import api from '../../api/client';
 import ArchonField from '../ArchonField';
 import ArchonSelect, { SelectOption } from '../ArchonSelect';
 import { useUsers } from '../../context/UserContext';
+import ArchonFuelSensor from '../Routes/ArchonFuelSensor';
 
 interface MaintenanceCompletionPanelProps {
   log: MaintenanceLog;
@@ -57,14 +59,19 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
   onCancel,
 }) => {
   const { users } = useUsers();
+
   const [odometerAtService, setOdometerAtService] = useState<number>(
     Number(log.odometer_at_service) || 0
   );
+  const [endOdometer, setEndOdometer] = useState<number>(Number(log.odometer_at_service) || 0);
   const [cost, setCost] = useState<number>(Number(log.cost) || 0);
   const [technician, setTechnician] = useState<string>(log.technician || '');
   const [serviceDate, setServiceDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [template, setTemplate] = useState<MaintenanceTemplateTask[]>([]);
   const [details, setDetails] = useState<{ taskCode: string; status: string; notes: string }[]>([]);
+  const [fuelLevelEnd, setFuelLevelEnd] = useState<number>(Number(log.fuel_level_start ?? 50));
+  const [fuelLitersLoaded, setFuelLitersLoaded] = useState<string>('');
+  const [fuelAmount, setFuelAmount] = useState<string>('');
   const [loadingTemplate, setLoadingTemplate] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +133,10 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
           status: d.status,
           notes: d.notes || undefined,
         })),
+        fuelLevelEnd,
+        fuelLitersLoaded: fuelLitersLoaded ? Number(fuelLitersLoaded) : undefined,
+        fuelAmount: fuelAmount ? Number(fuelAmount) : undefined,
+        endOdometer: endOdometer > odometerAtService ? endOdometer : undefined,
       };
       const res = await api.patch(`/maintenance/${log.uuid}/complete`, payload);
       if (res.data.success) onSuccess();
@@ -201,7 +212,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
             <h3 className="card-sovereign-title text-[14px] opacity-100">DATOS DE CIERRE</h3>
           </div>
           <div className="space-y-6 relative z-10">
-            <ArchonField label="Odómetro de Salida" icon={Gauge} required>
+            <ArchonField label="Odómetro de Entrada al Taller" icon={Gauge} required>
               <div className="relative flex items-center">
                 <input
                   required
@@ -219,7 +230,27 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 mt-1 font-mono pl-1">
-                Entrada: {Number(log.odometer_at_service).toLocaleString()} km
+                Registro original: {Number(log.odometer_at_service).toLocaleString()} km
+              </p>
+            </ArchonField>
+            <ArchonField label="Odómetro de Salida del Taller" icon={Gauge}>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  min={odometerAtService}
+                  placeholder="Ej: 126680"
+                  className={`${inputClass} font-mono pr-14`}
+                  value={endOdometer || ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setEndOdometer(e.target.valueAsNumber)
+                  }
+                />
+                <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                  KM
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1 font-mono pl-1">
+                Incluye traslado y pruebas de taller
               </p>
             </ArchonField>
             <ArchonField label="Fecha de Cierre" icon={Calendar}>
@@ -270,6 +301,77 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                 </span>
               </div>
             </ArchonField>
+          </div>
+        </div>
+      </div>
+
+      {/* ── TELEMETRÍA DE COMBUSTIBLE ──────────────────────────────────────── */}
+      <div className="card-archon-sovereign bg-white p-10 [--card-accent:#f2b705]">
+        <div className="card-sovereign-header mb-8">
+          <Droplets className="text-[var(--card-accent)]" size={22} />
+          <h3 className="card-sovereign-title text-[14px] opacity-100">
+            TELEMETRÍA DE COMBUSTIBLE
+          </h3>
+        </div>
+
+        {/* 2 columnas: sensor izq — campos der */}
+        <div className="archon-grid-2-sovereign gap-10 items-start">
+          {/* COL IZQ — Nivel final del tanque */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#0f2a44]/50">
+              Nivel Final del Tanque
+            </p>
+            <ArchonFuelSensor value={fuelLevelEnd} onChange={setFuelLevelEnd} />
+          </div>
+
+          {/* COL DER — Litros cargados + monto */}
+          <div className="space-y-6">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+                Litros Cargados
+              </label>
+              <div className="relative">
+                <Droplets
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/30"
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={fuelLitersLoaded}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFuelLitersLoaded(e.target.value.replace(/[^0-9.]/g, ''))
+                  }
+                  className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 flex items-center justify-between">
+                Monto del Ticket de Combustible
+                <span className="text-amber-600 font-black">$</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/40 font-black text-[10px]">
+                  $
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={fuelAmount}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFuelAmount(e.target.value.replace(/[^0-9.]/g, ''))
+                  }
+                  className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
+                />
+              </div>
+              <p className="text-[8px] font-bold text-[#0f2a44]/40 italic">
+                * Incluye combustible y aditivos del ticket.
+              </p>
+            </div>
           </div>
         </div>
       </div>
