@@ -49,6 +49,7 @@ checkpoints.md
 # 📜 INTERNAL PROTOCOLS & CLIENT DATA
 datosCliente/
 Protocolos/
+# COMMIT_PROTOCOL.md lives at repo root — tracked intentionally
 # Scratch directories
 **/scratch/
 apps/api/scratch/
