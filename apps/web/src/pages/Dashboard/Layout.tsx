@@ -4,6 +4,7 @@ import Sidebar from '../../components/Navigation/Sidebar';
 import SovereignHeader from '../../components/Navigation/SovereignHeader';
 import SovereignSubheader from '../../components/Navigation/SovereignSubheader';
 import SovereignFooter from '../../components/Navigation/SovereignFooter';
+import ArchonNetworkBanner from '../../components/Navigation/ArchonNetworkBanner';
 import { FleetProvider } from '../../context/FleetContext';
 import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 
@@ -29,6 +30,7 @@ const DashboardLayout: React.FC = () => {
 
           {/* 🏢 Workspace Chassis */}
           <main className="flex flex-col h-screen w-full overflow-hidden bg-white min-w-0 relative">
+            <ArchonNetworkBanner />
             <SovereignHeader />
             <SovereignSubheader />
 
