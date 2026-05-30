@@ -156,7 +156,7 @@ describe('MaintenanceForecastView', () => {
   });
 
   // ── Service type labels ────────────────────────────────────────────────────
-  it('renders "Avanzado 50K" label for ADVANCED_50K service type', async () => {
+  it('renders "Avanzado 50K - 60K" label for ADVANCED_50K service type', async () => {
     server.use(
       http.get('*/maintenance/forecast', () =>
         HttpResponse.json({ success: true, data: [CRITICAL_ROW] })
@@ -164,11 +164,11 @@ describe('MaintenanceForecastView', () => {
     );
     renderForecast();
     await waitFor(() => {
-      expect(screen.getByText('Avanzado 50K')).toBeInTheDocument();
+      expect(screen.getByText('Avanzado 50K - 60K')).toBeInTheDocument();
     });
   });
 
-  it('renders "Mayor 30K" label for MAJOR_30K service type', async () => {
+  it('renders "Mayor 30K - 40K" label for MAJOR_30K service type', async () => {
     server.use(
       http.get('*/maintenance/forecast', () =>
         HttpResponse.json({ success: true, data: [WARNING_ROW] })
@@ -176,7 +176,7 @@ describe('MaintenanceForecastView', () => {
     );
     renderForecast();
     await waitFor(() => {
-      expect(screen.getByText('Mayor 30K')).toBeInTheDocument();
+      expect(screen.getByText('Mayor 30K - 40K')).toBeInTheDocument();
     });
   });
 
@@ -190,7 +190,7 @@ describe('MaintenanceForecastView', () => {
     });
   });
 
-  it('renders "Menor — Mina" label for MINOR_MINING service type', async () => {
+  it('renders "Servicio Menor" label for MINOR_MINING service type', async () => {
     server.use(
       http.get('*/maintenance/forecast', () =>
         HttpResponse.json({ success: true, data: [MINE_ROW] })
@@ -198,7 +198,7 @@ describe('MaintenanceForecastView', () => {
     );
     renderForecast();
     await waitFor(() => {
-      expect(screen.getByText('Menor — Mina')).toBeInTheDocument();
+      expect(screen.getByText('Servicio Menor')).toBeInTheDocument();
     });
   });
 
