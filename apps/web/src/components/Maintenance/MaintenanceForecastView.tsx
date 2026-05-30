@@ -14,6 +14,7 @@ import api from '../../api/client';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
 import { useFleet } from '../../context/FleetContext';
+import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLayoutContext';
 
 const SERVICE_LABELS: Record<ServiceType, string> = {
   BASIC_10K: 'Básico 10K',
@@ -109,12 +110,30 @@ const daysColor = (days: number): string => {
   return '';
 };
 
+const matchFieldInForecast = (
+  row: MaintenanceForecastRow,
+  query: string
+): { label: string; value: string } | null => {
+  if (row.unitId.toLowerCase().includes(query)) {
+    return { label: 'Unidad', value: row.unitId };
+  }
+  if (row.departamento && row.departamento.toLowerCase().includes(query)) {
+    return { label: 'Depto', value: row.departamento };
+  }
+  const svcLabel = SERVICE_LABELS[row.projectedServiceType];
+  if (svcLabel && svcLabel.toLowerCase().includes(query)) {
+    return { label: 'Servicio', value: svcLabel };
+  }
+  return null;
+};
+
 interface MaintenanceForecastViewProps {
   onScheduleRequest: (unitId: string) => void;
 }
 
 const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onScheduleRequest }) => {
   const { units } = useFleet();
+  const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
   const [data, setData] = useState<MaintenanceForecastRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +152,40 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
       .catch(() => setError('Error al recuperar pronósticos de mantenimiento.'))
       .finally(() => setLoading(false));
   }, []);
+
+  // 🛡️ Dynamic Register for Universal Search Protocol
+  useEffect(() => {
+    setSearchConfig({
+      placeholder: 'Buscar por unidad, depto o tipo de servicio...',
+      getSuggestions: (term: string): SearchSuggestion[] => {
+        const query = term.toLowerCase().trim();
+        return (data || [])
+          .map((row): SearchSuggestion | null => {
+            const match = matchFieldInForecast(row, query);
+            if (!match) return null;
+            return {
+              id: row.unitId,
+              title: row.unitId,
+              subtitle: SERVICE_LABELS[row.projectedServiceType],
+              metaLabel: match.label,
+              metaValue: match.value,
+              rawItem: row,
+            };
+          })
+          .filter((s): s is SearchSuggestion => s !== null);
+      },
+      onSuggestionSelect: (suggestion) => {
+        setSearchTerm(suggestion.title);
+      },
+    });
+
+    return () => {
+      setSearchConfig(null);
+    };
+  }, [data, setSearchConfig, setSearchTerm]);
+
+  // 🛡️ Auto-cleanup Search Term on Unmount
+  useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
 
   const handleSort = (key: string): void => {
     const field = key as keyof MaintenanceForecastRow;
@@ -157,6 +210,12 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
     });
   }, [data, sortConfig]);
 
+  const filtered = React.useMemo(() => {
+    if (!searchTerm.trim()) return sorted;
+    const query = searchTerm.toLowerCase().trim();
+    return sorted.filter((row) => matchFieldInForecast(row, query) !== null);
+  }, [sorted, searchTerm]);
+
   if (error) return <div className="p-4 text-[#C12020] font-mono text-sm">{error}</div>;
 
   return (
@@ -165,7 +224,7 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
         loading={loading}
         loadingMessage="Calculando pronósticos de flotilla..."
         emptyMessage="NO SE ENCONTRARON UNIDADES ACTIVAS"
-        data={sorted}
+        data={filtered}
         headers={headers}
         onSort={handleSort}
         sortConfig={sortConfig}
