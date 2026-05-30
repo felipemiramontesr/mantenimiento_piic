@@ -92,7 +92,7 @@ const SovereignHeader: React.FC = () => {
 
   return (
     <header className="flex flex-row items-center w-full border-b border-pinnacle-navy/5 px-4 md:pl-10 md:pr-[46px] min-h-[10vh] py-2 bg-white relative z-50 mt-[10px]">
-      <div className="archon-grid-2-sovereign items-center w-full flex-col md:flex-row gap-4 md:gap-0">
+      <div className="archon-grid-2-sovereign items-center w-full flex-col md:flex-row gap-4 md:gap-10">
         {/* 🛡️ Section Identification (Col Alfa) */}
         <div
           className={`flex flex-col w-full ${
