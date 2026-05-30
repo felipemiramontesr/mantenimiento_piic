@@ -83,7 +83,7 @@ const headers: ArchonTableHeader[] = [
   {
     key: 'projectedServiceType',
     label: 'TIPO PROYECTADO',
-    sortable: false,
+    sortable: true,
     align: 'center',
     width: '14%',
   },
@@ -199,8 +199,8 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
     if (!sortConfig.field) return data;
     const f = sortConfig.field;
     return [...data].sort((a, b) => {
-      const valA = a[f];
-      const valB = b[f];
+      const valA = f === 'projectedServiceType' ? a.projectedOdometer : a[f];
+      const valB = f === 'projectedServiceType' ? b.projectedOdometer : b[f];
       if (typeof valA === 'number' && typeof valB === 'number') {
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
       }
