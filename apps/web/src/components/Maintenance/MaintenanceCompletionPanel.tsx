@@ -35,7 +35,7 @@ const SERVICE_LABELS: Record<ServiceType, string> = {
   INTERMEDIATE_20K: 'Intermedio 20,000 km',
   MAJOR_30K: 'Mayor 30,000 km',
   ADVANCED_50K: 'Avanzado 50,000 km',
-  MINOR_MINING: 'Servicio Menor — Mina',
+  MINOR_MINING: 'Servicio Menor',
 };
 
 const SERVICE_MODE_LABELS: Record<ServiceMode, string> = {

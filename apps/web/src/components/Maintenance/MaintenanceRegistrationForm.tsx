@@ -72,7 +72,7 @@ const SERVICE_LABELS: Record<ServiceType, string> = {
   INTERMEDIATE_20K: 'Intermedio 20,000 km',
   MAJOR_30K: 'Mayor 30,000 km',
   ADVANCED_50K: 'Avanzado 50,000 km',
-  MINOR_MINING: 'Servicio Menor — Mina',
+  MINOR_MINING: 'Servicio Menor',
 };
 
 const SERVICE_BADGE_STYLE: Record<ServiceType, { bg: string; text: string; border: string }> = {
@@ -255,7 +255,6 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const [submitting, setSubmitting] = useState(false);
 
   const unit = units.find((u) => u.id === selectedUnit);
-  const isMineUnit = Number(unit?.maintIntervalKm) === 5000;
   const computedServiceType = computeServiceType(odometerAtService, unit?.maintIntervalKm ?? 10000);
   const badge = SERVICE_BADGE_STYLE[computedServiceType];
   // MINOR_MINING → In Situ; all agency milestones → Taller (Downtime)
@@ -452,11 +451,6 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                 >
                   <Wrench size={11} />
                   {SERVICE_LABELS[computedServiceType]}
-                  {isMineUnit && computedServiceType === 'MINOR_MINING' && (
-                    <span className="ml-1 opacity-60 font-mono normal-case tracking-normal">
-                      · mina
-                    </span>
-                  )}
                 </div>
               </div>
             )}

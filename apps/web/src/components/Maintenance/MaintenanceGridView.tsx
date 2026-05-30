@@ -56,7 +56,7 @@ const matchFieldInMaintenance = (
   if (log.service_type.toLowerCase().includes(query)) {
     return {
       label: 'Tipo',
-      value: log.service_type === 'MINOR_MINING' ? 'Mina Menor' : 'Preventivo',
+      value: log.service_type === 'MINOR_MINING' ? 'Servicio Menor' : 'Preventivo',
     };
   }
   return null;
@@ -93,7 +93,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
             return {
               id: log.id.toString(),
               title: log.unit_id,
-              subtitle: log.service_type === 'MINOR_MINING' ? 'Mina Menor' : 'Preventivo',
+              subtitle: log.service_type === 'MINOR_MINING' ? 'Servicio Menor' : 'Preventivo',
               metaLabel: match.label,
               metaValue: match.value,
               rawItem: log,
@@ -311,7 +311,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                   <span
                     className={`${AT.statusBadge} bg-emerald-500/10 text-emerald-700 border-emerald-500/20`}
                   >
-                    Mina Menor
+                    Servicio Menor
                   </span>
                 ) : (
                   <span
