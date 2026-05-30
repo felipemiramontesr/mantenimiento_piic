@@ -66,6 +66,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       searchConfig: null,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
   });
 
@@ -85,6 +87,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       searchConfig: null,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     const { rerender } = render(<FleetGridView {...mockProps} />);
@@ -98,6 +102,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       searchConfig: null,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     rerender(<FleetGridView {...mockProps} />);
@@ -113,6 +119,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       searchConfig: null,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     const { rerender } = render(<FleetGridView {...mockProps} />);
@@ -126,6 +134,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       searchConfig: null,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     rerender(<FleetGridView {...mockProps} />);
@@ -141,6 +151,8 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
       searchConfig: null,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<FleetGridView {...mockProps} />);

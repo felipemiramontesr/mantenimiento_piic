@@ -16,6 +16,7 @@ import {
   Wrench,
   AlertTriangle,
   Navigation,
+  Menu,
 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import ArchonManagementCard from '../UI/ArchonManagementCard';
@@ -28,7 +29,14 @@ import ArchonManagementCard from '../UI/ArchonManagementCard';
  */
 
 const SovereignHeader: React.FC = () => {
-  const { layoutData, searchTerm, setSearchTerm, searchConfig } = useSovereignLayout();
+  const {
+    layoutData,
+    searchTerm,
+    setSearchTerm,
+    searchConfig,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+  } = useSovereignLayout();
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -83,18 +91,25 @@ const SovereignHeader: React.FC = () => {
   const { main: MainIcon, sub: SubIcon } = getHeaderIcons(layoutData.title);
 
   return (
-    <header className="flex flex-row items-center w-full border-b border-pinnacle-navy/5 pl-10 pr-[46px] min-h-[10vh] py-2 bg-white relative z-50 mt-[10px]">
-      <div className="archon-grid-2-sovereign items-center w-full">
+    <header className="flex flex-row items-center w-full border-b border-pinnacle-navy/5 px-4 md:pl-10 md:pr-[46px] min-h-[10vh] py-2 bg-white relative z-50 mt-[10px]">
+      <div className="archon-grid-2-sovereign items-center w-full flex-col md:flex-row gap-4 md:gap-0">
         {/* 🛡️ Section Identification (Col Alfa) */}
         <div
-          className={`flex flex-col ${
-            searchConfig ? 'justify-between h-[105px] py-0.5' : 'justify-center'
+          className={`flex flex-col w-full ${
+            searchConfig ? 'justify-between h-auto md:h-[105px] py-0.5' : 'justify-center'
           }`}
         >
           <div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={(): void => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden flex items-center justify-center p-2 -ml-2 rounded hover:bg-slate-100 text-pinnacle-navy"
+                aria-label="Toggle Menu"
+              >
+                <Menu size={24} />
+              </button>
               <MainIcon size={20} className="text-pinnacle-yellow" strokeWidth={2.5} />
-              <h2 className="text-pinnacle-navy tracking-tighter font-black text-2xl m-0 p-0 leading-[0.9]">
+              <h2 className="text-pinnacle-navy tracking-tighter font-black text-xl md:text-2xl m-0 p-0 leading-[0.9]">
                 {layoutData.title}
               </h2>
             </div>

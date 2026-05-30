@@ -32,6 +32,13 @@ vi.mock('../../context/AuthContext', () => ({
   }),
 }));
 
+vi.mock('../../context/SovereignLayoutContext', () => ({
+  useSovereignLayout: (): Record<string, unknown> => ({
+    isMobileMenuOpen: false,
+    setIsMobileMenuOpen: vi.fn(),
+  }),
+}));
+
 describe('Sidebar Component (Archon Core)', () => {
   const navigateMock = vi.fn();
 

@@ -21,8 +21,8 @@ const DashboardLayout: React.FC = () => {
     <SovereignLayoutProvider>
       <FleetProvider>
         <div
-          className={`grid h-screen w-screen overflow-hidden bg-[#0f2a44] transition-all duration-300 ease-in-out ${
-            isCollapsed ? 'grid-cols-[80px_minmax(0,1fr)]' : 'grid-cols-[200px_minmax(0,1fr)]'
+          className={`flex flex-col md:grid h-screen w-screen overflow-hidden bg-[#0f2a44] transition-all duration-300 ease-in-out ${
+            isCollapsed ? 'md:grid-cols-[80px_minmax(0,1fr)]' : 'md:grid-cols-[200px_minmax(0,1fr)]'
           }`}
         >
           {/* 🔱 Navigation Chassis */}
@@ -34,7 +34,7 @@ const DashboardLayout: React.FC = () => {
             <SovereignHeader />
             <SovereignSubheader />
 
-            <div className="h-[80vh] overflow-y-auto px-10 pt-0 pb-[26px] custom-scrollbar flex-1 relative">
+            <div className="h-[80vh] overflow-y-auto px-4 md:px-10 pt-0 pb-[26px] custom-scrollbar flex-1 relative">
               <Outlet />
             </div>
 

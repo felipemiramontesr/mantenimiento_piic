@@ -9,12 +9,12 @@ import { LucideIcon } from 'lucide-react';
  */
 
 export interface SearchSuggestion {
-  id: string;          // Unique ID for React rendering and lookup
-  title: string;       // Primary search result title (e.g., "ASM-002")
-  subtitle: string;    // Primary detail (e.g., "Modelo: Aveo")
-  metaLabel: string;   // Matched attribute key/label (e.g., "Placas")
-  metaValue: string;   // Matched attribute value (e.g., "XYZ-987")
-  rawItem: unknown;    // Polymorphic reference to the original object
+  id: string; // Unique ID for React rendering and lookup
+  title: string; // Primary search result title (e.g., "ASM-002")
+  subtitle: string; // Primary detail (e.g., "Modelo: Aveo")
+  metaLabel: string; // Matched attribute key/label (e.g., "Placas")
+  metaValue: string; // Matched attribute value (e.g., "XYZ-987")
+  rawItem: unknown; // Polymorphic reference to the original object
 }
 
 export interface UniversalSearchConfig {
@@ -52,6 +52,8 @@ interface SovereignLayoutContextType {
     subheaderActions?: React.ReactNode,
     headerAction?: LayoutData['headerAction']
   ) => void;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (isOpen: boolean) => void;
 }
 
 const SovereignLayoutContext = createContext<SovereignLayoutContextType | undefined>(undefined);
@@ -65,6 +67,8 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
   });
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchConfig, setSearchConfig] = useState<UniversalSearchConfig | null>(null);
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const setSectionData = useCallback(
     (
@@ -87,6 +91,8 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
         searchConfig,
         setSearchConfig,
         setSectionData,
+        isMobileMenuOpen,
+        setIsMobileMenuOpen,
       }}
     >
       {children}

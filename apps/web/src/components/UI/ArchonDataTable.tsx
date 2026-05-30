@@ -79,7 +79,7 @@ export function ArchonDataTable<T>({
 
   const containerClasses =
     variant === 'master'
-      ? `bg-white overflow-visible border-y border-pinnacle-navy/5 animate-in fade-in duration-700 relative w-full ${className}`
+      ? `bg-white overflow-x-auto custom-scrollbar border-y border-pinnacle-navy/5 animate-in fade-in duration-700 relative w-full ${className}`
       : `w-full !p-0 !m-0 !rounded-none !border-none overflow-x-auto custom-scrollbar relative ${className}`;
 
   return (

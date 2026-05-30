@@ -187,6 +187,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
   });
 
@@ -233,6 +235,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: null,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     const { unmount: unmount2 } = render(<SovereignHeader />);
@@ -252,6 +256,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
@@ -274,6 +280,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
@@ -296,6 +304,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
@@ -318,6 +328,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
@@ -343,6 +355,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
@@ -369,6 +383,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
@@ -395,6 +411,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
@@ -414,6 +432,8 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
       searchConfig: mockSearchConfig,
       setSearchConfig: vi.fn(),
       setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
     });
 
     render(<SovereignHeader />);
