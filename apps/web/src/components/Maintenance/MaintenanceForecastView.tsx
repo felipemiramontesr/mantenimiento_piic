@@ -19,9 +19,17 @@ import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLay
 const SERVICE_LABELS: Record<ServiceType, string> = {
   BASIC_10K: 'Básico 10K',
   INTERMEDIATE_20K: 'Intermedio 20K',
-  MAJOR_30K: 'Mayor 30K',
-  ADVANCED_50K: 'Avanzado 50K',
+  MAJOR_30K: 'Mayor 30K - 40K',
+  ADVANCED_50K: 'Avanzado 50K - 60K',
   MINOR_MINING: 'Menor — Mina',
+};
+
+const SERVICE_WEIGHT: Record<ServiceType, number> = {
+  MINOR_MINING: 1,
+  BASIC_10K: 2,
+  INTERMEDIATE_20K: 3,
+  MAJOR_30K: 4,
+  ADVANCED_50K: 5,
 };
 
 const SERVICE_BADGE: Record<ServiceType, { bg: string; text: string; border: string }> = {
@@ -199,8 +207,8 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
     if (!sortConfig.field) return data;
     const f = sortConfig.field;
     return [...data].sort((a, b) => {
-      const valA = f === 'projectedServiceType' ? a.projectedOdometer : a[f];
-      const valB = f === 'projectedServiceType' ? b.projectedOdometer : b[f];
+      const valA = f === 'projectedServiceType' ? SERVICE_WEIGHT[a.projectedServiceType] : a[f];
+      const valB = f === 'projectedServiceType' ? SERVICE_WEIGHT[b.projectedServiceType] : b[f];
       if (typeof valA === 'number' && typeof valB === 'number') {
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
       }
