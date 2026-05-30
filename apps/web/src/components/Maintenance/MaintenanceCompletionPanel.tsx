@@ -168,7 +168,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
       className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full pb-20 space-y-8"
     >
       {/* ── COMPLETION CONTEXT BANNER ─────────────────────────────────────── */}
-      <div className="flex items-start gap-4 px-6 py-5 rounded-xl bg-amber-500/10 border border-amber-400/40">
+      <div className="flex items-start gap-4 px-6 py-5 rounded-[4px] bg-amber-500/10 border border-amber-400/40">
         <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0 mt-0.5">
           <Wrench size={18} className="text-amber-600" />
         </div>
@@ -198,7 +198,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
       </div>
 
       {error && (
-        <div className="px-5 py-3 rounded-xl bg-red-50 border border-red-200 text-[12px] font-bold text-red-700">
+        <div className="px-5 py-3 rounded-[4px] bg-red-50 border border-red-200 text-[12px] font-bold text-red-700">
           {error}
         </div>
       )}

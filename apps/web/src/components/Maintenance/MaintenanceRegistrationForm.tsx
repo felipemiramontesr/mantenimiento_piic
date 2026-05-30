@@ -383,7 +383,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
       {/* ── MODO DE REGISTRO (automático) ──────────────────────────────────── */}
       {selectedUnit && (
         <div
-          className={`flex items-center gap-3 px-5 py-3.5 rounded-xl border ${
+          className={`flex items-center gap-3 px-5 py-3.5 rounded-[4px] border ${
             isInProgress
               ? 'bg-amber-500/10 border-amber-400/40'
               : 'bg-emerald-500/10 border-emerald-400/30'
