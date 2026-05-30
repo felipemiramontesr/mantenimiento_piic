@@ -71,6 +71,12 @@ export function ArchonDataTable<T>({
     return 'justify-center';
   };
 
+  const getAlignClass = (align?: string): string => {
+    if (align === 'left') return 'text-left';
+    if (align === 'right') return 'text-right';
+    return 'text-center';
+  };
+
   const containerClasses =
     variant === 'master'
       ? `bg-white overflow-visible border-y border-pinnacle-navy/5 animate-in fade-in duration-700 relative w-full ${className}`
@@ -78,9 +84,13 @@ export function ArchonDataTable<T>({
 
   return (
     <div className={containerClasses} style={{ borderLeft: 'none', borderRight: 'none' }}>
-      <table data-testid={testId} style={{ borderLeft: 'none', borderRight: 'none' }} className="w-full border-collapse table-fixed [&_td]:!border-x-0 [&_th]:!border-x-0 [&_tr]:!border-x-0">
+      <table
+        data-testid={testId}
+        style={{ borderLeft: 'none', borderRight: 'none' }}
+        className="w-full border-collapse table-fixed [&_td]:!border-x-0 [&_th]:!border-x-0 [&_tr]:!border-x-0"
+      >
         <thead className="sticky top-0 z-20">
-          <tr className="bg-pinnacle-navy border-b border-pinnacle-navy/10 shadow-md">
+          <tr className="border-b border-pinnacle-navy/10 shadow-md">
             {headers.map((header) => (
               <th
                 key={header.key}
@@ -91,13 +101,13 @@ export function ArchonDataTable<T>({
                 }}
                 style={header.width ? { width: header.width } : {}}
                 className={`
-                  h-14 px-3 text-white text-[10px] font-black uppercase tracking-[0.15em] whitespace-nowrap
+                  bg-pinnacle-navy h-14 px-3 text-white text-[10px] font-black uppercase tracking-[0.15em] whitespace-nowrap
                   ${
                     header.sortable
                       ? 'cursor-pointer hover:bg-pinnacle-navy/90 transition-colors'
                       : ''
                   } 
-                  text-${header.align || 'center'}
+                  ${getAlignClass(header.align)}
                 `}
               >
                 <div className={`flex items-center gap-2 ${getJustifyClass(header.align)}`}>

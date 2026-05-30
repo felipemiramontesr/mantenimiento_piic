@@ -226,10 +226,10 @@ const RouteLogRow = ({
         </td>
 
         {/* Misión */}
-        <td className={`py-6 ${borderTopClass}`}>
-          <div className="flex flex-col items-start gap-1 px-4">
+        <td className={`py-6 text-center ${borderTopClass}`}>
+          <div className="flex flex-col items-center gap-1 px-4">
             {/* SALIDA RECORD */}
-            <div className="w-full flex flex-col items-start gap-1">
+            <div className="w-full flex flex-col items-center gap-1">
               <div className="flex items-center gap-2 whitespace-nowrap">
                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter w-[45px]">
                   Salida:
@@ -256,7 +256,7 @@ const RouteLogRow = ({
             {/* LLEGADA RECORD */}
             {log.end_time && (
               <>
-                <div className="w-full flex flex-col items-start gap-1 mt-1.5 border-t border-[#0f2a44]/5 pt-1.5">
+                <div className="w-full flex flex-col items-center gap-1 mt-1.5 border-t border-[#0f2a44]/5 pt-1.5">
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter w-[45px]">
                       Llegada:
@@ -456,10 +456,13 @@ const RouteLogRow = ({
                 e.stopPropagation();
                 onEdit?.(log);
               }}
-              className="p-2.5 rounded-[4px] bg-[#0f2a44] text-white"
-              title="Ajustes de Ruta"
+              className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none group"
+              title="Editar Ruta"
             >
-              <Pencil size={18} />
+              <Pencil
+                size={18}
+                className="transition-transform duration-300 group-hover:rotate-12"
+              />
             </button>
             {!log.end_time && (
               <button
@@ -670,7 +673,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
     { key: 'consumo', label: 'CONSUMO', width: '8%' },
     { key: 'costo', label: 'COSTO TOTAL', width: '8%' },
     { key: 'estado', label: 'ESTADO', width: '8%', sortable: true },
-    { key: 'ajustes', label: 'AJUSTES', width: '8%' },
+    { key: 'ajustes', label: 'ACCIONES', width: '8%' },
   ];
 
   if (reportingRoute) {

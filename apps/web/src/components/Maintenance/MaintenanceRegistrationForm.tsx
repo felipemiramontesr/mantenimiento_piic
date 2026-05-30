@@ -630,7 +630,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           <button
             type="submit"
             disabled={submitting || !canSubmit}
-            className={`w-full h-11 flex items-center justify-center gap-2 px-4 rounded-lg text-[12px] font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50 ${getSubmitBtnClass(
+            className={`w-full h-11 flex items-center justify-center gap-2 px-4 rounded-[4px] text-[12px] font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50 ${getSubmitBtnClass(
               isInProgress
             )}`}
           >

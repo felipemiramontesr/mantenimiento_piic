@@ -200,7 +200,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
     },
     { key: 'service_date', label: 'FECHAS', sortable: true, align: 'center', width: '22%' },
     { key: 'cost', label: 'COSTO', sortable: true, align: 'center', width: '11%' },
-    { key: 'accion', label: 'ACCIÓN', sortable: false, align: 'center', width: '11%' },
+    { key: 'accion', label: 'ACCIONES', sortable: false, align: 'center', width: '11%' },
   ];
 
   return (
@@ -237,7 +237,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                     }`
               }`}
             >
-              <td className="py-4 px-3">
+              <td className="py-4 px-3 text-center">
                 <div className="flex flex-col items-center">
                   {unit?.images?.[0] ? (
                     <img
@@ -276,7 +276,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                   </span>
                 </div>
               </td>
-              <td className="py-4 px-3">
+              <td className="py-4 px-3 text-center">
                 <div className="flex flex-col items-center">
                   <div className="relative mb-2">
                     <div className="w-10 h-10 rounded-full bg-[#0f2a44]/5 flex items-center justify-center border border-[#0f2a44]/10 overflow-hidden relative">
@@ -325,8 +325,8 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                 {Number(log.odometer_at_service).toLocaleString()} km
               </td>
               {/* FECHAS */}
-              <td className="py-4 px-3">
-                <div className="flex flex-col gap-3 w-full">
+              <td className="py-4 px-3 text-center">
+                <div className="flex flex-col gap-3 w-full items-center">
                   <div className="grid grid-cols-2 items-center gap-2">
                     <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
                       Entrada
@@ -396,20 +396,25 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                 })}`}
               </td>
 
-              {/* ACCIÓN */}
+              {/* ACCIONES */}
               <td className="py-4 px-3 text-center">
                 {isActive && onCompleteRequest && (
-                  <button
-                    type="button"
-                    onClick={(e): void => {
-                      e.stopPropagation();
-                      onCompleteRequest(log);
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-md transition-all duration-200 shadow-sm whitespace-nowrap"
-                  >
-                    <Wrench size={9} />
-                    Finalizar
-                  </button>
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      title="Finalizar Servicio"
+                      onClick={(e): void => {
+                        e.stopPropagation();
+                        onCompleteRequest(log);
+                      }}
+                      className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none group/complete"
+                    >
+                      <Wrench
+                        size={18}
+                        className="transition-transform duration-300 group-hover/complete:rotate-12"
+                      />
+                    </button>
+                  </div>
                 )}
               </td>
             </motion.tr>

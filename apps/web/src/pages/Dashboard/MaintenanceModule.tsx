@@ -38,6 +38,14 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
     scrollToTop();
   };
 
+  // Cancel SCHEDULE: return to origin panel (FORECAST if triggered from forecaster, HISTORY if from grid)
+  const handleCancelSchedule = (): void => {
+    const origin: MaintenancePanel = scheduleInitialUnit !== '' ? 'FORECAST' : 'HISTORY';
+    setScheduleInitialUnit('');
+    setActivePanel(origin);
+    scrollToTop();
+  };
+
   const handleCompleteRequest = (log: MaintenanceLog): void => {
     setCompletingLog(log);
     setActivePanel('COMPLETE');
@@ -93,10 +101,7 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
           description: 'Cancelar Programación',
           buttonText: 'Cerrar Formulario',
           isActive: true,
-          onClick: () => {
-            setActivePanel('HISTORY');
-            scrollToTop();
-          },
+          onClick: handleCancelSchedule,
         }
       );
       return;
@@ -166,7 +171,7 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
               {activePanel === 'SCHEDULE' && (
                 <MaintenanceRegistrationForm
                   onSuccess={handleReturnToGrid}
-                  onCancel={handleReturnToGrid}
+                  onCancel={handleCancelSchedule}
                   initialUnitId={scheduleInitialUnit}
                 />
               )}

@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   RefreshCcw,
   Pencil,
-  Settings,
 } from 'lucide-react';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
@@ -508,7 +507,7 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="py-4 px-2 min-w-[140px] border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <td className="py-4 px-2 min-w-[140px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
           <OdometerCluster
             unit={unit}
             usageUnit={usageUnit}
@@ -517,7 +516,7 @@ const FleetUnitRow = React.memo(
           />
         </td>
 
-        <td className="py-4 px-2 min-w-[180px] border-t border-solid border-slate-200 border-x-0 border-b-0">
+        <td className="py-4 px-2 min-w-[180px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
           <SpecCluster unit={unit} />
         </td>
 
@@ -888,7 +887,7 @@ export const FleetGridView = ({
     { key: 'salud', label: 'SALUD', width: '140px' },
     {
       key: 'acciones',
-      label: <Settings size={15} className="mx-auto opacity-70" />,
+      label: 'ACCIONES',
       width: '65px',
     },
   ];

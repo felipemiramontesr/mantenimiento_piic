@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Calendar, CheckCircle2, Clock, Gauge, PlusCircle, Zap } from 'lucide-react';
+import {
+  AlertTriangle,
+  Calendar,
+  CalendarPlus,
+  CheckCircle2,
+  Clock,
+  Gauge,
+  Zap,
+} from 'lucide-react';
 import { ForecastUrgency, MaintenanceForecastRow, ServiceType } from '../../types/maintenance';
 import api from '../../api/client';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -79,7 +87,7 @@ const headers: ArchonTableHeader[] = [
     width: '14%',
   },
   { key: 'urgency', label: 'URGENCIA', sortable: false, align: 'center', width: '13%' },
-  { key: 'action', label: 'ACCIÓN', sortable: false, align: 'center', width: '12%' },
+  { key: 'action', label: 'ACCIONES', sortable: false, align: 'center', width: '12%' },
 ];
 
 type SortField = keyof MaintenanceForecastRow | null;
@@ -174,7 +182,7 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
               className="border-y border-solid border-slate-200/50 bg-transparent hover:bg-pinnacle-navy/[0.015] transition-colors duration-300"
             >
               {/* UNIDAD */}
-              <td className="py-4 px-3">
+              <td className="py-4 px-3 text-center">
                 <div className="flex flex-col items-center">
                   {unit?.images?.[0] ? (
                     <img
@@ -268,16 +276,21 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
                 </div>
               </td>
 
-              {/* ACCIÓN */}
+              {/* ACCIONES */}
               <td className="py-4 px-3 text-center">
-                <button
-                  type="button"
-                  onClick={(): void => onScheduleRequest(row.unitId)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0f2a44] hover:bg-[#0f2a44]/85 active:scale-95 text-white text-[9px] font-black uppercase tracking-wider rounded-md transition-all duration-200 shadow-sm whitespace-nowrap"
-                >
-                  <PlusCircle size={10} />
-                  Programar
-                </button>
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={(): void => onScheduleRequest(row.unitId)}
+                    title="Programar Servicio"
+                    className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none group"
+                  >
+                    <CalendarPlus
+                      size={18}
+                      className="transition-transform duration-300 group-hover:rotate-12"
+                    />
+                  </button>
+                </div>
               </td>
             </motion.tr>
           );

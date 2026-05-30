@@ -142,9 +142,9 @@ const UserRegistryRow = ({
         <div className="flex justify-center gap-2">
           <button
             onClick={(): void => onEdit(user)}
-            className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] border-none outline-none"
+            className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none group"
           >
-            <Pencil size={18} />
+            <Pencil size={18} className="transition-transform duration-300 group-hover:rotate-12" />
           </button>
         </div>
       </td>
@@ -240,7 +240,7 @@ const UsersGridView: React.FC = () => {
     { key: 'contact', label: 'CANAL DE CONTACTO' },
     { key: 'role', label: 'ROL Y DEPARTAMENTO', sortable: true },
     { key: 'status', label: 'ESTATUS OPERATIVO', sortable: true },
-    { key: 'settings', label: 'AJUSTES' },
+    { key: 'settings', label: 'ACCIONES' },
   ];
 
   return (

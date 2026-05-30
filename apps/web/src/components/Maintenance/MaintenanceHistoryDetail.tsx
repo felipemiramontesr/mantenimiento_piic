@@ -126,7 +126,7 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 text-[#0f2a44] text-[11px] font-black uppercase tracking-wider transition-all duration-200"
+          className="flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 text-[#0f2a44] text-[11px] font-black uppercase tracking-wider transition-all duration-200"
         >
           <ArrowLeft size={14} />
           Volver
