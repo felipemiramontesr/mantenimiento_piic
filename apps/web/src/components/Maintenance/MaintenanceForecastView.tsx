@@ -21,7 +21,7 @@ const SERVICE_LABELS: Record<ServiceType, string> = {
   INTERMEDIATE_20K: 'Intermedio 20K',
   MAJOR_30K: 'Mayor 30K - 40K',
   ADVANCED_50K: 'Avanzado 50K - 60K',
-  MINOR_MINING: 'Menor — Mina',
+  MINOR_MINING: 'Servicio Menor',
 };
 
 const SERVICE_WEIGHT: Record<ServiceType, number> = {
