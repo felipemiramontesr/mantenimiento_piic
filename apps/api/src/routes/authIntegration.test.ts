@@ -110,7 +110,9 @@ describe('authIntegration.test', () => {
           },
         ],
         undefined,
-      ]);
+      ])
+      // permissions query for non-master role
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }, { slug: 'maint:view' }], undefined]);
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',

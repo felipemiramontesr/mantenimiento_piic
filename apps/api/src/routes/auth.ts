@@ -130,12 +130,25 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         }
         const mapped = mapUserResponse(user);
         const isMaster = mapped.roleId === 0 || mapped.roleId === 1 || user.username === 'GrayMan';
+        let permissions: string[];
+        if (isMaster) {
+          permissions = ['*'];
+        } else {
+          const [permRows] = await db.execute<RowDataPacket[]>(
+            `SELECT p.slug
+             FROM role_permissions rp
+             JOIN permissions p ON p.id = rp.permission_id
+             WHERE rp.role_id = ?`,
+            [mapped.roleId]
+          );
+          permissions = permRows.map((r) => r.slug as string);
+        }
         const token = fastify.jwt.sign({
           id: user.id,
           username: user.username,
           roleId: mapped.roleId,
           roleName: mapped.roleName,
-          permissions: isMaster ? ['*'] : [],
+          permissions,
         });
         return reply.send({ success: true, token, user: mapped });
       } catch (e) {
