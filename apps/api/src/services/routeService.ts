@@ -249,6 +249,29 @@ export default class RouteService {
         [randomUUID(), route.unit_id, routeUuid, route.start_reading, endReading, route.driver_id]
       );
 
+      // 6. Register fuel cost in financial ledger (AUTO — idempotent via source_uuid)
+      if (fuelAmount > 0) {
+        const period = new Date().toISOString().slice(0, 7);
+        await connection.execute(
+          `INSERT INTO financial_transactions
+             (uuid, unit_id, category, amount, period, source, source_uuid, notes, created_by, created_at)
+           SELECT UUID(), ?, 'FUEL', ?, ?, 'AUTO', ?, ?, ?, NOW()
+           WHERE NOT EXISTS (
+             SELECT 1 FROM financial_transactions
+             WHERE source = 'AUTO' AND source_uuid = ?
+           )`,
+          [
+            route.unit_id,
+            fuelAmount,
+            period,
+            routeUuid,
+            `Combustible + insumos ruta — ${routeUuid}`,
+            route.driver_id,
+            routeUuid,
+          ]
+        );
+      }
+
       await connection.commit();
       connection.release();
     } catch (e) {
