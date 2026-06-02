@@ -192,14 +192,15 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
                   ) : (
                     <button
                       onClick={(): Promise<void> => saveRole(role.id)}
-                      disabled={saving === role.id || !isDirty(role.id)}
+                      disabled={saving === role.id}
                       className={`
                         flex items-center justify-center gap-1 mx-auto px-3 py-1.5 rounded-[4px] text-[10px] font-black uppercase tracking-widest transition-all duration-200
                         ${
                           isDirty(role.id)
-                            ? 'bg-pinnacle-navy text-white hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
-                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            ? 'bg-archon-gold text-pinnacle-navy hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
+                            : 'bg-pinnacle-navy text-white hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
                         }
+                        ${saving === role.id ? 'opacity-50 cursor-not-allowed' : ''}
                       `}
                     >
                       <Save size={10} />

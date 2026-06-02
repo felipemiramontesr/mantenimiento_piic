@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.5_Identity_Avatar_And_Admin_Permissions_Matrix
+VERSIÓN ACTUAL: V.78.101.6_Admin_Matrix_Save_Button_Always_Active
 ```
 
 ---
