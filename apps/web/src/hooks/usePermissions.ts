@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 export default function usePermissions(): {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
+  isOmnipotent: () => boolean;
 } {
   const { currentUser } = useAuth();
 
@@ -37,5 +38,16 @@ export default function usePermissions(): {
   const hasAnyPermission = (permissions: string[]): boolean =>
     permissions.some((p) => hasPermission(p));
 
-  return { hasPermission, hasAnyPermission };
+  // Checks by roleId/username only — does NOT fall back to permissions array.
+  // Use for GrayMan-exclusive features like the permissions matrix.
+  const isOmnipotent = (): boolean => {
+    if (!currentUser) return false;
+    return (
+      Number(currentUser.roleId) === 0 ||
+      currentUser.roleName === 'Master (Archon)' ||
+      ['archon', 'greyman', 'grayman'].includes(currentUser.username.toLowerCase())
+    );
+  };
+
+  return { hasPermission, hasAnyPermission, isOmnipotent };
 }

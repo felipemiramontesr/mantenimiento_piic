@@ -89,7 +89,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isOmnipotent } = usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
 
@@ -102,8 +102,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
   const fullImageUrl = resolveImageUrl(currentUser?.imageUrl);
 
-  const goToSettings = (): void => {
+  const goToProfile = (): void => {
     navigate('/dashboard/settings');
+    setIsMobileMenuOpen(false);
+  };
+
+  const goToAdmin = (): void => {
+    navigate('/dashboard/admin');
     setIsMobileMenuOpen(false);
   };
 
@@ -145,7 +150,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           ${isCollapsed ? 'justify-center p-0' : 'justify-start px-4 gap-3'}
         `}
         >
-          <div className="w-10 h-10 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10">
+          <button
+            onClick={goToProfile}
+            title="Mi perfil"
+            className="w-10 h-10 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10 hover:brightness-125 transition-all duration-200 cursor-pointer outline-none border-none"
+          >
             {fullImageUrl ? (
               <img
                 src={fullImageUrl}
@@ -159,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             ) : (
               <UserIcon size={20} />
             )}
-          </div>
+          </button>
           <div
             className={`
           transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
@@ -241,20 +250,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
         {/* ⚙️ FOOTER (15%) */}
         <footer className="h-[15%] flex flex-col items-center justify-center px-4 gap-2 border-t border-white/5">
-          {hasPermission('user:admin') && (
+          {isOmnipotent() && (
             <>
               <button
-                onClick={goToSettings}
+                onClick={goToAdmin}
                 className={`
                 flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
                 ${
-                  location.pathname === '/dashboard/settings'
+                  location.pathname === '/dashboard/admin'
                     ? 'bg-white text-pinnacle-navy hover:brightness-95'
                     : 'bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110'
                 }
                 ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
               `}
-                title="Configuración de Sistema"
+                title="Administración del Sistema"
                 data-testid="nav-item-settings"
               >
                 <Settings size={14} className="shrink-0" />

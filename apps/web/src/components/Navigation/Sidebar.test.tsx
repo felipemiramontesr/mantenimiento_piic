@@ -16,9 +16,11 @@ vi.mock('../../hooks/usePermissions', () => ({
   default: (): {
     hasPermission: (permission: string) => boolean;
     hasAnyPermission: (permissions: string[]) => boolean;
+    isOmnipotent: () => boolean;
   } => ({
     hasPermission: (): boolean => true,
     hasAnyPermission: (): boolean => true,
+    isOmnipotent: (): boolean => true,
   }),
 }));
 
@@ -93,8 +95,8 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    const settingsBtn = screen.getByTitle('Configuración de Sistema');
+    const settingsBtn = screen.getByTitle('Administración del Sistema');
     fireEvent.click(settingsBtn);
-    expect(navigateMock).toHaveBeenCalledWith('/dashboard/settings');
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/admin');
   });
 });
