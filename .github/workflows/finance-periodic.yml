@@ -1,0 +1,100 @@
+name: 💰 Finance — Periodic LEASE & INSURANCE Insert
+
+on:
+  # ── Automático: día 1 de cada mes a las 6am UTC ───────────────────────────
+  schedule:
+    - cron: '0 6 1 * *'
+
+  # ── Manual: GrayMan puede especificar el rango de períodos ────────────────
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Período inicial (YYYY-MM). Default: mes actual.'
+        required: false
+        default: ''
+      to:
+        description: 'Período final (YYYY-MM). Default: igual a "from".'
+        required: false
+        default: ''
+
+# ── Para cambiar a menor frecuencia (ej. trimestral) ──────────────────────────
+# 1. Cambiar el cron a: '0 6 1 */3 *'
+# 2. Cambiar MONTHS_TO_COVER a 3 (el script cubrirá los últimos 3 meses)
+# El script run_090 es idempotente — nunca duplica registros existentes.
+
+env:
+  # Número de meses a cubrir en ejecución automática (cron).
+  # Cambia este valor si reduces la frecuencia del cron.
+  # Ejemplo: frecuencia mensual → 1 | bimestral → 2 | trimestral → 3
+  MONTHS_TO_COVER: 1
+
+jobs:
+  insert-periodic-finance:
+    name: 💰 Insertar LEASE + INSURANCE del período
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      # ── Calcular FINANCE_FROM y FINANCE_TO ───────────────────────────────
+      # En cron automático: cubre los últimos MONTHS_TO_COVER meses terminando en el mes actual.
+      # En workflow_dispatch: usa los inputs del usuario (o el mes actual si están vacíos).
+      - name: Compute finance period range
+        id: period
+        run: |
+          CURRENT=$(date -u +'%Y-%m')
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.from }}" ]; then
+            FROM="${{ inputs.from }}"
+            TO="${{ inputs.to }}"
+            if [ -z "$TO" ]; then TO="$FROM"; fi
+          else
+            # Cron automático: retroceder (MONTHS_TO_COVER - 1) meses desde el mes actual
+            OFFSET=$(( ${{ env.MONTHS_TO_COVER }} - 1 ))
+            FROM=$(date -u -d "$CURRENT-01 -${OFFSET} months" +'%Y-%m' 2>/dev/null || \
+                   python3 -c "
+          from datetime import date
+          from dateutil.relativedelta import relativedelta
+          d = date.today().replace(day=1)
+          d -= relativedelta(months=${OFFSET})
+          print(d.strftime('%Y-%m'))
+          ")
+            TO="$CURRENT"
+          fi
+
+          echo "from=$FROM" >> $GITHUB_OUTPUT
+          echo "to=$TO"     >> $GITHUB_OUTPUT
+          echo "[090] Rango calculado: $FROM → $TO"
+
+      # ── Ejecutar el script ────────────────────────────────────────────────
+      - name: Run periodic finance insert
+        env:
+          DB_HOST:     ${{ secrets.DB_HOST }}
+          DB_USER:     ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME:     ${{ secrets.DB_NAME }}
+          FINANCE_FROM: ${{ steps.period.outputs.from }}
+          FINANCE_TO:   ${{ steps.period.outputs.to }}
+        run: node packages/database/scripts/run_090_periodic_finance.js
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### 💰 Finance Periodic Insert" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Campo | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Período FROM | ${{ steps.period.outputs.from }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Período TO   | ${{ steps.period.outputs.to }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Meses cubiertos | ${{ env.MONTHS_TO_COVER }} |" >> $GITHUB_STEP_SUMMARY

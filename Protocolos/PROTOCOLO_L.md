@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.2_Finance_Module_JWT_Auth_And_Type_Fix
+VERSIÓN ACTUAL: V.78.101.3_Finance_Periodic_Insert_Workflow
 ```
 
 ---
