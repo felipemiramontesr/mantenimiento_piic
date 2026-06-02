@@ -78,6 +78,14 @@ const createTransactionSchema = z.object({
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Sesión requerida' });
+    }
+  });
+
   // GET /v1/finance/dashboard
   fastify.get('/finance/dashboard', async (request, reply) => {
     try {
@@ -198,13 +206,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       });
     } catch (error) {
       fastify.log.error({ err: (error as Error).message }, 'Finance dashboard error');
-      return reply
-        .code(500)
-        .send({
-          success: false,
-          code: 'INTERNAL_ERROR',
-          message: 'Error al obtener datos financieros',
-        });
+      return reply.code(500).send({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Error al obtener datos financieros',
+      });
     }
   });
 
@@ -300,13 +306,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       });
     } catch (error) {
       fastify.log.error({ err: (error as Error).message }, 'Finance transactions list error');
-      return reply
-        .code(500)
-        .send({
-          success: false,
-          code: 'INTERNAL_ERROR',
-          message: 'Error al obtener transacciones',
-        });
+      return reply.code(500).send({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Error al obtener transacciones',
+      });
     }
   });
 
@@ -326,7 +330,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
     const { unitId, category, amount, vendor, invoiceRef, notes } = parsed.data;
     const uuid = crypto.randomUUID();
     const period = computePeriod(new Date());
-    const createdBy = (request as unknown as { user?: { id: number } }).user?.id ?? 1;
+    const createdBy = (request.user as { id: number }).id;
 
     try {
       const [unitCheck] = await db.execute<RowDataPacket[]>(
@@ -359,13 +363,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.code(201).send({ success: true, data: { uuid } });
     } catch (error) {
       fastify.log.error({ err: (error as Error).message }, 'Finance create transaction error');
-      return reply
-        .code(500)
-        .send({
-          success: false,
-          code: 'INTERNAL_ERROR',
-          message: 'Error al registrar transacción',
-        });
+      return reply.code(500).send({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Error al registrar transacción',
+      });
     }
   });
 
