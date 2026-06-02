@@ -9,16 +9,17 @@ const AdminModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const { isOmnipotent } = usePermissions();
   const navigate = useNavigate();
+  const omnipotent = isOmnipotent();
 
   useEffect((): void => {
-    if (!isOmnipotent()) {
+    if (!omnipotent) {
       navigate('/dashboard', { replace: true });
       return;
     }
     setSectionData('Administración', 'Control soberano de roles y permisos del sistema Archon');
-  }, [setSectionData, isOmnipotent, navigate]);
+  }, [setSectionData, omnipotent, navigate]);
 
-  if (!isOmnipotent()) return <></>;
+  if (!omnipotent) return <></>;
 
   return (
     <div className="animate-in fade-in duration-700">
