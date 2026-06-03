@@ -373,7 +373,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-[#0f2a44]/5">
+              <div className="flex flex-col gap-4 pt-4 border-t border-[#0f2a44]/5">
                 {/* Col 1: Rol de Sistema */}
                 <div className="flex items-center justify-between opacity-60">
                   <div>
