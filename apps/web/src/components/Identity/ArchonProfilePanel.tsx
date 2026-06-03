@@ -230,7 +230,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
         )}
 
         {/* 🔱 TWO COLUMN GRID (Sovereign Information Density) */}
-        <div className="archon-grid-2 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full items-start">
           {/* Personal Data Panel */}
           <div className="glass-card-pro bg-white p-6 space-y-5">
             <div className="archon-card-header-pro">
