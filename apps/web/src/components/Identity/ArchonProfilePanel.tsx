@@ -374,8 +374,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4 pt-4 border-t border-[#0f2a44]/5">
-                {/* Col 1: Rol de Sistema */}
+              <div className="pt-4 border-t border-[#0f2a44]/5">
                 <div className="flex items-center justify-between opacity-60">
                   <div>
                     <p className="text-[9px] font-black uppercase tracking-widest text-[#0f2a44]">
@@ -387,21 +386,24 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                   </div>
                   <Shield size={20} className="text-[#0f2a44]/20" />
                 </div>
-
-                {/* Col 2: Submit button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !canSubmit}
-                  className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
-                    !canSubmit ? 'opacity-30 grayscale cursor-not-allowed' : 'shadow-xl'
-                  }`}
-                >
-                  {isSubmitting ? 'Sincronizando...' : 'Actualizar Perfil'}
-                  <Save size={16} />
-                </button>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Action row — aligned to right column */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
+          <div />
+          <button
+            type="submit"
+            disabled={isSubmitting || !canSubmit}
+            className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
+              !canSubmit ? 'opacity-30 grayscale cursor-not-allowed' : 'shadow-xl'
+            }`}
+          >
+            {isSubmitting ? 'Sincronizando...' : 'Actualizar Perfil'}
+            <Save size={16} />
+          </button>
         </div>
       </form>
     </div>
