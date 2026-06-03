@@ -299,99 +299,107 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
             </div>
 
             <div className="space-y-8">
-              <ArchonField label="Correo Electrónico" icon={Mail} required>
-                <input
-                  required
-                  type="email"
-                  className="archon-input"
-                  value={formData.email}
-                  onChange={(e): void => setFormData({ ...formData, email: e.target.value })}
-                />
-              </ArchonField>
-
-              <div className="space-y-6">
-                <ArchonField label="Nueva Contraseña" icon={Key}>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      minLength={8}
-                      placeholder="Dejar vacío para mantener actual"
-                      className="archon-input pr-12"
-                      value={formData.password}
-                      onChange={(e): void => setFormData({ ...formData, password: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      onClick={(): void => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-[4px] text-[#0f2a44]/20 hover:text-[#f2b705] hover:bg-[#f2b705]/10 transition-all duration-300 flex items-center justify-center border-0 bg-transparent outline-none focus:outline-none"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Col 1: Email */}
+                <ArchonField label="Correo Electrónico" icon={Mail} required>
+                  <input
+                    required
+                    type="email"
+                    className="archon-input"
+                    value={formData.email}
+                    onChange={(e): void => setFormData({ ...formData, email: e.target.value })}
+                  />
                 </ArchonField>
 
-                {formData.password && (
-                  <div className="animate-in fade-in slide-in-from-top-2">
-                    <ArchonField label="Confirmar Nueva Contraseña" icon={CheckCircle} required>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          className={`archon-input ${
-                            formData.confirmPassword && !passwordsMatch
-                              ? 'border-red-200 bg-red-50/10'
-                              : ''
-                          }`}
-                          value={formData.confirmPassword}
-                          onChange={(e): void =>
-                            setFormData({ ...formData, confirmPassword: e.target.value })
-                          }
-                        />
-                        {formData.confirmPassword && (
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            {passwordsMatch ? (
-                              <CheckCircle
-                                size={16}
-                                className="text-emerald-500 animate-in zoom-in"
-                              />
-                            ) : (
-                              <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">
-                                No coincide
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </ArchonField>
-                  </div>
-                )}
+                {/* Col 2: Password fields */}
+                <div className="flex flex-col gap-6">
+                  <ArchonField label="Nueva Contraseña" icon={Key}>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        minLength={8}
+                        placeholder="Dejar vacío para mantener actual"
+                        className="archon-input pr-12"
+                        value={formData.password}
+                        onChange={(e): void =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={(): void => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-[4px] text-[#0f2a44]/20 hover:text-[#f2b705] hover:bg-[#f2b705]/10 transition-all duration-300 flex items-center justify-center border-0 bg-transparent outline-none focus:outline-none"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </ArchonField>
+
+                  {formData.password && (
+                    <div className="animate-in fade-in slide-in-from-top-2">
+                      <ArchonField label="Confirmar Nueva Contraseña" icon={CheckCircle} required>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            className={`archon-input ${
+                              formData.confirmPassword && !passwordsMatch
+                                ? 'border-red-200 bg-red-50/10'
+                                : ''
+                            }`}
+                            value={formData.confirmPassword}
+                            onChange={(e): void =>
+                              setFormData({ ...formData, confirmPassword: e.target.value })
+                            }
+                          />
+                          {formData.confirmPassword && (
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                              {passwordsMatch ? (
+                                <CheckCircle
+                                  size={16}
+                                  className="text-emerald-500 animate-in zoom-in"
+                                />
+                              ) : (
+                                <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">
+                                  No coincide
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </ArchonField>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="pt-8 border-t border-[#0f2a44]/5 flex items-center justify-between opacity-60">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-[#0f2a44]">
-                    Rol de Sistema
-                  </p>
-                  <p className="text-xs font-bold text-[#0f2a44]">
-                    {currentUser?.roleName || 'Usuario'}
-                  </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-[#0f2a44]/5">
+                {/* Col 1: Rol de Sistema */}
+                <div className="flex items-center justify-between opacity-60">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-[#0f2a44]">
+                      Rol de Sistema
+                    </p>
+                    <p className="text-xs font-bold text-[#0f2a44]">
+                      {currentUser?.roleName || 'Usuario'}
+                    </p>
+                  </div>
+                  <Shield size={20} className="text-[#0f2a44]/20" />
                 </div>
-                <Shield size={20} className="text-[#0f2a44]/20" />
+
+                {/* Col 2: Submit button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !canSubmit}
+                  className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
+                    !canSubmit ? 'opacity-30 grayscale cursor-not-allowed' : 'shadow-xl'
+                  }`}
+                >
+                  {isSubmitting ? 'Sincronizando...' : 'Actualizar Perfil'}
+                  <Save size={16} />
+                </button>
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-center pt-8">
-          <button
-            type="submit"
-            disabled={isSubmitting || !canSubmit}
-            className={`btn-sentinel-emerald w-full md:w-auto uppercase font-black text-[11px] tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
-              !canSubmit ? 'opacity-30 grayscale cursor-not-allowed' : 'shadow-xl'
-            }`}
-          >
-            {isSubmitting ? 'Sincronizando...' : 'Actualizar Perfil'}
-            <Save size={16} />
-          </button>
         </div>
       </form>
     </div>
