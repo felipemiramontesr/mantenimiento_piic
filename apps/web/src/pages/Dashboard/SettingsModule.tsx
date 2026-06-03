@@ -1,31 +1,45 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Bell, Settings, User } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import AlertsPanel from '../../components/Identity/AlertsPanel';
 import ArchonProfilePanel from '../../components/Identity/ArchonProfilePanel';
 
-/**
- * 🔱 Archon Module: SettingsModule
- * Implementation: Sovereign Identity Node
- * v.20.0.0
- * Refinement: Centralized Header/Footer via SovereignLayoutContext
- */
+type SettingsPanel = 'ALERTS' | 'IDENTITY';
+
 const SettingsModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
+  const [activePanel, setActivePanel] = useState<SettingsPanel>('ALERTS');
 
-  // 🚀 SYNC SOVEREIGN HEADER
-  useEffect(() => {
+  const isIdentity = activePanel === 'IDENTITY';
+
+  useEffect((): void => {
     setSectionData(
-      'Configuración de Identidad',
-      'Gestión de Perfil, Seguridad de Acceso & Credenciales Archon'
+      isIdentity ? 'Configuración de Identidad' : 'Alertas y Notificaciones',
+      isIdentity
+        ? 'Gestión de Perfil, Seguridad de Acceso & Credenciales Archon'
+        : 'Notificaciones y alertas del sistema',
+      null,
+      {
+        variant: isIdentity ? 'yellow' : 'navy',
+        headerTitle: isIdentity ? 'Alertas y Notificaciones' : 'Configuración de Identidad',
+        HeaderIcon: isIdentity ? Bell : Settings,
+        PayloadIcon: isIdentity ? Bell : User,
+        actionTitle: isIdentity ? 'Alertas' : 'Identidad',
+        description: isIdentity ? 'Notificaciones del sistema' : 'Perfil, credenciales y foto',
+        buttonText: isIdentity ? 'Ver Alertas' : 'Configuración de Identidad',
+        isActive: isIdentity,
+        onClick: (): void => setActivePanel(isIdentity ? 'ALERTS' : 'IDENTITY'),
+      }
     );
-  }, [setSectionData]);
+  }, [setSectionData, isIdentity]);
 
   return (
     <div className="animate-in fade-in duration-700">
-      {/* 📊 BODY MODULAR */}
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container">
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            <ArchonProfilePanel />
+            {activePanel === 'ALERTS' && <AlertsPanel />}
+            {activePanel === 'IDENTITY' && <ArchonProfilePanel />}
           </div>
         </div>
       </section>
