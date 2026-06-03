@@ -9,6 +9,7 @@ import {
   Hash,
   Image as ImageIcon,
   Key,
+  ShieldCheck,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -293,7 +294,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           {/* Security & System Panel */}
           <div className="glass-card-pro bg-white p-6 space-y-5">
             <div className="archon-card-header-pro">
-              <Key size={20} className="text-[#0f2a44]" />
+              <ShieldCheck size={20} className="text-[#0f2a44]" />
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">
                 Seguridad y Acceso
               </h3>
