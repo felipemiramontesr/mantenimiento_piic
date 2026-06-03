@@ -156,11 +156,10 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       );
 
       const [topRows] = await db.execute<RowDataPacket[]>(
-        `SELECT ft.unit_id, fu.id AS unitName, SUM(ft.amount) AS amount
+        `SELECT ft.unit_id AS unitId, SUM(ft.amount) AS amount
          FROM financial_transactions ft
-         JOIN fleet_units fu ON fu.id = ft.unit_id
          WHERE ft.period >= ? AND ft.period <= ?
-         GROUP BY ft.unit_id, fu.id
+         GROUP BY ft.unit_id
          ORDER BY amount DESC
          LIMIT 5`,
         [fromMonth, toMonth]
@@ -198,8 +197,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
             amount: Number(r.amount),
           })),
           topUnits: (topRows as RowDataPacket[]).map((r) => ({
-            unitId: r.unit_id as number,
-            unitName: r.unitName as string,
+            unitId: r.unitId as string,
             amount: Number(r.amount),
           })),
         },

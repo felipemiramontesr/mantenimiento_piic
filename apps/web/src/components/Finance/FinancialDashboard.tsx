@@ -429,7 +429,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                     {idx + 1}
                   </span>
                   <span className="text-[11px] font-black text-pinnacle-navy font-mono w-20 shrink-0">
-                    {u.unitName}
+                    {u.unitId}
                   </span>
                   <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div

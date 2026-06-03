@@ -56,8 +56,7 @@ export interface MonthlyTrend {
 }
 
 export interface TopUnit {
-  unitId: number;
-  unitName: string;
+  unitId: string;
   amount: number;
 }
 
