@@ -233,7 +233,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
         {/* 🔱 TWO COLUMN GRID (Sovereign Information Density) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full items-start">
           {/* Personal Data Panel */}
-          <div className="glass-card-pro bg-white p-6 space-y-5">
+          <div className="card-archon-sovereign bg-white p-6 space-y-5 [--card-accent:#10b981]">
             <div className="archon-card-header-pro">
               <Contact size={20} className="text-[#10b981]" />
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">
@@ -292,7 +292,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           </div>
 
           {/* Security & System Panel */}
-          <div className="glass-card-pro bg-white p-6 space-y-5">
+          <div className="card-archon-sovereign bg-white p-6 space-y-5 [--card-accent:#0f2a44]">
             <div className="archon-card-header-pro">
               <ShieldCheck size={20} className="text-[#0f2a44]" />
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">

@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.15_Identity_Panel_Button_Extracted_To_Action_Row
+VERSIÓN ACTUAL: V.78.101.16_Identity_Panel_Card_Sovereign_Border_Style
 ```
 
 ---
