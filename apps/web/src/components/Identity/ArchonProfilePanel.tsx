@@ -205,7 +205,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
     <div className="animate-in fade-in duration-700">
       <form
         onSubmit={handleFormSubmit}
-        className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-40 space-y-8"
+        className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full max-w-[1700px] mx-auto pb-20 space-y-4"
       >
         {success && (
           <div className="bg-emerald-50 border-l-4 border-emerald-500 p-6 animate-in fade-in slide-in-from-top-4">
@@ -232,7 +232,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
         {/* 🔱 TWO COLUMN GRID (Sovereign Information Density) */}
         <div className="archon-grid-2 items-start">
           {/* Personal Data Panel */}
-          <div className="glass-card-pro bg-white p-12 space-y-10">
+          <div className="glass-card-pro bg-white p-6 space-y-5">
             <div className="archon-card-header-pro">
               <Contact size={20} className="text-[#10b981]" />
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">
@@ -240,7 +240,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
               </h3>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-4">
               <ArchonField label="Nombre Completo" icon={User} required>
                 <input
                   required
@@ -251,7 +251,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                 />
               </ArchonField>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ArchonField label="Usuario (Inalterable)" icon={Shield}>
                   <input
                     type="text"
@@ -272,7 +272,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                 </ArchonField>
               </div>
 
-              <div className="pt-8 border-t border-[#0f2a44]/5">
+              <div className="pt-4 border-t border-[#0f2a44]/5">
                 <ArchonField label="Fotografía de Perfil" icon={ImageIcon}>
                   <ArchonImageUploader
                     images={currentPreviewUrl ? [currentPreviewUrl] : []}
@@ -283,6 +283,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                     allowedFormats="JPG, PNG"
                     accept="image/jpeg, image/png"
                     variant="square"
+                    reducedHeight
                   />
                 </ArchonField>
               </div>
@@ -290,7 +291,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           </div>
 
           {/* Security & System Panel */}
-          <div className="glass-card-pro bg-white p-12 space-y-10">
+          <div className="glass-card-pro bg-white p-6 space-y-5">
             <div className="archon-card-header-pro">
               <Key size={20} className="text-[#0f2a44]" />
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#0f2a44]">
@@ -298,8 +299,8 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
               </h3>
             </div>
 
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Col 1: Email */}
                 <ArchonField label="Correo Electrónico" icon={Mail} required>
                   <input
@@ -312,7 +313,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                 </ArchonField>
 
                 {/* Col 2: Password fields */}
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-3">
                   <ArchonField label="Nueva Contraseña" icon={Key}>
                     <div className="relative">
                       <input
@@ -372,7 +373,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-[#0f2a44]/5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-[#0f2a44]/5">
                 {/* Col 1: Rol de Sistema */}
                 <div className="flex items-center justify-between opacity-60">
                   <div>
