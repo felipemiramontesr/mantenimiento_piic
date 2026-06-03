@@ -42,8 +42,9 @@ test.describe('Fleet Sovereign Operations', () => {
   });
 
   test('should certify the Fleet Registration architecture', async ({ page }) => {
-    // Verify Management Cards
-    await expect(page.getByTestId('fleet-strategy-btn')).toBeVisible();
+    // Verify the grid is visible (strategy view is the default)
+    await expect(page.getByTestId('fleet-inventory-table')).toBeVisible();
+    // Verify the registration management card
     await expect(page.getByTestId('fleet-registration-btn')).toBeVisible();
 
     // Open Registration Form

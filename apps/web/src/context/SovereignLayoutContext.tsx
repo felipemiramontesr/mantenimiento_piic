@@ -37,6 +37,7 @@ interface LayoutData {
     buttonText: string;
     isActive: boolean;
     onClick: () => void;
+    testId?: string;
   } | null;
 }
 

@@ -168,6 +168,7 @@ const FleetModule: React.FC = (): React.ReactElement => {
         buttonText:
           activePanel === 'EXPANSION' || !!editingUnit ? 'Cerrar Formulario' : 'Iniciar Registro',
         isActive: activePanel === 'EXPANSION' || !!editingUnit,
+        testId: 'fleet-registration-btn',
         onClick: () => {
           if (editingUnit) {
             handleReturnToGrid();

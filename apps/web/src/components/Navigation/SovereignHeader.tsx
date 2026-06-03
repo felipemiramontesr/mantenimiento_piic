@@ -213,6 +213,7 @@ const SovereignHeader: React.FC = () => {
                 buttonText={layoutData.headerAction.buttonText}
                 isActive={layoutData.headerAction.isActive}
                 onClick={layoutData.headerAction.onClick}
+                testId={layoutData.headerAction.testId}
               />
             </div>
           )}
