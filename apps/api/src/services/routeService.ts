@@ -4,6 +4,7 @@ import { RowDataPacket, PoolConnection, ResultSetHeader } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import { recordAuditLog } from './auditService';
+import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
 
 /**
  * 🔱 Archon RouteService — CTI Architecture (V2)
@@ -84,7 +85,8 @@ export default class RouteService {
       );
 
       if (units.length === 0) throw new Error(`Unit ${unitId} not found`);
-      if (units[0].status === 'En Ruta') throw new Error(`Unit ${unitId} is already in transit`);
+      if (units[0].status === UNIT_STATUS.IN_ROUTE)
+        throw new Error(`Unit ${unitId} is already in transit`);
       if (units[0].status === 'Downtime') throw new Error(`Unit ${unitId} is under maintenance`);
       if (startReading < units[0].odometer) {
         throw new Error(
@@ -330,11 +332,12 @@ export default class RouteService {
       );
 
       // 3. Determine unit status impact (Industrial Safety Protocol)
-      let nextStatus = route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible';
+      let nextStatus =
+        route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE;
       if (severity === 'CRITICAL') {
-        nextStatus = 'En Mantenimiento';
+        nextStatus = UNIT_STATUS.MAINTENANCE;
       } else if (category === 'SINIESTRO') {
-        nextStatus = 'Descontinuada';
+        nextStatus = UNIT_STATUS.DISCONTINUED;
       }
 
       // 4. Forensic journal entry
@@ -347,7 +350,7 @@ export default class RouteService {
           route.unit_id,
           routeUuid,
           route.start_reading,
-          route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible',
+          route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE,
           nextStatus,
           `${category}: ${description.substring(0, 100)}`,
           route.driver_id,
@@ -355,7 +358,10 @@ export default class RouteService {
       );
 
       // 5. Apply unit status impact if it changed
-      if (nextStatus !== (route.status === 'ACTIVE' ? 'En Ruta' : 'Disponible')) {
+      if (
+        nextStatus !==
+        (route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE)
+      ) {
         await connection.execute('UPDATE fleet_units SET status = ? WHERE id = ?', [
           nextStatus,
           route.unit_id,

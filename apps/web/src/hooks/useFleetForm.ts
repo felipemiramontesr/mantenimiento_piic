@@ -4,6 +4,7 @@ import { AxiosResponse } from 'axios';
 import { CreateFleetUnit, UseFleetFormReturn, CatalogOption } from '../types/fleet';
 import getInitialFleetForm from '../utils/fleetUtils';
 import api from '../api/client';
+import { archonCache } from '../utils/archonCache';
 
 /**
  * 🔱 Archon Alpha Engine (v.37.0.0) - THE CASCADE REBUILD
@@ -17,6 +18,18 @@ const extractCatalogData = (
   const { data } = res;
   const rawData = (data as { data?: CatalogOption[] })?.data || (data as CatalogOption[]) || [];
   return Array.isArray(rawData) ? rawData : [];
+};
+
+const getCatalog = async (name: string): Promise<CatalogOption[]> => {
+  const cacheKey = `catalog_${name}`;
+  const cached = archonCache.get<CatalogOption[]>(cacheKey);
+  if (cached) return cached;
+  const res = await api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
+    `/catalogs/${name}`
+  );
+  const data = extractCatalogData(res);
+  archonCache.set(cacheKey, data);
+  return data;
 };
 
 const EMERGENCY_BRANDS = [
@@ -134,96 +147,52 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
     setIsLoading(true);
 
     try {
-      const ts = Date.now();
       const [
-        asset,
-        fuel,
-        drive,
-        trans,
-        time,
-        usage,
-        dept,
-        loc,
-        uses,
-        tires,
-        lube,
-        filter,
-        engines,
-        terrains,
-        ownersRes,
-        complianceRes,
-        colorsRes,
-        maintCentersRes,
-        insuranceRes,
-        originsRes,
-        environmentalRes,
+        assetList,
+        fuelList,
+        driveList,
+        transList,
+        timeList,
+        usageList,
+        deptList,
+        locList,
+        usesList,
+        tireList,
+        lubeList,
+        filterList,
+        engineList,
+        terrainList,
+        ownerList,
+        complianceList,
+        colorList,
+        maintCenterList,
+        insuranceList,
+        originList,
+        envList,
       ] = await Promise.all([
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/ASSET_TYPE?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/FUEL?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/DRIVE_TYPE?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/TRANSMISSION?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/FREQ_TIME?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/FREQ_USAGE?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/DEPARTMENT?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/LOCATION?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/OPERATIONAL_USE?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/TIRE_BRAND?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/LUBE_BRAND?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/FILTER_BRAND?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/ENGINE_TYPE?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/TERRAIN_TYPE?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/FLEET_OWNER?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/COMPLIANCE_STATUS?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/VEHICLE_COLOR?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/MAINTENANCE_CENTER?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/INSURANCE_COMPANY?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/ROUTE_ORIGIN?_cb=${ts}`
-        ),
-        api.get<{ success: boolean; data: CatalogOption[] } | CatalogOption[]>(
-          `/catalogs/ENVIRONMENTAL_HOLOGRAM?_cb=${ts}`
-        ),
+        getCatalog('ASSET_TYPE'),
+        getCatalog('FUEL'),
+        getCatalog('DRIVE_TYPE'),
+        getCatalog('TRANSMISSION'),
+        getCatalog('FREQ_TIME'),
+        getCatalog('FREQ_USAGE'),
+        getCatalog('DEPARTMENT'),
+        getCatalog('LOCATION'),
+        getCatalog('OPERATIONAL_USE'),
+        getCatalog('TIRE_BRAND'),
+        getCatalog('LUBE_BRAND'),
+        getCatalog('FILTER_BRAND'),
+        getCatalog('ENGINE_TYPE'),
+        getCatalog('TERRAIN_TYPE'),
+        getCatalog('FLEET_OWNER'),
+        getCatalog('COMPLIANCE_STATUS'),
+        getCatalog('VEHICLE_COLOR'),
+        getCatalog('MAINTENANCE_CENTER'),
+        getCatalog('INSURANCE_COMPANY'),
+        getCatalog('ROUTE_ORIGIN'),
+        getCatalog('ENVIRONMENTAL_HOLOGRAM'),
       ]);
 
-      const assetList = extractCatalogData(asset);
       // Initialize brands for the first asset type (usually VEH)
       const brandsInitial = await fetchCategory('BRAND', assetList[0]?.id);
 
@@ -232,26 +201,26 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
           (prev: CatalogsState): CatalogsState => ({
             ...prev,
             assetTypes: assetList,
-            fuelTypes: extractCatalogData(fuel),
-            driveTypes: extractCatalogData(drive),
-            transmissionTypes: extractCatalogData(trans),
-            freqTime: extractCatalogData(time),
-            freqUsage: extractCatalogData(usage),
-            departments: extractCatalogData(dept),
-            locations: extractCatalogData(loc),
-            useTypes: extractCatalogData(uses),
-            tireBrands: extractCatalogData(tires),
-            lubeBrands: extractCatalogData(lube),
-            filterBrands: extractCatalogData(filter),
-            engineTypes: extractCatalogData(engines),
-            terrainTypes: extractCatalogData(terrains),
-            owners: extractCatalogData(ownersRes),
-            complianceStatuses: extractCatalogData(complianceRes),
-            colors: extractCatalogData(colorsRes),
-            maintenanceCenters: extractCatalogData(maintCentersRes),
-            insuranceCompanies: extractCatalogData(insuranceRes),
-            routeOrigins: extractCatalogData(originsRes),
-            environmentalHolograms: extractCatalogData(environmentalRes),
+            fuelTypes: fuelList,
+            driveTypes: driveList,
+            transmissionTypes: transList,
+            freqTime: timeList,
+            freqUsage: usageList,
+            departments: deptList,
+            locations: locList,
+            useTypes: usesList,
+            tireBrands: tireList,
+            lubeBrands: lubeList,
+            filterBrands: filterList,
+            engineTypes: engineList,
+            terrainTypes: terrainList,
+            owners: ownerList,
+            complianceStatuses: complianceList,
+            colors: colorList,
+            maintenanceCenters: maintCenterList,
+            insuranceCompanies: insuranceList,
+            routeOrigins: originList,
+            environmentalHolograms: envList,
             marcas:
               brandsInitial.length > 0 ? brandsInitial : (EMERGENCY_BRANDS as CatalogOption[]),
           })

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
 import db from '../services/db';
+import { UNIT_STATUS } from '../constants/statuses';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,8 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       const [unitRows] = await db.execute<RowDataPacket[]>(
         `SELECT COUNT(*) AS unitCount
          FROM fleet_units
-         WHERE status != 'Descontinuada'`
+         WHERE status != ?`,
+        [UNIT_STATUS.DISCONTINUED]
       );
 
       const [categoryRows] = await db.execute<RowDataPacket[]>(

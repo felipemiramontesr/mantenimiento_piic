@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
 import db from '../services/db';
+import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -151,7 +152,7 @@ async function applyMaintenanceCompletionToUnit(
     ['lastServiceReading', odometerAtService],
     ['lastServiceDate', serviceDate],
     ['nextServiceReading_forecast', nextServiceReading],
-    ['status', 'Disponible'],
+    ['status', UNIT_STATUS.AVAILABLE],
   ];
   if (fuelLevelEnd !== undefined) updates.push(['lastFuelLevel', fuelLevelEnd]);
   if (updateChassisOdo) updates.push(['last_chassis_inspection_odometer', odometerAtService]);
@@ -657,15 +658,15 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       if (data.is_in_progress) {
         // 4a. Lock unit → En Mantenimiento (blocks route dispatch)
         await connection.execute(
-          `UPDATE fleet_units SET status = 'En Mantenimiento', updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-          [data.unitId]
+          `UPDATE fleet_units SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+          [UNIT_STATUS.MAINTENANCE, data.unitId]
         );
         await connection.commit();
         return reply.code(201).send({
           success: true,
           message: 'Maintenance order opened. Unit locked to En Mantenimiento.',
           uuid: logUuid,
-          movement_status: 'ACTIVE',
+          movement_status: MOVEMENT_STATUS.ACTIVE,
         });
       }
       // 4b. Apply completion immediately (in-situ / historical log)
@@ -684,7 +685,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         success: true,
         message: 'Maintenance registered successfully.',
         uuid: logUuid,
-        movement_status: 'COMPLETED',
+        movement_status: MOVEMENT_STATUS.COMPLETED,
       });
     } catch (error) {
       await connection.rollback();
@@ -718,7 +719,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       );
       if (movements.length === 0) throw new Error('Maintenance order not found');
       const movement = movements[0];
-      if (movement.status !== 'ACTIVE')
+      if (movement.status !== MOVEMENT_STATUS.ACTIVE)
         throw new Error(`Cannot complete: order is already ${movement.status}`);
 
       const unitId = movement.unit_id as string;
@@ -800,7 +801,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         success: true,
         message: 'Maintenance completed. Unit released to Disponible.',
         uuid,
-        movement_status: 'COMPLETED',
+        movement_status: MOVEMENT_STATUS.COMPLETED,
       });
     } catch (error) {
       await connection.rollback();

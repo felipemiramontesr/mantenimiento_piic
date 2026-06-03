@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.19_Refactor_Phase1_TopUnit_Alias_Consistency
+VERSIÓN ACTUAL: V.78.101.20_Refactor_Phase2_Status_Constants_And_Utils
 ```
 
 ---

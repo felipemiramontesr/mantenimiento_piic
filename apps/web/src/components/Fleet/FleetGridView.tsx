@@ -91,130 +91,126 @@ const IdentityCluster = ({
   );
 };
 
-const LogisticsCluster = ({
-  unit,
-  cuenta,
-  usageUnit,
-}: {
-  unit: FleetUnit;
-  cuenta: string | number;
-  usageUnit: string;
-}): React.JSX.Element => (
-  <div className="flex flex-col items-center space-y-3">
-    <div className="flex flex-col items-center">
-      <span className="text-[10px] font-black text-navy-400 uppercase tracking-wider">LEASING</span>
-      <span className="text-[14px] font-black text-navy-900">
-        $
-        {Number(unit.monthlyLeasePayment || 0).toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}
-      </span>
-      <span className="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 rounded uppercase tracking-tighter mt-1">
-        CTA: {cuenta}
-      </span>
-    </div>
-    <div className="flex flex-col items-center gap-1.5">
-      <span className={`flex items-center gap-1.5 ${AT.cellValue} uppercase tracking-tighter`}>
-        <RefreshCcw size={11} className="text-sky-500" />
-        {unit.usageFreqLabel ||
-          `${Number(unit.maintIntervalKm || 10000).toLocaleString('en-US', {
+const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
+  const cuenta = unit.accountingAccount || '---';
+  const usageUnit = unit.usageUnitName || 'KM';
+  return (
+    <div className="flex flex-col items-center space-y-3">
+      <div className="flex flex-col items-center">
+        <span className="text-[10px] font-black text-navy-400 uppercase tracking-wider">
+          LEASING
+        </span>
+        <span className="text-[14px] font-black text-navy-900">
+          $
+          {Number(unit.monthlyLeasePayment || 0).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })} ${usageUnit}`}
-      </span>
-      <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-        <CalendarDays size={11} className="text-slate-300" />
-        {unit.timeFreqLabel || `${unit.maintIntervalDays || 180} DÍAS`}
-      </span>
+          })}
+        </span>
+        <span className="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 rounded uppercase tracking-tighter mt-1">
+          CTA: {cuenta}
+        </span>
+      </div>
+      <div className="flex flex-col items-center gap-1.5">
+        <span className={`flex items-center gap-1.5 ${AT.cellValue} uppercase tracking-tighter`}>
+          <RefreshCcw size={11} className="text-sky-500" />
+          {unit.usageFreqLabel ||
+            `${Number(unit.maintIntervalKm || 10000).toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} ${usageUnit}`}
+        </span>
+        <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+          <CalendarDays size={11} className="text-slate-300" />
+          {unit.timeFreqLabel || `${unit.maintIntervalDays || 180} DÍAS`}
+        </span>
+      </div>
+      <div className="bg-sky-50 px-2 py-1 rounded border border-sky-100 shadow-sm">
+        <span className="text-[10px] font-black text-sky-700">
+          {Number(unit.dailyUsageAvg || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}{' '}
+          {usageUnit}/D
+        </span>
+      </div>
     </div>
-    <div className="bg-sky-50 px-2 py-1 rounded border border-sky-100 shadow-sm">
-      <span className="text-[10px] font-black text-sky-700">
-        {Number(unit.dailyUsageAvg || 0).toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}{' '}
-        {usageUnit}/D
-      </span>
-    </div>
-  </div>
-);
+  );
+};
 
-const OdometerCluster = ({
-  unit,
-  usageUnit,
-  carga,
-  tanque,
-}: {
-  unit: FleetUnit;
-  usageUnit: string;
-  carga: string | number;
-  tanque: string | number;
-}): React.JSX.Element => (
-  <div className="flex flex-col items-center space-y-4">
-    <div className="flex items-center gap-3 bg-sky-50 px-4 py-2 rounded border border-sky-100 transform hover:scale-105 transition-transform">
-      <Gauge size={16} className="text-sky-600" />
-      <span className="text-[15px] font-black text-navy-900 tracking-tight whitespace-nowrap">
-        {Number(unit.odometer || 0).toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}{' '}
-        {usageUnit}
-      </span>
-    </div>
-    <div className="flex flex-col items-center opacity-60 text-[11px] font-bold text-slate-600">
-      <span>
-        {Number(unit.lastServiceReading || 0).toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}{' '}
-        {usageUnit}
-      </span>
-      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-        {formatDateTime(new Date(unit.lastServiceDate || Date.now()))}
-      </span>
-    </div>
-    <div className="flex flex-col items-center bg-amber-50 px-3 py-1 rounded border border-amber-100">
-      <span className="text-[9px] font-black text-amber-600 uppercase tracking-tighter">
-        OBJETIVO {usageUnit}
-      </span>
-      <span className="text-[13px] font-black text-amber-800">
-        {Number(unit.nextServiceKmTarget ?? unit.nextServiceReading ?? 0).toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}
-      </span>
-    </div>
-    <div className="flex items-center gap-4 pt-2 border-t border-slate-100 w-full justify-center">
-      <div className="flex flex-col items-center">
-        <span className="text-[8px] font-black text-slate-400 uppercase">Carga</span>
-        <span className="text-[10px] font-black text-navy-800">
-          {Number(carga || 0).toLocaleString('en-US')} KG
+const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
+  const usageUnit = unit.usageUnitName || 'KM';
+  const carga = unit.capacidadCarga || 0;
+  const tanque = unit.fuelTankCapacity || 0;
+  return (
+    <div className="flex flex-col items-center space-y-4">
+      <div className="flex items-center gap-3 bg-sky-50 px-4 py-2 rounded border border-sky-100 transform hover:scale-105 transition-transform">
+        <Gauge size={16} className="text-sky-600" />
+        <span className="text-[15px] font-black text-navy-900 tracking-tight whitespace-nowrap">
+          {Number(unit.odometer || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}{' '}
+          {usageUnit}
         </span>
       </div>
-      <div className="flex flex-col items-center">
-        <span className="text-[8px] font-black text-slate-400 uppercase">Tanque</span>
-        <span className="text-[10px] font-black text-navy-800">
-          {(() => {
-            const percent =
-              unit.lastFuelLevel !== undefined && unit.lastFuelLevel !== null
-                ? Number(unit.lastFuelLevel)
-                : 100;
-            const cap = Number(tanque || 0);
-            const currentLiters = (percent / 100) * cap;
-            return `${currentLiters.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })} / ${cap.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })} L`;
-          })()}
+      <div className="flex flex-col items-center opacity-60 text-[11px] font-bold text-slate-600">
+        <span>
+          {Number(unit.lastServiceReading || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}{' '}
+          {usageUnit}
+        </span>
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+          {formatDateTime(new Date(unit.lastServiceDate || Date.now()))}
         </span>
       </div>
+      <div className="flex flex-col items-center bg-amber-50 px-3 py-1 rounded border border-amber-100">
+        <span className="text-[9px] font-black text-amber-600 uppercase tracking-tighter">
+          OBJETIVO {usageUnit}
+        </span>
+        <span className="text-[13px] font-black text-amber-800">
+          {Number(unit.nextServiceKmTarget ?? unit.nextServiceReading ?? 0).toLocaleString(
+            'en-US',
+            {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }
+          )}
+        </span>
+      </div>
+      <div className="flex items-center gap-4 pt-2 border-t border-slate-100 w-full justify-center">
+        <div className="flex flex-col items-center">
+          <span className="text-[8px] font-black text-slate-400 uppercase">Carga</span>
+          <span className="text-[10px] font-black text-navy-800">
+            {Number(carga || 0).toLocaleString('en-US')} KG
+          </span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-[8px] font-black text-slate-400 uppercase">Tanque</span>
+          <span className="text-[10px] font-black text-navy-800">
+            {(() => {
+              const percent =
+                unit.lastFuelLevel !== undefined && unit.lastFuelLevel !== null
+                  ? Number(unit.lastFuelLevel)
+                  : 100;
+              const cap = Number(tanque || 0);
+              const currentLiters = (percent / 100) * cap;
+              return `${currentLiters.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })} / ${cap.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })} L`;
+            })()}
+          </span>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const HologramBadge = ({
   hologram,
@@ -500,20 +496,11 @@ const FleetUnitRow = React.memo(
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <LogisticsCluster
-            unit={unit}
-            cuenta={unit.accountingAccount || '---'}
-            usageUnit={usageUnit}
-          />
+          <LogisticsCluster unit={unit} />
         </td>
 
         <td className="py-4 px-2 min-w-[140px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <OdometerCluster
-            unit={unit}
-            usageUnit={usageUnit}
-            carga={unit.capacidadCarga || 0}
-            tanque={unit.fuelTankCapacity || 0}
-          />
+          <OdometerCluster unit={unit} />
         </td>
 
         <td className="py-4 px-2 min-w-[180px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
