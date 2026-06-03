@@ -24,6 +24,7 @@ import ArchonField from '../ArchonField';
 import ArchonSelect, { SelectOption } from '../ArchonSelect';
 import { useUsers } from '../../context/UserContext';
 import ArchonFuelSensor from '../Routes/ArchonFuelSensor';
+import { MAINTENANCE } from '../../constants/maintenance';
 
 interface MaintenanceRegistrationFormProps {
   onSuccess: () => void;
@@ -37,24 +38,38 @@ interface MaintenanceRegistrationFormProps {
  */
 const computeServiceType = (odometer: number, maintIntervalKm: number | string): ServiceType => {
   if (!odometer || odometer <= 0) return 'BASIC_10K';
-  const remainder = odometer % 60000;
-  const isMineUnit = Number(maintIntervalKm) === 5000;
+  const remainder = odometer % MAINTENANCE.CYCLE_KM;
+  const isMineUnit = Number(maintIntervalKm) === MAINTENANCE.MINE_UNIT_INTERVAL_KM;
 
-  if (remainder <= 1000 || remainder >= 59000) return 'ADVANCED_50K';
-  if (remainder >= 49000 && remainder <= 51000) return 'ADVANCED_50K';
-  if (remainder >= 29000 && remainder <= 41000) return 'MAJOR_30K';
-  if (remainder >= 19000 && remainder <= 21000) return 'INTERMEDIATE_20K';
-  if (remainder >= 9000 && remainder <= 11000) return 'BASIC_10K';
+  if (
+    remainder <= MAINTENANCE.TOLERANCE_KM ||
+    remainder >= MAINTENANCE.CYCLE_KM - MAINTENANCE.TOLERANCE_KM
+  )
+    return 'ADVANCED_50K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.ADVANCED_50K.low &&
+    remainder <= MAINTENANCE.WINDOWS.ADVANCED_50K.high
+  )
+    return 'ADVANCED_50K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.MAJOR_30K.low &&
+    remainder <= MAINTENANCE.WINDOWS.MAJOR_30K.high
+  )
+    return 'MAJOR_30K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.INTERMEDIATE_20K.low &&
+    remainder <= MAINTENANCE.WINDOWS.INTERMEDIATE_20K.high
+  )
+    return 'INTERMEDIATE_20K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.BASIC_10K.low &&
+    remainder <= MAINTENANCE.WINDOWS.BASIC_10K.high
+  )
+    return 'BASIC_10K';
 
   if (isMineUnit) return 'MINOR_MINING';
 
-  const milestones: { type: ServiceType; value: number }[] = [
-    { type: 'BASIC_10K', value: 10000 },
-    { type: 'INTERMEDIATE_20K', value: 20000 },
-    { type: 'MAJOR_30K', value: 30000 },
-    { type: 'MAJOR_30K', value: 40000 },
-    { type: 'ADVANCED_50K', value: 50000 },
-  ];
+  const milestones: { type: ServiceType; value: number }[] = [...MAINTENANCE.MILESTONES];
   let best: ServiceType = 'BASIC_10K';
   let minDist = Infinity;
   milestones.forEach((m) => {

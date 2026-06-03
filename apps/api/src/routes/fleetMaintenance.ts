@@ -4,6 +4,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
 import db from '../services/db';
 import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
+import { MAINTENANCE } from '../constants/maintenance';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -76,24 +77,38 @@ export function computeServiceType(
   maintIntervalKm: number | string
 ): ServiceType {
   if (!odometer || odometer <= 0) return 'BASIC_10K';
-  const remainder = odometer % 60000;
-  const isMineUnit = Number(maintIntervalKm) === 5000;
+  const remainder = odometer % MAINTENANCE.CYCLE_KM;
+  const isMineUnit = Number(maintIntervalKm) === MAINTENANCE.MINE_UNIT_INTERVAL_KM;
 
-  if (remainder <= 1000 || remainder >= 59000) return 'ADVANCED_50K';
-  if (remainder >= 49000 && remainder <= 51000) return 'ADVANCED_50K';
-  if (remainder >= 29000 && remainder <= 41000) return 'MAJOR_30K';
-  if (remainder >= 19000 && remainder <= 21000) return 'INTERMEDIATE_20K';
-  if (remainder >= 9000 && remainder <= 11000) return 'BASIC_10K';
+  if (
+    remainder <= MAINTENANCE.TOLERANCE_KM ||
+    remainder >= MAINTENANCE.CYCLE_KM - MAINTENANCE.TOLERANCE_KM
+  )
+    return 'ADVANCED_50K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.ADVANCED_50K.low &&
+    remainder <= MAINTENANCE.WINDOWS.ADVANCED_50K.high
+  )
+    return 'ADVANCED_50K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.MAJOR_30K.low &&
+    remainder <= MAINTENANCE.WINDOWS.MAJOR_30K.high
+  )
+    return 'MAJOR_30K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.INTERMEDIATE_20K.low &&
+    remainder <= MAINTENANCE.WINDOWS.INTERMEDIATE_20K.high
+  )
+    return 'INTERMEDIATE_20K';
+  if (
+    remainder >= MAINTENANCE.WINDOWS.BASIC_10K.low &&
+    remainder <= MAINTENANCE.WINDOWS.BASIC_10K.high
+  )
+    return 'BASIC_10K';
 
   if (isMineUnit) return 'MINOR_MINING';
 
-  const milestones: { type: ServiceType; value: number }[] = [
-    { type: 'BASIC_10K', value: 10000 },
-    { type: 'INTERMEDIATE_20K', value: 20000 },
-    { type: 'MAJOR_30K', value: 30000 },
-    { type: 'MAJOR_30K', value: 40000 },
-    { type: 'ADVANCED_50K', value: 50000 },
-  ];
+  const milestones: { type: ServiceType; value: number }[] = [...MAINTENANCE.MILESTONES];
   let best: ServiceType = 'BASIC_10K';
   let minDist = Infinity;
   milestones.forEach((m) => {
@@ -131,7 +146,8 @@ async function applyMaintenanceCompletionToUnit(
   const currentOdometer = Number((unitRows[0] as RowDataPacket).odometer || 0);
 
   // Number() casting prevents string concatenation bug (ASM-021 incident)
-  const nextServiceReading = Number(odometerAtService) + Number(maintIntervalKm || 10000);
+  const nextServiceReading =
+    Number(odometerAtService) + Number(maintIntervalKm || MAINTENANCE.AGENCY_DEFAULT_INTERVAL_KM);
   // endOdometer reflects post-service km (test drives + return trip); falls back to odometerAtService
   const finalOdometer = Math.max(currentOdometer, Number(endOdometer ?? odometerAtService));
 
@@ -232,7 +248,7 @@ function appendPredictiveAlerts(
   lastChassisOdo: number,
   lastDistOdo: number
 ): void {
-  if (currentOdometer - lastChassisOdo >= 80000) {
+  if (currentOdometer - lastChassisOdo >= MAINTENANCE.PREDICTIVE_ALERTS.CHASSIS_INSPECTION_KM) {
     tasks.push({
       code: 'CHASSIS_SHOCKS_HEAVY',
       label: 'Inspección de chasis pesado y amortiguadores (Alerta Predictiva Delta)',
@@ -240,7 +256,7 @@ function appendPredictiveAlerts(
       isDeferredCarry: false,
     });
   }
-  if (currentOdometer - lastDistOdo >= 100000) {
+  if (currentOdometer - lastDistOdo >= MAINTENANCE.PREDICTIVE_ALERTS.DISTRIBUTION_KIT_KM) {
     tasks.push({
       code: 'DISTRIBUTION_KIT_WATER_PUMP',
       label: 'Reemplazo de kit de distribución y bomba de agua (Alerta Predictiva Delta)',
@@ -318,7 +334,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const currentOdometer =
         odometer !== undefined ? Number(odometer) : Number(unit.odometer || 0);
       const isMineUnit =
-        Number(unit.maintIntervalKm) === 5000 || Number(unit.maintIntervalDays) > 0;
+        Number(unit.maintIntervalKm) === MAINTENANCE.MINE_UNIT_INTERVAL_KM ||
+        Number(unit.maintIntervalDays) > 0;
       const resolvedType: ServiceType =
         (serviceType as ServiceType | undefined) ??
         computeServiceType(currentOdometer, unit.maintIntervalKm);
@@ -746,7 +763,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         'SELECT maintIntervalKm FROM fleet_units WHERE id = ?',
         [unitId]
       );
-      const maintIntervalKm = (unitRows[0] as RowDataPacket)?.maintIntervalKm ?? 10000;
+      const maintIntervalKm =
+        (unitRows[0] as RowDataPacket)?.maintIntervalKm ?? MAINTENANCE.AGENCY_DEFAULT_INTERVAL_KM;
 
       const finalServiceDate = data.serviceDate ?? (movement.service_date as string);
       const finalServiceType = computeServiceType(data.odometerAtService, maintIntervalKm);

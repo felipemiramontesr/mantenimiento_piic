@@ -1,22 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  Gauge,
-  Truck,
-  ShieldCheck,
-  Wrench,
-  Navigation,
-  ShieldAlert,
-  History,
-  Activity,
-  Layers,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, Gauge, ShieldCheck, Navigation, ShieldAlert, Users } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AccessControlSlideOver from '../../components/Identity/AccessControlSlideOver';
+import CategoryAnalyticsCard from '../../components/Dashboard/CategoryAnalyticsCard';
 
 /**
  * 🔱 Archon Component: ArchonCenter
@@ -77,112 +66,8 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     </div>
   );
 
-  const formatTimeMetric = (hours: number): string => {
-    if (hours === 0) return '0h';
-    if (hours >= 48) {
-      const days = Number((hours / 24).toFixed(1));
-      return `${days}d`;
-    }
-    return `${hours}h`;
-  };
-
-  const renderCategoryAnalyticalColumn = (
-    title: string,
-    categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta',
-    accentColor: string
-  ): React.ReactElement => {
-    const data = stats.categories[categoryKey];
-    const avail = data.availablePercent;
-
-    let dotColor = 'bg-red-500 animate-pulse';
-    if (avail >= 90) dotColor = 'bg-emerald-500';
-    else if (avail >= 75) dotColor = 'bg-amber-500 animate-pulse';
-
-    const categoryIcons: Record<string, React.ElementType> = {
-      vehiculo: Truck,
-      maquinaria: Layers,
-      herramienta: Wrench,
-    };
-
-    const Icon = categoryIcons[categoryKey];
-
-    return (
-      <div
-        className="card-archon-sovereign animate-in fade-in duration-700"
-        style={{ '--card-accent': accentColor } as React.CSSProperties}
-      >
-        <div className="flex items-center gap-4 mb-6">
-          <div
-            className="w-14 h-14 rounded-[4px] flex items-center justify-center border-2"
-            style={{
-              backgroundColor: `${accentColor}10`,
-              borderColor: `${accentColor}30`,
-            }}
-          >
-            <Icon size={24} style={{ color: accentColor }} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-pinnacle-navy opacity-40">
-              Segmento Operativo
-            </span>
-            <h3 className="text-lg font-black text-pinnacle-navy tracking-tight">{title}</h3>
-          </div>
-          <div className="ml-auto flex flex-col items-end">
-            <span className="text-2xl font-black text-pinnacle-navy">{data.count}</span>
-            <span className="text-[8px] font-black uppercase opacity-30">Activos</span>
-          </div>
-        </div>
-
-        <div className="card-sovereign-quadrant-grid">
-          <div className="card-sovereign-quadrant-item">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
-              Disponibilidad
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-black text-pinnacle-navy">
-                {data.availablePercent}%
-              </span>
-              <div className={`w-2 h-2 rounded-full ${dotColor}`} />
-            </div>
-          </div>
-          <div className="card-sovereign-quadrant-item">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
-              Estado Crítico
-            </span>
-            <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
-          </div>
-          <div className="card-sovereign-quadrant-item">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
-              MTBF Promedio
-            </span>
-            <div className="flex items-center gap-1">
-              <Activity size={10} className="text-sky-500" />
-              <span className="text-base font-black text-pinnacle-navy">
-                {formatTimeMetric(data.avgMtbf)}
-              </span>
-            </div>
-          </div>
-          <div className="card-sovereign-quadrant-item">
-            <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
-              MTTR Táctico
-            </span>
-            <div className="flex items-center gap-1">
-              <History size={10} className="text-amber-500" />
-              <span className="text-base font-black text-pinnacle-navy">
-                {formatTimeMetric(data.avgMttr)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={(): void => navigate(`/dashboard/fleet?categoria=${categoryKey}`)}
-          className="btn-archon-card-action"
-        >
-          VER DETALLES <ArrowRight size={12} className="ml-2" />
-        </button>
-      </div>
-    );
+  const handleViewDetails = (categoryKey: string): void => {
+    navigate(`/dashboard/fleet?categoria=${categoryKey}`);
   };
 
   return (
@@ -192,9 +77,27 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <div className="archon-axial-container">
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
             <div className="archon-grid-sovereign">
-              {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
-              {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
-              {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
+              <CategoryAnalyticsCard
+                title="Vehículos de Flota"
+                categoryKey="vehiculo"
+                accentColor="#8b5cf6"
+                data={stats.categories.vehiculo}
+                onViewDetails={handleViewDetails}
+              />
+              <CategoryAnalyticsCard
+                title="Maquinaria Pesada"
+                categoryKey="maquinaria"
+                accentColor="#f2b705"
+                data={stats.categories.maquinaria}
+                onViewDetails={handleViewDetails}
+              />
+              <CategoryAnalyticsCard
+                title="Herramienta Menor"
+                categoryKey="herramienta"
+                accentColor="#0ea5e9"
+                data={stats.categories.herramienta}
+                onViewDetails={handleViewDetails}
+              />
 
               {renderKPI(
                 'Fuerza Operativa',
