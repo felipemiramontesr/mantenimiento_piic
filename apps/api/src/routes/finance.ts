@@ -4,6 +4,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
 import db from '../services/db';
 import { UNIT_STATUS } from '../constants/statuses';
+import requirePermission from '../middleware/requirePermission';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Sesión requerida' });
     }
   });
+  fastify.addHook('preHandler', requirePermission('financial:view'));
 
   // GET /v1/finance/dashboard
   fastify.get('/finance/dashboard', async (request, reply) => {
@@ -315,61 +317,65 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // POST /v1/finance/transactions
-  fastify.post('/finance/transactions', async (request, reply) => {
-    const parsed = createTransactionSchema.safeParse(request.body);
-    if (!parsed.success) {
-      const first = parsed.error.issues[0];
-      return reply.code(400).send({
-        success: false,
-        code: 'VALIDATION_ERROR',
-        message: first.message,
-        field: String(first.path[0] ?? ''),
-      });
-    }
-
-    const { unitId, category, amount, vendor, invoiceRef, notes } = parsed.data;
-    const uuid = crypto.randomUUID();
-    const period = computePeriod(new Date());
-    const createdBy = (request.user as { id: number }).id;
-
-    try {
-      const [unitCheck] = await db.execute<RowDataPacket[]>(
-        'SELECT id FROM fleet_units WHERE id = ?',
-        [unitId]
-      );
-      if (unitCheck.length === 0) {
-        return reply
-          .code(404)
-          .send({ success: false, code: 'NOT_FOUND', message: 'Unidad no encontrada' });
+  fastify.post(
+    '/finance/transactions',
+    { preHandler: [requirePermission('financial:write')] },
+    async (request, reply) => {
+      const parsed = createTransactionSchema.safeParse(request.body);
+      if (!parsed.success) {
+        const first = parsed.error.issues[0];
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: first.message,
+          field: String(first.path[0] ?? ''),
+        });
       }
 
-      await db.execute<ResultSetHeader>(
-        `INSERT INTO financial_transactions
+      const { unitId, category, amount, vendor, invoiceRef, notes } = parsed.data;
+      const uuid = crypto.randomUUID();
+      const period = computePeriod(new Date());
+      const createdBy = (request.user as { id: number }).id;
+
+      try {
+        const [unitCheck] = await db.execute<RowDataPacket[]>(
+          'SELECT id FROM fleet_units WHERE id = ?',
+          [unitId]
+        );
+        if (unitCheck.length === 0) {
+          return reply
+            .code(404)
+            .send({ success: false, code: 'NOT_FOUND', message: 'Unidad no encontrada' });
+        }
+
+        await db.execute<ResultSetHeader>(
+          `INSERT INTO financial_transactions
            (uuid, unit_id, category, amount, period, source, vendor, invoice_ref, notes, created_by)
          VALUES (?, ?, ?, ?, ?, 'MANUAL', ?, ?, ?, ?)`,
-        [
-          uuid,
-          unitId,
-          category,
-          amount,
-          period,
-          vendor ?? null,
-          invoiceRef ?? null,
-          notes ?? null,
-          createdBy,
-        ]
-      );
+          [
+            uuid,
+            unitId,
+            category,
+            amount,
+            period,
+            vendor ?? null,
+            invoiceRef ?? null,
+            notes ?? null,
+            createdBy,
+          ]
+        );
 
-      return reply.code(201).send({ success: true, data: { uuid } });
-    } catch (error) {
-      fastify.log.error({ err: (error as Error).message }, 'Finance create transaction error');
-      return reply.code(500).send({
-        success: false,
-        code: 'INTERNAL_ERROR',
-        message: 'Error al registrar transacción',
-      });
+        return reply.code(201).send({ success: true, data: { uuid } });
+      } catch (error) {
+        fastify.log.error({ err: (error as Error).message }, 'Finance create transaction error');
+        return reply.code(500).send({
+          success: false,
+          code: 'INTERNAL_ERROR',
+          message: 'Error al registrar transacción',
+        });
+      }
     }
-  });
+  );
 
   // GET /v1/finance/export
   fastify.get('/finance/export', async (request, reply) => {

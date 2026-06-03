@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
+import requirePermission from '../middleware/requirePermission';
 
 /**
  * 🔱 ARCHON SOVEREIGN CATALOGS (v.18.0.0)
@@ -15,6 +16,7 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
     }
   });
+  fastify.addHook('preHandler', requirePermission('fleet:view'));
 
   // 1. Fetch options by Category (e.g. ASSET_TYPE, FREQ_TIME)
   fastify.get(

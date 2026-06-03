@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import db from '../services/db';
 import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
 import { MAINTENANCE } from '../constants/maintenance';
+import requirePermission from '../middleware/requirePermission';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -277,6 +278,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
     }
   });
+  fastify.addHook('preHandler', requirePermission('maint:view'));
 
   // GET /v1/maintenance — Cursor-paginated history (includes ACTIVE movements)
   fastify.get('/maintenance', async (request, reply) => {
@@ -603,241 +605,249 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
    * is_in_progress = false → COMPLETED immediately (quick log / in-situ)
    * is_in_progress = true  → ACTIVE movement + unit locked to Downtime
    */
-  fastify.post('/maintenance', async (request, reply) => {
-    const connection = await db.getConnection();
-    try {
-      await connection.beginTransaction();
-      const data = createMaintenanceSchema.parse(request.body);
-      const logUuid = crypto.randomUUID();
+  fastify.post(
+    '/maintenance',
+    { preHandler: [requirePermission('maint:write')] },
+    async (request, reply) => {
+      const connection = await db.getConnection();
+      try {
+        await connection.beginTransaction();
+        const data = createMaintenanceSchema.parse(request.body);
+        const logUuid = crypto.randomUUID();
 
-      const [units] = await connection.execute<RowDataPacket[]>(
-        'SELECT id, odometer, maintIntervalKm, status, lastFuelLevel FROM fleet_units WHERE id = ? FOR UPDATE',
-        [data.unitId]
-      );
-      if (units.length === 0) throw new Error('Fleet unit not found');
-      const unit = units[0];
-      const serviceType = computeServiceType(data.odometerAtService, unit.maintIntervalKm);
-      const serviceMode = resolveServiceMode(serviceType);
+        const [units] = await connection.execute<RowDataPacket[]>(
+          'SELECT id, odometer, maintIntervalKm, status, lastFuelLevel FROM fleet_units WHERE id = ? FOR UPDATE',
+          [data.unitId]
+        );
+        if (units.length === 0) throw new Error('Fleet unit not found');
+        const unit = units[0];
+        const serviceType = computeServiceType(data.odometerAtService, unit.maintIntervalKm);
+        const serviceMode = resolveServiceMode(serviceType);
 
-      // Auto-inherit current fuel level from unit — no frontend input required
-      const fuelStart = unit.lastFuelLevel != null ? Number(unit.lastFuelLevel) : null;
+        // Auto-inherit current fuel level from unit — no frontend input required
+        const fuelStart = unit.lastFuelLevel != null ? Number(unit.lastFuelLevel) : null;
 
-      // 1. Insert CTI base record
-      let movementResult: ResultSetHeader;
-      if (data.is_in_progress) {
-        [movementResult] = await connection.execute<ResultSetHeader>(
-          `INSERT INTO fleet_movements
+        // 1. Insert CTI base record
+        let movementResult: ResultSetHeader;
+        if (data.is_in_progress) {
+          [movementResult] = await connection.execute<ResultSetHeader>(
+            `INSERT INTO fleet_movements
             (uuid, unit_id, movement_type, status, start_reading, start_at, fuel_level_start)
            VALUES (?, ?, 'MAINTENANCE', 'ACTIVE', ?, ?, ?)`,
-          [logUuid, data.unitId, data.odometerAtService, data.serviceDate, fuelStart]
-        );
-      } else {
-        const endOdo = data.endOdometer ?? data.odometerAtService;
-        [movementResult] = await connection.execute<ResultSetHeader>(
-          `INSERT INTO fleet_movements
+            [logUuid, data.unitId, data.odometerAtService, data.serviceDate, fuelStart]
+          );
+        } else {
+          const endOdo = data.endOdometer ?? data.odometerAtService;
+          [movementResult] = await connection.execute<ResultSetHeader>(
+            `INSERT INTO fleet_movements
             (uuid, unit_id, movement_type, status, start_reading, end_reading,
              start_at, end_at, fuel_level_start, fuel_level_end, fuel_liters_loaded, fuel_amount)
            VALUES (?, ?, 'MAINTENANCE', 'COMPLETED', ?, ?, ?, NOW(), ?, ?, ?, ?)`,
-          [
-            logUuid,
-            data.unitId,
-            data.odometerAtService,
-            endOdo,
-            data.serviceDate,
-            fuelStart,
-            data.fuelLevelEnd ?? null,
-            data.fuelLitersLoaded ?? null,
-            data.fuelAmount ?? null,
-          ]
-        );
-      }
-      const movementId = movementResult.insertId;
+            [
+              logUuid,
+              data.unitId,
+              data.odometerAtService,
+              endOdo,
+              data.serviceDate,
+              fuelStart,
+              data.fuelLevelEnd ?? null,
+              data.fuelLitersLoaded ?? null,
+              data.fuelAmount ?? null,
+            ]
+          );
+        }
+        const movementId = movementResult.insertId;
 
-      // 2. Insert CTI maintenance extension
-      await connection.execute(
-        `INSERT INTO fleet_maintenance_extensions
+        // 2. Insert CTI maintenance extension
+        await connection.execute(
+          `INSERT INTO fleet_maintenance_extensions
           (movement_id, service_date, service_type, service_mode, system_recommended_type, cost, technician)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          movementId,
-          data.serviceDate,
-          serviceType,
-          serviceMode,
-          serviceType,
-          data.cost,
-          data.technician,
-        ]
-      );
-
-      // 3. Insert task details if provided
-      if (data.details.length > 0) {
-        await Promise.all(
-          data.details.map((detail) =>
-            connection.execute(
-              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status_code, notes) VALUES (?, ?, ?, ?)`,
-              [movementId, detail.taskCode, detail.status, detail.notes || null]
-            )
-          )
+          [
+            movementId,
+            data.serviceDate,
+            serviceType,
+            serviceMode,
+            serviceType,
+            data.cost,
+            data.technician,
+          ]
         );
-      }
 
-      if (data.is_in_progress) {
-        // 4a. Lock unit → En Mantenimiento (blocks route dispatch)
-        await connection.execute(
-          `UPDATE fleet_units SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-          [UNIT_STATUS.MAINTENANCE, data.unitId]
+        // 3. Insert task details if provided
+        if (data.details.length > 0) {
+          await Promise.all(
+            data.details.map((detail) =>
+              connection.execute(
+                `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status_code, notes) VALUES (?, ?, ?, ?)`,
+                [movementId, detail.taskCode, detail.status, detail.notes || null]
+              )
+            )
+          );
+        }
+
+        if (data.is_in_progress) {
+          // 4a. Lock unit → En Mantenimiento (blocks route dispatch)
+          await connection.execute(
+            `UPDATE fleet_units SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+            [UNIT_STATUS.MAINTENANCE, data.unitId]
+          );
+          await connection.commit();
+          return reply.code(201).send({
+            success: true,
+            message: 'Maintenance order opened. Unit locked to En Mantenimiento.',
+            uuid: logUuid,
+            movement_status: MOVEMENT_STATUS.ACTIVE,
+          });
+        }
+        // 4b. Apply completion immediately (in-situ / historical log)
+        await applyMaintenanceCompletionToUnit(
+          connection,
+          data.unitId,
+          data.odometerAtService,
+          data.serviceDate,
+          unit.maintIntervalKm,
+          data.details,
+          data.endOdometer,
+          data.fuelLevelEnd
         );
         await connection.commit();
         return reply.code(201).send({
           success: true,
-          message: 'Maintenance order opened. Unit locked to En Mantenimiento.',
+          message: 'Maintenance registered successfully.',
           uuid: logUuid,
-          movement_status: MOVEMENT_STATUS.ACTIVE,
+          movement_status: MOVEMENT_STATUS.COMPLETED,
         });
+      } catch (error) {
+        await connection.rollback();
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: (error as Error).message });
+      } finally {
+        connection.release();
       }
-      // 4b. Apply completion immediately (in-situ / historical log)
-      await applyMaintenanceCompletionToUnit(
-        connection,
-        data.unitId,
-        data.odometerAtService,
-        data.serviceDate,
-        unit.maintIntervalKm,
-        data.details,
-        data.endOdometer,
-        data.fuelLevelEnd
-      );
-      await connection.commit();
-      return reply.code(201).send({
-        success: true,
-        message: 'Maintenance registered successfully.',
-        uuid: logUuid,
-        movement_status: MOVEMENT_STATUS.COMPLETED,
-      });
-    } catch (error) {
-      await connection.rollback();
-      fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as Error).message });
-    } finally {
-      connection.release();
     }
-  });
+  );
 
   /**
    * PATCH /v1/maintenance/:uuid/complete — Close an ACTIVE maintenance order
    *
    * Receives final telemetry, closes the movement, releases unit to Disponible.
    */
-  fastify.patch('/maintenance/:uuid/complete', async (request, reply) => {
-    const connection = await db.getConnection();
-    try {
-      await connection.beginTransaction();
-      const { uuid } = request.params as { uuid: string };
-      const data = completeMaintenanceSchema.parse(request.body);
+  fastify.patch(
+    '/maintenance/:uuid/complete',
+    { preHandler: [requirePermission('maint:write')] },
+    async (request, reply) => {
+      const connection = await db.getConnection();
+      try {
+        await connection.beginTransaction();
+        const { uuid } = request.params as { uuid: string };
+        const data = completeMaintenanceSchema.parse(request.body);
 
-      // 1. Verify movement exists and is ACTIVE MAINTENANCE
-      const [movements] = await connection.execute<RowDataPacket[]>(
-        `SELECT fm.id, fm.unit_id, fm.status, fme.service_date, fme.service_type,
+        // 1. Verify movement exists and is ACTIVE MAINTENANCE
+        const [movements] = await connection.execute<RowDataPacket[]>(
+          `SELECT fm.id, fm.unit_id, fm.status, fme.service_date, fme.service_type,
                 fme.service_mode, fme.technician, fme.cost
          FROM fleet_movements fm
          JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
          WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE' FOR UPDATE`,
-        [uuid]
-      );
-      if (movements.length === 0) throw new Error('Maintenance order not found');
-      const movement = movements[0];
-      if (movement.status !== MOVEMENT_STATUS.ACTIVE)
-        throw new Error(`Cannot complete: order is already ${movement.status}`);
+          [uuid]
+        );
+        if (movements.length === 0) throw new Error('Maintenance order not found');
+        const movement = movements[0];
+        if (movement.status !== MOVEMENT_STATUS.ACTIVE)
+          throw new Error(`Cannot complete: order is already ${movement.status}`);
 
-      const unitId = movement.unit_id as string;
+        const unitId = movement.unit_id as string;
 
-      // 2. Close movement — end_reading captures post-service km (test drives + return)
-      const endOdo = data.endOdometer ?? data.odometerAtService;
-      await connection.execute(
-        `UPDATE fleet_movements
+        // 2. Close movement — end_reading captures post-service km (test drives + return)
+        const endOdo = data.endOdometer ?? data.odometerAtService;
+        await connection.execute(
+          `UPDATE fleet_movements
          SET status = 'COMPLETED', end_at = NOW(), start_reading = ?,
              end_reading = ?, fuel_level_end = ?, fuel_liters_loaded = ?, fuel_amount = ?
          WHERE uuid = ?`,
-        [
-          data.odometerAtService,
-          endOdo,
-          data.fuelLevelEnd ?? null,
-          data.fuelLitersLoaded ?? null,
-          data.fuelAmount ?? null,
-          uuid,
-        ]
-      );
+          [
+            data.odometerAtService,
+            endOdo,
+            data.fuelLevelEnd ?? null,
+            data.fuelLitersLoaded ?? null,
+            data.fuelAmount ?? null,
+            uuid,
+          ]
+        );
 
-      // 3. Fetch unit interval — drives cyclic service type + completion forecast
-      const [unitRows] = await connection.execute<RowDataPacket[]>(
-        'SELECT maintIntervalKm FROM fleet_units WHERE id = ?',
-        [unitId]
-      );
-      const maintIntervalKm =
-        (unitRows[0] as RowDataPacket)?.maintIntervalKm ?? MAINTENANCE.AGENCY_DEFAULT_INTERVAL_KM;
+        // 3. Fetch unit interval — drives cyclic service type + completion forecast
+        const [unitRows] = await connection.execute<RowDataPacket[]>(
+          'SELECT maintIntervalKm FROM fleet_units WHERE id = ?',
+          [unitId]
+        );
+        const maintIntervalKm =
+          (unitRows[0] as RowDataPacket)?.maintIntervalKm ?? MAINTENANCE.AGENCY_DEFAULT_INTERVAL_KM;
 
-      const finalServiceDate = data.serviceDate ?? (movement.service_date as string);
-      const finalServiceType = computeServiceType(data.odometerAtService, maintIntervalKm);
-      const finalServiceMode = resolveServiceMode(finalServiceType);
-      const finalTechnician = data.technician ?? movement.technician;
-      const finalCost = data.cost;
+        const finalServiceDate = data.serviceDate ?? (movement.service_date as string);
+        const finalServiceType = computeServiceType(data.odometerAtService, maintIntervalKm);
+        const finalServiceMode = resolveServiceMode(finalServiceType);
+        const finalTechnician = data.technician ?? movement.technician;
+        const finalCost = data.cost;
 
-      await connection.execute(
-        `UPDATE fleet_maintenance_extensions
+        await connection.execute(
+          `UPDATE fleet_maintenance_extensions
          SET service_date = ?, service_type = ?, service_mode = ?,
              system_recommended_type = ?, cost = ?, technician = ?
          WHERE movement_id = ?`,
-        [
-          finalServiceDate,
-          finalServiceType,
-          finalServiceMode,
-          finalServiceType,
-          finalCost,
-          finalTechnician,
-          movement.id,
-        ]
-      );
+          [
+            finalServiceDate,
+            finalServiceType,
+            finalServiceMode,
+            finalServiceType,
+            finalCost,
+            finalTechnician,
+            movement.id,
+          ]
+        );
 
-      // 4. Insert final task details
-      if (data.details.length > 0) {
-        await Promise.all(
-          data.details.map((detail) =>
-            connection.execute(
-              `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status_code, notes)
+        // 4. Insert final task details
+        if (data.details.length > 0) {
+          await Promise.all(
+            data.details.map((detail) =>
+              connection.execute(
+                `INSERT INTO fleet_maintenance_details (maintenance_id, task_code, status_code, notes)
                VALUES (?, ?, ?, ?)
                ON DUPLICATE KEY UPDATE status_code = VALUES(status_code), notes = VALUES(notes)`,
-              [movement.id, detail.taskCode, detail.status, detail.notes || null]
+                [movement.id, detail.taskCode, detail.status, detail.notes || null]
+              )
             )
-          )
+          );
+        }
+
+        // 5. Apply unit completion: odometer + forecast + fuel + status = Disponible
+        await applyMaintenanceCompletionToUnit(
+          connection,
+          unitId,
+          data.odometerAtService,
+          finalServiceDate,
+          maintIntervalKm,
+          data.details,
+          data.endOdometer,
+          data.fuelLevelEnd
         );
+
+        await connection.commit();
+        return reply.send({
+          success: true,
+          message: 'Maintenance completed. Unit released to Disponible.',
+          uuid,
+          movement_status: MOVEMENT_STATUS.COMPLETED,
+        });
+      } catch (error) {
+        await connection.rollback();
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: (error as Error).message });
+      } finally {
+        connection.release();
       }
-
-      // 5. Apply unit completion: odometer + forecast + fuel + status = Disponible
-      await applyMaintenanceCompletionToUnit(
-        connection,
-        unitId,
-        data.odometerAtService,
-        finalServiceDate,
-        maintIntervalKm,
-        data.details,
-        data.endOdometer,
-        data.fuelLevelEnd
-      );
-
-      await connection.commit();
-      return reply.send({
-        success: true,
-        message: 'Maintenance completed. Unit released to Disponible.',
-        uuid,
-        movement_status: MOVEMENT_STATUS.COMPLETED,
-      });
-    } catch (error) {
-      await connection.rollback();
-      fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as Error).message });
-    } finally {
-      connection.release();
     }
-  });
+  );
 }
 
 export default fleetMaintenanceRoutes;

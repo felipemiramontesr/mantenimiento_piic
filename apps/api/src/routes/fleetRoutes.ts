@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import RouteService from '../services/routeService';
+import requirePermission from '../middleware/requirePermission';
 
 /**
  * 🔱 Archon Fleet Routes — CTI Architecture (V2)
@@ -51,66 +52,75 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
     }
   });
+  fastify.addHook('preHandler', requirePermission('route:view'));
 
   /**
    * START ROUTE
    * POST /v1/routes/start
    */
-  fastify.post('/routes/start', async (request, reply) => {
-    try {
-      const data = startRouteSchema.parse(request.body);
-      const routeUuid = await RouteService.startRoute(
-        data.unitId,
-        data.driverId,
-        data.startReading,
-        data.fuelLevelStart,
-        data.destination,
-        data.originId,
-        data.description,
-        data.destinationNeighborhoodId
-      );
+  fastify.post(
+    '/routes/start',
+    { preHandler: [requirePermission('route:write')] },
+    async (request, reply) => {
+      try {
+        const data = startRouteSchema.parse(request.body);
+        const routeUuid = await RouteService.startRoute(
+          data.unitId,
+          data.driverId,
+          data.startReading,
+          data.fuelLevelStart,
+          data.destination,
+          data.originId,
+          data.description,
+          data.destinationNeighborhoodId
+        );
 
-      return reply.code(201).send({
-        success: true,
-        message: 'Route started successfully',
-        routeUuid,
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as Error).message });
+        return reply.code(201).send({
+          success: true,
+          message: 'Route started successfully',
+          routeUuid,
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: (error as Error).message });
+      }
     }
-  });
+  );
 
   /**
    * FINISH ROUTE
    * PATCH /v1/routes/:uuid/finish
    */
-  fastify.patch('/routes/:uuid/finish', async (request, reply) => {
-    try {
-      const { uuid } = request.params as { uuid: string };
-      const data = finishRouteSchema.parse(request.body);
+  fastify.patch(
+    '/routes/:uuid/finish',
+    { preHandler: [requirePermission('route:write')] },
+    async (request, reply) => {
+      try {
+        const { uuid } = request.params as { uuid: string };
+        const data = finishRouteSchema.parse(request.body);
 
-      await RouteService.finishRoute(uuid, {
-        endReading: data.endReading,
-        fuelLevelEnd: data.fuelLevelEnd,
-        fuelImage: data.fuelTicketImage,
-        fuelLiters: data.fuelLitersLoaded,
-        fuelAmount: data.fuelAmount,
-        additivesCheck: data.additivesCheck,
-        tirePressureJson: data.tirePressureJson,
-        checklistJson: data.checklistJson,
-        description: data.description,
-      });
+        await RouteService.finishRoute(uuid, {
+          endReading: data.endReading,
+          fuelLevelEnd: data.fuelLevelEnd,
+          fuelImage: data.fuelTicketImage,
+          fuelLiters: data.fuelLitersLoaded,
+          fuelAmount: data.fuelAmount,
+          additivesCheck: data.additivesCheck,
+          tirePressureJson: data.tirePressureJson,
+          checklistJson: data.checklistJson,
+          description: data.description,
+        });
 
-      return reply.send({
-        success: true,
-        message: 'Route completed successfully. Unit updated.',
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as Error).message });
+        return reply.send({
+          success: true,
+          message: 'Route completed successfully. Unit updated.',
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: (error as Error).message });
+      }
     }
-  });
+  );
 
   /**
    * GET ACTIVE ROUTE BY UNIT
@@ -339,28 +349,32 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    * REPORT INCIDENT
    * POST /v1/routes/:uuid/incidents
    */
-  fastify.post('/routes/:uuid/incidents', async (request, reply) => {
-    try {
-      const { uuid } = request.params as { uuid: string };
-      const data = reportIncidentSchema.parse(request.body);
+  fastify.post(
+    '/routes/:uuid/incidents',
+    { preHandler: [requirePermission('route:write')] },
+    async (request, reply) => {
+      try {
+        const { uuid } = request.params as { uuid: string };
+        const data = reportIncidentSchema.parse(request.body);
 
-      await RouteService.reportIncident(
-        uuid,
-        data.category,
-        data.description,
-        data.severity,
-        data.evidenceImage
-      );
+        await RouteService.reportIncident(
+          uuid,
+          data.category,
+          data.description,
+          data.severity,
+          data.evidenceImage
+        );
 
-      return reply.code(201).send({
-        success: true,
-        message: 'Incident reported successfully. Logged in forensic journal.',
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as Error).message });
+        return reply.code(201).send({
+          success: true,
+          message: 'Incident reported successfully. Logged in forensic journal.',
+        });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: (error as Error).message });
+      }
     }
-  });
+  );
 
   /**
    * LIST INCIDENTS FOR A ROUTE
@@ -393,46 +407,54 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    * UPDATE ROUTE (FORENSIC)
    * PUT /v1/routes/:uuid
    */
-  fastify.put('/routes/:uuid', async (request, reply) => {
-    try {
-      const { uuid } = request.params as { uuid: string };
-      const schema = z.object({
-        data: z.record(z.any()),
-        reason: z.string().min(5),
-      });
-      const { data, reason } = schema.parse(request.body);
-      const user = request.user as { id: number };
+  fastify.put(
+    '/routes/:uuid',
+    { preHandler: [requirePermission('route:write')] },
+    async (request, reply) => {
+      try {
+        const { uuid } = request.params as { uuid: string };
+        const schema = z.object({
+          data: z.record(z.any()),
+          reason: z.string().min(5),
+        });
+        const { data, reason } = schema.parse(request.body);
+        const user = request.user as { id: number };
 
-      await RouteService.updateRoute(uuid, data, reason, user.id);
+        await RouteService.updateRoute(uuid, data, reason, user.id);
 
-      return reply.send({ success: true, message: 'Route updated forensically' });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as Error).message });
+        return reply.send({ success: true, message: 'Route updated forensically' });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: (error as Error).message });
+      }
     }
-  });
+  );
 
   /**
    * DELETE ROUTE (FORENSIC)
    * DELETE /v1/routes/:uuid
    */
-  fastify.delete('/routes/:uuid', async (request, reply) => {
-    try {
-      const { uuid } = request.params as { uuid: string };
-      const schema = z.object({
-        reason: z.string().min(5),
-      });
-      const { reason } = schema.parse(request.body);
-      const user = request.user as { id: number };
+  fastify.delete(
+    '/routes/:uuid',
+    { preHandler: [requirePermission('route:write')] },
+    async (request, reply) => {
+      try {
+        const { uuid } = request.params as { uuid: string };
+        const schema = z.object({
+          reason: z.string().min(5),
+        });
+        const { reason } = schema.parse(request.body);
+        const user = request.user as { id: number };
 
-      await RouteService.deleteRoute(uuid, reason, user.id);
+        await RouteService.deleteRoute(uuid, reason, user.id);
 
-      return reply.send({ success: true, message: 'Route deleted forensically' });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(400).send({ success: false, message: (error as Error).message });
+        return reply.send({ success: true, message: 'Route deleted forensically' });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: (error as Error).message });
+      }
     }
-  });
+  );
 }
 
 export default fleetRoutes;

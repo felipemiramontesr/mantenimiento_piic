@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import FleetService from '../services/fleetService';
+import requirePermission from '../middleware/requirePermission';
 
 /**
  * 🔱 Archon Fleet Routes — Plan Omega
@@ -79,6 +80,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       reply.code(401).send({ error: 'Archon Protection: Session required' });
     }
   });
+  fastify.addHook('preHandler', requirePermission('fleet:view'));
 
   /**
    * GET /api/v1/fleet
@@ -115,86 +117,98 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
    * POST /api/v1/fleet
    * Plan Omega: Base64 images are part of the main payload.
    */
-  fastify.post('/fleet', async (request, reply) => {
-    const parse = createFleetSchema.safeParse(request.body);
-    if (!parse.success) {
-      return reply.code(400).send({ error: 'Validation failed', details: parse.error.format() });
-    }
-
-    try {
-      const result = await FleetService.createUnit(
-        parse.data as Parameters<typeof FleetService.createUnit>[0]
-      );
-      return reply.code(201).send({ success: true, ...result });
-    } catch (error: unknown) {
-      fastify.log.error(error as Error);
-      const err = error as Record<string, unknown>;
-      const message =
-        (err?.message as string) ||
-        (err?.sqlMessage as string) ||
-        (typeof err === 'string' ? err : 'Unknown DB Exception');
-
-      if (message.includes('CONFLICT')) {
-        return reply.code(409).send({ error: message });
+  fastify.post(
+    '/fleet',
+    { preHandler: [requirePermission('fleet:write')] },
+    async (request, reply) => {
+      const parse = createFleetSchema.safeParse(request.body);
+      if (!parse.success) {
+        return reply.code(400).send({ error: 'Validation failed', details: parse.error.format() });
       }
 
-      return reply.code(500).send({ error: `Database Error: ${message}` });
+      try {
+        const result = await FleetService.createUnit(
+          parse.data as Parameters<typeof FleetService.createUnit>[0]
+        );
+        return reply.code(201).send({ success: true, ...result });
+      } catch (error: unknown) {
+        fastify.log.error(error as Error);
+        const err = error as Record<string, unknown>;
+        const message =
+          (err?.message as string) ||
+          (err?.sqlMessage as string) ||
+          (typeof err === 'string' ? err : 'Unknown DB Exception');
+
+        if (message.includes('CONFLICT')) {
+          return reply.code(409).send({ error: message });
+        }
+
+        return reply.code(500).send({ error: `Database Error: ${message}` });
+      }
     }
-  });
+  );
 
   /**
    * PATCH /api/v1/fleet/:id
    */
-  fastify.patch('/fleet/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const schema = z.object({
-      data: updateFleetSchema,
-      reason: z.string().min(5),
-    });
+  fastify.patch(
+    '/fleet/:id',
+    { preHandler: [requirePermission('fleet:write')] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const schema = z.object({
+        data: updateFleetSchema,
+        reason: z.string().min(5),
+      });
 
-    const parse = schema.safeParse(request.body);
-    if (!parse.success) {
-      return reply
-        .code(400)
-        .send({ error: 'Invalid update format', details: parse.error.format() });
+      const parse = schema.safeParse(request.body);
+      if (!parse.success) {
+        return reply
+          .code(400)
+          .send({ error: 'Invalid update format', details: parse.error.format() });
+      }
+
+      const { data, reason } = parse.data;
+      const user = request.user as { id: number };
+
+      try {
+        const success = await FleetService.updateUnit(id, data, reason, user.id);
+        if (!success) return reply.code(404).send({ error: 'Unit not found' });
+        return reply.send({ success: true });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(500).send({ error: 'Critical failure during update' });
+      }
     }
-
-    const { data, reason } = parse.data;
-    const user = request.user as { id: number };
-
-    try {
-      const success = await FleetService.updateUnit(id, data, reason, user.id);
-      if (!success) return reply.code(404).send({ error: 'Unit not found' });
-      return reply.send({ success: true });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Critical failure during update' });
-    }
-  });
+  );
 
   /**
    * DELETE /api/v1/fleet/:id
    */
-  fastify.delete('/fleet/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const schema = z.object({
-      reason: z.string().min(5),
-    });
-    const parse = schema.safeParse(request.body);
-    if (!parse.success) {
-      return reply.code(400).send({ error: 'Reason required for deletion' });
-    }
+  fastify.delete(
+    '/fleet/:id',
+    { preHandler: [requirePermission('fleet:write')] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const schema = z.object({
+        reason: z.string().min(5),
+      });
+      const parse = schema.safeParse(request.body);
+      if (!parse.success) {
+        return reply.code(400).send({ error: 'Reason required for deletion' });
+      }
 
-    const { reason } = parse.data;
-    const user = request.user as { id: number };
+      const { reason } = parse.data;
+      const user = request.user as { id: number };
 
-    try {
-      const success = await FleetService.deleteUnit(id, reason, user.id);
-      if (!success) return reply.code(404).send({ error: 'Unit not found' });
-      return reply.send({ success: true });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'System error during deletion' });
+      try {
+        const success = await FleetService.deleteUnit(id, reason, user.id);
+        if (!success) return reply.code(404).send({ error: 'Unit not found' });
+        return reply.send({ success: true });
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.code(500).send({ error: 'System error during deletion' });
+      }
     }
-  });
+  );
 }
