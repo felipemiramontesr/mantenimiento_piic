@@ -234,7 +234,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
                 ShieldAlert,
                 '#ef4444',
                 'Alertas Sentinel activas',
-                '/dashboard/routes'
+                '/dashboard/incidents'
               )}
               {renderKPI(
                 'Mermas Operativas',

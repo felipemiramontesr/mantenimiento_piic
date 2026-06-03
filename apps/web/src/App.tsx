@@ -10,6 +10,7 @@ import FinancialHealthModule from './pages/Dashboard/FinancialHealthModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
 import AdminModule from './pages/Dashboard/AdminModule';
+import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider } from './context/AuthContext';
@@ -61,6 +62,7 @@ const App: React.FC = () => (
                 <Route path="logs" element={<LogsModule />} />
                 <Route path="settings" element={<SettingsModule />} />
                 <Route path="admin" element={<AdminModule />} />
+                <Route path="incidents" element={<IncidentsModule />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
