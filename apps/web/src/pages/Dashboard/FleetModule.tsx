@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { PlusCircle, ShieldAlert } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -80,10 +81,27 @@ const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
 
 const FleetModule: React.FC = (): React.ReactElement => {
   const { refreshUnits, units, loading } = useFleet();
-  const { setSectionData } = useSovereignLayout();
+  const { setSectionData, setSearchTerm } = useSovereignLayout();
+  const location = useLocation();
   const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
   const [editingUnit, setEditingUnit] = useState<FleetUnit | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect((): (() => void) => {
+    const params = new URLSearchParams(location.search);
+    const categoria = params.get('categoria');
+    const status = params.get('status');
+    if (categoria) {
+      setSearchTerm(categoria);
+    } else if (status) {
+      setSearchTerm(status);
+    } else {
+      setSearchTerm('');
+    }
+    return (): void => {
+      setSearchTerm('');
+    };
+  }, [location.search, setSearchTerm]);
 
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
   // Deferred Hydration: Only start catalog sync when expansion panel is requested

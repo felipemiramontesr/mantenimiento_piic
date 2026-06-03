@@ -176,7 +176,7 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         </div>
 
         <button
-          onClick={(): void => navigate(`/inventory?type=${categoryKey}`)}
+          onClick={(): void => navigate(`/dashboard/fleet?categoria=${categoryKey}`)}
           className="btn-archon-card-action"
         >
           VER DETALLES <ArrowRight size={12} className="ml-2" />
@@ -192,70 +192,59 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
         <div className="archon-axial-container">
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
             <div className="archon-grid-sovereign">
-            {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
-            {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
-            {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
+              {renderCategoryAnalyticalColumn('Vehículos de Flota', 'vehiculo', '#8b5cf6')}
+              {renderCategoryAnalyticalColumn('Maquinaria Pesada', 'maquinaria', '#f2b705')}
+              {renderCategoryAnalyticalColumn('Herramienta Menor', 'herramienta', '#0ea5e9')}
 
-            {renderKPI(
-              'Fuerza Operativa',
-              activePersonnelCount,
-              Users,
-              '#0f2a44',
-              'Personal habilitado en sitio'
-            )}
-            {renderKPI(
-              'Salud de Flota',
-              `${stats.maintenanceIndex}%`,
-              Gauge,
-              '#0f2a44',
-              'Índice global de operatividad'
-            )}
-            {renderKPI(
-              'Activos Totales',
-              stats.total,
-              Truck,
-              '#0f2a44',
-              'Unidades totales en inventario'
-            )}
-
-            {renderKPI(
-              'Disponibilidad',
-              stats.available,
-              ShieldCheck,
-              '#10b981',
-              'Unidades listas para operación'
-            )}
-            {renderKPI(
-              'Despliegue en Ruta',
-              stats.inRoute,
-              Navigation,
-              '#0ea5e9',
-              'Unidades en tránsito operativo'
-            )}
-            {renderKPI(
-              'Mantenimiento',
-              stats.maintenance,
-              Wrench,
-              '#f2b705',
-              'Unidades en mantenimiento activo'
-            )}
-
-            {renderKPI(
-              'Incidencias en Ruta',
-              stats.openIncidents,
-              ShieldAlert,
-              '#ef4444',
-              'Alertas Sentinel activas',
-              '/routes'
-            )}
-            {renderKPI(
-              'Mermas Operativas',
-              stats.totalInactive,
-              ShieldAlert,
-              '#8b5cf6',
-              'Unidades fuera de servicio'
-            )}
-          </div>
+              {renderKPI(
+                'Fuerza Operativa',
+                activePersonnelCount,
+                Users,
+                '#0f2a44',
+                'Personal habilitado en sitio',
+                '/dashboard/users'
+              )}
+              {renderKPI(
+                'Salud de Flota',
+                `${stats.maintenanceIndex}%`,
+                Gauge,
+                '#0f2a44',
+                'Índice global de operatividad',
+                '/dashboard/maintenance'
+              )}
+              {renderKPI(
+                'Disponibilidad',
+                stats.available,
+                ShieldCheck,
+                '#10b981',
+                'Unidades listas para operación',
+                '/dashboard/fleet?status=Disponible'
+              )}
+              {renderKPI(
+                'Despliegue en Ruta',
+                stats.inRoute,
+                Navigation,
+                '#0ea5e9',
+                'Unidades en tránsito operativo',
+                '/dashboard/routes'
+              )}
+              {renderKPI(
+                'Incidencias en Ruta',
+                stats.openIncidents,
+                ShieldAlert,
+                '#ef4444',
+                'Alertas Sentinel activas',
+                '/dashboard/routes'
+              )}
+              {renderKPI(
+                'Mermas Operativas',
+                stats.totalInactive,
+                ShieldAlert,
+                '#8b5cf6',
+                'Unidades fuera de servicio',
+                '/dashboard/fleet?status=Descontinuada'
+              )}
+            </div>
           </div>
         </div>
       </section>
