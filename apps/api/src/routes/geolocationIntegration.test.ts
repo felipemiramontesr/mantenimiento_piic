@@ -15,13 +15,28 @@ vi.mock('../services/db', () => ({
 
 describe('Geolocation Integration Endpoints', () => {
   const app = buildApp();
+  let token: string;
 
-  beforeAll(async () => {
+  beforeAll(async (): Promise<void> => {
     await app.ready();
+    token = app.jwt.sign({
+      id: 1,
+      username: 'admin',
+      roleId: 1,
+      roleName: 'Director',
+      permissions: ['*'],
+    });
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('Security — A01:2021 Broken Access Control', () => {
+    it('should reject unauthenticated requests with 401', async (): Promise<void> => {
+      const response = await app.inject({ method: 'GET', url: '/v1/geolocation/states' });
+      expect(response.statusCode).toBe(401);
+    });
   });
 
   describe('GET /v1/geolocation/states', () => {
@@ -35,6 +50,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/states',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -52,6 +68,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/states',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(500);
@@ -68,6 +85,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/states/2/municipalities',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -86,6 +104,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/states/2/municipalities?search=Zapo',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -101,6 +120,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/states/2/municipalities',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(500);
@@ -117,6 +137,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/municipalities/10/neighborhoods',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -137,6 +158,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/municipalities/10/neighborhoods?q=441',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -152,6 +174,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/municipalities/10/neighborhoods',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(500);
@@ -174,6 +197,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/neighborhoods/100',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -192,6 +216,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/neighborhoods/999',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(404);
@@ -205,6 +230,7 @@ describe('Geolocation Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/geolocation/neighborhoods/100',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(500);

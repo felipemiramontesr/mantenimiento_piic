@@ -7,6 +7,15 @@ import db from '../services/db';
  * Provides optimized endpoints for cascading State ➔ Municipality ➔ Neighborhood dropdowns.
  */
 export default async function geolocationRoutes(fastify: FastifyInstance): Promise<void> {
+  // Security Hook — A01:2021 Broken Access Control
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
+    }
+  });
+
   // 1. Fetch States
   fastify.get('/states', async (_request, reply) => {
     try {
@@ -48,13 +57,11 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
         return reply.send({ success: true, data: rows });
       } catch (error) {
         fastify.log.error(error);
-        return reply
-          .status(500)
-          .send({
-            success: false,
-            code: 'INTERNAL_ERROR',
-            message: 'Failed to fetch municipalities',
-          });
+        return reply.status(500).send({
+          success: false,
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to fetch municipalities',
+        });
       }
     }
   );
@@ -88,13 +95,11 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
         return reply.send({ success: true, data: rows });
       } catch (error) {
         fastify.log.error(error);
-        return reply
-          .status(500)
-          .send({
-            success: false,
-            code: 'INTERNAL_ERROR',
-            message: 'Failed to fetch neighborhoods',
-          });
+        return reply.status(500).send({
+          success: false,
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to fetch neighborhoods',
+        });
       }
     }
   );
@@ -123,13 +128,11 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
         return reply.send({ success: true, data: rows[0] });
       } catch (error) {
         fastify.log.error(error);
-        return reply
-          .status(500)
-          .send({
-            success: false,
-            code: 'INTERNAL_ERROR',
-            message: 'Failed to fetch neighborhood details',
-          });
+        return reply.status(500).send({
+          success: false,
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to fetch neighborhood details',
+        });
       }
     }
   );

@@ -7,6 +7,15 @@ import db from '../services/db';
  * Logic: Provides dynamic hierarchical metadata for the entire Fleet ecosystem.
  */
 export default async function catalogRoutes(fastify: FastifyInstance): Promise<void> {
+  // Security Hook — A01:2021 Broken Access Control
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
+    }
+  });
+
   // 1. Fetch options by Category (e.g. ASSET_TYPE, FREQ_TIME)
   fastify.get(
     '/:category',

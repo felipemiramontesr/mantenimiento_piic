@@ -15,13 +15,28 @@ vi.mock('../services/db', () => ({
 
 describe('Catalogs Integration Endpoints', () => {
   const app = buildApp();
+  let token: string;
 
-  beforeAll(async () => {
+  beforeAll(async (): Promise<void> => {
     await app.ready();
+    token = app.jwt.sign({
+      id: 1,
+      username: 'admin',
+      roleId: 1,
+      roleName: 'Director',
+      permissions: ['*'],
+    });
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('Security — A01:2021 Broken Access Control', () => {
+    it('should reject unauthenticated requests with 401', async (): Promise<void> => {
+      const response = await app.inject({ method: 'GET', url: '/v1/catalogs/ASSET_TYPE' });
+      expect(response.statusCode).toBe(401);
+    });
   });
 
   describe('GET /v1/catalogs/:category', () => {
@@ -32,6 +47,7 @@ describe('Catalogs Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/catalogs/ASSET_TYPE',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -44,10 +60,10 @@ describe('Catalogs Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/catalogs/BRAND?parentId=10',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
-      // Verify query composition indirectly via mock expectation
       expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('AND parent_id = ?'), [
         'BRAND',
         '10',
@@ -60,6 +76,7 @@ describe('Catalogs Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/catalogs/ASSET_TYPE',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(500);
@@ -75,6 +92,7 @@ describe('Catalogs Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/catalogs/item/U_5K',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -87,6 +105,7 @@ describe('Catalogs Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/catalogs/item/MISSING',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(404);
@@ -99,6 +118,7 @@ describe('Catalogs Integration Endpoints', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/v1/catalogs/item/U_5K',
+        headers: { authorization: `Bearer ${token}` },
       });
 
       expect(response.statusCode).toBe(500);
