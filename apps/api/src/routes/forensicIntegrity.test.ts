@@ -33,7 +33,13 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
 
   beforeAll(async () => {
     await app.ready();
-    mockToken = app.jwt.sign({ id: 1, email: 'admin@piic.mx' });
+    mockToken = app.jwt.sign({
+      id: 1,
+      username: 'admin',
+      roleId: 1,
+      roleName: 'Director',
+      permissions: ['*'],
+    });
   });
 
   beforeEach(() => {

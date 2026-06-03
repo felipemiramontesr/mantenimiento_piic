@@ -41,7 +41,7 @@ describe('Fleet Integration Endpoints', () => {
     await app.ready();
     mockToken = await (
       app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
-    ).jwt.sign({ id: 1, email: 'admin@piic.mx' });
+    ).jwt.sign({ id: 1, username: 'admin', roleId: 1, roleName: 'Director', permissions: ['*'] });
   });
 
   beforeEach(() => {
