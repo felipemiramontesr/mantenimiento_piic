@@ -6,7 +6,17 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Strategy: Chromium-only for speed. Full browser matrix in CI.
  * Prerequisite: Both API and Web dev servers must be running.
+ *
+ * Environments:
+ *   production (default): https://mantenimiento.piic.com.mx
+ *   local:                http://localhost:5173  (set E2E_ENV=local)
+ *
+ * Credentials: set E2E_USERNAME and E2E_PASSWORD env vars.
+ * Never hardcode credentials in test files.
  */
+
+const isLocal = process.env.E2E_ENV === 'local';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -20,7 +30,7 @@ export default defineConfig({
 
   /* Shared settings for all tests */
   use: {
-    baseURL: 'https://mantenimiento.piic.com.mx',
+    baseURL: isLocal ? 'http://localhost:5173' : 'https://mantenimiento.piic.com.mx',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

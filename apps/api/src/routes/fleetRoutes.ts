@@ -43,6 +43,15 @@ const reportIncidentSchema = z.object({
 });
 
 async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
+  // Security Hook — A01:2021 Broken Access Control
+  fastify.addHook('onRequest', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
+    }
+  });
+
   /**
    * START ROUTE
    * POST /v1/routes/start
@@ -392,7 +401,6 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         reason: z.string().min(5),
       });
       const { data, reason } = schema.parse(request.body);
-      await request.jwtVerify();
       const user = request.user as { id: number };
 
       await RouteService.updateRoute(uuid, data, reason, user.id);
@@ -415,7 +423,6 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         reason: z.string().min(5),
       });
       const { reason } = schema.parse(request.body);
-      await request.jwtVerify();
       const user = request.user as { id: number };
 
       await RouteService.deleteRoute(uuid, reason, user.id);

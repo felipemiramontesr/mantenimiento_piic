@@ -1,10 +1,12 @@
 /**
  * 🔱 Archon Sovereign Cache Engine
  * Implementation: Stale-While-Revalidate (SWR) Pattern
- * v.1.0.0 - Production Grade Persistence
+ * v.2.0.0 - TTL + Version Guard
  */
 
 import { SYSTEM_VERSION, CACHE_PREFIX } from '../constants/versionConstants';
+
+const CATALOG_TTL_MS = 60 * 60 * 1000; // 1 hour — catalogs rarely change
 
 export interface CacheMetadata {
   version: string;
@@ -37,9 +39,9 @@ export const archonCache = {
   },
 
   /**
-   * 🛡️ Retrieve data with version validation
+   * 🛡️ Retrieve data with version + TTL validation
    */
-  get: <T>(key: string): T | null => {
+  get: <T>(key: string, ttlMs: number = CATALOG_TTL_MS): T | null => {
     try {
       const raw = localStorage.getItem(`${CACHE_PREFIX}${key}`);
       if (!raw) return null;
@@ -50,6 +52,12 @@ export const archonCache = {
       const payloadMajor = payload.meta.version.split('.')[0];
       const systemMajor = SYSTEM_VERSION.split('.')[0];
       if (payloadMajor !== systemMajor) {
+        localStorage.removeItem(`${CACHE_PREFIX}${key}`);
+        return null;
+      }
+
+      // TTL check — evict stale entries
+      if (Date.now() - payload.meta.timestamp > ttlMs) {
         localStorage.removeItem(`${CACHE_PREFIX}${key}`);
         return null;
       }
