@@ -1,6 +1,5 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent, waitFor } from '../../test/testUtils';
 import SettingsModule from './SettingsModule';
 
@@ -12,11 +11,7 @@ vi.mock('../../components/Identity/ArchonProfilePanel', () => ({
 }));
 
 const renderModule = (): void => {
-  render(
-    <MemoryRouter>
-      <SettingsModule />
-    </MemoryRouter>
-  );
+  render(<SettingsModule />);
 };
 
 describe('SettingsModule (Alertas + Identidad)', () => {

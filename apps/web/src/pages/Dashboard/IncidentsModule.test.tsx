@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '../../test/testUtils';
 import server from '../../test/server';
 import IncidentsModule from './IncidentsModule';
@@ -33,11 +32,7 @@ const INCIDENT_FIXTURE = [
 ];
 
 const renderModule = (): void => {
-  render(
-    <MemoryRouter>
-      <IncidentsModule />
-    </MemoryRouter>
-  );
+  render(<IncidentsModule />);
 };
 
 describe('IncidentsModule (Incidencias en Ruta)', () => {

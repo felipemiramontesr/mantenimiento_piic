@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent, RenderResult } from '../../test/testUtils';
 import FleetModule from './FleetModule';
 import { UseFleetFormReturn, CatalogOption } from '../../types/fleet';
@@ -140,12 +139,7 @@ describe('FleetModule Orchestrator', () => {
     environmentalHolograms: [] as CatalogOption[],
   } as unknown as UseFleetFormReturn;
 
-  const renderModule = (): RenderResult =>
-    render(
-      <MemoryRouter>
-        <FleetModule />
-      </MemoryRouter>
-    );
+  const renderModule = (): RenderResult => render(<FleetModule />);
 
   it('should start in the GRID view', async (): Promise<void> => {
     vi.mocked(useFleetForm).mockReturnValue(baseMock);
@@ -183,11 +177,7 @@ describe('FleetModule Orchestrator', () => {
     } as unknown as UseFleetFormReturn);
 
     // Re-render to pick up new mock values
-    rerender(
-      <MemoryRouter>
-        <FleetModule />
-      </MemoryRouter>
-    );
+    rerender(<FleetModule />);
 
     expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();
   });

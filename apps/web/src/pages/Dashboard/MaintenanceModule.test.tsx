@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { render, screen, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
@@ -21,11 +20,7 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
   });
 
   const renderModule = (): void => {
-    render(
-      <MemoryRouter>
-        <MaintenanceModule />
-      </MemoryRouter>
-    );
+    render(<MaintenanceModule />);
   };
 
   it('renders header and titles correctly', async () => {

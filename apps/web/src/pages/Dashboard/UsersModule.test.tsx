@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { render, screen, RenderResult } from '../../test/testUtils';
 import UsersModule from './UsersModule';
 
@@ -12,12 +11,7 @@ describe('UsersModule Component', () => {
     vi.clearAllMocks();
   });
 
-  const renderModule = (): RenderResult =>
-    render(
-      <MemoryRouter>
-        <UsersModule />
-      </MemoryRouter>
-    );
+  const renderModule = (): RenderResult => render(<UsersModule />);
 
   it('should render the correct administrative context', async (): Promise<void> => {
     renderModule();

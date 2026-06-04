@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BrowserRouter } from 'react-router-dom';
 import { render, screen, act } from '../../test/testUtils';
 import ArchonCenter from './ArchonCenter';
 
@@ -17,11 +16,7 @@ describe('ArchonCenter Component (Apex Standard)', () => {
 
   const renderModule = async (): Promise<void> => {
     await act(async () => {
-      render(
-        <BrowserRouter>
-          <ArchonCenter />
-        </BrowserRouter>
-      );
+      render(<ArchonCenter />);
     });
   };
 

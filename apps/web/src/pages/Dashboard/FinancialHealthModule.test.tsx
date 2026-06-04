@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent, waitFor } from '../../test/testUtils';
 import server from '../../test/server';
 import FinancialHealthModule from './FinancialHealthModule';
@@ -69,11 +68,7 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
   });
 
   const renderModule = (): void => {
-    render(
-      <MemoryRouter>
-        <FinancialHealthModule />
-      </MemoryRouter>
-    );
+    render(<FinancialHealthModule />);
   };
 
   it('renders KPI cards when dashboard data loads successfully', async (): Promise<void> => {
