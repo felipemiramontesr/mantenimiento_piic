@@ -9,7 +9,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   Fuel,
+  ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useFleet } from '../../context/FleetContext';
 import { useUsers } from '../../context/UserContext';
 import AT from '../../styles/archonTypography';
@@ -440,7 +442,18 @@ const RouteLogRow = ({
 
         {/* Ajustes */}
         <td className={`py-6 ${borderTopClass}`}>
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex flex-col items-center gap-2">
+            <Link
+              to={`/dashboard/routes/${log.uuid}`}
+              title="Ver nodo de ruta"
+              className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] group"
+              onClick={(e): void => e.stopPropagation()}
+            >
+              <ExternalLink
+                size={16}
+                className="transition-transform duration-300 group-hover:scale-110"
+              />
+            </Link>
             {!log.end_time && (
               <button
                 onClick={(e): void => {

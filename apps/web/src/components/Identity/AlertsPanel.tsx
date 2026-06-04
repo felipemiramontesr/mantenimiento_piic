@@ -1,5 +1,6 @@
 ﻿import React from 'react';
-import { Wrench, AlertTriangle, Lock, RefreshCw } from 'lucide-react';
+import { Wrench, AlertTriangle, Lock, RefreshCw, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import useAlerts, { Alert, AlertSeverity, AlertType } from '../../hooks/useAlerts';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -38,11 +39,18 @@ const TYPE_LABEL: Record<AlertType, string> = {
   UNIT_CRITICAL: 'Unidad bloqueada',
 };
 
+const TYPE_ROUTE: Record<AlertType, string> = {
+  MAINTENANCE_OVERDUE: '/dashboard/maintenance',
+  INCIDENT_OPEN: '/dashboard/incidents',
+  UNIT_CRITICAL: '/dashboard/maintenance',
+};
+
 const HEADERS: ArchonTableHeader[] = [
-  { key: 'severity', label: 'Severidad', align: 'center', width: '14%' },
-  { key: 'type', label: 'Tipo', align: 'center', width: '22%' },
-  { key: 'unit', label: 'Unidad', align: 'center', width: '12%' },
-  { key: 'detail', label: 'Detalle', align: 'center', width: '52%' },
+  { key: 'severity', label: 'Severidad', align: 'center', width: '13%' },
+  { key: 'type', label: 'Tipo', align: 'center', width: '20%' },
+  { key: 'unit', label: 'Unidad', align: 'center', width: '11%' },
+  { key: 'detail', label: 'Detalle', align: 'center', width: '44%' },
+  { key: 'actions', label: 'Acciones', align: 'center', width: '12%' },
 ];
 
 function AlertRow(alert: Alert): React.JSX.Element {
@@ -74,6 +82,19 @@ function AlertRow(alert: Alert): React.JSX.Element {
 
       <td className="px-3 py-3 text-center">
         <p className={AT.cellDetail}>{alert.description}</p>
+      </td>
+
+      <td className="px-3 py-3 text-center">
+        <Link
+          to={TYPE_ROUTE[alert.type]}
+          className="inline-flex items-center gap-1.5 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44] transition-colors duration-200 group"
+        >
+          Ir al módulo
+          <ArrowRight
+            size={11}
+            className="transition-transform duration-200 group-hover:translate-x-1"
+          />
+        </Link>
       </td>
     </tr>
   );

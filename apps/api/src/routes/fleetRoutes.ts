@@ -455,6 +455,81 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       }
     }
   );
+
+  // GET /v1/routes/:uuid/node — Sovereign node: full route with unit + driver + incidents
+  fastify.get('/routes/:uuid/node', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const [routeRows] = await db.execute<RowDataPacket[]>(
+        `SELECT fm.id, fm.uuid, fm.unit_id, fm.status,
+                fm.start_reading, fm.end_reading, fm.start_at, fm.end_at,
+                fm.fuel_level_start, fm.fuel_level_end,
+                fm.fuel_liters_loaded, fm.fuel_amount, fm.fuel_ticket_image,
+                fm.description, fm.created_at,
+                fre.driver_id, fre.origin_id, fre.destination,
+                fre.destination_neighborhood_id,
+                fre.additives_check, fre.tire_pressure_json, fre.checklist_json,
+                u.full_name AS driver_name, r.name AS driver_role,
+                c_brand.label AS unit_marca, c_model.label AS unit_modelo, fu.year AS unit_year
+         FROM fleet_movements fm
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         LEFT JOIN users u ON fre.driver_id = u.id
+         LEFT JOIN roles r ON u.role_id = r.id
+         LEFT JOIN fleet_units fu ON fm.unit_id = fu.id
+         LEFT JOIN common_catalogs c_brand ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
+         LEFT JOIN common_catalogs c_model ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
+         WHERE fm.uuid = ? AND fm.movement_type = 'ROUTE'`,
+        [uuid]
+      );
+      if (routeRows.length === 0)
+        return reply.code(404).send({ success: false, message: 'Ruta no encontrada' });
+
+      const [incidentRows] = await db.execute<RowDataPacket[]>(
+        `SELECT id, category, description, severity, status, reported_at
+         FROM route_incidents WHERE route_uuid = ? ORDER BY reported_at DESC`,
+        [uuid]
+      );
+
+      return reply.send({
+        success: true,
+        data: { route: routeRows[0], incidents: incidentRows },
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ success: false, message: 'Error al cargar nodo de ruta' });
+    }
+  });
+
+  // GET /v1/incidents/:id/node — Sovereign node: incident with route + unit context
+  fastify.get('/incidents/:id/node', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const [rows] = await db.execute<RowDataPacket[]>(
+        `SELECT ri.id, ri.route_uuid, ri.category, ri.description,
+                ri.severity, ri.evidence_image, ri.status, ri.reported_at,
+                fm.unit_id, fm.start_at AS route_start, fm.end_at AS route_end,
+                fre.destination, fre.driver_id,
+                u.full_name AS driver_name,
+                c_brand.label AS unit_marca, c_model.label AS unit_modelo, fu.year AS unit_year
+         FROM route_incidents ri
+         JOIN fleet_movements fm ON ri.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         LEFT JOIN users u ON fre.driver_id = u.id
+         LEFT JOIN fleet_units fu ON fm.unit_id = fu.id
+         LEFT JOIN common_catalogs c_brand ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
+         LEFT JOIN common_catalogs c_model ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
+         WHERE ri.id = ?`,
+        [id]
+      );
+      if (rows.length === 0)
+        return reply.code(404).send({ success: false, message: 'Incidente no encontrado' });
+
+      return reply.send({ success: true, data: rows[0] });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ success: false, message: 'Error al cargar nodo de incidente' });
+    }
+  });
 }
 
 export default fleetRoutes;

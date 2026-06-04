@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Activity, Pencil, Hash, Briefcase } from 'lucide-react';
+import { User, Mail, Activity, Pencil, Hash, Briefcase, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useUsers } from '../../context/UserContext';
 import { UserIndustrial } from '../../types/user';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -141,7 +142,17 @@ const UserRegistryRow = ({
         </div>
       </td>
       <td className="py-6 text-center px-4">
-        <div className="flex justify-center gap-2">
+        <div className="flex flex-col items-center gap-2">
+          <Link
+            to={`/dashboard/users/${user.id}`}
+            title="Ver nodo de usuario"
+            className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] group"
+          >
+            <ExternalLink
+              size={16}
+              className="transition-transform duration-300 group-hover:scale-110"
+            />
+          </Link>
           <button
             onClick={(): void => onEdit(user)}
             className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none group"

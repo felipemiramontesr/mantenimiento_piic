@@ -5,19 +5,32 @@ import {
   DollarSign,
   Shield,
   AlertTriangle,
-  ChevronLeft,
   Activity,
   Gauge,
   Cog,
   FileText,
   Hash,
-  RefreshCw,
+  ChevronLeft,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
 import { FleetUnit } from '../../types/fleet';
+import {
+  InfoRow,
+  SectionCard,
+  NodeLoadingState,
+  NodeErrorState,
+  formatMXN,
+  formatDate,
+  formatKm,
+  formatNum,
+  formatHours,
+  formatPct,
+  SEVERITY_BADGE,
+  SEVERITY_LABEL,
+} from './nodes/NodeShared';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,27 +63,13 @@ interface NodeData {
   incidents: { recent: IncidentRecord[]; openCount: number };
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Local helpers ────────────────────────────────────────────────────────────
 
-const STATUS_BADGE: Record<string, string> = {
+const FLEET_STATUS_BADGE: Record<string, string> = {
   Disponible: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   'En Ruta': 'bg-blue-100 text-blue-700 border border-blue-200',
   'En Mantenimiento': 'bg-amber-100 text-amber-700 border border-amber-200',
   Descontinuada: 'bg-slate-100 text-slate-500 border border-slate-200',
-};
-
-const SEVERITY_BADGE: Record<string, string> = {
-  CRITICAL: 'bg-red-100 text-red-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  MEDIUM: 'bg-amber-100 text-amber-700',
-  LOW: 'bg-blue-100 text-blue-700',
-};
-
-const SEVERITY_LABEL: Record<string, string> = {
-  CRITICAL: 'Crítico',
-  HIGH: 'Alto',
-  MEDIUM: 'Medio',
-  LOW: 'Bajo',
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -92,88 +91,8 @@ const SERVICE_TYPE_LABEL: Record<string, string> = {
   MINOR_MINING: 'Servicio Menor Minero',
 };
 
-function formatMXN(v: number): string {
-  return v.toLocaleString('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 0,
-  });
-}
-
-function formatDate(s?: string | null): string {
-  if (!s) return '—';
-  return new Date(s).toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function formatKm(v?: number | null): string {
-  if (v == null) return '—';
-  return `${Number(v).toLocaleString('es-MX', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })} km`;
-}
-
-function formatNum(v: number | null | undefined, unit: string, decimals = 0): string {
-  if (v == null) return '—';
-  return `${Number(v).toLocaleString('es-MX', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: decimals,
-  })} ${unit}`;
-}
-
-function formatHours(v: number | null | undefined): string {
-  if (!v) return '—';
-  return `${Number(v).toLocaleString('es-MX', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
-  })} h`;
-}
-
-function formatPct(v: number | null | undefined, decimals = 1): string {
-  if (v == null) return '—';
-  return `${Number(v).toLocaleString('es-MX', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: decimals,
-  })}%`;
-}
-
 function statusBadgeClass(status: string): string {
-  return STATUS_BADGE[status] ?? 'bg-slate-100 text-slate-500';
-}
-
-// ─── Shared UI primitives ─────────────────────────────────────────────────────
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }): React.JSX.Element {
-  return (
-    <div className="flex items-start justify-between py-2 border-b border-slate-100 last:border-0 gap-4">
-      <span className={AT.cellMeta}>{label}</span>
-      <span className={`${AT.cellValue} text-right`}>{value ?? '—'}</span>
-    </div>
-  );
-}
-
-function SectionCard({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}): React.JSX.Element {
-  return (
-    <div className="card-archon-sovereign">
-      <div className="card-sovereign-header mb-4">
-        {icon}
-        <span className="card-sovereign-title">{title}</span>
-      </div>
-      {children}
-    </div>
-  );
+  return FLEET_STATUS_BADGE[status] ?? 'bg-slate-100 text-slate-500';
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -379,29 +298,8 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
       .finally(() => setLoading(false));
   }, [unitId]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-32 gap-3">
-        <RefreshCw size={18} className="animate-spin text-[#0f2a44]/30" />
-        <span className={AT.sectionTitle}>Cargando nodo…</span>
-      </div>
-    );
-  }
-
-  if (!node) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4">
-        <AlertTriangle size={32} className="text-red-400" />
-        <p className={AT.cellValue}>{error ?? 'Unidad no encontrada'}</p>
-        <Link
-          to="/dashboard/fleet"
-          className="text-archon-base font-black text-[#0f2a44]/50 hover:text-[#0f2a44] transition-colors flex items-center gap-1.5"
-        >
-          <ChevronLeft size={14} /> Volver a Flota
-        </Link>
-      </div>
-    );
-  }
+  if (loading) return <NodeLoadingState />;
+  if (!node) return <NodeErrorState error={error} backTo="/dashboard/fleet" backLabel="Flota" />;
 
   const { unit, maintenance, financial, incidents } = node;
   const kmSinceService =

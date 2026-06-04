@@ -13,6 +13,10 @@ import AdminModule from './pages/Dashboard/AdminModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import FleetUnitNode from './pages/Dashboard/FleetUnitNode';
+import MaintenanceNode from './pages/Dashboard/nodes/MaintenanceNode';
+import RouteNode from './pages/Dashboard/nodes/RouteNode';
+import IncidentNode from './pages/Dashboard/nodes/IncidentNode';
+import UserNode from './pages/Dashboard/nodes/UserNode';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
@@ -58,13 +62,17 @@ const App: React.FC = () => (
                 <Route path="fleet" element={<FleetModule />} />
                 <Route path="fleet/:unitId" element={<FleetUnitNode />} />
                 <Route path="maintenance" element={<MaintenanceModule />} />
+                <Route path="maintenance/:uuid" element={<MaintenanceNode />} />
                 <Route path="routes" element={<RoutesModule />} />
-                <Route path="users" element={<UsersModule />} />
+                <Route path="routes/:uuid" element={<RouteNode />} />
                 <Route path="financial" element={<FinancialHealthModule />} />
                 <Route path="logs" element={<LogsModule />} />
                 <Route path="settings" element={<SettingsModule />} />
                 <Route path="admin" element={<AdminModule />} />
                 <Route path="incidents" element={<IncidentsModule />} />
+                <Route path="incidents/:id" element={<IncidentNode />} />
+                <Route path="users" element={<UsersModule />} />
+                <Route path="users/:id" element={<UserNode />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/login" replace />} />

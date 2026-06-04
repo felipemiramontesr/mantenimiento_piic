@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, User, Wrench } from 'lucide-react';
+import { Calendar, User, Wrench, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { MaintenanceLog } from '../../types/maintenance';
 import api from '../../api/client';
@@ -400,8 +401,19 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
 
               {/* ACCIONES */}
               <td className="py-4 px-3 text-center">
-                {isActive && onCompleteRequest && (
-                  <div className="flex justify-center">
+                <div className="flex flex-col items-center gap-2">
+                  <Link
+                    to={`/dashboard/maintenance/${log.uuid}`}
+                    title="Ver nodo de mantenimiento"
+                    className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] group"
+                    onClick={(e): void => e.stopPropagation()}
+                  >
+                    <ExternalLink
+                      size={16}
+                      className="transition-transform duration-300 group-hover:scale-110"
+                    />
+                  </Link>
+                  {isActive && onCompleteRequest && (
                     <button
                       type="button"
                       title="Finalizar Servicio"
@@ -416,8 +428,8 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                         className="transition-transform duration-300 group-hover/complete:rotate-12"
                       />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </td>
             </motion.tr>
           );

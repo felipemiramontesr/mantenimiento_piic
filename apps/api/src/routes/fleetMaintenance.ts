@@ -599,6 +599,66 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     }
   });
 
+  // GET /v1/maintenance/:uuid/node — Sovereign node: full maintenance order with unit context
+  fastify.get('/maintenance/:uuid/node', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const [movements] = await db.execute<RowDataPacket[]>(
+        `SELECT fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
+                fme.service_date, fm.start_reading AS odometer_at_service,
+                fm.end_reading AS odometer_at_close,
+                fm.fuel_level_start, fm.fuel_level_end,
+                fm.fuel_liters_loaded, fm.fuel_amount,
+                fme.service_type, fme.service_mode, fme.system_recommended_type,
+                fme.cost, fme.technician, fm.created_at, fm.start_at, fm.end_at
+         FROM fleet_movements fm
+         JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+         WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE'`,
+        [uuid]
+      );
+      if (movements.length === 0)
+        return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
+      const movement = movements[0];
+
+      const [details, unitRows] = await Promise.all([
+        db.execute<RowDataPacket[]>(
+          `SELECT fmd.task_code AS taskCode, fmd.status_code AS status, fmd.notes,
+                  mt.label, mt.is_critical AS isCritical,
+                  mts.label AS statusLabel
+           FROM fleet_maintenance_details fmd
+           JOIN maintenance_tasks mt ON fmd.task_code = mt.code
+           JOIN maintenance_task_statuses mts ON fmd.status_code = mts.code
+           WHERE fmd.maintenance_id = ?
+           ORDER BY mt.is_critical DESC, fmd.task_code`,
+          [movement.id]
+        ),
+        db.execute<RowDataPacket[]>(
+          `SELECT fu.id, fu.status,
+                  c_brand.label AS marca, c_model.label AS modelo, fu.year,
+                  fu.odometer, fu.maintIntervalKm, fu.lastFuelLevel
+           FROM fleet_units fu
+           LEFT JOIN common_catalogs c_brand ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
+           LEFT JOIN common_catalogs c_model ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
+           WHERE fu.id = ?`,
+          [movement.unit_id]
+        ),
+      ]);
+
+      return reply.send({
+        success: true,
+        data: {
+          order: { ...movement, details: details[0] },
+          unit: unitRows[0][0] ?? null,
+        },
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply
+        .code(500)
+        .send({ success: false, message: 'Error al cargar nodo de mantenimiento' });
+    }
+  });
+
   /**
    * POST /v1/maintenance — Hybrid intake (Option C)
    *
