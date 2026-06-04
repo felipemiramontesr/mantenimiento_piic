@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Activity, Pencil, Hash, Briefcase } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
@@ -65,12 +65,12 @@ const UserIdentityCluster = ({ user }: { user: UserIndustrial }): React.JSX.Elem
   <div className="flex flex-col items-center gap-1.5">
     <div className="flex items-center gap-1.5 opacity-60">
       <Hash size={10} className="text-pinnacle-navy" />
-      <span className="text-[10px] font-black text-pinnacle-navy uppercase tracking-tighter">
+      <span className="text-archon-base font-black text-pinnacle-navy uppercase tracking-tighter">
         {user.employeeNumber || 'SIN NÚMERO'}
       </span>
     </div>
     <div className="flex flex-col items-center">
-      <span className="text-[12px] font-black text-pinnacle-navy uppercase tracking-tight leading-tight text-center">
+      <span className="text-archon-label font-black text-pinnacle-navy uppercase tracking-tight leading-tight text-center">
         {user.fullName || user.username}
       </span>
     </div>
@@ -98,7 +98,7 @@ const UserRegistryRow = ({
       <td className="py-6 text-center px-4">
         <div className="flex items-center justify-center gap-2 text-pinnacle-navy opacity-80">
           <User size={12} className="text-pinnacle-yellow" />
-          <span className="text-[11px] font-black tracking-widest">
+          <span className="text-archon-md font-black tracking-widest">
             {user.username.toUpperCase()}
           </span>
         </div>
@@ -110,7 +110,7 @@ const UserRegistryRow = ({
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-[4px]">
             <Mail size={11} />
-            <span className="text-[10px] font-black">{user.email}</span>
+            <span className="text-archon-base font-black">{user.email}</span>
           </div>
         </div>
       </td>
@@ -119,7 +119,9 @@ const UserRegistryRow = ({
           <RoleBadge roleName={user.roleName || 'Usuario'} />
           <div className="flex items-center gap-1 opacity-40">
             <Briefcase size={9} />
-            <span className="text-[9px] font-bold uppercase">{user.department || 'GENERAL'}</span>
+            <span className="text-archon-sm font-bold uppercase">
+              {user.department || 'GENERAL'}
+            </span>
           </div>
         </div>
       </td>
@@ -127,7 +129,7 @@ const UserRegistryRow = ({
         <div className="flex flex-col items-center">
           <button
             onClick={(): Promise<void> => toggleUserStatus(user.id, user.is_active)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-[4px] font-black text-[9px] uppercase transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-[4px] font-black text-archon-sm uppercase transition-all ${
               user.is_active
                 ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                 : 'bg-red-50 text-red-700 hover:bg-red-100'

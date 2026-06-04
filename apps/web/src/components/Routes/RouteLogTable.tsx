@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -231,23 +231,23 @@ const RouteLogRow = ({
             {/* SALIDA RECORD */}
             <div className="w-full flex flex-col items-center gap-1">
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter w-[45px]">
+                <span className="text-archon-base font-black text-emerald-500 uppercase tracking-tighter w-[45px]">
                   Salida:
                 </span>
                 <div className="flex items-center gap-2">
                   <Clock size={10} className="text-[#0f2a44] opacity-30" />
-                  <span className="text-[10px] font-bold text-[#0f2a44]">
+                  <span className="text-archon-base font-bold text-[#0f2a44]">
                     {formatDateTime(log.start_time)}
                   </span>
-                  <span className="text-[10px] font-black text-[#0f2a44] opacity-40">—</span>
-                  <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter">
+                  <span className="text-archon-base font-black text-[#0f2a44] opacity-40">—</span>
+                  <span className="text-archon-base font-black text-[#0f2a44] uppercase tracking-tighter">
                     {unit?.sede || 'BASE'}
                   </span>
                 </div>
               </div>
               <div className="flex items-start gap-2 pl-[53px] w-full">
                 <ArrowRight size={10} className="text-emerald-500 mt-0.5 shrink-0 opacity-40" />
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter break-words text-left leading-relaxed w-full pr-4">
+                <span className="text-archon-base font-bold text-emerald-600 uppercase tracking-tighter break-words text-left leading-relaxed w-full pr-4">
                   {log.destination}
                 </span>
               </div>
@@ -258,16 +258,18 @@ const RouteLogRow = ({
               <>
                 <div className="w-full flex flex-col items-center gap-1 mt-1.5 border-t border-[#0f2a44]/5 pt-1.5">
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter w-[45px]">
+                    <span className="text-archon-base font-black text-blue-500 uppercase tracking-tighter w-[45px]">
                       Llegada:
                     </span>
                     <div className="flex items-center gap-2">
                       <Clock size={10} className="text-[#0f2a44] opacity-30" />
-                      <span className="text-[10px] font-bold text-[#0f2a44]">
+                      <span className="text-archon-base font-bold text-[#0f2a44]">
                         {formatDateTime(log.end_time)}
                       </span>
-                      <span className="text-[10px] font-black text-[#0f2a44] opacity-40">—</span>
-                      <span className="text-[10px] font-black text-[#0f2a44] uppercase tracking-tighter opacity-70">
+                      <span className="text-archon-base font-black text-[#0f2a44] opacity-40">
+                        —
+                      </span>
+                      <span className="text-archon-base font-black text-[#0f2a44] uppercase tracking-tighter opacity-70">
                         {unit?.sede || 'BASE'}
                       </span>
                     </div>
@@ -277,7 +279,7 @@ const RouteLogRow = ({
                       size={10}
                       className="text-blue-500 mt-0.5 shrink-0 opacity-40 rotate-180"
                     />
-                    <span className="text-[10px] font-bold text-[#0f2a44] uppercase tracking-tighter opacity-80 break-words text-left leading-relaxed w-full pr-4">
+                    <span className="text-archon-base font-bold text-[#0f2a44] uppercase tracking-tighter opacity-80 break-words text-left leading-relaxed w-full pr-4">
                       {log.destination}
                     </span>
                   </div>
@@ -285,10 +287,10 @@ const RouteLogRow = ({
 
                 {/* TIEMPO TOTAL */}
                 <div className="flex items-center gap-2 mt-2 pl-[53px]">
-                  <span className="text-[9px] font-black text-[#0f2a44] uppercase tracking-widest opacity-40">
+                  <span className="text-archon-sm font-black text-[#0f2a44] uppercase tracking-widest opacity-40">
                     Tiempo Total:
                   </span>
-                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                  <span className="text-archon-base font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
                     {calculateDuration(log.start_time, log.end_time)}
                   </span>
                 </div>
@@ -302,14 +304,14 @@ const RouteLogRow = ({
           <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-2 text-slate-400">
               <Gauge size={14} />
-              <span className="text-[11px] font-black tracking-tight">
+              <span className="text-archon-md font-black tracking-tight">
                 {log.start_km?.toLocaleString() || '0'} KM
               </span>
             </div>
             {log.end_km !== null && log.end_km !== undefined && (
               <div className="flex items-center gap-2 text-emerald-500">
                 <CheckCircle2 size={14} />
-                <span className="text-[11px] font-black tracking-tight">
+                <span className="text-archon-md font-black tracking-tight">
                   {log.end_km?.toLocaleString()} KM
                 </span>
               </div>
@@ -329,16 +331,16 @@ const RouteLogRow = ({
                 <>
                   <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
                     <Fuel size={14} />
-                    <span className="text-[11px] font-black tracking-tight">
+                    <span className="text-archon-md font-black tracking-tight">
                       {currentPercent?.toLocaleString(undefined, { minimumFractionDigits: 1 })}%
                     </span>
                   </div>
                   {realLiters !== null && (
-                    <span className="text-[10px] font-black text-[#0f2a44] mt-1 opacity-80">
+                    <span className="text-archon-base font-black text-[#0f2a44] mt-1 opacity-80">
                       {realLiters.toLocaleString(undefined, { minimumFractionDigits: 1 })} L
                     </span>
                   )}
-                  <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">
+                  <span className="text-archon-xs font-bold text-slate-400 uppercase mt-0.5">
                     {log.end_time ? 'LECTURA FINAL' : 'PUNTO PARTIDA'}
                   </span>
                 </>
@@ -361,12 +363,12 @@ const RouteLogRow = ({
                     }`}
                   >
                     {!isNegative && (
-                      <span className="text-[10px] font-black tracking-widest">+</span>
+                      <span className="text-archon-base font-black tracking-widest">+</span>
                     )}
-                    <span className="text-[11px] font-black tracking-tight">
+                    <span className="text-archon-md font-black tracking-tight">
                       {delta.toLocaleString()}
                     </span>
-                    <span className="text-[8px] font-bold opacity-60 ml-0.5">KM</span>
+                    <span className="text-archon-xs font-bold opacity-60 ml-0.5">KM</span>
                   </div>
                 );
               })()
@@ -382,13 +384,13 @@ const RouteLogRow = ({
             {consumedLiters !== null ? (
               <>
                 <div className="flex items-center gap-1 text-[#0f2a44] bg-[#0f2a44]/5 px-3 py-1 rounded-full border border-[#0f2a44]/10">
-                  <span className="text-[11px] font-black tracking-tight">
+                  <span className="text-archon-md font-black tracking-tight">
                     {consumedLiters.toFixed(1)}
                   </span>
-                  <span className="text-[8px] font-bold opacity-60 ml-0.5">L</span>
+                  <span className="text-archon-xs font-bold opacity-60 ml-0.5">L</span>
                 </div>
                 {kmPerLiter !== null && (
-                  <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                  <span className="text-archon-base font-bold text-slate-400 mt-1 uppercase tracking-tight">
                     {kmPerLiter.toFixed(2)} KM/L
                   </span>
                 )}
@@ -405,8 +407,8 @@ const RouteLogRow = ({
             {log.end_time ? (
               <>
                 <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-                  <span className="text-[10px] font-black opacity-70">$</span>
-                  <span className="text-[11px] font-black tracking-tight">
+                  <span className="text-archon-base font-black opacity-70">$</span>
+                  <span className="text-archon-md font-black tracking-tight">
                     {Number(log.fuel_amount || 0).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -414,7 +416,7 @@ const RouteLogRow = ({
                   </span>
                 </div>
                 {costPerKm !== null && (
-                  <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                  <span className="text-archon-base font-bold text-slate-400 mt-1 uppercase tracking-tight">
                     ${costPerKm.toFixed(2)}/KM
                   </span>
                 )}
@@ -429,7 +431,7 @@ const RouteLogRow = ({
         <td className={`py-6 ${borderTopClass}`}>
           <div className="flex justify-center">
             <span
-              className={`px-3 py-1.5 rounded-[4px] text-[9px] font-black uppercase tracking-widest border ${status.bg} ${status.color} ${status.border}`}
+              className={`px-3 py-1.5 rounded-[4px] text-archon-sm font-black uppercase tracking-widest border ${status.bg} ${status.color} ${status.border}`}
             >
               {status.label}
             </span>
@@ -697,7 +699,7 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
       {isSyncing && (
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[8px] font-black uppercase tracking-widest text-[#0f2a44] opacity-30">
+          <span className="text-archon-xs font-black uppercase tracking-widest text-[#0f2a44] opacity-30">
             Syncing
           </span>
         </div>

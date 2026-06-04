@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Activity, ShieldCheck, Zap, Layers } from 'lucide-react';
 
 interface FleetKPIMatrixProps {
@@ -64,9 +64,9 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
         <div className="flex flex-col items-center gap-0.5 p-1">
           <div className="flex items-center gap-1 opacity-40">
             <Activity size={10} />
-            <span className="text-[8px] font-black uppercase tracking-tighter">DISP</span>
+            <span className="text-archon-xs font-black uppercase tracking-tighter">DISP</span>
           </div>
-          <span className={`text-[10px] font-bold text-center ${getAvaColor(availability)}`}>
+          <span className={`text-archon-base font-bold text-center ${getAvaColor(availability)}`}>
             {availability.toFixed(1)}%
           </span>
         </div>
@@ -75,27 +75,31 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
         <div className="flex flex-col items-center gap-0.5 p-1">
           <div className="flex items-center gap-1 opacity-40">
             <ShieldCheck size={10} />
-            <span className="text-[8px] font-black uppercase tracking-tighter">MTBF</span>
+            <span className="text-archon-xs font-black uppercase tracking-tighter">MTBF</span>
           </div>
-          <span className={`text-[10px] font-bold text-center ${getRelColor(mtbf)}`}>{mtbf}h</span>
+          <span className={`text-archon-base font-bold text-center ${getRelColor(mtbf)}`}>
+            {mtbf}h
+          </span>
         </div>
 
         {/* ⚡ MTTR - Velocidad de Respuesta */}
         <div className="flex flex-col items-center gap-0.5 p-1">
           <div className="flex items-center gap-1 opacity-40">
             <Zap size={10} />
-            <span className="text-[8px] font-black uppercase tracking-tighter">MTTR</span>
+            <span className="text-archon-xs font-black uppercase tracking-tighter">MTTR</span>
           </div>
-          <span className={`text-[10px] font-bold text-center ${getSpdColor(mttr)}`}>{mttr}h</span>
+          <span className={`text-archon-base font-bold text-center ${getSpdColor(mttr)}`}>
+            {mttr}h
+          </span>
         </div>
 
         {/* 📚 BCK - Pendientes (Backlog) */}
         <div className="flex flex-col items-center gap-0.5 p-1">
           <div className="flex items-center gap-1 opacity-40">
             <Layers size={10} />
-            <span className="text-[8px] font-black uppercase tracking-tighter">BCK</span>
+            <span className="text-archon-xs font-black uppercase tracking-tighter">BCK</span>
           </div>
-          <span className={`text-[10px] font-bold text-center ${getBckColor(backlog)}`}>
+          <span className={`text-archon-base font-bold text-center ${getBckColor(backlog)}`}>
             {backlog}
           </span>
         </div>
@@ -104,11 +108,11 @@ const FleetKpiMatrix: React.FC<FleetKPIMatrixProps> = (
       {/* 🔱 Archon Health Index Bar */}
       <div className="space-y-1.5 mt-1">
         <div className="flex justify-between items-center px-1">
-          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
+          <span className="text-archon-xs font-black text-slate-500 uppercase tracking-widest">
             Health Index
           </span>
           <span
-            className={`text-[9px] font-black ${
+            className={`text-archon-sm font-black ${
               daysRemaining !== undefined && daysRemaining < 0 ? 'text-rose-600' : 'text-navy-700'
             }`}
           >

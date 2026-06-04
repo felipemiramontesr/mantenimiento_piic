@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Truck, User, AlertCircle } from 'lucide-react';
 import ArchonSelect from '../../ArchonSelect';
@@ -24,10 +24,10 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
         <ShieldCheck size={20} className="text-[#0f2a44]" />
       </div>
       <div>
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+        <span className="text-archon-base font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
           Fase I
         </span>
-        <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+        <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
           Identidad del Servicio
         </h3>
       </div>
@@ -35,7 +35,7 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
 
     {/* Unit Selection */}
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+      <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
         Seleccionar Unidad
       </label>
       <ArchonSelect
@@ -68,23 +68,23 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-black text-[#0f2a44] truncate leading-tight">
+            <p className="text-archon-xl font-black text-[#0f2a44] truncate leading-tight">
               {selectedUnitData.marca} {selectedUnitData.modelo}
             </p>
             <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/50 px-1.5 rounded uppercase">
+              <span className="text-archon-base font-bold text-emerald-700 bg-emerald-100/50 px-1.5 rounded uppercase">
                 {selectedUnitData.id}
               </span>
-              <span className="text-[10px] font-bold opacity-60 text-[#0f2a44]">
+              <span className="text-archon-base font-bold opacity-60 text-[#0f2a44]">
                 {selectedUnitData.placas}
               </span>
               {selectedUnitData.lastFuelLevel !== undefined && !isEdit && (
-                <span className="text-[10px] font-bold text-sky-700 bg-sky-100/50 px-1.5 rounded uppercase">
+                <span className="text-archon-base font-bold text-sky-700 bg-sky-100/50 px-1.5 rounded uppercase">
                   Telemetría Heredada: {selectedUnitData.lastFuelLevel}%
                 </span>
               )}
             </div>
-            <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest mt-1">
+            <p className="text-archon-sm font-bold opacity-40 uppercase tracking-widest mt-1">
               {selectedUnitData.departamento}
             </p>
           </div>
@@ -94,7 +94,7 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
 
     {/* Operator Selection */}
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+      <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
         Operador Asignado
       </label>
       <ArchonSelect
@@ -120,7 +120,7 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
           className={`${isEdit ? 'text-amber-600' : 'text-emerald-600'} shrink-0 mt-0.5`}
         />
         <p
-          className={`text-[9px] font-bold ${
+          className={`text-archon-sm font-bold ${
             isEdit ? 'text-amber-800' : 'text-emerald-800'
           } leading-relaxed`}
         >

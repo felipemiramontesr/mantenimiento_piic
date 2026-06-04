@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file IncidentReportForm.tsx
  * @version 78.0.0 (Archon Elite)
  * @description High-fidelity forensic reporting interface for route incidents.
@@ -127,11 +127,11 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
                 Protocolo Sentinel: Alerta de Incidencia
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-rose-200 uppercase tracking-widest">
+                <span className="text-archon-base font-bold text-rose-200 uppercase tracking-widest">
                   UNIDAD: {unitId}
                 </span>
                 <div className="w-1 h-1 bg-rose-400 rounded-full" />
-                <span className="text-[10px] font-bold text-rose-200 uppercase tracking-widest">
+                <span className="text-archon-base font-bold text-rose-200 uppercase tracking-widest">
                   REPORTE FORENSE EN TIEMPO REAL
                 </span>
               </div>
@@ -149,7 +149,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="space-y-10">
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
                   Clasificación del Evento
                 </label>
                 <div className="grid grid-cols-1 gap-2.5">
@@ -175,7 +175,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
                           }
                         />
                         <span
-                          className={`text-[11px] font-black uppercase tracking-widest ${
+                          className={`text-archon-md font-black uppercase tracking-widest ${
                             formData.category === cat.value ? 'text-[#0f2a44]' : ''
                           }`}
                         >
@@ -191,7 +191,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
                   Grado de Severidad Operativa
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -205,11 +205,13 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
                         ${
                           formData.severity === sev.value
                             ? `border-[#0f2a44] ${sev.bg} text-[#0f2a44] shadow-sm font-black`
-                            : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/30 text-[10px] font-black'
+                            : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/30 text-archon-base font-black'
                         }
                       `}
                     >
-                      <span className="text-[10px] uppercase tracking-[0.2em]">{sev.label}</span>
+                      <span className="text-archon-base uppercase tracking-[0.2em]">
+                        {sev.label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -218,7 +220,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
 
             <div className="space-y-10 flex flex-col h-full">
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
                   Relato de los Hechos
                 </label>
                 <div className="relative">
@@ -237,7 +239,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
               </div>
 
               <div className="space-y-4 flex-grow">
-                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
                   Evidencia Visual (Mandatorio)
                 </label>
                 <div className="h-[210px]">
@@ -256,7 +258,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="p-4 bg-rose-50 text-rose-800 text-[10px] font-black border-l-4 border-rose-600 flex items-center gap-3 rounded-r-[4px]"
+                  className="p-4 bg-rose-50 text-rose-800 text-archon-base font-black border-l-4 border-rose-600 flex items-center gap-3 rounded-r-[4px]"
                 >
                   <AlertTriangle size={18} /> {error}
                 </motion.div>
@@ -266,7 +268,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
                 <button
                   type="button"
                   onClick={onClose}
-                  className="text-[10px] font-black uppercase tracking-[0.3em] text-[#0f2a44]/40 hover:text-rose-600 transition-colors border-b-2 border-transparent hover:border-rose-600 pb-1"
+                  className="text-archon-base font-black uppercase tracking-[0.3em] text-[#0f2a44]/40 hover:text-rose-600 transition-colors border-b-2 border-transparent hover:border-rose-600 pb-1"
                 >
                   Cancelar
                 </button>
@@ -274,7 +276,7 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
                   type="submit"
                   disabled={submitting || !formData.description}
                   className={`
-                    flex items-center gap-4 px-10 py-5 rounded-[4px] text-[10px] font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group
+                    flex items-center gap-4 px-10 py-5 rounded-[4px] text-archon-base font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group
                     ${
                       submitting || !formData.description
                         ? 'bg-[#0f2a44]/5 text-[#0f2a44]/20 cursor-not-allowed'

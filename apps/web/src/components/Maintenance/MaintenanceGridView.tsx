@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, User, Wrench } from 'lucide-react';
 
@@ -328,7 +328,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
               <td className="py-4 px-3 text-center">
                 <div className="flex flex-col gap-3 w-full items-center">
                   <div className="grid grid-cols-2 items-center gap-2">
-                    <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
+                    <span className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
                       Entrada
                     </span>
                     {((): React.ReactElement => {
@@ -338,14 +338,16 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                           <Calendar size={9} className="text-[#0f2a44]/30 shrink-0" />
                           <span className={AT.cellValue}>{date}</span>
                           {time && (
-                            <span className="text-[9px] font-mono text-[#0f2a44]/40">{time}</span>
+                            <span className="text-archon-sm font-mono text-[#0f2a44]/40">
+                              {time}
+                            </span>
                           )}
                         </div>
                       );
                     })()}
                   </div>
                   <div className="grid grid-cols-2 items-center gap-2">
-                    <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
+                    <span className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
                       Salida
                     </span>
                     {isActive ? (
@@ -362,7 +364,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                             <Calendar size={9} className="text-emerald-500/60 shrink-0" />
                             <span className={AT.cellValue}>{date}</span>
                             {time && (
-                              <span className="text-[9px] font-mono text-emerald-600/50">
+                              <span className="text-archon-sm font-mono text-emerald-600/50">
                                 {time}
                               </span>
                             )}
@@ -372,7 +374,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                     )}
                   </div>
                   <div className="grid grid-cols-2 items-center gap-2">
-                    <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
+                    <span className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
                       Días
                     </span>
                     <span

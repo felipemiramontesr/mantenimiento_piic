@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   User,
   Mail,
@@ -278,7 +278,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               <div className="bg-red-100 p-2 rounded-[4px]">
                 <Shield size={18} className="text-red-500" />
               </div>
-              <p className="text-[11px] uppercase font-black tracking-widest text-pinnacle-navy">
+              <p className="text-archon-md uppercase font-black tracking-widest text-pinnacle-navy">
                 {error}
               </p>
             </div>
@@ -288,7 +288,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#10b981]">
             <div className="card-sovereign-header">
               <Contact size={22} className="text-[var(--card-accent)]" />
-              <h3 className="card-sovereign-title text-[14px] opacity-100">
+              <h3 className="card-sovereign-title text-archon-xl opacity-100">
                 {editingUser ? 'Actualizar Identidad' : 'Identidad de Personal'}
               </h3>
             </div>
@@ -347,7 +347,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   variant="square"
                 />
               </ArchonField>
-              <p className="text-[10px] uppercase tracking-widest opacity-40 mt-4 text-center">
+              <p className="text-archon-base uppercase tracking-widest opacity-40 mt-4 text-center">
                 Estándar Archon: Formato cuadrado recomendado
               </p>
             </div>
@@ -356,7 +356,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#0f2a44]">
             <div className="card-sovereign-header">
               <Briefcase size={22} className="text-[var(--card-accent)]" />
-              <h3 className="card-sovereign-title text-[14px] opacity-100">Perfil Industrial</h3>
+              <h3 className="card-sovereign-title text-archon-xl opacity-100">Perfil Industrial</h3>
             </div>
 
             <ArchonField label="Correo Electrónico" icon={Mail} required>
@@ -441,7 +441,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                         {passwordsMatch ? (
                           <CheckCircle size={16} className="text-emerald-500 animate-in zoom-in" />
                         ) : (
-                          <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">
+                          <span className="text-archon-base font-bold text-red-500 uppercase tracking-tighter">
                             No coincide
                           </span>
                         )}

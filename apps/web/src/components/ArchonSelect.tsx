@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+﻿import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, X } from 'lucide-react';
@@ -168,7 +168,7 @@ export default function ArchonSelect({
             <Icon size={16} className={isOpen ? 'text-[#f2b705]' : 'text-[#0f2a44] opacity-40'} />
           )}
           <span
-            className={`truncate text-[13px] font-bold ${
+            className={`truncate text-archon-lg font-bold ${
               !value ? 'text-[#0f2a44] opacity-30' : 'text-[#0f2a44]'
             }`}
           >
@@ -215,7 +215,7 @@ export default function ArchonSelect({
                       onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                         setSearchTerm(e.target.value)
                       }
-                      className="w-full bg-transparent border-none outline-none text-[13px] font-bold text-[#0f2a44] placeholder:opacity-30"
+                      className="w-full bg-transparent border-none outline-none text-archon-lg font-bold text-[#0f2a44] placeholder:opacity-30"
                       onClick={(e: React.MouseEvent): void => e.stopPropagation()}
                     />
                     {searchTerm && (
@@ -246,7 +246,7 @@ export default function ArchonSelect({
                             onChange(option.value);
                             setIsOpen(false);
                           }}
-                          className={`px-5 py-3 text-[13px] font-bold cursor-pointer transition-all duration-200 border-l-[3px] flex items-center justify-between gap-4 ${
+                          className={`px-5 py-3 text-archon-lg font-bold cursor-pointer transition-all duration-200 border-l-[3px] flex items-center justify-between gap-4 ${
                             isSelected
                               ? 'border-[#f2b705] bg-[rgba(242,183,5,0.05)] text-[#f2b705]'
                               : 'border-transparent text-[#0f2a44] hover:bg-[rgba(15,42,68,0.02)] hover:border-[rgba(15,42,68,0.2)]'
@@ -255,7 +255,7 @@ export default function ArchonSelect({
                           <div className="flex flex-col gap-1.5 min-w-0">
                             <div className="truncate">{option.label}</div>
                             {option.secondaryLabel && (
-                              <div className="text-[9px] font-black opacity-30 uppercase tracking-widest truncate mt-0.5">
+                              <div className="text-archon-sm font-black opacity-30 uppercase tracking-widest truncate mt-0.5">
                                 {option.secondaryLabel}
                               </div>
                             )}

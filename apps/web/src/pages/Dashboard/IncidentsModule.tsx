@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { ArchonDataTable, ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import api from '../../api/client';
@@ -89,19 +89,19 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
               testId="incidents-table"
               renderRow={(incident): React.ReactNode => (
                 <tr key={incident.id} className="hover:bg-slate-50/50 transition-all duration-300">
-                  <td className="text-center py-3 px-4 font-mono font-bold text-[13px] text-[#0f2a44]">
+                  <td className="text-center py-3 px-4 font-mono font-bold text-archon-lg text-[#0f2a44]">
                     {incident.unit_id}
                   </td>
-                  <td className="text-center py-3 px-4 text-[13px] text-[#0f2a44]">
+                  <td className="text-center py-3 px-4 text-archon-lg text-[#0f2a44]">
                     {incident.driver_name}
                   </td>
-                  <td className="text-center py-3 px-4 text-[11px] font-black uppercase tracking-wider text-[#0f2a44]">
+                  <td className="text-center py-3 px-4 text-archon-md font-black uppercase tracking-wider text-[#0f2a44]">
                     {incident.category}
                   </td>
                   <td className="text-center py-3 px-4">
                     <div className="flex justify-center">
                       <span
-                        className={`px-2 py-0.5 rounded-[4px] text-[10px] font-black uppercase tracking-wider ${getSeverityClasses(
+                        className={`px-2 py-0.5 rounded-[4px] text-archon-base font-black uppercase tracking-wider ${getSeverityClasses(
                           incident.severity
                         )}`}
                       >
@@ -112,7 +112,7 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
                   <td className="text-center py-3 px-4">
                     <div className="flex justify-center">
                       <span
-                        className={`px-2 py-0.5 rounded-[4px] text-[10px] font-black uppercase tracking-wider ${getStatusClasses(
+                        className={`px-2 py-0.5 rounded-[4px] text-archon-base font-black uppercase tracking-wider ${getStatusClasses(
                           incident.status
                         )}`}
                       >
@@ -120,10 +120,10 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
                       </span>
                     </div>
                   </td>
-                  <td className="text-left py-3 px-4 text-[12px] text-[#0f2a44]/70 max-w-[200px] truncate">
+                  <td className="text-left py-3 px-4 text-archon-label text-[#0f2a44]/70 max-w-[200px] truncate">
                     {incident.description}
                   </td>
-                  <td className="text-center py-3 px-4 font-mono text-[12px] text-[#0f2a44]/60">
+                  <td className="text-center py-3 px-4 font-mono text-archon-label text-[#0f2a44]/60">
                     {formatDate(incident.reported_at)}
                   </td>
                 </tr>

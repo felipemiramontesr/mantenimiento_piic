@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -299,7 +299,9 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
               {/* KM RESTANTES */}
               <td className="py-4 px-3 text-center">
                 <span
-                  className={`font-mono text-[13px] font-bold ${kmRemainingColor(row.kmRemaining)}`}
+                  className={`font-mono text-archon-lg font-bold ${kmRemainingColor(
+                    row.kmRemaining
+                  )}`}
                 >
                   {row.kmRemaining.toLocaleString()} km
                 </span>

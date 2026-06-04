@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Wrench,
   Truck,
@@ -144,7 +144,7 @@ const FuelSection: React.FC<FuelSectionProps> = ({
     <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#f2b705]">
       <div className="card-sovereign-header">
         <Droplets className="text-[var(--card-accent)]" size={22} />
-        <h3 className="card-sovereign-title text-[14px] opacity-100">
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">
           {isInProgress ? 'NIVEL DE SALIDA' : 'NIVEL DE COMBUSTIBLE'}
         </h3>
       </div>
@@ -155,7 +155,7 @@ const FuelSection: React.FC<FuelSectionProps> = ({
           disabled={isInProgress}
         />
         {isInProgress && (
-          <p className="text-[10px] text-[#0f2a44]/40 italic pt-1">
+          <p className="text-archon-base text-[#0f2a44]/40 italic pt-1">
             Nivel auto-heredado del sistema. El nivel de retorno se captura al cerrar el servicio.
           </p>
         )}
@@ -166,7 +166,7 @@ const FuelSection: React.FC<FuelSectionProps> = ({
     <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 [--card-accent:#f2b705]">
       <div className="card-sovereign-header">
         <Gauge className="text-[var(--card-accent)]" size={22} />
-        <h3 className="card-sovereign-title text-[14px] opacity-100">
+        <h3 className="card-sovereign-title text-archon-xl opacity-100">
           {isInProgress ? 'ESTADO DE SALIDA' : 'DATOS DE SALIDA'}
         </h3>
       </div>
@@ -185,11 +185,11 @@ const FuelSection: React.FC<FuelSectionProps> = ({
                   onEndOdometer(e.target.valueAsNumber)
                 }
               />
-              <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+              <span className="absolute right-4 text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                 KM
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1 font-mono pl-1">
+            <p className="text-archon-base text-slate-400 mt-1 font-mono pl-1">
               Incluye traslado y pruebas de campo
             </p>
           </ArchonField>
@@ -205,25 +205,25 @@ const FuelSection: React.FC<FuelSectionProps> = ({
                   onFuelLitersLoaded(e.target.value.replace(/[^0-9.]/g, ''))
                 }
               />
-              <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+              <span className="absolute right-4 text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                 LTS
               </span>
             </div>
           </ArchonField>
           <ArchonField label="Monto del Ticket de Combustible" icon={DollarSign}>
             <div className="flex items-center w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus-within:border-b-[#f2b705] focus-within:bg-white focus-within:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] transition-all duration-300">
-              <span className="text-[#0f2a44]/40 font-bold text-[13px]">$</span>
+              <span className="text-[#0f2a44]/40 font-bold text-archon-lg">$</span>
               <input
                 type="text"
                 inputMode="decimal"
                 placeholder="0.00"
-                className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-[13px] font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal"
+                className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
                 value={fuelAmount}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                   onFuelAmount(e.target.value.replace(/[^0-9.]/g, ''))
                 }
               />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+              <span className="text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                 MXN
               </span>
             </div>
@@ -233,11 +233,11 @@ const FuelSection: React.FC<FuelSectionProps> = ({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Gauge size={14} className="text-[#0f2a44]/30 shrink-0" />
-            <span className="font-mono text-[13px] font-bold text-[#0f2a44]">
+            <span className="font-mono text-archon-lg font-bold text-[#0f2a44]">
               {Number(unit?.odometer ?? 0).toLocaleString()} km
             </span>
           </div>
-          <p className="text-[10px] text-[#0f2a44]/40">
+          <p className="text-archon-base text-[#0f2a44]/40">
             Odómetro de entrada y nivel de combustible se registran automáticamente. Al retorno del
             taller, capture el odómetro final y nivel en el formulario de cierre.
           </p>
@@ -388,7 +388,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   );
 
   const inputClass =
-    'w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal outline-none';
+    'w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal outline-none';
 
   return (
     <form
@@ -417,14 +417,14 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           </div>
           <div>
             <p
-              className={`text-[11px] font-black uppercase tracking-[0.15em] ${
+              className={`text-archon-md font-black uppercase tracking-[0.15em] ${
                 isInProgress ? 'text-amber-700' : 'text-emerald-700'
               }`}
             >
               {isInProgress ? 'Ingreso a Taller — Downtime' : 'In Situ — Registro Inmediato'}
             </p>
             <p
-              className={`text-[10px] mt-0.5 ${
+              className={`text-archon-base mt-0.5 ${
                 isInProgress ? 'text-amber-600/70' : 'text-emerald-600/70'
               }`}
             >
@@ -442,7 +442,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
         <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 relative z-20 [--card-accent:#0f2a44]">
           <div className="card-sovereign-header">
             <Wrench className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-[14px] opacity-100">CONFIGURACIÓN</h3>
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">CONFIGURACIÓN</h3>
           </div>
           <div className="space-y-6 relative z-10">
             <ArchonField label="1. Unidad Asignada" icon={Truck} required>
@@ -458,11 +458,11 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
             {/* Dynamic service type badge — computed server-side from odometry */}
             {selectedUnit && (
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black text-[#0f2a44]/50 uppercase tracking-[0.15em]">
+                <p className="text-archon-base font-black text-[#0f2a44]/50 uppercase tracking-[0.15em]">
                   Tipo de Servicio (Calculado)
                 </p>
                 <div
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-[11px] font-black uppercase tracking-wider ${badge.bg} ${badge.text} ${badge.border}`}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-archon-md font-black uppercase tracking-wider ${badge.bg} ${badge.text} ${badge.border}`}
                 >
                   <Wrench size={11} />
                   {SERVICE_LABELS[computedServiceType]}
@@ -484,7 +484,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                       setOdometerAtService(e.target.valueAsNumber)
                     }
                   />
-                  <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                  <span className="absolute right-4 text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                     KM
                   </span>
                 </div>
@@ -508,7 +508,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
         <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 relative z-20 [--card-accent:#0f2a44]">
           <div className="card-sovereign-header">
             <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-[14px] opacity-100">DATOS OPERATIVOS</h3>
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">DATOS OPERATIVOS</h3>
           </div>
           <div className="space-y-6 relative z-10">
             <ArchonField label="Técnico Ejecutor" icon={User} required>
@@ -522,19 +522,19 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
             </ArchonField>
             <ArchonField label="Costo del Servicio" icon={DollarSign}>
               <div className="flex items-center w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus-within:border-b-[#f2b705] focus-within:bg-white focus-within:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] transition-all duration-300">
-                <span className="text-[#0f2a44]/40 font-bold text-[13px]">$</span>
+                <span className="text-[#0f2a44]/40 font-bold text-archon-lg">$</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   placeholder="Ej: 3,450.00"
-                  className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-[13px] font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal"
+                  className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
                   value={cost || ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setCost(e.target.valueAsNumber)
                   }
                 />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                <span className="text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                   MXN
                 </span>
               </div>
@@ -566,17 +566,17 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
         <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#0f2a44] !pb-2">
           <div className="card-sovereign-header p-10 pb-0">
             <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-[14px] opacity-100">
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">
               {isInProgress ? 'INSPECCIÓN DE ENTRADA (Opcional)' : 'CHECKLIST OPERATIVO'}
             </h3>
           </div>
           {loading && (
-            <div className="p-12 text-center text-[10px] font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
+            <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
               Generando matriz de inspección...
             </div>
           )}
           {!loading && template.length === 0 && (
-            <div className="p-12 text-center text-[10px] font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
+            <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
               No se generaron tareas para esta configuración.
             </div>
           )}
@@ -589,14 +589,14 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                 >
                   <div className="min-w-0 pr-6">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="text-[13px] font-bold text-[#0f2a44]">{task.label}</div>
+                      <div className="text-archon-lg font-bold text-[#0f2a44]">{task.label}</div>
                       {task.isDeferredCarry && (
-                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-400/30 text-[9px] font-black text-amber-600 uppercase tracking-[0.1em]">
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-400/30 text-archon-sm font-black text-amber-600 uppercase tracking-[0.1em]">
                           ↩ Diferido
                         </span>
                       )}
                     </div>
-                    <div className="text-[9px] font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
+                    <div className="text-archon-sm font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
                       {task.code}
                     </div>
                   </div>
@@ -617,7 +617,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                         onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                           handleDetailChange(idx, 'notes', e.target.value)
                         }
-                        className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] outline-none"
+                        className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg outline-none"
                       />
                     </div>
                   </div>
@@ -639,7 +639,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           <button
             type="submit"
             disabled={submitting || !canSubmit}
-            className={`w-full h-11 flex items-center justify-center gap-2 px-4 rounded-[4px] text-[12px] font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50 ${getSubmitBtnClass(
+            className={`w-full h-11 flex items-center justify-center gap-2 px-4 rounded-[4px] text-archon-label font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50 ${getSubmitBtnClass(
               isInProgress
             )}`}
           >

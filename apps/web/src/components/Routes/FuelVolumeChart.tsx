@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 
 /**
@@ -83,23 +83,23 @@ const FuelVolumeChart: React.FC<FuelVolumeChartProps> = ({
         {/* 📋 ANALYTICAL LEGEND (SIDE-ALIGNED) */}
         <div className="flex flex-col justify-center gap-3 flex-1">
           <div className="space-y-1">
-            <p className="text-[8px] font-black opacity-30 text-[#0f2a44] uppercase tracking-widest">
+            <p className="text-archon-xs font-black opacity-30 text-[#0f2a44] uppercase tracking-widest">
               Estado de Carga
             </p>
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-black text-[#0f2a44]">{currentLevel}%</span>
-              <span className="text-[8px] font-bold opacity-40 text-[#0f2a44]">VOL</span>
+              <span className="text-archon-xs font-bold opacity-40 text-[#0f2a44]">VOL</span>
             </div>
           </div>
 
           <div className="h-px bg-[#0f2a44]/10 w-full" />
 
           <div className="grid grid-cols-1 gap-1.5">
-            <div className="flex items-center justify-between text-[10px]">
+            <div className="flex items-center justify-between text-archon-base">
               <span className="font-bold opacity-50 text-[#0f2a44]">Total Tanque:</span>
               <span className="font-black text-[#0f2a44]">{totalCapacity}L</span>
             </div>
-            <div className="flex items-center justify-between text-[10px]">
+            <div className="flex items-center justify-between text-archon-base">
               <span className="font-bold opacity-50 text-[#0f2a44]">Espacio Libre:</span>
               <span className="font-black text-[#0f2a44]">{remainingLiters}L</span>
             </div>

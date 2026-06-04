@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -51,13 +51,13 @@ const IdentityCluster = ({
 
   return (
     <div className="flex flex-col items-center gap-2.5">
-      <span className="text-[10px] font-black text-navy-400 uppercase tracking-[0.2em]">
+      <span className="text-archon-base font-black text-navy-400 uppercase tracking-[0.2em]">
         {unit.owner || 'ARIAN SILVER DE MÉXICO'}
       </span>
       <div className="flex flex-col items-center gap-1.5">
         <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
           <Tag size={11} className="text-slate-400" />
-          <span className="text-[12px] font-black text-navy-800 uppercase tracking-tight">
+          <span className="text-archon-label font-black text-navy-800 uppercase tracking-tight">
             {unit.placas}
           </span>
           {restriction.isRestricted && (
@@ -70,21 +70,23 @@ const IdentityCluster = ({
           )}
         </div>
         <div className="flex flex-col items-center">
-          <span className="text-[8px] font-black text-navy-900/30 uppercase tracking-tighter leading-none">
+          <span className="text-archon-xs font-black text-navy-900/30 uppercase tracking-tighter leading-none">
             T. CIRCULACIÓN:
           </span>
-          <span className="text-[10px] font-mono text-slate-400 font-bold">{tarjeta || '---'}</span>
+          <span className="text-archon-base font-mono text-slate-400 font-bold">
+            {tarjeta || '---'}
+          </span>
         </div>
       </div>
       {restriction.isRestricted && (
-        <span className="text-[8px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 uppercase tracking-tighter">
+        <span className="text-archon-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 uppercase tracking-tighter">
           {restriction.reason}
         </span>
       )}
-      <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 bg-emerald-50/50 px-2.5 py-1 rounded-[4px] uppercase tracking-widest border border-emerald-100/50">
+      <span className="flex items-center gap-1.5 text-archon-base font-black text-emerald-600 bg-emerald-50/50 px-2.5 py-1 rounded-[4px] uppercase tracking-widest border border-emerald-100/50">
         <ShieldCheck size={12} /> {unit.complianceStatus || 'OPERATIVO'}
       </span>
-      <span className="flex items-center gap-1.5 text-[10px] font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-[4px] border border-sky-100 uppercase tracking-widest shadow-sm">
+      <span className="flex items-center gap-1.5 text-archon-base font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-[4px] border border-sky-100 uppercase tracking-widest shadow-sm">
         <MapPin size={11} className="text-sky-500" /> {unit.sede || 'MINA'}
       </span>
     </div>
@@ -97,17 +99,17 @@ const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
   return (
     <div className="flex flex-col items-center space-y-3">
       <div className="flex flex-col items-center">
-        <span className="text-[10px] font-black text-navy-400 uppercase tracking-wider">
+        <span className="text-archon-base font-black text-navy-400 uppercase tracking-wider">
           LEASING
         </span>
-        <span className="text-[14px] font-black text-navy-900">
+        <span className="text-archon-xl font-black text-navy-900">
           $
           {Number(unit.monthlyLeasePayment || 0).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
         </span>
-        <span className="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 rounded uppercase tracking-tighter mt-1">
+        <span className="text-archon-sm font-mono text-slate-400 bg-slate-50 px-1.5 rounded uppercase tracking-tighter mt-1">
           CTA: {cuenta}
         </span>
       </div>
@@ -120,13 +122,13 @@ const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
               maximumFractionDigits: 2,
             })} ${usageUnit}`}
         </span>
-        <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+        <span className="flex items-center gap-1.5 text-archon-base font-bold text-slate-400 uppercase tracking-tighter">
           <CalendarDays size={11} className="text-slate-300" />
           {unit.timeFreqLabel || `${unit.maintIntervalDays || 180} DÍAS`}
         </span>
       </div>
       <div className="bg-sky-50 px-2 py-1 rounded border border-sky-100 shadow-sm">
-        <span className="text-[10px] font-black text-sky-700">
+        <span className="text-archon-base font-black text-sky-700">
           {Number(unit.dailyUsageAvg || 0).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
@@ -154,7 +156,7 @@ const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           {usageUnit}
         </span>
       </div>
-      <div className="flex flex-col items-center opacity-60 text-[11px] font-bold text-slate-600">
+      <div className="flex flex-col items-center opacity-60 text-archon-md font-bold text-slate-600">
         <span>
           {Number(unit.lastServiceReading || 0).toLocaleString('en-US', {
             minimumFractionDigits: 2,
@@ -162,15 +164,15 @@ const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           })}{' '}
           {usageUnit}
         </span>
-        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+        <span className="text-archon-sm font-black text-slate-400 uppercase tracking-widest mt-0.5">
           {formatDateTime(new Date(unit.lastServiceDate || Date.now()))}
         </span>
       </div>
       <div className="flex flex-col items-center bg-amber-50 px-3 py-1 rounded border border-amber-100">
-        <span className="text-[9px] font-black text-amber-600 uppercase tracking-tighter">
+        <span className="text-archon-sm font-black text-amber-600 uppercase tracking-tighter">
           OBJETIVO {usageUnit}
         </span>
-        <span className="text-[13px] font-black text-amber-800">
+        <span className="text-archon-lg font-black text-amber-800">
           {Number(unit.nextServiceKmTarget ?? unit.nextServiceReading ?? 0).toLocaleString(
             'en-US',
             {
@@ -182,14 +184,14 @@ const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
       </div>
       <div className="flex items-center gap-4 pt-2 border-t border-slate-100 w-full justify-center">
         <div className="flex flex-col items-center">
-          <span className="text-[8px] font-black text-slate-400 uppercase">Carga</span>
-          <span className="text-[10px] font-black text-navy-800">
+          <span className="text-archon-xs font-black text-slate-400 uppercase">Carga</span>
+          <span className="text-archon-base font-black text-navy-800">
             {Number(carga || 0).toLocaleString('en-US')} KG
           </span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="text-[8px] font-black text-slate-400 uppercase">Tanque</span>
-          <span className="text-[10px] font-black text-navy-800">
+          <span className="text-archon-xs font-black text-slate-400 uppercase">Tanque</span>
+          <span className="text-archon-base font-black text-navy-800">
             {(() => {
               const percent =
                 unit.lastFuelLevel !== undefined && unit.lastFuelLevel !== null
@@ -238,7 +240,7 @@ const HologramBadge = ({
     <div className="flex flex-col items-center gap-1">
       <div className="flex items-center gap-1">
         <div
-          className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[8px] font-black uppercase border ${style} tracking-tighter leading-none`}
+          className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-archon-xs font-black uppercase border ${style} tracking-tighter leading-none`}
         >
           H-{hologram}
         </div>
@@ -281,32 +283,32 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           }`}
         >
           <Fuel size={11} />{' '}
-          <span className="text-[10px] font-black uppercase tracking-tighter">{fuelType}</span>
+          <span className="text-archon-base font-black uppercase tracking-tighter">{fuelType}</span>
         </div>
         <div className="flex items-center gap-1.5 px-2 py-1 bg-navy-50 rounded border border-navy-100 justify-center shadow-sm">
-          <span className="text-[10px] font-black text-navy-800 uppercase tracking-tighter">
+          <span className="text-archon-base font-black text-navy-800 uppercase tracking-tighter">
             {motor}
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase">
+      <div className="flex items-center gap-2 text-archon-md font-bold text-slate-500 uppercase">
         <Truck size={12} className="text-slate-300" /> {unit.tireSpec || 'S/D'} /{' '}
         <span className="text-navy-600 font-black">{unit.tireBrand || '---'}</span>
       </div>
       <div className="flex flex-col gap-1.5 w-full border-t border-gray-100 pt-2 mt-1">
-        <div className="flex items-center justify-between text-[9px] font-black uppercase">
+        <div className="flex items-center justify-between text-archon-sm font-black uppercase">
           <span className="text-rose-500">Seguro</span>
-          <span className="text-navy-800 text-[10px]">
+          <span className="text-navy-800 text-archon-base">
             {unit.insuranceExpiryDate ? formatDate(new Date(unit.insuranceExpiryDate)) : '---'}
           </span>
         </div>
-        <div className="flex items-center justify-between text-[8px] font-black uppercase -mt-0.5 mb-1">
+        <div className="flex items-center justify-between text-archon-xs font-black uppercase -mt-0.5 mb-1">
           <span className="text-slate-400 tracking-wider">Póliza</span>
-          <span className="text-[9px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-[2px] border border-slate-200/60 tracking-tight shadow-sm whitespace-nowrap">
+          <span className="text-archon-sm font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-[2px] border border-slate-200/60 tracking-tight shadow-sm whitespace-nowrap">
             {poliza || '---'}
           </span>
         </div>
-        <div className="flex items-center justify-between mt-1 text-[9px] font-black uppercase">
+        <div className="flex items-center justify-between mt-1 text-archon-sm font-black uppercase">
           <div className="flex items-center gap-2">
             <span className="text-emerald-600">VERIFICACIÓN</span>
             <HologramBadge
@@ -314,13 +316,13 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
               placas={unit.placas || null}
             />
           </div>
-          <span className="text-navy-800 text-[10px]">
+          <span className="text-navy-800 text-archon-base">
             {verifDate ? formatDate(verifDate) : '---'}
           </span>
         </div>
-        <div className="flex items-center justify-between text-[9px] font-black uppercase">
+        <div className="flex items-center justify-between text-archon-sm font-black uppercase">
           <span className="text-sky-600">MECÁNICA</span>
-          <span className="text-navy-800 text-[10px]">
+          <span className="text-navy-800 text-archon-base">
             {mechDate ? formatDate(mechDate) : '---'}
           </span>
         </div>
@@ -342,7 +344,9 @@ const ServiceForecastCluster = ({
     <div className="flex flex-col items-center space-y-3">
       <div className="flex items-center gap-2">
         <Zap size={14} className={isClose ? 'text-red-500' : 'text-emerald-500'} />
-        <span className={`text-[14px] font-black ${isClose ? 'text-red-600' : 'text-emerald-700'}`}>
+        <span
+          className={`text-archon-xl font-black ${isClose ? 'text-red-600' : 'text-emerald-700'}`}
+        >
           {Number(kmPara).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
@@ -350,10 +354,10 @@ const ServiceForecastCluster = ({
           {usageUnit}
         </span>
       </div>
-      <div className="bg-slate-50 px-2.5 py-1 rounded opacity-60 text-[9px] font-black uppercase text-slate-500 border border-slate-100">
+      <div className="bg-slate-50 px-2.5 py-1 rounded opacity-60 text-archon-sm font-black uppercase text-slate-500 border border-slate-100">
         BY KM: {forecast ? formatDate(forecast.serviceByKmDate) : '--/--/--'}
       </div>
-      <div className="bg-sky-50 px-2.5 py-1 rounded border border-sky-100/50 text-[9px] font-black uppercase text-sky-800 shadow-sm">
+      <div className="bg-sky-50 px-2.5 py-1 rounded border border-sky-100/50 text-archon-sm font-black uppercase text-sky-800 shadow-sm">
         BY FECHA: {forecast ? formatDate(forecast.serviceByTimeDate) : '--/--/--'}
       </div>
     </div>
@@ -381,7 +385,7 @@ const HealthStatusCluster = ({
           <TrendingUp size={13} className="text-emerald-600" />
         )}
         <span
-          className={`text-[10px] font-black uppercase tracking-[0.15em] ${
+          className={`text-archon-base font-black uppercase tracking-[0.15em] ${
             isOverdue ? 'text-white' : 'text-emerald-700 opacity-60'
           }`}
         >
@@ -468,23 +472,23 @@ const FleetUnitRow = React.memo(
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <div className="flex flex-col items-center gap-2">
-            <span className="text-[13px] font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded tracking-[0.2em]">
+            <span className="text-archon-lg font-black text-yellow-500 bg-navy-900 px-3 py-1 rounded tracking-[0.2em]">
               {unit.id}
             </span>
             <div className="flex flex-col items-center">
-              <span className="text-[14px] font-black text-navy-900 uppercase tracking-tight">
+              <span className="text-archon-xl font-black text-navy-900 uppercase tracking-tight">
                 {unit.marca} {unit.modelo}
               </span>
-              <span className="text-[11px] font-bold text-slate-500 mt-0.5">
+              <span className="text-archon-md font-bold text-slate-500 mt-0.5">
                 ({unit.year || 'SIN REGISTRO'}) • {unit.color || 'SIN REGISTRO'}
               </span>
             </div>
             <div className="flex flex-col items-center opacity-80 pt-1">
-              <span className="text-[10px] font-black text-navy-400 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-archon-base font-black text-navy-400 uppercase tracking-widest flex items-center gap-1.5">
                 <Wrench size={12} />
                 {unit.departamento || 'SIN REGISTRO'}
               </span>
-              <span className="text-[9px] font-mono text-slate-400 mt-1">
+              <span className="text-archon-sm font-mono text-slate-400 mt-1">
                 VIN: {unit.numeroSerie || '---'}
               </span>
             </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArrowRight, Truck, Layers, Wrench, Activity, History } from 'lucide-react';
 
 interface CategoryData {
@@ -58,20 +58,20 @@ const CategoryAnalyticsCard: React.FC<CategoryAnalyticsCardProps> = ({
           <Icon size={24} style={{ color: accentColor }} />
         </div>
         <div className="flex flex-col">
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-pinnacle-navy opacity-40">
+          <span className="text-archon-sm font-black uppercase tracking-[0.2em] text-pinnacle-navy opacity-40">
             Segmento Operativo
           </span>
           <h3 className="text-lg font-black text-pinnacle-navy tracking-tight">{title}</h3>
         </div>
         <div className="ml-auto flex flex-col items-end">
           <span className="text-2xl font-black text-pinnacle-navy">{data.count}</span>
-          <span className="text-[8px] font-black uppercase opacity-30">Activos</span>
+          <span className="text-archon-xs font-black uppercase opacity-30">Activos</span>
         </div>
       </div>
 
       <div className="card-sovereign-quadrant-grid">
         <div className="card-sovereign-quadrant-item">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
+          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
             Disponibilidad
           </span>
           <div className="flex items-center gap-2">
@@ -80,13 +80,13 @@ const CategoryAnalyticsCard: React.FC<CategoryAnalyticsCardProps> = ({
           </div>
         </div>
         <div className="card-sovereign-quadrant-item">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
+          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
             Estado Crítico
           </span>
           <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
         </div>
         <div className="card-sovereign-quadrant-item">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
+          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
             MTBF Promedio
           </span>
           <div className="flex items-center gap-1">
@@ -97,7 +97,7 @@ const CategoryAnalyticsCard: React.FC<CategoryAnalyticsCardProps> = ({
           </div>
         </div>
         <div className="card-sovereign-quadrant-item">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-2">
+          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
             MTTR Táctico
           </span>
           <div className="flex items-center gap-1">

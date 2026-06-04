@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Gauge, Milestone, Fuel, Info, AlertCircle } from 'lucide-react';
 import ArchonFuelSensor from '../ArchonFuelSensor';
 import FuelVolumeChart from '../FuelVolumeChart';
@@ -32,7 +32,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
           <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#0f2a44]/40">
             SISTEMA DESCONECTADO
           </h3>
-          <p className="text-[10px] font-bold text-[#0f2a44]/30">
+          <p className="text-archon-base font-bold text-[#0f2a44]/30">
             SELECCIONE UNA UNIDAD PARA ACTIVAR TELEMETRÍA
           </p>
         </div>
@@ -59,16 +59,16 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
             <Gauge size={20} className="text-[#0f2a44]" />
           </div>
           <div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+            <span className="text-archon-base font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
               Fase III
             </span>
-            <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+            <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
               Telemetría de {isReturn ? 'Retorno' : 'Salida'}
             </h3>
           </div>
         </div>
         {isReturn && (
-          <div className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-black uppercase tracking-widest">
+          <div className="text-archon-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-black uppercase tracking-widest">
             Salida: {startReadingDisplay} KM
           </div>
         )}
@@ -79,7 +79,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
         <div className="space-y-4">
           {!isEdit ? (
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5 h-4">
+              <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5 h-4">
                 <Milestone size={12} />
                 LECTURA DE ODÓMETRO (KM)
               </label>
@@ -97,7 +97,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
                   #
                 </span>
               </div>
-              <p className="text-[10px] font-bold text-[#0f2a44]/40 flex items-center gap-1">
+              <p className="text-archon-base font-bold text-[#0f2a44]/40 flex items-center gap-1">
                 <Info size={10} />
                 Basado en última lectura: {startReadingDisplay} KM
               </p>
@@ -105,7 +105,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 opacity-50 flex items-center gap-1.5 h-4">
+                <label className="text-archon-base font-black uppercase tracking-widest text-emerald-600 opacity-50 flex items-center gap-1.5 h-4">
                   <Milestone size={12} />
                   SALIDA (KM)
                 </label>
@@ -124,7 +124,7 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-blue-600 opacity-50 flex items-center gap-1.5 h-4">
+                <label className="text-archon-base font-black uppercase tracking-widest text-blue-600 opacity-50 flex items-center gap-1.5 h-4">
                   <Milestone size={12} />
                   LLEGADA (KM)
                 </label>
@@ -149,15 +149,15 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
         {/* Fuel Level Section with Archon Sensor */}
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5">
+            <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44]/50 flex items-center gap-1.5">
               <Fuel className="w-3 h-3" />
               {isEdit ? 'Nivel al Llegar (%)' : 'Nivel de Salida (%)'}
             </label>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] bg-[#0f2a44]/5 text-[#0f2a44]/60 px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
+              <span className="font-mono text-archon-md bg-[#0f2a44]/5 text-[#0f2a44]/60 px-2 py-0.5 rounded font-bold border border-[#0f2a44]/10">
                 {Number(isEdit ? formData.arrivalFuelLevel : formData.fuelLevel).toFixed(1)}%
               </span>
-              
+
               {/* 🔱 Archon Dual-Input: Liters Selector with Safe Guards */}
               {tankCapacity > 0 ? (
                 <div className="flex items-center gap-1 bg-[#0f2a44]/5 px-2 py-0.5 rounded border border-[#0f2a44]/10 focus-within:border-[#f2b705] focus-within:bg-white transition-all">
@@ -183,10 +183,12 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
                     }}
                     className="w-12 bg-transparent font-mono text-xs text-[#0f2a44] font-black focus:outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <span className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-tight select-none">L</span>
+                  <span className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-tight select-none">
+                    L
+                  </span>
                 </div>
               ) : (
-                <span className="text-[8px] font-black text-rose-500 bg-rose-50 px-2 py-1 rounded border border-rose-200 uppercase tracking-wider">
+                <span className="text-archon-xs font-black text-rose-500 bg-rose-50 px-2 py-1 rounded border border-rose-200 uppercase tracking-wider">
                   Falta Capacidad Tanque
                 </span>
               )}
@@ -217,8 +219,6 @@ const RouteTelemetryPanel: React.FC<RouteTelemetryPanelProps> = ({
             </div>
           )}
         </div>
-
-
       </div>
     </div>
   );

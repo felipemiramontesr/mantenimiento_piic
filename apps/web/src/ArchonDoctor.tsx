@@ -1,4 +1,4 @@
-/* eslint-disable */
+﻿/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { SYSTEM_VERSION } from './constants/versionConstants';
 
@@ -47,7 +47,7 @@ export const ArchonDoctor: React.FC = () => {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="relative z-[9999] bg-pinnacle-navy text-pinnacle-yellow px-4 py-2 rounded-full font-display font-black text-[10px] shadow-pinnacle hover:scale-105 transition-all flex items-center gap-2 border border-pinnacle-yellow/20 uppercase tracking-widest"
+        className="relative z-[9999] bg-pinnacle-navy text-pinnacle-yellow px-4 py-2 rounded-full font-display font-black text-archon-base shadow-pinnacle hover:scale-105 transition-all flex items-center gap-2 border border-pinnacle-yellow/20 uppercase tracking-widest"
       >
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pinnacle-yellow opacity-75"></span>
@@ -82,7 +82,7 @@ export const ArchonDoctor: React.FC = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 text-[10px] font-black tracking-widest transition-all ${
+            className={`flex-1 py-2 text-archon-base font-black tracking-widest transition-all ${
               activeTab === tab
                 ? 'bg-pinnacle-yellow text-pinnacle-navy'
                 : 'text-pinnacle-white/40 hover:text-pinnacle-white hover:bg-white/5'
@@ -94,11 +94,11 @@ export const ArchonDoctor: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 font-mono text-[11px] custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 font-mono text-archon-md custom-scrollbar">
         {activeTab === 'NET' && (
           <div className="space-y-4">
             <div className="p-3 bg-black/30 rounded border border-white/5">
-              <p className="text-pinnacle-yellow/60 uppercase text-[9px] mb-2 tracking-tighter">
+              <p className="text-pinnacle-yellow/60 uppercase text-archon-sm mb-2 tracking-tighter">
                 Gateway Status
               </p>
               <div className="grid grid-cols-2 gap-2 text-pinnacle-white/80">
@@ -136,13 +136,13 @@ export const ArchonDoctor: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 bg-black/30 rounded border border-green-500/20">
-                <p className="text-[9px] text-green-400 font-bold uppercase">Valid Units</p>
+                <p className="text-archon-sm text-green-400 font-bold uppercase">Valid Units</p>
                 <p className="text-2xl font-black text-pinnacle-white">
                   {context?.units?.length || 0}
                 </p>
               </div>
               <div className="p-3 bg-black/30 rounded border border-red-500/20">
-                <p className="text-[9px] text-red-400 font-bold uppercase">Corrupt/Fail</p>
+                <p className="text-archon-sm text-red-400 font-bold uppercase">Corrupt/Fail</p>
                 <p className="text-2xl font-black text-pinnacle-white">
                   {context?.integrity?.corrupt || 0}
                 </p>
@@ -150,7 +150,7 @@ export const ArchonDoctor: React.FC = () => {
             </div>
 
             <div className="p-3 bg-black/30 rounded border border-white/5">
-              <p className="text-pinnacle-yellow/60 uppercase text-[9px] mb-2">
+              <p className="text-pinnacle-yellow/60 uppercase text-archon-sm mb-2">
                 Structure Integrity
               </p>
               <div className="space-y-1 text-pinnacle-white/60">
@@ -169,7 +169,7 @@ export const ArchonDoctor: React.FC = () => {
                 console.log('🔱 ARCHON DATA DUMP:', context?.units);
                 addLog('DATA: Memory dump sent to browser console', 'data');
               }}
-              className="w-full py-2 bg-pinnacle-yellow/10 text-pinnacle-yellow border border-pinnacle-yellow/20 rounded font-black text-[10px] uppercase hover:bg-pinnacle-yellow/20 transition-all"
+              className="w-full py-2 bg-pinnacle-yellow/10 text-pinnacle-yellow border border-pinnacle-yellow/20 rounded font-black text-archon-base uppercase hover:bg-pinnacle-yellow/20 transition-all"
             >
               Export JSON to Console
             </button>
@@ -201,7 +201,7 @@ export const ArchonDoctor: React.FC = () => {
         {activeTab === 'CACHE' && (
           <div className="space-y-4">
             <div className="p-3 bg-black/30 rounded border border-white/5">
-              <p className="text-pinnacle-yellow/60 uppercase text-[9px] mb-2 tracking-tighter">
+              <p className="text-pinnacle-yellow/60 uppercase text-archon-sm mb-2 tracking-tighter">
                 Persistence Layer
               </p>
               <p className="text-pinnacle-white/80">
@@ -215,7 +215,7 @@ export const ArchonDoctor: React.FC = () => {
                   .forEach((k) => localStorage.removeItem(k));
                 window.location.reload();
               }}
-              className="w-full py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded font-black text-[10px] uppercase hover:bg-red-500/20 transition-all"
+              className="w-full py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded font-black text-archon-base uppercase hover:bg-red-500/20 transition-all"
             >
               Emergency Wipe & Reload
             </button>
@@ -224,7 +224,7 @@ export const ArchonDoctor: React.FC = () => {
       </div>
 
       {/* Footer Info */}
-      <div className="p-3 bg-black/20 text-[9px] text-pinnacle-white/30 flex justify-between items-center border-t border-pinnacle-yellow/5">
+      <div className="p-3 bg-black/20 text-archon-sm text-pinnacle-white/30 flex justify-between items-center border-t border-pinnacle-yellow/5">
         <span>SOVEREIGN CORE V.78.100.184</span>
         <span className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 bg-green-500 rounded-full" />

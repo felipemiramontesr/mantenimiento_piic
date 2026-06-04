@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { Settings, LogOut, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -86,7 +86,7 @@ const ArchonTopBar: React.FC = () => {
                 className="w-full px-6 py-4 flex items-center gap-3 hover:bg-pinnacle-yellow/5 text-pinnacle-navy transition-colors text-left border-none bg-transparent cursor-pointer"
               >
                 <Settings size={14} className="text-pinnacle-yellow" />
-                <span className="text-[10px] font-bold uppercase tracking-widest leading-none">
+                <span className="text-archon-base font-bold uppercase tracking-widest leading-none">
                   Ajustes
                 </span>
               </button>
@@ -96,7 +96,7 @@ const ArchonTopBar: React.FC = () => {
                 className="w-full px-6 py-4 flex items-center gap-3 hover:bg-rose-50/50 text-rose-600 transition-colors text-left border-none bg-transparent cursor-pointer"
               >
                 <LogOut size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-widest leading-none">
+                <span className="text-archon-base font-bold uppercase tracking-widest leading-none">
                   Desconexión
                 </span>
               </button>

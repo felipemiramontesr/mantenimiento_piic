@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 /**
  * 🔱 Archon Component: ArchonFuelSensor
@@ -93,7 +93,7 @@ const ArchonFuelSensor: React.FC<ArchonFuelSensorProps> = ({ value, onChange, di
           }}
         >
           <span
-            className={`text-[9px] font-black uppercase tracking-tighter transition-all duration-500 text-center ${
+            className={`text-archon-sm font-black uppercase tracking-tighter transition-all duration-500 text-center ${
               Math.abs(value - step.value) < 0.1
                 ? 'text-[#0f2a44] scale-110 opacity-100'
                 : 'text-[#0f2a44]/30 opacity-60'

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ChevronRight, Save, Trash2 } from 'lucide-react';
 import useRouteAssignmentControl from './RouteAssignment/useRouteAssignmentControl';
 import { RouteLog } from './RouteLogTable';
@@ -159,7 +159,7 @@ const RouteAssignmentForm: React.FC<RouteAssignmentFormProps> = ({ onClose, rout
 
         {/* Status Reporting */}
         {error && (
-          <div className="mt-4 px-6 py-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 text-[11px] font-bold rounded-[4px] shadow-sm">
+          <div className="mt-4 px-6 py-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 text-archon-md font-bold rounded-[4px] shadow-sm">
             {error}
           </div>
         )}

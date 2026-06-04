@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArrowRight, LucideIcon } from 'lucide-react';
 
 /**
@@ -84,7 +84,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
             <button
               data-testid={testId}
               className={`
-                btn-archon-card-action !h-11 !text-[10px]
+                btn-archon-card-action !h-11 !text-archon-base
                 ${isActive ? 'brightness-110 ring-1 ring-white/20' : ''}
                 ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
               `}
@@ -109,10 +109,10 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
             </div>
 
             <div className="flex flex-col items-center space-y-1 text-center">
-              <h3 className="text-pinnacle-navy font-black uppercase tracking-[0.15em] text-[13px]">
+              <h3 className="text-pinnacle-navy font-black uppercase tracking-[0.15em] text-archon-lg">
                 {actionTitle}
               </h3>
-              <p className="text-[9px] font-bold opacity-40 uppercase tracking-[0.25em] text-pinnacle-navy">
+              <p className="text-archon-sm font-bold opacity-40 uppercase tracking-[0.25em] text-pinnacle-navy">
                 {description}
               </p>
             </div>

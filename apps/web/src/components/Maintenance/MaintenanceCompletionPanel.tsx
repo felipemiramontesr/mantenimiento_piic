@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Wrench,
   Gauge,
@@ -160,7 +160,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
   };
 
   const inputClass =
-    'w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal outline-none';
+    'w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal outline-none';
 
   return (
     <form
@@ -173,18 +173,18 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
           <Wrench size={18} className="text-amber-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-black text-amber-700 uppercase tracking-[0.15em] mb-1">
+          <p className="text-archon-md font-black text-amber-700 uppercase tracking-[0.15em] mb-1">
             Cerrar Servicio de Taller — {log.unit_id}
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-1">
-            <span className="text-[11px] text-amber-600/80 font-mono">
+            <span className="text-archon-md text-amber-600/80 font-mono">
               MNT-{String(log.id).padStart(5, '0')}
             </span>
-            <span className="text-[11px] text-amber-600/80">
+            <span className="text-archon-md text-amber-600/80">
               {SERVICE_LABELS[log.service_type]}
             </span>
             <span
-              className={`text-[11px] font-black ${
+              className={`text-archon-md font-black ${
                 log.service_mode === 'PARTIAL_EXECUTION' ? 'text-amber-700' : 'text-emerald-700'
               }`}
             >
@@ -198,7 +198,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
       </div>
 
       {error && (
-        <div className="px-5 py-3 rounded-[4px] bg-red-50 border border-red-200 text-[12px] font-bold text-red-700">
+        <div className="px-5 py-3 rounded-[4px] bg-red-50 border border-red-200 text-archon-label font-bold text-red-700">
           {error}
         </div>
       )}
@@ -209,7 +209,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
         <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 relative z-20 [--card-accent:#f2b705]">
           <div className="card-sovereign-header">
             <Gauge className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-[14px] opacity-100">DATOS DE CIERRE</h3>
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">DATOS DE CIERRE</h3>
           </div>
           <div className="space-y-6 relative z-10">
             <ArchonField label="Odómetro de Entrada al Taller" icon={Gauge} required>
@@ -225,11 +225,11 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                     setOdometerAtService(e.target.valueAsNumber)
                   }
                 />
-                <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                <span className="absolute right-4 text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                   KM
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 font-mono pl-1">
+              <p className="text-archon-base text-slate-400 mt-1 font-mono pl-1">
                 Registro original: {Number(log.odometer_at_service).toLocaleString()} km
               </p>
             </ArchonField>
@@ -245,11 +245,11 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                     setEndOdometer(e.target.valueAsNumber)
                   }
                 />
-                <span className="absolute right-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                <span className="absolute right-4 text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                   KM
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 font-mono pl-1">
+              <p className="text-archon-base text-slate-400 mt-1 font-mono pl-1">
                 Incluye traslado y pruebas de taller
               </p>
             </ArchonField>
@@ -270,7 +270,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
         <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 relative z-20 [--card-accent:#f2b705]">
           <div className="card-sovereign-header">
             <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-[14px] opacity-100">CONFIRMACIÓN FINAL</h3>
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">CONFIRMACIÓN FINAL</h3>
           </div>
           <div className="space-y-6 relative z-10">
             <ArchonField label="Técnico Ejecutor" icon={User}>
@@ -284,19 +284,19 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
             </ArchonField>
             <ArchonField label="Costo Final del Servicio" icon={DollarSign}>
               <div className="flex items-center w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus-within:border-b-[#f2b705] focus-within:bg-white focus-within:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] transition-all duration-300">
-                <span className="text-[#0f2a44]/40 font-bold text-[13px]">$</span>
+                <span className="text-[#0f2a44]/40 font-bold text-archon-lg">$</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   placeholder="Ej: 3,450.00"
-                  className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-[13px] font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal"
+                  className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
                   value={cost || ''}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setCost(e.target.valueAsNumber)
                   }
                 />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                <span className="text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                   MXN
                 </span>
               </div>
@@ -311,7 +311,9 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
         <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#f2b705]">
           <div className="card-sovereign-header">
             <Droplets className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-[14px] opacity-100">NIVEL DE COMBUSTIBLE</h3>
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">
+              NIVEL DE COMBUSTIBLE
+            </h3>
           </div>
           <div className="space-y-3">
             <ArchonFuelSensor value={fuelLevelEnd} onChange={setFuelLevelEnd} />
@@ -322,7 +324,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
         <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 [--card-accent:#f2b705]">
           <div className="card-sovereign-header">
             <Gauge className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-[14px] opacity-100">DATOS DE RETORNO</h3>
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">DATOS DE RETORNO</h3>
           </div>
           <div className="space-y-6">
             <ArchonField label="Litros Cargados" icon={Droplets}>
@@ -339,28 +341,28 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setFuelLitersLoaded(e.target.value.replace(/[^0-9.]/g, ''))
                   }
-                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 pl-9 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal outline-none"
+                  className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 pl-9 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal outline-none"
                 />
               </div>
             </ArchonField>
             <ArchonField label="Monto del Ticket de Combustible" icon={DollarSign}>
               <div className="flex items-center w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus-within:border-b-[#f2b705] focus-within:bg-white focus-within:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] transition-all duration-300">
-                <span className="text-[#0f2a44]/40 font-bold text-[13px]">$</span>
+                <span className="text-[#0f2a44]/40 font-bold text-archon-lg">$</span>
                 <input
                   type="text"
                   inputMode="decimal"
                   placeholder="0.00"
-                  className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-[13px] font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] placeholder:font-sans placeholder:tracking-normal"
+                  className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
                   value={fuelAmount}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                     setFuelAmount(e.target.value.replace(/[^0-9.]/g, ''))
                   }
                 />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
+                <span className="text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                   MXN
                 </span>
               </div>
-              <p className="text-[8px] font-bold text-[#0f2a44]/40 italic mt-1">
+              <p className="text-archon-xs font-bold text-[#0f2a44]/40 italic mt-1">
                 * Incluye combustible y aditivos del ticket.
               </p>
             </ArchonField>
@@ -372,15 +374,15 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
       <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#f2b705] !pb-2">
         <div className="card-sovereign-header p-10 pb-0">
           <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
-          <h3 className="card-sovereign-title text-[14px] opacity-100">CHECKLIST DE CIERRE</h3>
+          <h3 className="card-sovereign-title text-archon-xl opacity-100">CHECKLIST DE CIERRE</h3>
         </div>
         {loadingTemplate && (
-          <div className="p-12 text-center text-[10px] font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
+          <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
             Generando matriz de inspección...
           </div>
         )}
         {!loadingTemplate && template.length === 0 && (
-          <div className="p-12 text-center text-[10px] font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
+          <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
             No se encontraron tareas para este servicio.
           </div>
         )}
@@ -393,14 +395,14 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
               >
                 <div className="min-w-0 pr-6">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <div className="text-[13px] font-bold text-[#0f2a44]">{task.label}</div>
+                    <div className="text-archon-lg font-bold text-[#0f2a44]">{task.label}</div>
                     {task.isDeferredCarry && (
-                      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-400/30 text-[9px] font-black text-amber-600 uppercase tracking-[0.1em]">
+                      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-400/30 text-archon-sm font-black text-amber-600 uppercase tracking-[0.1em]">
                         ↩ Diferido
                       </span>
                     )}
                   </div>
-                  <div className="text-[9px] font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
+                  <div className="text-archon-sm font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
                     {task.code}
                     {task.isCritical && <span className="ml-2 text-red-500">● CRÍTICO</span>}
                   </div>
@@ -419,7 +421,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                       handleDetailChange(idx, 'notes', e.target.value)
                     }
-                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-[13px] font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-[13px] outline-none"
+                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg outline-none"
                   />
                 </div>
               </div>
@@ -439,7 +441,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
           <button
             type="submit"
             disabled={submitting || !canSubmit}
-            className="w-full h-11 flex items-center justify-center gap-2 px-4 rounded-[4px] bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50"
+            className="w-full h-11 flex items-center justify-center gap-2 px-4 rounded-[4px] bg-emerald-600 hover:bg-emerald-700 text-white text-archon-label font-black uppercase tracking-wider transition-all duration-200 disabled:opacity-50"
           >
             <CheckCircle2 size={14} />
             {submitting ? 'Cerrando...' : 'Finalizar Servicio'}

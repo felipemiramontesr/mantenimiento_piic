@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Settings,
   LayoutDashboard,
@@ -115,7 +115,7 @@ const SovereignHeader: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 mt-1">
               <SubIcon size={10} className="text-pinnacle-yellow opacity-70" strokeWidth={3} />
-              <p className="text-pinnacle-navy text-[10px] font-bold uppercase tracking-[0.25em] opacity-50">
+              <p className="text-pinnacle-navy text-archon-base font-bold uppercase tracking-[0.25em] opacity-50">
                 {layoutData.description}
               </p>
             </div>
@@ -151,7 +151,7 @@ const SovereignHeader: React.FC = () => {
                   border: '1px solid rgba(16, 185, 129, 0.2)',
                   borderRadius: '4px',
                 }}
-                className="w-full pl-9 pr-9 py-3 text-[11px] font-bold text-[#0f2a44] bg-white focus:outline-none placeholder-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
+                className="w-full pl-9 pr-9 py-3 text-archon-md font-bold text-[#0f2a44] bg-white focus:outline-none placeholder-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
               />
               {searchTerm && (
                 <button
@@ -182,12 +182,12 @@ const SovereignHeader: React.FC = () => {
                         searchConfig.onSuggestionSelect(s);
                         setIsOpen(false);
                       }}
-                      className="px-4 py-2.5 text-[11px] font-bold text-[#0f2a44] hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors duration-150 uppercase"
+                      className="px-4 py-2.5 text-archon-md font-bold text-[#0f2a44] hover:bg-slate-50 cursor-pointer flex items-center justify-between transition-colors duration-150 uppercase"
                     >
                       <span className="tracking-tight">
                         {s.title} ({s.metaLabel}: {s.metaValue})
                       </span>
-                      <span className="text-[9px] font-black text-slate-400 tracking-wider">
+                      <span className="text-archon-sm font-black text-slate-400 tracking-wider">
                         SELECCIONAR
                       </span>
                     </li>

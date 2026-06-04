@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, ChevronDown, Loader2 } from 'lucide-react';
 import api from '../../../api/client';
 import { archonCache } from '../../../utils/archonCache';
@@ -133,7 +133,7 @@ function Combobox<T>({
         onClick={handleTriggerClick}
       >
         <span
-          className={`truncate text-[13px] font-bold ${
+          className={`truncate text-archon-lg font-bold ${
             !value ? 'text-[#0f2a44] opacity-30' : 'text-[#0f2a44]'
           }`}
         >
@@ -157,7 +157,7 @@ function Combobox<T>({
               placeholder="Buscar..."
               value={searchTerm}
               onChange={(e): void => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-[13px] font-bold text-[#0f2a44] placeholder:opacity-30"
+              className="w-full bg-transparent border-none outline-none text-archon-lg font-bold text-[#0f2a44] placeholder:opacity-30"
               onClick={(e): void => e.stopPropagation()}
             />
             {loading && <Loader2 size={12} className="animate-spin text-[#0f2a44]/40" />}
@@ -176,7 +176,7 @@ function Combobox<T>({
                       onChange(optId, getOptionLabel(option));
                       setIsOpen(false);
                     }}
-                    className={`px-5 py-2.5 text-[13px] font-bold cursor-pointer transition-all duration-200 border-l-[3px] flex items-center justify-between gap-4 ${
+                    className={`px-5 py-2.5 text-archon-lg font-bold cursor-pointer transition-all duration-200 border-l-[3px] flex items-center justify-between gap-4 ${
                       isSelected
                         ? 'border-[#f2b705] bg-[#f2b705]/5 text-[#f2b705]'
                         : 'border-transparent text-[#0f2a44] hover:bg-[#0f2a44]/2'
@@ -185,7 +185,7 @@ function Combobox<T>({
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{getOptionLabel(option)}</span>
                       {getOptionSecondary && getOptionSecondary(option) && (
-                        <span className="text-[9px] font-black opacity-30 uppercase tracking-widest truncate mt-0.5">
+                        <span className="text-archon-sm font-black opacity-30 uppercase tracking-widest truncate mt-0.5">
                           {getOptionSecondary(option)}
                         </span>
                       )}
@@ -230,7 +230,9 @@ export default function ArchonGeoSelector({
   const [selectedMunicipality, setSelectedMunicipality] = useState<number | undefined>(undefined);
   const [loadingHydration, setLoadingHydration] = useState(false);
   const [municipalities, setMunicipalities] = useState<MunicipioOption[]>([]);
-  const [hydratedNeighborhood, setHydratedNeighborhood] = useState<NeighborhoodOption | undefined>(undefined);
+  const [hydratedNeighborhood, setHydratedNeighborhood] = useState<NeighborhoodOption | undefined>(
+    undefined
+  );
 
   useEffect((): void => {
     const loadStates = async (): Promise<void> => {
@@ -377,9 +379,12 @@ export default function ArchonGeoSelector({
         return [];
       }
       try {
-        const res = await api.get(`/geolocation/municipalities/${selectedMunicipality}/neighborhoods`, {
-          params: { search },
-        });
+        const res = await api.get(
+          `/geolocation/municipalities/${selectedMunicipality}/neighborhoods`,
+          {
+            params: { search },
+          }
+        );
         const { data } = res;
         return data?.data || data || [];
       } catch (err) {
@@ -397,7 +402,7 @@ export default function ArchonGeoSelector({
         <div className="space-y-2">{originNode}</div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+          <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
             Destino
           </label>
           <Combobox<StateOption>
@@ -413,7 +418,7 @@ export default function ArchonGeoSelector({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+          <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
             Municipio
           </label>
           <Combobox<MunicipioOption>
@@ -429,7 +434,7 @@ export default function ArchonGeoSelector({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+          <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
             Colonia / Código Postal
           </label>
           <Combobox<NeighborhoodOption>
@@ -451,7 +456,7 @@ export default function ArchonGeoSelector({
   return (
     <div className="grid grid-cols-3 gap-4">
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+        <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
           Estado
         </label>
         <Combobox<StateOption>
@@ -467,7 +472,7 @@ export default function ArchonGeoSelector({
       </div>
 
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+        <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
           Municipio
         </label>
         <Combobox<MunicipioOption>
@@ -483,7 +488,7 @@ export default function ArchonGeoSelector({
       </div>
 
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+        <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
           Colonia / Código Postal
         </label>
         <Combobox<NeighborhoodOption>

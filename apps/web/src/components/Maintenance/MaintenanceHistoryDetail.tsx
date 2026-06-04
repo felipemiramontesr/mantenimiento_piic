@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Wrench,
@@ -126,13 +126,13 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 text-[#0f2a44] text-[11px] font-black uppercase tracking-wider transition-all duration-200"
+          className="flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 text-[#0f2a44] text-archon-md font-black uppercase tracking-wider transition-all duration-200"
         >
           <ArrowLeft size={14} />
           Volver
         </button>
         <div>
-          <p className="text-[10px] font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
+          <p className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
             Historial de Servicio
           </p>
           <p className="text-[15px] font-black text-[#0f2a44]">
@@ -146,7 +146,7 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
         <div className="card-archon-sovereign bg-white p-8 [--card-accent:#0f2a44]">
           <div className="card-sovereign-header mb-6">
             <Wrench className="text-[var(--card-accent)]" size={20} />
-            <h3 className="card-sovereign-title text-[13px] opacity-100">DATOS DEL SERVICIO</h3>
+            <h3 className="card-sovereign-title text-archon-lg opacity-100">DATOS DEL SERVICIO</h3>
           </div>
           <dl className="space-y-3">
             {[
@@ -173,10 +173,10 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
             ].map(({ icon, label, value }) => (
               <div key={label} className="flex items-center gap-3">
                 <span className="text-[#0f2a44]/30 shrink-0">{icon}</span>
-                <span className="text-[10px] font-black text-[#0f2a44]/40 uppercase tracking-[0.12em] w-16 shrink-0">
+                <span className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.12em] w-16 shrink-0">
                   {label}
                 </span>
-                <span className="text-[12px] font-bold text-[#0f2a44] truncate">{value}</span>
+                <span className="text-archon-label font-bold text-[#0f2a44] truncate">{value}</span>
               </div>
             ))}
           </dl>
@@ -186,10 +186,10 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
         <div className="card-archon-sovereign bg-white p-8 [--card-accent:#0f2a44]">
           <div className="card-sovereign-header mb-6">
             <ClipboardCheck className="text-[var(--card-accent)]" size={20} />
-            <h3 className="card-sovereign-title text-[13px] opacity-100">RESUMEN DE TAREAS</h3>
+            <h3 className="card-sovereign-title text-archon-lg opacity-100">RESUMEN DE TAREAS</h3>
           </div>
           {loading ? (
-            <p className="text-[10px] font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
+            <p className="text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
               Cargando...
             </p>
           ) : (
@@ -200,17 +200,17 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
                 return (
                   <div key={code} className="flex items-center gap-3">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[9px] font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-archon-sm font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
                     >
                       {meta.icon}
                       {code}
                     </span>
-                    <span className="text-[13px] font-black text-[#0f2a44]">{count}</span>
+                    <span className="text-archon-lg font-black text-[#0f2a44]">{count}</span>
                   </div>
                 );
               })}
               <div className="pt-2 border-t border-[#0f2a44]/5 flex items-center gap-3">
-                <span className="text-[10px] font-black text-[#0f2a44]/40 uppercase tracking-[0.12em]">
+                <span className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.12em]">
                   Total
                 </span>
                 <span className="text-[15px] font-black text-[#0f2a44]">
@@ -226,19 +226,21 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
       <div className="card-archon-sovereign bg-white [--card-accent:#0f2a44] !pb-2">
         <div className="card-sovereign-header p-10 pb-0">
           <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
-          <h3 className="card-sovereign-title text-[14px] opacity-100">DETALLE DE TAREAS</h3>
+          <h3 className="card-sovereign-title text-archon-xl opacity-100">DETALLE DE TAREAS</h3>
         </div>
 
         {loading && (
-          <div className="p-12 text-center text-[10px] font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
+          <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
             Cargando tareas...
           </div>
         )}
 
-        {error && <div className="p-8 text-center text-[12px] font-bold text-red-600">{error}</div>}
+        {error && (
+          <div className="p-8 text-center text-archon-label font-bold text-red-600">{error}</div>
+        )}
 
         {!loading && !error && detail && detail.details.length === 0 && (
-          <div className="p-12 text-center text-[10px] font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
+          <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
             Este servicio no tiene tareas registradas.
           </div>
         )}
@@ -255,7 +257,7 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
                   {/* Status badge */}
                   <div className="shrink-0 w-28">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-archon-sm font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
                     >
                       {meta.icon}
                       {task.statusLabel}
@@ -265,7 +267,7 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
                   {/* Task info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-bold text-[#0f2a44] truncate">
+                      <span className="text-archon-lg font-bold text-[#0f2a44] truncate">
                         {task.label}
                       </span>
                       {task.isCritical && (
@@ -276,14 +278,14 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
                         </span>
                       )}
                     </div>
-                    <span className="text-[9px] font-black text-[#0f2a44]/30 uppercase tracking-[0.15em]">
+                    <span className="text-archon-sm font-black text-[#0f2a44]/30 uppercase tracking-[0.15em]">
                       {task.taskCode}
                     </span>
                   </div>
 
                   {/* Notes */}
                   {task.notes && (
-                    <p className="shrink-0 max-w-[200px] text-[11px] text-[#0f2a44]/50 italic truncate">
+                    <p className="shrink-0 max-w-[200px] text-archon-md text-[#0f2a44]/50 italic truncate">
                       {task.notes}
                     </p>
                   )}

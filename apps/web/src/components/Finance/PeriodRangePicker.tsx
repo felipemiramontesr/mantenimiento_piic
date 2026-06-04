@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar } from 'lucide-react';
 import { DateRange } from '../../types/finance';
 
@@ -121,7 +121,7 @@ function CalendarPanel({
   return (
     <div className="flex flex-col gap-3">
       {/* Etiqueta del panel */}
-      <span className="text-[9px] font-black uppercase tracking-[0.25em] text-pinnacle-navy/40">
+      <span className="text-archon-sm font-black uppercase tracking-[0.25em] text-pinnacle-navy/40">
         {title}
       </span>
 
@@ -130,7 +130,7 @@ function CalendarPanel({
         <button onClick={onPrev} className={navBtnCls} title="Mes anterior">
           <ChevronLeft size={14} />
         </button>
-        <span className="text-[13px] font-black text-pinnacle-navy tracking-tight select-none">
+        <span className="text-archon-lg font-black text-pinnacle-navy tracking-tight select-none">
           {MESES[month]} {year}
         </span>
         <button onClick={onNext} className={navBtnCls} title="Mes siguiente">
@@ -143,7 +143,7 @@ function CalendarPanel({
         {DIAS_CORTOS.map((d) => (
           <span
             key={d}
-            className="h-7 border-r border-b border-slate-200 flex items-center justify-center text-[9px] font-black uppercase tracking-widest text-pinnacle-navy/30 select-none bg-slate-50/60"
+            className="h-7 border-r border-b border-slate-200 flex items-center justify-center text-archon-sm font-black uppercase tracking-widest text-pinnacle-navy/30 select-none bg-slate-50/60"
           >
             {d}
           </span>
@@ -161,7 +161,7 @@ function CalendarPanel({
             <button
               key={day}
               onClick={(): void => onDaySelect(dateStr)}
-              className={`h-8 border-r border-b border-slate-200 text-[11px] flex items-center justify-center transition-all duration-150 cursor-pointer select-none outline-none ${getDayCls(
+              className={`h-8 border-r border-b border-slate-200 text-archon-md flex items-center justify-center transition-all duration-150 cursor-pointer select-none outline-none ${getDayCls(
                 dateStr,
                 selected,
                 rangeFrom,
@@ -176,7 +176,7 @@ function CalendarPanel({
       </div>
 
       {/* Fecha seleccionada */}
-      <p className="text-[10px] font-bold text-pinnacle-navy/50 text-center mt-1 min-h-[16px]">
+      <p className="text-archon-base font-bold text-pinnacle-navy/50 text-center mt-1 min-h-[16px]">
         {selected ? formatLabel(selected) : ''}
       </p>
     </div>
@@ -257,7 +257,7 @@ const PeriodRangePicker: React.FC<PeriodRangePickerProps> = ({
         >
           <div className="flex items-center gap-2">
             <Calendar size={13} className="text-pinnacle-navy/40 shrink-0" />
-            <span className="text-[11px] font-black text-pinnacle-navy tracking-tight">
+            <span className="text-archon-md font-black text-pinnacle-navy tracking-tight">
               {appliedLabel}
             </span>
           </div>
@@ -308,7 +308,7 @@ const PeriodRangePicker: React.FC<PeriodRangePickerProps> = ({
           {/* Footer */}
           <div className="grid grid-cols-2 gap-10 py-3">
             <div className="flex items-center">
-              {error && <p className="text-[10px] font-bold text-sentinel-red">{error}</p>}
+              {error && <p className="text-archon-base font-bold text-sentinel-red">{error}</p>}
             </div>
             <button
               onClick={handleApply}

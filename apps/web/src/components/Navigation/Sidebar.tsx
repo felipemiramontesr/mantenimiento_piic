@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   LayoutDashboard,
   Truck,
@@ -75,7 +75,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
       {!isCollapsed && (
         <span
           className={`
-            text-[13px] font-medium tracking-tight transition-colors
+            text-archon-lg font-medium tracking-tight transition-colors
             ${active ? 'text-white' : 'text-white/70 group-hover:text-white'}
           `}
         >
@@ -255,7 +255,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               <button
                 onClick={goToAdmin}
                 className={`
-                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
+                flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
                 ${
                   location.pathname === '/dashboard/admin'
                     ? 'bg-white text-pinnacle-navy hover:brightness-95'
@@ -280,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               <button
                 onClick={logout}
                 className={`
-                flex items-center justify-center rounded-[4px] font-bold text-[11px] uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
+                flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
                 bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110
                 ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
               `}

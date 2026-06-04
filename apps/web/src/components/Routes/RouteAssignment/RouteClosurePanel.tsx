@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Droplets } from 'lucide-react';
 import ArchonImageUploader from '../../ArchonImageUploader';
@@ -13,8 +13,7 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
   updateForm,
   tankCapacity,
 }) => {
-
-    const consumedLiters = React.useMemo(() => {
+  const consumedLiters = React.useMemo(() => {
     if (tankCapacity <= 0) return null;
     const startPct = Number(formData.fuelLevel || 0);
     const endPct = Number(formData.arrivalFuelLevel || 0);
@@ -64,10 +63,10 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
           <Camera size={20} className="text-[#0f2a44]" />
         </div>
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 opacity-50">
+          <span className="text-archon-base font-black uppercase tracking-[0.2em] text-amber-600 opacity-50">
             Fase IV
           </span>
-          <h3 className="text-[14px] font-black uppercase tracking-tight text-[#0f2a44]">
+          <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
             Evidencia y Cierre
           </h3>
         </div>
@@ -76,7 +75,7 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
       <div className="bg-amber-50/30 border border-amber-200/50 p-3 rounded-[4px] space-y-4">
         <div className="grid grid-cols-1 gap-3">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+            <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
               Litros de Combustible Cargados
             </label>
             <div className="relative">
@@ -99,7 +98,7 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
             {/* 🔱 Archon Premium: Consumo de Combustible Calculado */}
             {tankCapacity > 0 ? (
               <div className="flex items-center justify-between bg-[#0f2a44]/5 border border-[#0f2a44]/10 p-2 rounded-[4px] mt-1.5 select-none">
-                <span className="text-[9px] font-black uppercase tracking-wider text-[#0f2a44]/60 flex items-center gap-1">
+                <span className="text-archon-sm font-black uppercase tracking-wider text-[#0f2a44]/60 flex items-center gap-1">
                   🔱 Consumo de Ruta
                 </span>
                 <span className="font-mono text-xs font-black text-[#0f2a44]">
@@ -108,10 +107,10 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
               </div>
             ) : (
               <div className="flex items-center justify-between bg-rose-50 border border-rose-200/50 p-2 rounded-[4px] mt-1.5 select-none">
-                <span className="text-[9px] font-black uppercase tracking-wider text-rose-600/70">
+                <span className="text-archon-sm font-black uppercase tracking-wider text-rose-600/70">
                   🔱 Consumo de Ruta
                 </span>
-                <span className="text-[8px] font-bold text-rose-500 uppercase tracking-wider">
+                <span className="text-archon-xs font-bold text-rose-500 uppercase tracking-wider">
                   Sin Capacidad de Tanque
                 </span>
               </div>
@@ -119,12 +118,12 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50 flex items-center justify-between">
+            <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 flex items-center justify-between">
               Monto Total del Ticket
               <span className="text-amber-600 font-black">$</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/40 font-black text-[10px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0f2a44]/40 font-black text-archon-base">
                 $
               </span>
               <input
@@ -139,14 +138,14 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
                 className="w-full bg-white border-b-2 border-[#0f2a44]/10 focus:border-amber-500 p-2.5 pl-10 text-xs font-black text-[#0f2a44] placeholder:text-[#0f2a44]/30 outline-none transition-colors rounded-[4px]"
               />
             </div>
-            <p className="text-[8px] font-bold text-[#0f2a44]/40 italic">
+            <p className="text-archon-xs font-bold text-[#0f2a44]/40 italic">
               * Incluye combustible, aditivos y otros insumos del ticket.
             </p>
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+          <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
             Ticket de Combustible (Evidencia)
           </label>
           <ArchonImageUploader
@@ -180,13 +179,13 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+            <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
               Presión de Neumáticos (PSI)
             </label>
             <div className="grid grid-cols-4 gap-2">
               {['DI', 'DD', 'TI', 'TD'].map((pos) => (
                 <div key={pos} className="space-y-1">
-                  <span className="text-[8px] font-black text-[#0f2a44] opacity-40 block text-center">
+                  <span className="text-archon-xs font-black text-[#0f2a44] opacity-40 block text-center">
                     {pos}
                   </span>
                   <input
@@ -196,7 +195,7 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
                       updateTire(pos, e.target.value)
                     }
-                    className="w-full bg-white border border-[#0f2a44]/10 p-1.5 text-center text-[10px] font-black text-[#0f2a44] rounded-[4px] focus:border-amber-500 outline-none transition-colors"
+                    className="w-full bg-white border border-[#0f2a44]/10 p-1.5 text-center text-archon-base font-black text-[#0f2a44] rounded-[4px] focus:border-amber-500 outline-none transition-colors"
                   />
                 </div>
               ))}
@@ -207,7 +206,7 @@ const RouteClosurePanel: React.FC<RouteClosurePanelProps> = ({
 
       {/* Observations Section */}
       <div className="space-y-2 pt-4 border-t border-[#0f2a44]/5">
-        <label className="text-[10px] font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
+        <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50">
           Observaciones de la misión
         </label>
         <textarea

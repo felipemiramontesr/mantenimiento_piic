@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   User,
   Mail,
@@ -151,7 +151,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           <div className="bg-emerald-50 border-l-4 border-emerald-500 p-6 animate-in fade-in slide-in-from-top-4">
             <div className="flex items-center gap-4">
               <CheckCircle size={20} className="text-emerald-500" />
-              <p className="text-[11px] uppercase font-black tracking-widest text-[#0f2a44]">
+              <p className="text-archon-md uppercase font-black tracking-widest text-[#0f2a44]">
                 Perfil actualizado con éxito. La identidad ha sido sincronizada.
               </p>
             </div>
@@ -162,7 +162,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           <div className="bg-red-50 border-l-4 border-red-500 p-6 animate-in fade-in slide-in-from-top-4">
             <div className="flex items-center gap-4">
               <Shield size={20} className="text-red-500" />
-              <p className="text-[11px] uppercase font-black tracking-widest text-[#0f2a44]">
+              <p className="text-archon-md uppercase font-black tracking-widest text-[#0f2a44]">
                 {error}
               </p>
             </div>
@@ -300,7 +300,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
                                   className="text-emerald-500 animate-in zoom-in"
                                 />
                               ) : (
-                                <span className="text-[10px] font-bold text-red-500 uppercase tracking-tighter">
+                                <span className="text-archon-base font-bold text-red-500 uppercase tracking-tighter">
                                   No coincide
                                 </span>
                               )}
@@ -316,7 +316,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
               <div className="pt-4 border-t border-[#0f2a44]/5">
                 <div className="flex items-center justify-between opacity-60">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-[#0f2a44]">
+                    <p className="text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]">
                       Rol de Sistema
                     </p>
                     <p className="text-xs font-bold text-[#0f2a44]">
@@ -336,7 +336,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           <button
             type="submit"
             disabled={isSubmitting || !canSubmit}
-            className={`btn-sentinel-emerald w-full uppercase font-black text-[11px] tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
+            className={`btn-sentinel-emerald w-full uppercase font-black text-archon-md tracking-[0.4em] flex items-center justify-center gap-4 rounded-[4px] transition-all duration-500 ${
               !canSubmit ? 'opacity-30 grayscale cursor-not-allowed' : 'shadow-xl'
             }`}
           >

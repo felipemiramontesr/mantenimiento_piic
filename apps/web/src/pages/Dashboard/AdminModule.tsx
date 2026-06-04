@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -32,10 +32,10 @@ const AdminModule: React.FC = (): React.ReactElement => {
                 <ShieldCheck size={16} className="text-pinnacle-navy" />
               </div>
               <div>
-                <h2 className="text-[13px] font-black text-pinnacle-navy uppercase tracking-widest">
+                <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
                   Roles y Permisos
                 </h2>
-                <p className="text-[10px] text-pinnacle-navy/50 font-medium">
+                <p className="text-archon-base text-pinnacle-navy/50 font-medium">
                   Activa o desactiva permisos por rol. GrayMan es omnipotente — no aparece en la
                   matriz.
                 </p>

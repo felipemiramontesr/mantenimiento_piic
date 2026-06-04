@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Download, Plus, ChevronDown, Search, X } from 'lucide-react';
 import api from '../../api/client';
 import { FinancialTransaction, FinanceCategory, CATEGORY_LABELS } from '../../types/finance';
@@ -222,7 +222,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
                 if (e.key === 'Escape') setSearchOpen(false);
               }}
               style={{ border: '1px solid rgba(16,185,129,0.2)', borderRadius: '4px' }}
-              className="w-full pl-9 pr-9 py-3 text-[11px] font-bold text-[#0f2a44] bg-white focus:outline-none placeholder-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
+              className="w-full pl-9 pr-9 py-3 text-archon-md font-bold text-[#0f2a44] bg-white focus:outline-none placeholder-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
             />
             {unitSearch && (
               <button
@@ -241,10 +241,10 @@ const EgressTable: React.FC<EgressTableProps> = ({
                   <li
                     key={unit}
                     onClick={(): void => selectUnit(unit)}
-                    className="px-4 py-2.5 text-[11px] font-bold text-pinnacle-navy hover:bg-slate-50 cursor-pointer flex items-center justify-between uppercase tracking-tight transition-colors duration-150"
+                    className="px-4 py-2.5 text-archon-md font-bold text-pinnacle-navy hover:bg-slate-50 cursor-pointer flex items-center justify-between uppercase tracking-tight transition-colors duration-150"
                   >
                     <span>{unit}</span>
-                    <span className="text-[9px] font-black text-slate-400 tracking-wider">
+                    <span className="text-archon-sm font-black text-slate-400 tracking-wider">
                       SELECCIONAR
                     </span>
                   </li>
@@ -259,7 +259,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
               value={categoryFilter}
               onChange={(e): void => setCategoryFilter(e.target.value as FinanceCategory | '')}
               style={{ border: '1px solid rgba(16,185,129,0.2)', borderRadius: '4px' }}
-              className="appearance-none w-full pl-4 pr-8 py-3 text-[11px] font-bold text-[#0f2a44] bg-white focus:outline-none cursor-pointer shadow-sm shadow-slate-100/50 tracking-[0.02em]"
+              className="appearance-none w-full pl-4 pr-8 py-3 text-archon-md font-bold text-[#0f2a44] bg-white focus:outline-none cursor-pointer shadow-sm shadow-slate-100/50 tracking-[0.02em]"
             >
               <option value="">Todas las categorías</option>
               {ALL_CATEGORIES.map((cat) => (
@@ -278,7 +278,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
 
         {/* DERECHA — contador + acciones (col-beta, alineados a la derecha) */}
         <div className="flex items-center justify-end gap-3">
-          <span className="text-[10px] font-bold text-pinnacle-navy/40 uppercase tracking-widest">
+          <span className="text-archon-base font-bold text-pinnacle-navy/40 uppercase tracking-widest">
             {total} registro{total !== 1 ? 's' : ''}
           </span>
 
@@ -307,22 +307,22 @@ const EgressTable: React.FC<EgressTableProps> = ({
         <table className="w-full [&_td]:!border-x-0 [&_th]:!border-x-0">
           <thead>
             <tr className="bg-pinnacle-navy">
-              <th className="text-center py-4 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
+              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
                 Unidad
               </th>
-              <th className="text-center py-4 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
+              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
                 Categoría
               </th>
-              <th className="text-center py-4 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
+              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
                 Monto
               </th>
-              <th className="text-center py-4 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
+              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
                 Concepto
               </th>
-              <th className="text-center py-4 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
+              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
                 Origen
               </th>
-              <th className="text-center py-4 px-4 text-[10px] font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
+              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
                 Fecha
               </th>
             </tr>
@@ -333,7 +333,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
                 <td colSpan={6} className="py-16 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-pinnacle-navy/20 border-t-pinnacle-navy rounded-full animate-spin" />
-                    <span className="text-[11px] text-pinnacle-navy/40 font-bold uppercase tracking-widest">
+                    <span className="text-archon-md text-pinnacle-navy/40 font-bold uppercase tracking-widest">
                       Cargando...
                     </span>
                   </div>
@@ -344,7 +344,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
               <tr>
                 <td
                   colSpan={6}
-                  className="py-16 text-center text-[11px] font-bold text-pinnacle-navy/30 uppercase tracking-widest"
+                  className="py-16 text-center text-archon-md font-bold text-pinnacle-navy/30 uppercase tracking-widest"
                 >
                   Sin egresos registrados en este período
                 </td>
@@ -356,13 +356,13 @@ const EgressTable: React.FC<EgressTableProps> = ({
                   key={row.uuid}
                   className="border-y border-slate-200/50 bg-transparent hover:bg-slate-50/50 transition-all duration-300"
                 >
-                  <td className="text-center py-4 px-4 font-mono font-black text-[12px] text-pinnacle-navy whitespace-nowrap">
+                  <td className="text-center py-4 px-4 font-mono font-black text-archon-label text-pinnacle-navy whitespace-nowrap">
                     {row.unit_name}
                   </td>
                   <td className="text-center py-4 px-4">
                     <div className="flex justify-center">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-[9px] font-black uppercase tracking-widest ${
+                        className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-archon-sm font-black uppercase tracking-widest ${
                           CATEGORY_BADGE[row.category] ?? 'bg-slate-100 text-slate-600'
                         }`}
                       >
@@ -370,21 +370,21 @@ const EgressTable: React.FC<EgressTableProps> = ({
                       </span>
                     </div>
                   </td>
-                  <td className="text-center py-4 px-4 font-mono font-black text-[13px] text-pinnacle-navy whitespace-nowrap">
+                  <td className="text-center py-4 px-4 font-mono font-black text-archon-lg text-pinnacle-navy whitespace-nowrap">
                     {formatMXN(row.amount)}
                   </td>
                   <td className="text-center py-4 px-4">
                     {row.source === 'AUTO' ? (
-                      <span className="text-[11px] text-pinnacle-navy/60 italic">
+                      <span className="text-archon-md text-pinnacle-navy/60 italic">
                         {cleanConcept(row)}
                       </span>
                     ) : (
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-[11px] font-bold text-pinnacle-navy">
+                        <span className="text-archon-md font-bold text-pinnacle-navy">
                           {cleanConcept(row)}
                         </span>
                         {row.invoice_ref && (
-                          <span className="text-[9px] font-mono text-pinnacle-navy/40">
+                          <span className="text-archon-sm font-mono text-pinnacle-navy/40">
                             {row.invoice_ref}
                           </span>
                         )}
@@ -394,7 +394,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
                   <td className="text-center py-4 px-4">
                     <div className="flex justify-center">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-[9px] font-black uppercase tracking-widest ${
+                        className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-archon-sm font-black uppercase tracking-widest ${
                           row.source === 'AUTO'
                             ? 'bg-sky-50 text-sky-600'
                             : 'bg-emerald-50 text-emerald-600'
@@ -404,7 +404,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
                       </span>
                     </div>
                   </td>
-                  <td className="text-center py-4 px-4 text-[11px] font-bold text-pinnacle-navy/60 whitespace-nowrap">
+                  <td className="text-center py-4 px-4 text-archon-md font-bold text-pinnacle-navy/60 whitespace-nowrap">
                     {formatDate(row.created_at)}
                   </td>
                 </tr>
@@ -419,7 +419,7 @@ const EgressTable: React.FC<EgressTableProps> = ({
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="text-[10px] font-black uppercase tracking-widest text-pinnacle-navy/50 hover:text-pinnacle-navy transition-colors duration-300 flex items-center gap-2"
+            className="text-archon-base font-black uppercase tracking-widest text-pinnacle-navy/50 hover:text-pinnacle-navy transition-colors duration-300 flex items-center gap-2"
           >
             {loadingMore ? 'Cargando...' : 'Cargar más'}
             <ChevronDown size={12} />

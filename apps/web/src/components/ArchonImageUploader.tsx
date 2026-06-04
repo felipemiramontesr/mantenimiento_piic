@@ -1,4 +1,4 @@
-/* eslint-disable sonarjs/cognitive-complexity */
+﻿/* eslint-disable sonarjs/cognitive-complexity */
 import React, { useState, useRef } from 'react';
 import { Image as ImageIcon, X, UploadCloud } from 'lucide-react';
 
@@ -164,11 +164,15 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
         </div>
 
         <div className={compact ? 'flex items-center gap-2' : 'text-center'}>
-          <p className="text-[#0f2a44] font-bold text-[13px]">
+          <p className="text-[#0f2a44] font-bold text-archon-lg">
             {isDragging ? '¡Suelta para capturar!' : title}
           </p>
           {!compact && (
-            <p className={`text-[10px] uppercase tracking-widest opacity-40 ${reducedHeight ? 'mt-1' : 'mt-4'}`}>
+            <p
+              className={`text-archon-base uppercase tracking-widest opacity-40 ${
+                reducedHeight ? 'mt-1' : 'mt-4'
+              }`}
+            >
               Máximo {maxImages} fotos • {allowedFormats}
             </p>
           )}
@@ -224,7 +228,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                 )}
                 {variant === 'square' && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-4 pointer-events-none">
-                    <span className="text-[8px] text-white font-black uppercase tracking-tighter shadow-sm">
+                    <span className="text-archon-xs text-white font-black uppercase tracking-tighter shadow-sm">
                       Slot 0{idx + 1}
                     </span>
                   </div>

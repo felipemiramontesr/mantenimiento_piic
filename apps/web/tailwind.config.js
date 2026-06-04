@@ -34,6 +34,7 @@ export default {
         'archon-sm': ['9px', { lineHeight: '1.3' }],
         'archon-base': ['10px', { lineHeight: '1.4' }],
         'archon-md': ['11px', { lineHeight: '1.4' }],
+        'archon-label': ['12px', { lineHeight: '1.4' }],
         'archon-lg': ['13px', { lineHeight: '1.5' }],
         'archon-xl': ['14px', { lineHeight: '1.5' }],
       },

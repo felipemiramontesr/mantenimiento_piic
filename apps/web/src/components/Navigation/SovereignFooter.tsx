@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArchonDoctor } from '../../ArchonDoctor';
 import ArchonLogo from '../Logo/ArchonLogo';
 
@@ -12,7 +12,7 @@ import ArchonLogo from '../Logo/ArchonLogo';
 const SovereignFooter: React.FC = () => (
   <footer className="h-[10%] min-h-[60px] flex items-center justify-between w-full border-t border-pinnacle-navy/5 px-[60px] bg-white shrink-0">
     {/* ⚖️ Legal Metadata (Col Alfa) */}
-    <div className="flex-1 text-[10px] font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left whitespace-nowrap">
+    <div className="flex-1 text-archon-base font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left whitespace-nowrap">
       © Copyright ArchonCore by Dreamtek Versión V.78.100.154
     </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import {
@@ -137,7 +137,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
   if (error || !data) {
     return (
       <div className="card-archon-sovereign flex items-center justify-center h-48">
-        <p className="text-[12px] font-bold text-sentinel-red uppercase tracking-widest">
+        <p className="text-archon-label font-bold text-sentinel-red uppercase tracking-widest">
           {error ?? 'Sin datos'}
         </p>
       </div>
@@ -330,7 +330,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Donut — by category */}
         <div className="card-archon-sovereign">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 mb-4">
+          <p className="text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 mb-4">
             Distribución por categoría
           </p>
           {displaySeries.length > 0 ? (
@@ -354,13 +354,13 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: color }}
                       />
-                      <span className="text-[10px] font-bold text-pinnacle-navy/70 flex-1 truncate">
+                      <span className="text-archon-base font-bold text-pinnacle-navy/70 flex-1 truncate">
                         {label}
                       </span>
-                      <span className="text-[10px] font-mono font-black text-pinnacle-navy shrink-0">
+                      <span className="text-archon-base font-mono font-black text-pinnacle-navy shrink-0">
                         {formatMXN(item.amount)}
                       </span>
-                      <span className="text-[9px] font-bold text-pinnacle-navy/40 w-9 text-right shrink-0">
+                      <span className="text-archon-sm font-bold text-pinnacle-navy/40 w-9 text-right shrink-0">
                         {pct}%
                       </span>
                     </div>
@@ -370,7 +370,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
             </>
           ) : (
             <div className="h-64 flex items-center justify-center">
-              <p className="text-[11px] text-pinnacle-navy/30 font-bold uppercase tracking-widest">
+              <p className="text-archon-md text-pinnacle-navy/30 font-bold uppercase tracking-widest">
                 Sin egresos en este período
               </p>
             </div>
@@ -380,7 +380,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
         {/* Area — monthly trend */}
         <div className="card-archon-sovereign">
           <div className="flex items-center justify-between mb-4 shrink-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pinnacle-navy/50">
+            <p className="text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50">
               Tendencia — {chartWindowLabel}
             </p>
             <div className="flex items-center gap-1 flex-wrap justify-end">
@@ -388,7 +388,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                 <button
                   key={w.label}
                   onClick={(): void => setChartLabel(w.label)}
-                  className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-wider transition-all duration-200 border-none outline-none cursor-pointer ${
+                  className={`px-2 py-0.5 rounded-[4px] text-archon-sm font-black uppercase tracking-wider transition-all duration-200 border-none outline-none cursor-pointer ${
                     chartLabel === w.label
                       ? 'bg-pinnacle-navy text-white'
                       : 'bg-slate-100 text-pinnacle-navy/50 hover:bg-slate-200'
@@ -405,7 +405,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
             </div>
           ) : (
             <div className="flex-1 min-h-[200px] flex items-center justify-center">
-              <p className="text-[11px] text-pinnacle-navy/30 font-bold uppercase tracking-widest">
+              <p className="text-archon-md text-pinnacle-navy/30 font-bold uppercase tracking-widest">
                 Sin historial disponible
               </p>
             </div>
@@ -416,7 +416,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
       {/* Top units */}
       {topUnits.length > 0 && (
         <div className="card-archon-sovereign">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 mb-4">
+          <p className="text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 mb-4">
             Top 5 unidades por costo — {periodLabel(dateRange.from)}
             {dateRange.from !== dateRange.to ? ` — ${periodLabel(dateRange.to)}` : ''}
           </p>
@@ -425,10 +425,10 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
               const pct = kpis.totalEgresos > 0 ? (u.amount / kpis.totalEgresos) * 100 : 0;
               return (
                 <div key={u.unitId} className="flex items-center gap-3">
-                  <span className="text-[10px] font-mono font-bold text-pinnacle-navy/40 w-4">
+                  <span className="text-archon-base font-mono font-bold text-pinnacle-navy/40 w-4">
                     {idx + 1}
                   </span>
-                  <span className="text-[11px] font-black text-pinnacle-navy font-mono w-20 shrink-0">
+                  <span className="text-archon-md font-black text-pinnacle-navy font-mono w-20 shrink-0">
                     {u.unitId}
                   </span>
                   <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -437,7 +437,7 @@ const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-[11px] font-black text-pinnacle-navy w-28 text-right shrink-0">
+                  <span className="text-archon-md font-black text-pinnacle-navy w-28 text-right shrink-0">
                     {formatMXN(u.amount)}
                   </span>
                 </div>

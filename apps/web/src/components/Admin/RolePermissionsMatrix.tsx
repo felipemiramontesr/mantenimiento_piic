@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Save, AlertTriangle, CheckCircle } from 'lucide-react';
 import api from '../../api/client';
 
@@ -104,7 +104,7 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
   if (loading) {
     return (
       <div className="card-archon-sovereign flex items-center justify-center h-48">
-        <p className="text-[11px] font-bold text-pinnacle-navy/40 uppercase tracking-widest animate-pulse">
+        <p className="text-archon-md font-bold text-pinnacle-navy/40 uppercase tracking-widest animate-pulse">
           Cargando matriz de permisos...
         </p>
       </div>
@@ -114,7 +114,7 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
   if (error || !matrix) {
     return (
       <div className="card-archon-sovereign flex items-center justify-center h-48">
-        <p className="text-[11px] font-bold text-sentinel-red uppercase tracking-widest">
+        <p className="text-archon-md font-bold text-sentinel-red uppercase tracking-widest">
           {error ?? 'Sin datos'}
         </p>
       </div>
@@ -126,7 +126,7 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
       {/* Aviso de sesión */}
       <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-[4px]">
         <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
-        <p className="text-[11px] text-amber-700 font-medium">
+        <p className="text-archon-md text-amber-700 font-medium">
           Los cambios aplican al <strong>próximo inicio de sesión</strong> del usuario. Las sesiones
           activas no se ven afectadas de inmediato.
         </p>
@@ -137,13 +137,13 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
         <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b border-pinnacle-navy/10">
-              <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 w-48">
+              <th className="text-left py-3 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 w-48">
                 Permiso
               </th>
               {matrix.roles.map((role) => (
                 <th
                   key={role.id}
-                  className="text-center py-3 px-2 text-[10px] font-black uppercase tracking-[0.15em] text-pinnacle-navy/70 min-w-[110px]"
+                  className="text-center py-3 px-2 text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/70 min-w-[110px]"
                 >
                   {role.name}
                 </th>
@@ -157,10 +157,10 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
                 className="border-b border-slate-100 hover:bg-slate-50/50 transition-all duration-300"
               >
                 <td className="py-2.5 px-4">
-                  <span className="text-[11px] font-bold text-pinnacle-navy">
+                  <span className="text-archon-md font-bold text-pinnacle-navy">
                     {PERMISSION_LABELS[perm.slug] ?? perm.slug}
                   </span>
-                  <span className="block text-[9px] font-mono text-pinnacle-navy/30 mt-0.5">
+                  <span className="block text-archon-sm font-mono text-pinnacle-navy/30 mt-0.5">
                     {perm.slug}
                   </span>
                 </td>
@@ -179,7 +179,7 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
           </tbody>
           <tfoot>
             <tr className="border-t border-pinnacle-navy/10">
-              <td className="py-3 px-4 text-[10px] font-black text-pinnacle-navy/40 uppercase tracking-widest">
+              <td className="py-3 px-4 text-archon-base font-black text-pinnacle-navy/40 uppercase tracking-widest">
                 Guardar por rol
               </td>
               {matrix.roles.map((role) => (
@@ -187,14 +187,14 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
                   {savedRole === role.id ? (
                     <div className="flex items-center justify-center gap-1 text-emerald-600">
                       <CheckCircle size={13} />
-                      <span className="text-[10px] font-bold">Guardado</span>
+                      <span className="text-archon-base font-bold">Guardado</span>
                     </div>
                   ) : (
                     <button
                       onClick={(): Promise<void> => saveRole(role.id)}
                       disabled={saving === role.id}
                       className={`
-                        flex items-center justify-center gap-1 mx-auto px-3 py-1.5 rounded-[4px] text-[10px] font-black uppercase tracking-widest transition-all duration-200
+                        flex items-center justify-center gap-1 mx-auto px-3 py-1.5 rounded-[4px] text-archon-base font-black uppercase tracking-widest transition-all duration-200
                         ${
                           isDirty(role.id)
                             ? 'bg-archon-gold text-pinnacle-navy hover:-translate-y-0.5 hover:shadow-md cursor-pointer'

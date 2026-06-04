@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AlertCircle, X, CheckCircle, Info } from 'lucide-react';
 
 /**
@@ -56,7 +56,7 @@ const ArchonFeedbackBanner: React.FC<ArchonFeedbackBannerProps> = ({
       <div className="flex items-center space-x-4">
         <div className="flex-shrink-0">{currentStyle.icon}</div>
         <div className="flex flex-col">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">
+          <span className="text-archon-base font-black uppercase tracking-[0.2em] opacity-50 mb-1">
             Notificación del Sistema
           </span>
           <p className={`${currentStyle.text} text-sm font-bold tracking-tight leading-snug`}>

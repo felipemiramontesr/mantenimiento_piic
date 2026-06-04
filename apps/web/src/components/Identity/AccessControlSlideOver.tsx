@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   X,
   ShieldCheck,
@@ -136,7 +136,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
       return (
         <div className="flex flex-col items-center justify-center py-20 opacity-20">
           <Loader2 size={32} className="animate-spin mb-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">
+          <span className="text-archon-base font-black uppercase tracking-widest">
             Sincronizando Vault...
           </span>
         </div>
@@ -164,7 +164,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                 <div>
                   <h4 className="text-sm font-black text-[#0f2a44] uppercase">{u.username}</h4>
                   <div
-                    className={`mt-1 inline-block px-2 py-0.5 rounded border text-[8px] font-black uppercase ${getRoleBadge(
+                    className={`mt-1 inline-block px-2 py-0.5 rounded border text-archon-xs font-black uppercase ${getRoleBadge(
                       u.roleId
                     )}`}
                   >
@@ -211,7 +211,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
         <div className="flex border-b border-gray-100">
           <button
             onClick={(): void => setView('list')}
-            className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${
+            className={`flex-1 py-4 text-archon-base font-black uppercase tracking-widest transition-all ${
               view === 'list'
                 ? 'border-b-2 border-[#0f2a44] text-[#0f2a44]'
                 : 'text-gray-300 hover:text-gray-500'
@@ -221,7 +221,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
           </button>
           <button
             onClick={(): void => setView('create')}
-            className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${
+            className={`flex-1 py-4 text-archon-base font-black uppercase tracking-widest transition-all ${
               view === 'create'
                 ? 'border-b-2 border-[#0f2a44] text-[#0f2a44]'
                 : 'text-gray-300 hover:text-gray-500'
@@ -248,7 +248,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
               )}
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase opacity-40 flex items-center gap-2">
+                <label className="text-archon-base font-black uppercase opacity-40 flex items-center gap-2">
                   <Users size={12} /> Identidad de Usuario
                 </label>
                 <input
@@ -263,7 +263,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase opacity-40 flex items-center gap-2">
+                <label className="text-archon-base font-black uppercase opacity-40 flex items-center gap-2">
                   <Mail size={12} /> Correo Corporativo
                 </label>
                 <input
@@ -279,7 +279,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase opacity-40 flex items-center gap-2">
+                <label className="text-archon-base font-black uppercase opacity-40 flex items-center gap-2">
                   <Key size={12} /> Credencial de Acceso
                 </label>
                 <input
@@ -295,7 +295,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase opacity-40 flex items-center gap-2">
+                <label className="text-archon-base font-black uppercase opacity-40 flex items-center gap-2">
                   <ShieldCheck size={12} /> Nivel de Autorización (Rol)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -305,7 +305,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                         key={rId}
                         type="button"
                         onClick={(): void => setFormData({ ...formData, roleId: rId })}
-                        className={`p-3 rounded border text-[8px] font-black uppercase transition-all text-center leading-tight ${
+                        className={`p-3 rounded border text-archon-xs font-black uppercase transition-all text-center leading-tight ${
                           formData.roleId === rId
                             ? 'bg-[#0f2a44] text-white border-[#0f2a44] shadow-lg'
                             : 'bg-white border-gray-100 text-gray-400 hover:border-[#0f2a44]/20'
@@ -316,7 +316,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
                     )
                   )}
                 </div>
-                <p className="text-[9px] text-gray-400 italic mt-2">
+                <p className="text-archon-sm text-gray-400 italic mt-2">
                   * El rol Master (Archon) está restringido a nivel de infraestructura.
                 </p>
               </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
 
@@ -56,7 +56,7 @@ export function ArchonDataTable<T>({
       <div className={loadingClasses}>
         <div className="flex items-center gap-3 opacity-40 animate-pulse">
           <div className="w-4 h-4 bg-pinnacle-yellow rounded-[4px]" />
-          <span className="text-[11px] font-black text-pinnacle-navy uppercase tracking-[0.2em]">
+          <span className="text-archon-md font-black text-pinnacle-navy uppercase tracking-[0.2em]">
             {loadingMessage}
           </span>
         </div>
@@ -101,7 +101,7 @@ export function ArchonDataTable<T>({
                 }}
                 style={header.width ? { width: header.width } : {}}
                 className={`
-                  bg-pinnacle-navy h-14 px-3 text-white text-[10px] font-black uppercase tracking-[0.15em] whitespace-nowrap
+                  bg-pinnacle-navy h-14 px-3 text-white text-archon-base font-black uppercase tracking-[0.15em] whitespace-nowrap
                   ${
                     header.sortable
                       ? 'cursor-pointer hover:bg-pinnacle-navy/90 transition-colors'
@@ -138,7 +138,7 @@ export function ArchonDataTable<T>({
           ) : (
             <tr>
               <td colSpan={headers.length} className="py-20 text-center">
-                <p className="text-[14px] font-black text-pinnacle-navy opacity-20 uppercase tracking-widest">
+                <p className="text-archon-xl font-black text-pinnacle-navy opacity-20 uppercase tracking-widest">
                   {emptyMessage}
                 </p>
               </td>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ============================================================================
@@ -129,12 +129,12 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
         type="button"
         id={id}
         onClick={(): void => setIsOpen((prev) => !prev)}
-        className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-[13px] font-bold transition-all duration-300 outline-none flex items-center justify-between cursor-pointer text-left"
+        className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-archon-lg font-bold transition-all duration-300 outline-none flex items-center justify-between cursor-pointer text-left"
         style={{
           color: value ? '#0f2a44' : 'rgba(15, 42, 68, 0.3)',
         }}
       >
-        <span className="font-sans text-[13px] font-bold">
+        <span className="font-sans text-archon-lg font-bold">
           {value ? formatDisplay(value) : placeholder}
         </span>
         <Calendar size={16} className="text-[#f2b705] shrink-0 ml-2" />
@@ -152,7 +152,7 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-[11px] font-black text-[#0f2a44] uppercase tracking-wider">
+            <span className="text-archon-md font-black text-[#0f2a44] uppercase tracking-wider">
               {MONTHS_ES[viewMonth]} {viewYear}
             </span>
             <button
@@ -170,7 +170,7 @@ const ArchonDatePicker: React.FC<ArchonDatePickerProps> = ({
               (d: string): React.ReactElement => (
                 <div
                   key={d}
-                  className="text-[9px] font-black text-[#0f2a44]/40 uppercase tracking-widest py-1"
+                  className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-widest py-1"
                 >
                   {d}
                 </div>

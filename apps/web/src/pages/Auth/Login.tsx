@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import PiicLogo from '../../components/Logo/PiicLogo';
@@ -119,13 +119,13 @@ const LoginPage: React.FC = () => {
                 <h2 className="text-pinnacle-navy font-display font-black text-4xl lg:text-5xl tracking-tight leading-tight">
                   Acceso Archon
                 </h2>
-                <p className="text-pinnacle-navy/40 font-display font-bold text-[11px] uppercase tracking-[0.25em] mt-2">
+                <p className="text-pinnacle-navy/40 font-display font-bold text-archon-md uppercase tracking-[0.25em] mt-2">
                   Control de Flotas
                 </p>
               </header>
 
               {error && (
-                <div className="mb-6 p-4 bg-red-500/10 text-red-600 text-[11px] font-black uppercase rounded-[4px] border-l-4 border-red-500 animate-in slide-in-from-top duration-300">
+                <div className="mb-6 p-4 bg-red-500/10 text-red-600 text-archon-md font-black uppercase rounded-[4px] border-l-4 border-red-500 animate-in slide-in-from-top duration-300">
                   {error}
                 </div>
               )}
@@ -133,7 +133,7 @@ const LoginPage: React.FC = () => {
               <form onSubmit={handleLogin} className="flex flex-col gap-6">
                 {/* 🆔 IDENTITY */}
                 <div className="flex flex-col gap-1 relative mb-4">
-                  <label className="font-sans text-[10px] font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
+                  <label className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
                     Identidad de Usuario
                   </label>
                   <input
@@ -149,7 +149,7 @@ const LoginPage: React.FC = () => {
 
                 {/* 🔑 SECURITY */}
                 <div className="flex flex-col gap-1 relative mb-6">
-                  <label className="font-sans text-[10px] font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
+                  <label className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
                     Clave de Seguridad
                   </label>
                   <input
@@ -186,10 +186,10 @@ const LoginPage: React.FC = () => {
           {/* 🏙️ FOOTER */}
           <footer className="h-[10vh] flex items-center justify-center border-t border-pinnacle-navy/5 px-8">
             <div className="flex flex-col items-center gap-1 text-center">
-              <span className="text-pinnacle-navy/40 font-bold text-[9px] uppercase tracking-widest">
+              <span className="text-pinnacle-navy/40 font-bold text-archon-sm uppercase tracking-widest">
                 © Todos los derechos reservados por ArchonCore by Dreamtek.
               </span>
-              <span className="text-pinnacle-navy/20 font-black text-[8px] uppercase tracking-widest">
+              <span className="text-pinnacle-navy/20 font-black text-archon-xs uppercase tracking-widest">
                 Archon Fleet System | V.78.100.50
               </span>
             </div>
@@ -200,7 +200,7 @@ const LoginPage: React.FC = () => {
       {/* 🍪 COOKIE BANNER */}
       {showCookies && (
         <div className="fixed bottom-0 left-0 w-full bg-pinnacle-yellow h-[10vh] px-6 md:px-16 z-[1000] flex items-center justify-between animate-in slide-in-from-bottom duration-500 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-          <p className="text-pinnacle-navy text-[11px] font-bold max-w-4xl leading-tight hidden md:block">
+          <p className="text-pinnacle-navy text-archon-md font-bold max-w-4xl leading-tight hidden md:block">
             Utilizamos cookies propias y de terceros. Al continuar navegando, acepta esta{' '}
             <a
               href="https://piic.com.mx/politicas"
@@ -214,13 +214,13 @@ const LoginPage: React.FC = () => {
           <div className="flex gap-4 w-full md:w-auto justify-center md:justify-end">
             <button
               onClick={(): void => setShowCookies(false)}
-              className="px-8 h-10 bg-white text-pinnacle-navy rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-pinnacle-navy hover:text-white transition-all shadow-sm"
+              className="px-8 h-10 bg-white text-pinnacle-navy rounded-[4px] font-black text-archon-base uppercase tracking-widest hover:bg-pinnacle-navy hover:text-white transition-all shadow-sm"
             >
               RECHAZAR
             </button>
             <button
               onClick={acceptCookies}
-              className="px-8 h-10 bg-pinnacle-navy text-white rounded-[4px] font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-pinnacle-navy transition-all shadow-md"
+              className="px-8 h-10 bg-pinnacle-navy text-white rounded-[4px] font-black text-archon-base uppercase tracking-widest hover:bg-white hover:text-pinnacle-navy transition-all shadow-md"
             >
               ACEPTAR
             </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { X, DollarSign } from 'lucide-react';
 import api from '../../api/client';
 import { FinanceCategory, CATEGORY_LABELS, CreateTransactionPayload } from '../../types/finance';
@@ -109,7 +109,7 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
   };
 
   const inputCls = (field: string): string =>
-    `w-full text-[12px] font-bold text-pinnacle-navy bg-white border rounded-[4px] px-3 py-2.5 focus:outline-none transition-colors duration-200 ${
+    `w-full text-archon-label font-bold text-pinnacle-navy bg-white border rounded-[4px] px-3 py-2.5 focus:outline-none transition-colors duration-200 ${
       fieldError?.field === field
         ? 'border-sentinel-red focus:border-sentinel-red'
         : 'border-slate-200 focus:border-pinnacle-navy/30'
@@ -122,7 +122,7 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <DollarSign size={16} className="text-pinnacle-navy" />
-            <h2 className="text-[13px] font-black text-pinnacle-navy uppercase tracking-[0.1em]">
+            <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-[0.1em]">
               Registrar Egreso
             </h2>
           </div>
@@ -138,7 +138,7 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {/* Unidad */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+            <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
               Unidad *
             </label>
             <select
@@ -155,13 +155,13 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
               ))}
             </select>
             {fieldError?.field === 'unitId' && (
-              <p className="text-[10px] text-sentinel-red font-bold">{fieldError.message}</p>
+              <p className="text-archon-base text-sentinel-red font-bold">{fieldError.message}</p>
             )}
           </div>
 
           {/* Categoría */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+            <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
               Categoría *
             </label>
             <select
@@ -178,13 +178,13 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
               ))}
             </select>
             {fieldError?.field === 'category' && (
-              <p className="text-[10px] text-sentinel-red font-bold">{fieldError.message}</p>
+              <p className="text-archon-base text-sentinel-red font-bold">{fieldError.message}</p>
             )}
           </div>
 
           {/* Monto */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+            <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
               Monto (MXN) *
             </label>
             <input
@@ -198,14 +198,14 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
               className={inputCls('amount')}
             />
             {fieldError?.field === 'amount' && (
-              <p className="text-[10px] text-sentinel-red font-bold">{fieldError.message}</p>
+              <p className="text-archon-base text-sentinel-red font-bold">{fieldError.message}</p>
             )}
           </div>
 
           {/* Proveedor + Referencia */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+              <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
                 Proveedor
               </label>
               <input
@@ -219,7 +219,7 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+              <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
                 No. Factura
               </label>
               <input
@@ -236,7 +236,7 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
 
           {/* Notas */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+            <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
               Notas
             </label>
             <textarea
@@ -252,7 +252,7 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
 
           {/* Error general */}
           {fieldError && !['unitId', 'category', 'amount'].includes(fieldError.field) && (
-            <p className="text-[11px] text-sentinel-red font-bold bg-red-50 px-3 py-2 rounded-[4px]">
+            <p className="text-archon-md text-sentinel-red font-bold bg-red-50 px-3 py-2 rounded-[4px]">
               {fieldError.message}
             </p>
           )}
@@ -262,14 +262,14 @@ const EgressRegistrationModal: React.FC<EgressRegistrationModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest text-pinnacle-navy/60 bg-slate-100 hover:bg-slate-200 rounded-[4px] transition-all duration-200"
+              className="flex-1 h-10 text-archon-base font-black uppercase tracking-widest text-pinnacle-navy/60 bg-slate-100 hover:bg-slate-200 rounded-[4px] transition-all duration-200"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest text-white bg-pinnacle-navy hover:brightness-110 rounded-[4px] transition-all duration-200 disabled:opacity-50"
+              className="flex-1 h-10 text-archon-base font-black uppercase tracking-widest text-white bg-pinnacle-navy hover:brightness-110 rounded-[4px] transition-all duration-200 disabled:opacity-50"
             >
               {submitting ? 'Registrando...' : 'Registrar Egreso'}
             </button>
