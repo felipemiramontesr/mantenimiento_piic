@@ -7,6 +7,7 @@ import IncidentsModule from './IncidentsModule';
 const INCIDENT_FIXTURE = [
   {
     id: 1,
+    uuid: 'aaaa-1111-bbbb-2222',
     route_uuid: 'abc-123',
     unit_id: 'ASM-001',
     driver_name: 'Juan Perez',
@@ -19,6 +20,7 @@ const INCIDENT_FIXTURE = [
   },
   {
     id: 2,
+    uuid: 'cccc-3333-dddd-4444',
     route_uuid: 'def-456',
     unit_id: 'ASM-005',
     driver_name: 'Pedro Técnico',
@@ -74,5 +76,18 @@ describe('IncidentsModule (Incidencias en Ruta)', () => {
     server.use(http.get('*/incidents', () => HttpResponse.json({ success: true, data: [] })));
     renderModule();
     expect(await screen.findByText(/sin incidencias/i)).toBeInTheDocument();
+  });
+
+  it('unit_id cell links to /incidents/:uuid', async (): Promise<void> => {
+    renderModule();
+    const link = await screen.findByRole('link', { name: 'ASM-001' });
+    expect(link.getAttribute('href')).toBe('/dashboard/incidents/aaaa-1111-bbbb-2222');
+  });
+
+  it('each row uses uuid as key (second incident link correct)', async (): Promise<void> => {
+    renderModule();
+    await screen.findByText('ASM-001');
+    const link = screen.getByRole('link', { name: 'ASM-005' });
+    expect(link.getAttribute('href')).toBe('/dashboard/incidents/cccc-3333-dddd-4444');
   });
 });

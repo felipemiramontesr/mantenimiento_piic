@@ -13,6 +13,7 @@ describe('UsersGridView Component', () => {
   const mockUsers = [
     {
       id: '1',
+      uuid: 'uuid-admin-0001',
       username: 'admin',
       fullName: 'Administrator',
       email: 'admin@piic.com',
@@ -24,6 +25,7 @@ describe('UsersGridView Component', () => {
     },
     {
       id: '2',
+      uuid: 'uuid-operator-0002',
       username: 'operator',
       fullName: 'Operator One',
       email: 'op1@piic.com',
@@ -146,4 +148,16 @@ describe('UsersGridView Component', () => {
     expect(screen.getAllByText(/Administrator|Operator One/)[0].textContent).toBe('Administrator');
   });
 
+  it('node link uses uuid instead of numeric id', () => {
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={mockValue as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    const links = screen.getAllByRole('link');
+    const nodeLinks = links.filter((l) => l.getAttribute('href')?.startsWith('/dashboard/users/'));
+    expect(nodeLinks[0].getAttribute('href')).toBe('/dashboard/users/uuid-admin-0001');
+    expect(nodeLinks[1].getAttribute('href')).toBe('/dashboard/users/uuid-operator-0002');
+  });
 });
