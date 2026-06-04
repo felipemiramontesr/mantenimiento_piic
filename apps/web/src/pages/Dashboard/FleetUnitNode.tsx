@@ -111,7 +111,34 @@ function formatDate(s?: string | null): string {
 
 function formatKm(v?: number | null): string {
   if (v == null) return '—';
-  return `${Number(v).toLocaleString('es-MX')} km`;
+  return `${Number(v).toLocaleString('es-MX', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })} km`;
+}
+
+function formatNum(v: number | null | undefined, unit: string, decimals = 0): string {
+  if (v == null) return '—';
+  return `${Number(v).toLocaleString('es-MX', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals,
+  })} ${unit}`;
+}
+
+function formatHours(v: number | null | undefined): string {
+  if (!v) return '—';
+  return `${Number(v).toLocaleString('es-MX', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  })} h`;
+}
+
+function formatPct(v: number | null | undefined, decimals = 1): string {
+  if (v == null) return '—';
+  return `${Number(v).toLocaleString('es-MX', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals,
+  })}%`;
 }
 
 function statusBadgeClass(status: string): string {
@@ -163,9 +190,9 @@ function UnitHeader({
   );
   const badge = statusBadgeClass(unit.status);
   const kpis = [
-    { label: 'Disponibilidad', value: `${unit.availabilityIndex ?? 100}%` },
+    { label: 'Disponibilidad', value: formatPct(unit.availabilityIndex ?? 100) },
     { label: 'Salud', value: unit.healthStatus ?? '—' },
-    { label: 'MTBF', value: unit.mtbfHours ? `${unit.mtbfHours}h` : '—' },
+    { label: 'MTBF', value: formatHours(unit.mtbfHours) },
     { label: 'Backlog', value: String(unit.backlogCount ?? 0) },
   ];
 
@@ -271,16 +298,10 @@ function MaintenanceSection({
         </div>
         <div className="flex flex-col gap-2">
           <span className={AT.sectionTitle}>Indicadores operacionales</span>
-          <InfoRow
-            label="Score de salud"
-            value={unit.healthScore != null ? `${unit.healthScore}%` : '—'}
-          />
-          <InfoRow
-            label="Disponibilidad"
-            value={unit.availabilityIndex != null ? `${unit.availabilityIndex}%` : '—'}
-          />
-          <InfoRow label="MTBF" value={unit.mtbfHours ? `${unit.mtbfHours}h` : '—'} />
-          <InfoRow label="MTTR" value={unit.mttrHours ? `${unit.mttrHours}h` : '—'} />
+          <InfoRow label="Score de salud" value={formatPct(unit.healthScore)} />
+          <InfoRow label="Disponibilidad" value={formatPct(unit.availabilityIndex)} />
+          <InfoRow label="MTBF" value={formatHours(unit.mtbfHours)} />
+          <InfoRow label="MTTR" value={formatHours(unit.mttrHours)} />
           <InfoRow label="Backlog" value={unit.backlogCount ?? 0} />
         </div>
       </div>
@@ -342,7 +363,7 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
 
   useEffect(() => {
     setSectionData(
-      unitId ? `Nodo — ${unitId}` : 'Nodo de Unidad',
+      unitId ?? 'Unidad',
       'Perfil completo de activo · Mantenimiento · Finanzas · Cumplimiento'
     );
   }, [unitId, setSectionData]);
@@ -428,12 +449,14 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
           <InfoRow label="Transmisión" value={unit.transmision} />
           <InfoRow label="Llantas" value={unit.tireSpec} />
           <InfoRow
-            label="Capacidad de carga"
-            value={unit.capacidadCarga ? `${unit.capacidadCarga} ton` : null}
+            label="Uso diario promedio"
+            value={unit.dailyUsageAvg ? formatNum(unit.dailyUsageAvg, 'km/día', 1) : null}
           />
+          <InfoRow label="Capacidad de carga" value={formatNum(unit.capacidadCarga, 'kg')} />
+          <InfoRow label="Tanque de combustible" value={formatNum(unit.fuelTankCapacity, 'L')} />
           <InfoRow
-            label="Tanque"
-            value={unit.fuelTankCapacity ? `${unit.fuelTankCapacity} L` : null}
+            label="Nivel de combustible"
+            value={unit.lastFuelLevel != null ? formatPct(unit.lastFuelLevel, 0) : null}
           />
         </SectionCard>
       </div>

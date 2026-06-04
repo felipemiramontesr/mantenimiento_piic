@@ -537,7 +537,7 @@ const FleetUnitRow = React.memo(
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <div className="flex gap-2 justify-center">
+          <div className="flex flex-col gap-2 items-center">
             <Link
               to={`/dashboard/fleet/${unit.id}`}
               title="Ver nodo completo de la unidad"
