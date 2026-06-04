@@ -54,25 +54,28 @@ const STATUS_BADGE: Record<string, string> = {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const IncidentNode: React.FC = (): React.JSX.Element => {
-  const { id } = useParams<{ id: string }>();
+  const { uuid } = useParams<{ uuid: string }>();
   const { setSectionData } = useSovereignLayout();
   const [incident, setIncident] = useState<IncidentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSectionData(`Incidente #${id ?? ''}`, 'Detalle de incidente · Contexto de ruta · Unidad');
-  }, [id, setSectionData]);
+    setSectionData(
+      uuid ? uuid.slice(0, 8).toUpperCase() : 'Incidente',
+      'Detalle de incidente · Contexto de ruta · Unidad'
+    );
+  }, [uuid, setSectionData]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!uuid) return;
     setLoading(true);
     api
-      .get(`/incidents/${id}/node`)
+      .get(`/incidents/${uuid}/node`)
       .then((res) => setIncident(res.data.data as IncidentData))
       .catch(() => setError('No se pudo cargar el incidente'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [uuid]);
 
   if (loading) return <NodeLoadingState />;
   if (!incident)

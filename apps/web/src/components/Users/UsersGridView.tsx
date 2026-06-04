@@ -144,7 +144,7 @@ const UserRegistryRow = ({
       <td className="py-6 text-center px-4">
         <div className="flex flex-col items-center gap-2">
           <Link
-            to={`/dashboard/users/${user.id}`}
+            to={`/dashboard/users/${user.uuid ?? user.id}`}
             title="Ver nodo de usuario"
             className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] group"
           >

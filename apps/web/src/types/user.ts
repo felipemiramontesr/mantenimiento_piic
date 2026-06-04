@@ -14,6 +14,7 @@ export interface Role {
 
 export interface UserIndustrial {
   id: string;
+  uuid?: string;
   username: string;
   fullName: string;
   email: string;

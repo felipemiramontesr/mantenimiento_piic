@@ -70,9 +70,9 @@ const App: React.FC = () => (
                 <Route path="settings" element={<SettingsModule />} />
                 <Route path="admin" element={<AdminModule />} />
                 <Route path="incidents" element={<IncidentsModule />} />
-                <Route path="incidents/:id" element={<IncidentNode />} />
+                <Route path="incidents/:uuid" element={<IncidentNode />} />
                 <Route path="users" element={<UsersModule />} />
-                <Route path="users/:id" element={<UserNode />} />
+                <Route path="users/:uuid" element={<UserNode />} />
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/login" replace />} />

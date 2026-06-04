@@ -485,7 +485,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         return reply.code(404).send({ success: false, message: 'Ruta no encontrada' });
 
       const [incidentRows] = await db.execute<RowDataPacket[]>(
-        `SELECT id, category, description, severity, status, reported_at
+        `SELECT id, uuid, category, description, severity, status, reported_at
          FROM route_incidents WHERE route_uuid = ? ORDER BY reported_at DESC`,
         [uuid]
       );
@@ -500,12 +500,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // GET /v1/incidents/:id/node — Sovereign node: incident with route + unit context
-  fastify.get('/incidents/:id/node', async (request, reply) => {
+  // GET /v1/incidents/:uuid/node — Sovereign node: incident with route + unit context
+  fastify.get('/incidents/:uuid/node', async (request, reply) => {
     try {
-      const { id } = request.params as { id: string };
+      const { uuid } = request.params as { uuid: string };
       const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT ri.id, ri.route_uuid, ri.category, ri.description,
+        `SELECT ri.id, ri.uuid, ri.route_uuid, ri.category, ri.description,
                 ri.severity, ri.evidence_image, ri.status, ri.reported_at,
                 fm.unit_id, fm.start_at AS route_start, fm.end_at AS route_end,
                 fre.destination, fre.driver_id,
@@ -518,8 +518,8 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
          LEFT JOIN fleet_units fu ON fm.unit_id = fu.id
          LEFT JOIN common_catalogs c_brand ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
          LEFT JOIN common_catalogs c_model ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
-         WHERE ri.id = ?`,
-        [id]
+         WHERE ri.uuid = ?`,
+        [uuid]
       );
       if (rows.length === 0)
         return reply.code(404).send({ success: false, message: 'Incidente no encontrado' });

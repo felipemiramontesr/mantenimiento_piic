@@ -14,6 +14,7 @@ import requirePermission from '../middleware/requirePermission';
 
 function mapUserResponse(user: RowDataPacket): {
   id: number;
+  uuid: string;
   username: string;
   fullName: string;
   email: string;
@@ -45,6 +46,7 @@ function mapUserResponse(user: RowDataPacket): {
   }
   return {
     id: user.id,
+    uuid: user.uuid,
     username: user.username,
     fullName: user.full_name || user.fullName,
     email: EncryptionService.decrypt(user.email),
@@ -416,15 +418,15 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     }
   });
 
-  // GET /v1/auth/users/:id/node — Sovereign node: full user profile + permissions + recent activity
+  // GET /v1/auth/users/:uuid/node — Sovereign node: full user profile + permissions + recent activity
   fastify.get(
-    '/auth/users/:id/node',
+    '/auth/users/:uuid/node',
     { preHandler: [requirePermission('user:admin')] },
     async (request, reply) => {
       try {
-        const { id } = request.params as { id: string };
+        const { uuid } = request.params as { uuid: string };
         const [userRows] = await db.execute<RowDataPacket[]>(
-          `SELECT u.id, u.username, u.full_name, u.email, u.role_id,
+          `SELECT u.id, u.uuid, u.username, u.full_name, u.email, u.role_id,
                 u.employee_number, u.is_active, u.last_login, u.created_at,
                 u.profile_picture_url, u.department_id,
                 r.name AS role_name,
@@ -432,8 +434,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
          FROM users u
          JOIN roles r ON u.role_id = r.id
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
-         WHERE u.id = ?`,
-          [id]
+         WHERE u.uuid = ?`,
+          [uuid]
         );
         if (userRows.length === 0)
           return reply.code(404).send({ success: false, message: 'Usuario no encontrado' });
@@ -455,7 +457,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
            JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
            WHERE fre.driver_id = ? AND fm.movement_type = 'ROUTE'
            ORDER BY fm.created_at DESC LIMIT 5`,
-            [id]
+            [user.id]
           ),
         ]);
 

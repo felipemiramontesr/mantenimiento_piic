@@ -12,6 +12,7 @@ import api from '../api/client';
 
 interface RawUserResponse {
   id: number;
+  uuid?: string;
   username: string;
   full_name?: string;
   fullName?: string;
@@ -56,6 +57,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     () => (data: unknown) =>
       (data as RawUserResponse[]).map((u) => ({
         id: String(u.id),
+        uuid: u.uuid,
         username: u.username,
         fullName: u.full_name || u.fullName || '',
         email: u.email,
@@ -69,11 +71,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
-  const usersOptions = useMemo(() => ({
-    key: 'users_directory',
-    endpoint: '/auth/users',
-    transform: usersTransform,
-  }), [usersTransform]);
+  const usersOptions = useMemo(
+    () => ({
+      key: 'users_directory',
+      endpoint: '/auth/users',
+      transform: usersTransform,
+    }),
+    [usersTransform]
+  );
 
   const {
     data: users,
@@ -81,17 +86,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     refresh: fetchUsers,
   } = useSilkHydration<UserIndustrial>(usersOptions);
 
-  const departmentsOptions = useMemo(() => ({
-    key: 'system_departments',
-    endpoint: '/catalogs/DEPARTMENT',
-  }), []);
+  const departmentsOptions = useMemo(
+    () => ({
+      key: 'system_departments',
+      endpoint: '/catalogs/DEPARTMENT',
+    }),
+    []
+  );
 
   const { data: departmentsData } = useSilkHydration<CatalogOption>(departmentsOptions);
 
-  const rolesOptions = useMemo(() => ({
-    key: 'system_roles',
-    endpoint: '/auth/roles',
-  }), []);
+  const rolesOptions = useMemo(
+    () => ({
+      key: 'system_roles',
+      endpoint: '/auth/roles',
+    }),
+    []
+  );
 
   const { data: rolesData } = useSilkHydration<CatalogOption>(rolesOptions);
 

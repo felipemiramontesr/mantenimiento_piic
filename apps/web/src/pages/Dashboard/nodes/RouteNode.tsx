@@ -54,6 +54,7 @@ interface RouteRecord {
 
 interface IncidentRecord {
   id: number;
+  uuid: string;
   category: string;
   description: string;
   severity: string;
@@ -217,7 +218,7 @@ const RouteNode: React.FC = (): React.JSX.Element => {
                 <div className="shrink-0 text-right">
                   <span className={AT.cellMeta}>{formatDate(inc.reported_at)}</span>
                   <Link
-                    to={`/dashboard/incidents/${inc.id}`}
+                    to={`/dashboard/incidents/${inc.uuid}`}
                     className="block text-archon-xs font-black uppercase tracking-widest text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors mt-1"
                   >
                     Ver nodo <ExternalLink size={10} className="inline" />

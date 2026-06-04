@@ -1,10 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { ArchonDataTable, ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import api from '../../api/client';
 
 interface RouteIncident {
   id: number;
+  uuid: string;
   route_uuid: string;
   unit_id: string;
   driver_name: string;
@@ -88,9 +90,17 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
               emptyMessage="Sin incidencias registradas"
               testId="incidents-table"
               renderRow={(incident): React.ReactNode => (
-                <tr key={incident.id} className="hover:bg-slate-50/50 transition-all duration-300">
+                <tr
+                  key={incident.uuid}
+                  className="hover:bg-slate-50/50 transition-all duration-300"
+                >
                   <td className="text-center py-3 px-4 font-mono font-bold text-archon-lg text-[#0f2a44]">
-                    {incident.unit_id}
+                    <Link
+                      to={`/dashboard/incidents/${incident.uuid}`}
+                      className="hover:text-[#f2b705] transition-colors"
+                    >
+                      {incident.unit_id}
+                    </Link>
                   </td>
                   <td className="text-center py-3 px-4 text-archon-lg text-[#0f2a44]">
                     {incident.driver_name}

@@ -56,7 +56,7 @@ interface NodeData {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const UserNode: React.FC = (): React.JSX.Element => {
-  const { id } = useParams<{ id: string }>();
+  const { uuid } = useParams<{ uuid: string }>();
   const { setSectionData } = useSovereignLayout();
   const [node, setNode] = useState<NodeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,14 +64,17 @@ const UserNode: React.FC = (): React.JSX.Element => {
   const [imgSrc, setImgSrc] = React.useState<string | null>(null);
 
   useEffect(() => {
-    setSectionData(id ?? 'Usuario', 'Perfil · Permisos · Actividad reciente');
-  }, [id, setSectionData]);
+    setSectionData(
+      uuid ? uuid.slice(0, 8).toUpperCase() : 'Usuario',
+      'Perfil · Permisos · Actividad reciente'
+    );
+  }, [uuid, setSectionData]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!uuid) return;
     setLoading(true);
     api
-      .get(`/auth/users/${id}/node`)
+      .get(`/auth/users/${uuid}/node`)
       .then((res) => {
         const data = res.data.data as NodeData;
         setNode(data);
@@ -79,7 +82,7 @@ const UserNode: React.FC = (): React.JSX.Element => {
       })
       .catch(() => setError('No se pudo cargar el perfil'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [uuid]);
 
   if (loading) return <NodeLoadingState />;
   if (!node) return <NodeErrorState error={error} backTo="/dashboard/users" backLabel="Personal" />;
