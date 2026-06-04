@@ -12,6 +12,7 @@ import SettingsModule from './pages/Dashboard/SettingsModule';
 import AdminModule from './pages/Dashboard/AdminModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
+import FleetUnitNode from './pages/Dashboard/FleetUnitNode';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
@@ -55,6 +56,7 @@ const App: React.FC = () => (
               >
                 <Route index element={<ArchonCenter />} />
                 <Route path="fleet" element={<FleetModule />} />
+                <Route path="fleet/:unitId" element={<FleetUnitNode />} />
                 <Route path="maintenance" element={<MaintenanceModule />} />
                 <Route path="routes" element={<RoutesModule />} />
                 <Route path="users" element={<UsersModule />} />

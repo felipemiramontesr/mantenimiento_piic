@@ -1,7 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { RowDataPacket } from 'mysql2';
 import FleetService from '../services/fleetService';
 import requirePermission from '../middleware/requirePermission';
+import db from '../services/db';
 
 /**
  * 🔱 Archon Fleet Routes — Plan Omega
@@ -211,4 +213,82 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       }
     }
   );
+
+  /**
+   * GET /api/v1/fleet/:id/node
+   * Sovereign Node — aggregates full unit profile + maintenance + financial + incidents
+   */
+  fastify.get('/fleet/:id/node', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      const unit = await FleetService.getUnitById(id, fastify.log);
+      if (!unit) return reply.code(404).send({ error: 'Unidad no encontrada' });
+
+      const yearStart = `${new Date().getFullYear()}-01`;
+      const yearEnd = `${new Date().getFullYear()}-12`;
+
+      const [maintenanceRows, financialRows, incidentRows] = await Promise.all([
+        // Last 5 maintenance records
+        db.execute<RowDataPacket[]>(
+          `SELECT fm.uuid, fme.service_date, fme.service_type, fme.service_mode,
+                  fme.cost, fme.technician, fm.start_reading AS odometer,
+                  fm.end_reading, fm.status, fm.start_at, fm.end_at
+           FROM fleet_movements fm
+           JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+           WHERE fm.unit_id = ? AND fm.movement_type = 'MAINTENANCE'
+           ORDER BY fme.service_date DESC, fm.id DESC
+           LIMIT 5`,
+          [id]
+        ),
+        // Financial summary by category for current year
+        db.execute<RowDataPacket[]>(
+          `SELECT category, SUM(amount) AS total
+           FROM financial_transactions
+           WHERE unit_id = ? AND period >= ? AND period <= ?
+           GROUP BY category`,
+          [id, yearStart, yearEnd]
+        ),
+        // Last 3 incidents linked to this unit
+        db.execute<RowDataPacket[]>(
+          `SELECT ri.id, ri.category, ri.description, ri.severity,
+                  ri.status, ri.reported_at
+           FROM route_incidents ri
+           JOIN fleet_movements fm ON ri.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
+           WHERE fm.unit_id = ?
+           ORDER BY ri.reported_at DESC
+           LIMIT 3`,
+          [id]
+        ),
+      ]);
+
+      const byCategory: Record<string, number> = {};
+      (financialRows[0] as RowDataPacket[]).forEach((r) => {
+        byCategory[r.category as string] = Number(r.total);
+      });
+      const totalFinancial = Object.values(byCategory).reduce((s, v) => s + v, 0);
+
+      return reply.send({
+        success: true,
+        data: {
+          unit,
+          maintenance: {
+            recentHistory: maintenanceRows[0] as RowDataPacket[],
+          },
+          financial: {
+            year: new Date().getFullYear(),
+            totalCost: totalFinancial,
+            byCategory,
+          },
+          incidents: {
+            recent: incidentRows[0] as RowDataPacket[],
+            openCount: (incidentRows[0] as RowDataPacket[]).filter((r) => r.status === 'OPEN')
+              .length,
+          },
+        },
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Error al cargar nodo de unidad' });
+    }
+  });
 }

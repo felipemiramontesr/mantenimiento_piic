@@ -15,7 +15,9 @@ import {
   ShieldCheck,
   RefreshCcw,
   Pencil,
+  ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { FleetUnit } from '../../types/fleet';
 import ArchonGalleryOverlay from './ArchonGalleryOverlay';
 import FleetKpiMatrix from './FleetKpiMatrix';
@@ -536,6 +538,16 @@ const FleetUnitRow = React.memo(
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
           <div className="flex gap-2 justify-center">
+            <Link
+              to={`/dashboard/fleet/${unit.id}`}
+              title="Ver nodo completo de la unidad"
+              className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group"
+            >
+              <ExternalLink
+                size={16}
+                className="transition-transform duration-300 group-hover:scale-110"
+              />
+            </Link>
             <button
               onClick={(): void => onEdit(unit)}
               title="Editar Activo (Auditado)"
