@@ -2,6 +2,7 @@
 import { render, RenderOptions, renderHook, RenderHookOptions } from '@testing-library/react';
 import { vi } from 'vitest';
 import { type ReactElement, type ReactNode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 import { FleetContext } from '../context/FleetContext';
 import { AuthProvider } from '../context/AuthContext';
@@ -109,16 +110,18 @@ const LayoutMetadataObserver = (): ReactElement => {
 };
 
 const AllTheProviders = ({ children }: { children: ReactNode }): ReactElement => (
-  <AuthProvider>
-    <SovereignLayoutProvider>
-      <UserContext.Provider value={MockUserContext as any}>
-        <FleetContext.Provider value={MockFleetContext as any}>
-          {children}
-          <LayoutMetadataObserver />
-        </FleetContext.Provider>
-      </UserContext.Provider>
-    </SovereignLayoutProvider>
-  </AuthProvider>
+  <MemoryRouter>
+    <AuthProvider>
+      <SovereignLayoutProvider>
+        <UserContext.Provider value={MockUserContext as any}>
+          <FleetContext.Provider value={MockFleetContext as any}>
+            {children}
+            <LayoutMetadataObserver />
+          </FleetContext.Provider>
+        </UserContext.Provider>
+      </SovereignLayoutProvider>
+    </AuthProvider>
+  </MemoryRouter>
 );
 
 const renderWithProviders = (
