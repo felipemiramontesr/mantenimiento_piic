@@ -130,4 +130,153 @@ describe('RouteNode', () => {
     render(<RouteNode />);
     expect(await screen.findByText(/No se pudo cargar la ruta/i)).toBeInTheDocument();
   });
+
+  it('shows null km when end_reading is null', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: { ...ROUTE_FIXTURE.route, end_reading: null },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText('Km recorridos')).toBeInTheDocument();
+  });
+
+  it('shows null fuel variation when fuel_level_end is null', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: { ...ROUTE_FIXTURE.route, fuel_level_end: null },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText('Variación nivel')).toBeInTheDocument();
+  });
+
+  it('shows open incidents badge when there are OPEN incidents', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          incidents: [
+            { ...ROUTE_FIXTURE.incidents[0], status: 'OPEN' },
+            { ...ROUTE_FIXTURE.incidents[0], id: 4, uuid: 'inc-uuid-qqq-444', status: 'OPEN' },
+          ],
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText(/2 incidentes/)).toBeInTheDocument();
+  });
+
+  it('shows singular incidente badge when exactly one OPEN incident', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          incidents: [{ ...ROUTE_FIXTURE.incidents[0], status: 'OPEN' }],
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText(/1 incidente/)).toBeInTheDocument();
+  });
+
+  it('skips driver name span when driver_name is null', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: { ...ROUTE_FIXTURE.route, driver_name: null },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.queryByText(/Operador:/)).toBeNull();
+  });
+
+  it('skips unit marca in header when unit_marca is null', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: { ...ROUTE_FIXTURE.route, unit_marca: null },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.queryByText(/Nissan/)).toBeNull();
+  });
+
+  it('shows aditivos Sí when additives_check is 1', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: { ...ROUTE_FIXTURE.route, additives_check: 1 },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText('Sí')).toBeInTheDocument();
+  });
+
+  it('renders fuel loaded and amount when set', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: {
+            ...ROUTE_FIXTURE.route,
+            fuel_liters_loaded: 55.5,
+            fuel_amount: 1200,
+          },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText('55.5 L')).toBeInTheDocument();
+    expect(screen.getByText('$1,200')).toBeInTheDocument();
+  });
+
+  it('renders description InfoRow when route.description is set', async () => {
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText('Ruta a Mina Norte')).toBeInTheDocument();
+  });
+
+  it('renders unknown movement status as raw value', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: { ...ROUTE_FIXTURE.route, status: 'UNKNOWN_STATUS' },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('UNKNOWN_STATUS').length).toBeGreaterThan(0);
+  });
 });

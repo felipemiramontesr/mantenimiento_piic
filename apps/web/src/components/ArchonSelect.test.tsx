@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import ArchonSelect from './ArchonSelect';
@@ -82,5 +83,46 @@ describe('ArchonSelect', () => {
     await waitFor(() => {
       expect(screen.getByText(/No se encontraron coincidencias/i)).toBeInTheDocument();
     });
+  });
+
+  it('renders disabled state with opacity class', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} disabled={true} />);
+    const trigger = screen.getByText('Seleccionar...').closest('[class*="opacity-40"]');
+    expect(trigger).toBeTruthy();
+  });
+
+  it('clears search term when clicking the X button', async () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+
+    const searchInput = screen.getByPlaceholderText('Buscar...');
+    fireEvent.change(searchInput, { target: { value: 'NP300' } });
+
+    await waitFor(() => expect(screen.getByText('ASM-02')).toBeInTheDocument());
+
+    const clearBtn = screen.getByRole('button');
+    fireEvent.click(clearBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('ASM-01')).toBeInTheDocument();
+    });
+  });
+
+  it('accepts and displays a pre-selected value', () => {
+    render(<ArchonSelect options={options} value="ASM-02" onChange={mockOnChange} />);
+    expect(screen.getByText('ASM-02')).toBeInTheDocument();
+  });
+
+  it('normalizes string options to object format', () => {
+    render(<ArchonSelect options={['OPT-A', 'OPT-B']} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    expect(screen.getByText('OPT-A')).toBeInTheDocument();
+    expect(screen.getByText('OPT-B')).toBeInTheDocument();
+  });
+
+  it('renders with icon prop', () => {
+    const FakeIcon = (): React.JSX.Element => <svg data-testid="fake-icon" />;
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} icon={FakeIcon} />);
+    expect(screen.getByTestId('fake-icon')).toBeInTheDocument();
   });
 });

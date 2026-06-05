@@ -135,4 +135,101 @@ describe('MaintenanceNode', () => {
       await screen.findByText(/No se pudo cargar la orden de mantenimiento/i)
     ).toBeInTheDocument();
   });
+
+  it('renders plural "tareas fallidas" when failCount > 1', async () => {
+    const TWO_FAIL = [
+      TASK_FAIL,
+      { ...TASK_FAIL, taskCode: 'TIRE_CHECK', label: 'Revisión llantas' },
+    ];
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { order: { ...ORDER_FIXTURE, details: TWO_FAIL }, unit: UNIT_FIXTURE },
+      },
+    });
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getByText(/2 tareas fallidas/)).toBeInTheDocument());
+  });
+
+  it('renders fuel_liters_loaded and fuel_amount when set', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          order: { ...ORDER_FIXTURE, fuel_liters_loaded: 40, fuel_amount: 900 },
+          unit: UNIT_FIXTURE,
+        },
+      },
+    });
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getAllByText('Carlos López').length).toBeGreaterThan(0));
+    expect(screen.getByText('40 L')).toBeInTheDocument();
+    expect(screen.getByText('$900')).toBeInTheDocument();
+  });
+
+  it('renders unknown service_type as raw value', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          order: { ...ORDER_FIXTURE, service_type: 'SPECIAL_MINING' },
+          unit: UNIT_FIXTURE,
+        },
+      },
+    });
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getAllByText('SPECIAL_MINING').length).toBeGreaterThan(0));
+  });
+
+  it('renders unknown service_mode as raw value', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          order: { ...ORDER_FIXTURE, service_mode: 'REMOTE' },
+          unit: UNIT_FIXTURE,
+        },
+      },
+    });
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getAllByText('Carlos López').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('REMOTE').length).toBeGreaterThan(0);
+  });
+
+  it('renders unknown movement_status badge as raw value', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          order: { ...ORDER_FIXTURE, movement_status: 'UNKNOWN_STATUS' },
+          unit: UNIT_FIXTURE,
+        },
+      },
+    });
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getAllByText('UNKNOWN_STATUS').length).toBeGreaterThan(0));
+  });
+
+  it('renders task with unknown status using fallback color', async () => {
+    const TASK_UNKNOWN = {
+      taskCode: 'UNKNOWN_TASK',
+      status: 'CUSTOM_STATUS',
+      notes: 'Some note',
+      label: 'Custom Task',
+      isCritical: false,
+      statusLabel: 'Custom',
+    };
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          order: { ...ORDER_FIXTURE, details: [TASK_UNKNOWN] },
+          unit: UNIT_FIXTURE,
+        },
+      },
+    });
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getByText('Custom Task')).toBeInTheDocument());
+    expect(screen.getByText('Custom')).toBeInTheDocument();
+  });
 });

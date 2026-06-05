@@ -172,4 +172,33 @@ describe('useSilkHydration', () => {
       expect(result.current.data).toEqual(mockData);
     });
   });
+
+  it('falls back to response.data when response.data.data is absent', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockResolvedValue({ data: mockData });
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    await waitFor(() => expect(result.current.data).toEqual(mockData));
+  });
+
+  it('falls back to empty array when response.data is also falsy', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockResolvedValue({ data: null });
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    await waitFor(() => expect(result.current.isSyncing).toBe(false));
+    expect(result.current.data).toEqual([]);
+  });
+
+  it('sets RATE_LIMIT_EXCEEDED error for 429 responses', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockRejectedValue({ response: { status: 429 } });
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    await waitFor(() => expect(result.current.isSyncing).toBe(false));
+    expect(result.current.error?.message).toBe('RATE_LIMIT_EXCEEDED');
+  });
 });

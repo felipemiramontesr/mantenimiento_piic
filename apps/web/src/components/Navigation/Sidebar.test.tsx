@@ -4,6 +4,10 @@ import { BrowserRouter, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
 const logoutMock = vi.hoisted(() => vi.fn());
+const useAuthMock = vi.hoisted(() => vi.fn());
+const usePermissionsMock = vi.hoisted(() => vi.fn());
+const setIsMobileMenuOpenMock = vi.hoisted(() => vi.fn());
+const useSovereignLayoutMock = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
@@ -15,33 +19,32 @@ vi.mock('react-router-dom', async () => {
 });
 
 vi.mock('../../hooks/usePermissions', () => ({
-  default: (): {
-    hasPermission: (permission: string) => boolean;
-    hasAnyPermission: (permissions: string[]) => boolean;
-    isOmnipotent: () => boolean;
-  } => ({
-    hasPermission: (): boolean => true,
-    hasAnyPermission: (): boolean => true,
-    isOmnipotent: (): boolean => true,
-  }),
+  default: usePermissionsMock,
 }));
 
 vi.mock('../../context/AuthContext', () => ({
-  useAuth: (): {
-    currentUser: { username: string; imageUrl: string | null };
-    logout: () => void;
-  } => ({
-    currentUser: { username: 'Soberano', imageUrl: null },
-    logout: logoutMock,
-  }),
+  useAuth: useAuthMock,
 }));
 
 vi.mock('../../context/SovereignLayoutContext', () => ({
-  useSovereignLayout: (): Record<string, unknown> => ({
-    isMobileMenuOpen: false,
-    setIsMobileMenuOpen: vi.fn(),
-  }),
+  useSovereignLayout: useSovereignLayoutMock,
 }));
+
+const defaultPermissions = {
+  hasPermission: (): boolean => true,
+  hasAnyPermission: (): boolean => true,
+  isOmnipotent: (): boolean => true,
+};
+
+const defaultAuth = {
+  currentUser: { username: 'Soberano', imageUrl: null },
+  logout: logoutMock,
+};
+
+const defaultLayout = {
+  isMobileMenuOpen: false,
+  setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+};
 
 describe('Sidebar Component (Archon Core)', () => {
   const navigateMock = vi.fn();
@@ -49,6 +52,9 @@ describe('Sidebar Component (Archon Core)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (useNavigate as unknown as ReturnType<typeof vi.fn>).mockReturnValue(navigateMock);
+    usePermissionsMock.mockReturnValue(defaultPermissions);
+    useAuthMock.mockReturnValue(defaultAuth);
+    useSovereignLayoutMock.mockReturnValue(defaultLayout);
   });
 
   it('renders all navigation items properly and avoids redundancy', () => {
@@ -59,7 +65,6 @@ describe('Sidebar Component (Archon Core)', () => {
     );
 
     expect(screen.getByText(/Soberano/i)).toBeDefined();
-
     expect(screen.getByText('Comando')).toBeDefined();
     expect(screen.getByText('Unidades')).toBeDefined();
     expect(screen.getByText('Rutas')).toBeDefined();
@@ -131,5 +136,157 @@ describe('Sidebar Component (Archon Core)', () => {
 
     fireEvent.click(screen.getByTestId('nav-item-logout'));
     expect(logoutMock).toHaveBeenCalledOnce();
+  });
+
+  it('renders collapsed state — nav labels hidden, icons still present', () => {
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    expect(screen.queryByText('Comando')).toBeNull();
+    expect(screen.queryByText('Incidencias')).toBeNull();
+    expect(screen.queryByText('Personal')).toBeNull();
+  });
+
+  it('toggle button calls onToggle when collapsed', () => {
+    const onToggle = vi.fn();
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={true} onToggle={onToggle} />
+      </BrowserRouter>
+    );
+    const buttons = screen.getAllByRole('button');
+    fireEvent.click(buttons[0]);
+    expect(onToggle).toHaveBeenCalledOnce();
+  });
+
+  it('renders user profile image when imageUrl is a full URL', () => {
+    useAuthMock.mockReturnValue({
+      currentUser: { username: 'GrayMan', imageUrl: 'https://cdn.example.com/avatar.jpg' },
+      logout: logoutMock,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    const img = screen.getByAltText('Profile');
+    expect(img.getAttribute('src')).toBe('https://cdn.example.com/avatar.jpg');
+  });
+
+  it('renders user profile image when imageUrl is a relative path', () => {
+    useAuthMock.mockReturnValue({
+      currentUser: { username: 'GrayMan', imageUrl: '/uploads/avatar.jpg' },
+      logout: logoutMock,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    const img = screen.getByAltText('Profile');
+    expect(img.getAttribute('src')).toContain('/uploads/avatar.jpg');
+  });
+
+  it('img onError replaces src with empty string', () => {
+    useAuthMock.mockReturnValue({
+      currentUser: { username: 'GrayMan', imageUrl: 'https://cdn.example.com/avatar.jpg' },
+      logout: logoutMock,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    const img = screen.getByAltText('Profile') as HTMLImageElement;
+    fireEvent.error(img);
+    expect(img.src).toBe('http://localhost:3000/');
+  });
+
+  it('does not render admin/logout buttons when user is not omnipotent', () => {
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (): boolean => true,
+      hasAnyPermission: (): boolean => true,
+      isOmnipotent: (): boolean => false,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    expect(screen.queryByTestId('nav-item-admin')).toBeNull();
+    expect(screen.queryByTestId('nav-item-logout')).toBeNull();
+  });
+
+  it('hides permission-gated nav items when all permissions are denied', () => {
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (): boolean => false,
+      hasAnyPermission: (): boolean => false,
+      isOmnipotent: (): boolean => false,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    expect(screen.queryByText('Finanzas')).toBeNull();
+    expect(screen.queryByText('Unidades')).toBeNull();
+    expect(screen.queryByText('Mantenimiento')).toBeNull();
+    expect(screen.queryByText('Personal')).toBeNull();
+  });
+
+  it('renders mobile overlay when isMobileMenuOpen is true', () => {
+    useSovereignLayoutMock.mockReturnValue({
+      isMobileMenuOpen: true,
+      setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+    });
+
+    const { container } = render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    const overlay = container.querySelector('.bg-black\\/60');
+    expect(overlay).toBeTruthy();
+  });
+
+  it('clicking mobile overlay calls setIsMobileMenuOpen(false)', () => {
+    useSovereignLayoutMock.mockReturnValue({
+      isMobileMenuOpen: true,
+      setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+    });
+
+    const { container } = render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    const overlay = container.querySelector('.bg-black\\/60') as HTMLElement;
+    fireEvent.click(overlay);
+    expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
+  });
+
+  it('NavItem calls setIsMobileMenuOpen(false) on navigation', () => {
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(screen.getByText('Comando'));
+    expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
   });
 });

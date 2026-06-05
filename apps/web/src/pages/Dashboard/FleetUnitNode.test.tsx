@@ -212,4 +212,61 @@ describe('FleetUnitNode', () => {
     render(<FleetUnitNode />);
     expect(await screen.findByText(/No se pudo cargar el nodo de la unidad/i)).toBeInTheDocument();
   });
+
+  it('shows Abierto label for OPEN incident status', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          incidents: {
+            openCount: 1,
+            recent: [{ ...NODE_FIXTURE.incidents.recent[0], status: 'OPEN' }],
+          },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Incidentes Recientes')).toBeInTheDocument());
+    expect(screen.getByText('Abierto')).toBeInTheDocument();
+  });
+
+  it('shows Resuelto label for non-OPEN incident status', async () => {
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Incidentes Recientes')).toBeInTheDocument());
+    expect(screen.getByText('Resuelto')).toBeInTheDocument();
+  });
+
+  it('renders unknown severity as fallback badge in incident list', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          incidents: {
+            openCount: 0,
+            recent: [{ ...NODE_FIXTURE.incidents.recent[0], severity: 'EXTREME' }],
+          },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Incidentes Recientes')).toBeInTheDocument());
+    expect(screen.getAllByText('EXTREME').length).toBeGreaterThan(0);
+  });
+
+  it('renders null for insuranceCost when value is 0', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          unit: { ...NODE_FIXTURE.unit, insuranceCost: 0 },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Cumplimiento & Legal')).toBeInTheDocument());
+    expect(screen.getByText('Costo del seguro')).toBeInTheDocument();
+  });
 });

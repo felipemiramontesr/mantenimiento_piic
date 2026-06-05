@@ -155,4 +155,32 @@ describe('ArchonImageUploader Component', () => {
     expect(dropzone).toHaveClass('p-6');
     expect(dropzone).toHaveClass('gap-2');
   });
+
+  it('calls onFileChange when it returns a Promise and catches errors silently', async () => {
+    const onFileChange = vi.fn().mockReturnValue(Promise.reject(new Error('upload failed')));
+    const file = new File(['x'], 'fail.png', { type: 'image/png' });
+
+    render(<ArchonImageUploader images={[]} onChange={mockOnChange} onFileChange={onFileChange} />);
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(onFileChange).toHaveBeenCalledWith([file]);
+    // No unhandled rejection — promise is caught internally
+    await waitFor(() => expect(mockOnChange).toHaveBeenCalled());
+  });
+
+  it('renders circle variant remove button when variant is circle', () => {
+    render(
+      <ArchonImageUploader
+        images={['data:image/png;base64,abc']}
+        onChange={mockOnChange}
+        variant="circle"
+      />
+    );
+    const removeButtons = document.querySelectorAll('button');
+    expect(removeButtons.length).toBeGreaterThan(0);
+    fireEvent.click(removeButtons[0]);
+    expect(mockOnChange).toHaveBeenCalledWith([]);
+  });
 });

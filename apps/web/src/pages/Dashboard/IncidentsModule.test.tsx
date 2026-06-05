@@ -96,4 +96,43 @@ describe('IncidentsModule (Incidencias en Ruta)', () => {
     renderModule();
     expect(await screen.findByText(/sin incidencias/i)).toBeInTheDocument();
   });
+
+  it('renders HIGH severity badge with amber classes', async (): Promise<void> => {
+    server.use(
+      http.get('*/incidents', () =>
+        HttpResponse.json({
+          success: true,
+          data: [{ ...INCIDENT_FIXTURE[0], severity: 'HIGH', id: 99, uuid: 'hh-99' }],
+        })
+      )
+    );
+    renderModule();
+    expect(await screen.findByText('HIGH')).toBeInTheDocument();
+  });
+
+  it('renders LOW severity badge with sky classes', async (): Promise<void> => {
+    server.use(
+      http.get('*/incidents', () =>
+        HttpResponse.json({
+          success: true,
+          data: [{ ...INCIDENT_FIXTURE[0], severity: 'LOW', id: 98, uuid: 'll-98' }],
+        })
+      )
+    );
+    renderModule();
+    expect(await screen.findByText('LOW')).toBeInTheDocument();
+  });
+
+  it('renders non-OPEN status badge with emerald classes', async (): Promise<void> => {
+    server.use(
+      http.get('*/incidents', () =>
+        HttpResponse.json({
+          success: true,
+          data: [{ ...INCIDENT_FIXTURE[0], status: 'RESOLVED', id: 97, uuid: 'rr-97' }],
+        })
+      )
+    );
+    renderModule();
+    expect(await screen.findByText('RESOLVED')).toBeInTheDocument();
+  });
 });

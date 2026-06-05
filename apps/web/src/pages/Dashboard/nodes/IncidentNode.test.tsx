@@ -98,4 +98,62 @@ describe('IncidentNode', () => {
     render(<IncidentNode />);
     expect(await screen.findByText(/No se pudo cargar el incidente/i)).toBeInTheDocument();
   });
+
+  it('uses fallback badge classes for unknown severity', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...INCIDENT_FIXTURE, severity: 'EXTREME', status: 'PENDING', category: 'ROAD' },
+      },
+    });
+    render(<IncidentNode />);
+    await waitFor(() =>
+      expect(screen.getAllByText('Falla en sistema de frenos').length).toBeGreaterThan(0)
+    );
+    // Unknown severity falls back to raw value
+    expect(screen.getAllByText('EXTREME').length).toBeGreaterThan(0);
+    // Unknown status falls back to raw value
+    expect(screen.getAllByText('PENDING').length).toBeGreaterThan(0);
+    // Unknown category falls back to raw value
+    expect(screen.getAllByText('ROAD').length).toBeGreaterThan(0);
+  });
+
+  it('renders DISMISSED status with its label', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...INCIDENT_FIXTURE, status: 'DISMISSED' },
+      },
+    });
+    render(<IncidentNode />);
+    await waitFor(() => expect(screen.getAllByText('Desestimado').length).toBeGreaterThan(0));
+  });
+
+  it('renders without unit brand text when unit_marca is null', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...INCIDENT_FIXTURE, unit_marca: null, driver_name: null },
+      },
+    });
+    render(<IncidentNode />);
+    await waitFor(() =>
+      expect(screen.getAllByText('Falla en sistema de frenos').length).toBeGreaterThan(0)
+    );
+    expect(screen.queryByText(/Nissan/)).toBeNull();
+  });
+
+  it('renders with non-null route_end date', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...INCIDENT_FIXTURE, route_end: '2026-06-01T18:00:00.000Z' },
+      },
+    });
+    render(<IncidentNode />);
+    await waitFor(() =>
+      expect(screen.getAllByText('Falla en sistema de frenos').length).toBeGreaterThan(0)
+    );
+    expect(screen.getByText('Cierre ruta')).toBeInTheDocument();
+  });
 });

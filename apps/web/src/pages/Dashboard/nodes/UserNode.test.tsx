@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '../../../test/testUtils';
+import { render, screen, waitFor, fireEvent } from '../../../test/testUtils';
 import api from '../../../api/client';
 import UserNode from './UserNode';
 
@@ -123,5 +123,51 @@ describe('UserNode', () => {
     render(<UserNode />);
     const img = await screen.findByRole('img');
     expect(img.getAttribute('src')).toBe('https://cdn.example.com/avatar.jpg');
+  });
+
+  it('img onError hides the image (setImgSrc null)', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...USER_FIXTURE,
+          user: { ...USER_FIXTURE.user, profile_picture_url: 'https://cdn.example.com/avatar.jpg' },
+        },
+      },
+    });
+    render(<UserNode />);
+    const img = await screen.findByRole('img');
+    fireEvent.error(img);
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('renders unknown route status as raw value in recent routes', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...USER_FIXTURE,
+          recentRoutes: [{ ...USER_FIXTURE.recentRoutes[0], status: 'PENDING_REVIEW' }],
+        },
+      },
+    });
+    render(<UserNode />);
+    await waitFor(() => expect(screen.getAllByText('Felipe Miramontes').length).toBeGreaterThan(0));
+    expect(screen.getByText('PENDING_REVIEW')).toBeInTheDocument();
+  });
+
+  it('skips department span when department_name is null', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...USER_FIXTURE,
+          user: { ...USER_FIXTURE.user, department_name: null },
+        },
+      },
+    });
+    render(<UserNode />);
+    await waitFor(() => expect(screen.getAllByText('Felipe Miramontes').length).toBeGreaterThan(0));
+    expect(screen.queryByText('IT')).toBeNull();
   });
 });

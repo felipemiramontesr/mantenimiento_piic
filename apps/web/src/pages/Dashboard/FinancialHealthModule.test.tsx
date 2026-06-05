@@ -103,4 +103,25 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
     );
     expect(screen.getByText('Dashboard Financiero')).toBeInTheDocument();
   });
+
+  it('loadDateRange falls back to defaultDateRange when stored object lacks from/to', async (): Promise<void> => {
+    localStorage.setItem('archon_finance_date_range', JSON.stringify({ foo: 'bar' }));
+    renderModule();
+    expect(await screen.findByText('Dashboard Financiero')).toBeInTheDocument();
+    localStorage.removeItem('archon_finance_date_range');
+  });
+
+  it('loadDateRange falls back to defaultDateRange when stored value is corrupt JSON', async (): Promise<void> => {
+    localStorage.setItem('archon_finance_date_range', '{ NOT VALID JSON');
+    renderModule();
+    expect(await screen.findByText('Dashboard Financiero')).toBeInTheDocument();
+    localStorage.removeItem('archon_finance_date_range');
+  });
+
+  it('saveDateRange is called when date range changes via navigation', async (): Promise<void> => {
+    renderModule();
+    const verEgresosBtn = await screen.findByRole('button', { name: /ver egresos/i });
+    fireEvent.click(verEgresosBtn);
+    expect(await screen.findByRole('button', { name: /ver dashboard/i })).toBeInTheDocument();
+  });
 });

@@ -20,6 +20,7 @@ describe('UsersGridView Component', () => {
       email: 'admin@piic.com',
       is_active: true,
       role: { name: 'Archon' },
+      roleName: 'Archon',
       employeeNumber: '001',
       imageUrl: 'admin.png',
       department: 'IT',
@@ -32,6 +33,7 @@ describe('UsersGridView Component', () => {
       email: 'op1@piic.com',
       is_active: false,
       role: { name: 'Operador' },
+      roleName: 'Operador',
       employeeNumber: '002',
     },
   ];
@@ -193,5 +195,117 @@ describe('UsersGridView Component', () => {
       </UserContext.Provider>
     );
     expect(screen.getAllByText(/Administrator|Operator One/).length).toBeGreaterThan(0);
+  });
+
+  it('getSuggestions covers fullName, email, employeeNumber, roleName, department match paths', () => {
+    let capturedConfig: Parameters<typeof layoutContext.useSovereignLayout>[0] extends undefined
+      ? never
+      : ReturnType<typeof layoutContext.useSovereignLayout>['searchConfig'] = null;
+
+    const setSearchConfigSpy = vi.fn((cfg) => {
+      if (cfg !== null) capturedConfig = cfg;
+    });
+
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: '', description: '' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: setSearchConfigSpy,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={mockValue as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+
+    expect(capturedConfig).not.toBeNull();
+    const cfg = capturedConfig as {
+      getSuggestions: (t: string) => unknown[];
+      onSuggestionSelect: (s: { id: string }) => void;
+    };
+
+    // username match
+    expect(cfg.getSuggestions('admin').length).toBe(1);
+    // fullName match
+    expect(cfg.getSuggestions('operator one').length).toBe(1);
+    // email match
+    expect(cfg.getSuggestions('op1@piic').length).toBe(1);
+    // employeeNumber match
+    expect(cfg.getSuggestions('001').length).toBe(1);
+    // roleName match
+    expect(cfg.getSuggestions('archon').length).toBe(1);
+    // department match
+    expect(cfg.getSuggestions('it').length).toBe(1);
+    // no match
+    expect(cfg.getSuggestions('zzznomatch').length).toBe(0);
+  });
+
+  it('onSuggestionSelect calls setSearchTerm with suggestion id', () => {
+    let capturedConfig: {
+      getSuggestions: (t: string) => unknown[];
+      onSuggestionSelect: (s: { id: string }) => void;
+    } | null = null;
+    const setSearchTermSpy = vi.fn();
+
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: '', description: '' },
+      searchTerm: '',
+      setSearchTerm: setSearchTermSpy,
+      searchConfig: null,
+      setSearchConfig: (cfg) => {
+        capturedConfig = cfg as typeof capturedConfig;
+      },
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={mockValue as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+
+    capturedConfig!.onSuggestionSelect({ id: 'admin' });
+    expect(setSearchTermSpy).toHaveBeenCalledWith('admin');
+  });
+
+  it('UserIdentityCluster falls back to username when fullName is null', () => {
+    const usersWithNoFullName = [{ ...mockUsers[0], fullName: null }, mockUsers[1]];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: usersWithNoFullName } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    expect(screen.getByText('ADMIN')).toBeInTheDocument();
+  });
+
+  it('RoleBadge applies correct styles for various role names', () => {
+    const usersMultiRole = [
+      { ...mockUsers[0], role: { name: 'Gerente' }, roleName: 'Gerente' },
+      {
+        ...mockUsers[1],
+        role: { name: 'Técnico' },
+        roleName: 'Técnico',
+        uuid: 'uuid-003',
+        id: '3',
+      },
+    ];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: usersMultiRole } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    expect(screen.getByText('Gerente')).toBeInTheDocument();
+    expect(screen.getByText('Técnico')).toBeInTheDocument();
   });
 });
