@@ -17,11 +17,12 @@ permissions:
 
 jobs:
   backend-validation:
-    name: 🛡️ Backend (API) Verification
+    name: 🛡️ Backend (API) Verification (Shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    outputs:
-      tests: ${{ steps.results.outputs.tests }}
-      passed: ${{ steps.results.outputs.passed }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
       - name: Setup Node.js
@@ -31,20 +32,14 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Lint and Test
-        run: |
-          npm run lint --workspace=@mantenimiento/api
-          npm run test --workspace=@mantenimiento/api
-      - name: Extract Results
-        id: results
-        if: always()
-        run: |
-          # Simple extraction from JUnit XML
-          TESTS=$(grep -oP 'tests="\K[^"]+' apps/api/test-results.xml | head -1 || echo "0")
-          FAILURES=$(grep -oP 'failures="\K[^"]+' apps/api/test-results.xml | head -1 || echo "0")
-          PASSED=$((TESTS - FAILURES))
-          echo "tests=$TESTS" >> $GITHUB_OUTPUT
-          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+      - name: Lint
+        if: matrix.shard == 1
+        run: npm run lint --workspace=@mantenimiento/api
+      - name: Test Shard
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        working-directory: apps/api
+        run: npx vitest run --shard=${{ matrix.shard }}/4
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v6
         if: always()
@@ -52,14 +47,20 @@ jobs:
           report_paths: 'apps/api/test-results.xml'
           detailed_summary: true
           include_passed: true
+      - name: Upload Shard Artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-results-shard-${{ matrix.shard }}
+          path: apps/api/test-results.xml
 
   frontend-validation:
-    name: 🎨 Frontend (Web) Verification (Shard ${{ matrix.shard }}/8)
+    name: 🎨 Frontend (Web) Verification (Shard ${{ matrix.shard }}/12)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     steps:
       - uses: actions/checkout@v5
       - name: Setup Node.js
@@ -76,7 +77,7 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
-          npm run test --workspace=@mantenimiento/web -- --shard=${{ matrix.shard }}/8 --reporter=default --reporter=junit
+          npm run test --workspace=@mantenimiento/web -- --shard=${{ matrix.shard }}/12 --reporter=default --reporter=junit
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v6
         if: always()
@@ -117,13 +118,24 @@ jobs:
           path: all-results
       - name: Generate Certification Dashboard
         run: |
-          B_TESTS=${{ needs.backend-validation.outputs.tests }}
-          B_PASSED=${{ needs.backend-validation.outputs.passed }}
-          
+          # Sum up backend shards
+          B_TESTS=0
+          B_PASSED=0
+
+          for file in all-results/backend-results-shard-*/test-results.xml; do
+            if [ -f "$file" ]; then
+              TESTS=$(grep -oP 'tests="\K[^"]+' "$file" | head -1 || echo "0")
+              FAILURES=$(grep -oP 'failures="\K[^"]+' "$file" | head -1 || echo "0")
+              PASSED=$((TESTS - FAILURES))
+              B_TESTS=$((B_TESTS + TESTS))
+              B_PASSED=$((B_PASSED + PASSED))
+            fi
+          done
+
           # Sum up frontend shards
           F_TESTS=0
           F_PASSED=0
-          
+
           for file in all-results/frontend-results-shard-*/test-results.xml; do
             if [ -f "$file" ]; then
               TESTS=$(grep -oP 'tests="\K[^"]+' "$file" | head -1 || echo "0")
@@ -133,10 +145,10 @@ jobs:
               F_PASSED=$((F_PASSED + PASSED))
             fi
           done
-          
+
           TOTAL_TESTS=$((B_TESTS + F_TESTS))
           TOTAL_PASSED=$((B_PASSED + F_PASSED))
-          
+
           echo "### 🔱 ARCHON CERTIFICATION DASHBOARD" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Módulo | Estado | Tests Pasados | Integridad |" >> $GITHUB_STEP_SUMMARY
@@ -196,7 +208,7 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          lftp -c "set ftp:ssl-allow no; 
-          open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER; 
+          lftp -c "set ftp:ssl-allow no;
+          open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER;
           mirror -R ./apps/web/dist/ .;
           quit"

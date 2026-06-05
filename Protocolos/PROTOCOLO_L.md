@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.38_Coverage_98pct_All_Thresholds_Green
+VERSIÓN ACTUAL: V.78.101.39_Sidebar_Incidencias_Admin_Sharding_CI
 ```
 
 ---

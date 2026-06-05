@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
+const logoutMock = vi.hoisted(() => vi.fn());
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
   return {
@@ -30,7 +32,7 @@ vi.mock('../../context/AuthContext', () => ({
     logout: () => void;
   } => ({
     currentUser: { username: 'Soberano', imageUrl: null },
-    logout: vi.fn(),
+    logout: logoutMock,
   }),
 }));
 
@@ -61,11 +63,10 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Comando')).toBeDefined();
     expect(screen.getByText('Unidades')).toBeDefined();
     expect(screen.getByText('Rutas')).toBeDefined();
+    expect(screen.getByText('Incidencias')).toBeDefined();
     expect(screen.getByText('Seguridad')).toBeDefined();
     expect(screen.getByText('Personal')).toBeDefined();
-
-    // Configuración should now be found as the bottom action button
-    expect(screen.getByText('Configuración')).toBeDefined();
+    expect(screen.getByText('Administración')).toBeDefined();
   });
 
   it('navigates to dashboard items when clicking main nav items', () => {
@@ -88,15 +89,47 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/users');
   });
 
-  it('navigates to settings when clicking the bottom action button', () => {
+  it('navigates to incidents module when clicking Incidencias nav item', () => {
     render(
       <BrowserRouter>
         <Sidebar isCollapsed={false} onToggle={vi.fn()} />
       </BrowserRouter>
     );
 
-    const settingsBtn = screen.getByTitle('Administración del Sistema');
-    fireEvent.click(settingsBtn);
+    fireEvent.click(screen.getByText('Incidencias'));
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/incidents');
+  });
+
+  it('navigates to settings when clicking the profile button', () => {
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(screen.getByTestId('nav-item-settings'));
+    expect(navigateMock).toHaveBeenCalledWith('/dashboard/settings');
+  });
+
+  it('navigates to admin panel when clicking the admin footer button', () => {
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(screen.getByTestId('nav-item-admin'));
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/admin');
+  });
+
+  it('calls logout when clicking Cerrar Sesión', () => {
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(screen.getByTestId('nav-item-logout'));
+    expect(logoutMock).toHaveBeenCalledOnce();
   });
 });

@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Truck,
   ShieldAlert,
-  Settings,
   Users,
   Wrench,
   Navigation,
@@ -12,6 +11,7 @@ import {
   ChevronRight,
   LogOut,
   User as UserIcon,
+  AlertTriangle,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -153,6 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           <button
             onClick={goToProfile}
             title="Mi perfil"
+            data-testid="nav-item-settings"
             className="w-10 h-10 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10 hover:brightness-125 transition-all duration-200 cursor-pointer outline-none border-none"
           >
             {fullImageUrl ? (
@@ -218,6 +219,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 isCollapsed={isCollapsed}
               />
             )}
+            {hasPermission('route:view') && (
+              <NavItem
+                icon={<AlertTriangle size={20} />}
+                label="Incidencias"
+                path="/dashboard/incidents"
+                active={location.pathname.startsWith('/dashboard/incidents')}
+                isCollapsed={isCollapsed}
+              />
+            )}
             {hasPermission('maint:view') && (
               <NavItem
                 icon={<Wrench size={20} />}
@@ -264,16 +274,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
               `}
                 title="Administración del Sistema"
-                data-testid="nav-item-settings"
+                data-testid="nav-item-admin"
               >
-                <Settings size={14} className="shrink-0" />
+                <Users size={14} className="shrink-0" />
                 <div
                   className={`
                 transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
                 ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
               `}
                 >
-                  <span>Configuración</span>
+                  <span>Administración</span>
                 </div>
               </button>
 
