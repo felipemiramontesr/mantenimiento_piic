@@ -15,7 +15,6 @@ vi.mock('../../hooks/usePermissions', () => ({
   default: vi.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
