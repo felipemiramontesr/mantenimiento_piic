@@ -90,4 +90,10 @@ describe('IncidentsModule (Incidencias en Ruta)', () => {
     const link = screen.getByRole('link', { name: 'ASM-005' });
     expect(link.getAttribute('href')).toBe('/dashboard/incidents/cccc-3333-dddd-4444');
   });
+
+  it('shows empty state when API fetch fails', async (): Promise<void> => {
+    server.use(http.get('*/incidents', () => HttpResponse.error()));
+    renderModule();
+    expect(await screen.findByText(/sin incidencias/i)).toBeInTheDocument();
+  });
 });

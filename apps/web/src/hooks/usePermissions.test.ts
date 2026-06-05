@@ -124,4 +124,88 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     const { result } = renderHook(() => usePermissions());
     expect(result.current.hasPermission('fleet:read')).toBe(false);
   });
+
+  it('isOmnipotent returns false when no currentUser', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      updateCurrentUser: vi.fn(),
+      isAuthenticated: false,
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isOmnipotent()).toBe(false);
+  });
+
+  it('isOmnipotent returns true for roleId 0', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: {
+        id: '1',
+        username: 'admin',
+        roleId: 0,
+        roleName: 'Admin',
+        permissions: [],
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      login: vi.fn(),
+      logout: vi.fn(),
+      updateCurrentUser: vi.fn(),
+      isAuthenticated: true,
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isOmnipotent()).toBe(true);
+  });
+
+  it('isOmnipotent returns true for Master (Archon) roleName', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: {
+        id: '2',
+        username: 'user',
+        roleId: 5,
+        roleName: 'Master (Archon)',
+        permissions: [],
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      login: vi.fn(),
+      logout: vi.fn(),
+      updateCurrentUser: vi.fn(),
+      isAuthenticated: true,
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isOmnipotent()).toBe(true);
+  });
+
+  it('isOmnipotent returns true for grayman username', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: {
+        id: '3',
+        username: 'grayman',
+        roleId: 5,
+        roleName: 'Operador',
+        permissions: [],
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      login: vi.fn(),
+      logout: vi.fn(),
+      updateCurrentUser: vi.fn(),
+      isAuthenticated: true,
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isOmnipotent()).toBe(true);
+  });
+
+  it('isOmnipotent returns false for regular user', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      currentUser: {
+        id: '4',
+        username: 'operator',
+        roleId: 3,
+        roleName: 'Operador',
+        permissions: ['fleet:read'],
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      login: vi.fn(),
+      logout: vi.fn(),
+      updateCurrentUser: vi.fn(),
+      isAuthenticated: true,
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isOmnipotent()).toBe(false);
+  });
 });

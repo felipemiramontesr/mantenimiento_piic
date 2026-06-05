@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkHoyNoCircula } from './fleetCompliance';
+import { checkHoyNoCircula, predecirHologramaYEngomado } from './fleetCompliance';
 
 /**
  * 🔱 Archon Compliance Engine: Hoy No Circula Logic Tests
@@ -121,5 +121,67 @@ describe('Fleet Compliance Engine (Hoy No Circula)', () => {
     vi.setSystemTime(sunday);
 
     expect(checkHoyNoCircula('2', 'ABC-1').isRestricted).toBe(false);
+  });
+});
+
+// ─── predecirHologramaYEngomado ───────────────────────────────────────────────
+
+describe('predecirHologramaYEngomado', () => {
+  it('returns placeholder when placas is null', () => {
+    const result = predecirHologramaYEngomado(null, 2022, null);
+    expect(result.hologramaSugerido).toBe('0');
+    expect(result.mesesVerificacion).toContain('Captura');
+  });
+
+  it('detects electric/hybrid plates (prefix E)', () => {
+    const result = predecirHologramaYEngomado('E-ABC-001', 2023, null);
+    expect(result.hologramaSugerido).toBe('Exento');
+    expect(result.engomadoColor).toBe('Exento');
+    expect(result.mesesVerificacion).toBe('No aplica (Exento)');
+  });
+
+  it('detects electric by assetTypeCode AT_ELEC', () => {
+    const result = predecirHologramaYEngomado('ABC-123', 2023, 'AT_ELEC');
+    expect(result.hologramaSugerido).toBe('Exento');
+  });
+
+  it('detects foráneo plates', () => {
+    const result = predecirHologramaYEngomado('FOR-123', 2020, null);
+    expect(result.hologramaSugerido).toBe('Foráneo');
+    expect(result.mesesVerificacion).toBe('No aplica (Foráneo)');
+  });
+
+  it('suggests hologram 00 for year >= 2023', () => {
+    const result = predecirHologramaYEngomado('ABC-123', 2024, null);
+    expect(result.hologramaSugerido).toBe('00');
+  });
+
+  it('suggests hologram 0 for year 2018-2022', () => {
+    expect(predecirHologramaYEngomado('ABC-123', 2020, null).hologramaSugerido).toBe('0');
+    expect(predecirHologramaYEngomado('ABC-123', 2018, null).hologramaSugerido).toBe('0');
+  });
+
+  it('suggests hologram 1 for year 2016-2017', () => {
+    expect(predecirHologramaYEngomado('ABC-123', 2016, null).hologramaSugerido).toBe('1');
+    expect(predecirHologramaYEngomado('ABC-123', 2017, null).hologramaSugerido).toBe('1');
+  });
+
+  it('suggests hologram 2 for year < 2016', () => {
+    expect(predecirHologramaYEngomado('ABC-123', 2010, null).hologramaSugerido).toBe('2');
+  });
+
+  it('returns correct engomado color by last digit', () => {
+    expect(predecirHologramaYEngomado('ABC-5', 2020, null).engomadoColor).toBe('Amarillo');
+    expect(predecirHologramaYEngomado('ABC-7', 2020, null).engomadoColor).toBe('Rosa');
+    expect(predecirHologramaYEngomado('ABC-3', 2020, null).engomadoColor).toBe('Rojo');
+    expect(predecirHologramaYEngomado('ABC-1', 2020, null).engomadoColor).toBe('Verde');
+    expect(predecirHologramaYEngomado('ABC-9', 2020, null).engomadoColor).toBe('Azul');
+    expect(predecirHologramaYEngomado('ABC-0', 2020, null).engomadoColor).toBe('Azul');
+  });
+
+  it('handles null year gracefully', () => {
+    const result = predecirHologramaYEngomado('ABC-5', null, null);
+    expect(result.hologramaSugerido).toBe('0');
+    expect(result.engomadoColor).toBe('Amarillo');
   });
 });

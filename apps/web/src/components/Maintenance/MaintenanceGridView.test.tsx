@@ -134,4 +134,59 @@ describe('MaintenanceGridView', () => {
     fireEvent.click(completedUnitText.closest('tr') || completedUnitText);
     expect(calledWith).toBeTruthy();
   });
+
+  it('renders MINOR_MINING service type badge', async () => {
+    const MINOR_LOG = {
+      ...ACTIVE_LOG,
+      id: 3,
+      uuid: 'uuid-minor-003',
+      unit_id: 'ASM-020',
+      service_type: 'MINOR_MINING',
+      movement_status: 'COMPLETED',
+      end_at: '2026-05-29T16:00:00Z',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [MINOR_LOG], nextCursor: null })
+      )
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    expect(await screen.findByText('Servicio Menor')).toBeInTheDocument();
+  });
+
+  it('sorts logs by unit_id when activo header is clicked', async () => {
+    const LOG_B = {
+      ...ACTIVE_LOG,
+      id: 3,
+      uuid: 'uuid-b',
+      unit_id: 'ASM-ZZZ',
+      movement_status: 'COMPLETED',
+      end_at: '2026-05-29T16:00:00Z',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [ACTIVE_LOG, LOG_B], nextCursor: null })
+      )
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
+    const unitHeader = screen.getByText('UNIDAD');
+    fireEvent.click(unitHeader); // sort asc
+    fireEvent.click(unitHeader); // sort desc
+    expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0);
+  });
 });

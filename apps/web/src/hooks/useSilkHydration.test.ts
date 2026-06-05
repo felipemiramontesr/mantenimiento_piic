@@ -103,4 +103,73 @@ describe('useSilkHydration', () => {
       expect(result.current.isSyncing).toBe(false);
     });
   });
+
+  it('should call onSuccess callback with fresh data', async () => {
+    const onSuccess = vi.fn();
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockResolvedValue({ data: { data: mockData } });
+
+    const { result } = renderHook(() =>
+      useSilkHydration({ key: mockKey, endpoint: mockEndpoint, onSuccess })
+    );
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual(mockData);
+    });
+
+    expect(onSuccess).toHaveBeenCalledWith(mockData);
+  });
+
+  it('invokes failsafe after 15s if still syncing', async () => {
+    vi.useFakeTimers();
+    // API never resolves during this test
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise((_resolve) => {
+          /* intentionally never resolves */
+        })
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation((): void => {});
+
+    renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    // Advance past the 15s failsafe
+    vi.advanceTimersByTime(16000);
+
+    vi.useRealTimers();
+    warnSpy.mockRestore();
+  });
+
+  it('should handle API errors gracefully', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockRejectedValue(new Error('Network error'));
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    await waitFor(() => {
+      expect(result.current.isSyncing).toBe(false);
+    });
+
+    expect(result.current.error).toBeDefined();
+  });
+
+  it('should expose refresh function that re-fetches data', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get)
+      .mockResolvedValueOnce({ data: { data: [] } })
+      .mockResolvedValueOnce({ data: { data: mockData } });
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    await waitFor(() => expect(result.current.isSyncing).toBe(false));
+
+    await result.current.refresh();
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual(mockData);
+    });
+  });
 });

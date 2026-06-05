@@ -82,4 +82,46 @@ describe('UserNode', () => {
     render(<UserNode />);
     expect(await screen.findByText(/No se pudo cargar el perfil/i)).toBeInTheDocument();
   });
+
+  it('renders inactive user badge when is_active is 0', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...USER_FIXTURE,
+          user: { ...USER_FIXTURE.user, is_active: 0 },
+          permissions: [],
+          recentRoutes: [],
+        },
+      },
+    });
+    render(<UserNode />);
+    await waitFor(() => expect(screen.getAllByText('Inactivo').length).toBeGreaterThan(0));
+  });
+
+  it('shows "Sin permisos asignados" when permissions array is empty', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...USER_FIXTURE, permissions: [], recentRoutes: [] },
+      },
+    });
+    render(<UserNode />);
+    expect(await screen.findByText('Sin permisos asignados')).toBeInTheDocument();
+  });
+
+  it('renders profile image when profile_picture_url is set', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...USER_FIXTURE,
+          user: { ...USER_FIXTURE.user, profile_picture_url: 'https://cdn.example.com/avatar.jpg' },
+        },
+      },
+    });
+    render(<UserNode />);
+    const img = await screen.findByRole('img');
+    expect(img.getAttribute('src')).toBe('https://cdn.example.com/avatar.jpg');
+  });
 });

@@ -70,6 +70,22 @@ describe('archonCache', () => {
     consoleWarnSpy.mockRestore();
   });
 
+  it('evicts and returns null when TTL is exceeded', () => {
+    const [major] = SYSTEM_VERSION.split('.');
+    const expiredTimestamp = Date.now() - 2 * 60 * 60 * 1000; // 2 hours ago
+    localStorage.setItem(
+      `${CACHE_PREFIX}stale_key`,
+      JSON.stringify({
+        data: 'stale_data',
+        meta: { version: `${major}.0.0`, timestamp: expiredTimestamp },
+      })
+    );
+    // Default TTL is 1 hour — this entry is 2 hours old → evict
+    const data = archonCache.get('stale_key');
+    expect(data).toBeNull();
+    expect(localStorage.getItem(`${CACHE_PREFIX}stale_key`)).toBeNull();
+  });
+
   it('clears specific key', () => {
     archonCache.set('key1', 'val1');
     archonCache.set('key2', 'val2');

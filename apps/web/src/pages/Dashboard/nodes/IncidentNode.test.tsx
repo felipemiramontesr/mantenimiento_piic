@@ -72,6 +72,22 @@ describe('IncidentNode', () => {
     expect(routeLink).toBeDefined();
   });
 
+  it('renders evidence image section when evidence_image is set', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...INCIDENT_FIXTURE, evidence_image: 'data:image/jpeg;base64,/9j/4AAQ' },
+      },
+    });
+    render(<IncidentNode />);
+    await waitFor(() =>
+      expect(screen.getAllByText('Falla en sistema de frenos').length).toBeGreaterThan(0)
+    );
+    expect(screen.getByText('Evidencia Fotográfica')).toBeInTheDocument();
+    const img = screen.getByAltText('Evidencia del incidente');
+    expect(img.getAttribute('src')).toContain('data:image/jpeg');
+  });
+
   it('calls API with uuid param from route', () => {
     render(<IncidentNode />);
     expect(vi.mocked(api.get)).toHaveBeenCalledWith('/incidents/aaaa-1111-bbbb-2222/node');

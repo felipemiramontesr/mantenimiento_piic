@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { render, screen, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
@@ -12,6 +12,8 @@ import MaintenanceModule from './MaintenanceModule';
 describe('MaintenanceModule (Sovereign Maintenance)', () => {
   // Mock standard API dependencies
   beforeEach(() => {
+    // scrollIntoView is not implemented in jsdom — mock it so scrollToTop executes fully
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
     server.use(
       http.get('*/maintenance/forecast', () => HttpResponse.json({ success: true, data: [] })),
       http.get('*/maintenance', () => HttpResponse.json({ success: true, data: [] })),
@@ -41,6 +43,118 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
 
     // HISTORY panel empty state
     expect(await screen.findByText('NO SE ENCONTRARON REGISTROS')).toBeInTheDocument();
+  });
+
+  it('HISTORY → FORECAST via Ver Pronósticos header action', async () => {
+    renderModule();
+    const historyBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(historyBtn);
+    await screen.findByText('NO SE ENCONTRARON REGISTROS');
+    // Click header action button — LayoutMetadataObserver renders it
+    const forecastBtn = screen.getAllByText('Ver Pronósticos')[0];
+    fireEvent.click(forecastBtn);
+    expect(await screen.findByText('NO SE ENCONTRARON UNIDADES ACTIVAS')).toBeInTheDocument();
+  });
+
+  it('SCHEDULE cancel returns to FORECAST when scheduleInitialUnit is set', async () => {
+    const forecastRow = {
+      unitId: 'ASM-001',
+      marca: 'Nissan',
+      modelo: 'March',
+      departamento: 'MINA',
+      currentOdometer: 49800,
+      dailyUsageAvg: 120,
+      nextKmReading: 50000,
+      kmRemaining: 200,
+      nextServiceDate: '2026-05-30',
+      daysUntilService: 2,
+      triggerType: 'KM',
+      projectedOdometer: 50000,
+      projectedServiceType: 'ADVANCED_50K',
+      urgency: 'CRITICAL',
+    };
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [forecastRow] })
+      ),
+      http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] }))
+    );
+    renderModule();
+    // FORECAST → SCHEDULE via Programar
+    const programarBtn = await screen.findByRole('button', { name: /Programar/i });
+    fireEvent.click(programarBtn);
+    await screen.findByText('CONFIGURACIÓN');
+    // Cancel via header action → returns to FORECAST (scheduleInitialUnit was set)
+    const closeBtn = screen.getAllByText('Cerrar Formulario')[0];
+    fireEvent.click(closeBtn);
+    // FORECAST panel: layout title resets to Administrar Mantenimientos
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent(
+      'Administrar Mantenimientos'
+    );
+  });
+
+  it('COMPLETE panel: clicking Finalizar on ACTIVE row transitions to COMPLETE', async () => {
+    const activeLog = {
+      id: 1,
+      uuid: 'uuid-active',
+      unit_id: 'ASM-001',
+      service_date: '2026-06-01',
+      odometer_at_service: 50000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 0,
+      technician: 'TechA',
+      created_at: '2026-06-01T08:00:00Z',
+      start_at: '2026-06-01T08:00:00Z',
+      end_at: null,
+      movement_status: 'ACTIVE',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [activeLog], nextCursor: null })
+      ),
+      http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] }))
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const finalizarBtn = await screen.findByRole('button', { name: /finalizar/i });
+    fireEvent.click(finalizarBtn);
+    // setSectionData title becomes "Finalizar Servicio" in layout observer
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent('Finalizar Servicio');
+  });
+
+  it('HISTORY_DETAIL panel: clicking COMPLETED row triggers handleDetailRequest', async () => {
+    const completedLog = {
+      id: 2,
+      uuid: 'uuid-completed',
+      unit_id: 'ASM-010',
+      service_date: '2026-05-28',
+      odometer_at_service: 30000,
+      service_type: 'MAJOR_30K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'MAJOR_30K',
+      cost: 6000,
+      technician: 'Ana Martínez',
+      created_at: '2026-05-28T09:00:00Z',
+      start_at: '2026-05-28T07:00:00Z',
+      end_at: '2026-05-28T16:00:00Z',
+      movement_status: 'COMPLETED',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [completedLog], nextCursor: null })
+      )
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    // Click the completed row to trigger handleDetailRequest
+    const completedCell = await screen.findByText('ASM-010');
+    fireEvent.click(completedCell.closest('tr') || completedCell);
+    // HISTORY_DETAIL panel sets layout title to "Detalle de Servicio"
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent('Detalle de Servicio');
   });
 
   it('FORECAST → SCHEDULE transition via Programar button', async () => {

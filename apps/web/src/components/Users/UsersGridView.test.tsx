@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '../../test/testUtils';
 import UsersGridView from './UsersGridView';
 import { UserContext } from '../../context/UserContext';
+import * as layoutContext from '../../context/SovereignLayoutContext';
 
 /**
  * 🔱 Archon UI Suite: Users Grid View Tests
@@ -159,5 +160,38 @@ describe('UsersGridView Component', () => {
     const nodeLinks = links.filter((l) => l.getAttribute('href')?.startsWith('/dashboard/users/'));
     expect(nodeLinks[0].getAttribute('href')).toBe('/dashboard/users/uuid-admin-0001');
     expect(nodeLinks[1].getAttribute('href')).toBe('/dashboard/users/uuid-operator-0002');
+  });
+
+  it('should perform sorting by username', () => {
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={mockValue as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    const employeeHeader = screen.getByText('EMPLEADO');
+    fireEvent.click(employeeHeader); // asc: admin < operator
+    const names = screen.getAllByText(/admin|operator/i).filter((el) => el.tagName !== 'A');
+    expect(names[0].textContent?.toLowerCase()).toContain('admin');
+  });
+
+  it('should filter users when searchTerm is active via SovereignLayout', () => {
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: '', description: '' },
+      searchTerm: 'admin',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={mockValue as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    expect(screen.getAllByText(/Administrator|Operator One/).length).toBeGreaterThan(0);
   });
 });

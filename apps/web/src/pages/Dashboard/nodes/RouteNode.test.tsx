@@ -89,6 +89,37 @@ describe('RouteNode', () => {
     expect(unitLink.getAttribute('href')).toBe('/dashboard/fleet/ASM-002');
   });
 
+  it('renders fuel ticket image when fuel_ticket_image is set', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          route: {
+            ...ROUTE_FIXTURE.route,
+            fuel_ticket_image: 'data:image/jpeg;base64,/9j/4AAQ',
+          },
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getByText('Imagen del ticket')).toBeInTheDocument();
+  });
+
+  it('renders empty incidents section when incidents list is empty', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...ROUTE_FIXTURE, incidents: [] },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    // No incidents section card when list is empty
+    expect(screen.queryByText(/Incidentes \(/)).toBeNull();
+  });
+
   it('calls API with uuid param from route', () => {
     render(<RouteNode />);
     expect(vi.mocked(api.get)).toHaveBeenCalledWith('/routes/route-uuid-001/node');
