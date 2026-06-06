@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import useSilkHydration from './useSilkHydration';
 import { archonCache } from '../utils/archonCache';
@@ -120,9 +120,8 @@ describe('useSilkHydration', () => {
     expect(onSuccess).toHaveBeenCalledWith(mockData);
   });
 
-  it('invokes failsafe after 15s if still syncing', async () => {
+  it('invokes failsafe after 15s if still syncing: resets isSyncing and warns', async () => {
     vi.useFakeTimers();
-    // API never resolves during this test
     vi.mocked(archonCache.get).mockReturnValue(null);
     vi.mocked(api.get).mockImplementation(
       () =>
@@ -134,10 +133,18 @@ describe('useSilkHydration', () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation((): void => {});
 
-    renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
 
-    // Advance past the 15s failsafe
-    vi.advanceTimersByTime(16000);
+    // No cache + not silent → shouldShowLoading = true → isSyncing = true immediately
+    expect(result.current.isSyncing).toBe(true);
+
+    // Advance past the 15s failsafe and flush React updates
+    await act(async () => {
+      vi.advanceTimersByTime(16000);
+    });
+
+    expect(result.current.isSyncing).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[Archon Silk] Failsafe'));
 
     vi.useRealTimers();
     warnSpy.mockRestore();

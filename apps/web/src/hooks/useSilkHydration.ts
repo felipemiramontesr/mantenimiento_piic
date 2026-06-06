@@ -70,16 +70,20 @@ export default function useSilkHydration<T>({
   transformRef.current = transform;
   const onSuccessRef = useRef(onSuccess);
   onSuccessRef.current = onSuccess;
+  // Ref mirror for isSyncing: closures inside useCallback capture stale state values,
+  // so guards and the failsafe must read the current value via a ref instead.
+  const isSyncingRef = useRef(false);
 
   // 2. Atomic Sync Engine (Sovereign Revalidation)
   const sync = useCallback(
     async (isSilent = false): Promise<void> => {
-      if (!isMounted.current || isSyncing) return;
+      if (!isMounted.current || isSyncingRef.current) return;
 
       // 🛡️ FAILSAFE TIMEOUT: Force IDLE state after 15s
       const failsafe = setTimeout(() => {
-        if (isMounted.current && isSyncing) {
+        if (isMounted.current && isSyncingRef.current) {
           console.warn(`⚠️ [Archon Silk] Failsafe for ${key}.`);
+          isSyncingRef.current = false;
           setIsSyncing(false);
         }
       }, 15000);
@@ -95,6 +99,7 @@ export default function useSilkHydration<T>({
       });
 
       if (shouldShowLoading) {
+        isSyncingRef.current = true;
         setIsSyncing(true);
       }
 
@@ -122,6 +127,7 @@ export default function useSilkHydration<T>({
       } finally {
         if (failsafe) clearTimeout(failsafe);
         if (isMounted.current) {
+          isSyncingRef.current = false;
           setIsSyncing(false);
         }
       }
