@@ -291,3 +291,123 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
   **Por qué:** GrayMan aprobó Feature Contract `Settings_Module_Alerts_And_Identity_Panel` vía Protocolo L. Opción A (toggle simétrico) seleccionada.
   **Decisiones tomadas:** (1) Toggle simétrico (Opción A) — consistente con patrón de Finanzas. (2) `AlertsPanel` como componente independiente para aislamiento de futura lógica de alertas. (3) `ArchonProfilePanel` sin modificaciones — reutilizado tal cual. (4) `Protocolos/` está en `.gitignore` (protege `LOG_FORENSE.md`); `PROTOCOLO_L.md` se commitea con `git add -f` como en sesiones anteriores.
   **Pendiente / Notas:** El contenido de Alertas y Notificaciones será definido por GrayMan en sesiones futuras.
+
+---
+
+### V.78.101.39 — 2026-06-04 — CC
+
+**Sesión:** E2E Dashboard testIds fix + Sidebar Incidencias/Admin + CI sharding (frontend 12 / backend 4)
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (version bump)
+- `apps/web/src/components/Navigation/Sidebar.tsx` (NavItem Incidencias, nav-item-settings en profile button, nav-item-admin en footer, Settings import removido)
+- `apps/web/src/components/Navigation/Sidebar.test.tsx` (vi.hoisted logoutMock, 3 tests nuevos: Incidencias nav, Settings profile button, logout; test admin renombrado)
+- `e2e/dashboard.spec.ts` (import default loginAs, tests alineados a testIds reales)
+- `e2e/helpers.ts` (nuevo — loginAs como default export)
+- `e2e/auth.spec.ts` (staged de sesión previa)
+- `e2e/mocks.ts` (staged de sesión previa)
+- `.github/workflows/deploy.yml` (frontend 8→12 shards; backend single job→4 shards con working-directory + npx vitest run sin --coverage)
+
+**Qué se hizo:** (1) Diagnóstico forense de testIds fallidos en e2e: `nav-item-incidencias` no existía en Sidebar, `nav-item-settings` navegaba a Admin en lugar de Settings, `nav-item-admin` no tenía testid. (2) Sidebar corregido: NavItem "Incidencias" agregado (ruta `/dashboard/incidents`, permiso `route:view`, ícono `AlertTriangle`); `data-testid="nav-item-settings"` movido al profile button del header (que ya llamaba `goToProfile → /dashboard/settings`, eliminando duplicación); botón footer renombrado con `data-testid="nav-item-admin"` y texto "Administración". (3) Sidebar.test.tsx: mock de logout capturado via `vi.hoisted` para testear que `logout` sea llamado; 3 tests nuevos; test de admin renombrado con descripción exacta. (4) CI: frontend escalado de 8 a 12 shards; backend refactorizado de job único a 4 shards paralelos con `working-directory: apps/api` y `npx vitest run` directo (sin `--coverage` para evitar threshold failures por shard parcial); `global-certification` migrado a agregación por artifacts para ambos módulos (eliminando dependencia de `outputs` del job de backend).
+
+**Por qué:** `dashboard.spec.ts` fue escrito como spec v.78.101.39 con testIds que no coincidían con los generados dinámicamente por el Sidebar (`nav-item-${label.toLowerCase()}`). El CI de 8 shards estaba empezando a ser lento; GrayMan pidió 12 shards frontend y los necesarios en backend.
+
+**Decisiones tomadas:** (1) `nav-item-settings` en el profile button del header (no nuevo botón en footer) — elimina duplicación de `goToProfile`; el footer ya tenía un slot limitado. (2) Backend: 4 shards (22 archivos / ~5-6 por shard) — mismo ratio que frontend. (3) `npx vitest run` directo en backend en lugar de `npm run test` para excluir `--coverage` sin cambiar `package.json`; los reporters son auto-configurados por `GITHUB_ACTIONS` env en `vitest.config.ts`. (4) `global-certification` usa loop de artifacts para ambos módulos — patrón consistente, elimina dependencia frágil de `outputs` de matrix jobs.
+
+**Pendiente / Notas:** Ninguno en dev. Suite: 405 tests / 63 archivos / coverage 98.05% (todos los thresholds verdes).
+
+---
+
+### V.78.101.40 — 2026-06-04 — CC
+
+**Sesión:** Fix CI — Lint stale eslint-disable + reporter de frontend
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (version bump)
+- `apps/web/src/pages/Dashboard/AdminModule.test.tsx` (removida directiva `eslint-disable-next-line @typescript-eslint/no-explicit-any` stale)
+- `.github/workflows/deploy.yml` (removidos flags `--reporter=default --reporter=junit` del step de frontend)
+
+**Qué se hizo:** (1) El CI de shard 1 fallaba con exit code 1 porque `npm run lint` (que solo corre en shard 1) detectó un `eslint-disable-next-line @typescript-eslint/no-explicit-any` en `AdminModule.test.tsx` que ya no era necesario — la regla no reportaba ningún problema ahí. El pre-commit no lo atrapó porque ese archivo no estaba staged. (2) Los shards de frontend no generaban `test-results.xml`: al pasar `--reporter=default --reporter=junit` por CLI se sobreescriben los reporters del `vite.config.ts`, dejando el `outputFile: { junit: './test-results.xml' }` sin efecto (el JUnit reporter escribía a stdout). Fix: eliminar los flags explícitos y dejar que el config detecte `GITHUB_ACTIONS=true`.
+
+**Por qué:** GH Actions reportó: shard 1 exit code 1 (lint) + "No files were found with the provided path: apps/web/test-results.xml" (artifact upload vacío).
+
+**Decisiones tomadas:** (1) Remover la directiva stale en lugar de suprimir el error de lint — el `no-explicit-any` ya no aplica aquí (el tipo es correcto). (2) Confiar en la detección `process.env.GITHUB_ACTIONS` del config para reporters/outputFile en lugar de pasarlos por CLI — es el mecanismo diseñado para esto.
+
+**Pendiente / Notas:** Ninguno.
+
+---
+
+### V.78.101.41 — 2026-06-04 — CC
+
+**Sesión:** Fix CI — Shard 12 vacío con exit code 1
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (version bump)
+- `.github/workflows/deploy.yml` (añadido `--passWithNoTests` al comando de frontend)
+
+**Qué se hizo:** Shard 12/12 fallaba con "No test files found, exiting with code 1". Causa aritmética: Vitest usa `shardSize = ceil(N/total)` y el shard `i` recibe archivos `[shardSize*(i-1), shardSize*i]`. Con 63 archivos y 12 shards: `ceil(63/12) = 6`, shard 12 empieza en `6×11 = 66 > 63` → array vacío. Solución: `--passWithNoTests` hace que Vitest salga con código 0 cuando un shard queda vacío.
+
+**Por qué:** GH Actions: "No test files found, exiting with code 1" en shard 12.
+
+**Decisiones tomadas:** `--passWithNoTests` sobre reducir a 11 shards — más robusto ante variaciones futuras en el conteo de archivos. Si mañana se agregan tests y el total cambia, no hay que recalcular shards.
+
+**Pendiente / Notas:** Ninguno.
+
+---
+
+### V.78.101.42 — 2026-06-04 — CC
+
+**Sesión:** Fix Build — tsconfig.json excluye test files de compilación
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (version bump)
+- `apps/web/tsconfig.json` (añadido `exclude` para `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`, `src/test/**`)
+
+**Qué se hizo:** El step `tsc && vite build` fallaba en deploy porque `tsconfig.json` incluía `src/` sin excluir archivos de test. Al evolucionar `SilkHydrationResult<unknown>` con nuevas propiedades (`setData`, `error`), los mocks de `useAlerts.test.ts` quedaron incompletos para el compilador de TypeScript (aunque son válidos en runtime de Vitest que usa esbuild). Fix: excluir todos los `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx` y `src/test/**` del tsconfig de build.
+
+**Por qué:** Deploy a Hostinger fallaba con `error TS2345: Argument of type '...' is not assignable to parameter of type 'SilkHydrationResult<unknown>'` — propiedades `setData` y `error` ausentes en mocks.
+
+**Decisiones tomadas:** Excluir test files del tsconfig en lugar de actualizar los mocks con cast `as unknown as SilkHydrationResult<unknown>` — los archivos de test nunca deben compilarse durante el build de producción. Vitest tiene su propio transpilador (esbuild) y no usa `tsc`, por lo que los tests no se ven afectados.
+
+**Pendiente / Notas:** Ninguno. `tsc --noEmit` limpio, `useAlerts.test.ts` 5/5 passing verificado.
+
+---
+
+### V.78.101.43–50 — 2026-06-05 — CC
+
+**Sesión:** Coverage Oleadas 1–6 — de 84.02% a 98.71% branches (405→538 tests)
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (version bumps sucesivos)
+- `apps/web/src/components/Users/UserRegistrationForm.test.tsx` (Oleada 6 — 9 tests nuevos)
+- `apps/web/src/components/Routes/IncidentReportForm.test.tsx` (fix lint — directiva stale en línea 154)
+- Múltiples archivos de tests en Oleadas 1–5 (FleetSidebar, MaintenanceDashboard, etc.)
+
+**Qué se hizo:** Serie de 8 commits (V.78.101.43–50) para llevar el branch coverage de la app web de 84.02% a 98.71%. Oleada 6 cubrió `UserRegistrationForm.tsx` (el archivo con mayor gap). V.78.101.50 fue un lint fix: se removió una directiva `eslint-disable-next-line @typescript-eslint/no-explicit-any` stale en `IncidentReportForm.test.tsx:154` que CI rechazó con "Unused eslint-disable directive".
+
+**Por qué:** GrayMan solicitó subir coverage al máximo posible sin alterar código fuente. Los 4 gaps permanentes (SSR guards, crash-path defensive code, dead code) están documentados en `memory/coverage_state.md`.
+
+**Decisiones tomadas:** (1) No forzar 100% — los gaps permanentes representan dead code legítimo o guards SSR imposibles de ejercitar en jsdom. Hacer cambios para satisfacer cobertura = Goodhart's Law. (2) Techo real sin alterar fuentes: ~98.71% branches. (3) El coverage como thresholds en CI (16 jobs) es el enforcement correcto — no hooks en pre-commit que congelarían el flujo.
+
+**Pendiente / Notas:** Ver `memory/coverage_state.md` para detalle de gaps permanentes.
+
+---
+
+### V.78.101.51 — 2026-06-06 — CC
+
+**Sesión:** Process Autonomy Rules — Modelo de operación autónoma de CC
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (version bump)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (Sección 0 nueva — modelo de operación)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+- `CLAUDE.md` (reglas de autonomía: 5 puntos aprobados por GrayMan)
+- `.claude/settings.local.json` (allow broad: git/npm/npx/node/Read/Edit/Write/Glob/Grep/PowerShell + deny destructivos)
+
+**Qué se hizo:** GrayMan aprobó 5 cambios de proceso para hacer a CC más autónomo y mantener calidad sostenida: (1) Autonomía total en comandos — solo confirmación en destructivos. (2) Tests en el mismo commit — regla conductual + CI enforcement. (3) Push automático post-commit. (4) Protocolo L siempre activo. (5) Documentación de protocolos post-commit para base sólida a AG.
+
+**Por qué:** La sesión anterior dedicó un día completo a mejorar coverage que se había acumulado como deuda. El proceso nuevo previene recurrencia: los tests van en el mismo commit que el código, el CI rechaza si coverage baja, y AG tiene siempre un HANDOFF actualizado para retomar si CC se atasca.
+
+**Decisiones tomadas:** (1) NO se agregó vitest al pre-commit hook — 530+ tests = 2+ min por commit, haría el flujo impracticable. El enforcement real es CI. (2) Allow `PowerShell(*)` en settings.local.json — entorno Windows requiere PowerShell frecuentemente. (3) Deny explícito en settings para `git push --force`, `git reset --hard`, `rm -rf`, `git clean -f`. (4) CLAUDE.md actualizado con las 5 reglas como texto normativo vinculante.
+
+**Pendiente / Notas:** Modelo de operación activo desde esta sesión. AG debe leer Sección 0 de HANDOFF_CC_TO_AG.md al inicio de sesión.
