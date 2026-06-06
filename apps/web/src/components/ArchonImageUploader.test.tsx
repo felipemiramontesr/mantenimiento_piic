@@ -183,4 +183,27 @@ describe('ArchonImageUploader Component', () => {
     fireEvent.click(removeButtons[0]);
     expect(mockOnChange).toHaveBeenCalledWith([]);
   });
+
+  it('disabled=true sets all drag/click handlers to undefined (drop zone is inert)', () => {
+    render(<ArchonImageUploader images={[]} onChange={mockOnChange} disabled={true} />);
+    const dropzone = screen.getByText('Arrastra imágenes de la unidad').closest('div');
+    if (!dropzone) throw new Error('Dropzone not found');
+    // Drag events on disabled zone should not change isDragging state
+    fireEvent.dragOver(dropzone);
+    expect(screen.queryByText('¡Suelta para capturar!')).toBeNull();
+    fireEvent.drop(dropzone, { dataTransfer: { files: [] } });
+    expect(mockOnChange).not.toHaveBeenCalled();
+  });
+
+  it('preview grid uses gap-2 when compact=true', () => {
+    const { container } = render(
+      <ArchonImageUploader
+        images={['data:image/png;base64,abc']}
+        onChange={mockOnChange}
+        compact={true}
+      />
+    );
+    const grid = container.querySelector('.grid-cols-4');
+    expect(grid?.className).toContain('gap-2');
+  });
 });

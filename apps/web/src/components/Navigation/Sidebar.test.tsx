@@ -8,13 +8,14 @@ const useAuthMock = vi.hoisted(() => vi.fn());
 const usePermissionsMock = vi.hoisted(() => vi.fn());
 const setIsMobileMenuOpenMock = vi.hoisted(() => vi.fn());
 const useSovereignLayoutMock = vi.hoisted(() => vi.fn());
+const mockLocation = vi.hoisted(() => ({ pathname: '/dashboard/fleet' }));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
   return {
     ...actual,
     useNavigate: vi.fn(),
-    useLocation: (): { pathname: string } => ({ pathname: '/dashboard/fleet' }),
+    useLocation: (): { pathname: string } => ({ pathname: mockLocation.pathname }),
   };
 });
 
@@ -50,6 +51,7 @@ describe('Sidebar Component (Archon Core)', () => {
   const navigateMock = vi.fn();
 
   beforeEach(() => {
+    mockLocation.pathname = '/dashboard/fleet';
     vi.clearAllMocks();
     (useNavigate as unknown as ReturnType<typeof vi.fn>).mockReturnValue(navigateMock);
     usePermissionsMock.mockReturnValue(defaultPermissions);
@@ -288,5 +290,16 @@ describe('Sidebar Component (Archon Core)', () => {
 
     fireEvent.click(screen.getByText('Comando'));
     expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
+  });
+
+  it('admin button uses bg-white style when pathname is /dashboard/admin', () => {
+    mockLocation.pathname = '/dashboard/admin';
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    const adminBtn = screen.getByTestId('nav-item-admin');
+    expect(adminBtn.className).toContain('bg-white');
   });
 });

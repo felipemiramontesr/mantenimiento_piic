@@ -308,4 +308,46 @@ describe('UsersGridView Component', () => {
     expect(screen.getByText('Gerente')).toBeInTheDocument();
     expect(screen.getByText('Técnico')).toBeInTheDocument();
   });
+
+  it('identity sort with null fullName uses username as fallback in comparator', () => {
+    const usersNullName = [
+      { ...mockUsers[0], fullName: null },
+      { ...mockUsers[1], fullName: null },
+    ];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: usersNullName } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    fireEvent.click(screen.getByText('IDENTIDAD'));
+    expect(screen.getByText('ADMIN')).toBeInTheDocument();
+  });
+
+  it('role sort with null roleName uses empty string fallback in comparator', () => {
+    const usersNullRole = [
+      { ...mockUsers[0], roleName: null },
+      { ...mockUsers[1], roleName: null },
+    ];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: usersNullRole } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    fireEvent.click(screen.getByText('ROL Y DEPARTAMENTO'));
+    expect(screen.getByText('ADMIN')).toBeInTheDocument();
+  });
+
+  it('status sort with inactive user first covers is_active false branch in comparator', () => {
+    const usersReversed = [mockUsers[1], mockUsers[0]]; // operator (inactive) first
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: usersReversed } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    fireEvent.click(screen.getByText('ESTATUS OPERATIVO'));
+    expect(screen.getByText('ADMIN')).toBeInTheDocument();
+  });
 });

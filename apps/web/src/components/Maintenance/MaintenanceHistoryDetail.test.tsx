@@ -107,4 +107,42 @@ describe('MaintenanceHistoryDetail', () => {
     render(<MaintenanceHistoryDetail log={BASE_LOG} onBack={noop} />);
     expect(screen.getAllByText(/cargando/i).length).toBeGreaterThan(0);
   });
+
+  it('shows empty state when details array is empty', async () => {
+    server.use(
+      http.get('*/maintenance/:uuid', () =>
+        HttpResponse.json({ success: true, data: { ...DETAIL_RESPONSE, details: [] } })
+      )
+    );
+    render(<MaintenanceHistoryDetail log={BASE_LOG} onBack={noop} />);
+    await waitFor(() =>
+      expect(screen.getByText(/Este servicio no tiene tareas registradas/i)).toBeInTheDocument()
+    );
+  });
+
+  it('renders unknown task status with fallback meta', async () => {
+    server.use(
+      http.get('*/maintenance/:uuid', () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            ...DETAIL_RESPONSE,
+            details: [
+              {
+                taskCode: 'MYSTERY_TASK',
+                label: 'Tarea misteriosa',
+                status: 'UNKNOWN_STATUS',
+                statusLabel: 'Desconocido',
+                notes: null,
+                isCritical: false,
+              },
+            ],
+          },
+        })
+      )
+    );
+    render(<MaintenanceHistoryDetail log={BASE_LOG} onBack={noop} />);
+    await waitFor(() => expect(screen.getByText('Tarea misteriosa')).toBeInTheDocument());
+    expect(screen.getByText('Desconocido')).toBeInTheDocument();
+  });
 });

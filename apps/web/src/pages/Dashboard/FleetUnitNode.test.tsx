@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '../../test/testUtils';
+import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import api from '../../api/client';
 import FleetUnitNode from './FleetUnitNode';
 
@@ -328,5 +328,57 @@ describe('FleetUnitNode', () => {
     render(<FleetUnitNode />);
     await waitFor(() => expect(screen.getByText('Resumen Financiero 2026')).toBeInTheDocument());
     expect(screen.getByText('UNKNOWN_CATEGORY')).toBeInTheDocument();
+  });
+
+  it('renders unit image from images array and img onError resets to placeholder', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          unit: { ...NODE_FIXTURE.unit, images: ['https://cdn.example.com/unit.jpg'] },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
+    const unitImg = document.querySelector('img[alt="ASM-001"]') as HTMLImageElement | null;
+    expect(unitImg?.getAttribute('src')).toBe('https://cdn.example.com/unit.jpg');
+    if (unitImg) fireEvent.error(unitImg);
+    expect(unitImg?.getAttribute('src')).toBe('/img/archon-unit-placeholder.png');
+  });
+
+  it('renders non-COMPLETED maintenance as Activo and unknown service_type as raw value', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          maintenance: {
+            recentHistory: [
+              {
+                ...NODE_FIXTURE.maintenance.recentHistory[0],
+                status: 'IN_PROGRESS',
+                service_type: 'UNKNOWN_SERVICE',
+              },
+            ],
+          },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Activo')).toBeInTheDocument());
+    expect(screen.getByText('UNKNOWN_SERVICE')).toBeInTheDocument();
+  });
+
+  it('renders null monthlyLeasePayment row without value', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...NODE_FIXTURE, unit: { ...NODE_FIXTURE.unit, monthlyLeasePayment: null } },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Pago arrendamiento')).toBeInTheDocument());
   });
 });
