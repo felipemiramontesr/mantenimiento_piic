@@ -4,9 +4,11 @@ import api from '../../../api/client';
 import IncidentNode from './IncidentNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
+const mockParams = vi.hoisted(() => ({ uuid: 'aaaa-1111-bbbb-2222' as string | undefined }));
+
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: 'aaaa-1111-bbbb-2222' }) };
+  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
 });
 
 const INCIDENT_FIXTURE = {
@@ -31,6 +33,7 @@ const INCIDENT_FIXTURE = {
 
 describe('IncidentNode', () => {
   beforeEach(() => {
+    mockParams.uuid = 'aaaa-1111-bbbb-2222';
     vi.clearAllMocks();
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: INCIDENT_FIXTURE } });
   });
@@ -155,5 +158,12 @@ describe('IncidentNode', () => {
       expect(screen.getAllByText('Falla en sistema de frenos').length).toBeGreaterThan(0)
     );
     expect(screen.getByText('Cierre ruta')).toBeInTheDocument();
+  });
+
+  it('renders loading state when uuid is undefined, api not called', () => {
+    mockParams.uuid = undefined;
+    render(<IncidentNode />);
+    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(vi.mocked(api.get)).not.toHaveBeenCalled();
   });
 });

@@ -4,9 +4,11 @@ import api from '../../api/client';
 import FleetUnitNode from './FleetUnitNode';
 
 vi.mock('../../api/client', () => ({ default: { get: vi.fn() } }));
+const mockParams = vi.hoisted(() => ({ unitId: 'ASM-001' as string | undefined }));
+
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ unitId: 'ASM-001' }) };
+  return { ...actual, useParams: () => ({ unitId: mockParams.unitId }) };
 });
 
 const UNIT_FIXTURE = {
@@ -97,6 +99,7 @@ const NODE_FIXTURE = {
 
 describe('FleetUnitNode', () => {
   beforeEach(() => {
+    mockParams.unitId = 'ASM-001';
     vi.clearAllMocks();
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: NODE_FIXTURE } });
   });
@@ -268,5 +271,62 @@ describe('FleetUnitNode', () => {
     render(<FleetUnitNode />);
     await waitFor(() => expect(screen.getByText('Cumplimiento & Legal')).toBeInTheDocument());
     expect(screen.getByText('Costo del seguro')).toBeInTheDocument();
+  });
+
+  it('renders loading state when unitId is undefined, api not called', () => {
+    mockParams.unitId = undefined;
+    render(<FleetUnitNode />);
+    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(vi.mocked(api.get)).not.toHaveBeenCalled();
+  });
+
+  it('renders null kmSinceService when odometer is null', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...NODE_FIXTURE, unit: { ...NODE_FIXTURE.unit, odometer: null } },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Km desde el último')).toBeInTheDocument());
+    // InfoRow renders '—' for null via formatKm(null)
+  });
+
+  it('renders null dailyUsageAvg as dash', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...NODE_FIXTURE, unit: { ...NODE_FIXTURE.unit, dailyUsageAvg: null } },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Uso diario promedio')).toBeInTheDocument());
+    // InfoRow renders null value → shows '—' via InfoRow fallback
+  });
+
+  it('renders null lastFuelLevel as dash', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...NODE_FIXTURE, unit: { ...NODE_FIXTURE.unit, lastFuelLevel: null } },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Nivel de combustible')).toBeInTheDocument());
+  });
+
+  it('renders unknown financial category as raw key via ?? fallback', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          financial: { year: 2026, totalCost: 7000, byCategory: { UNKNOWN_CATEGORY: 7000 } },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Resumen Financiero 2026')).toBeInTheDocument());
+    expect(screen.getByText('UNKNOWN_CATEGORY')).toBeInTheDocument();
   });
 });

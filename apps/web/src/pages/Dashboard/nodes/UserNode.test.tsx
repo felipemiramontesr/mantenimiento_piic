@@ -4,9 +4,11 @@ import api from '../../../api/client';
 import UserNode from './UserNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
+const mockParams = vi.hoisted(() => ({ uuid: 'uuid-admin-0001' as string | undefined }));
+
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: 'uuid-admin-0001' }) };
+  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
 });
 
 const USER_FIXTURE = {
@@ -43,6 +45,7 @@ const USER_FIXTURE = {
 
 describe('UserNode', () => {
   beforeEach(() => {
+    mockParams.uuid = 'uuid-admin-0001';
     vi.clearAllMocks();
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: USER_FIXTURE } });
   });
@@ -169,5 +172,12 @@ describe('UserNode', () => {
     render(<UserNode />);
     await waitFor(() => expect(screen.getAllByText('Felipe Miramontes').length).toBeGreaterThan(0));
     expect(screen.queryByText('IT')).toBeNull();
+  });
+
+  it('renders loading state when uuid is undefined, api not called', () => {
+    mockParams.uuid = undefined;
+    render(<UserNode />);
+    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(vi.mocked(api.get)).not.toHaveBeenCalled();
   });
 });

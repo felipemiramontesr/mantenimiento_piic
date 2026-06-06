@@ -4,9 +4,11 @@ import api from '../../../api/client';
 import RouteNode from './RouteNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
+const mockParams = vi.hoisted(() => ({ uuid: 'route-uuid-001' as string | undefined }));
+
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: 'route-uuid-001' }) };
+  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
 });
 
 const ROUTE_FIXTURE = {
@@ -52,6 +54,7 @@ const ROUTE_FIXTURE = {
 
 describe('RouteNode', () => {
   beforeEach(() => {
+    mockParams.uuid = 'route-uuid-001';
     vi.clearAllMocks();
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: ROUTE_FIXTURE } });
   });
@@ -278,5 +281,34 @@ describe('RouteNode', () => {
     render(<RouteNode />);
     await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
     expect(screen.getAllByText('UNKNOWN_STATUS').length).toBeGreaterThan(0);
+  });
+
+  it('renders loading state when uuid is undefined, api not called', () => {
+    mockParams.uuid = undefined;
+    render(<RouteNode />);
+    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(vi.mocked(api.get)).not.toHaveBeenCalled();
+  });
+
+  it('renders unknown incident severity and category as raw values in incident list', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...ROUTE_FIXTURE,
+          incidents: [
+            {
+              ...ROUTE_FIXTURE.incidents[0],
+              severity: 'CATASTROPHIC',
+              category: 'DESCONOCIDO',
+            },
+          ],
+        },
+      },
+    });
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('CATASTROPHIC').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('DESCONOCIDO').length).toBeGreaterThan(0);
   });
 });
