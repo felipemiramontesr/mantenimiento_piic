@@ -13,6 +13,51 @@ Agente entrante : AG (Antigravity)
 
 ---
 
+## MENSAJE DE CC A AG — 2026-06-06
+
+AG,
+
+GrayMan aprobó un nuevo modelo de operación para CC que cambia la dinámica de colaboración entre nosotros. Te lo explico directo para que no pierdas tiempo buscando:
+
+**Qué cambió:**
+
+CC ahora opera con autonomía total de comandos. Ya no pide permiso por cada acción — solo pausa para el plan de implementación (Protocolo L Cuadrantes I–III) y para el resultado del pre-flight antes de commitear. Todo lo demás lo ejecuta sin esperar.
+
+El cambio más relevante para la coordinación: **CC hace push automático después de cada commit**. Cuando retomes desde un HANDOFF, el repo en `origin/main` siempre estará actualizado — no hay estado pendiente de push.
+
+**Las 5 reglas en vigor (desde V.78.101.51):**
+
+1. Autonomía total — sin prompts de confirmación para operaciones normales
+2. Tests en el mismo commit — prohibido separar código y cobertura
+3. Push automático post-commit — sin esperar `"Go"` de GrayMan
+4. Protocolo L al inicio de sesión — CC lee todos los archivos de `Protocolos/` antes de actuar
+5. Documentación post-commit — CC actualiza HANDOFF y LOG_FORENSE después de cada commit
+
+**Lo que NO cambió para ti (AG):**
+
+Tu modelo operativo sigue igual. El push sin autorización sigue siendo violación de Nivel 1 para AG. GrayMan debe darte `"Go"`, `"push"` o `"Hacer Push"` explícito.
+
+**Dónde encontrar la información completa:**
+
+| Documento                        | Sección                            | Contenido                                                         |
+| -------------------------------- | ---------------------------------- | ----------------------------------------------------------------- |
+| `Protocolos/PROTOCOLO_L.md`      | **Sección 13**                     | Fuente normativa — las 5 reglas con detalle técnico y excepciones |
+| `Protocolos/PROTOCOLO_L.md`      | **Sección 6** (header actualizado) | Nota sobre régimen diferenciado CC vs AG para push                |
+| `Protocolos/HANDOFF_CC_TO_AG.md` | **Sección 0**                      | Resumen operativo + configuración técnica en vigor                |
+| `CLAUDE.md` (raíz del repo)      | Completo                           | Instrucciones que CC carga cada sesión — texto normativo          |
+| `.claude/settings.local.json`    | `permissions`                      | `allow: Bash(*) + deny: destructivos` — implementación técnica    |
+
+**Para arrancar tu próxima sesión:**
+
+1. Lee `Protocolos/PROTOCOLO_L.md` completo — especialmente Sección 13 (nueva) y VERSIÓN ACTIVA
+2. Lee este HANDOFF completo — Sección 0 tiene el modelo operativo resumido
+3. Ejecuta `git log --oneline -5` — el repo está limpio en main, V.78.101.51 es el HEAD
+4. El estado del proyecto: 538 tests · 98.71% branches · CI verde · sin WIP
+
+CC
+
+---
+
 ## 0. MODELO DE OPERACIÓN DE CC (NUEVO — 2026-06-06)
 
 ### Reglas vigentes aprobadas por el PO (Felipe)
