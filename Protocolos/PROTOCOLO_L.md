@@ -347,7 +347,7 @@ Ante cualquier cambio arquitectónico, refactorización compleja, o cuando GrayM
 
 ## SECCIÓN 6 — GOBERNANZA DE CÓDIGO (AVCCP)
 
-> **Régimen de push por agente:** CC hace push automático después de cada commit (Sección 13). AG requiere autorización explícita de GrayMan antes de push — `"Go"`, `"push"` o `"Hacer Push"`. Automatizar push sin autorización sigue siendo **violación de Nivel 1 para AG**.
+> **Régimen de push (ambos agentes):** CC y AG hacen push automático después de cada commit exitoso. Ver Sección 13.
 
 ### 6.1 Gobernanza de Dependencias (Dependency Gate)
 
@@ -384,19 +384,19 @@ V.{MAJOR}.{MINOR}.{PATCH}_{Descriptor_Pascal_Snake_Case}
 
 El pipeline es secuencial y no negociable.
 
-| #      | Fase         | Acción                                                                                        | Estado requerido                                         |
-| ------ | ------------ | --------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| **0**  | Secret Scan  | Revisar staged files en busca de tokens, API keys, JWT, connection strings hardcodeados       | `0` hallazgos                                            |
-| **0b** | Version Bump | Actualizar línea `VERSIÓN ACTUAL` en este archivo (`PROTOCOLO_L.md`) e incluirlo en `git add` | Actualizado y staged                                     |
-| **0c** | RED          | Escribir test(s) que mapeen los Acceptance Criteria del Feature Contract                      | Tests **fallan**                                         |
-| **0d** | Confirmación | `vitest run` — verificar que el fallo es el esperado                                          | Confirmado                                               |
-| **1**  | GREEN        | Implementar el código mínimo para pasar los tests                                             | Tests **pasan**                                          |
-| **2**  | REFACTOR     | Limpiar sin romper — DRY, naming, complejidad                                                 | Tests siguen **pasando**                                 |
-| **3**  | Lint         | `eslint --max-warnings=0` sobre archivos modificados                                          | `0` errores                                              |
-| **4**  | TypeScript   | `tsc --noEmit` en ambas apps                                                                  | `0` errores                                              |
-| **5**  | Cobertura    | `vitest run --coverage` — delta no puede bajar del baseline                                   | Delta ≥ 0                                                |
-| **6**  | Propuesta    | Presentar versión `V.x.x.x_...` a GrayMan con pre-flight report                               | Await `"Go"`                                             |
-| **7**  | Push         | `git add [archivos] && git commit && git push`                                                | **CC:** automático · **AG:** solo tras `"Go"` de GrayMan |
+| #      | Fase         | Acción                                                                                        | Estado requerido                       |
+| ------ | ------------ | --------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **0**  | Secret Scan  | Revisar staged files en busca de tokens, API keys, JWT, connection strings hardcodeados       | `0` hallazgos                          |
+| **0b** | Version Bump | Actualizar línea `VERSIÓN ACTUAL` en este archivo (`PROTOCOLO_L.md`) e incluirlo en `git add` | Actualizado y staged                   |
+| **0c** | RED          | Escribir test(s) que mapeen los Acceptance Criteria del Feature Contract                      | Tests **fallan**                       |
+| **0d** | Confirmación | `vitest run` — verificar que el fallo es el esperado                                          | Confirmado                             |
+| **1**  | GREEN        | Implementar el código mínimo para pasar los tests                                             | Tests **pasan**                        |
+| **2**  | REFACTOR     | Limpiar sin romper — DRY, naming, complejidad                                                 | Tests siguen **pasando**               |
+| **3**  | Lint         | `eslint --max-warnings=0` sobre archivos modificados                                          | `0` errores                            |
+| **4**  | TypeScript   | `tsc --noEmit` en ambas apps                                                                  | `0` errores                            |
+| **5**  | Cobertura    | `vitest run --coverage` — delta no puede bajar del baseline                                   | Delta ≥ 0                              |
+| **6**  | Propuesta    | Presentar versión `V.x.x.x_...` a GrayMan con pre-flight report                               | Await `"Go"`                           |
+| **7**  | Push         | `git add [archivos] && git commit && git push`                                                | Automático post-commit (ambos agentes) |
 
 **Test obligatorio por tipo de cambio:**
 
@@ -629,23 +629,21 @@ Si la sesión no produce un commit (solo análisis, protocolo, configuración), 
 
 ---
 
-## SECCIÓN 13 — MODELO DE OPERACIÓN AUTÓNOMA CC (VIGENTE DESDE 2026-06-06)
+## SECCIÓN 13 — MODELO DE OPERACIÓN AUTÓNOMA (CC Y AG — VIGENTE DESDE 2026-06-06)
 
-> **Aprobado por GrayMan.** Estas reglas son ley de protocolo equivalente a EAL6+. Aplican exclusivamente a CC (Claude Code). AG opera bajo las reglas previas de Sección 6.
+> **Aprobado por GrayMan.** Estas reglas son ley de protocolo equivalente a EAL6+. Aplican a **CC (Claude Code) y AG (Antigravity)** por igual.
 
 ### 13.1 Las Cinco Reglas
 
-| #     | Regla                           | Comportamiento                                                                                                                                                 |
-| ----- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1** | **Autonomía total de comandos** | CC ejecuta todos los comandos sin solicitar permiso. Sin prompts de confirmación para operaciones normales.                                                    |
-| **2** | **Tests en el mismo commit**    | Todo commit que introduzca código nuevo debe incluir sus tests en el mismo commit. Prohibido separar código y cobertura en commits distintos.                  |
-| **3** | **Push automático post-commit** | Después de cada commit exitoso, CC hace push inmediato a `origin/main` sin esperar autorización. El PO (GrayMan) trackea el flujo desde GitHub en tiempo real. |
-| **4** | **Protocolo L siempre activo**  | Al iniciar cada sesión, CC lee: `Protocolos/PROTOCOLO_L.md` + todos los archivos en `Protocolos/` + `MEMORY.md`. Solo entonces actúa sobre el request.         |
-| **5** | **Documentación post-commit**   | Después de cada commit, CC actualiza `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md` para que AG tenga base sólida al arrancar.                 |
+| #     | Regla                           | Comportamiento                                                                                                                                                    |
+| ----- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | **Autonomía total de comandos** | El agente ejecuta todos los comandos sin solicitar permiso. Sin prompts de confirmación para operaciones normales.                                                |
+| **2** | **Tests en el mismo commit**    | Todo commit que introduzca código nuevo debe incluir sus tests en el mismo commit. Prohibido separar código y cobertura en commits distintos.                     |
+| **3** | **Push automático post-commit** | Después de cada commit exitoso, el agente hace push inmediato a `origin/main` sin esperar autorización. GrayMan trackea el flujo desde GitHub en tiempo real.     |
+| **4** | **Protocolo L al inicio**       | Al iniciar cada sesión, el agente lee: `Protocolos/PROTOCOLO_L.md` + todos los archivos en `Protocolos/` + `MEMORY.md`. Solo entonces actúa sobre el request.     |
+| **5** | **Documentación post-commit**   | Después de cada commit, el agente actualiza `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md` para que el otro agente tenga base sólida al arrancar. |
 
-### 13.2 Excepciones — Confirmación explícita siempre requerida
-
-Las siguientes operaciones requieren visto bueno explícito de GrayMan sin excepción:
+### 13.2 Excepciones — Confirmación explícita de GrayMan siempre requerida
 
 | Operación                          | Razón                                     |
 | ---------------------------------- | ----------------------------------------- |
@@ -657,9 +655,9 @@ Las siguientes operaciones requieren visto bueno explícito de GrayMan sin excep
 ### 13.3 Los Dos Únicos Momentos que Requieren Visto Bueno
 
 1. **Plan de implementación** — antes de ejecutar cambios no triviales (Protocolo L Sección 5, Cuadrantes I–III)
-2. **Resultado del Pre-Flight** — CC presenta el pre-flight report y espera `"Go"` antes del commit
+2. **Resultado del Pre-Flight** — el agente presenta el pre-flight report y espera `"Go"` antes del commit
 
-### 13.4 Configuración Técnica en Vigor
+### 13.4 Configuración Técnica de Referencia
 
 | Archivo                       | Contenido clave                                                                                                       |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -671,9 +669,8 @@ Las siguientes operaciones requieren visto bueno explícito de GrayMan sin excep
 ### 13.5 Fuentes de Verdad para este Modelo
 
 - **`CLAUDE.md`** — instrucciones que CC carga automáticamente al inicio de sesión
-- **`Protocolos/HANDOFF_CC_TO_AG.md` Sección 0** — descripción operativa para AG
+- **`Protocolos/HANDOFF_CC_TO_AG.md` Sección 0** — descripción operativa para ambos agentes
 - **Esta sección (13)** — fuente normativa dentro del Protocolo L
-- **`memory/autonomy_rules.md`** — memoria persistente entre sesiones de CC
 
 ---
 

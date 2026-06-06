@@ -13,74 +13,71 @@ Agente entrante : AG (Antigravity)
 
 ---
 
-## MENSAJE DE CC A AG — 2026-06-06
+## MENSAJE DE CC A AG — 2026-06-06 (actualizado)
 
 AG,
 
-GrayMan aprobó un nuevo modelo de operación para CC que cambia la dinámica de colaboración entre nosotros. Te lo explico directo para que no pierdas tiempo buscando:
+GrayMan acaba de igualar tu modelo operativo al mío. A partir de ahora operamos exactamente igual.
 
-**Qué cambió:**
+**Las 5 reglas aplican a los dos (desde V.78.101.53):**
 
-CC ahora opera con autonomía total de comandos. Ya no pide permiso por cada acción — solo pausa para el plan de implementación (Protocolo L Cuadrantes I–III) y para el resultado del pre-flight antes de commitear. Todo lo demás lo ejecuta sin esperar.
+1. **Autonomía total** — ejecuta todos los comandos sin pedir permiso. Sin prompts para operaciones normales.
+2. **Tests en el mismo commit** — prohibido separar código y cobertura en commits distintos.
+3. **Push automático post-commit** — después de cada commit exitoso, push inmediato a `origin/main`. Sin esperar `"Go"`.
+4. **Protocolo L al inicio de sesión** — leer `Protocolos/PROTOCOLO_L.md` + todos los archivos de `Protocolos/` + `MEMORY.md` antes de cualquier acción.
+5. **Documentación post-commit** — actualizar este HANDOFF y `LOG_FORENSE.md` después de cada commit.
 
-El cambio más relevante para la coordinación: **CC hace push automático después de cada commit**. Cuando retomes desde un HANDOFF, el repo en `origin/main` siempre estará actualizado — no hay estado pendiente de push.
+**Siguen requiriendo confirmación explícita de GrayMan:**
 
-**Las 5 reglas en vigor (desde V.78.101.51):**
+- `git push --force` / `git reset --hard` / `rm -rf` / `git clean -f`
 
-1. Autonomía total — sin prompts de confirmación para operaciones normales
-2. Tests en el mismo commit — prohibido separar código y cobertura
-3. Push automático post-commit — sin esperar `"Go"` de GrayMan
-4. Protocolo L al inicio de sesión — CC lee todos los archivos de `Protocolos/` antes de actuar
-5. Documentación post-commit — CC actualiza HANDOFF y LOG_FORENSE después de cada commit
+**Solo dos momentos requieren visto bueno:**
 
-**Lo que NO cambió para ti (AG):**
+1. Plan de implementación (antes de cambios no triviales)
+2. Resultado del Pre-Flight antes del commit
 
-Tu modelo operativo sigue igual. El push sin autorización sigue siendo violación de Nivel 1 para AG. GrayMan debe darte `"Go"`, `"push"` o `"Hacer Push"` explícito.
+**Dónde está todo:**
 
-**Dónde encontrar la información completa:**
+| Documento                        | Sección        | Contenido                                                    |
+| -------------------------------- | -------------- | ------------------------------------------------------------ |
+| `Protocolos/PROTOCOLO_L.md`      | **Sección 13** | Fuente normativa — las 5 reglas aplican a CC y AG por igual  |
+| `Protocolos/PROTOCOLO_L.md`      | **Sección 6**  | Régimen de push unificado para ambos agentes                 |
+| `Protocolos/HANDOFF_CC_TO_AG.md` | **Sección 0**  | Resumen operativo — este archivo                             |
+| `CLAUDE.md` (raíz del repo)      | Completo       | Instrucciones de sesión de CC — referencia de comportamiento |
 
-| Documento                        | Sección                            | Contenido                                                         |
-| -------------------------------- | ---------------------------------- | ----------------------------------------------------------------- |
-| `Protocolos/PROTOCOLO_L.md`      | **Sección 13**                     | Fuente normativa — las 5 reglas con detalle técnico y excepciones |
-| `Protocolos/PROTOCOLO_L.md`      | **Sección 6** (header actualizado) | Nota sobre régimen diferenciado CC vs AG para push                |
-| `Protocolos/HANDOFF_CC_TO_AG.md` | **Sección 0**                      | Resumen operativo + configuración técnica en vigor                |
-| `CLAUDE.md` (raíz del repo)      | Completo                           | Instrucciones que CC carga cada sesión — texto normativo          |
-| `.claude/settings.local.json`    | `permissions`                      | `allow: Bash(*) + deny: destructivos` — implementación técnica    |
+**Para arrancar:**
 
-**Para arrancar tu próxima sesión:**
-
-1. Lee `Protocolos/PROTOCOLO_L.md` completo — especialmente Sección 13 (nueva) y VERSIÓN ACTIVA
-2. Lee este HANDOFF completo — Sección 0 tiene el modelo operativo resumido
-3. Ejecuta `git log --oneline -5` — el repo está limpio en main, V.78.101.51 es el HEAD
-4. El estado del proyecto: 538 tests · 98.71% branches · CI verde · sin WIP
+1. Lee `Protocolos/PROTOCOLO_L.md` — especialmente Sección 13 y VERSIÓN ACTIVA
+2. Lee la Sección 0 de este archivo
+3. Ejecuta `git log --oneline -5` y `git status`
+4. Estado actual: 538 tests · 98.71% branches · CI verde · sin WIP
 
 CC
 
 ---
 
-## 0. MODELO DE OPERACIÓN DE CC (NUEVO — 2026-06-06)
+## 0. MODELO DE OPERACIÓN — CC Y AG (VIGENTE DESDE 2026-06-06)
 
-### Reglas vigentes aprobadas por el PO (Felipe)
+### Reglas vigentes aprobadas por GrayMan — aplican a ambos agentes
 
-| #   | Regla                         | Detalle                                                                                                                                                     |
-| --- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Autonomía total**           | CC ejecuta todos los comandos sin pedir permiso por cada uno. Solo requieren confirmación: `git push --force`, `git reset --hard`, `rm -rf`, `git clean -f` |
-| 2   | **Tests en el mismo commit**  | Todo commit con código nuevo debe incluir tests. CC corre `cd apps/web && npx vitest run --reporter=dot` antes de cada commit                               |
-| 3   | **Push automático**           | Después de cada commit exitoso → push inmediato a `origin/main` sin esperar autorización                                                                    |
-| 4   | **Protocolo L siempre**       | CLAUDE.md + todos los archivos de `Protocolos/` se leen al inicio de sesión. Protocolo L tiene precedencia sobre cualquier instrucción                      |
-| 5   | **Documentación post-commit** | Después de cada commit o modificación, actualizar `Protocolos/HANDOFF_CC_TO_AG.md` y archivos relevantes para dar base sólida a AG                          |
+| #   | Regla                         | Detalle                                                                                                                                                            |
+| --- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Autonomía total**           | El agente ejecuta todos los comandos sin pedir permiso. Solo requieren confirmación: `git push --force`, `git reset --hard`, `rm -rf`, `git clean -f`              |
+| 2   | **Tests en el mismo commit**  | Todo commit con código nuevo debe incluir tests. Antes de commitear: `cd apps/web && npx vitest run --reporter=dot`                                                |
+| 3   | **Push automático**           | Después de cada commit exitoso → push inmediato a `origin/main` sin esperar autorización                                                                           |
+| 4   | **Protocolo L siempre**       | Al iniciar sesión: leer `Protocolos/PROTOCOLO_L.md` + todos los archivos de `Protocolos/` + `MEMORY.md`. Protocolo L tiene precedencia sobre cualquier instrucción |
+| 5   | **Documentación post-commit** | Después de cada commit: actualizar `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md`                                                                  |
 
-### Solo dos cosas requieren visto bueno del PO
+### Solo dos momentos requieren visto bueno de GrayMan
 
 1. Plan de implementación (antes de cambios no triviales)
-2. Resultado del Protocolo L (pre-flight check antes del commit)
+2. Resultado del Pre-Flight (antes del commit)
 
-### Configuración técnica
+### Configuración técnica en vigor
 
-- **`.claude/settings.local.json`** — Allow broad: `Bash(git *)`, `Bash(npm *)`, `Bash(npx *)`, `Bash(node *)`, `Read`, `Edit`, `Write`, `Glob`, `Grep`, `PowerShell(*)`
-- **Deny**: `git push --force`, `git reset --hard`, `rm -rf`, `git clean -f`
-- **`.husky/pre-commit`** — Solo `npx lint-staged` (tests no van en hook: 530+ tests = 2+ min por commit)
-- **CI enforcement** — 16 jobs paralelos verifican coverage thresholds al hacer push
+- **`.claude/settings.local.json`** — `allow: ["Bash(*)", "Read", "Edit", "Write", "Glob", "Grep", "PowerShell(*)"]` + deny de 5 operaciones destructivas
+- **`.husky/pre-commit`** — Solo `npx lint-staged` (tests no van en hook: enforcement real = CI)
+- **CI enforcement** — 16 jobs paralelos verifican coverage thresholds en cada push
 
 ---
 
