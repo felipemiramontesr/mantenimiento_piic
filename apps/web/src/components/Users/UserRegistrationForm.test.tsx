@@ -377,4 +377,186 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     fireEvent.click(backBtn);
     expect(currentMockState.setActivePanel).toHaveBeenCalledWith('DIRECTORY');
   });
+
+  // ── Oleada 6: UserRegistrationForm branch coverage ──────────────────────
+
+  it('update with password and no file: sends password to updateUser and skips upload (lines 143/149)', async () => {
+    currentMockState.editingUser = {
+      id: '2',
+      username: 'user2',
+      fullName: 'User Two',
+      email: 'u2@p.com',
+      roleId: 1,
+      department: 'IT',
+    };
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Dejar vacío para no cambiar/i), {
+      target: { value: 'newpass123' },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    const modal = await screen.findByRole('dialog');
+    fireEvent.change(within(modal).getByPlaceholderText(/error en kilometraje/i), {
+      target: { value: 'Password change reason' },
+    });
+    await act(async () => {
+      fireEvent.click(within(modal).getByText('Sincronizar'));
+    });
+    // line 143 truthy: formData.password = 'newpass123' → passes password to updateUser
+    expect(currentMockState.updateUser).toHaveBeenCalledWith(
+      '2',
+      expect.objectContaining({ password: 'newpass123' }),
+      'Password change reason'
+    );
+    // line 149 false: selectedFile=null → no upload-profile call
+    expect(api.post).not.toHaveBeenCalled();
+    expect(await screen.findByText(/Actualización Exitosa/i)).toBeInTheDocument();
+  });
+
+  it('create with explicit matching password uses provided password instead of tempPass (line 181)', async () => {
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
+      target: { value: 'New User' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'newuser' } });
+    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
+      target: { value: 'new@t.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), {
+      target: { value: 'pass12345' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Repita la clave/i), {
+      target: { value: 'pass12345' },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    // line 181 truthy: formData.password = 'pass12345' → api.post receives it directly
+    expect(vi.mocked(api.post)).toHaveBeenCalledWith(
+      '/auth/register',
+      expect.objectContaining({ password: 'pass12345' })
+    );
+    expect(await screen.findByText(/Incorporación Exitosa/i)).toBeInTheDocument();
+  });
+
+  it('create error with no error field uses "Error en el servidor." fallback (line 197)', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: { success: false } });
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
+      target: { value: 'Test' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser2' } });
+    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
+      target: { value: 'test2@t.com' },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    // line 197: response.data.error is undefined → 'Error en el servidor.' (falsy branch)
+    expect(await screen.findByTestId('error-message')).toHaveTextContent(/Error en el servidor\./i);
+  });
+
+  it('create error with axios-style rejection uses errObj.response.data.error (line 241 first branch)', async () => {
+    vi.mocked(api.post).mockRejectedValue({ response: { data: { error: 'Axios API Error' } } });
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
+      target: { value: 'Test' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser3' } });
+    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
+      target: { value: 'test3@t.com' },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    // line 241: errObj.response?.data?.error = 'Axios API Error' → truthy → first OR branch
+    expect(await screen.findByTestId('error-message')).toHaveTextContent(/Axios API Error/i);
+  });
+
+  it('create error with non-Error rejection uses "Falla en el alta." final fallback (line 241)', async () => {
+    vi.mocked(api.post).mockRejectedValue({});
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
+      target: { value: 'Test' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser4' } });
+    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
+      target: { value: 'test4@t.com' },
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    // line 241: response=undefined, message=undefined → 'Falla en el alta.' (final fallback)
+    expect(await screen.findByTestId('error-message')).toHaveTextContent(/Falla en el alta\./i);
+  });
+
+  it('editingUser with imageUrl renders image in uploader and removal clears it (lines 338/340)', async () => {
+    currentMockState.editingUser = {
+      id: '3',
+      username: 'photo_user',
+      fullName: 'Photo User',
+      email: 'photo@p.com',
+      roleId: 1,
+      department: 'IT',
+      imageUrl: 'http://example.com/photo.jpg',
+    };
+    const { container } = render(<UserRegistrationForm />);
+    // line 338 truthy: formData.imageUrl = 'http://...' → images=['http://...'] passed to uploader
+    // Wait for useEffect to set formData.imageUrl and commit the re-render
+    await waitFor(() => {
+      expect(container.querySelector('img[alt="Vista 1"]')).not.toBeNull();
+    });
+    // Find remove button via closest .relative slot (works for both circle and square variants)
+    const imgElem = container.querySelector('img[alt="Vista 1"]') as HTMLImageElement;
+    const imgSlot = imgElem.closest('.relative') as HTMLElement;
+    const removeBtn = imgSlot.querySelector('button') as HTMLButtonElement;
+    expect(removeBtn).toBeInTheDocument();
+    // Click remove → onChange([]) → line 340: imgs[0] = undefined → '' (falsy branch)
+    fireEvent.click(removeBtn);
+    await waitFor(() => {
+      expect(container.querySelector('img[alt="Vista 1"]')).not.toBeInTheDocument();
+    });
+  });
+
+  it('submit button shows Transmitiendo during create while api is pending (line 490 truthy)', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    vi.mocked(api.post).mockImplementation(() => new Promise(() => {}));
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
+      target: { value: 'Test User' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser5' } });
+    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
+      target: { value: 'test5@t.com' },
+    });
+    // Click submit (without await/act so we can capture the in-flight state)
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar Alta/i }));
+    // line 490: isSubmitting=true → 'Transmitiendo...' text appears on button
+    await waitFor(() => expect(screen.getByText('Transmitiendo...')).toBeInTheDocument());
+  });
+
+  it('submit button is disabled when password set but shorter than 8 chars (line 250 false branch)', () => {
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), { target: { value: 'ab' } });
+    fireEvent.change(screen.getByPlaceholderText(/Repita la clave/i), { target: { value: 'ab' } });
+    // passwordsMatch=true, length=2 < 8 → canSubmit = false → button disabled (line 250 false branch)
+    expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
+  });
+
+  it('confirm password input type follows showPassword toggle (line 427 truthy branch)', () => {
+    render(<UserRegistrationForm />);
+    // Fill password to make confirm field appear (line 427 rendered)
+    fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), {
+      target: { value: 'mypassword' },
+    });
+    const confirmInput = screen.getByPlaceholderText(/Repita la clave/i);
+    // line 427 false branch: showPassword=false → type='password'
+    expect(confirmInput).toHaveAttribute('type', 'password');
+    // Click toggle (first svg-bearing button is the Eye/EyeOff toggle)
+    const toggleBtn = screen.getAllByRole('button').filter((b) => b.querySelector('svg'))[0];
+    fireEvent.click(toggleBtn);
+    // line 427 truthy branch: showPassword=true → type='text'
+    expect(confirmInput).toHaveAttribute('type', 'text');
+  });
 });
