@@ -125,4 +125,29 @@ describe('ArchonSelect', () => {
     render(<ArchonSelect options={options} value="" onChange={mockOnChange} icon={FakeIcon} />);
     expect(screen.getByTestId('fake-icon')).toBeInTheDocument();
   });
+
+  it('closes dropdown when mousedown fires outside the container', async () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    await waitFor(() => expect(screen.getByText('ASM-01')).toBeInTheDocument());
+
+    document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+    });
+  });
+
+  it('does not close dropdown when mousedown fires inside the portal root', async () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    await waitFor(() => expect(screen.getByText('ASM-01')).toBeInTheDocument());
+
+    const portal = document.getElementById('archon-select-portal');
+    if (portal) {
+      portal.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    }
+
+    await waitFor(() => expect(screen.getByText('ASM-01')).toBeInTheDocument());
+  });
 });
