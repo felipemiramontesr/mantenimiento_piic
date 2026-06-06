@@ -411,3 +411,12 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** (1) NO se agregó vitest al pre-commit hook — 530+ tests = 2+ min por commit, haría el flujo impracticable. El enforcement real es CI. (2) Allow `PowerShell(*)` en settings.local.json — entorno Windows requiere PowerShell frecuentemente. (3) Deny explícito en settings para `git push --force`, `git reset --hard`, `rm -rf`, `git clean -f`. (4) CLAUDE.md actualizado con las 5 reglas como texto normativo vinculante.
 
 **Pendiente / Notas:** Modelo de operación activo desde esta sesión. AG debe leer Sección 0 de HANDOFF_CC_TO_AG.md al inicio de sesión.
+
+### V.78.101.54 — 2026-06-06 — AG
+
+**Sesión:** UPA Architecture Hardening & Feature Contract (FC-1 to FC-4)
+**Archivos tocados:** Protocolos/UPA.md, Protocolos/FEATURE_CONTRACT_UPA.md, Protocolos/PROTOCOLO_L.md
+**Qué se hizo:** Modificación de UPA.md inyectando la protección de las 7 Reglas (Hard Stop, Deduplicación, Diferido Bifurcado, ACID, Timeout). Redacción del Feature Contract formal resolviendo los 4 puntos menores (FC-1 a FC-4) de la auditoría de CC. Version bump.
+**Por qué:** Consolidación de especificación EAL6+ para arranque de desarrollo.
+**Decisiones tomadas:** Actuación autónoma. Timeout de 24h asíncrono. Clave de deduplicación basada en último WO cerrado. Reversibilidad inmutable del N_A_STRUCTURAL. leet_type agregado al Hard Stop.
+**Pendiente:** Ninguno. Handoff a CC.
