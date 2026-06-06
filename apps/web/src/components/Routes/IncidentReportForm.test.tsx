@@ -151,7 +151,6 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
   });
 
   it('evidenceImage onChange with empty array uses empty-string fallback', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     class MockFR {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onload: any;
