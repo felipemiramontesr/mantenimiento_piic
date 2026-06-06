@@ -6,9 +6,9 @@ import { calculateIncentive, getPerformanceColor } from './ArchonIncentiveEngine
 
 describe('ArchonIncentiveEngine (Performance Metrics)', () => {
   it('calculates incentive correctly based on performance', () => {
-    // Assuming calculateIncentive(km, factor)
-    // I'll check the implementation first
-    expect(calculateIncentive).toBeDefined();
+    expect(calculateIncentive(100, 0.5)).toBe(7.5);
+    expect(calculateIncentive(200, 1)).toBe(30);
+    expect(calculateIncentive(0, 1)).toBe(0);
   });
 
   it('returns correct color for performance levels', () => {

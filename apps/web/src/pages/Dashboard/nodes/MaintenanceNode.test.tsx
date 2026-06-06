@@ -4,9 +4,10 @@ import api from '../../../api/client';
 import MaintenanceNode from './MaintenanceNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
+const mockParams = vi.hoisted(() => ({ uuid: 'maint-uuid-0001' as string | undefined }));
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: 'maint-uuid-0001' }) };
+  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
 });
 
 const TASK_PASS = {
@@ -64,6 +65,7 @@ const NODE_FIXTURE = { order: ORDER_FIXTURE, unit: UNIT_FIXTURE };
 
 describe('MaintenanceNode', () => {
   beforeEach(() => {
+    mockParams.uuid = 'maint-uuid-0001';
     vi.clearAllMocks();
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: NODE_FIXTURE } });
   });
@@ -208,6 +210,27 @@ describe('MaintenanceNode', () => {
     });
     render(<MaintenanceNode />);
     await waitFor(() => expect(screen.getAllByText('UNKNOWN_STATUS').length).toBeGreaterThan(0));
+  });
+
+  it('renders loading state when uuid is undefined, api not called', () => {
+    mockParams.uuid = undefined;
+    render(<MaintenanceNode />);
+    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(vi.mocked(api.get)).not.toHaveBeenCalled();
+  });
+
+  it('renders unknown system_recommended_type as raw value via ?? fallback', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          order: { ...ORDER_FIXTURE, system_recommended_type: 'SPECIAL_OVERHAUL' },
+          unit: UNIT_FIXTURE,
+        },
+      },
+    });
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getAllByText('SPECIAL_OVERHAUL').length).toBeGreaterThan(0));
   });
 
   it('renders task with unknown status using fallback color', async () => {

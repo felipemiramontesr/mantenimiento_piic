@@ -208,4 +208,35 @@ describe('useSilkHydration', () => {
     await waitFor(() => expect(result.current.isSyncing).toBe(false));
     expect(result.current.error?.message).toBe('RATE_LIMIT_EXCEEDED');
   });
+
+  it('sets Sync failed error for non-Error non-429 rejection', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockRejectedValue({ response: { status: 500 } });
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    await waitFor(() => expect(result.current.isSyncing).toBe(false));
+    expect(result.current.error?.message).toBe('Sync failed');
+  });
+
+  it('concurrent sync call is blocked when isSyncingRef is true', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise((_resolve) => {
+          /* never resolves */
+        })
+    );
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));
+
+    // Initial sync started: isSyncingRef.current = true
+    expect(result.current.isSyncing).toBe(true);
+    expect(vi.mocked(api.get)).toHaveBeenCalledTimes(1);
+
+    // Second call should be blocked by isSyncingRef guard
+    await result.current.refresh();
+
+    expect(vi.mocked(api.get)).toHaveBeenCalledTimes(1);
+  });
 });

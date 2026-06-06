@@ -195,6 +195,16 @@ describe('ArchonImageUploader Component', () => {
     expect(mockOnChange).not.toHaveBeenCalled();
   });
 
+  it('clicking the dropzone div triggers file input click', () => {
+    const { container } = render(<ArchonImageUploader images={[]} onChange={mockOnChange} />);
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+    const dropZone = container.querySelector('.border-dashed') as HTMLElement;
+    fireEvent.click(dropZone);
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
   it('preview grid uses gap-2 when compact=true', () => {
     const { container } = render(
       <ArchonImageUploader

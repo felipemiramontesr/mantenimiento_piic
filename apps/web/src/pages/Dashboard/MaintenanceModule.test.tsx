@@ -157,6 +157,115 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     expect(await screen.findByTestId('layout-title')).toHaveTextContent('Detalle de Servicio');
   });
 
+  it('HISTORY_DETAIL Volver button calls handleReturnToGrid → returns to HISTORY', async () => {
+    const completedLog = {
+      id: 3,
+      uuid: 'uuid-ret',
+      unit_id: 'ASM-020',
+      service_date: '2026-04-10',
+      odometer_at_service: 20000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 2500,
+      technician: 'Regresar Test',
+      created_at: '2026-04-10T10:00:00Z',
+      start_at: '2026-04-10T08:00:00Z',
+      end_at: '2026-04-10T14:00:00Z',
+      movement_status: 'COMPLETED',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [completedLog], nextCursor: null })
+      ),
+      http.get('*/maintenance/:uuid', () =>
+        HttpResponse.json({
+          success: true,
+          data: { ...completedLog, details: [] },
+        })
+      )
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const row = await screen.findByText('ASM-020');
+    fireEvent.click(row.closest('tr') || row);
+    // Wait for HISTORY_DETAIL to render its Volver button
+    const volverBtn = await screen.findByRole('button', { name: /volver/i });
+    fireEvent.click(volverBtn);
+    // handleReturnToGrid → panel returns to HISTORY
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent(
+      'Administrar Mantenimientos'
+    );
+  });
+
+  it('COMPLETE panel description uses empty string when log unit_id is null', async () => {
+    const nullIdLog = {
+      id: 4,
+      uuid: 'uuid-null-id',
+      unit_id: null,
+      service_date: '2026-05-01',
+      odometer_at_service: 10000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 0,
+      technician: 'Tech',
+      created_at: '2026-05-01T08:00:00Z',
+      start_at: '2026-05-01T08:00:00Z',
+      end_at: null,
+      movement_status: 'ACTIVE',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [nullIdLog], nextCursor: null })
+      ),
+      http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] }))
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const finalizarBtn = await screen.findByRole('button', { name: /finalizar/i });
+    fireEvent.click(finalizarBtn);
+    // completingLog.unit_id is null → `?? ''` fallback covers line 68
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent('Finalizar Servicio');
+  });
+
+  it('HISTORY_DETAIL description uses empty string when log unit_id is null', async () => {
+    const nullIdLog = {
+      id: 5,
+      uuid: 'uuid-null-detail',
+      unit_id: null,
+      service_date: '2026-04-01',
+      odometer_at_service: 8000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 1500,
+      technician: 'Tech',
+      created_at: '2026-04-01T08:00:00Z',
+      start_at: '2026-04-01T08:00:00Z',
+      end_at: '2026-04-01T12:00:00Z',
+      movement_status: 'COMPLETED',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [nullIdLog], nextCursor: null })
+      ),
+      http.get('*/maintenance/:uuid', () =>
+        HttpResponse.json({ success: true, data: { ...nullIdLog, details: [] } })
+      )
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    // The row renders null unit_id — find by technician name
+    const techCell = await screen.findByText('Tech');
+    fireEvent.click(techCell.closest('tr') || techCell);
+    // detailLog.unit_id is null → `?? ''` fallback covers line 86
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent('Detalle de Servicio');
+  });
+
   it('FORECAST → SCHEDULE transition via Programar button', async () => {
     const forecastRow = {
       unitId: 'ASM-001',

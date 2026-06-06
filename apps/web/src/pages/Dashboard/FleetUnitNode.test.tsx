@@ -381,4 +381,70 @@ describe('FleetUnitNode', () => {
     render(<FleetUnitNode />);
     await waitFor(() => expect(screen.getByText('Pago arrendamiento')).toBeInTheDocument());
   });
+
+  it('UnitHeader null assetType, departamento, color hide those sub-elements', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          unit: {
+            ...NODE_FIXTURE.unit,
+            assetType: null,
+            departamento: null,
+            color: null,
+            availabilityIndex: undefined,
+            backlogCount: null,
+          },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
+    // availabilityIndex ?? 100 → 100%, backlogCount ?? 0 → 0 rendered
+    expect(screen.getByText('100%')).toBeInTheDocument();
+  });
+
+  it('statusBadgeClass falls back for unknown status and healthStatus null uses dash', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          unit: {
+            ...NODE_FIXTURE.unit,
+            status: 'Baja', // not in FLEET_STATUS_BADGE → ?? fallback (line 95)
+            healthStatus: null, // null ?? '—' in kpis array (line 113)
+          },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Baja')).toBeInTheDocument());
+    // 'Salud' label confirms kpi rendered; '—' confirms healthStatus ?? '—'
+    expect(screen.getByText('Salud')).toBeInTheDocument();
+  });
+
+  it('renders overdue kmRemaining in red when nextServiceReading < odometer', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          ...NODE_FIXTURE,
+          unit: {
+            ...NODE_FIXTURE.unit,
+            odometer: 60000,
+            nextServiceReading: 55000, // 55000 - 60000 = -5000 → overdue
+            maintIntervalDays: null, // covers '—' branch
+          },
+        },
+      },
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Km restantes')).toBeInTheDocument());
+    // formatKm(5000) + ' (vencido)' rendered in red
+    expect(screen.getByText(/vencido/i)).toBeInTheDocument();
+    // maintIntervalDays falsy → '—' rendered
+    expect(screen.getByText('Intervalo (días)')).toBeInTheDocument();
+  });
 });

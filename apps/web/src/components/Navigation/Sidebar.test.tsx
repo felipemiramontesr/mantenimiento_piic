@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
+import api from '../../api/client';
 import Sidebar from './Sidebar';
 
 const logoutMock = vi.hoisted(() => vi.fn());
@@ -301,5 +302,51 @@ describe('Sidebar Component (Archon Core)', () => {
     );
     const adminBtn = screen.getByTestId('nav-item-admin');
     expect(adminBtn.className).toContain('bg-white');
+  });
+
+  it('renders Soberano fallback when currentUser has no username', () => {
+    useAuthMock.mockReturnValue({
+      currentUser: { username: null, imageUrl: null },
+      logout: logoutMock,
+    });
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    expect(screen.getByText('Soberano')).toBeInTheDocument();
+  });
+
+  it('resolveImageUrl uses empty string when api.defaults.baseURL is not set', () => {
+    const savedBaseURL = api.defaults.baseURL;
+    api.defaults.baseURL = '';
+    useAuthMock.mockReturnValue({
+      currentUser: { username: 'GrayMan', imageUrl: '/uploads/avatar.jpg' },
+      logout: logoutMock,
+    });
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    const img = screen.getByAltText('Profile') as HTMLImageElement;
+    // baseURL = '' → '' || '' = '' → baseUrl = '' → src = '/uploads/avatar.jpg'
+    expect(img.getAttribute('src')).toBe('/uploads/avatar.jpg');
+    api.defaults.baseURL = savedBaseURL;
+  });
+
+  it('resolveImageUrl inserts slash separator for relative URL without leading slash', () => {
+    useAuthMock.mockReturnValue({
+      currentUser: { username: 'GrayMan', imageUrl: 'uploads/avatar.jpg' },
+      logout: logoutMock,
+    });
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    const img = screen.getByAltText('Profile') as HTMLImageElement;
+    // The src should contain the path with a slash inserted before 'uploads'
+    expect(img.getAttribute('src')).toContain('uploads/avatar.jpg');
   });
 });

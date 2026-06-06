@@ -350,4 +350,66 @@ describe('UsersGridView Component', () => {
     fireEvent.click(screen.getByText('ESTATUS OPERATIVO'));
     expect(screen.getByText('ADMIN')).toBeInTheDocument();
   });
+
+  it('RoleBadge covers superintendente, jefe, and planeador style branches', () => {
+    const multiRoleUsers = [
+      {
+        ...mockUsers[0],
+        uuid: 'uuid-s',
+        id: '10',
+        role: { name: 'Superintendente' },
+        roleName: 'Superintendente',
+      },
+      {
+        ...mockUsers[0],
+        uuid: 'uuid-j',
+        id: '11',
+        role: { name: 'Jefe de Taller' },
+        roleName: 'Jefe de Taller',
+      },
+      {
+        ...mockUsers[0],
+        uuid: 'uuid-p',
+        id: '12',
+        role: { name: 'Planeador' },
+        roleName: 'Planeador',
+      },
+    ];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: multiRoleUsers } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+    expect(screen.getByText('Superintendente')).toBeInTheDocument();
+    expect(screen.getByText('Jefe de Taller')).toBeInTheDocument();
+    expect(screen.getByText('Planeador')).toBeInTheDocument();
+  });
+
+  it('getSuggestions subtitle falls back to Empleado General when fullName is null', () => {
+    let capturedConfig: { getSuggestions: (t: string) => { subtitle: string }[] } | null = null;
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: '', description: '' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: (cfg) => {
+        capturedConfig = cfg as typeof capturedConfig;
+      },
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    const usersNullFull = [{ ...mockUsers[0], fullName: null }];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ ...mockValue, users: usersNullFull } as any}>
+        <UsersGridView />
+      </UserContext.Provider>
+    );
+
+    const suggestions = capturedConfig!.getSuggestions('admin');
+    expect(suggestions[0].subtitle).toBe('Empleado General');
+  });
 });

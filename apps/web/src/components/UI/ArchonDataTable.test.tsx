@@ -64,4 +64,21 @@ describe('ArchonDataTable', () => {
     expect(screen.getByText('Alpha')).toBeInTheDocument();
     expect(screen.getByText('Beta')).toBeInTheDocument();
   });
+
+  it('getJustifyClass and getAlignClass cover right alignment branches', () => {
+    const rightHeaders: ArchonTableHeader[] = [{ key: 'name', label: 'NAME', align: 'right' }];
+    const { container } = render(
+      <ArchonDataTable<Row>
+        data={[{ name: 'Gamma' }]}
+        headers={rightHeaders}
+        renderRow={renderRow}
+      />
+    );
+    // getAlignClass('right') → 'text-right' on the th
+    const th = container.querySelector('th');
+    expect(th?.className).toContain('text-right');
+    // getJustifyClass('right') → 'justify-end' on the flex div inside th
+    const flexDiv = th?.querySelector('div');
+    expect(flexDiv?.className).toContain('justify-end');
+  });
 });

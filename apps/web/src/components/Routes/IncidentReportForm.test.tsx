@@ -150,6 +150,82 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     expect(mockOnSuccess).not.toHaveBeenCalled();
   });
 
+  it('evidenceImage onChange with empty array uses empty-string fallback', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    class MockFR {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onload: any;
+
+      readAsDataURL(): void {
+        setTimeout(() => {
+          if (this.onload) this.onload({ target: { result: 'data:image/png;base64,m' } });
+        }, 0);
+      }
+    }
+    vi.stubGlobal('FileReader', MockFR);
+
+    const { container } = renderForm();
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['x'], 'ev.png', { type: 'image/png' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    // Wait for the image preview remove button to appear
+    await waitFor(() => {
+      expect(container.querySelector('.aspect-square button')).toBeInTheDocument();
+    });
+
+    // Click remove → onChange([]) → imgs[0] || '' covers the empty-string fallback
+    const removeBtn = container.querySelector('.aspect-square button') as HTMLButtonElement;
+    fireEvent.click(removeBtn);
+
+    await waitFor(() => {
+      expect(container.querySelector('.aspect-square button')).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows Transmitiendo text while submitting and blocks second submission', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    mockReportIncident.mockImplementation(() => new Promise(() => {}));
+    const { container } = renderForm();
+
+    const desc = screen.getByPlaceholderText(
+      /Describa el evento, ubicación y estado de la unidad/i
+    );
+    fireEvent.change(desc, { target: { value: 'Test doble envío' } });
+
+    // First click: submitting becomes true (line 288 true branch: 'Transmitiendo...')
+    fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Transmitiendo...')).toBeInTheDocument();
+    });
+
+    // Second form submit while submitting=true → hits line 86 submitting guard → returns early
+    fireEvent.submit(container.querySelector('form')!);
+    expect(mockReportIncident).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses fallback error message when rejection is not an Error instance', async () => {
+    mockReportIncident.mockRejectedValue({ code: 500 });
+    renderForm();
+
+    const desc = screen.getByPlaceholderText(
+      /Describa el evento, ubicación y estado de la unidad/i
+    );
+    fireEvent.change(desc, { target: { value: 'Error test' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
+    });
+
+    // err instanceof Error = false → uses fallback string (line 103 false branch)
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Error en la transmisión del protocolo Sentinel/i)
+      ).toBeInTheDocument();
+    });
+  });
+
   it('allows category and severity selection switching', async () => {
     renderForm();
 

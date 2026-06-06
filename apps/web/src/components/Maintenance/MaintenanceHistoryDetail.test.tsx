@@ -120,6 +120,18 @@ describe('MaintenanceHistoryDetail', () => {
     );
   });
 
+  it('renders unknown log service_type as raw value via ?? fallback', async () => {
+    render(
+      <MaintenanceHistoryDetail
+        log={{ ...BASE_LOG, service_type: 'CUSTOM_OVERHAUL' }}
+        onBack={noop}
+      />
+    );
+    await waitFor(() => expect(document.body.textContent).toContain('ASM-010'));
+    // SERVICE_LABELS['CUSTOM_OVERHAUL'] is undefined → ?? fallback renders raw value
+    expect(document.body.textContent).toContain('CUSTOM_OVERHAUL');
+  });
+
   it('renders unknown task status with fallback meta', async () => {
     server.use(
       http.get('*/maintenance/:uuid', () =>

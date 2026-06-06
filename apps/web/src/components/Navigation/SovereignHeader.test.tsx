@@ -423,6 +423,34 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     expect(mockSetSearchTerm).toHaveBeenCalledWith('');
   });
 
+  it('onChange on search input calls setSearchTerm and opens suggestions', () => {
+    render(<SovereignHeader />);
+    const input = screen.getByPlaceholderText(
+      'Buscar por placas, marca, modelo, sede o departamento...'
+    );
+    fireEvent.change(input, { target: { value: 'aveo' } });
+    expect(mockSetSearchTerm).toHaveBeenCalledWith('aveo');
+  });
+
+  it('mobile menu button click calls setIsMobileMenuOpen', () => {
+    const mockSetMobileMenuOpen = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: '',
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: mockSetMobileMenuOpen,
+    });
+
+    render(<SovereignHeader />);
+    const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
+    fireEvent.click(menuBtn);
+    expect(mockSetMobileMenuOpen).toHaveBeenCalledWith(true);
+  });
+
   it('closes suggestions when enter key is pressed on the input', () => {
     mockSearchTerm = 'aveo';
     vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
