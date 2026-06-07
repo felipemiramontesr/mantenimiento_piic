@@ -4,7 +4,7 @@
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
 Versión activa  : V.78.101.58_Protocol_Cascade_Triggers_PreCommit_Docs
-Commit          : (pendiente)
+Commit          : 7b9fb06
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
