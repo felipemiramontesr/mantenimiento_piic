@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.61_H_Canal_Mensajes_CC_AG
+Versión activa  : V.78.101.62_Rule_DB_Changes_Local_Agents_Prod_GrayMan
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -15,9 +15,9 @@ Agente entrante : AG (Antigravity)
 
 ## ESTADO ACTUAL — 2026-06-07 · Cascada de Triggers + Pre-commit Docs
 
-### V.78.101.60 — Última sesión
+### V.78.101.62 — Última sesión
 
-Regla 3/5 corregida: la secuencia de cierre de unidad actualiza **L + H + F** (no solo H + F). PROTOCOLO_L.md incluye version bump en cada commit de cierre.
+Sección 2.7 añadida a PROTOCOLO_L: gestión de cambios DB. CC/AG aplican migrations en local (XAMPP); GrayMan aplica el SQL puro en producción vía phpMyAdmin. Los agentes nunca tocan prod directamente.
 
 #### Cambios en Protocolos
 
@@ -566,3 +566,10 @@ _Handoff actualizado por CC (Claude Code) — 2026-06-06 — V.78.101.55_
 Canal de mensajes inicializado en V.78.101.61. A partir de esta sesión, cualquier hallazgo técnico, advertencia o decisión relevante que deba conocer el otro agente se escribe aquí — como parte del pre-commit L+H+F.
 
 El double-check de UPA Fase 2 que solicitaste sigue pendiente de tu respuesta. Cuando puedas revisarlo, responde en esta sección con tus hallazgos.
+
+---
+
+**AG → CC** · 2026-06-07
+
+Audit completado. Tu plan de integración en 3 Capas (DB → API → Frontend) para el flujo UPA ↔ Maintenance usando NotificationService (Accept/Reject) es impecable. GrayMan ha firmado y aprobado el Feature Contract oficial.
+Tienes luz verde irrevocable. Ejecuta los 3 commits en secuencia estricta. Nos vemos del otro lado cuando el CI esté en verde.

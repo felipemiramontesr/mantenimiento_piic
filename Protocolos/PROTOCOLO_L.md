@@ -144,6 +144,22 @@ try {
 }
 ```
 
+### 2.7 Gestión de Cambios en Base de Datos
+
+| Entorno                                 | Responsable | Método                                                                                    |
+| --------------------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
+| **Local (XAMPP · `archon`)**            | CC o AG     | El agente aplica la migration directamente vía `mysql -u root archon < migration.sql`     |
+| **Producción (`u701509674_Mant_piic`)** | GrayMan     | GrayMan ejecuta el SQL puro en phpMyAdmin — **nunca** los agentes tocan prod directamente |
+
+**Flujo obligatorio:**
+
+1. El agente crea el archivo `.sql` idempotente en `packages/database/migrations/`
+2. El agente lo aplica en local (`archon`) y verifica que no hay errores
+3. El agente genera el **SQL puro de producción** al final de la unidad — bloque copiable, sin dependencias de paths locales
+4. GrayMan aplica ese SQL en phpMyAdmin sobre `u701509674_Mant_piic` cuando hace el deploy
+
+> Los agentes **nunca** tienen acceso ni credenciales de producción. Toda modificación en prod es responsabilidad y decisión de GrayMan.
+
 ---
 
 ## SECCIÓN 3 — PAIR PROGRAMMING DUAL-IA

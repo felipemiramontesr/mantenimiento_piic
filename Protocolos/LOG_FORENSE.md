@@ -564,3 +564,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** (1) Canal al final de H para no interferir con la lectura del estado técnico. (2) Append-only — los mensajes son audit trail, no se borran. (3) Temas válidos acotados: hallazgos técnicos, advertencias, decisiones; prohibido chatter o repetir lo que está en ESTADO ACTUAL o F.
 
 **Pendiente / Notas:** Ninguno.
+
+---
+
+### V.78.101.62 — 2026-06-07 — CC
+
+**Sesión:** Sección 2.7 — Gestión de cambios DB: local (agentes) vs prod (GrayMan)
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 2.7 nueva)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (header → V.78.101.62)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Sección 2.7 en PROTOCOLO_L.md formaliza el flujo de cambios DB: CC y AG aplican migrations en local (`archon`) vía `mysql` CLI; generan el SQL puro de producción al cierre de la unidad; GrayMan aplica ese SQL en phpMyAdmin sobre `u701509674_Mant_piic`. Los agentes nunca tienen acceso a prod.
+
+**Por qué:** GrayMan solicitó formalizar esta división de responsabilidades — quedó evidenciada al necesitar aplicar migration 092 en local para resolver el 500 en `/v1/maintenance`.
+
+**Decisiones tomadas:** Flujo en 4 pasos: crear `.sql` idempotente → aplicar en local → verificar → generar bloque SQL puro para prod. El bloque de prod se incluye en el HANDOFF o en el mensaje del canal CC↔AG al cerrar la unidad.
+
+**Pendiente / Notas:** Migrations 091 y 092 ya aplicadas en local. GrayMan debe aplicarlas en prod cuando haga deploy.
