@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BarChart3, ClipboardList, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { BarChart3, ClipboardList, Cpu, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { MaintenancePanel, MaintenanceLog } from '../../types/maintenance';
 import MaintenanceGridView from '../../components/Maintenance/MaintenanceGridView';
@@ -7,6 +7,8 @@ import MaintenanceRegistrationForm from '../../components/Maintenance/Maintenanc
 import MaintenanceCompletionPanel from '../../components/Maintenance/MaintenanceCompletionPanel';
 import MaintenanceHistoryDetail from '../../components/Maintenance/MaintenanceHistoryDetail';
 import MaintenanceForecastView from '../../components/Maintenance/MaintenanceForecastView';
+import UpaWorkspace from '../Upa/UpaWorkspace';
+import { acceptMaintenance, rejectMaintenance } from '../../api/maintenance';
 
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
@@ -15,6 +17,7 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
   const [completingLog, setCompletingLog] = useState<MaintenanceLog | null>(null);
   const [detailLog, setDetailLog] = useState<MaintenanceLog | null>(null);
   const [scheduleInitialUnit, setScheduleInitialUnit] = useState<string>('');
+  const [activeUpaOrderId, setActiveUpaOrderId] = useState<number | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToTop = (): void => {
@@ -38,7 +41,6 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
     scrollToTop();
   };
 
-  // Cancel SCHEDULE: return to origin panel (FORECAST if triggered from forecaster, HISTORY if from grid)
   const handleCancelSchedule = (): void => {
     const origin: MaintenancePanel = scheduleInitialUnit !== '' ? 'FORECAST' : 'HISTORY';
     setScheduleInitialUnit('');
@@ -58,9 +60,46 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
     scrollToTop();
   };
 
+  const handleOpenUpa = useCallback((workOrderId: number): void => {
+    setActiveUpaOrderId(workOrderId);
+    setActivePanel('UPA');
+    scrollToTop();
+  }, []);
+
+  const handleReturnFromUpa = useCallback((): void => {
+    setActiveUpaOrderId(null);
+    setActivePanel('HISTORY');
+    setRefreshTrigger((prev) => prev + 1);
+    scrollToTop();
+  }, []);
+
+  const handleAcceptOrder = useCallback(
+    async (uuid: string): Promise<void> => {
+      try {
+        const { workOrderId } = await acceptMaintenance(uuid);
+        setRefreshTrigger((prev) => prev + 1);
+        handleOpenUpa(workOrderId);
+      } catch {
+        // Error surfaced via grid refresh — no blocking alert
+        setRefreshTrigger((prev) => prev + 1);
+      }
+    },
+    [handleOpenUpa]
+  );
+
+  const handleRejectOrder = useCallback(async (uuid: string): Promise<void> => {
+    try {
+      await rejectMaintenance(uuid);
+      setRefreshTrigger((prev) => prev + 1);
+    } catch {
+      setRefreshTrigger((prev) => prev + 1);
+    }
+  }, []);
+
   useEffect(() => {
     const isScheduling = activePanel === 'SCHEDULE';
     const isCompleting = activePanel === 'COMPLETE';
+    const isUpa = activePanel === 'UPA';
 
     if (isCompleting) {
       setSectionData(
@@ -102,6 +141,26 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
           buttonText: 'Cerrar Formulario',
           isActive: true,
           onClick: handleCancelSchedule,
+        }
+      );
+      return;
+    }
+
+    if (isUpa) {
+      setSectionData(
+        'Proceso UPA',
+        'Pipeline Universal Archon — Control de Servicio Sistemático',
+        null,
+        {
+          variant: 'navy',
+          headerTitle: 'Volver al Historial',
+          HeaderIcon: ClipboardList,
+          PayloadIcon: Cpu,
+          actionTitle: 'Retorno',
+          description: 'Volver al historial de mantenimiento',
+          buttonText: 'Volver',
+          isActive: false,
+          onClick: handleReturnFromUpa,
         }
       );
       return;
@@ -149,7 +208,7 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
         },
       }
     );
-  }, [activePanel, completingLog, detailLog, setSectionData]);
+  }, [activePanel, completingLog, detailLog, setSectionData, handleReturnFromUpa]);
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -163,6 +222,9 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
                   onNewRequest={(): void => setActivePanel('SCHEDULE')}
                   onCompleteRequest={handleCompleteRequest}
                   onDetailRequest={handleDetailRequest}
+                  onAcceptOrder={handleAcceptOrder}
+                  onRejectOrder={handleRejectOrder}
+                  onOpenUpa={handleOpenUpa}
                 />
               )}
               {activePanel === 'FORECAST' && (
@@ -184,6 +246,9 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
               )}
               {activePanel === 'HISTORY_DETAIL' && detailLog && (
                 <MaintenanceHistoryDetail log={detailLog} onBack={handleReturnToGrid} />
+              )}
+              {activePanel === 'UPA' && activeUpaOrderId !== null && (
+                <UpaWorkspace workOrderId={activeUpaOrderId} onReturn={handleReturnFromUpa} />
               )}
             </div>
           </div>

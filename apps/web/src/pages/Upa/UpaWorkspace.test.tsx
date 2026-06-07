@@ -6,11 +6,6 @@ import type { UseUpaOrderReturn } from '../../hooks/useUpaOrder';
 import type { UpaWorkOrderDetail } from '../../types/upa';
 
 vi.mock('../../hooks/useUpaOrder');
-vi.mock('../../context/SovereignLayoutContext', () => ({
-  useSovereignLayout: (): { setSectionData: ReturnType<typeof vi.fn> } => ({
-    setSectionData: vi.fn(),
-  }),
-}));
 
 const mockTask = {
   taskId: 'triage_dashboard_lights',
@@ -298,6 +293,59 @@ describe('UpaWorkspace', () => {
       render(<UpaWorkspace />);
       fireEvent.click(screen.getByTestId('new-order-btn'));
       expect(resetOrder).toHaveBeenCalled();
+    });
+  });
+
+  // ─── Embedded Mode (workOrderId + onReturn props) ──────────────────────────
+
+  describe('Embedded mode', () => {
+    it('calls loadOrder with workOrderId on mount instead of showing InitForm', () => {
+      const loadOrder = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, loadOrder });
+      render(<UpaWorkspace workOrderId={42} />);
+      expect(loadOrder).toHaveBeenCalledWith(42);
+      expect(screen.queryByTestId('vehicle-id-input')).toBeNull();
+    });
+
+    it('shows loading state when workOrderId provided but workOrder is null and loading', () => {
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, loading: true });
+      render(<UpaWorkspace workOrderId={42} />);
+      expect(screen.queryByTestId('vehicle-id-input')).toBeNull();
+    });
+
+    it('shows upa-return-btn when onReturn is provided and work order is active', () => {
+      const onReturn = vi.fn();
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
+      render(<UpaWorkspace workOrderId={1} onReturn={onReturn} />);
+      expect(screen.getByTestId('upa-return-btn')).toBeDefined();
+    });
+
+    it('does not show upa-return-btn when onReturn is not provided', () => {
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
+      render(<UpaWorkspace workOrderId={1} />);
+      expect(screen.queryByTestId('upa-return-btn')).toBeNull();
+    });
+
+    it('calls onReturn when back button is clicked', () => {
+      const onReturn = vi.fn();
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
+      render(<UpaWorkspace workOrderId={1} onReturn={onReturn} />);
+      fireEvent.click(screen.getByTestId('upa-return-btn'));
+      expect(onReturn).toHaveBeenCalled();
+    });
+
+    it('shows Volver a Mantenimiento button on closed order when onReturn provided', () => {
+      const closedOrder = {
+        ...mockWorkOrder,
+        status: 'CLOSED' as const,
+        closedAt: '2024-01-02T00:00:00.000Z',
+        tasks: [],
+      };
+      const onReturn = vi.fn();
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: closedOrder });
+      render(<UpaWorkspace workOrderId={1} onReturn={onReturn} />);
+      fireEvent.click(screen.getByTestId('new-order-btn'));
+      expect(onReturn).toHaveBeenCalled();
     });
   });
 

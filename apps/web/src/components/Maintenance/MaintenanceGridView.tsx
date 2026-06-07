@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, User, Wrench, ExternalLink } from 'lucide-react';
+import { Calendar, User, Wrench, ExternalLink, CheckCircle2, XCircle, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { MaintenanceLog } from '../../types/maintenance';
@@ -16,6 +16,9 @@ interface MaintenanceGridViewProps {
   onNewRequest: () => void;
   onCompleteRequest?: (log: MaintenanceLog) => void;
   onDetailRequest?: (log: MaintenanceLog) => void;
+  onAcceptOrder?: (uuid: string, logId: number) => void;
+  onRejectOrder?: (uuid: string) => void;
+  onOpenUpa?: (workOrderId: number) => void;
 }
 
 const fmtDateTime = (dt: string | null | undefined): { date: string; time: string } => {
@@ -68,6 +71,9 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
   onNewRequest: _onNewRequest,
   onCompleteRequest,
   onDetailRequest,
+  onAcceptOrder,
+  onRejectOrder,
+  onOpenUpa,
 }) => {
   const { units } = useFleet();
   const { users } = useUsers();
@@ -219,8 +225,10 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
           const technician = users.find(
             (u) => u.fullName === log.technician || u.username === log.technician
           );
+          const isOpen = log.movement_status === 'OPEN';
           const isActive = log.movement_status === 'ACTIVE';
           const isCompleted = log.movement_status === 'COMPLETED';
+          const hasUpa = isActive && log.upa_work_order_id != null;
           return (
             <motion.tr
               key={log.id}
@@ -413,7 +421,55 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                       className="transition-transform duration-300 group-hover:scale-110"
                     />
                   </Link>
-                  {isActive && onCompleteRequest && (
+
+                  {/* OPEN: Accept / Reject buttons for assigned technician */}
+                  {isOpen && onAcceptOrder && (
+                    <button
+                      type="button"
+                      data-testid={`accept-btn-${log.uuid}`}
+                      title="Aceptar Orden"
+                      onClick={(e): void => {
+                        e.stopPropagation();
+                        onAcceptOrder(log.uuid, log.id);
+                      }}
+                      className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
+                    >
+                      <CheckCircle2 size={18} />
+                    </button>
+                  )}
+                  {isOpen && onRejectOrder && (
+                    <button
+                      type="button"
+                      data-testid={`reject-btn-${log.uuid}`}
+                      title="Rechazar Orden"
+                      onClick={(e): void => {
+                        e.stopPropagation();
+                        onRejectOrder(log.uuid);
+                      }}
+                      className="flex items-center justify-center w-10 h-10 text-red-500 bg-red-50 hover:bg-red-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
+                    >
+                      <XCircle size={18} />
+                    </button>
+                  )}
+
+                  {/* ACTIVE + UPA: open UPA panel */}
+                  {hasUpa && onOpenUpa && (
+                    <button
+                      type="button"
+                      data-testid={`open-upa-btn-${log.uuid}`}
+                      title="Ver Proceso UPA"
+                      onClick={(e): void => {
+                        e.stopPropagation();
+                        onOpenUpa(log.upa_work_order_id!);
+                      }}
+                      className="flex items-center justify-center w-10 h-10 text-sky-600 bg-sky-50 hover:bg-sky-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
+                    >
+                      <Cpu size={16} />
+                    </button>
+                  )}
+
+                  {/* ACTIVE without UPA: legacy Finalizar Servicio */}
+                  {isActive && !hasUpa && onCompleteRequest && (
                     <button
                       type="button"
                       title="Finalizar Servicio"

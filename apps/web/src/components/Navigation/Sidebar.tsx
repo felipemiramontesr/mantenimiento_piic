@@ -12,7 +12,6 @@ import {
   LogOut,
   User as UserIcon,
   AlertTriangle,
-  Activity,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -235,15 +234,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 label="Mantenimiento"
                 path="/dashboard/maintenance"
                 active={location.pathname === '/dashboard/maintenance'}
-                isCollapsed={isCollapsed}
-              />
-            )}
-            {hasPermission('fleet:write') && (
-              <NavItem
-                icon={<Activity size={20} />}
-                label="Proceso UPA"
-                path="/dashboard/upa"
-                active={location.pathname.startsWith('/dashboard/upa')}
                 isCollapsed={isCollapsed}
               />
             )}

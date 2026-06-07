@@ -1,4 +1,10 @@
-export type MaintenancePanel = 'HISTORY' | 'FORECAST' | 'SCHEDULE' | 'COMPLETE' | 'HISTORY_DETAIL';
+export type MaintenancePanel =
+  | 'HISTORY'
+  | 'FORECAST'
+  | 'SCHEDULE'
+  | 'COMPLETE'
+  | 'HISTORY_DETAIL'
+  | 'UPA';
 
 export type MovementStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
@@ -15,6 +21,7 @@ export type MaintenanceLog = {
   id: number;
   uuid: string;
   unit_id: string;
+  upa_work_order_id?: number | null;
   service_date: string;
   odometer_at_service: number;
   odometer_at_close?: number | null;

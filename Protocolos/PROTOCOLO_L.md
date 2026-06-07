@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.55_UPA_Capa1y2_DB_Migration_And_API_Accept_Reject
+VERSIÓN ACTUAL: V.78.101.56_UPA_Capa3_Frontend_Integrated
 ```
 
 ---

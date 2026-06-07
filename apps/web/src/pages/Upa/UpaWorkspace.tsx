@@ -7,16 +7,15 @@ import {
   CheckCircle,
   ShieldAlert,
   XCircle,
-  RefreshCw,
   ClipboardList,
   Truck,
   CheckSquare,
   Plus,
   Trash2,
   Activity,
+  ArrowLeft,
   type LucideIcon,
 } from 'lucide-react';
-import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import ArchonManagementCard from '../../components/UI/ArchonManagementCard';
 import { useUpaOrder } from '../../hooks/useUpaOrder';
 import type {
@@ -448,8 +447,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
 // ─── Main Workspace ───────────────────────────────────────────────────────────
 
-const UpaWorkspace: React.FC = (): React.ReactElement => {
-  const { setSectionData } = useSovereignLayout();
+interface UpaWorkspaceProps {
+  workOrderId?: number;
+  onReturn?: () => void;
+}
+
+const UpaWorkspace: React.FC<UpaWorkspaceProps> = ({
+  workOrderId,
+  onReturn,
+}): React.ReactElement => {
   const upa = useUpaOrder();
 
   const [deferTaskId, setDeferTaskId] = useState<string | null>(null);
@@ -457,26 +463,12 @@ const UpaWorkspace: React.FC = (): React.ReactElement => {
   const [evidenceUrls, setEvidenceUrls] = useState<Record<string, string[]>>({});
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
 
+  // Auto-load order when workOrderId is provided (embedded mode — skips InitForm)
   useEffect(() => {
-    setSectionData(
-      'Mantenimiento UPA',
-      'Pipeline Universal Archon — Control de Servicio Sistemático',
-      null,
-      upa.workOrder && upa.workOrder.status !== 'CLOSED'
-        ? {
-            variant: 'red',
-            headerTitle: 'Nueva Orden',
-            HeaderIcon: RefreshCw,
-            PayloadIcon: RefreshCw,
-            actionTitle: 'Cancelar',
-            description: 'Reiniciar proceso',
-            buttonText: 'Nueva Orden',
-            isActive: false,
-            onClick: upa.resetOrder,
-          }
-        : null
-    );
-  }, [setSectionData, upa.workOrder, upa.resetOrder]);
+    if (workOrderId !== undefined && upa.workOrder === null && !upa.loading) {
+      upa.loadOrder(workOrderId);
+    }
+  }, [workOrderId, upa.workOrder, upa.loading, upa.loadOrder]);
 
   const handleComplete = useCallback(
     (task: UpaTaskDetail): void => {
@@ -500,15 +492,14 @@ const UpaWorkspace: React.FC = (): React.ReactElement => {
     : null;
 
   if (!upa.workOrder) {
-    return (
-      <div className="animate-in fade-in duration-700">
-        <section className="archon-workspace-chassis">
-          <div className="archon-axial-container">
-            <InitForm onSubmit={upa.startOrder} loading={upa.initLoading} error={upa.error} />
-          </div>
-        </section>
-      </div>
-    );
+    if (workOrderId !== undefined) {
+      return (
+        <div className="flex items-center justify-center py-16 text-[#0f2a44]/40 font-bold text-sm uppercase tracking-wider">
+          {upa.loading ? 'Cargando orden UPA...' : upa.error ?? 'Orden no encontrada'}
+        </div>
+      );
+    }
+    return <InitForm onSubmit={upa.startOrder} loading={upa.initLoading} error={upa.error} />;
   }
 
   const wo = upa.workOrder;
@@ -533,137 +524,154 @@ const UpaWorkspace: React.FC = (): React.ReactElement => {
 
   return (
     <div className="animate-in fade-in duration-700">
-      <section className="archon-workspace-chassis">
-        <div className="archon-axial-container">
-          {/* Stepper */}
-          <Stepper currentStep={currentStep} />
+      {/* Back button — only in embedded panel mode */}
+      {onReturn && (
+        <button
+          type="button"
+          onClick={onReturn}
+          data-testid="upa-return-btn"
+          className="flex items-center gap-2 mb-4 text-xs font-bold uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44] transition-colors"
+        >
+          <ArrowLeft size={14} />
+          Volver a Mantenimiento
+        </button>
+      )}
 
-          {/* Order Status Banner */}
-          <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-[4px] border mb-6 ${sc.color}`}
-          >
-            <ClipboardList size={16} />
-            <div>
-              <span className="text-sm font-black uppercase tracking-wider block">{sc.label}</span>
-              <span className="text-xs font-bold opacity-70 uppercase tracking-wide">
-                Unidad: {wo.vehicleId} —{' '}
-                {wo.fleetType === 'urban' ? 'Flotilla Urbana' : 'Flotilla Minería'} — OT #{wo.id}
-              </span>
-            </div>
+      {/* Stepper */}
+      <Stepper currentStep={currentStep} />
+
+      {/* Order Status Banner */}
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-[4px] border mb-6 ${sc.color}`}>
+        <ClipboardList size={16} />
+        <div>
+          <span className="text-sm font-black uppercase tracking-wider block">{sc.label}</span>
+          <span className="text-xs font-bold opacity-70 uppercase tracking-wide">
+            Unidad: {wo.vehicleId} —{' '}
+            {wo.fleetType === 'urban' ? 'Flotilla Urbana' : 'Flotilla Minería'} — OT #{wo.id}
+          </span>
+        </div>
+      </div>
+
+      {/* Error Banner */}
+      {upa.error && (
+        <div
+          data-testid="order-error"
+          className="flex items-center gap-2 px-4 py-3 rounded-[4px] border border-red-200 bg-red-50 text-red-700 mb-4"
+        >
+          <XCircle size={14} />
+          <span className="text-sm font-bold">{upa.error}</span>
+        </div>
+      )}
+
+      {/* AWAITING_AUTH Notice */}
+      {wo.status === 'AWAITING_AUTH' && (
+        <div
+          data-testid="awaiting-auth-banner"
+          className="flex items-start gap-3 px-4 py-4 rounded-[4px] border border-yellow-300 bg-yellow-50 text-yellow-800 mb-6"
+        >
+          <ShieldAlert size={20} className="shrink-0 mt-0.5" />
+          <div>
+            <span className="font-black text-sm uppercase tracking-wider block">
+              Autorización Requerida — Etapa 5
+            </span>
+            <span className="text-xs font-bold opacity-80 block mt-0.5">
+              Existen tareas diferidas financieramente o no aplicables estructuralmente. Requiere
+              validación del gerente de flota. El sistema cerrará automáticamente la orden después
+              de 24 horas hábiles sin respuesta.
+            </span>
           </div>
+        </div>
+      )}
 
-          {/* Error Banner */}
-          {upa.error && (
-            <div
-              data-testid="order-error"
-              className="flex items-center gap-2 px-4 py-3 rounded-[4px] border border-red-200 bg-red-50 text-red-700 mb-4"
-            >
-              <XCircle size={14} />
-              <span className="text-sm font-bold">{upa.error}</span>
-            </div>
-          )}
+      {/* Task Groups */}
+      <div className="space-y-8">
+        {STAGE_ORDER.map((stage) => {
+          const tasks = tasksByStage[stage];
+          if (tasks.length === 0) return null;
+          const StageIcon = STAGE_ICONS[stage];
+          const pendingCount = tasks.filter((t) => t.status === 'pending').length;
 
-          {/* AWAITING_AUTH Notice */}
-          {wo.status === 'AWAITING_AUTH' && (
-            <div
-              data-testid="awaiting-auth-banner"
-              className="flex items-start gap-3 px-4 py-4 rounded-[4px] border border-yellow-300 bg-yellow-50 text-yellow-800 mb-6"
-            >
-              <ShieldAlert size={20} className="shrink-0 mt-0.5" />
-              <div>
-                <span className="font-black text-sm uppercase tracking-wider block">
-                  Autorización Requerida — Etapa 5
-                </span>
-                <span className="text-xs font-bold opacity-80 block mt-0.5">
-                  Existen tareas diferidas financieramente o no aplicables estructuralmente.
-                  Requiere validación del gerente de flota. El sistema cerrará automáticamente la
-                  orden después de 24 horas hábiles sin respuesta.
+          return (
+            <div key={stage}>
+              <div className="flex items-center gap-2 mb-3">
+                <StageIcon size={16} className="text-[#0f2a44]/60" />
+                <h3 className="font-black uppercase tracking-[0.15em] text-[#0f2a44] text-sm">
+                  Etapa {STAGE_STEP[stage]}: {STAGE_LABELS[stage]}
+                </h3>
+                <span className="text-[10px] font-bold text-[#0f2a44]/40 uppercase tracking-wider ml-1">
+                  ({pendingCount} pendiente{pendingCount !== 1 ? 's' : ''})
                 </span>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {tasks.map((task) => (
+                  <TaskCard
+                    key={task.taskId}
+                    task={task}
+                    isUpdating={!!upa.taskUpdating[task.taskId]}
+                    evidenceUrls={evidenceUrls[task.taskId] ?? []}
+                    evidenceNotes={evidenceNotes[task.taskId] ?? ''}
+                    onComplete={(): void => handleComplete(task)}
+                    onDefer={(): void => setDeferTaskId(task.taskId)}
+                    onEvidenceUrlsChange={(urls): void =>
+                      setEvidenceUrls((prev) => ({ ...prev, [task.taskId]: urls }))
+                    }
+                    onEvidenceNotesChange={(notes): void =>
+                      setEvidenceNotes((prev) => ({ ...prev, [task.taskId]: notes }))
+                    }
+                  />
+                ))}
+              </div>
             </div>
-          )}
+          );
+        })}
+      </div>
 
-          {/* Task Groups */}
-          <div className="space-y-8">
-            {STAGE_ORDER.map((stage) => {
-              const tasks = tasksByStage[stage];
-              if (tasks.length === 0) return null;
-              const StageIcon = STAGE_ICONS[stage];
-              const pendingCount = tasks.filter((t) => t.status === 'pending').length;
+      {/* Close Order Button */}
+      {wo.status !== 'CLOSED' && (
+        <div className="mt-10 pt-6 border-t border-slate-100">
+          <button
+            onClick={(): void => {
+              upa.closeCurrentOrder();
+            }}
+            disabled={upa.closingOrder || upa.loading}
+            data-testid="close-order-btn"
+            className="w-full md:w-auto px-8 py-4 font-black text-sm uppercase tracking-widest text-white bg-[#0f2a44] rounded-[4px] hover:brightness-125 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+          >
+            {upa.closingOrder ? 'Cerrando Orden...' : 'Cerrar Orden UPA'}
+          </button>
+        </div>
+      )}
 
-              return (
-                <div key={stage}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <StageIcon size={16} className="text-[#0f2a44]/60" />
-                    <h3 className="font-black uppercase tracking-[0.15em] text-[#0f2a44] text-sm">
-                      Etapa {STAGE_STEP[stage]}: {STAGE_LABELS[stage]}
-                    </h3>
-                    <span className="text-[10px] font-bold text-[#0f2a44]/40 uppercase tracking-wider ml-1">
-                      ({pendingCount} pendiente{pendingCount !== 1 ? 's' : ''})
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {tasks.map((task) => (
-                      <TaskCard
-                        key={task.taskId}
-                        task={task}
-                        isUpdating={!!upa.taskUpdating[task.taskId]}
-                        evidenceUrls={evidenceUrls[task.taskId] ?? []}
-                        evidenceNotes={evidenceNotes[task.taskId] ?? ''}
-                        onComplete={(): void => handleComplete(task)}
-                        onDefer={(): void => setDeferTaskId(task.taskId)}
-                        onEvidenceUrlsChange={(urls): void =>
-                          setEvidenceUrls((prev) => ({ ...prev, [task.taskId]: urls }))
-                        }
-                        onEvidenceNotesChange={(notes): void =>
-                          setEvidenceNotes((prev) => ({ ...prev, [task.taskId]: notes }))
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Close Order Button */}
-          {wo.status !== 'CLOSED' && (
-            <div className="mt-10 pt-6 border-t border-slate-100">
-              <button
-                onClick={(): void => {
-                  upa.closeCurrentOrder();
-                }}
-                disabled={upa.closingOrder || upa.loading}
-                data-testid="close-order-btn"
-                className="w-full md:w-auto px-8 py-4 font-black text-sm uppercase tracking-widest text-white bg-[#0f2a44] rounded-[4px] hover:brightness-125 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-              >
-                {upa.closingOrder ? 'Cerrando Orden...' : 'Cerrar Orden UPA'}
-              </button>
-            </div>
-          )}
-
-          {/* Closed State */}
-          {wo.status === 'CLOSED' && (
-            <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col items-center gap-4 py-8">
-              <CheckCircle size={52} className="text-emerald-500" />
-              <p className="font-black text-lg uppercase tracking-wider text-[#0f2a44]">
-                Orden Cerrada Exitosamente
-              </p>
-              <p className="text-sm font-bold text-[#0f2a44]/50 uppercase tracking-wide">
-                UUID: {wo.uuid}
-              </p>
-              <button
-                onClick={upa.resetOrder}
-                data-testid="new-order-btn"
-                className="px-8 py-3 font-black text-sm uppercase tracking-widest text-[#0f2a44] bg-[#f2b705] rounded-[4px] hover:brightness-110 transition-all shadow-md"
-              >
-                Nueva Orden UPA
-              </button>
-            </div>
+      {/* Closed State */}
+      {wo.status === 'CLOSED' && (
+        <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col items-center gap-4 py-8">
+          <CheckCircle size={52} className="text-emerald-500" />
+          <p className="font-black text-lg uppercase tracking-wider text-[#0f2a44]">
+            Orden Cerrada Exitosamente
+          </p>
+          <p className="text-sm font-bold text-[#0f2a44]/50 uppercase tracking-wide">
+            UUID: {wo.uuid}
+          </p>
+          {onReturn ? (
+            <button
+              onClick={onReturn}
+              data-testid="new-order-btn"
+              className="px-8 py-3 font-black text-sm uppercase tracking-widest text-[#0f2a44] bg-[#f2b705] rounded-[4px] hover:brightness-110 transition-all shadow-md"
+            >
+              Volver a Mantenimiento
+            </button>
+          ) : (
+            <button
+              onClick={upa.resetOrder}
+              data-testid="new-order-btn"
+              className="px-8 py-3 font-black text-sm uppercase tracking-widest text-[#0f2a44] bg-[#f2b705] rounded-[4px] hover:brightness-110 transition-all shadow-md"
+            >
+              Nueva Orden UPA
+            </button>
           )}
         </div>
-      </section>
+      )}
 
       {/* Defer Modal */}
       {deferTaskId && deferringTaskObj && (
