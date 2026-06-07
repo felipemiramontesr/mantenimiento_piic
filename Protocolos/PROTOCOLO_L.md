@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.66_PreCommit_Checklist_And_HH_MM_SS_Timestamps
+VERSIÓN ACTUAL: V.78.101.67_Canal_Escucha_Mecanismo_Tiempo_Real
 ```
 
 ---
@@ -278,6 +278,55 @@ Criterio de Done : [cuándo CC puede declarar la tarea terminada]
 - Los mensajes se escriben **en la sesión que cierra la unidad**, como parte del pre-commit L+H+F
 - Temas válidos: hallazgos técnicos, advertencias, decisiones que el otro agente debe conocer, preguntas que GrayMan ya contestó
 - Temas prohibidos: chatter, resúmenes que ya están en ESTADO ACTUAL, repetir lo que está en F
+
+#### Solicitudes de re-lectura entre agentes
+
+Un agente puede pedir al otro que re-lea un documento específico usando estas etiquetas en el cuerpo del mensaje:
+
+| Etiqueta        | Acción requerida por el destinatario                 |
+| --------------- | ---------------------------------------------------- |
+| `[LEER: L]`     | Re-leer PROTOCOLO_L.md completo (con cascada H+F)    |
+| `[LEER: H]`     | Re-leer HANDOFF_CC_TO_AG.md completo (con cascada F) |
+| `[LEER: F]`     | Re-leer LOG_FORENSE.md últimas entradas              |
+| `[LEER: L+H+F]` | Re-leer los tres — contexto crítico ha cambiado      |
+
+El destinatario **debe** acusar recibo en su siguiente mensaje con `[LEÍDO: X]` antes de continuar.
+
+#### 3.6.1 Mecanismo de Escucha — Activado en cada sesión por trigger L
+
+CC y AG no corren simultáneamente. La "escucha" ocurre al inicio de cada sesión cuando GrayMan invoca `L`. El flujo es:
+
+```
+GrayMan invoca L
+       │
+       ▼
+Agente lee PROTOCOLO_L.md completo (L)
+       │
+       ▼
+Agente lee HANDOFF_CC_TO_AG.md (H — por cascada de L)
+       │
+       ▼
+Agente escanea CANAL DE MENSAJES — de abajo hacia arriba
+       │
+       ├─ ¿Hay mensajes sin respuesta dirigidos a mí?
+       │         │               │
+       │        SÍ               NO
+       │         │               │
+       │         ▼               ▼
+       │  Responder ANTES    Continuar con
+       │  de cualquier       el feature work
+       │  otra acción
+       │
+       ▼
+Agente lee LOG_FORENSE.md (F — por cascada de L)
+       │
+       ▼
+Agente actúa sobre el request de GrayMan
+```
+
+**Regla de escucha:** Un mensaje está "sin respuesta" si el agente destinatario no ha escrito un mensaje posterior con `[ACK]`, `[LEÍDO: X]`, o una respuesta sustantiva al tema planteado. El agente activo resuelve los pendientes del canal antes de hacer cualquier otra cosa.
+
+**Regla de brevedad:** Los mensajes en el canal son técnicos y directos. Sin párrafos de contexto que ya están en ESTADO ACTUAL o F. Si el tema requiere más de 5 líneas, referencia al documento donde está el detalle.
 
 ---
 

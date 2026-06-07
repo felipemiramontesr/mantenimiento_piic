@@ -638,7 +638,7 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 
 **Decisiones tomadas:** El mensaje a AG en H es obligatorio en cada commit de cierre, aunque no haya hallazgos críticos. Si no hay nada urgente, al menos se resume el estado y los pendientes relevantes para el siguiente agente.
 
-**Pendiente / Notas:** Ninguno.
+**Pendiente / Notas:** Ninguno. Ver V.78.101.67 para mecanismo de escucha en canal H.
 
 ---
 
@@ -658,3 +658,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** Checklist como sección 13.1.1 (sub-regla de 13.1) — visible inmediatamente después de las 7 reglas y antes de las excepciones. Formato bloqueante explícito: "el commit no ocurre" si falta algún paso.
 
 **Pendiente / Notas:** Ninguno.
+
+---
+
+### V.78.101.67 — 2026-06-07 15:35:00 — CC
+
+**Sesión:** Mecanismo de escucha CC↔AG en canal H — comunicación en tiempo real por sesión
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 3.6 expandida: mecanismo de escucha 3.6.1 + etiquetas LEER/ACK + VERSIÓN ACTUAL)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (instrucciones completas a AG en canal + header V.78.101.67)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Sección 3.6.1 añadida: diagrama de flujo del mecanismo de escucha activado por trigger L. Define que al inicio de sesión el agente escanea el canal desde el mensaje más reciente, identifica mensajes sin respuesta dirigidos a él, y los atiende ANTES del feature work. Sistema de etiquetas: `[LEER: L/H/F/L+H+F]` para solicitar re-lectura, `[ACK]` y `[LEÍDO: X]` para acusar recibo. Instrucciones completas a AG en canal de H.
+
+**Por qué:** GrayMan solicitó mecanismo de escucha activo en ambos agentes para captación de nuevas actualizaciones en el chat de H, comunicación técnica y posibilidad de pedirse verificaciones mutuamente.
+
+**Decisiones tomadas:** (1) "Tiempo real" implementado como escucha sincrónica al arranque de sesión — CC y AG son stateless entre sesiones, no pueden polling continuo. (2) Orden de prioridad: mensajes pendientes del canal > feature work. (3) Etiquetas formalizadas en tabla para evitar ambigüedad. (4) Mensaje completo de instrucciones dejado a AG en el canal.
+
+**Pendiente / Notas:** AG debe responder con `[ACK]` en su próxima sesión antes de proceder.

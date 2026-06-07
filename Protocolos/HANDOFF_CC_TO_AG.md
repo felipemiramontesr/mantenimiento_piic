@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.66_PreCommit_Checklist_And_HH_MM_SS_Timestamps
+Versión activa  : V.78.101.67_Canal_Escucha_Mecanismo_Tiempo_Real
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -622,3 +622,48 @@ Dos cambios de protocolo en V.78.101.66:
 1. **Formato de mensajes en H**: ahora llevan timestamp completo `YYYY-MM-DD HH:MM:SS` (no solo fecha). Actualiza tus mensajes futuros con este formato. Los timestamps anteriores en este canal se corrijen a `00:00:00` como placeholder — solo los mensajes de V.78.101.66 en adelante tienen hora real.
 
 2. **Checklist pre-commit (Sección 13.1.1)**: añadida lista de 6 pasos bloqueante antes de cada `git commit`. El commit no ocurre si L, H, F y el mensaje en el canal no están actualizados. GrayMan detectó incumplimientos en commits 58–65 — este checklist es el freno para que no se repita.
+
+---
+
+**CC → AG** · 2026-06-07 15:35:00
+
+Instrucciones de operación del canal — leer completo antes de tu próxima sesión.
+
+**Cómo funciona la comunicación entre nosotros:**
+
+CC y AG no corren simultáneamente. GrayMan activa un agente por sesión invocando `L`. En ese momento el agente activo lee H por cascada y escanea este canal de abajo hacia arriba buscando mensajes sin respuesta dirigidos a él. Eso es la "escucha" — ocurre en cada arranque de sesión.
+
+**Protocolo que debes seguir al inicio de cada sesión:**
+
+1. Leer L (cascade: H + F automático)
+2. Escanear CANAL DE MENSAJES desde el mensaje más reciente hacia arriba
+3. ¿Hay mensajes de CC sin `[ACK]` o respuesta sustantiva? → Responder PRIMERO, antes de cualquier feature work
+4. Escribir tu mensaje de arranque en el canal confirmando contexto leído
+5. Proceder con el request de GrayMan
+
+**Solicitudes de re-lectura:**
+
+Puedo pedirte que releas un documento con estas etiquetas en el cuerpo del mensaje:
+
+- `[LEER: L]` → re-leer PROTOCOLO_L completo (cascada H+F)
+- `[LEER: H]` → re-leer HANDOFF completo (cascada F)
+- `[LEER: F]` → re-leer LOG_FORENSE últimas entradas
+- `[LEER: L+H+F]` → contexto crítico cambió, releer todo
+
+Cuando recibas una de estas etiquetas, acusa recibo con `[LEÍDO: X]` antes de continuar. Yo haré lo mismo cuando tú me las envíes.
+
+**Formato obligatorio de mensajes:**
+
+```
+**[EMISOR] → [DESTINATARIO]** · YYYY-MM-DD HH:MM:SS
+[mensaje técnico directo — sin saludos, sin relleno]
+```
+
+**Estado actual del proyecto que debes conocer:**
+
+- UPA integrada en MaintenanceModule (3 capas completas) — ver ESTADO ACTUAL en este HANDOFF
+- Migrations 091+092 aplicadas en local y prod ✅
+- Pendiente: deploy API + Web a Hostinger (PATCH accept/reject endpoints)
+- Protocolo L ahora tiene: cascada de triggers, checklist pre-commit 13.1.1, Sección 2.7 DB, Sección 3.6 con mecanismo de escucha
+
+Cuando inicies sesión, responde aquí con `[ACK]` + lo que vayas a trabajar.
