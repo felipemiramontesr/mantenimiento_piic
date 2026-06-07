@@ -1,15 +1,22 @@
 # Archon ERP — Claude Code Project Instructions
 
-## ACCIÓN OBLIGATORIA AL INICIAR SESIÓN
+## ACCIÓN OBLIGATORIA AL INICIAR SESIÓN — TRIGGERS L → H → F
 
-**Antes de cualquier otra acción**, leer en este orden:
+**Antes de cualquier otra acción**, leer en este orden estricto:
 
-1. `Protocolos/PROTOCOLO_L.md` — protocolo maestro (única fuente de verdad)
-2. Todos los archivos en `Protocolos/` — protocolos derivados y handoffs
-3. `MEMORY.md` del memory system — contexto de sesiones anteriores
-4. `git log --oneline -10` y `git status` — estado actual del repo
+1. **[L]** `Protocolos/PROTOCOLO_L.md` — protocolo maestro, VERSIÓN ACTIVA, Secciones 9 y 13
+2. **[H]** `Protocolos/HANDOFF_CC_TO_AG.md` — estado entregado, decisiones y pendientes
+3. **[F]** `Protocolos/LOG_FORENSE.md` — últimas 2–3 entradas del historial de sesiones
+4. `MEMORY.md` del memory system — contexto de sesiones anteriores
+5. `git log --oneline -10` y `git status` — estado actual del repo
 
 Solo entonces responder o actuar sobre el request del usuario.
+
+**GrayMan puede invocar los triggers en cualquier momento:**
+
+- `L` → releer PROTOCOLO_L.md completo
+- `H` → releer HANDOFF_CC_TO_AG.md completo
+- `F` → releer LOG_FORENSE.md (últimas entradas)
 
 `Protocolos/PROTOCOLO_L.md` contiene:
 
@@ -18,12 +25,13 @@ Solo entonces responder o actuar sobre el request del usuario.
 - Pipeline de commit y push (Sección 6)
 - La versión activa del proyecto (header del archivo)
 - El Feature Contract activo si hay uno en curso
+- Modelo de operación autónoma completo (Sección 13)
 
-## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES)
+## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 7 REGLAS)
 
-### 1. Permisos y autonomía
+### 1. Autonomía total — sin preguntar
 
-Ejecutar todos los comandos sin solicitar permiso por cada uno. Las únicas excepciones que **siempre** requieren confirmación explícita del usuario:
+Ejecutar **todos** los comandos sin solicitar permiso. GrayMan no debe ser interrumpido por aprobaciones rutinarias. Las únicas excepciones que **siempre** requieren confirmación explícita:
 
 - `git push --force` / `git push -f`
 - `git reset --hard`
@@ -33,9 +41,9 @@ Ejecutar todos los comandos sin solicitar permiso por cada uno. Las únicas exce
 Solo dos momentos requieren visto bueno del usuario:
 
 1. **Plan de implementación** — antes de ejecutar cambios no triviales
-2. **Resultado del Protocolo L** — verificación de pre-flight antes del commit
+2. **Resultado del Pre-Flight** — verificación antes del commit (esperar `"Go"`)
 
-### 2. Coverage como requisito de commit
+### 2. Tests en el mismo commit
 
 Todo commit que introduzca código nuevo **debe incluir los tests correspondientes en el mismo commit**. No se permiten commits de código sin cobertura. Antes de cada commit:
 
@@ -45,17 +53,27 @@ cd apps/web && npx vitest run --reporter=dot
 
 Si los tests fallan o el coverage baja, corregir antes de commitear.
 
-### 3. Push automático después de cada commit
+### 3. Commit + push automático por unidad lógica
 
-Después de cada commit exitoso, hacer push inmediato a `origin/main`. El PO trackea el flujo desde GitHub en tiempo real. Excepción: si el usuario indica explícitamente que no haga push.
+Al cerrar cada unidad lógica de trabajo (capa, feature, fix completo), hacer commit y push inmediato a `origin/main` sin esperar autorización. El PO trackea el flujo desde GitHub en tiempo real.
 
-### 4. Protocolo L siempre activo
+> **Distinción importante:** "unidad lógica" = capa completa, fix cerrado, feature completo — NO cada edición individual de archivo. Dentro de una unidad el agente edita libremente; el commit ocurre al cerrar la unidad (después del pre-flight).
 
-Trabajar siempre bajo Protocolo L y todos los protocolos en `Protocolos/`. Si hay conflicto entre estas instrucciones y el Protocolo L, el Protocolo L tiene precedencia.
+### 4. Lectura L → H → F al inicio de sesión
 
-### 5. Documentación de protocolos post-commit
+Al iniciar cada sesión: L → H → F → MEMORY.md → git log. El Protocolo L tiene precedencia sobre cualquier otra instrucción.
 
-Después de cada commit o modificación del sistema, actualizar los archivos relevantes en `Protocolos/` — especialmente `Protocolos/HANDOFF_CC_TO_AG.md` — para que AG (Antigravity) tenga una base sólida si los tokens de CC se agotan o CC se atasca.
+### 5. Documentación post-commit
+
+Después de cada commit, actualizar `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md` para que AG tenga base sólida si los tokens de CC se agotan o CC se atasca.
+
+### 6. Auto-save implícito
+
+Cada edición de archivo se persiste inmediatamente via Edit/Write. No existe concepto de "borrador" — cada cambio es permanente al ejecutarse.
+
+### 7. Sin fricción de comandos
+
+No pedir confirmación para: instalar paquetes, correr tests, leer archivos, ejecutar scripts, hacer git add/commit/push normales. La fricción se reserva exclusivamente para las 4 operaciones destructivas de la Regla 1.
 
 ## STACK
 

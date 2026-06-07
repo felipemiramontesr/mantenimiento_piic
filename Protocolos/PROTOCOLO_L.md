@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.56_UPA_Capa3_Frontend_Integrated
+VERSIÓN ACTUAL: V.78.101.57_Protocol_Triggers_H_F_L_And_7_Rules
 ```
 
 ---
@@ -188,23 +188,30 @@ Criterio de Done : [cuándo CC puede declarar la tarea terminada]
 **Cuando GrayMan cambia de AG → CC:**
 
 1. CC lee este archivo completo — especialmente VERSIÓN ACTIVA y Sección 9
-2. CC ejecuta `git log --oneline -10` y `git status`
-3. CC NO sobreescribe sin entender qué hizo AG
-4. Si hay dudas de intención, CC pregunta antes de actuar
+2. CC lee `Protocolos/HANDOFF_CC_TO_AG.md` completo — estado entregado, decisiones y pendientes (Trigger **H**)
+3. CC lee `Protocolos/LOG_FORENSE.md` — últimas 2–3 entradas para entender sesiones recientes (Trigger **F**)
+4. CC ejecuta `git log --oneline -10` y `git status`
+5. CC NO sobreescribe sin entender qué hizo AG
+6. Si hay dudas de intención, CC pregunta antes de actuar
 
 **Cuando GrayMan cambia de CC → AG:**
 
 1. AG aplica Protocolo L (Sección 5) antes de cualquier cambio complejo
-2. AG verifica que el archivo objetivo no tiene ediciones en curso de CC
-3. AG no usa `Set-Content` sin `-Encoding UTF8`
+2. AG lee `Protocolos/HANDOFF_CC_TO_AG.md` completo — estado actual del sistema (Trigger **H**)
+3. AG lee `Protocolos/LOG_FORENSE.md` — últimas 2–3 entradas para entender qué hizo CC (Trigger **F**)
+4. AG verifica que el archivo objetivo no tiene ediciones en curso de CC
+5. AG no usa `Set-Content` sin `-Encoding UTF8`
 
 ### 3.4 Harness Protocol — Ciclo de Vida de Sesión CC
 
-**Al iniciar sesión:**
+**Al iniciar sesión (orden obligatorio):**
 
-1. Leer `MEMORY.md` (contexto persistente acumulado)
-2. Ejecutar `git log --oneline -10` y `git status`
-3. Activar `TodoWrite` con las tareas del Feature Contract activo — máximo 1 tarea `in_progress` en todo momento
+1. Leer `Protocolos/PROTOCOLO_L.md` — especialmente VERSIÓN ACTIVA y Sección 9 (Trigger **L**)
+2. Leer `Protocolos/HANDOFF_CC_TO_AG.md` — estado entregado, decisiones y pendientes (Trigger **H**)
+3. Leer `Protocolos/LOG_FORENSE.md` — últimas 2–3 entradas del historial (Trigger **F**)
+4. Leer `MEMORY.md` (contexto persistente acumulado)
+5. Ejecutar `git log --oneline -10` y `git status`
+6. Activar `TodoWrite` con las tareas del Feature Contract activo — máximo 1 tarea `in_progress` en todo momento
 
 **Durante la sesión:**
 
@@ -633,15 +640,31 @@ Si la sesión no produce un commit (solo análisis, protocolo, configuración), 
 
 > **Aprobado por GrayMan.** Estas reglas son ley de protocolo equivalente a EAL6+. Aplican a **CC (Claude Code) y AG (Antigravity)** por igual.
 
-### 13.1 Las Cinco Reglas
+### 13.0 Sistema de Triggers
 
-| #     | Regla                           | Comportamiento                                                                                                                                                    |
-| ----- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1** | **Autonomía total de comandos** | El agente ejecuta todos los comandos sin solicitar permiso. Sin prompts de confirmación para operaciones normales.                                                |
-| **2** | **Tests en el mismo commit**    | Todo commit que introduzca código nuevo debe incluir sus tests en el mismo commit. Prohibido separar código y cobertura en commits distintos.                     |
-| **3** | **Push automático post-commit** | Después de cada commit exitoso, el agente hace push inmediato a `origin/main` sin esperar autorización. GrayMan trackea el flujo desde GitHub en tiempo real.     |
-| **4** | **Protocolo L al inicio**       | Al iniciar cada sesión, el agente lee: `Protocolos/PROTOCOLO_L.md` + todos los archivos en `Protocolos/` + `MEMORY.md`. Solo entonces actúa sobre el request.     |
-| **5** | **Documentación post-commit**   | Después de cada commit, el agente actualiza `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md` para que el otro agente tenga base sólida al arrancar. |
+Los triggers son disparadores de lectura obligatoria. Cualquier agente puede invocarlos explícitamente en el prompt o GrayMan puede activarlos por su letra.
+
+| Trigger | Letra | Acción                                                                                         | Cuándo se activa                                                               |
+| ------- | ----- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **L**   | `L`   | Leer y comprender `Protocolos/PROTOCOLO_L.md` completo — VERSIÓN ACTIVA + Secciones 9 y 13     | Inicio de sesión (obligatorio) · Cuando GrayMan escribe `L`                    |
+| **H**   | `H`   | Leer y comprender `Protocolos/HANDOFF_CC_TO_AG.md` completo — estado, decisiones, pendientes   | Inicio de sesión (obligatorio) · Cambio de agente · Cuando GrayMan escribe `H` |
+| **F**   | `F`   | Leer y comprender `Protocolos/LOG_FORENSE.md` — últimas 2–3 entradas del historial de sesiones | Inicio de sesión (obligatorio) · Cuando GrayMan escribe `F`                    |
+
+**Orden de lectura al iniciar sesión:** L → H → F → MEMORY.md → `git log` + `git status`
+
+### 13.1 Las Siete Reglas
+
+| #     | Regla                                       | Comportamiento                                                                                                                                                                       |
+| ----- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1** | **Autonomía total — sin preguntar**         | El agente ejecuta **todos** los comandos sin solicitar permiso. Sin prompts de confirmación para operaciones normales. GrayMan no debe ser interrumpido por aprobaciones rutinarias. |
+| **2** | **Tests en el mismo commit**                | Todo commit que introduzca código nuevo debe incluir sus tests en el mismo commit. Prohibido separar código y cobertura en commits distintos.                                        |
+| **3** | **Commit + push automático por unidad**     | Al cerrar cada unidad lógica de trabajo (capa, feature, fix), el agente hace commit y push a `origin/main` sin esperar autorización. GrayMan trackea el flujo desde GitHub.          |
+| **4** | **Lectura obligatoria L → H → F al inicio** | Al iniciar cada sesión: L (PROTOCOLO_L) → H (HANDOFF) → F (LOG_FORENSE) → MEMORY.md → git log. Solo entonces actúa sobre el request.                                                 |
+| **5** | **Documentación post-commit**               | Después de cada commit, el agente actualiza `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md` para que el otro agente tenga base sólida al arrancar.                    |
+| **6** | **Auto-save implícito**                     | Cada edición de archivo se persiste inmediatamente vía las herramientas del agente (Edit/Write). No existe concepto de "borrador" — cada cambio es permanente al ejecutarse.         |
+| **7** | **Sin fricción de comandos**                | El agente no pide confirmación para: instalar paquetes, correr tests, leer archivos, ejecutar scripts, hacer git add/commit/push normales. La lista de excepciones está en 13.2.     |
+
+> **Nota sobre "commit por modificación" vs "commit por unidad":** Un commit después de cada edición individual de archivo rompería el pipeline TDD (tests → lint → tsc deben pasar antes del commit). La Regla 3 aplica al cierre de cada **unidad lógica** — una capa completa, un fix cerrado, un feature completo. Dentro de una unidad, el agente edita libremente sin commitear.
 
 ### 13.2 Excepciones — Confirmación explícita de GrayMan siempre requerida
 
@@ -662,7 +685,7 @@ Si la sesión no produce un commit (solo análisis, protocolo, configuración), 
 | Archivo                       | Contenido clave                                                                                                       |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `.claude/settings.local.json` | `allow: ["Bash(*)", "Read", "Edit", "Write", "Glob", "Grep", "PowerShell(*)"]` + `deny` de 5 operaciones destructivas |
-| `CLAUDE.md`                   | Las 5 reglas como texto normativo — se carga en cada sesión de CC                                                     |
+| `CLAUDE.md`                   | Las 7 reglas y triggers como texto normativo — se carga en cada sesión de CC                                          |
 | `.husky/pre-commit`           | Solo `npx lint-staged` — tests NO van en hook (530+ tests = 2+ min por commit; enforcement real: CI)                  |
 | CI (GitHub Actions)           | 16 jobs paralelos verifican coverage thresholds en cada push                                                          |
 
