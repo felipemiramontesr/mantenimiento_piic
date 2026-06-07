@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.65_Fix_Missing_AG_Message_In_H
+VERSIÓN ACTUAL: V.78.101.66_PreCommit_Checklist_And_HH_MM_SS_Timestamps
 ```
 
 ---
@@ -269,7 +269,7 @@ Criterio de Done : [cuándo CC puede declarar la tarea terminada]
 - Cada mensaje sigue el formato exacto:
 
 ```
-**[EMISOR] → [DESTINATARIO]** · [fecha YYYY-MM-DD]
+**[EMISOR] → [DESTINATARIO]** · [fecha YYYY-MM-DD HH:MM:SS]
 [Cuerpo del mensaje — técnico y directo. Sin saludos. Sin relleno.]
 ```
 
@@ -717,6 +717,21 @@ Cada trigger tiene un alcance exacto de lectura. No más, no menos.
 | **7** | **Sin fricción de comandos**                | El agente no pide confirmación para: instalar paquetes, correr tests, leer archivos, ejecutar scripts, hacer git add/commit/push normales. La lista de excepciones está en 13.2.                                                                                                                   |
 
 > **Nota sobre "commit por modificación" vs "commit por unidad":** Un commit después de cada edición individual de archivo rompería el pipeline TDD (tests → lint → tsc deben pasar antes del commit). La Regla 3 aplica al cierre de cada **unidad lógica** — una capa completa, un fix cerrado, un feature completo. Dentro de una unidad, el agente edita libremente sin commitear. Al cerrar la unidad: (1) actualizar **L + H + F** (Regla 5), (2) pre-flight vitest (Regla 2), (3) commit todo junto + push.
+
+### 13.1.1 CHECKLIST PRE-COMMIT — OBLIGATORIO ANTES DE CADA `git commit`
+
+> **El agente NO puede ejecutar `git commit` sin haber completado estos 4 pasos en orden.**
+
+```
+[ ] 1. PROTOCOLO_L.md  — VERSIÓN ACTUAL bumpeada a la nueva versión
+[ ] 2. HANDOFF_CC_TO_AG.md — header actualizado + ESTADO ACTUAL refleja el cierre
+[ ] 3. LOG_FORENSE.md  — entrada nueva con qué se hizo, por qué, decisiones
+[ ] 4. CANAL DE MENSAJES en H — mensaje a AG escrito con fecha YYYY-MM-DD HH:MM:SS
+[ ] 5. git add -f Protocolos/PROTOCOLO_L.md Protocolos/HANDOFF_CC_TO_AG.md Protocolos/LOG_FORENSE.md [+ archivos de código]
+[ ] 6. git commit + git push
+```
+
+Si cualquiera de los pasos 1–4 no está completo, el commit **no ocurre**. No hay excepciones.
 
 ### 13.2 Excepciones — Confirmación explícita de GrayMan siempre requerida
 

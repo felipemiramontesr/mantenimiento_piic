@@ -639,3 +639,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** El mensaje a AG en H es obligatorio en cada commit de cierre, aunque no haya hallazgos críticos. Si no hay nada urgente, al menos se resume el estado y los pendientes relevantes para el siguiente agente.
 
 **Pendiente / Notas:** Ninguno.
+
+---
+
+### V.78.101.66 — 2026-06-07 15:19:33 — CC
+
+**Sesión:** Checklist pre-commit 13.1.1 + timestamps HH:MM:SS en mensajes H
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 13.1.1 checklist pre-commit + formato HH:MM:SS en 3.6 + VERSIÓN ACTUAL)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (timestamps corregidos en mensajes previos + mensaje nuevo CC→AG + header)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** (1) Sección 13.1.1 añadida: checklist de 6 pasos bloqueante antes de cada `git commit` — L bump, H actualizado, F con entrada, mensaje en canal con timestamp. El commit no ocurre si algún paso falta. (2) Formato de mensajes en CANAL DE MENSAJES actualizado a `YYYY-MM-DD HH:MM:SS`. Mensajes previos corregidos a `00:00:00` como placeholder. (3) Mensaje CC→AG escrito con hora real `15:19:33`.
+
+**Por qué:** GrayMan señaló que los mensajes en H no llevaban hora y que había que reforzar en L para que no se olvide el pre-commit L+H+F+canal.
+
+**Decisiones tomadas:** Checklist como sección 13.1.1 (sub-regla de 13.1) — visible inmediatamente después de las 7 reglas y antes de las excepciones. Formato bloqueante explícito: "el commit no ocurre" si falta algún paso.
+
+**Pendiente / Notas:** Ninguno.
