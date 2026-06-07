@@ -467,3 +467,21 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** (1) SovereignLayout ownership en MaintenanceModule (no en UpaWorkspace embebido) — un solo componente orquesta el header por contexto. (2) Ruta /dashboard/upa eliminada (no deprecada) — nunca tuvo datos reales. (3) data-testid="new-order-btn" reutilizado para ambos estados CLOSED — identifica la acción de salida del estado, no la acción concreta. (4) Loading state en embedded mode cuando workOrder es null.
 
 **Pendiente / Notas:** Producción: ejecutar migration 092 en `u701509674_Mant_piic` + deploy API + deploy Web. FK constraint de 091 si no está en prod.
+
+---
+
+### V.78.101.57 — 2026-06-07 — CC
+
+**Sesión:** Refuerzo Protocolo L — Triggers H/F/L + 7 Reglas de autonomía (commit c0859d7)
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Secciones 3.3, 3.4, 13 — version bump → V.78.101.57)
+- `CLAUDE.md` (instrucciones de sesión CC — sincronizado con 7 reglas y triggers)
+
+**Qué se hizo:** Formalización del sistema de triggers en Protocolo L Sección 13.0: L (leer PROTOCOLO_L), H (leer HANDOFF), F (leer LOG_FORENSE), con tabla y orden de lectura obligatorio al inicio de sesión. Sección 3.3 actualizada con pasos H y F en el cambio de agente (AG↔CC). Sección 3.4 actualizada con secuencia L→H→F→MEMORY→git como arranque obligatorio. Reglas 5→7: se añadieron Regla 6 (auto-save implícito) y Regla 7 (sin fricción de comandos). Nota explicativa sobre "commit por unidad lógica" vs "commit por edición de archivo". CLAUDE.md sincronizado con las 7 reglas y los triggers.
+
+**Por qué:** GrayMan solicitó formalizar los triggers H, F, L, asegurar que ningún agente pregunte por la ejecución de comandos, y aclarar la semántica de commit automático.
+
+**Decisiones tomadas:** (1) "Commit por unidad lógica" en lugar de "commit por edición de archivo" — edición por archivo rompería el pre-flight TDD (tests → lint → tsc deben pasar antes del commit). Documentado explícitamente en nota de Regla 3 para evitar ambigüedad futura. (2) Triggers como tabla formal en Sección 13.0 — invocables por letra desde el prompt de GrayMan en cualquier momento. (3) CLAUDE.md sincronizado con PROTOCOLO_L Sección 13 — ambos son fuentes de verdad equivalentes para CC.
+
+**Pendiente / Notas:** Ninguno. GrayMan confirmará si "commit por modificación" debe interpretarse de forma diferente.
