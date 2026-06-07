@@ -545,3 +545,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** L (version bump) va siempre en el commit de cierre — es la fuente de verdad de versión del proyecto.
 
 **Pendiente / Notas:** Ninguno.
+
+---
+
+### V.78.101.61 — 2026-06-07 — CC
+
+**Sesión:** H como canal de comunicación bidireccional CC ↔ AG
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 3.6 nueva — H como canal de mensajes + reglas)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (sección CANAL DE MENSAJES al final + header V.78.101.61)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Sección 3.6 en PROTOCOLO_L.md define H como canal de comunicación técnica directa entre CC y AG, adicional a su función de estado entregado. Reglas: append-only, formato `**[EMISOR] → [DESTINATARIO]** · [fecha]`, lectura obligatoria al invocar H, escritura como parte del pre-commit L+H+F. Sección `## CANAL DE MENSAJES CC ↔ AG` añadida al final de HANDOFF_CC_TO_AG.md con primer mensaje de CC a AG.
+
+**Por qué:** GrayMan solicitó que H funcione como herramienta de comunicación entre CC y AG sin perder la estructura actual.
+
+**Decisiones tomadas:** (1) Canal al final de H para no interferir con la lectura del estado técnico. (2) Append-only — los mensajes son audit trail, no se borran. (3) Temas válidos acotados: hallazgos técnicos, advertencias, decisiones; prohibido chatter o repetir lo que está en ESTADO ACTUAL o F.
+
+**Pendiente / Notas:** Ninguno.

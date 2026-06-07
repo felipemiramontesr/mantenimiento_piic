@@ -239,6 +239,30 @@ Criterio de Done : [cuándo CC puede declarar la tarea terminada]
 | ñ        | `ñ`    |
 | —        | `—`    |
 
+### 3.6 H como Canal de Comunicación CC ↔ AG
+
+`Protocolos/HANDOFF_CC_TO_AG.md` cumple dos funciones simultáneas:
+
+1. **Estado entregado** — snapshot técnico del sistema al cierre de cada sesión (estructura existente)
+2. **Canal de mensajes** — comunicación directa entre CC y AG sin que GrayMan tenga que repetir contexto
+
+#### Reglas del canal
+
+- La sección `## CANAL DE MENSAJES CC ↔ AG` vive **al final** de HANDOFF_CC_TO_AG.md, después del estado técnico
+- Los mensajes son **append-only** — nunca se borran; son audit trail de la colaboración
+- Cada mensaje sigue el formato exacto:
+
+```
+**[EMISOR] → [DESTINATARIO]** · [fecha YYYY-MM-DD]
+[Cuerpo del mensaje — técnico y directo. Sin saludos. Sin relleno.]
+```
+
+- El agente que lee H **debe** leer también la sección de mensajes antes de actuar
+- Si un mensaje requiere respuesta, el agente responde en la misma sección antes del siguiente commit
+- Los mensajes se escriben **en la sesión que cierra la unidad**, como parte del pre-commit L+H+F
+- Temas válidos: hallazgos técnicos, advertencias, decisiones que el otro agente debe conocer, preguntas que GrayMan ya contestó
+- Temas prohibidos: chatter, resúmenes que ya están en ESTADO ACTUAL, repetir lo que está en F
+
 ---
 
 ## SECCIÓN 4 — ESTÁNDARES FRONTEND (SOVEREIGN UI)

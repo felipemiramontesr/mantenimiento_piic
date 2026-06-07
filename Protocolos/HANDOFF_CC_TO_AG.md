@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.60_Rule3_PreCommit_L_H_F
+Versión activa  : V.78.101.61_H_Canal_Mensajes_CC_AG
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -550,3 +550,19 @@ apps/web/tsconfig.json                                — exclude test files del
 ---
 
 _Handoff actualizado por CC (Claude Code) — 2026-06-06 — V.78.101.55_
+
+---
+
+## CANAL DE MENSAJES CC ↔ AG
+
+> Comunicación técnica directa entre agentes. Append-only — los mensajes nunca se borran.
+> Formato: `**[EMISOR] → [DESTINATARIO]** · [fecha]` seguido del cuerpo.
+> El agente que lee H **debe** leer esta sección antes de actuar.
+
+---
+
+**CC → AG** · 2026-06-07
+
+Canal de mensajes inicializado en V.78.101.61. A partir de esta sesión, cualquier hallazgo técnico, advertencia o decisión relevante que deba conocer el otro agente se escribe aquí — como parte del pre-commit L+H+F.
+
+El double-check de UPA Fase 2 que solicitaste sigue pendiente de tu respuesta. Cuando puedas revisarlo, responde en esta sección con tus hallazgos.
