@@ -420,3 +420,50 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Por qué:** Consolidación de especificación EAL6+ para arranque de desarrollo.
 **Decisiones tomadas:** Actuación autónoma. Timeout de 24h asíncrono. Clave de deduplicación basada en último WO cerrado. Reversibilidad inmutable del N_A_STRUCTURAL. leet_type agregado al Hard Stop.
 **Pendiente:** Ninguno. Handoff a CC.
+
+---
+
+### V.78.101.55 — 2026-06-07 — CC
+
+**Sesión:** UPA Capa 1 (DB) + Capa 2 (API) — Migration 092 + endpoints accept/reject (commit 3a8ddbc)
+**Archivos tocados:**
+
+- `packages/database/migrations/092_maintenance_upa_link.sql` (nuevo)
+- `apps/api/src/routes/fleetMaintenance.ts` (POST→OPEN, PATCH accept, PATCH reject)
+- `apps/api/src/services/workOrderService.ts` (fix: execute→ResultSetHeader)
+- `apps/api/src/routes/fleetMaintenanceIntegration.test.ts` (+6 tests)
+- `Protocolos/PROTOCOLO_L.md` (version bump)
+
+**Qué se hizo:** Migration 092: columnas `upa_work_order_id` (FK → upa_work_orders ON DELETE SET NULL) y `created_by_user_id` en `fleet_movements`, índice `idx_fm_upa_wo`. API: `POST /maintenance` con `is_in_progress=true` crea movimiento `OPEN` (no `ACTIVE`) y envía notificación push al técnico (non-blocking); `PATCH /maintenance/:uuid/accept` (OPEN→ACTIVE, bloquea unidad, crea UPA work order, vincula upa_work_order_id, notifica responsable, devuelve workOrderId); `PATCH /maintenance/:uuid/reject` (limpia técnico, notifica responsable, movimiento queda OPEN listo para reasignar). 6 tests de integración nuevos (401/404/409 para accept y reject).
+
+**Por qué:** GrayMan/AG dieron "Go" directo e irrevocable para implementar el flujo completo: Forecast → Programar → técnico recibe notificación → acepta/rechaza → UPA pipeline.
+
+**Decisiones tomadas:** (1) `OPEN` como semántica de "programado, pendiente aceptación" — status existía en el tipo pero nunca se asignaba en POST. (2) Bloqueo de unidad diferido al PATCH accept (no al POST) — evita bloqueos fantasma por órdenes rechazadas. (3) NotificationService dispatch no bloqueante con `.catch(err => fastify.log.warn)` — fallo de notificación no cancela la operación. (4) Fix `execute<ResultSetHeader>` en workOrderService — bug TS pre-existente.
+
+**Pendiente / Notas:** Capa 3 frontend en siguiente sesión.
+
+---
+
+### V.78.101.56 — 2026-06-07 — CC
+
+**Sesión:** UPA Capa 3 (Frontend) — Embedded en MaintenanceModule + limpieza ruta standalone (commits 6a1ab7c + fc86cd5)
+**Archivos tocados:**
+
+- `apps/web/src/types/maintenance.ts` (upa_work_order_id, panel 'UPA')
+- `apps/web/src/api/maintenance.ts` (nuevo — acceptMaintenance, rejectMaintenance)
+- `apps/web/src/components/Maintenance/MaintenanceGridView.tsx` (botones Accept/Reject/Ver UPA en ACCIONES)
+- `apps/web/src/pages/Dashboard/MaintenanceModule.tsx` (panel UPA + handlers accept/reject/openUpa/returnFromUpa)
+- `apps/web/src/pages/Upa/UpaWorkspace.tsx` (refactor: workOrderId + onReturn props, sin SovereignLayout)
+- `apps/web/src/pages/Upa/UpaWorkspace.test.tsx` (mock SovereignLayout eliminado, +6 tests embedded mode)
+- `apps/web/src/App.tsx` (ruta /dashboard/upa ELIMINADA)
+- `apps/web/src/components/Navigation/Sidebar.tsx` (NavItem "Proceso UPA" ELIMINADO)
+- `Protocolos/PROTOCOLO_L.md` (version bump → V.78.101.56)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (actualizado con arquitectura 3 capas completa)
+
+**Qué se hizo:** Integración completa de UPA dentro de `/dashboard/maintenance`. MaintenanceGridView muestra botones Accept (✓) y Reject (✗) para órdenes `OPEN`, y Ver UPA (Cpu icon) para órdenes `ACTIVE + upa_work_order_id`. MaintenanceModule: panel `'UPA'` con handleAcceptOrder (API → workOrderId → panel), handleRejectOrder (API → refresh), handleOpenUpa/handleReturnFromUpa. UpaWorkspace refactorizado como embebible: con workOrderId auto-carga y omite InitForm; con onReturn muestra back button y "Volver a Mantenimiento" en CLOSED. Ruta `/dashboard/upa` y nav item "Proceso UPA" eliminados. 594 tests · 68 archivos · 0 fallos · tsc clean.
+
+**Por qué:** UPA standalone nunca tuvo acceso a datos reales de mantenimiento. El flujo correcto es que la UPA se accede únicamente desde el grid de mantenimiento al aceptar una orden, con MaintenanceModule como orquestador del SovereignLayout.
+
+**Decisiones tomadas:** (1) SovereignLayout ownership en MaintenanceModule (no en UpaWorkspace embebido) — un solo componente orquesta el header por contexto. (2) Ruta /dashboard/upa eliminada (no deprecada) — nunca tuvo datos reales. (3) data-testid="new-order-btn" reutilizado para ambos estados CLOSED — identifica la acción de salida del estado, no la acción concreta. (4) Loading state en embedded mode cuando workOrder es null.
+
+**Pendiente / Notas:** Producción: ejecutar migration 092 en `u701509674_Mant_piic` + deploy API + deploy Web. FK constraint de 091 si no está en prod.
