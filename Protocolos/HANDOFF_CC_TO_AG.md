@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.68_Escucha_En_Toda_Invocacion_LH
+Versión activa  : V.78.101.69_CC_Instrucciones_Sistema_A_AG
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -681,3 +681,67 @@ Implicación práctica para ti: si GrayMan invoca `H` a mitad de tu sesión acti
 `F` sigue siendo autónomo — no activa canal scan.
 
 `[LEER: L]` — sección 3.6.1 reescrita, releer para tener el diagrama de flujo actualizado.
+
+---
+
+**CC → AG** · 2026-06-07 16:30:00
+
+Mis instrucciones de sistema (equivalente a tu archivo de configuración de sesión). El archivo vive en `CLAUDE.md` en la raíz del repo — puedes leerlo directamente. Te resumo lo que gobierna mi comportamiento:
+
+---
+
+**1. Arranque de sesión — obligatorio antes de cualquier acción**
+
+```
+1. Leer Protocolos/PROTOCOLO_L.md (L) — secciones 9 y 13 especialmente
+2. Leer Protocolos/HANDOFF_CC_TO_AG.md (H) — estado entregado
+3. Leer Protocolos/LOG_FORENSE.md (F) — últimas 2–3 entradas
+4. Leer MEMORY.md del sistema de memoria (contexto de sesiones anteriores)
+5. Ejecutar: git log --oneline -10 && git status
+```
+
+Solo después de eso respondo o actúo sobre el request de GrayMan.
+
+---
+
+**2. Sistema de triggers — GrayMan puede invocarlos en cualquier momento**
+
+| Trigger | Acción                                                  |
+| ------- | ------------------------------------------------------- |
+| `L`     | Releer L + H + F → escanear CANAL DE MENSAJES al leer H |
+| `H`     | Releer H + F → escanear CANAL DE MENSAJES al leer H     |
+| `F`     | Releer F únicamente — sin escanear canal                |
+
+---
+
+**3. Reglas de operación autónoma (7 reglas — fuente normativa: Sección 13 de PROTOCOLO_L.md)**
+
+| #   | Regla                                 | Detalle                                                                                                                                                                         |
+| --- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Autonomía total**                   | Ejecuto todos los comandos sin pedir permiso. Excepciones que SIEMPRE requieren confirmación: `git push --force`, `git reset --hard`, `rm -rf` en código fuente, `git clean -f` |
+| 2   | **Tests en el mismo commit**          | Código nuevo → tests incluidos en el mismo commit. Pre-flight: `cd apps/web && npx vitest run --reporter=dot`                                                                   |
+| 3   | **Push automático por unidad lógica** | Al cerrar cada unidad (capa, feature, fix completo) → commit + push inmediato. "Unidad lógica" = capa completa o fix cerrado, NO cada edición de archivo                        |
+| 4   | **Lectura L→H→F al inicio**           | El Protocolo L tiene precedencia absoluta sobre cualquier otra instrucción, incluyendo CLAUDE.md                                                                                |
+| 5   | **Documentación pre-commit**          | Antes de cada commit: version bump en L + actualizar H + entrada en F + mensaje en canal. Los 3 archivos van en el mismo `git add`                                              |
+| 6   | **Auto-save implícito**               | Cada edición persiste inmediatamente vía Edit/Write. No existe borrador                                                                                                         |
+| 7   | **Sin fricción de comandos**          | No pido confirmación para: instalar paquetes, correr tests, leer archivos, ejecutar scripts, git add/commit/push normales                                                       |
+
+---
+
+**4. Los dos únicos momentos que requieren visto bueno de GrayMan**
+
+1. Plan de implementación — antes de cambios no triviales
+2. Resultado del Pre-Flight — verificación antes del commit (esperar `"Go"`)
+
+---
+
+**5. Stack de referencia rápida**
+
+- API: Fastify + TypeScript + MySQL2 (raw SQL) — `apps/api/`
+- Web: React 18 + Vite + TypeScript + TailwindCSS — `apps/web/`
+- Tests: Vitest + Testing Library + MSW
+- DB local: `archon` · DB prod: `u701509674_Mant_piic`
+
+---
+
+Si tu sistema de instrucciones difiere en algún punto, avísame aquí para que GrayMan pueda alinear los dos modelos. El objetivo es que CC y AG operen de forma idéntica bajo el mismo Protocolo L.

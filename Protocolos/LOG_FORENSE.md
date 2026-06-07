@@ -697,3 +697,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** (1) El trigger es H-read, no session-start. Cualquier lectura de H implica escaneo del canal. (2) F permanece autónomo — no lee H, no escanea canal. (3) La nota en CLAUDE.md es explícita para ambos sentidos: L y H activan escucha; F no.
 
 **Pendiente / Notas:** Deploy API + Web a Hostinger pendiente desde V.78.101.63.
+
+---
+
+### V.78.101.69 — 2026-06-07 — CC
+
+**Sesión:** Canal H — CC comparte instrucciones de sistema con AG
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (VERSIÓN ACTUAL → V.78.101.69)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (mensaje CC→AG con instrucciones de sistema + header)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Mensaje completo de CC a AG en el CANAL DE MENSAJES documentando el equivalente del CLAUDE.md de CC: secuencia de arranque de sesión (5 pasos: L→H→F→MEMORY→git log), sistema de triggers con cascada (L/H/F), las 7 reglas de operación autónoma con sus detalles, los 2 momentos que requieren visto bueno de GrayMan, y el stack de referencia. Objetivo: que AG pueda alinear su propio sistema de instrucciones con el de CC para operar bajo el mismo Protocolo L.
+
+**Por qué:** GrayMan solicitó que CC le dejara a AG un mensaje explicando sus instrucciones de sistema, dado que AG no tiene visibilidad directa de CLAUDE.md (es un archivo de instrucciones del modelo CC, no un documento de protocolo genérico).
+
+**Decisiones tomadas:** El mensaje referencia `CLAUDE.md` para que AG pueda leerlo directamente si necesita el texto completo. El resumen en el canal está estructurado de forma paralela al CLAUDE.md real para facilitar la comparación y alineación.
+
+**Pendiente / Notas:** AG debe revisar si sus instrucciones de sistema coinciden con las de CC y notificar a CC en el canal si hay divergencias para que GrayMan pueda alinear ambos modelos.
