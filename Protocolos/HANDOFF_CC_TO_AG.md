@@ -3,8 +3,8 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.55_UPA_Core_Engine_And_Test_Harness
-Commit          : 8d61a41
+Versión activa  : V.78.101.52_UPA_Fase2_WorkOrderService_Infra
+Commit          : 64ab065
 Fecha           : 2026-06-06
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
@@ -13,7 +13,84 @@ Agente entrante : AG (Antigravity)
 
 ---
 
-## MENSAJE DE CC A AG — 2026-06-06 · Cierre de Sesión UPA Engine
+## MENSAJE DE CC A AG — 2026-06-06 · Cierre de Sesión UPA Fase 2
+
+AG,
+
+Esta sesión cerró la Fase 2 del pipeline UPA. El motor puro del commit `8d61a41` ahora tiene toda la infraestructura de persistencia conectada.
+
+---
+
+### LO QUE SE IMPLEMENTÓ EN ESTA SESIÓN (commit `64ab065`)
+
+**1. Decisión arquitectónica clave: `fleetType` en el request de init (Opción B).**
+`fleet_units` no tiene columna `fleet_type`. Se decidió capturarlo en `POST /v1/work-orders/init` en lugar de añadir ALTER TABLE a una tabla con datos de producción. Semánticamente correcto: el contexto operativo (urbano/minero) puede cambiar por asignación, no es un atributo fijo del vehículo.
+
+**2. Migration 091 — `packages/database/migrations/091_upa_work_orders.sql`**
+
+- `upa_work_orders`: uuid, vehicle_id VARCHAR(36), fleet_type ENUM, status ENUM (IN_PROGRESS/AWAITING_AUTH/CLOSED), pending_since, opened_at, closed_at. FK → fleet_units(id) ON DELETE RESTRICT.
+- `upa_work_order_tasks`: task_id, stage, package_level, description, status ENUM (pending/completed/DEFERRED_FINANCIAL/N_A_STRUCTURAL), evidence_urls JSON, evidence_notes, completed_at. FK → upa_work_orders(id) ON DELETE CASCADE.
+
+**3. workOrderService.ts — `apps/api/src/services/workOrderService.ts`**
+
+- `createWorkOrder(vehicleId, fleetType)`: JOIN fleet_units → common_catalogs para obtener brandLabel/fuelTypeLabel → mapea a Brand/FuelType del motor → llama `calculateUpaOrder` → ACID bulk insert.
+- Brand mapping: 'TOYOTA'/'toyota' → 'toyota', 'Dodge'/'RAM' → 'dodge_ram', cualquier otra → 'generic'.
+- Fuel mapping: contiene 'diesel' → 'diesel', resto → 'gasoline'.
+- `updateTaskStatus(workOrderId, taskId, update)`: actualiza status + escalation automática a AWAITING_AUTH si status es DEFERRED_FINANCIAL o N_A_STRUCTURAL.
+- `closeWorkOrder(workOrderId)`: cierra orden, tareas pending → DEFERRED_FINANCIAL.
+- `checkAndTimeoutStage5Orders()`: batch UPDATE de órdenes AWAITING_AUTH con TIMESTAMPDIFF > 24h.
+
+**4. Routes — `apps/api/src/routes/workOrders.ts`**
+
+- `POST /v1/work-orders/init` → 201 `{ workOrderId, uuid, taskCount }` | 404 VEHICLE_NOT_FOUND | 422 VALIDATION_ERROR
+- `PATCH /v1/work-orders/:id/tasks/:taskId` → 200 | 404 TASK_NOT_FOUND
+- `POST /v1/work-orders/:id/close` → 200 | 404 NOT_FOUND | 409 ALREADY_CLOSED
+- Todos tras `requirePermission('fleet:write')` + `jwtVerify()`.
+
+**5. Cron en index.ts**
+
+- `import('node-cron')` dinámico dentro del bloque de auto-start (fuera de `buildApp`).
+- Schedule: `'0 * * * *'` (cada hora en punto). Llama `checkAndTimeoutStage5Orders()`.
+- NO se testea en unit tests (no es lógica pura — adapter de 5 líneas sobre función ya testeada).
+
+**6. Tests — 22 nuevos en `workOrderService.test.ts`**
+
+- Patrón: `vi.mock('./db', ...)` con mockConnection (beginTransaction/commit/rollback/release).
+- Casos cubiertos: VEHICLE_NOT_FOUND sin tocar getConnection, happy path con verificación de UUID, mining vs urban (presencia de triage_rotating_beacon), deduplicación de cascade tasks, rollback en error de insert, brand mapping Toyota/generic, AWAITING_AUTH escalation, ALREADY_CLOSED, timeout sweep vacío y con órdenes.
+
+**7. Total tests: 377/377 — lint clean.**
+
+---
+
+### ESTADO ACTUAL DEL STACK UPA
+
+| Capa         | Archivo                   | Estado                    |
+| ------------ | ------------------------- | ------------------------- |
+| Motor puro   | `upaEngine.ts`            | ✅ 85 tests               |
+| Persistencia | `workOrderService.ts`     | ✅ 22 tests               |
+| HTTP         | `workOrders.ts`           | ✅ registrado en index.ts |
+| Cron         | `index.ts`                | ✅ node-cron hourly       |
+| DB Schema    | `091_upa_work_orders.sql` | ✅ en repo                |
+
+---
+
+### LO QUE QUEDA PENDIENTE
+
+**Fase 3 — UI (React):**
+
+- Componente de apertura de orden: selector de vehículo + fleetType toggle + botón Init.
+- Checklist de tareas por stage: triage → minor_service → cascade → deferred → cierre.
+- Upload de evidencias (el backend ya soporta `evidence_urls: JSON`).
+- El endpoint `POST /v1/work-orders/:id/close` ya existe — solo necesita el botón en UI.
+
+**Fase 4 — Producción:**
+
+- Ejecutar `091_upa_work_orders.sql` en `u701509674_Mant_piic`.
+- Verificar `fleet_units.brandId` y `fuelTypeId` tienen datos en `common_catalogs` con categories `BRAND` y `FUEL`.
+
+---
+
+## MENSAJE ANTERIOR — 2026-06-06 · Cierre de Sesión UPA Engine
 
 AG,
 
