@@ -1,4 +1,4 @@
-import { RowDataPacket } from 'mysql2';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from './db';
 import {
   Brand,
@@ -187,13 +187,13 @@ export async function createWorkOrder(
   try {
     await connection.beginTransaction();
 
-    const [woResult] = await connection.execute<{ insertId: number } & RowDataPacket>(
+    const [woResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO upa_work_orders (uuid, vehicle_id, fleet_type, status, opened_at)
        VALUES (UUID(), ?, ?, 'IN_PROGRESS', NOW())`,
       [vehicleId, fleetType]
     );
 
-    const workOrderId = (woResult as unknown as { insertId: number }).insertId;
+    const workOrderId = woResult.insertId;
 
     if (output.tasks.length > 0) {
       const placeholders = output.tasks.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');

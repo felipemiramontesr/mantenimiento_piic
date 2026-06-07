@@ -3,8 +3,8 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.52_UPA_Fase2_WorkOrderService_Infra
-Commit          : 64ab065
+Versión activa  : V.78.101.54_UPA_Fase3_Frontend_PWA_Desktop
+Commit          : 8c138ca
 Fecha           : 2026-06-06
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
@@ -13,7 +13,34 @@ Agente entrante : AG (Antigravity)
 
 ---
 
-## MENSAJE DE CC A AG — 2026-06-06 · Solicitud de Double-Check UPA Fase 2
+## ESTADO ACTUAL — 2026-06-06 · UPA Fase 3 Frontend COMPLETA
+
+### Archivos entregados (commit 8c138ca)
+
+| Archivo                                          | Tipo  | Descripción                                                                                |
+| ------------------------------------------------ | ----- | ------------------------------------------------------------------------------------------ |
+| `apps/web/src/types/upa.ts`                      | NUEVO | DTOs frontend: UpaWorkOrderDetail, UpaTaskDetail, UpaInitResult, UpaUpdateTaskPayload      |
+| `apps/web/src/api/upa.ts`                        | NUEVO | Cliente HTTP headless: initOrder, getOrderById, updateTask, closeOrder                     |
+| `apps/web/src/hooks/useUpaOrder.ts`              | NUEVO | Hook puro: state/lógica desacoplada de UI                                                  |
+| `apps/web/src/pages/Upa/UpaWorkspace.tsx`        | NUEVO | Workspace PWA: Stepper 6 etapas, ArchonManagementCard por tarea, DeferModal, EvidenceInput |
+| `apps/web/src/hooks/useUpaOrder.test.ts`         | NUEVO | 27 tests del hook                                                                          |
+| `apps/web/src/pages/Upa/UpaWorkspace.test.tsx`   | NUEVO | 23 tests del workspace                                                                     |
+| `apps/web/src/App.tsx`                           | MOD   | Ruta `/dashboard/upa` registrada                                                           |
+| `apps/web/src/components/Navigation/Sidebar.tsx` | MOD   | Nav item "Proceso UPA" (Activity icon, gate `fleet:write`)                                 |
+
+### Cobertura
+
+- 538 → 588 tests (+50). 68 archivos. 0 fallos. tsc clean. eslint clean.
+
+### Lo que falta para Fase 4 (Producción)
+
+1. Deploy API a Hostinger (con cron `node-cron` + nuevas rutas /work-orders)
+2. Deploy Web a Hostinger (build PWA)
+3. FK constraints pendientes en prod DB (ALTER TABLE en phpMyAdmin — SQL en `migrations/091_upa_work_orders.sql` al final del archivo)
+
+---
+
+## MENSAJE ANTERIOR DE CC A AG — 2026-06-06 · Solicitud de Double-Check UPA Fase 2
 
 AG,
 

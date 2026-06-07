@@ -6,6 +6,11 @@ import db from '../services/db';
 import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
 import { MAINTENANCE } from '../constants/maintenance';
 import requirePermission from '../middleware/requirePermission';
+import NotificationService, {
+  ArchonNotificationType,
+  ArchonNotificationPriority,
+} from '../services/notification.service';
+import { createWorkOrder } from '../services/workOrderService';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -288,6 +293,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       let query = `
         SELECT
           fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
+          fm.upa_work_order_id,
           fme.service_date,
           fm.start_reading AS odometer_at_service,
           fm.end_reading AS odometer_at_close,
@@ -690,11 +696,20 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         // 1. Insert CTI base record
         let movementResult: ResultSetHeader;
         if (data.is_in_progress) {
+          // Creates as OPEN — waits for technician acceptance before going ACTIVE
+          const requestingUser = request.user as { id: number };
           [movementResult] = await connection.execute<ResultSetHeader>(
             `INSERT INTO fleet_movements
-            (uuid, unit_id, movement_type, status, start_reading, start_at, fuel_level_start)
-           VALUES (?, ?, 'MAINTENANCE', 'ACTIVE', ?, ?, ?)`,
-            [logUuid, data.unitId, data.odometerAtService, data.serviceDate, fuelStart]
+            (uuid, unit_id, movement_type, status, start_reading, start_at, fuel_level_start, created_by_user_id)
+           VALUES (?, ?, 'MAINTENANCE', 'OPEN', ?, ?, ?, ?)`,
+            [
+              logUuid,
+              data.unitId,
+              data.odometerAtService,
+              data.serviceDate,
+              fuelStart,
+              requestingUser.id,
+            ]
           );
         } else {
           const endOdo = data.endOdometer ?? data.odometerAtService;
@@ -747,17 +762,37 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         }
 
         if (data.is_in_progress) {
-          // 4a. Lock unit → En Mantenimiento (blocks route dispatch)
-          await connection.execute(
-            `UPDATE fleet_units SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-            [UNIT_STATUS.MAINTENANCE, data.unitId]
-          );
+          // 4a. Commit OPEN order — unit stays available until technician accepts
           await connection.commit();
+
+          // Notify assigned technician asynchronously (non-blocking)
+          db.execute<RowDataPacket[]>(
+            `SELECT id FROM users WHERE fullName = ? OR username = ? LIMIT 1`,
+            [data.technician, data.technician]
+          )
+            .then(([techRows]) => {
+              if (techRows.length > 0) {
+                const techUserId = techRows[0].id as number;
+                return NotificationService.dispatch({
+                  userId: techUserId,
+                  type: ArchonNotificationType.MAINTENANCE_ALERT,
+                  priority: ArchonNotificationPriority.HIGH,
+                  title: 'Nueva Orden de Servicio Asignada',
+                  message: `Se te ha asignado una orden de mantenimiento para la unidad ${data.unitId}. Acepta o rechaza desde el módulo de Mantenimiento.`,
+                  metadata: { uuid: logUuid, unitId: data.unitId },
+                });
+              }
+              return Promise.resolve();
+            })
+            .catch(() => {
+              // Notification failure is non-fatal per zero-noise policy
+            });
+
           return reply.code(201).send({
             success: true,
-            message: 'Maintenance order opened. Unit locked to En Mantenimiento.',
+            message: 'Maintenance order created. Awaiting technician acceptance.',
             uuid: logUuid,
-            movement_status: MOVEMENT_STATUS.ACTIVE,
+            movement_status: MOVEMENT_STATUS.OPEN,
           });
         }
         // 4b. Apply completion immediately (in-situ / historical log)
@@ -903,6 +938,176 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         await connection.rollback();
         fastify.log.error(error);
         return reply.code(400).send({ success: false, message: (error as Error).message });
+      } finally {
+        connection.release();
+      }
+    }
+  );
+  /**
+   * PATCH /v1/maintenance/:uuid/accept — Technician accepts an OPEN maintenance order.
+   *
+   * Transitions OPEN → ACTIVE, locks unit, creates UPA work order, notifies responsable.
+   * Returns { workOrderId } so the frontend can navigate directly to the UPA panel.
+   */
+  fastify.patch(
+    '/maintenance/:uuid/accept',
+    { preHandler: [requirePermission('fleet:write')] },
+    async (request, reply) => {
+      const connection = await db.getConnection();
+      try {
+        await connection.beginTransaction();
+        const { uuid } = request.params as { uuid: string };
+
+        const [movements] = await connection.execute<RowDataPacket[]>(
+          `SELECT fm.id, fm.unit_id, fm.status, fm.created_by_user_id,
+                  fme.service_type, fme.technician
+           FROM fleet_movements fm
+           JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+           WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE' FOR UPDATE`,
+          [uuid]
+        );
+        if (movements.length === 0) {
+          await connection.rollback();
+          return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
+        }
+        const movement = movements[0];
+        if (movement.status !== MOVEMENT_STATUS.OPEN) {
+          await connection.rollback();
+          return reply.code(409).send({
+            success: false,
+            message: `La orden ya está en estado ${movement.status as string}`,
+          });
+        }
+
+        const unitId = movement.unit_id as string;
+        const serviceType = movement.service_type as string;
+        const fleetType = serviceType === 'MINOR_MINING' ? 'mining' : 'urban';
+
+        // OPEN → ACTIVE + lock unit
+        await connection.execute(
+          `UPDATE fleet_movements
+           SET status = 'ACTIVE', start_at = NOW()
+           WHERE uuid = ?`,
+          [uuid]
+        );
+        await connection.execute(
+          `UPDATE fleet_units SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+          [UNIT_STATUS.MAINTENANCE, unitId]
+        );
+
+        // Create UPA work order (uses its own connection internally)
+        const workOrderResult = await createWorkOrder(unitId, fleetType as 'urban' | 'mining');
+
+        // Link work order to maintenance movement
+        await connection.execute(
+          `UPDATE fleet_movements SET upa_work_order_id = ? WHERE uuid = ?`,
+          [workOrderResult.workOrderId, uuid]
+        );
+
+        await connection.commit();
+
+        // Notify responsable asynchronously
+        const createdByUserId = movement.created_by_user_id as number | null;
+        if (createdByUserId) {
+          NotificationService.dispatch({
+            userId: createdByUserId,
+            type: ArchonNotificationType.MAINTENANCE_ALERT,
+            priority: ArchonNotificationPriority.MEDIUM,
+            title: 'Orden Aceptada por el Técnico',
+            message: `El técnico ${
+              movement.technician as string
+            } aceptó la orden para la unidad ${unitId}. Proceso UPA iniciado.`,
+            metadata: { uuid, unitId, workOrderId: workOrderResult.workOrderId },
+          }).catch((err: unknown) => {
+            fastify.log.warn({ err }, 'accept notification non-fatal');
+          });
+        }
+
+        return reply.send({
+          success: true,
+          message: 'Orden aceptada. Proceso UPA iniciado.',
+          workOrderId: workOrderResult.workOrderId,
+        });
+      } catch (error) {
+        await connection.rollback();
+        fastify.log.error(error);
+        return reply.code(500).send({ success: false, message: (error as Error).message });
+      } finally {
+        connection.release();
+      }
+    }
+  );
+
+  /**
+   * PATCH /v1/maintenance/:uuid/reject — Technician rejects an OPEN maintenance order.
+   *
+   * Order stays OPEN, technician is cleared so responsable can reassign.
+   * Notifies responsable.
+   */
+  fastify.patch(
+    '/maintenance/:uuid/reject',
+    { preHandler: [requirePermission('fleet:write')] },
+    async (request, reply) => {
+      const connection = await db.getConnection();
+      try {
+        await connection.beginTransaction();
+        const { uuid } = request.params as { uuid: string };
+
+        const [movements] = await connection.execute<RowDataPacket[]>(
+          `SELECT fm.id, fm.unit_id, fm.status, fm.created_by_user_id,
+                  fme.technician
+           FROM fleet_movements fm
+           JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+           WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE' FOR UPDATE`,
+          [uuid]
+        );
+        if (movements.length === 0) {
+          await connection.rollback();
+          return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
+        }
+        const movement = movements[0];
+        if (movement.status !== MOVEMENT_STATUS.OPEN) {
+          await connection.rollback();
+          return reply.code(409).send({
+            success: false,
+            message: `No se puede rechazar: la orden está en estado ${movement.status as string}`,
+          });
+        }
+
+        const rejectedByTech = movement.technician as string;
+        const unitId = movement.unit_id as string;
+
+        // Clear technician so responsable can reassign
+        await connection.execute(
+          `UPDATE fleet_maintenance_extensions SET technician = NULL WHERE movement_id = ?`,
+          [movement.id]
+        );
+
+        await connection.commit();
+
+        // Notify responsable asynchronously
+        const createdByUserId = movement.created_by_user_id as number | null;
+        if (createdByUserId) {
+          NotificationService.dispatch({
+            userId: createdByUserId,
+            type: ArchonNotificationType.MAINTENANCE_ALERT,
+            priority: ArchonNotificationPriority.HIGH,
+            title: 'Orden Rechazada — Reasignación Requerida',
+            message: `El técnico ${rejectedByTech} rechazó la orden para la unidad ${unitId}. Por favor reasigna un técnico disponible.`,
+            metadata: { uuid, unitId },
+          }).catch((err: unknown) => {
+            fastify.log.warn({ err }, 'reject notification non-fatal');
+          });
+        }
+
+        return reply.send({
+          success: true,
+          message: 'Orden rechazada. Técnico liberado para reasignación.',
+        });
+      } catch (error) {
+        await connection.rollback();
+        fastify.log.error(error);
+        return reply.code(500).send({ success: false, message: (error as Error).message });
       } finally {
         connection.release();
       }

@@ -55,4 +55,107 @@ describe('FleetMaintenance Routes — Security (A01:2021)', () => {
     const res = await app.inject({ method: 'GET', url: '/v1/maintenance/template/ASM-001' });
     expect(res.statusCode).toBe(401);
   });
+
+  it('PATCH /v1/maintenance/:uuid/accept — rejects unauthenticated with 401', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/test-uuid/accept',
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('PATCH /v1/maintenance/:uuid/reject — rejects unauthenticated with 401', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/test-uuid/reject',
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('PATCH /v1/maintenance/:uuid/accept — returns 404 when order not found', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi.fn().mockResolvedValue([[], undefined]),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/nonexistent-uuid/accept',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('PATCH /v1/maintenance/:uuid/reject — returns 404 when order not found', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi.fn().mockResolvedValue([[], undefined]),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/nonexistent-uuid/reject',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('PATCH /v1/maintenance/:uuid/accept — returns 409 when order is not OPEN', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi
+        .fn()
+        .mockResolvedValue([
+          [
+            {
+              id: 1,
+              unit_id: 'ASM-001',
+              status: 'ACTIVE',
+              created_by_user_id: 2,
+              service_type: 'BASIC_10K',
+              technician: 'Tech A',
+            },
+          ],
+          undefined,
+        ]),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/active-uuid/accept',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(409);
+  });
+
+  it('PATCH /v1/maintenance/:uuid/reject — returns 409 when order is not OPEN', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi
+        .fn()
+        .mockResolvedValue([
+          [
+            {
+              id: 1,
+              unit_id: 'ASM-001',
+              status: 'COMPLETED',
+              created_by_user_id: 2,
+              technician: 'Tech A',
+            },
+          ],
+          undefined,
+        ]),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/completed-uuid/reject',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(409);
+  });
 });
