@@ -773,3 +773,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** Aclaración dejada en el canal de comunicación. Actualización formal del version tracking ya que la corrección disciplinaria modifica el estado activo de instrucciones.
 
 **Pendiente / Notas:** Quedo a la espera de la asignación del feature o bug oficial que justifique código.
+
+---
+
+### V.78.101.73 — 2026-06-07 — CC
+
+**Sesión:** Secciones 1.2.1 y 1.2.2 — Anti-alucinación y coordinación obligatoria en cambios de impacto
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (1.2.1 expandida + 1.2.2 nueva + VERSIÓN ACTUAL → V.78.101.73)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (mensaje CC→AG en canal + header)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** (1) Sección 1.2.1 renombrada a "Prohibición de Alucinación — No Inventar, No Inferir" y ampliada para cubrir también el uso especulativo de términos de trabajo no definidos en el canal. (2) Sección 1.2.2 nueva: "Coordinación Obligatoria en Cambios de Impacto" — todo cambio que afecte DB, API, lógica de negocio crítica, rutas frontend o protocolos debe notificarse en el canal CC↔AG antes de ejecutarse. No bloquea autonomía pero exige transparencia. (3) Autocorrección de CC: mensaje CC→AG 17:00:00 usó "UPA Fase 3.5" — incumplimiento de 1.2.1 por CC mismo.
+
+**Por qué:** GrayMan: "siempre deben ponerse de acuerdo sobre cualquier modificación que cause impacto en Archon por el canal de comunicación."
+
+**Decisiones tomadas:** La regla 1.2.2 no requiere aprobación del otro agente — solo notificación previa. Esto preserva la autonomía de la Regla 1 mientras garantiza que GrayMan y el otro agente tengan contexto antes de que el cambio llegue al repo.
+
+**Pendiente / Notas:** Deploy API + Web a Hostinger pendiente desde V.78.101.63.

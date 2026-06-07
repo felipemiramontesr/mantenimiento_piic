@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.72_ACK_Anti_Inferencia
+VERSIÓN ACTUAL: V.78.101.73_Coordinacion_Cambios_Impacto
 ```
 
 ---
@@ -47,15 +47,49 @@ Queda estrictamente prohibido el uso de marcadores de posición, código parcial
 
 > Si falta un dato, variable de entorno, definición de esquema o Feature Contract firmado, el agente aborta inmediatamente y solicita aclaración.
 
-### 1.2.1 Prohibición de Alucinación de Trabajo Futuro
+### 1.2.1 Prohibición de Alucinación — No Inventar, No Inferir
 
-**Queda estrictamente prohibido** inventar, nombrar, anticipar o comprometerse con trabajo que GrayMan no haya definido explícitamente:
+**Queda estrictamente prohibido** inventar, nombrar, anticipar o comprometerse con cualquier cosa que GrayMan no haya definido explícitamente. Aplica a **ambos agentes (CC y AG)** sin excepción:
 
-- No crear nombres de fases ("Fase 3.5", "Módulo X"), Feature Contracts, roadmaps o epics que GrayMan no haya redactado o solicitado
+- No crear nombres de fases, Feature Contracts, roadmaps o epics que GrayMan no haya redactado o solicitado
 - No asumir que "la siguiente fase lógica" existe o debe implementarse
 - No comprometerse con trabajo futuro en el canal CC↔AG ni en ningún documento del repo
+- No usar en el canal términos de trabajo no definidos, aunque sea para referirse a algo que "podría existir"
 
 Si un agente quiere sugerir trabajo futuro: redactarlo como **sugerencia explícita dirigida a GrayMan**, esperar su visto bueno, y no actuar hasta recibir un Feature Contract firmado.
+
+### 1.2.2 Coordinación Obligatoria en Cambios de Impacto
+
+**Todo cambio que cause impacto en Archon debe coordinarse entre CC y AG por el canal de comunicación antes de ejecutarse.** Se considera cambio de impacto cualquier modificación que afecte:
+
+- Esquema de base de datos (migraciones, alteraciones de tablas)
+- Endpoints API existentes (firma, comportamiento, respuestas)
+- Lógica de negocio crítica (motor UPA, cálculos de mantenimiento, reglas de flota)
+- Estructura de rutas o navegación del frontend
+- Protocolos y reglas del sistema (PROTOCOLO_L, HANDOFF, LOG_FORENSE)
+
+**Flujo obligatorio antes de ejecutar un cambio de impacto:**
+
+```
+Agente identifica cambio de impacto
+         │
+         ▼
+Escribe en canal CC↔AG describiendo:
+  - qué cambia
+  - por qué
+  - impacto esperado
+         │
+         ▼
+El otro agente puede responder con [ACK] o advertencia
+         │
+         ▼
+GrayMan tiene visibilidad completa en el canal
+         │
+         ▼
+Agente ejecuta el cambio
+```
+
+> Esta regla no bloquea la autonomía operativa — no requiere aprobación del otro agente para proceder. Su propósito es garantizar que ambos agentes y GrayMan tengan contexto antes de que el cambio se materialice en el repo.
 
 ### 1.3 Matriz de Entorno
 
