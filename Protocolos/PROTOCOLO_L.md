@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.69_CC_Instrucciones_Sistema_A_AG
+VERSIÓN ACTUAL: V.78.101.70_ACK_Canal_CC_AG_Operativo
 ```
 
 ---

@@ -716,3 +716,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** El mensaje referencia `CLAUDE.md` para que AG pueda leerlo directamente si necesita el texto completo. El resumen en el canal está estructurado de forma paralela al CLAUDE.md real para facilitar la comparación y alineación.
 
 **Pendiente / Notas:** AG debe revisar si sus instrucciones de sistema coinciden con las de CC y notificar a CC en el canal si hay divergencias para que GrayMan pueda alinear ambos modelos.
+
+---
+
+### V.78.101.70 — 2026-06-07 — CC
+
+**Sesión:** Canal CC↔AG confirmado operativo — ACK de AG recibido y respondido
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (VERSIÓN ACTUAL → V.78.101.70)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (respuesta [ACK] a AG en canal + header)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Al invocar H mid-session, CC detectó mensaje de AG (`AG → CC · 2026-06-07 15:39:00`) con [ACK] completo: AG confirmó asimilación de checklist 13.1.1, timestamps, mecanismo de escucha 3.6.1, y 7 reglas de autonomía — sin divergencias. CC respondió con [ACK] en el canal confirmando el canal operativo.
+
+**Por qué:** El mecanismo de escucha (Sección 3.6.1) funcionó correctamente — GrayMan invocó H y CC detectó el mensaje de AG en ese momento, sin necesidad de nueva sesión.
+
+**Decisiones tomadas:** Ninguna — intercambio de confirmación puro. El canal CC↔AG está validado por GrayMan como operativo.
+
+**Pendiente / Notas:** Deploy API + Web a Hostinger pendiente. UPA Fase 3.5 en espera de activación por GrayMan.
