@@ -4,10 +4,13 @@ import {
   Brand,
   FuelType,
   FleetType,
+  TaskStage,
+  PackageLevel,
   WorkOrder,
   HistoricalTask,
   DeferredType,
   calculateUpaOrder,
+  checkStage5Timeout,
 } from './upaEngine';
 
 // ============================================================================
@@ -24,6 +27,29 @@ export interface UpdateTaskStatusInput {
   status: 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL';
   evidenceUrls?: string[];
   evidenceNotes?: string;
+}
+
+export interface WorkOrderTaskDetail {
+  taskId: string;
+  stage: TaskStage;
+  packageLevel: PackageLevel | null;
+  description: string;
+  status: 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL';
+  evidenceUrls: string[] | null;
+  evidenceNotes: string | null;
+  completedAt: Date | null;
+}
+
+export interface WorkOrderDetail {
+  id: number;
+  uuid: string;
+  vehicleId: string;
+  fleetType: FleetType;
+  status: 'IN_PROGRESS' | 'AWAITING_AUTH' | 'CLOSED';
+  pendingSince: Date | null;
+  openedAt: Date;
+  closedAt: Date | null;
+  tasks: WorkOrderTaskDetail[];
 }
 
 // ============================================================================
@@ -298,20 +324,69 @@ export async function closeWorkOrder(workOrderId: number): Promise<void> {
 
 export async function checkAndTimeoutStage5Orders(): Promise<void> {
   const [orders] = await db.execute<RowDataPacket[]>(
-    `SELECT id FROM upa_work_orders
-     WHERE status = 'AWAITING_AUTH'
-       AND pending_since IS NOT NULL
-       AND TIMESTAMPDIFF(HOUR, pending_since, NOW()) > 24`,
+    `SELECT id, pending_since FROM upa_work_orders
+     WHERE status = 'AWAITING_AUTH' AND pending_since IS NOT NULL`,
     []
   );
 
   if ((orders as RowDataPacket[]).length === 0) return;
 
-  const ids = (orders as RowDataPacket[]).map((r) => (r as RowDataPacket).id as number);
+  const now = new Date();
+  const timedOut = (orders as RowDataPacket[]).filter((r) =>
+    checkStage5Timeout(new Date((r as RowDataPacket).pending_since as Date), now)
+  );
+
+  if (timedOut.length === 0) return;
+
+  const ids = timedOut.map((r) => (r as RowDataPacket).id as number);
   const placeholders = ids.map(() => '?').join(', ');
   await db.execute(
     `UPDATE upa_work_orders SET status = 'CLOSED', closed_at = NOW()
      WHERE id IN (${placeholders})`,
     ids
   );
+}
+
+export async function getWorkOrder(workOrderId: number): Promise<WorkOrderDetail | null> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT
+       wo.id, wo.uuid, wo.vehicle_id, wo.fleet_type, wo.status,
+       wo.pending_since, wo.opened_at, wo.closed_at,
+       t.task_id, t.stage, t.package_level, t.description,
+       t.status AS task_status, t.evidence_urls,
+       t.evidence_notes, t.completed_at
+     FROM upa_work_orders wo
+     LEFT JOIN upa_work_order_tasks t ON t.work_order_id = wo.id
+     WHERE wo.id = ?
+     ORDER BY t.id ASC`,
+    [workOrderId]
+  );
+
+  if ((rows as RowDataPacket[]).length === 0) return null;
+
+  const first = (rows as RowDataPacket[])[0] as RowDataPacket;
+  const tasks: WorkOrderTaskDetail[] = (rows as RowDataPacket[])
+    .filter((r) => (r as RowDataPacket).task_id != null)
+    .map((r) => ({
+      taskId: r.task_id as string,
+      stage: r.stage as TaskStage,
+      packageLevel: (r.package_level as PackageLevel | null) ?? null,
+      description: r.description as string,
+      status: r.task_status as 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL',
+      evidenceUrls: r.evidence_urls ? (JSON.parse(r.evidence_urls as string) as string[]) : null,
+      evidenceNotes: (r.evidence_notes as string | null) ?? null,
+      completedAt: (r.completed_at as Date | null) ?? null,
+    }));
+
+  return {
+    id: first.id as number,
+    uuid: first.uuid as string,
+    vehicleId: first.vehicle_id as string,
+    fleetType: first.fleet_type as FleetType,
+    status: first.status as 'IN_PROGRESS' | 'AWAITING_AUTH' | 'CLOSED',
+    pendingSince: (first.pending_since as Date | null) ?? null,
+    openedAt: first.opened_at as Date,
+    closedAt: (first.closed_at as Date | null) ?? null,
+    tasks,
+  };
 }

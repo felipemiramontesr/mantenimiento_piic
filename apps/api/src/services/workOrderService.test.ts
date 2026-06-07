@@ -5,6 +5,7 @@ import {
   updateTaskStatus,
   closeWorkOrder,
   checkAndTimeoutStage5Orders,
+  getWorkOrder,
 } from './workOrderService';
 import db from './db';
 
@@ -317,16 +318,31 @@ describe('workOrderService', () => {
   // ── checkAndTimeoutStage5Orders ─────────────────────────────────────────────
 
   describe('checkAndTimeoutStage5Orders', () => {
-    it('does nothing when no timed-out orders exist', async () => {
-      (db.execute as any).mockResolvedValueOnce([[]]); // SELECT returns empty
+    it('does nothing when no AWAITING_AUTH orders exist', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]);
       await checkAndTimeoutStage5Orders();
       expect(db.execute).toHaveBeenCalledOnce();
     });
 
-    it('closes timed-out AWAITING_AUTH orders', async () => {
+    it('does nothing when AWAITING_AUTH orders have not yet exceeded 24 business hours', async () => {
+      const recentPendingSince = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
+      (db.execute as any).mockResolvedValueOnce([[{ id: 3, pending_since: recentPendingSince }]]);
+      await checkAndTimeoutStage5Orders();
+      // SELECT fires, no UPDATE because checkStage5Timeout returns false
+      expect(db.execute).toHaveBeenCalledOnce();
+    });
+
+    it('closes orders that have exceeded 24 business hours', async () => {
+      // 10 days ago — guaranteed > 24 business hours regardless of weekend placement
+      const longAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
       (db.execute as any)
-        .mockResolvedValueOnce([[{ id: 5 }, { id: 7 }]]) // SELECT timed-out orders
-        .mockResolvedValueOnce([{}]); // UPDATE batch close
+        .mockResolvedValueOnce([
+          [
+            { id: 5, pending_since: longAgo },
+            { id: 7, pending_since: longAgo },
+          ],
+        ])
+        .mockResolvedValueOnce([{}]);
 
       await checkAndTimeoutStage5Orders();
 
@@ -335,6 +351,94 @@ describe('workOrderService', () => {
       expect(updateSql).toContain('CLOSED');
       const updateParams = (db.execute as any).mock.calls[1][1] as number[];
       expect(updateParams).toEqual([5, 7]);
+    });
+  });
+
+  // ── getWorkOrder ─────────────────────────────────────────────────────────────
+
+  describe('getWorkOrder', () => {
+    it('returns null when work order does not exist', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]);
+      const result = await getWorkOrder(999);
+      expect(result).toBeNull();
+    });
+
+    it('returns work order with tasks on happy path', async () => {
+      const mockRow = {
+        id: 1,
+        uuid: 'test-uuid-4321',
+        vehicle_id: 'VEH-001',
+        fleet_type: 'urban',
+        status: 'IN_PROGRESS',
+        pending_since: null,
+        opened_at: new Date('2026-06-06'),
+        closed_at: null,
+        task_id: 'triage_horn',
+        stage: 'triage',
+        package_level: null,
+        description: 'Revisión de claxon',
+        task_status: 'pending',
+        evidence_urls: null,
+        evidence_notes: null,
+        completed_at: null,
+      };
+      (db.execute as any).mockResolvedValueOnce([[mockRow]]);
+      const result = await getWorkOrder(1);
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(1);
+      expect(result!.uuid).toBe('test-uuid-4321');
+      expect(result!.tasks).toHaveLength(1);
+      expect(result!.tasks[0].taskId).toBe('triage_horn');
+      expect(result!.tasks[0].status).toBe('pending');
+    });
+
+    it('parses evidence_urls JSON string into array', async () => {
+      const mockRow = {
+        id: 1,
+        uuid: 'u',
+        vehicle_id: 'V',
+        fleet_type: 'urban',
+        status: 'IN_PROGRESS',
+        pending_since: null,
+        opened_at: new Date(),
+        closed_at: null,
+        task_id: 'triage_horn',
+        stage: 'triage',
+        package_level: null,
+        description: 'test',
+        task_status: 'completed',
+        evidence_urls: '["https://s3.example.com/photo.jpg"]',
+        evidence_notes: 'nota de prueba',
+        completed_at: new Date(),
+      };
+      (db.execute as any).mockResolvedValueOnce([[mockRow]]);
+      const result = await getWorkOrder(1);
+      expect(result!.tasks[0].evidenceUrls).toEqual(['https://s3.example.com/photo.jpg']);
+      expect(result!.tasks[0].evidenceNotes).toBe('nota de prueba');
+    });
+
+    it('returns empty tasks array for work order with no tasks yet (LEFT JOIN returns null row)', async () => {
+      const mockRow = {
+        id: 1,
+        uuid: 'u',
+        vehicle_id: 'V',
+        fleet_type: 'mining',
+        status: 'IN_PROGRESS',
+        pending_since: null,
+        opened_at: new Date(),
+        closed_at: null,
+        task_id: null,
+        stage: null,
+        package_level: null,
+        description: null,
+        task_status: null,
+        evidence_urls: null,
+        evidence_notes: null,
+        completed_at: null,
+      };
+      (db.execute as any).mockResolvedValueOnce([[mockRow]]);
+      const result = await getWorkOrder(1);
+      expect(result!.tasks).toHaveLength(0);
     });
   });
 });
