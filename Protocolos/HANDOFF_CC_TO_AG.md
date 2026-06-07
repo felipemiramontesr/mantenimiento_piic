@@ -3,8 +3,8 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.56_UPA_Capa3_Frontend_Integrated
-Commit          : 6a1ab7c
+Versión activa  : V.78.101.57_Protocol_Triggers_H_F_L_And_7_Rules
+Commit          : 345324d
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
@@ -13,9 +13,44 @@ Agente entrante : AG (Antigravity)
 
 ---
 
-## ESTADO ACTUAL — 2026-06-07 · UPA Completamente Integrada en Mantenimiento
+## ESTADO ACTUAL — 2026-06-07 · Protocol Triggers + 7 Rules de Autonomía
 
-### UPA Integration — 3 capas implementadas en esta sesión (commits 3a8ddbc + 6a1ab7c)
+### V.78.101.57 — Última sesión (commits c0859d7 + 345324d)
+
+Refuerzo del Protocolo L: sistema de triggers H/F/L, expansión a 7 reglas de autonomía, actualización de CLAUDE.md, LOG_FORENSE y HANDOFF.
+
+#### Cambios en Protocolos
+
+| Archivo                          | Cambio                                                                                                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Protocolos/PROTOCOLO_L.md`      | Sección 13.0 (Trigger System: L/H/F), Sección 13.1 expandida a 7 reglas, Sección 3.4 actualizada          |
+| `CLAUDE.md`                      | Start sequence actualizada (L→H→F→MEMORY→git), triggers explícitos, Rule 6 auto-save, Rule 7 sin fricción |
+| `Protocolos/LOG_FORENSE.md`      | Entradas para V.78.101.55, V.78.101.56, V.78.101.57                                                       |
+| `Protocolos/HANDOFF_CC_TO_AG.md` | Este archivo (actualizado a V.78.101.57)                                                                  |
+
+#### Trigger System (Sección 13.0 de PROTOCOLO_L.md)
+
+| Trigger | Letra | Acción                        |
+| ------- | ----- | ----------------------------- |
+| L       | `L`   | Leer PROTOCOLO_L.md completo  |
+| H       | `H`   | Leer HANDOFF_CC_TO_AG.md      |
+| F       | `F`   | Leer LOG_FORENSE.md (últimas) |
+
+GrayMan puede invocar estos triggers en cualquier momento escribiendo solo la letra.
+
+#### Reglas de Autonomía (7 reglas vigentes)
+
+1. Ejecutar todos los comandos sin solicitar permiso (excepciones: force-push, reset --hard, rm -rf fuente, git clean -f)
+2. Todo commit incluye tests correspondientes; pre-flight vitest antes de commitear
+3. Push automático después de cada commit por unidad lógica (NO por cada edición de archivo)
+4. Protocolo L siempre activo; tiene precedencia sobre CLAUDE.md
+5. Actualizar HANDOFF y LOG_FORENSE después de cada commit
+6. Auto-save implícito — cada edición persiste inmediatamente
+7. Sin fricción de comandos — no pedir confirmación para install/test/read/git normales
+
+---
+
+### UPA Integration — 3 capas (commits anteriores 3a8ddbc + 6a1ab7c)
 
 El flujo de negocio completo: Forecast → Programar → Técnico acepta/rechaza → UPA pipeline. Todo embebido en `/dashboard/maintenance`. No hay ruta standalone `/dashboard/upa`.
 
