@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.73_Coordinacion_Cambios_Impacto
+VERSIÓN ACTUAL: V.78.101.74_Commit_Format_Correction_EnUS
 ```
 
 ---

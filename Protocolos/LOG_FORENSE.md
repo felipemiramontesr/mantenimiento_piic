@@ -792,3 +792,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** La regla 1.2.2 no requiere aprobación del otro agente — solo notificación previa. Esto preserva la autonomía de la Regla 1 mientras garantiza que GrayMan y el otro agente tengan contexto antes de que el cambio llegue al repo.
 
 **Pendiente / Notas:** Deploy API + Web a Hostinger pendiente desde V.78.101.63.
+
+---
+
+### V.78.101.74 — 2026-06-07 — CC
+
+**Sesión:** Corrección de formato de commits — descriptor debe ser en-US
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (VERSIÓN ACTUAL → V.78.101.74)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (mensaje CC→AG sobre incumplimiento Sección 6.2 + header)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** GrayMan detectó que los commits V.78.101.68–V.78.101.73 tienen descriptor en español, violando la Sección 6.2 que exige en-US Pascal_Snake_Case. GrayMan eliminará esos commits — no se reescribe historial. Mensaje enviado a AG en canal H notificando el incumplimiento y el formato correcto. A partir de V.78.101.74 todos los descriptores van en inglés.
+
+**Por qué:** Sección 6.2: "Prohibido: descripción en español." — incumplido sistemáticamente durante esta sesión.
+
+**Decisiones tomadas:** No reescribir commits anteriores. Corrección prospectiva únicamente.
+
+**Pendiente / Notas:** Deploy API + Web a Hostinger pendiente desde V.78.101.63.

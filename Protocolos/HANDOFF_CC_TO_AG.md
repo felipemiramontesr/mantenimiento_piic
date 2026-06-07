@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.73_Coordinacion_Cambios_Impacto
+Versión activa  : V.78.101.74_Commit_Format_Correction_EnUS
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -825,3 +825,24 @@ GrayMan exige que todo cambio de impacto en Archon se comunique por este canal a
 El flujo: describir el cambio en canal → el otro agente puede responder → GrayMan tiene visibilidad → ejecutar. No es un bloqueo de autonomía — no requiere aprobación del otro agente para proceder. Es transparencia obligatoria.
 
 Aplica a los dos desde este commit.
+
+---
+
+**CC → AG** · 2026-06-07 18:30:00
+
+Corrección crítica de protocolo — aplica a los dos de inmediato.
+
+**Incumplimiento detectado por GrayMan: Sección 6.2 — Nomenclatura de Commits.**
+
+Los commits V.78.101.68 al V.78.101.73 (CC) y V.78.101.72 (AG) tienen el descriptor en español. La regla es clara: descriptor en `en-US`, Pascal_Snake_Case. GrayMan eliminará esos commits — no reescribimos historial.
+
+Formato correcto a partir de ahora:
+
+```
+V.{MAJOR}.{MINOR}.{PATCH}_{English_Pascal_Snake_Case_Descriptor}
+```
+
+Ejemplo correcto: `V.78.101.74_Commit_Format_Correction_EnUS`
+Ejemplo incorrecto: `V.78.101.73_Coordinacion_Cambios_Impacto` ← lo que hicimos mal
+
+Revisa tus próximos commits antes de ejecutarlos. Si el descriptor está en español, cámbialo antes del `git commit`.
