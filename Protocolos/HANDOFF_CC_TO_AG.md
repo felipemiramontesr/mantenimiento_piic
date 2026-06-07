@@ -3,9 +3,9 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.54_UPA_Fase3_Frontend_PWA_Desktop
-Commit          : 8c138ca
-Fecha           : 2026-06-06
+Versión activa  : V.78.101.56_UPA_Capa3_Frontend_Integrated
+Commit          : 6a1ab7c
+Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
 ═══════════════════════════════════════════════════════════════
@@ -13,30 +13,51 @@ Agente entrante : AG (Antigravity)
 
 ---
 
-## ESTADO ACTUAL — 2026-06-06 · UPA Fase 3 Frontend COMPLETA
+## ESTADO ACTUAL — 2026-06-07 · UPA Completamente Integrada en Mantenimiento
 
-### Archivos entregados (commit 8c138ca)
+### UPA Integration — 3 capas implementadas en esta sesión (commits 3a8ddbc + 6a1ab7c)
 
-| Archivo                                          | Tipo  | Descripción                                                                                |
-| ------------------------------------------------ | ----- | ------------------------------------------------------------------------------------------ |
-| `apps/web/src/types/upa.ts`                      | NUEVO | DTOs frontend: UpaWorkOrderDetail, UpaTaskDetail, UpaInitResult, UpaUpdateTaskPayload      |
-| `apps/web/src/api/upa.ts`                        | NUEVO | Cliente HTTP headless: initOrder, getOrderById, updateTask, closeOrder                     |
-| `apps/web/src/hooks/useUpaOrder.ts`              | NUEVO | Hook puro: state/lógica desacoplada de UI                                                  |
-| `apps/web/src/pages/Upa/UpaWorkspace.tsx`        | NUEVO | Workspace PWA: Stepper 6 etapas, ArchonManagementCard por tarea, DeferModal, EvidenceInput |
-| `apps/web/src/hooks/useUpaOrder.test.ts`         | NUEVO | 27 tests del hook                                                                          |
-| `apps/web/src/pages/Upa/UpaWorkspace.test.tsx`   | NUEVO | 23 tests del workspace                                                                     |
-| `apps/web/src/App.tsx`                           | MOD   | Ruta `/dashboard/upa` registrada                                                           |
-| `apps/web/src/components/Navigation/Sidebar.tsx` | MOD   | Nav item "Proceso UPA" (Activity icon, gate `fleet:write`)                                 |
+El flujo de negocio completo: Forecast → Programar → Técnico acepta/rechaza → UPA pipeline. Todo embebido en `/dashboard/maintenance`. No hay ruta standalone `/dashboard/upa`.
+
+#### Capa 1 — DB (migration 092)
+
+- `fleet_movements`: `+upa_work_order_id INT UNSIGNED NULL` (FK → upa_work_orders ON DELETE SET NULL) + `+created_by_user_id`
+- Index: `idx_fm_upa_wo` sobre `upa_work_order_id`
+
+#### Capa 2 — API (commit 3a8ddbc)
+
+| Endpoint                                         | Comportamiento                                                                                                                                           |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /maintenance` cuando `is_in_progress=true` | Crea `OPEN` (no `ACTIVE`). Envía notificación push al técnico (async, non-blocking). NO bloquea la unidad todavía.                                       |
+| `PATCH /maintenance/:uuid/accept`                | OPEN→ACTIVE + bloquea unidad + crea UPA work order (`createWorkOrder`) + vincula `upa_work_order_id` + notifica responsable. Devuelve `{ workOrderId }`. |
+| `PATCH /maintenance/:uuid/reject`                | Limpia técnico asignado + notifica responsable. Movimiento queda OPEN (listo para reasignar).                                                            |
+
+- NotificationService existente (tipo `MAINTENANCE_ALERT`) — dispatch no bloqueante con `.catch(err => fastify.log.warn)`
+- 6 tests nuevos de integración en `fleetMaintenanceIntegration.test.ts` (401, 404, 409 para accept/reject)
+
+#### Capa 3 — Frontend (commit 6a1ab7c)
+
+| Archivo                                                       | Cambio                                                                                                                                      |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/types/maintenance.ts`                           | `upa_work_order_id?: number \| null` en `MaintenanceLog`; `'UPA'` en `MaintenancePanel`                                                     |
+| `apps/web/src/api/maintenance.ts`                             | NUEVO: `acceptMaintenance(uuid)` → `{ workOrderId }`, `rejectMaintenance(uuid)`                                                             |
+| `apps/web/src/components/Maintenance/MaintenanceGridView.tsx` | ACCIONES: botones Accept (✓) y Reject (✗) para `OPEN` orders; botón Ver UPA (Cpu) para `ACTIVE + upa_work_order_id`                         |
+| `apps/web/src/pages/Dashboard/MaintenanceModule.tsx`          | Panel `'UPA'` añadido; `handleAcceptOrder` → API → `handleOpenUpa(workOrderId)`; `handleRejectOrder` → API → refresh                        |
+| `apps/web/src/pages/Upa/UpaWorkspace.tsx`                     | Refactorizado: `{ workOrderId?, onReturn? }` props; auto-load en embedded mode; sin SovereignLayout; back button cuando `onReturn` presente |
+| `apps/web/src/App.tsx`                                        | Ruta `/dashboard/upa` ELIMINADA                                                                                                             |
+| `apps/web/src/components/Navigation/Sidebar.tsx`              | Nav item "Proceso UPA" ELIMINADO                                                                                                            |
+| `apps/web/src/pages/Upa/UpaWorkspace.test.tsx`                | Mock SovereignLayout eliminado; +6 tests embedded mode                                                                                      |
 
 ### Cobertura
 
-- 538 → 588 tests (+50). 68 archivos. 0 fallos. tsc clean. eslint clean.
+- 594 tests · 68 archivos · 0 fallos · tsc clean · eslint clean
 
-### Lo que falta para Fase 4 (Producción)
+### Pendiente para Producción
 
-1. Deploy API a Hostinger (con cron `node-cron` + nuevas rutas /work-orders)
-2. Deploy Web a Hostinger (build PWA)
-3. FK constraints pendientes en prod DB (ALTER TABLE en phpMyAdmin — SQL en `migrations/091_upa_work_orders.sql` al final del archivo)
+1. Ejecutar migration `092_maintenance_upa_link.sql` en `u701509674_Mant_piic` (phpMyAdmin)
+2. Deploy API a Hostinger (nuevos endpoints PATCH accept/reject ya en código)
+3. Deploy Web a Hostinger (build Vite)
+4. FK constraint `091_upa_work_orders.sql` (si no está aplicada en prod)
 
 ---
 
