@@ -19,6 +19,7 @@ import fleetMaintenanceRoutes from './routes/fleetMaintenance';
 import financeRoutes from './routes/finance';
 import adminRoutes from './routes/admin';
 import alertsRoutes from './routes/alerts';
+import workOrderRoutes from './routes/workOrders';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -110,6 +111,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(financeRoutes, { prefix: '/v1' });
   fastify.register(adminRoutes, { prefix: '/v1' });
   fastify.register(alertsRoutes, { prefix: '/v1' });
+  fastify.register(workOrderRoutes, { prefix: '/v1' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(
@@ -144,6 +146,15 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
       await server.listen({ port, host: '0.0.0.0' });
       // eslint-disable-next-line no-console
       console.log(`✅ [Archon API] System Online at port ${port}`);
+
+      // UPA Stage-5 timeout sweep — every hour on the hour
+      const cron = await import('node-cron');
+      const { checkAndTimeoutStage5Orders } = await import('./services/workOrderService');
+      cron.schedule('0 * * * *', () => {
+        checkAndTimeoutStage5Orders().catch((err: unknown) => {
+          server.log.error({ err }, 'UPA stage5 timeout sweep failed');
+        });
+      });
     } catch (err) {
       server.log.error(err);
       process.exit(1);
