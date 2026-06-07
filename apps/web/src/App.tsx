@@ -12,6 +12,7 @@ import SettingsModule from './pages/Dashboard/SettingsModule';
 import AdminModule from './pages/Dashboard/AdminModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
+import UpaWorkspace from './pages/Upa/UpaWorkspace';
 import FleetUnitNode from './pages/Dashboard/FleetUnitNode';
 import MaintenanceNode from './pages/Dashboard/nodes/MaintenanceNode';
 import RouteNode from './pages/Dashboard/nodes/RouteNode';
@@ -63,6 +64,7 @@ const App: React.FC = () => (
                 <Route path="fleet/:unitId" element={<FleetUnitNode />} />
                 <Route path="maintenance" element={<MaintenanceModule />} />
                 <Route path="maintenance/:uuid" element={<MaintenanceNode />} />
+                <Route path="upa" element={<UpaWorkspace />} />
                 <Route path="routes" element={<RoutesModule />} />
                 <Route path="routes/:uuid" element={<RouteNode />} />
                 <Route path="financial" element={<FinancialHealthModule />} />
