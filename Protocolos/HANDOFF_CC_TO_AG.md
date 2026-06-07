@@ -13,6 +13,60 @@ Agente entrante : AG (Antigravity)
 
 ---
 
+## MENSAJE DE CC A AG — 2026-06-06 · Solicitud de Double-Check UPA Fase 2
+
+AG,
+
+GrayMan me pide que te solicite una revisión independiente del trabajo de esta sesión. Necesito tu opinión técnica honesta — no una validación, un audit real. Si ves algo mal, dímelo directo.
+
+---
+
+### QUÉ REVISAR (scope del double-check)
+
+**1. `apps/api/src/services/workOrderService.ts`**
+Foco en:
+
+- `fetchLastClosedWorkOrder`: la query con JOIN + `LIMIT 200` reconstruye el `WorkOrder` para el motor. ¿El mapeo de `executed: r.executed === 1` es correcto con MySQL's boolean-as-int? ¿El `LIMIT 200` es suficiente o puede truncar el historial de tareas de una orden grande?
+- `createWorkOrder`: el bulk insert usa `flatMap` para construir placeholders. ¿Hay riesgo de superar el límite de parámetros de mysql2 con un task array de ~77 items × 6 columnas = 462 parámetros?
+- `updateTaskStatus`: el `completedAt` se interpola directamente en el SQL string como `NOW()` o `NULL`. ¿Ves un vector de inyección ahí dado que es un valor interno (no user input) y el string viene de una comparación `=== 'completed'`?
+- `checkAndTimeoutStage5Orders`: usa `TIMESTAMPDIFF(HOUR)` en lugar de `checkStage5Timeout()` del motor puro (que cuenta business hours excluyendo fines de semana). ¿Es una regresión de specs o una simplificación aceptable para el cron de producción?
+
+**2. `apps/api/src/routes/workOrders.ts`**
+Foco en:
+
+- ¿Los códigos HTTP son correctos? (201 init, 200 patch/close, 404/409/422 errors)
+- El `jwtVerify()` está en `onRequest` hook y `requirePermission` en `preHandler`. ¿El orden de ejecución en Fastify garantiza que el JWT se verifica antes de evaluar permisos?
+- ¿Falta algún endpoint obvio? (GET work order by id, GET tasks list, etc.)
+
+**3. `packages/database/migrations/091_upa_work_orders.sql`**
+Foco en:
+
+- Se eliminaron las FK constraints por collation mismatch en Hostinger (`utf8mb4_unicode_ci` vs `utf8mb4_general_ci`). ¿Ves esto como una deuda técnica aceptable o un riesgo real de corrupción de datos?
+- `evidence_urls` fue definido como `JSON` pero MySQL en Hostinger lo almacenó como `longtext`. ¿Afecta esto al service que hace `JSON.stringify()` antes del INSERT y espera poder hacer queries sobre el JSON?
+
+**4. Tests `workOrderService.test.ts`**
+Foco en:
+
+- ¿Los 22 tests cubren los caminos críticos o hay un caso de negocio sin test?
+- El test `'does NOT update work order status for completed or pending transitions'` verifica que solo se hacen 2 `execute` calls. ¿Es frágil ante cambios internos del service?
+
+---
+
+### CONTEXTO QUE NECESITAS SABER
+
+- El motor puro (`upaEngine.ts`, commit `8d61a41`) tiene 85 tests y 100% branch coverage — ese código no está en scope de este review.
+- La BD de prod (`u701509674_Mant_piic`) ya tiene las tablas creadas y verificadas con `DESCRIBE` + conteo de filas. No hay datos de prueba.
+- Los commits relevantes: `64ab065` (implementación) y `dad58e7` (fix migración post-prod).
+- La decisión de `fleetType` en el request (Opción B) fue aprobada explícitamente por GrayMan.
+
+---
+
+Dame tu opinión sin filtro. Si algo está mal o hay una mejor forma, dilo.
+
+— CC
+
+---
+
 ## MENSAJE DE CC A AG — 2026-06-06 · Cierre de Sesión UPA Fase 2
 
 AG,
