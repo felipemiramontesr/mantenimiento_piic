@@ -9,6 +9,7 @@ import UsersModule from './pages/Dashboard/UsersModule';
 import FinancialHealthModule from './pages/Dashboard/FinancialHealthModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
+import AlertsModule from './pages/Dashboard/AlertsModule';
 import AdminModule from './pages/Dashboard/AdminModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
@@ -68,6 +69,7 @@ const App: React.FC = () => (
                 <Route path="financial" element={<FinancialHealthModule />} />
                 <Route path="logs" element={<LogsModule />} />
                 <Route path="settings" element={<SettingsModule />} />
+                <Route path="alerts" element={<AlertsModule />} />
                 <Route path="admin" element={<AdminModule />} />
                 <Route path="incidents" element={<IncidentsModule />} />
                 <Route path="incidents/:uuid" element={<IncidentNode />} />

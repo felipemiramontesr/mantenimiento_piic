@@ -14,6 +14,8 @@ import {
   Trash2,
   Activity,
   ArrowLeft,
+  ChevronDown,
+  ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
 import ArchonManagementCard from '../../components/UI/ArchonManagementCard';
@@ -462,6 +464,13 @@ const UpaWorkspace: React.FC<UpaWorkspaceProps> = ({
   const [deferType, setDeferType] = useState<UpaDeferredType>('DEFERRED_FINANCIAL');
   const [evidenceUrls, setEvidenceUrls] = useState<Record<string, string[]>>({});
   const [evidenceNotes, setEvidenceNotes] = useState<Record<string, string>>({});
+  const [openStages, setOpenStages] = useState<Record<UpaTaskStage, boolean>>({
+    triage: true,
+    minor_service: false,
+    cascade: false,
+    deferred: false,
+    closure: false,
+  });
 
   // Auto-load order when workOrderId is provided (embedded mode — skips InitForm)
   useEffect(() => {
@@ -521,6 +530,10 @@ const UpaWorkspace: React.FC<UpaWorkspaceProps> = ({
     }),
     {} as Record<UpaTaskStage, UpaTaskDetail[]>
   );
+
+  const toggleStage = (stage: UpaTaskStage): void => {
+    setOpenStages((prev) => ({ ...prev, [stage]: !prev[stage] }));
+  };
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -583,45 +596,65 @@ const UpaWorkspace: React.FC<UpaWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Task Groups */}
-      <div className="space-y-8">
+      {/* Task Groups — Accordion */}
+      <div className="space-y-3" data-testid="upa-accordion">
         {STAGE_ORDER.map((stage) => {
           const tasks = tasksByStage[stage];
           if (tasks.length === 0) return null;
           const StageIcon = STAGE_ICONS[stage];
           const pendingCount = tasks.filter((t) => t.status === 'pending').length;
+          const isOpen = openStages[stage];
 
           return (
-            <div key={stage}>
-              <div className="flex items-center gap-2 mb-3">
-                <StageIcon size={16} className="text-[#0f2a44]/60" />
-                <h3 className="font-black uppercase tracking-[0.15em] text-[#0f2a44] text-sm">
+            <div
+              key={stage}
+              data-testid={`accordion-${stage}`}
+              className="border border-slate-200 rounded-[4px] overflow-hidden"
+            >
+              <button
+                type="button"
+                data-testid={`accordion-toggle-${stage}`}
+                onClick={(): void => toggleStage(stage)}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left border-none outline-none cursor-pointer"
+              >
+                <StageIcon size={15} className="text-[#0f2a44]/60 shrink-0" />
+                <span className="font-black uppercase tracking-[0.15em] text-[#0f2a44] text-sm flex-1">
                   Etapa {STAGE_STEP[stage]}: {STAGE_LABELS[stage]}
-                </h3>
-                <span className="text-[10px] font-bold text-[#0f2a44]/40 uppercase tracking-wider ml-1">
-                  ({pendingCount} pendiente{pendingCount !== 1 ? 's' : ''})
                 </span>
-              </div>
+                <span className="text-[10px] font-bold text-[#0f2a44]/40 uppercase tracking-wider">
+                  {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}
+                </span>
+                {isOpen ? (
+                  <ChevronDown size={14} className="text-[#0f2a44]/40 shrink-0" />
+                ) : (
+                  <ChevronRight size={14} className="text-[#0f2a44]/40 shrink-0" />
+                )}
+              </button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {tasks.map((task) => (
-                  <TaskCard
-                    key={task.taskId}
-                    task={task}
-                    isUpdating={!!upa.taskUpdating[task.taskId]}
-                    evidenceUrls={evidenceUrls[task.taskId] ?? []}
-                    evidenceNotes={evidenceNotes[task.taskId] ?? ''}
-                    onComplete={(): void => handleComplete(task)}
-                    onDefer={(): void => setDeferTaskId(task.taskId)}
-                    onEvidenceUrlsChange={(urls): void =>
-                      setEvidenceUrls((prev) => ({ ...prev, [task.taskId]: urls }))
-                    }
-                    onEvidenceNotesChange={(notes): void =>
-                      setEvidenceNotes((prev) => ({ ...prev, [task.taskId]: notes }))
-                    }
-                  />
-                ))}
-              </div>
+              {isOpen && (
+                <div
+                  data-testid={`accordion-content-${stage}`}
+                  className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200"
+                >
+                  {tasks.map((task) => (
+                    <TaskCard
+                      key={task.taskId}
+                      task={task}
+                      isUpdating={!!upa.taskUpdating[task.taskId]}
+                      evidenceUrls={evidenceUrls[task.taskId] ?? []}
+                      evidenceNotes={evidenceNotes[task.taskId] ?? ''}
+                      onComplete={(): void => handleComplete(task)}
+                      onDefer={(): void => setDeferTaskId(task.taskId)}
+                      onEvidenceUrlsChange={(urls): void =>
+                        setEvidenceUrls((prev) => ({ ...prev, [task.taskId]: urls }))
+                      }
+                      onEvidenceNotesChange={(notes): void =>
+                        setEvidenceNotes((prev) => ({ ...prev, [task.taskId]: notes }))
+                      }
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}

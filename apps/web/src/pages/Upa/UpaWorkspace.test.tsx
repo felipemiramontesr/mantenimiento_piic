@@ -183,6 +183,53 @@ describe('UpaWorkspace', () => {
       expect(screen.getByTestId('order-error')).toBeDefined();
     });
 
+    // ─── Accordion ─────────────────────────────────────────────────────────────
+
+    it('triage accordion is open by default and shows task card', () => {
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
+      render(<UpaWorkspace />);
+      expect(screen.getByTestId('accordion-content-triage')).toBeDefined();
+      expect(screen.getByTestId('task-card-triage_dashboard_lights')).toBeDefined();
+    });
+
+    it('minor_service accordion is closed by default', () => {
+      const minorTask = {
+        ...mockTask,
+        taskId: 'minor_oil_change',
+        stage: 'minor_service' as const,
+      };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [mockTask, minorTask] },
+      });
+      render(<UpaWorkspace />);
+      expect(screen.queryByTestId('accordion-content-minor_service')).toBeNull();
+      expect(screen.queryByTestId('task-card-minor_oil_change')).toBeNull();
+    });
+
+    it('clicking closed accordion toggle opens it', () => {
+      const minorTask = {
+        ...mockTask,
+        taskId: 'minor_oil_change',
+        stage: 'minor_service' as const,
+      };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [mockTask, minorTask] },
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-minor_service'));
+      expect(screen.getByTestId('accordion-content-minor_service')).toBeDefined();
+    });
+
+    it('clicking open accordion toggle closes it', () => {
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
+      render(<UpaWorkspace />);
+      expect(screen.getByTestId('accordion-content-triage')).toBeDefined();
+      fireEvent.click(screen.getByTestId('accordion-toggle-triage'));
+      expect(screen.queryByTestId('accordion-content-triage')).toBeNull();
+    });
+
     it('does not render defer button for completed task', () => {
       const completedTask = { ...mockTask, status: 'completed' as const };
       vi.mocked(useUpaOrder).mockReturnValue({
@@ -365,6 +412,7 @@ describe('UpaWorkspace', () => {
     it('shows evidence URL input for closure stage pending tasks', () => {
       vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: closureOrder });
       render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
       expect(screen.getByTestId('add-evidence-url-btn')).toBeDefined();
     });
 
@@ -377,6 +425,7 @@ describe('UpaWorkspace', () => {
     it('adds a URL input when add button clicked', () => {
       vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: closureOrder });
       render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
       fireEvent.click(screen.getByTestId('add-evidence-url-btn'));
       expect(screen.getByTestId('evidence-url-input-0')).toBeDefined();
     });
@@ -384,6 +433,7 @@ describe('UpaWorkspace', () => {
     it('shows evidence notes textarea', () => {
       vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: closureOrder });
       render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
       expect(screen.getByTestId('evidence-notes-input')).toBeDefined();
     });
   });

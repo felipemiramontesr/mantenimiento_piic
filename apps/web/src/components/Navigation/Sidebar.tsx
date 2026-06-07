@@ -12,6 +12,7 @@ import {
   LogOut,
   User as UserIcon,
   AlertTriangle,
+  Bell,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -234,6 +235,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 label="Mantenimiento"
                 path="/dashboard/maintenance"
                 active={location.pathname === '/dashboard/maintenance'}
+                isCollapsed={isCollapsed}
+              />
+            )}
+            {hasPermission('maint:view') && (
+              <NavItem
+                icon={<Bell size={20} />}
+                label="Alertas"
+                path="/dashboard/alerts"
+                active={location.pathname === '/dashboard/alerts'}
                 isCollapsed={isCollapsed}
               />
             )}
