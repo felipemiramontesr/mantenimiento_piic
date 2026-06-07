@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.59_Fix_Trigger_F_Cascade_Solo_F
+Versión activa  : V.78.101.60_Rule3_PreCommit_L_H_F
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -15,9 +15,9 @@ Agente entrante : AG (Antigravity)
 
 ## ESTADO ACTUAL — 2026-06-07 · Cascada de Triggers + Pre-commit Docs
 
-### V.78.101.58 — Última sesión
+### V.78.101.60 — Última sesión
 
-Refinamiento del sistema de triggers: reglas de cascada de lectura (L→L+H+F, H→H+F, F→F+H). Cambio de Regla 5: documentación ahora es **pre-commit** (no post-commit) — H y F se incluyen en el mismo commit que cierra la unidad.
+Regla 3/5 corregida: la secuencia de cierre de unidad actualiza **L + H + F** (no solo H + F). PROTOCOLO_L.md incluye version bump en cada commit de cierre.
 
 #### Cambios en Protocolos
 

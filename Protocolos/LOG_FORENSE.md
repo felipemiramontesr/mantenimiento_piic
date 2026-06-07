@@ -524,4 +524,24 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 
 **Decisiones tomadas:** F es autónomo. Solo L y H tienen cascada descendente.
 
+**Pendiente / Notas:** Corrección en V.78.101.60 — Regla 3 pre-commit debe actualizar L+H+F (no solo H+F).
+
+---
+
+### V.78.101.60 — 2026-06-07 — CC
+
+**Sesión:** Fix Regla 3 — secuencia pre-commit actualiza L+H+F
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Regla 3 nota + Regla 5 — L+H+F explícito)
+- `CLAUDE.md` (Regla 3 secuencia + Regla 5 — L+H+F)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (header → V.78.101.60)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Corrección de la secuencia de cierre de unidad en Regla 3 y Regla 5. Antes decía "actualizar H y F"; ahora dice "actualizar L + H + F". PROTOCOLO_L.md (version bump) es parte obligatoria del pre-commit junto con HANDOFF y LOG_FORENSE.
+
+**Por qué:** GrayMan corrigió: "la Regla 3 debe ser: actualizar L+H+F."
+
+**Decisiones tomadas:** L (version bump) va siempre en el commit de cierre — es la fuente de verdad de versión del proyecto.
+
 **Pendiente / Notas:** Ninguno.

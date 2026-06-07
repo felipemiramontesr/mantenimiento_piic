@@ -61,9 +61,9 @@ Al cerrar cada unidad lógica de trabajo (capa, feature, fix completo), hacer co
 
 **Secuencia de cierre de unidad:**
 
-1. Actualizar `HANDOFF_CC_TO_AG.md` y `LOG_FORENSE.md` (Regla 5)
+1. Actualizar `PROTOCOLO_L.md` (version bump) + `HANDOFF_CC_TO_AG.md` + `LOG_FORENSE.md` (Regla 5)
 2. Pre-flight vitest (Regla 2)
-3. Commit todo junto (código + docs) + push inmediato
+3. Commit todo junto (código + L + H + F) + push inmediato
 
 ### 4. Lectura L → H → F al inicio de sesión
 
@@ -71,7 +71,7 @@ Al iniciar cada sesión: L → H → F → MEMORY.md → git log. El Protocolo L
 
 ### 5. Documentación pre-commit
 
-**Antes** de cada commit, actualizar `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md`. Ambos archivos van **incluidos en el mismo commit** que cierra la unidad — el agente entrante recibe estado + historial al día en el mismo pull.
+**Antes** de cada commit, actualizar `Protocolos/PROTOCOLO_L.md` (version bump) + `Protocolos/HANDOFF_CC_TO_AG.md` + `Protocolos/LOG_FORENSE.md`. Los tres archivos van **incluidos en el mismo commit** que cierra la unidad — el agente entrante recibe L + H + F al día en un solo pull.
 
 ### 6. Auto-save implícito
 
