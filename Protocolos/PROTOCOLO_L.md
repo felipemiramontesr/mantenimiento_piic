@@ -654,15 +654,15 @@ Los triggers son disparadores de lectura obligatoria. Cualquier agente puede inv
 
 #### Cascada de Lectura por Trigger
 
-Cada trigger arrastra lectura obligatoria de los documentos relacionados. No se puede invocar uno sin los que le siguen.
+Cada trigger tiene un alcance exacto de lectura. No más, no menos.
 
 | Trigger recibido | Documentos que el agente **debe** leer y comprender                                    |
 | ---------------- | -------------------------------------------------------------------------------------- |
 | **L**            | PROTOCOLO_L.md completo **+** HANDOFF_CC_TO_AG.md (H) **+** LOG_FORENSE.md últimas (F) |
 | **H**            | HANDOFF_CC_TO_AG.md completo **+** LOG_FORENSE.md últimas (F)                          |
-| **F**            | LOG_FORENSE.md últimas **+** HANDOFF_CC_TO_AG.md (H)                                   |
+| **F**            | LOG_FORENSE.md últimas (solo F)                                                        |
 
-> **Lógica:** H y F son documentos complementarios — el estado entregado (H) solo tiene sentido con el historial de decisiones (F), y viceversa. L es el trigger maestro que garantiza contexto completo.
+> **Lógica:** L es el trigger maestro — garantiza contexto completo. H arrastra F porque el estado entregado necesita historial de decisiones. F es autónomo — el log es suficiente por sí solo.
 
 ### 13.1 Las Siete Reglas
 

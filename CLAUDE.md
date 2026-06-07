@@ -14,11 +14,9 @@ Solo entonces responder o actuar sobre el request del usuario.
 
 **GrayMan puede invocar los triggers en cualquier momento:**
 
-- `L` → releer PROTOCOLO_L.md completo **+ H + F** (cascada completa)
+- `L` → releer PROTOCOLO_L.md completo **+ H + F**
 - `H` → releer HANDOFF_CC_TO_AG.md completo **+ F**
-- `F` → releer LOG_FORENSE.md (últimas entradas) **+ H**
-
-**Regla de cascada:** cada trigger arrastra lectura obligatoria de los documentos relacionados. H y F son complementarios — nunca leer uno sin el otro.
+- `F` → releer LOG_FORENSE.md (últimas entradas) — solo F
 
 `Protocolos/PROTOCOLO_L.md` contiene:
 

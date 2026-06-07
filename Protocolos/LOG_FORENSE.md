@@ -504,4 +504,24 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 
 **Decisiones tomadas:** (1) F+H son bidireccionales — el historial de decisiones (F) solo tiene sentido con el estado entregado (H), y viceversa. (2) La última regla del request ("recibir H → leer H") interpretada como typo de "recibir F → leer H" — la cascada coherente es la implementada. (3) Pre-commit (no post-commit) garantiza que si el agente entrante hace pull, obtiene código + estado + historial en un solo commit atómico.
 
+**Pendiente / Notas:** Corrección en V.78.101.59 — cascada F era incorrecta (F+H → solo F).
+
+---
+
+### V.78.101.59 — 2026-06-07 — CC
+
+**Sesión:** Fix cascada trigger F — solo F, no F+H
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 13.0 — corrección tabla cascada F)
+- `CLAUDE.md` (trigger F corregido)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (header → V.78.101.59)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Corrección de la cascada del trigger F. V.78.101.58 implementó F→F+H (bidireccional), pero GrayMan precisó que F es autónomo: al recibir F solo se lee LOG_FORENSE.md. Cascada final: L→L+H+F, H→H+F, F→solo F.
+
+**Por qué:** GrayMan corrigió: "F solo es a F no a F y H."
+
+**Decisiones tomadas:** F es autónomo. Solo L y H tienen cascada descendente.
+
 **Pendiente / Notas:** Ninguno.
