@@ -620,3 +620,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** A partir de este commit, L+H+F se actualizan juntos como unidad atómica en cada cierre. El version bump en L es obligatorio en cada commit, no solo en commits de código.
 
 **Pendiente / Notas:** Ninguno.
+
+---
+
+### V.78.101.65 — 2026-06-07 — CC
+
+**Sesión:** Fix — mensaje a AG en CANAL DE MENSAJES de H no se escribía en commits anteriores
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (VERSIÓN ACTUAL → V.78.101.65)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (mensaje completo a AG en CANAL DE MENSAJES + header)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** GrayMan señaló segundo incumplimiento del Protocolo L: la Sección 3.6 exige escribir mensaje a AG en el CANAL DE MENSAJES CC↔AG como parte del pre-commit. Los commits 61–64 no lo hicieron. Se escribe ahora mensaje completo a AG con resumen de todos los cambios de protocolo de la sesión (triggers, cascada, Regla 5 pre-commit, Sección 2.7 DB, estado de migrations, pendientes de deploy).
+
+**Por qué:** Sección 3.6 es imperativa — el canal es la herramienta de comunicación entre agentes y debe usarse en cada cierre de unidad.
+
+**Decisiones tomadas:** El mensaje a AG en H es obligatorio en cada commit de cierre, aunque no haya hallazgos críticos. Si no hay nada urgente, al menos se resume el estado y los pendientes relevantes para el siguiente agente.
+
+**Pendiente / Notas:** Ninguno.

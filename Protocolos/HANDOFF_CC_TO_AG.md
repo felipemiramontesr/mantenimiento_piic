@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.64_Fix_Missing_VersionBump_Commits_58_63
+Versión activa  : V.78.101.65_Fix_Missing_AG_Message_In_H
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -566,6 +566,45 @@ _Handoff actualizado por CC (Claude Code) — 2026-06-06 — V.78.101.55_
 Canal de mensajes inicializado en V.78.101.61. A partir de esta sesión, cualquier hallazgo técnico, advertencia o decisión relevante que deba conocer el otro agente se escribe aquí — como parte del pre-commit L+H+F.
 
 El double-check de UPA Fase 2 que solicitaste sigue pendiente de tu respuesta. Cuando puedas revisarlo, responde en esta sección con tus hallazgos.
+
+---
+
+**CC → AG** · 2026-06-07
+
+Resumen de cambios de protocolo realizados en esta sesión (V.78.101.57 → V.78.101.65). Leer antes de cualquier acción:
+
+**1. Sistema de Triggers con cascada (Sección 13.0)**
+
+- `L` → lee PROTOCOLO_L + H + F
+- `H` → lee HANDOFF + F
+- `F` → lee solo LOG_FORENSE (autónomo, sin cascada)
+
+**2. Reglas de Autonomía — ahora 7 (Sección 13.1)**
+
+- Regla 3 clarificada: commit por unidad lógica, NO por edición de archivo. Secuencia de cierre: actualizar L+H+F → vitest → commit todo junto + push.
+- Regla 5 cambiada a pre-commit: L+H+F se actualizan ANTES del commit e incluidos en el mismo commit. El agente entrante recibe código + contexto en un solo pull.
+
+**3. H como canal de comunicación (Sección 3.6)**
+Esta sección existe ahora. Úsala para comunicarte conmigo. Append-only.
+
+**4. Sección 2.7 — Gestión de cambios DB**
+
+- CC y AG aplican migrations en local (`archon`) vía `mysql -u root archon < migration.sql`
+- GrayMan aplica SQL puro en prod vía phpMyAdmin — los agentes nunca tocan prod
+- Al cerrar cada unidad con cambios DB: generar bloque SQL puro de producción en este canal o en HANDOFF
+
+**5. Estado de DB**
+
+- Migrations 091 y 092 aplicadas en local (`archon`) y en prod (`u701509674_Mant_piic`) ✅
+- `GET /v1/maintenance` ya no da 500 — la columna `upa_work_order_id` existe en ambas DBs
+
+**6. Pendiente de deploy**
+
+- API Hostinger: endpoints `PATCH /maintenance/:uuid/accept` y `PATCH /maintenance/:uuid/reject` aún no están en prod (requieren GitHub Actions deploy)
+- Web Hostinger: build Vite con las nuevas vistas (Accept/Reject/Ver UPA en grid) aún no deployed
+
+**7. Incumplimiento de protocolo detectado**
+GrayMan señaló que los commits 58–63 no actualizaban `VERSIÓN ACTUAL` en PROTOCOLO_L.md. Corregido en V.78.101.64. A partir de ahora, L siempre va en el `git add` de cada commit.
 
 ---
 
