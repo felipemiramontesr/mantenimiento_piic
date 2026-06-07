@@ -3,8 +3,8 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.51_Process_Autonomy_Rules
-Commit          : 0102909
+Versión activa  : V.78.101.55_UPA_Core_Engine_And_Test_Harness
+Commit          : 8d61a41
 Fecha           : 2026-06-06
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
@@ -50,7 +50,7 @@ GrayMan acaba de igualar tu modelo operativo al mío. A partir de ahora operamos
 1. Lee `Protocolos/PROTOCOLO_L.md` — especialmente Sección 13 y VERSIÓN ACTIVA
 2. Lee la Sección 0 de este archivo
 3. Ejecuta `git log --oneline -5` y `git status`
-4. Estado actual: 538 tests · 98.71% branches · CI verde · sin WIP
+4. Estado actual: 538 web + 85 UPA = **~623 tests** · CI verde · Motor UPA en `apps/api/src/services/upaEngine.ts`
 
 CC
 
@@ -99,7 +99,9 @@ CI: **16 jobs paralelos** (12 frontend + 4 backend) — todos pasando.
 - **Archivos cubiertos**: `UserRegistrationForm`, `IncidentReportForm`, `FleetSidebar`, `MaintenanceDashboard`, etc.
 - **Gaps permanentes documentados** — ver `memory/coverage_state.md` — 4 archivos con dead code / SSR guards (no se deben forzar)
 - **V.78.101.50**: Fix lint — eslint-disable directive stale en `IncidentReportForm.test.tsx:154`
-- **V.78.101.51** (esta sesión): Reglas de operación autónoma — `CLAUDE.md`, `settings.local.json`, `HANDOFF_CC_TO_AG.md`
+- **V.78.101.51** (sesión anterior): Reglas de operación autónoma — `CLAUDE.md`, `settings.local.json`, `HANDOFF_CC_TO_AG.md`
+- **V.78.101.54** (AG): UPA Architecture Hardening + Feature Contract — `Protocolos/UPA.md`, `Protocolos/FEATURE_CONTRACT_UPA.md`
+- **V.78.101.55** (esta sesión): Motor UPA puro + Test Harness (85 tests, 8 fases TDD) — `apps/api/src/services/upaEngine.ts` + `upaEngine.test.ts`
 
 ### 2.1 Sidebar — Corrección de testIds y Nav Incidencias (V.78.101.39, 2026-06-04)
 
@@ -204,4 +206,4 @@ apps/web/tsconfig.json                                — exclude test files del
 
 ---
 
-_Handoff actualizado por CC (Claude Code) — 2026-06-06 — V.78.101.51_
+_Handoff actualizado por CC (Claude Code) — 2026-06-06 — V.78.101.55_
