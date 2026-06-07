@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.63_Prod_DB_Migrations_091_092_Applied
+Versión activa  : V.78.101.64_Fix_Missing_VersionBump_Commits_58_63
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)

@@ -601,3 +601,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** Ninguna — ejecución directa del SQL generado por el agente.
 
 **Pendiente / Notas:** Deploy API + Web a Hostinger (GitHub Actions) — esos endpoints nuevos (PATCH accept/reject) no están en prod hasta el siguiente deploy.
+
+---
+
+### V.78.101.64 — 2026-06-07 — CC
+
+**Sesión:** Fix — VERSIÓN ACTUAL en PROTOCOLO_L.md no se actualizó en commits 58–63
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (VERSIÓN ACTUAL corregida a V.78.101.64)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (header → V.78.101.64)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Corrección de incumplimiento del IMPERATIVO de PROTOCOLO_L.md — la línea `VERSIÓN ACTUAL` permaneció en V.78.101.57 durante los commits 58 al 63. Se actualiza a V.78.101.64 y se incluye PROTOCOLO_L.md en el git add de este commit.
+
+**Por qué:** GrayMan señaló que los commits no seguían el Protocolo L. El IMPERATIVO establece que VERSIÓN ACTUAL debe actualizarse antes de cada commit y el archivo debe incluirse en el mismo `git add`.
+
+**Decisiones tomadas:** A partir de este commit, L+H+F se actualizan juntos como unidad atómica en cada cierre. El version bump en L es obligatorio en cada commit, no solo en commits de código.
+
+**Pendiente / Notas:** Ninguno.
