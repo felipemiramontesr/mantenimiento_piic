@@ -484,4 +484,24 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 
 **Decisiones tomadas:** (1) "Commit por unidad lógica" en lugar de "commit por edición de archivo" — edición por archivo rompería el pre-flight TDD (tests → lint → tsc deben pasar antes del commit). Documentado explícitamente en nota de Regla 3 para evitar ambigüedad futura. (2) Triggers como tabla formal en Sección 13.0 — invocables por letra desde el prompt de GrayMan en cualquier momento. (3) CLAUDE.md sincronizado con PROTOCOLO_L Sección 13 — ambos son fuentes de verdad equivalentes para CC.
 
-**Pendiente / Notas:** Ninguno. GrayMan confirmará si "commit por modificación" debe interpretarse de forma diferente.
+**Pendiente / Notas:** Ninguno. GrayMan confirmó: commit por unidad lógica es correcto.
+
+---
+
+### V.78.101.58 — 2026-06-07 — CC
+
+**Sesión:** Cascada de Triggers + Pre-commit Docs (esta sesión)
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 13.0 — tabla cascada; Regla 5 → pre-commit; nota Regla 3 — version bump → V.78.101.58)
+- `CLAUDE.md` (triggers con cascada explícita, Regla 5 → pre-commit, secuencia cierre de unidad)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (header actualizado a V.78.101.58)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** (1) Tabla de cascada de lectura en Sección 13.0: L→L+H+F, H→H+F, F→F+H. Cualquier trigger arrastra lectura de sus documentos relacionados. (2) Regla 5 reformulada: documentación es **pre-commit** — H y F se actualizan antes del commit y van incluidos en el mismo commit que cierra la unidad. (3) Nota de Regla 3 actualizada con secuencia explícita de cierre de unidad: actualizar H+F → pre-flight vitest → commit todo junto + push. (4) CLAUDE.md sincronizado.
+
+**Por qué:** GrayMan aprobó la lógica de commit por unidad lógica, y solicitó: (1) cascada de lectura entre triggers (L implica H+F, H implica F, F implica H), (2) que H y F se actualicen antes del commit — no después — para que el estado sea coherente en el mismo commit que cierra la unidad.
+
+**Decisiones tomadas:** (1) F+H son bidireccionales — el historial de decisiones (F) solo tiene sentido con el estado entregado (H), y viceversa. (2) La última regla del request ("recibir H → leer H") interpretada como typo de "recibir F → leer H" — la cascada coherente es la implementada. (3) Pre-commit (no post-commit) garantiza que si el agente entrante hace pull, obtiene código + estado + historial en un solo commit atómico.
+
+**Pendiente / Notas:** Ninguno.

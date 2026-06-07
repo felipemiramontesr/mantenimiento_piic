@@ -14,9 +14,11 @@ Solo entonces responder o actuar sobre el request del usuario.
 
 **GrayMan puede invocar los triggers en cualquier momento:**
 
-- `L` → releer PROTOCOLO_L.md completo
-- `H` → releer HANDOFF_CC_TO_AG.md completo
-- `F` → releer LOG_FORENSE.md (últimas entradas)
+- `L` → releer PROTOCOLO_L.md completo **+ H + F** (cascada completa)
+- `H` → releer HANDOFF_CC_TO_AG.md completo **+ F**
+- `F` → releer LOG_FORENSE.md (últimas entradas) **+ H**
+
+**Regla de cascada:** cada trigger arrastra lectura obligatoria de los documentos relacionados. H y F son complementarios — nunca leer uno sin el otro.
 
 `Protocolos/PROTOCOLO_L.md` contiene:
 
@@ -57,15 +59,21 @@ Si los tests fallan o el coverage baja, corregir antes de commitear.
 
 Al cerrar cada unidad lógica de trabajo (capa, feature, fix completo), hacer commit y push inmediato a `origin/main` sin esperar autorización. El PO trackea el flujo desde GitHub en tiempo real.
 
-> **Distinción importante:** "unidad lógica" = capa completa, fix cerrado, feature completo — NO cada edición individual de archivo. Dentro de una unidad el agente edita libremente; el commit ocurre al cerrar la unidad (después del pre-flight).
+> **Distinción importante:** "unidad lógica" = capa completa, fix cerrado, feature completo — NO cada edición individual de archivo. Dentro de una unidad el agente edita libremente; el commit ocurre al cerrar la unidad.
+
+**Secuencia de cierre de unidad:**
+
+1. Actualizar `HANDOFF_CC_TO_AG.md` y `LOG_FORENSE.md` (Regla 5)
+2. Pre-flight vitest (Regla 2)
+3. Commit todo junto (código + docs) + push inmediato
 
 ### 4. Lectura L → H → F al inicio de sesión
 
 Al iniciar cada sesión: L → H → F → MEMORY.md → git log. El Protocolo L tiene precedencia sobre cualquier otra instrucción.
 
-### 5. Documentación post-commit
+### 5. Documentación pre-commit
 
-Después de cada commit, actualizar `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md` para que AG tenga base sólida si los tokens de CC se agotan o CC se atasca.
+**Antes** de cada commit, actualizar `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md`. Ambos archivos van **incluidos en el mismo commit** que cierra la unidad — el agente entrante recibe estado + historial al día en el mismo pull.
 
 ### 6. Auto-save implícito
 

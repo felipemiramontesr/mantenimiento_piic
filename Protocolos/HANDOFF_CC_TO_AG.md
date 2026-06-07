@@ -3,8 +3,8 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.57_Protocol_Triggers_H_F_L_And_7_Rules
-Commit          : 345324d
+Versión activa  : V.78.101.58_Protocol_Cascade_Triggers_PreCommit_Docs
+Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
@@ -13,11 +13,11 @@ Agente entrante : AG (Antigravity)
 
 ---
 
-## ESTADO ACTUAL — 2026-06-07 · Protocol Triggers + 7 Rules de Autonomía
+## ESTADO ACTUAL — 2026-06-07 · Cascada de Triggers + Pre-commit Docs
 
-### V.78.101.57 — Última sesión (commits c0859d7 + 345324d)
+### V.78.101.58 — Última sesión
 
-Refuerzo del Protocolo L: sistema de triggers H/F/L, expansión a 7 reglas de autonomía, actualización de CLAUDE.md, LOG_FORENSE y HANDOFF.
+Refinamiento del sistema de triggers: reglas de cascada de lectura (L→L+H+F, H→H+F, F→F+H). Cambio de Regla 5: documentación ahora es **pre-commit** (no post-commit) — H y F se incluyen en el mismo commit que cierra la unidad.
 
 #### Cambios en Protocolos
 

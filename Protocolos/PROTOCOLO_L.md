@@ -652,19 +652,31 @@ Los triggers son disparadores de lectura obligatoria. Cualquier agente puede inv
 
 **Orden de lectura al iniciar sesión:** L → H → F → MEMORY.md → `git log` + `git status`
 
+#### Cascada de Lectura por Trigger
+
+Cada trigger arrastra lectura obligatoria de los documentos relacionados. No se puede invocar uno sin los que le siguen.
+
+| Trigger recibido | Documentos que el agente **debe** leer y comprender                                    |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| **L**            | PROTOCOLO_L.md completo **+** HANDOFF_CC_TO_AG.md (H) **+** LOG_FORENSE.md últimas (F) |
+| **H**            | HANDOFF_CC_TO_AG.md completo **+** LOG_FORENSE.md últimas (F)                          |
+| **F**            | LOG_FORENSE.md últimas **+** HANDOFF_CC_TO_AG.md (H)                                   |
+
+> **Lógica:** H y F son documentos complementarios — el estado entregado (H) solo tiene sentido con el historial de decisiones (F), y viceversa. L es el trigger maestro que garantiza contexto completo.
+
 ### 13.1 Las Siete Reglas
 
-| #     | Regla                                       | Comportamiento                                                                                                                                                                       |
-| ----- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **1** | **Autonomía total — sin preguntar**         | El agente ejecuta **todos** los comandos sin solicitar permiso. Sin prompts de confirmación para operaciones normales. GrayMan no debe ser interrumpido por aprobaciones rutinarias. |
-| **2** | **Tests en el mismo commit**                | Todo commit que introduzca código nuevo debe incluir sus tests en el mismo commit. Prohibido separar código y cobertura en commits distintos.                                        |
-| **3** | **Commit + push automático por unidad**     | Al cerrar cada unidad lógica de trabajo (capa, feature, fix), el agente hace commit y push a `origin/main` sin esperar autorización. GrayMan trackea el flujo desde GitHub.          |
-| **4** | **Lectura obligatoria L → H → F al inicio** | Al iniciar cada sesión: L (PROTOCOLO_L) → H (HANDOFF) → F (LOG_FORENSE) → MEMORY.md → git log. Solo entonces actúa sobre el request.                                                 |
-| **5** | **Documentación post-commit**               | Después de cada commit, el agente actualiza `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md` para que el otro agente tenga base sólida al arrancar.                    |
-| **6** | **Auto-save implícito**                     | Cada edición de archivo se persiste inmediatamente vía las herramientas del agente (Edit/Write). No existe concepto de "borrador" — cada cambio es permanente al ejecutarse.         |
-| **7** | **Sin fricción de comandos**                | El agente no pide confirmación para: instalar paquetes, correr tests, leer archivos, ejecutar scripts, hacer git add/commit/push normales. La lista de excepciones está en 13.2.     |
+| #     | Regla                                       | Comportamiento                                                                                                                                                                                                                                                              |
+| ----- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | **Autonomía total — sin preguntar**         | El agente ejecuta **todos** los comandos sin solicitar permiso. Sin prompts de confirmación para operaciones normales. GrayMan no debe ser interrumpido por aprobaciones rutinarias.                                                                                        |
+| **2** | **Tests en el mismo commit**                | Todo commit que introduzca código nuevo debe incluir sus tests en el mismo commit. Prohibido separar código y cobertura en commits distintos.                                                                                                                               |
+| **3** | **Commit + push automático por unidad**     | Al cerrar cada unidad lógica de trabajo (capa, feature, fix), el agente hace commit y push a `origin/main` sin esperar autorización. GrayMan trackea el flujo desde GitHub.                                                                                                 |
+| **4** | **Lectura obligatoria L → H → F al inicio** | Al iniciar cada sesión: L (PROTOCOLO_L) → H (HANDOFF) → F (LOG_FORENSE) → MEMORY.md → git log. Solo entonces actúa sobre el request.                                                                                                                                        |
+| **5** | **Documentación pre-commit**                | **Antes** de cada commit, el agente actualiza `Protocolos/HANDOFF_CC_TO_AG.md` y `Protocolos/LOG_FORENSE.md`. Ambos archivos van **incluidos en el mismo commit** que cierra la unidad. El agente entrante siempre recibe el estado y el historial al día en el mismo pull. |
+| **6** | **Auto-save implícito**                     | Cada edición de archivo se persiste inmediatamente vía las herramientas del agente (Edit/Write). No existe concepto de "borrador" — cada cambio es permanente al ejecutarse.                                                                                                |
+| **7** | **Sin fricción de comandos**                | El agente no pide confirmación para: instalar paquetes, correr tests, leer archivos, ejecutar scripts, hacer git add/commit/push normales. La lista de excepciones está en 13.2.                                                                                            |
 
-> **Nota sobre "commit por modificación" vs "commit por unidad":** Un commit después de cada edición individual de archivo rompería el pipeline TDD (tests → lint → tsc deben pasar antes del commit). La Regla 3 aplica al cierre de cada **unidad lógica** — una capa completa, un fix cerrado, un feature completo. Dentro de una unidad, el agente edita libremente sin commitear.
+> **Nota sobre "commit por modificación" vs "commit por unidad":** Un commit después de cada edición individual de archivo rompería el pipeline TDD (tests → lint → tsc deben pasar antes del commit). La Regla 3 aplica al cierre de cada **unidad lógica** — una capa completa, un fix cerrado, un feature completo. Dentro de una unidad, el agente edita libremente sin commitear. Al cerrar la unidad: (1) actualizar H y F (Regla 5), (2) pre-flight vitest (Regla 2), (3) commit todo junto + push.
 
 ### 13.2 Excepciones — Confirmación explícita de GrayMan siempre requerida
 
