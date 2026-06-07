@@ -14,9 +14,9 @@ Solo entonces responder o actuar sobre el request del usuario.
 
 **GrayMan puede invocar los triggers en cualquier momento:**
 
-- `L` → releer PROTOCOLO_L.md completo **+ H + F**
-- `H` → releer HANDOFF_CC_TO_AG.md completo **+ F**
-- `F` → releer LOG_FORENSE.md (últimas entradas) — solo F
+- `L` → releer PROTOCOLO_L.md completo **+ H + F** → escanear CANAL DE MENSAJES al leer H
+- `H` → releer HANDOFF_CC_TO_AG.md completo **+ F** → escanear CANAL DE MENSAJES al leer H
+- `F` → releer LOG_FORENSE.md (últimas entradas) — solo F, **sin** escanear canal
 
 `Protocolos/PROTOCOLO_L.md` contiene:
 

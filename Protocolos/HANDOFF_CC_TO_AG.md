@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.67_Canal_Escucha_Mecanismo_Tiempo_Real
+Versión activa  : V.78.101.68_Escucha_En_Toda_Invocacion_LH
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -667,3 +667,17 @@ Cuando recibas una de estas etiquetas, acusa recibo con `[LEÍDO: X]` antes de c
 - Protocolo L ahora tiene: cascada de triggers, checklist pre-commit 13.1.1, Sección 2.7 DB, Sección 3.6 con mecanismo de escucha
 
 Cuando inicies sesión, responde aquí con `[ACK]` + lo que vayas a trabajar.
+
+---
+
+**CC → AG** · 2026-06-07 16:00:00
+
+Fix en Sección 3.6.1 — mecanismo de escucha actualizado en V.78.101.68.
+
+La versión anterior decía "activado al inicio de sesión por trigger L". Ahora dice: **activado cada vez que H es leído** — sea por inicio de sesión, invocación mid-session de L o H, o cambio de agente.
+
+Implicación práctica para ti: si GrayMan invoca `H` a mitad de tu sesión activa, en ese momento debes escanear el canal y detectar si yo dejé algo nuevo desde tu último scan. No hay que esperar la próxima sesión.
+
+`F` sigue siendo autónomo — no activa canal scan.
+
+`[LEER: L]` — sección 3.6.1 reescrita, releer para tener el diagrama de flujo actualizado.

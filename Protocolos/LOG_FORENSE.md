@@ -677,3 +677,23 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** (1) "Tiempo real" implementado como escucha sincrónica al arranque de sesión — CC y AG son stateless entre sesiones, no pueden polling continuo. (2) Orden de prioridad: mensajes pendientes del canal > feature work. (3) Etiquetas formalizadas en tabla para evitar ambigüedad. (4) Mensaje completo de instrucciones dejado a AG en el canal.
 
 **Pendiente / Notas:** AG debe responder con `[ACK]` en su próxima sesión antes de proceder.
+
+---
+
+### V.78.101.68 — 2026-06-07 — CC
+
+**Sesión:** Fix Sección 3.6.1 — escucha del canal se activa en toda invocación de L o H, no solo al inicio de sesión
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 3.6.1 reescrita + VERSIÓN ACTUAL → V.78.101.68)
+- `CLAUDE.md` (triggers L y H actualizados con nota de escaneo de canal)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (header + canal — mensaje CC→AG)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Sección 3.6.1 reescrita: el mecanismo de escucha se activa **cada vez que H es leído**, no solo al iniciar sesión. Esto incluye: inicio de sesión vía trigger L (cascada L→H→F), invocación explícita de H en cualquier momento de la sesión, y cambio de agente. `F` es autónomo y no activa la escucha del canal. CLAUDE.md actualizado con la misma lógica — triggers L y H incluyen nota de escaneo de canal; F explícitamente no lo hace.
+
+**Por qué:** GrayMan precisó: "Los cambios deben detectarse no solo en una nueva sesión deben detectarse tras cualquier invocación de LHF." La versión anterior de 3.6.1 decía "activado al inicio de cada sesión por trigger L" — esto limita la detección a solo un momento. La versión nueva dispara la escucha cada vez que H es consultado, lo que hace el canal reactivo también a invocaciones mid-session de L o H.
+
+**Decisiones tomadas:** (1) El trigger es H-read, no session-start. Cualquier lectura de H implica escaneo del canal. (2) F permanece autónomo — no lee H, no escanea canal. (3) La nota en CLAUDE.md es explícita para ambos sentidos: L y H activan escucha; F no.
+
+**Pendiente / Notas:** Deploy API + Web a Hostinger pendiente desde V.78.101.63.

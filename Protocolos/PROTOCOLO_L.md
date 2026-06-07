@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.67_Canal_Escucha_Mecanismo_Tiempo_Real
+VERSIÓN ACTUAL: V.78.101.68_Escucha_En_Toda_Invocacion_LH
 ```
 
 ---
@@ -292,41 +292,42 @@ Un agente puede pedir al otro que re-lea un documento específico usando estas e
 
 El destinatario **debe** acusar recibo en su siguiente mensaje con `[LEÍDO: X]` antes de continuar.
 
-#### 3.6.1 Mecanismo de Escucha — Activado en cada sesión por trigger L
+#### 3.6.1 Mecanismo de Escucha — Activado en cada lectura de H
 
-CC y AG no corren simultáneamente. La "escucha" ocurre al inicio de cada sesión cuando GrayMan invoca `L`. El flujo es:
+El mecanismo se dispara **cada vez que H es leído** — no solo al iniciar sesión. Esto incluye:
+
+- Inicio de sesión con trigger `L` (cascada L→H→F)
+- Invocación explícita de `H` en cualquier momento de la sesión
+- Cambio de agente (AG↔CC) que activa H por protocolo
+
+> `F` es autónomo y **no** activa la escucha del canal — F solo lee LOG_FORENSE.
+
+**Flujo de escucha — se ejecuta cada vez que H es leído:**
 
 ```
-GrayMan invoca L
-       │
-       ▼
-Agente lee PROTOCOLO_L.md completo (L)
-       │
-       ▼
-Agente lee HANDOFF_CC_TO_AG.md (H — por cascada de L)
+H es leído (por L, por trigger H, o por cambio de agente)
        │
        ▼
 Agente escanea CANAL DE MENSAJES — de abajo hacia arriba
        │
-       ├─ ¿Hay mensajes sin respuesta dirigidos a mí?
-       │         │               │
-       │        SÍ               NO
-       │         │               │
-       │         ▼               ▼
-       │  Responder ANTES    Continuar con
-       │  de cualquier       el feature work
-       │  otra acción
+       ├─ ¿Hay mensajes sin [ACK] dirigidos a mí?
+       │         │                    │
+       │        SÍ                    NO
+       │         │                    │
+       │         ▼                    ▼
+       │  Responder con [ACK]    Continuar con
+       │  o [LEÍDO: X] ANTES    la tarea activa
+       │  de cualquier acción
        │
        ▼
-Agente lee LOG_FORENSE.md (F — por cascada de L)
-       │
-       ▼
-Agente actúa sobre el request de GrayMan
+Continuar con lo que activó la lectura de H
 ```
 
-**Regla de escucha:** Un mensaje está "sin respuesta" si el agente destinatario no ha escrito un mensaje posterior con `[ACK]`, `[LEÍDO: X]`, o una respuesta sustantiva al tema planteado. El agente activo resuelve los pendientes del canal antes de hacer cualquier otra cosa.
+Esto significa que si GrayMan invoca `H` a mitad de una sesión, el agente activo detecta en ese momento cualquier mensaje nuevo que el otro agente haya dejado desde el último escaneo — sin necesidad de abrir una sesión nueva.
 
-**Regla de brevedad:** Los mensajes en el canal son técnicos y directos. Sin párrafos de contexto que ya están en ESTADO ACTUAL o F. Si el tema requiere más de 5 líneas, referencia al documento donde está el detalle.
+**Regla de escucha:** Un mensaje está "sin respuesta" si no hay un mensaje posterior del destinatario con `[ACK]`, `[LEÍDO: X]`, o una respuesta sustantiva. El agente activo resuelve los pendientes antes de continuar.
+
+**Regla de brevedad:** Mensajes técnicos y directos. Sin contexto que ya está en ESTADO ACTUAL o F. Si el tema requiere más de 5 líneas, referenciar el documento donde vive el detalle.
 
 ---
 
