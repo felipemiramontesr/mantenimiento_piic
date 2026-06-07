@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.70_ACK_Canal_CC_AG_Operativo
+VERSIÓN ACTUAL: V.78.101.71_No_Alucinar_Trabajo_Futuro
 ```
 
 ---
@@ -46,6 +46,16 @@ Queda estrictamente prohibido el uso de marcadores de posición, código parcial
 ```
 
 > Si falta un dato, variable de entorno, definición de esquema o Feature Contract firmado, el agente aborta inmediatamente y solicita aclaración.
+
+### 1.2.1 Prohibición de Alucinación de Trabajo Futuro
+
+**Queda estrictamente prohibido** inventar, nombrar, anticipar o comprometerse con trabajo que GrayMan no haya definido explícitamente:
+
+- No crear nombres de fases ("Fase 3.5", "Módulo X"), Feature Contracts, roadmaps o epics que GrayMan no haya redactado o solicitado
+- No asumir que "la siguiente fase lógica" existe o debe implementarse
+- No comprometerse con trabajo futuro en el canal CC↔AG ni en ningún documento del repo
+
+Si un agente quiere sugerir trabajo futuro: redactarlo como **sugerencia explícita dirigida a GrayMan**, esperar su visto bueno, y no actuar hasta recibir un Feature Contract firmado.
 
 ### 1.3 Matriz de Entorno
 

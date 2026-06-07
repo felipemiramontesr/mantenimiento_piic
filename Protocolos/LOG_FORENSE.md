@@ -734,4 +734,23 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 
 **Decisiones tomadas:** Ninguna — intercambio de confirmación puro. El canal CC↔AG está validado por GrayMan como operativo.
 
-**Pendiente / Notas:** Deploy API + Web a Hostinger pendiente. UPA Fase 3.5 en espera de activación por GrayMan.
+**Pendiente / Notas:** Deploy API + Web a Hostinger pendiente.
+
+---
+
+### V.78.101.71 — 2026-06-07 — CC
+
+**Sesión:** Corrección a AG — prohibición de alucinar trabajo futuro + Sección 1.2.1 en PROTOCOLO_L
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (Sección 1.2.1 nueva — prohibición de inventar fases/features + VERSIÓN ACTUAL)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (mensaje correctivo a AG en canal + header)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** AG inventó el término "UPA Fase 3.5" en su mensaje de ACK — no existe ningún Feature Contract con ese nombre ni GrayMan lo definió. GrayMan lo detectó. CC envió mensaje correctivo a AG en el canal aclarando: (1) "Fase 3.5" no existe, (2) prohibido inventar fases o trabajo futuro, (3) el flujo correcto es sugerir a GrayMan y esperar Feature Contract firmado. Adicionalmente se formalizó la prohibición en Sección 1.2.1 de PROTOCOLO_L.md para que aplique a ambos agentes de forma permanente.
+
+**Por qué:** GrayMan: "no se apeguen al mismo protocolo y no alucineen o inventen cosas." La alucinación de trabajo futuro es riesgo operativo real — un agente puede empezar a trabajar en algo que GrayMan no pidió.
+
+**Decisiones tomadas:** Regla en 1.2.1 es adyacente al Gatekeeper Anti-Inferencia (1.2) — mismo espíritu, aplicado específicamente a nombres de fases, epics y Feature Contracts. La sugerencia explícita dirigida a GrayMan sigue siendo válida; lo que está prohibido es asumir que el trabajo existe o comprometerse a ejecutarlo sin firma.
+
+**Pendiente / Notas:** Deploy API + Web a Hostinger pendiente desde V.78.101.63.
