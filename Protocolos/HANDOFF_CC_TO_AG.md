@@ -3,7 +3,7 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.62_Rule_DB_Changes_Local_Agents_Prod_GrayMan
+Versión activa  : V.78.101.63_Prod_DB_Migrations_091_092_Applied
 Commit          : (pendiente)
 Fecha           : 2026-06-07
 Agente saliente : CC (Claude Code)
@@ -15,9 +15,9 @@ Agente entrante : AG (Antigravity)
 
 ## ESTADO ACTUAL — 2026-06-07 · Cascada de Triggers + Pre-commit Docs
 
-### V.78.101.62 — Última sesión
+### V.78.101.63 — Última sesión
 
-Sección 2.7 añadida a PROTOCOLO_L: gestión de cambios DB. CC/AG aplican migrations en local (XAMPP); GrayMan aplica el SQL puro en producción vía phpMyAdmin. Los agentes nunca tocan prod directamente.
+Migrations 091 y 092 aplicadas en producción (`u701509674_Mant_piic`) por GrayMan vía phpMyAdmin. DB local y prod en sincronía. Pendiente: deploy API + Web a Hostinger.
 
 #### Cambios en Protocolos
 
@@ -89,10 +89,10 @@ El flujo de negocio completo: Forecast → Programar → Técnico acepta/rechaza
 
 ### Pendiente para Producción
 
-1. Ejecutar migration `092_maintenance_upa_link.sql` en `u701509674_Mant_piic` (phpMyAdmin)
+1. ~~Ejecutar migration `092_maintenance_upa_link.sql` en `u701509674_Mant_piic`~~ ✅ **DONE 2026-06-07**
 2. Deploy API a Hostinger (nuevos endpoints PATCH accept/reject ya en código)
 3. Deploy Web a Hostinger (build Vite)
-4. FK constraint `091_upa_work_orders.sql` (si no está aplicada en prod)
+4. ~~FK constraint `091_upa_work_orders.sql`~~ ✅ **DONE — ya estaba en prod**
 
 ---
 

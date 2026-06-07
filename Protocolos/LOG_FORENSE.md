@@ -583,3 +583,21 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** Flujo en 4 pasos: crear `.sql` idempotente → aplicar en local → verificar → generar bloque SQL puro para prod. El bloque de prod se incluye en el HANDOFF o en el mensaje del canal CC↔AG al cerrar la unidad.
 
 **Pendiente / Notas:** Migrations 091 y 092 ya aplicadas en local. GrayMan debe aplicarlas en prod cuando haga deploy.
+
+---
+
+### V.78.101.63 — 2026-06-07 — CC
+
+**Sesión:** Migrations 091+092 aplicadas en producción
+**Archivos tocados:**
+
+- `Protocolos/HANDOFF_CC_TO_AG.md` (checklist prod actualizado — 091+092 done)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** GrayMan aplicó migrations 091 (`upa_work_orders`) y 092 (`fleet_movements` + columnas + FK + index) en `u701509674_Mant_piic` vía phpMyAdmin. Tres queries, tres checkmarks verdes. DB local y prod en sincronía.
+
+**Por qué:** Necesario para que el frontend en prod pueda hacer GET `/v1/maintenance` sin 500 (la query selecciona `fm.upa_work_order_id` que requiere la columna).
+
+**Decisiones tomadas:** Ninguna — ejecución directa del SQL generado por el agente.
+
+**Pendiente / Notas:** Deploy API + Web a Hostinger (GitHub Actions) — esos endpoints nuevos (PATCH accept/reject) no están en prod hasta el siguiente deploy.
