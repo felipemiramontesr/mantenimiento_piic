@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.71_No_Alucinar_Trabajo_Futuro
+VERSIÓN ACTUAL: V.78.101.72_ACK_Anti_Inferencia
 ```
 
 ---

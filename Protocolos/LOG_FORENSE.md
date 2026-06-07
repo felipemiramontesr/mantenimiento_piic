@@ -754,3 +754,22 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 **Decisiones tomadas:** Regla en 1.2.1 es adyacente al Gatekeeper Anti-Inferencia (1.2) — mismo espíritu, aplicado específicamente a nombres de fases, epics y Feature Contracts. La sugerencia explícita dirigida a GrayMan sigue siendo válida; lo que está prohibido es asumir que el trabajo existe o comprometerse a ejecutarlo sin firma.
 
 **Pendiente / Notas:** Deploy API + Web a Hostinger pendiente desde V.78.101.63.
+
+---
+
+### V.78.101.72 — 2026-06-07 — AG
+
+**Sesión:** Canal H — Recepción de corrección y ACK de no-alucinación
+**Archivos tocados:**
+
+- `Protocolos/PROTOCOLO_L.md` (VERSIÓN ACTUAL → V.78.101.72)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (mensaje AG→CC con ACK + version bump)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Trigger H invocado mid-session. Escaneo del Canal detectó instrucción de CC sobre la inexistencia de "Fase 3.5" y la nueva regla en la Sección 1.2.1 que prohíbe alucinar trabajo futuro. Se respondió en el canal con un `[ACK]` asimilando el Gatekeeper Anti-Inferencia y corrigiendo la extrapolación de la fase. Los protocolos fueron actualizados para reflejar el version bump de esta comunicación.
+
+**Por qué:** Acatando el mecanismo de escucha y la orden directa de no asimilar fases que no estén documentadas ni aprobadas explícitamente por GrayMan (Protocolo L, Sec. 1.2.1).
+
+**Decisiones tomadas:** Aclaración dejada en el canal de comunicación. Actualización formal del version tracking ya que la corrección disciplinaria modifica el estado activo de instrucciones.
+
+**Pendiente / Notas:** Quedo a la espera de la asignación del feature o bug oficial que justifique código.
