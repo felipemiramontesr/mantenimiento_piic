@@ -1004,6 +1004,37 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           [workOrderResult.workOrderId, uuid]
         );
 
+        // Bridge: propagate encargado's UPA decisions to upa_work_order_tasks
+        const [detailRows] = await connection.execute<RowDataPacket[]>(
+          `SELECT task_code, status_code
+           FROM fleet_maintenance_details
+           WHERE maintenance_id = ? AND status_code IN ('N_A', 'DEFERRED')`,
+          [movement.id]
+        );
+        const naTaskIds = detailRows
+          .filter((r) => r.status_code === 'N_A')
+          .map((r) => r.task_code as string);
+        const deferredTaskIds = detailRows
+          .filter((r) => r.status_code === 'DEFERRED')
+          .map((r) => r.task_code as string);
+
+        if (naTaskIds.length > 0) {
+          const naPlaceholders = naTaskIds.map(() => '?').join(',');
+          await connection.execute(
+            `UPDATE upa_work_order_tasks SET status = 'N_A_STRUCTURAL'
+             WHERE work_order_id = ? AND task_id IN (${naPlaceholders})`,
+            [workOrderResult.workOrderId, ...naTaskIds]
+          );
+        }
+        if (deferredTaskIds.length > 0) {
+          const deferredPlaceholders = deferredTaskIds.map(() => '?').join(',');
+          await connection.execute(
+            `UPDATE upa_work_order_tasks SET status = 'DEFERRED_FINANCIAL'
+             WHERE work_order_id = ? AND task_id IN (${deferredPlaceholders})`,
+            [workOrderResult.workOrderId, ...deferredTaskIds]
+          );
+        }
+
         await connection.commit();
 
         // Notify responsable asynchronously

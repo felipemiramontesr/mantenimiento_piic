@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import {
   MaintenanceSchedulePayload,
-  MaintenanceTemplateTask,
   ServiceType,
   UpaPreviewTask,
   UpaTaskStage,
@@ -275,7 +274,6 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
 }) => {
   const [units, setUnits] = useState<FleetUnit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>(initialUnitId ?? '');
-  const [template, setTemplate] = useState<MaintenanceTemplateTask[]>([]);
   const { users } = useUsers();
 
   const [odometerAtService, setOdometerAtService] = useState<number>(0);
@@ -287,7 +285,6 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const [fuelLevelEnd, setFuelLevelEnd] = useState<number>(50);
   const [fuelLitersLoaded, setFuelLitersLoaded] = useState<string>('');
   const [fuelAmount, setFuelAmount] = useState<string>('');
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [upaPreview, setUpaPreview] = useState<UpaPreviewTask[] | null>(null);
   const [upaPreviewLoading, setUpaPreviewLoading] = useState(false);
@@ -322,26 +319,6 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   }, [selectedUnit, units]);
 
   useEffect(() => {
-    if (!selectedUnit || !odometerAtService || odometerAtService <= 0) return;
-    setLoading(true);
-    api
-      .get(`/maintenance/template/${selectedUnit}?odometer=${odometerAtService}`)
-      .then((res) => {
-        if (res.data.success) {
-          setTemplate(res.data.tasks);
-          setDetails(
-            res.data.tasks.map((t: MaintenanceTemplateTask) => ({
-              taskCode: t.code,
-              status: 'PASS',
-              notes: '',
-            }))
-          );
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [selectedUnit, odometerAtService]);
-
-  useEffect(() => {
     if (!selectedUnit) {
       setUpaPreview(null);
       return;
@@ -356,6 +333,14 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
       .finally(() => setUpaPreviewLoading(false));
   }, [selectedUnit]);
 
+  useEffect(() => {
+    if (upaPreview && upaPreview.length > 0) {
+      setDetails(upaPreview.map((t) => ({ taskCode: t.id, status: 'PASS', notes: '' })));
+    } else {
+      setDetails([]);
+    }
+  }, [upaPreview]);
+
   const unitOptions: SelectOption[] = units.map((u) => ({
     value: u.id,
     label: `${u.id} - ${u.marca || ''} ${u.modelo || ''}`.trim(),
@@ -365,12 +350,10 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     searchTerms: `${u.marca || ''} ${u.modelo || ''} ${u.placas || ''} ${u.departamento || ''}`,
   }));
 
-  const statusOptions: SelectOption[] = [
-    { value: 'PASS', label: 'Correcto' },
-    { value: 'REPLACED', label: 'Reemplazado' },
-    { value: 'FAIL', label: 'Falla / Revisión' },
+  const upaStatusOptions: SelectOption[] = [
+    { value: 'PASS', label: 'Tarea Aprobada' },
     { value: 'N_A', label: 'No Aplica' },
-    { value: 'DEFERRED', label: 'Diferido — Próxima Orden' },
+    { value: 'DEFERRED', label: 'Diferido Próxima Orden' },
   ];
 
   const technicianOptions: SelectOption[] = (users || [])
@@ -387,10 +370,8 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
       searchTerms: `${u.fullName || ''} ${u.username || ''} ${u.employeeNumber || ''}`,
     }));
 
-  const handleDetailChange = (index: number, field: string, value: string): void => {
-    const newDetails = [...details];
-    newDetails[index] = { ...newDetails[index], [field]: value };
-    setDetails(newDetails);
+  const handleUpaDetailChange = (taskId: string, value: string): void => {
+    setDetails((prev) => prev.map((d) => (d.taskCode === taskId ? { ...d, status: value } : d)));
   };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -593,10 +574,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
         <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#7c3aed]">
           <div className="card-sovereign-header p-10 pb-6">
             <ListChecks className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-archon-xl opacity-100">VISTA PREVIA UPA</h3>
-            <span className="ml-auto text-archon-base text-[#0f2a44]/30 font-black uppercase tracking-[0.1em]">
-              Solo lectura
-            </span>
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">
+              REVISIÓN DE TAREAS UPA
+            </h3>
           </div>
           {upaPreviewLoading && (
             <div className="px-10 pb-10 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
@@ -643,11 +623,25 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                       {isOpen && (
                         <div className="divide-y divide-[#0f2a44]/5">
                           {stageTasks.map((task) => (
-                            <div key={task.id} className="px-5 py-3 flex items-start gap-3">
-                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#7c3aed]/40 shrink-0" />
-                              <span className="text-archon-base text-[#0f2a44]/80">
+                            <div
+                              key={task.id}
+                              className="px-5 py-3.5 flex items-center gap-4 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
+                            >
+                              <span className="flex-1 text-archon-base text-[#0f2a44]/80 min-w-0">
                                 {task.description}
                               </span>
+                              <div className="w-52 shrink-0">
+                                <ArchonSelect
+                                  options={upaStatusOptions}
+                                  value={
+                                    details.find((d) => d.taskCode === task.id)?.status ?? 'PASS'
+                                  }
+                                  onChange={(val: string): void =>
+                                    handleUpaDetailChange(task.id, val)
+                                  }
+                                  searchable={false}
+                                />
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -677,73 +671,6 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           onFuelAmount={setFuelAmount}
           inputClass={inputClass}
         />
-      )}
-
-      {/* ── CHECKLIST OPERATIVO ─────────────────────────────────────────────── */}
-      {selectedUnit && (
-        <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#0f2a44] !pb-2">
-          <div className="card-sovereign-header p-10 pb-0">
-            <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
-            <h3 className="card-sovereign-title text-archon-xl opacity-100">
-              {isInProgress ? 'INSPECCIÓN DE ENTRADA (Opcional)' : 'CHECKLIST OPERATIVO'}
-            </h3>
-          </div>
-          {loading && (
-            <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
-              Generando matriz de inspección...
-            </div>
-          )}
-          {!loading && template.length === 0 && (
-            <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
-              No se generaron tareas para esta configuración.
-            </div>
-          )}
-          {!loading && template.length > 0 && (
-            <div className="divide-y divide-[#0f2a44]/5">
-              {template.map((task, idx) => (
-                <div
-                  key={task.code}
-                  className="px-10 py-5 archon-grid-2-sovereign gap-10 items-center hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
-                >
-                  <div className="min-w-0 pr-6">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="text-archon-lg font-bold text-[#0f2a44]">{task.label}</div>
-                      {task.isDeferredCarry && (
-                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-400/30 text-archon-sm font-black text-amber-600 uppercase tracking-[0.1em]">
-                          ↩ Diferido
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-archon-sm font-black text-[#0f2a44]/30 uppercase tracking-[0.15em] mt-0.5">
-                      {task.code}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="w-full">
-                      <ArchonSelect
-                        options={statusOptions}
-                        value={details[idx]?.status || 'PASS'}
-                        onChange={(val: string): void => handleDetailChange(idx, 'status', val)}
-                        searchable={false}
-                      />
-                    </div>
-                    <div className="w-full">
-                      <input
-                        type="text"
-                        placeholder="Notas..."
-                        value={details[idx]?.notes || ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                          handleDetailChange(idx, 'notes', e.target.value)
-                        }
-                        className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white px-4 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       )}
 
       {/* ── SOVEREIGN ACTION BAR ────────────────────────────────────────────── */}
