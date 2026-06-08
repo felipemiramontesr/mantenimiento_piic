@@ -10,6 +10,8 @@ interface RoleOption {
   permissions: string[];
 }
 
+const ARCHON_MASTER_ROLE: RoleOption = { id: 0, name: 'Master (Archon)', permissions: [] };
+
 const RoleSwitcher: React.FC = () => {
   const { effectiveUser, isImpersonating, startImpersonation, stopImpersonation } = useAuth();
   const { isOmnipotent } = usePermissions();
@@ -54,6 +56,11 @@ const RoleSwitcher: React.FC = () => {
   }
 
   const handleSelectRole = (role: RoleOption): void => {
+    if (role.id === 0) {
+      stopImpersonation();
+      setOpen(false);
+      return;
+    }
     const target: UserIndustrial = {
       id: `impersonated-${role.id}`,
       username: `[${role.name}]`,
@@ -81,6 +88,13 @@ const RoleSwitcher: React.FC = () => {
       </button>
       {open && (
         <div className="absolute bottom-full right-0 mb-2 bg-white border border-slate-200 rounded-[4px] shadow-lg min-w-[160px] z-50 overflow-hidden">
+          <button
+            type="button"
+            onClick={(): void => handleSelectRole(ARCHON_MASTER_ROLE)}
+            className="w-full text-left px-3 py-2 text-xs font-bold text-pinnacle-navy hover:bg-slate-50 border-b border-slate-200"
+          >
+            Master (Archon)
+          </button>
           {roles.map((role) => (
             <button
               key={role.id}

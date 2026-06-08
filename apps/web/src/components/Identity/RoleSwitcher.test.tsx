@@ -79,8 +79,18 @@ describe('RoleSwitcher', () => {
     mockAuth();
     render(<RoleSwitcher />);
     fireEvent.click(await screen.findByText('God Mode'));
-    expect(await screen.findByText('Administrador')).toBeInTheDocument();
+    expect(await screen.findByText('Master (Archon)')).toBeInTheDocument();
+    expect(screen.getByText('Administrador')).toBeInTheDocument();
     expect(screen.getByText('Operador')).toBeInTheDocument();
+  });
+
+  it('clicking Master (Archon) calls stopImpersonation and not startImpersonation', async () => {
+    const auth = mockAuth();
+    render(<RoleSwitcher />);
+    fireEvent.click(await screen.findByText('God Mode'));
+    fireEvent.click(await screen.findByText('Master (Archon)'));
+    expect(auth.stopImpersonation).toHaveBeenCalled();
+    expect(auth.startImpersonation).not.toHaveBeenCalled();
   });
 
   it('calls startImpersonation with correct mock user when role is selected', async () => {
