@@ -10,36 +10,27 @@ export default function usePermissions(): {
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmnipotent: () => boolean;
 } {
-  const { currentUser } = useAuth();
+  const { currentUser, effectiveUser } = useAuth();
 
-  /**
-   * Checks if the user has a specific permission slug.
-   * Master (Archon) has ID 0 and always returns true.
-   */
   const hasPermission = (permission: string): boolean => {
-    if (!currentUser) return false;
+    if (!effectiveUser) return false;
 
-    // 🛡️ OMEGA BYPASS: Master (Archon) has absolute power
-    // We check ID (flexible), Name, and Username to be indestructible
     if (
-      Number(currentUser.roleId) === 0 ||
-      currentUser.roleName === 'Master (Archon)' ||
-      ['archon', 'greyman', 'grayman'].includes(currentUser.username.toLowerCase())
+      Number(effectiveUser.roleId) === 0 ||
+      effectiveUser.roleName === 'Master (Archon)' ||
+      ['archon', 'greyman', 'grayman'].includes(effectiveUser.username.toLowerCase())
     ) {
       return true;
     }
 
-    return currentUser.permissions?.includes(permission) || false;
+    return effectiveUser.permissions?.includes(permission) || false;
   };
 
-  /**
-   * Checks if the user has ANY of the provided permissions.
-   */
   const hasAnyPermission = (permissions: string[]): boolean =>
     permissions.some((p) => hasPermission(p));
 
-  // Checks by roleId/username only — does NOT fall back to permissions array.
-  // Use for GrayMan-exclusive features like the permissions matrix.
+  // isOmnipotent always reads currentUser (not effectiveUser) so the
+  // God Mode switcher remains visible even while impersonating a limited role.
   const isOmnipotent = (): boolean => {
     if (!currentUser) return false;
     return (

@@ -10,19 +10,35 @@ import { UserIndustrial } from '../types/user';
 
 interface AuthContextType {
   currentUser: UserIndustrial | null;
+  effectiveUser: UserIndustrial | null;
+  isImpersonating: boolean;
   login: (token: string, user: UserIndustrial) => void;
   logout: () => void;
   updateCurrentUser: (data: Partial<UserIndustrial>) => void;
   isAuthenticated: boolean;
+  startImpersonation: (target: UserIndustrial) => void;
+  stopImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<UserIndustrial | null>(null);
+  const [viewAsUser, setViewAsUser] = useState<UserIndustrial | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     !!localStorage.getItem('auth_token')
   );
+
+  const isImpersonating = viewAsUser !== null;
+  const effectiveUser = viewAsUser ?? currentUser;
+
+  const startImpersonation = (target: UserIndustrial): void => {
+    setViewAsUser(target);
+  };
+
+  const stopImpersonation = (): void => {
+    setViewAsUser(null);
+  };
 
   const logout = (): void => {
     localStorage.removeItem('auth_token');
@@ -68,7 +84,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider
-      value={{ currentUser, login, logout, updateCurrentUser, isAuthenticated }}
+      value={{
+        currentUser,
+        effectiveUser,
+        isImpersonating,
+        login,
+        logout,
+        updateCurrentUser,
+        isAuthenticated,
+        startImpersonation,
+        stopImpersonation,
+      }}
     >
       {children}
     </AuthContext.Provider>

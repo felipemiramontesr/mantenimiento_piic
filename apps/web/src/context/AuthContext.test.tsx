@@ -108,4 +108,58 @@ describe('AuthContext', () => {
     );
     consoleError.mockRestore();
   });
+
+  // Impersonation
+  it('startImpersonation sets effectiveUser and isImpersonating without touching localStorage', async () => {
+    const admin = { id: '1', username: 'grayman' } as never;
+    const target = {
+      id: 'impersonated-3',
+      username: '[Operador]',
+      roleId: 3,
+      roleName: 'Operador',
+    } as never;
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => {
+      result.current.login('tok-admin', admin);
+    });
+    await act(async () => {
+      result.current.startImpersonation(target);
+    });
+    expect(result.current.isImpersonating).toBe(true);
+    expect(result.current.effectiveUser).toMatchObject({ username: '[Operador]' });
+    expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
+    expect(localStorage.getItem('user_data')).toContain('grayman');
+  });
+
+  it('stopImpersonation restores effectiveUser to currentUser without touching localStorage', async () => {
+    const admin = { id: '1', username: 'grayman' } as never;
+    const target = {
+      id: 'impersonated-3',
+      username: '[Operador]',
+      roleId: 3,
+      roleName: 'Operador',
+    } as never;
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => {
+      result.current.login('tok-admin', admin);
+    });
+    await act(async () => {
+      result.current.startImpersonation(target);
+    });
+    await act(async () => {
+      result.current.stopImpersonation();
+    });
+    expect(result.current.isImpersonating).toBe(false);
+    expect(result.current.effectiveUser).toMatchObject({ username: 'grayman' });
+  });
+
+  it('effectiveUser equals currentUser when not impersonating', async () => {
+    const user = { id: '1', username: 'grayman' } as never;
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => {
+      result.current.login('tok', user);
+    });
+    expect(result.current.effectiveUser).toMatchObject({ username: 'grayman' });
+    expect(result.current.isImpersonating).toBe(false);
+  });
 });
