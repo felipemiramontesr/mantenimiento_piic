@@ -92,7 +92,7 @@ const RoleSwitcher: React.FC = () => {
         God Mode
       </button>
       {open && (
-        <div className="absolute bottom-full right-0 mb-2 bg-white border border-pinnacle-navy/15 rounded-[4px] shadow-pinnacle-hover min-w-[180px] z-50 overflow-hidden">
+        <div className="absolute bottom-full right-0 mb-2 bg-white border border-pinnacle-navy/15 rounded-[4px] shadow-pinnacle-hover min-w-[270px] z-50 overflow-hidden">
           <div className="bg-pinnacle-navy px-3 py-2">
             <span className="text-[8px] font-bold text-pinnacle-yellow uppercase tracking-[0.2em]">
               God Mode
