@@ -11,11 +11,16 @@ import {
   X,
   Warehouse,
   Droplets,
+  ListChecks,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   MaintenanceSchedulePayload,
   MaintenanceTemplateTask,
   ServiceType,
+  UpaPreviewTask,
+  UpaTaskStage,
 } from '../../types/maintenance';
 
 import api from '../../api/client';
@@ -100,6 +105,22 @@ const SERVICE_BADGE_STYLE: Record<ServiceType, { bg: string; text: string; borde
     text: 'text-emerald-700',
     border: 'border-emerald-500/20',
   },
+};
+
+const UPA_STAGE_ORDER: UpaTaskStage[] = [
+  'triage',
+  'minor_service',
+  'cascade',
+  'deferred',
+  'closure',
+];
+
+const UPA_STAGE_LABELS: Record<UpaTaskStage, string> = {
+  triage: 'Triaje',
+  minor_service: 'Servicio Menor',
+  cascade: 'Cascada',
+  deferred: 'Diferidos',
+  closure: 'Cierre',
 };
 
 const getSubmitBtnClass = (inProgress: boolean): string =>
@@ -268,6 +289,15 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const [fuelAmount, setFuelAmount] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [upaPreview, setUpaPreview] = useState<UpaPreviewTask[] | null>(null);
+  const [upaPreviewLoading, setUpaPreviewLoading] = useState(false);
+  const [openPreviewStages, setOpenPreviewStages] = useState<Record<string, boolean>>({
+    triage: true,
+    minor_service: false,
+    cascade: false,
+    deferred: false,
+    closure: false,
+  });
 
   const unit = units.find((u) => u.id === selectedUnit);
   const computedServiceType = computeServiceType(odometerAtService, unit?.maintIntervalKm ?? 10000);
@@ -310,6 +340,21 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
       })
       .finally(() => setLoading(false));
   }, [selectedUnit, odometerAtService]);
+
+  useEffect(() => {
+    if (!selectedUnit) {
+      setUpaPreview(null);
+      return;
+    }
+    setUpaPreviewLoading(true);
+    api
+      .get(`/work-orders/preview/${selectedUnit}?fleetType=urban`)
+      .then((res) => {
+        if (res.data.success) setUpaPreview(res.data.data.tasks as UpaPreviewTask[]);
+      })
+      .catch(() => setUpaPreview(null))
+      .finally(() => setUpaPreviewLoading(false));
+  }, [selectedUnit]);
 
   const unitOptions: SelectOption[] = units.map((u) => ({
     value: u.id,
@@ -542,6 +587,79 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
           </div>
         </div>
       </div>
+
+      {/* ── VISTA PREVIA UPA ─────────────────────────────────────────────────── */}
+      {selectedUnit && (
+        <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#7c3aed]">
+          <div className="card-sovereign-header p-10 pb-6">
+            <ListChecks className="text-[var(--card-accent)]" size={22} />
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">VISTA PREVIA UPA</h3>
+            <span className="ml-auto text-archon-base text-[#0f2a44]/30 font-black uppercase tracking-[0.1em]">
+              Solo lectura
+            </span>
+          </div>
+          {upaPreviewLoading && (
+            <div className="px-10 pb-10 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
+              Calculando tareas UPA...
+            </div>
+          )}
+          {!upaPreviewLoading && upaPreview !== null && upaPreview.length === 0 && (
+            <div className="px-10 pb-10 text-center text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
+              Sin tareas UPA para esta unidad.
+            </div>
+          )}
+          {!upaPreviewLoading && upaPreview !== null && upaPreview.length > 0 && (
+            <div className="px-10 pb-10 space-y-2">
+              {UPA_STAGE_ORDER.filter((stage) => upaPreview.some((t) => t.stage === stage)).map(
+                (stage) => {
+                  const stageTasks = upaPreview.filter((t) => t.stage === stage);
+                  const isOpen = openPreviewStages[stage] ?? false;
+                  return (
+                    <div
+                      key={stage}
+                      className="border border-[#0f2a44]/10 rounded-[4px] overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        onClick={(): void =>
+                          setOpenPreviewStages((prev) => ({ ...prev, [stage]: !isOpen }))
+                        }
+                        className="w-full flex items-center justify-between px-5 py-3.5 bg-[#0f2a44]/[0.03] hover:bg-[#0f2a44]/[0.06] transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-archon-md font-black text-[#7c3aed] uppercase tracking-[0.15em]">
+                            {UPA_STAGE_LABELS[stage]}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-[#7c3aed]/10 text-[#7c3aed] text-archon-sm font-black">
+                            {stageTasks.length}
+                          </span>
+                        </div>
+                        {isOpen ? (
+                          <ChevronUp size={14} className="text-[#0f2a44]/40 shrink-0" />
+                        ) : (
+                          <ChevronDown size={14} className="text-[#0f2a44]/40 shrink-0" />
+                        )}
+                      </button>
+                      {isOpen && (
+                        <div className="divide-y divide-[#0f2a44]/5">
+                          {stageTasks.map((task) => (
+                            <div key={task.id} className="px-5 py-3 flex items-start gap-3">
+                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#7c3aed]/40 shrink-0" />
+                              <span className="text-archon-base text-[#0f2a44]/80">
+                                {task.description}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── TELEMETRÍA DE COMBUSTIBLE ──────────────────────────────────────── */}
       {selectedUnit && (

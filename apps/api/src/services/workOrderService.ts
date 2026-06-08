@@ -23,6 +23,17 @@ export interface CreateWorkOrderResult {
   taskCount: number;
 }
 
+export interface PreviewWorkOrderResult {
+  vehicleId: string;
+  odometer: number;
+  tasks: Array<{
+    id: string;
+    stage: TaskStage;
+    description: string;
+    packageLevel: PackageLevel | null;
+  }>;
+}
+
 export interface UpdateTaskStatusInput {
   status: 'pending' | 'completed' | 'DEFERRED_FINANCIAL' | 'N_A_STRUCTURAL';
   evidenceUrls?: string[];
@@ -229,6 +240,39 @@ export async function createWorkOrder(
   } finally {
     connection.release();
   }
+}
+
+export async function previewWorkOrder(
+  vehicleId: string,
+  fleetType: FleetType
+): Promise<PreviewWorkOrderResult> {
+  const vehicle = await fetchVehicleProfile(vehicleId);
+  if (!vehicle) {
+    throw new Error(`VEHICLE_NOT_FOUND: vehicleId '${vehicleId}' does not exist`);
+  }
+
+  const lastClosedWorkOrder = await fetchLastClosedWorkOrder(vehicleId);
+
+  const output = calculateUpaOrder({
+    vehicleProfile: {
+      brand: vehicle.brand,
+      fuelType: vehicle.fuelType,
+      fleetType,
+      odometer: vehicle.odometer,
+    },
+    lastClosedWorkOrder,
+  });
+
+  return {
+    vehicleId: vehicle.id,
+    odometer: vehicle.odometer,
+    tasks: output.tasks.map((t) => ({
+      id: t.id,
+      stage: t.stage,
+      description: t.description,
+      packageLevel: t.packageLevel ?? null,
+    })),
+  };
 }
 
 export async function updateTaskStatus(

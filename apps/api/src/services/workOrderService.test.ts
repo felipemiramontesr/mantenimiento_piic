@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createWorkOrder,
+  previewWorkOrder,
   updateTaskStatus,
   closeWorkOrder,
   checkAndTimeoutStage5Orders,
@@ -439,6 +440,50 @@ describe('workOrderService', () => {
       (db.execute as any).mockResolvedValueOnce([[mockRow]]);
       const result = await getWorkOrder(1);
       expect(result!.tasks).toHaveLength(0);
+    });
+  });
+
+  // ── previewWorkOrder ────────────────────────────────────────────────────────
+
+  describe('previewWorkOrder', () => {
+    it('throws VEHICLE_NOT_FOUND when vehicle does not exist', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]);
+      await expect(previewWorkOrder('GHOST-999', 'urban')).rejects.toThrow('VEHICLE_NOT_FOUND');
+    });
+
+    it('does not call getConnection (no DB write)', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
+      (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
+      await previewWorkOrder('VEH-001', 'urban');
+      expect(db.getConnection).not.toHaveBeenCalled();
+    });
+
+    it('returns vehicleId and odometer from vehicle profile', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
+      (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
+      const result = await previewWorkOrder('VEH-001', 'urban');
+      expect(result.vehicleId).toBe('VEH-001');
+      expect(result.odometer).toBe(10200);
+    });
+
+    it('returns non-empty tasks array for valid urban vehicle', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
+      (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
+      const result = await previewWorkOrder('VEH-001', 'urban');
+      expect(Array.isArray(result.tasks)).toBe(true);
+      expect(result.tasks.length).toBeGreaterThan(0);
+    });
+
+    it('returns tasks with correct shape (id, stage, description, packageLevel)', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
+      (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
+      const result = await previewWorkOrder('VEH-001', 'urban');
+      result.tasks.forEach((task) => {
+        expect(typeof task.id).toBe('string');
+        expect(typeof task.stage).toBe('string');
+        expect(typeof task.description).toBe('string');
+        expect(task.packageLevel === null || typeof task.packageLevel === 'string').toBe(true);
+      });
     });
   });
 });

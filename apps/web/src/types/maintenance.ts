@@ -95,6 +95,16 @@ export type MaintenanceCompletionPayload = {
   endOdometer?: number;
 };
 
+export type UpaTaskStage = 'triage' | 'minor_service' | 'cascade' | 'deferred' | 'closure';
+export type UpaPackageLevel = '10k' | '20k' | '30k' | '50k';
+
+export type UpaPreviewTask = {
+  id: string;
+  stage: UpaTaskStage;
+  description: string;
+  packageLevel: UpaPackageLevel | null;
+};
+
 export type ForecastUrgency = 'CRITICAL' | 'WARNING' | 'OK';
 
 export type MaintenanceForecastRow = {

@@ -203,7 +203,10 @@ const selectUnit = async (unitLabel: RegExp): Promise<void> => {
 describe('MaintenanceRegistrationForm', () => {
   beforeEach(() => {
     server.use(
-      http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] }))
+      http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] })),
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({ success: true, data: { vehicleId: '', odometer: 0, tasks: [] } })
+      )
     );
   });
 
@@ -267,6 +270,50 @@ describe('MaintenanceRegistrationForm', () => {
     });
 
     expect(screen.queryByText('CABIN_FILTER_MINING')).not.toBeInTheDocument();
+  });
+
+  it('Should render UPA preview panel with triage tasks after selecting a unit', async () => {
+    server.use(
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] })),
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            vehicleId: 'ASM-021',
+            odometer: 58774,
+            tasks: [
+              {
+                id: 'triage_lights',
+                stage: 'triage',
+                description: 'Revisión de luces',
+                packageLevel: null,
+              },
+              {
+                id: 'minor_oil',
+                stage: 'minor_service',
+                description: 'Cambio de aceite UPA',
+                packageLevel: '10k',
+              },
+            ],
+          },
+        })
+      )
+    );
+
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+
+    await waitFor(() => {
+      expect(screen.getByText('VISTA PREVIA UPA')).toBeInTheDocument();
+    });
+
+    // Triage accordion is open by default and shows task
+    expect(screen.getByText('Triaje')).toBeInTheDocument();
+    expect(screen.getByText('Revisión de luces')).toBeInTheDocument();
+
+    // Minor service accordion starts closed — description not visible yet
+    expect(screen.getByText('Servicio Menor')).toBeInTheDocument();
+    expect(screen.queryByText('Cambio de aceite UPA')).not.toBeInTheDocument();
   });
 
   it('Should expose SKIPPED_NA and DEFERRED in task status selector', async () => {

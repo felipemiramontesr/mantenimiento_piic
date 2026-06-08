@@ -3,6 +3,7 @@ import { z } from 'zod';
 import requirePermission from '../middleware/requirePermission';
 import {
   createWorkOrder,
+  previewWorkOrder,
   updateTaskStatus,
   closeWorkOrder,
   getWorkOrder,
@@ -28,6 +29,33 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
+  // GET /v1/work-orders/preview/:vehicleId
+  fastify.get(
+    '/work-orders/preview/:vehicleId',
+    { preHandler: [requirePermission('fleet:view')] },
+    async (request, reply) => {
+      const { vehicleId } = request.params as { vehicleId: string };
+      const { fleetType } = request.query as { fleetType?: string };
+      const resolvedFleetType = fleetType === 'mining' ? 'mining' : 'urban';
+
+      try {
+        const result = await previewWorkOrder(vehicleId, resolvedFleetType);
+        return reply.code(200).send({ success: true, data: result });
+      } catch (error) {
+        const msg = (error as Error).message;
+        if (msg.startsWith('VEHICLE_NOT_FOUND')) {
+          return reply.code(404).send({ success: false, code: 'NOT_FOUND', message: msg });
+        }
+        fastify.log.error({ err: msg }, 'work-orders/preview error');
+        return reply.code(500).send({
+          success: false,
+          code: 'INTERNAL_ERROR',
+          message: 'Error al generar vista previa UPA',
+        });
+      }
+    }
+  );
+
   // GET /v1/work-orders/:id
   fastify.get(
     '/work-orders/:id',
@@ -46,24 +74,20 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
       try {
         const result = await getWorkOrder(workOrderId);
         if (!result) {
-          return reply
-            .code(404)
-            .send({
-              success: false,
-              code: 'NOT_FOUND',
-              message: `Work order ${workOrderId} not found`,
-            });
+          return reply.code(404).send({
+            success: false,
+            code: 'NOT_FOUND',
+            message: `Work order ${workOrderId} not found`,
+          });
         }
         return reply.code(200).send({ success: true, data: result });
       } catch (error) {
         fastify.log.error({ err: (error as Error).message }, 'work-orders/:id GET error');
-        return reply
-          .code(500)
-          .send({
-            success: false,
-            code: 'INTERNAL_ERROR',
-            message: 'Error al obtener orden de trabajo',
-          });
+        return reply.code(500).send({
+          success: false,
+          code: 'INTERNAL_ERROR',
+          message: 'Error al obtener orden de trabajo',
+        });
       }
     }
   );
