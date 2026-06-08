@@ -157,8 +157,9 @@ describe('MaintenanceRegistrationForm', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// computeServiceType — badge via odometry (RED-first: zero tests existed)
-// Lógica pura con condiciones: ciclo 60,000 km + ventanas ± tolerancia.
+// UPA service badge — derived from UPA preview cascade level
+// Badge label mirrors the highest cascadeLevel returned by the preview API.
+// Legacy computeServiceType (odometer-based) was removed in Path B.
 // ─────────────────────────────────────────────────────────────────────────────
 const makeUnit = (id: string, odometer: number, maintIntervalKm: number): typeof TOYOTA_UNIT => ({
   id,
@@ -172,17 +173,30 @@ const makeUnit = (id: string, odometer: number, maintIntervalKm: number): typeof
   departamento: 'MINA',
 });
 
-describe('computeServiceType — service badge via odometry', () => {
-  beforeEach(() => {
+const makeCascadeTask = (
+  level: string
+): { id: string; stage: string; description: string; packageLevel: string } => ({
+  id: `cascade_${level}`,
+  stage: 'cascade',
+  description: `Cascade ${level}`,
+  packageLevel: level,
+});
+
+describe('UPA service badge — derived from preview cascade level', () => {
+  const assertBadge = async (
+    unit: typeof TOYOTA_UNIT,
+    previewTasks: { id: string; stage: string; description: string; packageLevel: string | null }[],
+    expectedLabel: string
+  ): Promise<void> => {
     server.use(
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [unit] })),
       http.get('*/work-orders/preview/*', () =>
-        HttpResponse.json({ success: true, data: { vehicleId: '', odometer: 0, tasks: [] } })
+        HttpResponse.json({
+          success: true,
+          data: { vehicleId: unit.id, odometer: unit.odometer, tasks: previewTasks },
+        })
       )
     );
-  });
-
-  const assertBadge = async (unit: typeof TOYOTA_UNIT, expectedLabel: string): Promise<void> => {
-    server.use(http.get('*/fleet', () => HttpResponse.json({ success: true, data: [unit] })));
     renderForm();
     await selectUnit(new RegExp(`${unit.id} - Test Unit`));
     await waitFor(() => {
@@ -190,28 +204,58 @@ describe('computeServiceType — service badge via odometry', () => {
     });
   };
 
-  it('odometer=10,000 km → Básico 10,000 km (within BASIC_10K window 9k–11k)', async () => {
-    await assertBadge(makeUnit('U-10K', 10000, 10000), 'Básico 10,000 km');
+  it('cascade 10k in preview → Básico 10,000 km', async () => {
+    await assertBadge(
+      makeUnit('U-10K', 10000, 10000),
+      [makeCascadeTask('10k')],
+      'Básico 10,000 km'
+    );
   });
 
-  it('odometer=20,000 km → Intermedio 20,000 km (within INTERMEDIATE_20K window 19k–21k)', async () => {
-    await assertBadge(makeUnit('U-20K', 20000, 10000), 'Intermedio 20,000 km');
+  it('cascade 20k in preview → Intermedio 20,000 km', async () => {
+    await assertBadge(
+      makeUnit('U-20K', 20000, 10000),
+      [makeCascadeTask('10k'), makeCascadeTask('20k')],
+      'Intermedio 20,000 km'
+    );
   });
 
-  it('odometer=35,000 km → Mayor 30,000 km (within MAJOR_30K window 29k–41k)', async () => {
-    await assertBadge(makeUnit('U-35K', 35000, 10000), 'Mayor 30,000 km');
+  it('cascade 30k in preview → Mayor 30,000 km', async () => {
+    await assertBadge(
+      makeUnit('U-35K', 35000, 10000),
+      [makeCascadeTask('10k'), makeCascadeTask('20k'), makeCascadeTask('30k')],
+      'Mayor 30,000 km'
+    );
   });
 
-  it('odometer=50,000 km → Avanzado 50,000 km (within ADVANCED_50K window 49k–51k)', async () => {
-    await assertBadge(makeUnit('U-50K', 50000, 10000), 'Avanzado 50,000 km');
+  it('cascade 50k in preview → Avanzado 50,000 km', async () => {
+    await assertBadge(
+      makeUnit('U-50K', 50000, 10000),
+      [
+        makeCascadeTask('10k'),
+        makeCascadeTask('20k'),
+        makeCascadeTask('30k'),
+        makeCascadeTask('50k'),
+      ],
+      'Avanzado 50,000 km'
+    );
   });
 
-  it('odometer=59,500 km → Avanzado 50,000 km (upper tolerance: remainder 59500 ≥ 59000)', async () => {
-    await assertBadge(makeUnit('U-TOL', 59500, 10000), 'Avanzado 50,000 km');
+  it('cascade 50k in preview at 59,500 km → Avanzado 50,000 km', async () => {
+    await assertBadge(
+      makeUnit('U-TOL', 59500, 10000),
+      [
+        makeCascadeTask('10k'),
+        makeCascadeTask('20k'),
+        makeCascadeTask('30k'),
+        makeCascadeTask('50k'),
+      ],
+      'Avanzado 50,000 km'
+    );
   });
 
-  it('mine unit at 22,000 km → Servicio Menor (falls through all windows, isMineUnit=true)', async () => {
-    await assertBadge(makeUnit('U-MINE', 22000, 5000), 'Servicio Menor');
+  it('mine unit → Servicio Menor regardless of preview tasks', async () => {
+    await assertBadge(makeUnit('U-MINE', 22000, 5000), [], 'Servicio Menor');
   });
 });
 

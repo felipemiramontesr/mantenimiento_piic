@@ -122,6 +122,62 @@ describe('getActivePackageLevels — symmetric ±1500 km tolerance', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PHASE 2b — Regla 3b: relative trigger for offset service history
+// ─────────────────────────────────────────────────────────────────────────────
+describe('getActivePackageLevels — Regla 3b: relative trigger (lastServiceOdometer)', () => {
+  it('ASM-002 scenario: 122,000 km | last service 112,089 km → cascade 10k via relative', () => {
+    // Absolute: |122,000 − 120,000| = 2,000 > 1,500 → absolute miss
+    // Relative: |9,911 − 10,000| = 89 < 1,500 → relative hit at 10k
+    expect(getActivePackageLevels(122000, 112089)).toEqual(['10k']);
+  });
+
+  it('absolute trigger takes priority when both would resolve', () => {
+    // At 120,000 absolute hits (cyclePos 60k → full set); relative (10k from 110k) is ignored
+    expect(getActivePackageLevels(120000, 110000)).toEqual(['10k', '20k', '30k', '50k']);
+  });
+
+  it('relative 10k (last service at non-multiple): returns only Package A', () => {
+    // Absolute: |122,000 − 120,000| = 2,000 > 1,500 → miss
+    // Relative: 122,000 − 112,000 = 10,000 → exact hit
+    expect(getActivePackageLevels(122000, 112000)).toEqual(['10k']);
+  });
+
+  it('relative 20k: returns Package A + B', () => {
+    // Absolute: miss; Relative: 122,000 − 102,000 = 20,000 → cyclePos 20k
+    expect(getActivePackageLevels(122000, 102000)).toEqual(['10k', '20k']);
+  });
+
+  it('relative 30k: returns Package A + B + C', () => {
+    // Absolute: miss; Relative: 122,000 − 92,000 = 30,000 → cyclePos 30k
+    expect(getActivePackageLevels(122000, 92000)).toEqual(['10k', '20k', '30k']);
+  });
+
+  it('relative 50k: returns Package A + B + C + D', () => {
+    // Absolute: miss; Relative: 122,000 − 72,000 = 50,000 → cyclePos 50k
+    expect(getActivePackageLevels(122000, 72000)).toEqual(['10k', '20k', '30k', '50k']);
+  });
+
+  it('relative miss (outside ±1,500 km): returns empty', () => {
+    // Absolute: |125,600 − 130,000| = 4,400 → miss
+    // Relative: 125,600 − 112,000 = 13,600 → |13,600 − 10,000| = 3,600 > 1,500 → miss
+    expect(getActivePackageLevels(125600, 112000)).toEqual([]);
+  });
+
+  it('returns empty when lastServiceOdometer is 0', () => {
+    // Relative base 0 → relativeKm = 122,000 → nearest 120k → same 2,000 km miss
+    expect(getActivePackageLevels(122000, 0)).toEqual([]);
+  });
+
+  it('returns empty when lastServiceOdometer is undefined', () => {
+    expect(getActivePackageLevels(122000, undefined)).toEqual([]);
+  });
+
+  it('returns empty when odometer is less than lastServiceOdometer (relativeKm negative)', () => {
+    expect(getActivePackageLevels(5000, 10000)).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PHASE 3 — Task injection per package level
 // ─────────────────────────────────────────────────────────────────────────────
 describe('getTasksForPackage — package injection', () => {
@@ -575,5 +631,25 @@ describe('calculateUpaOrder — Acceptance Criteria', () => {
     });
     expect(result.validationErrors).toHaveLength(0);
     expect(result.tasks.length).toBeGreaterThan(0);
+  });
+
+  it('Regla 3b — ASM-002: 122,000 km with lastServiceOdometer 112,089 → cascade 10k injected', () => {
+    const result = calculateUpaOrder({
+      vehicleProfile: { brand: 'toyota', fuelType: 'diesel', fleetType: 'urban', odometer: 122000 },
+      lastClosedWorkOrder: null,
+      lastServiceOdometer: 112089,
+    });
+    const cascadeIds = result.tasks.filter((t) => t.stage === 'cascade').map((t) => t.id);
+    expect(cascadeIds).toContain('cascade_tire_rotation'); // PKG_A_BASE
+    expect(cascadeIds).toContain('cascade_toyota_10k_pedals'); // PKG_A toyota brand
+    expect(cascadeIds).not.toContain('cascade_front_brake_pads'); // PKG_B not triggered
+  });
+
+  it('Regla 3b — without lastServiceOdometer at 122,000 km → no cascade (absolute miss)', () => {
+    const result = calculateUpaOrder({
+      vehicleProfile: { brand: 'toyota', fuelType: 'diesel', fleetType: 'urban', odometer: 122000 },
+      lastClosedWorkOrder: null,
+    });
+    expect(result.tasks.filter((t) => t.stage === 'cascade')).toHaveLength(0);
   });
 });

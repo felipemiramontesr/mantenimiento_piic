@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import {
   MaintenanceSchedulePayload,
-  ServiceType,
   UpaPreviewTask,
+  UpaPackageLevel,
   UpaTaskStage,
 } from '../../types/maintenance';
 
@@ -36,74 +36,36 @@ interface MaintenanceRegistrationFormProps {
   initialUnitId?: string;
 }
 
-/**
- * Cyclic service type engine — mirrors backend computeServiceType exactly.
- * mod-60,000 km residue with ±1,000 km tolerance windows.
- */
-const computeServiceType = (odometer: number, maintIntervalKm: number | string): ServiceType => {
-  if (!odometer || odometer <= 0) return 'BASIC_10K';
-  const remainder = odometer % MAINTENANCE.CYCLE_KM;
-  const isMineUnit = Number(maintIntervalKm) === MAINTENANCE.MINE_UNIT_INTERVAL_KM;
-
-  if (
-    remainder <= MAINTENANCE.TOLERANCE_KM ||
-    remainder >= MAINTENANCE.CYCLE_KM - MAINTENANCE.TOLERANCE_KM
-  )
-    return 'ADVANCED_50K';
-  if (
-    remainder >= MAINTENANCE.WINDOWS.ADVANCED_50K.low &&
-    remainder <= MAINTENANCE.WINDOWS.ADVANCED_50K.high
-  )
-    return 'ADVANCED_50K';
-  if (
-    remainder >= MAINTENANCE.WINDOWS.MAJOR_30K.low &&
-    remainder <= MAINTENANCE.WINDOWS.MAJOR_30K.high
-  )
-    return 'MAJOR_30K';
-  if (
-    remainder >= MAINTENANCE.WINDOWS.INTERMEDIATE_20K.low &&
-    remainder <= MAINTENANCE.WINDOWS.INTERMEDIATE_20K.high
-  )
-    return 'INTERMEDIATE_20K';
-  if (
-    remainder >= MAINTENANCE.WINDOWS.BASIC_10K.low &&
-    remainder <= MAINTENANCE.WINDOWS.BASIC_10K.high
-  )
-    return 'BASIC_10K';
-
-  if (isMineUnit) return 'MINOR_MINING';
-
-  const milestones: { type: ServiceType; value: number }[] = [...MAINTENANCE.MILESTONES];
-  let best: ServiceType = 'BASIC_10K';
-  let minDist = Infinity;
-  milestones.forEach((m) => {
-    const dist = Math.abs(remainder - m.value);
-    if (dist < minDist) {
-      minDist = dist;
-      best = m.type;
-    }
-  });
-  return best;
-};
-
-const SERVICE_LABELS: Record<ServiceType, string> = {
-  BASIC_10K: 'Básico 10,000 km',
-  INTERMEDIATE_20K: 'Intermedio 20,000 km',
-  MAJOR_30K: 'Mayor 30,000 km',
-  ADVANCED_50K: 'Avanzado 50,000 km',
-  MINOR_MINING: 'Servicio Menor',
-};
-
-const SERVICE_BADGE_STYLE: Record<ServiceType, { bg: string; text: string; border: string }> = {
-  BASIC_10K: { bg: 'bg-sky-500/10', text: 'text-sky-700', border: 'border-sky-500/20' },
-  INTERMEDIATE_20K: { bg: 'bg-blue-500/10', text: 'text-blue-700', border: 'border-blue-500/20' },
-  MAJOR_30K: { bg: 'bg-violet-500/10', text: 'text-violet-700', border: 'border-violet-500/20' },
-  ADVANCED_50K: { bg: 'bg-rose-500/10', text: 'text-rose-700', border: 'border-rose-500/20' },
-  MINOR_MINING: {
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-700',
-    border: 'border-emerald-500/20',
-  },
+const getUpaBadgeInfo = (
+  isMine: boolean,
+  level: UpaPackageLevel | null
+): { label: string; style: string } => {
+  if (isMine)
+    return {
+      label: 'Servicio Menor',
+      style: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+    };
+  if (level === '50k')
+    return {
+      label: 'Avanzado 50,000 km',
+      style: 'bg-rose-500/10 text-rose-700 border-rose-500/20',
+    };
+  if (level === '30k')
+    return {
+      label: 'Mayor 30,000 km',
+      style: 'bg-violet-500/10 text-violet-700 border-violet-500/20',
+    };
+  if (level === '20k')
+    return {
+      label: 'Intermedio 20,000 km',
+      style: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
+    };
+  if (level === '10k')
+    return { label: 'Básico 10,000 km', style: 'bg-sky-500/10 text-sky-700 border-sky-500/20' };
+  return {
+    label: 'Triaje + Menor (Sin Cascada)',
+    style: 'bg-slate-500/10 text-slate-600 border-slate-500/20',
+  };
 };
 
 const UPA_STAGE_ORDER: UpaTaskStage[] = [
@@ -297,10 +259,21 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   });
 
   const unit = units.find((u) => u.id === selectedUnit);
-  const computedServiceType = computeServiceType(odometerAtService, unit?.maintIntervalKm ?? 10000);
-  const badge = SERVICE_BADGE_STYLE[computedServiceType];
-  // MINOR_MINING → In Situ; all agency milestones → Taller (Downtime)
-  const isInProgress = computedServiceType !== 'MINOR_MINING';
+  const isMineUnit =
+    Number(unit?.maintIntervalKm ?? MAINTENANCE.AGENCY_DEFAULT_INTERVAL_KM) ===
+    MAINTENANCE.MINE_UNIT_INTERVAL_KM;
+  // MINE units → In Situ; all agency milestones → Taller (Downtime)
+  const isInProgress = !isMineUnit;
+  const cascadeLevel: UpaPackageLevel | null = ((): UpaPackageLevel | null => {
+    if (!upaPreview) return null;
+    const levels: UpaPackageLevel[] = ['50k', '30k', '20k', '10k'];
+    return (
+      levels.find((lvl) =>
+        upaPreview.some((t) => t.stage === 'cascade' && t.packageLevel === lvl)
+      ) ?? null
+    );
+  })();
+  const upaBadge = getUpaBadgeInfo(isMineUnit, cascadeLevel);
 
   useEffect(() => {
     api.get('/fleet').then((res) => {
@@ -481,17 +454,17 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
               />
             </ArchonField>
 
-            {/* Dynamic service type badge — computed server-side from odometry */}
-            {selectedUnit && (
+            {/* Service type badge — derived from UPA engine preview */}
+            {selectedUnit && (isMineUnit || (upaPreview !== null && !upaPreviewLoading)) && (
               <div className="space-y-1.5">
                 <p className="text-archon-base font-black text-[#0f2a44]/50 uppercase tracking-[0.15em]">
-                  Tipo de Servicio (Calculado)
+                  Tipo de Servicio (UPA)
                 </p>
                 <div
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-archon-md font-black uppercase tracking-wider ${badge.bg} ${badge.text} ${badge.border}`}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-archon-md font-black uppercase tracking-wider ${upaBadge.style}`}
                 >
                   <Wrench size={11} />
-                  {SERVICE_LABELS[computedServiceType]}
+                  {upaBadge.label}
                 </div>
               </div>
             )}

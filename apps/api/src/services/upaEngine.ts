@@ -44,6 +44,7 @@ export interface BusinessHoursConfig {
 export interface UpaInput {
   vehicleProfile: VehicleProfile;
   lastClosedWorkOrder: WorkOrder | null;
+  lastServiceOdometer?: number;
 }
 
 export interface UpaOutput {
@@ -754,17 +755,38 @@ export function validateVehicleProfile(vp: Partial<VehicleProfile>): string[] {
 }
 
 // Returns the PackageLevel labels active at a given odometer, in accumulative order.
-// A milestone N*10000 km triggers all packages up to its level (±1500 km tolerance).
-// Cycle: 10k→A, 20k→A+B, 30k/40k→A+B+C, 50k/60k→A+B+C+D, repeating every 60k.
-export function getActivePackageLevels(odometer: number): PackageLevel[] {
-  const nearest10k = Math.round(odometer / 10000) * 10000;
-  if (nearest10k === 0 || Math.abs(odometer - nearest10k) > CASCADE_TOLERANCE_KM) return [];
-
-  const cyclePosition = nearest10k % 60000 || 60000;
+// Primary (Regla 3): absolute milestone ±1500 km tolerance, repeating every 60k.
+// Fallback (Regla 3b): if absolute misses AND lastServiceOdometer is known, evaluates
+// relative interval (odometer − lastServiceOdometer) against the same ±1500 km window.
+// This handles vehicles whose service history sits at non-10k-multiple odometers.
+function resolveCyclePosition(nearest: number): PackageLevel[] {
+  const cyclePosition = nearest % 60000 || 60000;
   if (cyclePosition <= 10000) return ['10k'];
   if (cyclePosition <= 20000) return ['10k', '20k'];
   if (cyclePosition <= 40000) return ['10k', '20k', '30k'];
   return ['10k', '20k', '30k', '50k'];
+}
+
+export function getActivePackageLevels(
+  odometer: number,
+  lastServiceOdometer?: number
+): PackageLevel[] {
+  const nearest10k = Math.round(odometer / 10000) * 10000;
+  if (nearest10k !== 0 && Math.abs(odometer - nearest10k) <= CASCADE_TOLERANCE_KM) {
+    return resolveCyclePosition(nearest10k);
+  }
+
+  if (lastServiceOdometer && lastServiceOdometer > 0) {
+    const relativeKm = odometer - lastServiceOdometer;
+    if (relativeKm > 0) {
+      const nearestInterval = Math.round(relativeKm / 10000) * 10000;
+      if (nearestInterval > 0 && Math.abs(relativeKm - nearestInterval) <= CASCADE_TOLERANCE_KM) {
+        return resolveCyclePosition(nearestInterval);
+      }
+    }
+  }
+
+  return [];
 }
 
 export function getTasksForPackage(level: PackageLevel, brand: Brand, fuelType: FuelType): Task[] {
@@ -838,11 +860,11 @@ export function calculateUpaOrder(input: UpaInput): UpaOutput {
   if (errors.length > 0) return { tasks: [], validationErrors: errors };
 
   const { brand, fuelType, fleetType, odometer } = input.vehicleProfile;
-  const { lastClosedWorkOrder } = input;
+  const { lastClosedWorkOrder, lastServiceOdometer } = input;
 
   const tasks: Task[] = [...getTriageTasks(fleetType), ...getMinorServiceTasks(fuelType)];
 
-  const activeLevels = getActivePackageLevels(odometer);
+  const activeLevels = getActivePackageLevels(odometer, lastServiceOdometer);
   const cascadeTasks: Task[] = activeLevels.flatMap((level) =>
     getTasksForPackage(level, brand, fuelType)
   );

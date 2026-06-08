@@ -92,6 +92,7 @@ interface VehicleRow extends RowDataPacket {
   odometer: number;
   brandLabel: string | null;
   fuelTypeLabel: string | null;
+  lastServiceReading: number | null;
 }
 
 interface WorkOrderRow extends RowDataPacket {
@@ -105,11 +106,18 @@ interface WorkOrderRow extends RowDataPacket {
 
 async function fetchVehicleProfile(
   vehicleId: string
-): Promise<{ id: string; odometer: number; brand: Brand; fuelType: FuelType } | null> {
+): Promise<{
+  id: string;
+  odometer: number;
+  brand: Brand;
+  fuelType: FuelType;
+  lastServiceReading: number | null;
+} | null> {
   const [rows] = await db.execute<VehicleRow[]>(
     `SELECT
        f.id,
        COALESCE(f.odometer, 0) AS odometer,
+       f.lastServiceReading,
        c_brand.label AS brandLabel,
        c_ft.label    AS fuelTypeLabel
      FROM fleet_units f
@@ -128,6 +136,7 @@ async function fetchVehicleProfile(
     odometer: row.odometer,
     brand: mapBrandLabel(row.brandLabel),
     fuelType: mapFuelLabel(row.fuelTypeLabel),
+    lastServiceReading: row.lastServiceReading,
   };
 }
 
@@ -188,6 +197,7 @@ export async function createWorkOrder(
       odometer: vehicle.odometer,
     },
     lastClosedWorkOrder,
+    lastServiceOdometer: vehicle.lastServiceReading ?? undefined,
   });
 
   if (output.validationErrors.length > 0) {
@@ -261,6 +271,7 @@ export async function previewWorkOrder(
       odometer: vehicle.odometer,
     },
     lastClosedWorkOrder,
+    lastServiceOdometer: vehicle.lastServiceReading ?? undefined,
   });
 
   return {
