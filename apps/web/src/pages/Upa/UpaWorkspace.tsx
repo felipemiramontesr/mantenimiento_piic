@@ -18,7 +18,6 @@ import {
   ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
-import ArchonManagementCard from '../../components/UI/ArchonManagementCard';
 import { useUpaOrder } from '../../hooks/useUpaOrder';
 import type {
   UpaTaskDetail,
@@ -125,14 +124,6 @@ const Stepper: React.FC<{ currentStep: number }> = ({ currentStep }) => (
 // ─── Task Helpers ─────────────────────────────────────────────────────────────
 
 type UpaTaskStatus = UpaTaskDetail['status'];
-type CardVariant = 'navy' | 'emerald' | 'red' | 'yellow';
-
-function getTaskVariant(status: UpaTaskStatus): CardVariant {
-  if (status === 'completed') return 'emerald';
-  if (status === 'DEFERRED_FINANCIAL') return 'red';
-  if (status === 'N_A_STRUCTURAL') return 'yellow';
-  return 'navy';
-}
 
 function getStatusIcon(status: UpaTaskStatus): LucideIcon {
   if (status === 'completed') return CheckCircle;
@@ -146,6 +137,18 @@ function getStatusLabel(status: UpaTaskStatus): string {
   if (status === 'DEFERRED_FINANCIAL') return 'Dif. Financiero';
   if (status === 'N_A_STRUCTURAL') return 'No Aplica';
   return 'Pendiente';
+}
+
+function getDescriptionCls(status: UpaTaskStatus): string {
+  if (status === 'completed') return 'line-through text-[#0f2a44]/40';
+  if (status !== 'pending') return 'text-[#0f2a44]/50';
+  return 'text-[#0f2a44]';
+}
+
+function getBadgeCls(status: UpaTaskStatus): string {
+  if (status === 'completed') return 'text-emerald-700 bg-emerald-50';
+  if (status === 'DEFERRED_FINANCIAL') return 'text-red-600 bg-red-50';
+  return 'text-amber-700 bg-amber-50';
 }
 
 // ─── Evidence Input ───────────────────────────────────────────────────────────
@@ -374,9 +377,9 @@ const InitForm: React.FC<InitFormProps> = ({ onSubmit, loading, error }) => {
   );
 };
 
-// ─── Task Card ────────────────────────────────────────────────────────────────
+// ─── Checklist Row ────────────────────────────────────────────────────────────
 
-interface TaskCardProps {
+interface ChecklistRowProps {
   task: UpaTaskDetail;
   isUpdating: boolean;
   evidenceUrls: string[];
@@ -387,7 +390,7 @@ interface TaskCardProps {
   onEvidenceNotesChange: (notes: string) => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
+const ChecklistRow: React.FC<ChecklistRowProps> = ({
   task,
   isUpdating,
   evidenceUrls,
@@ -398,50 +401,76 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onEvidenceNotesChange,
 }) => {
   const isPending = task.status === 'pending';
-  const StageIcon = STAGE_ICONS[task.stage];
   const StatusIcon = getStatusIcon(task.status);
 
-  let taskButtonText = getStatusLabel(task.status);
-  if (isPending) taskButtonText = 'Completar';
-  if (isUpdating) taskButtonText = 'Procesando...';
+  const checkboxCls = (): string => {
+    if (task.status === 'completed')
+      return 'bg-emerald-500 border-emerald-500 text-white cursor-default';
+    if (task.status === 'DEFERRED_FINANCIAL')
+      return 'bg-red-100 border-red-400 text-red-500 cursor-default';
+    if (task.status === 'N_A_STRUCTURAL')
+      return 'bg-amber-100 border-amber-400 text-amber-600 cursor-default';
+    return 'border-slate-300 bg-white hover:border-[#0f2a44]/60 hover:bg-[#0f2a44]/5 cursor-pointer';
+  };
 
   return (
-    <div data-testid={`task-card-${task.taskId}`} className="flex flex-col gap-2">
-      <ArchonManagementCard
-        variant={getTaskVariant(task.status)}
-        layout="horizontal"
-        headerTitle={STAGE_LABELS[task.stage]}
-        HeaderIcon={StageIcon}
-        actionTitle={getStatusLabel(task.status)}
-        description={task.description}
-        PayloadIcon={StatusIcon}
-        buttonText={taskButtonText}
-        isActive={task.status === 'completed'}
-        onClick={(): void => {
-          if (isPending && !isUpdating) onComplete();
-        }}
-        testId={`complete-btn-${task.taskId}`}
-      />
+    <div data-testid={`task-card-${task.taskId}`} className="flex flex-col">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <button
+          type="button"
+          data-testid={`complete-btn-${task.taskId}`}
+          onClick={(): void => {
+            if (isPending && !isUpdating) onComplete();
+          }}
+          disabled={!isPending || isUpdating}
+          aria-label={isPending ? 'Marcar completada' : getStatusLabel(task.status)}
+          className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-150 ${checkboxCls()}`}
+        >
+          {task.status !== 'pending' && <StatusIcon size={11} />}
+          {task.status === 'pending' && isUpdating && (
+            <span className="w-2 h-2 rounded-full bg-slate-400 animate-pulse block" />
+          )}
+        </button>
+
+        <span
+          className={`flex-1 text-sm font-bold leading-tight ${getDescriptionCls(task.status)}`}
+        >
+          {task.description}
+        </span>
+
+        {!isPending && (
+          <span
+            className={`shrink-0 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${getBadgeCls(
+              task.status
+            )}`}
+          >
+            {getStatusLabel(task.status)}
+          </span>
+        )}
+
+        {isPending && (
+          <button
+            type="button"
+            data-testid={`defer-btn-${task.taskId}`}
+            onClick={onDefer}
+            disabled={isUpdating}
+            title="Diferir tarea"
+            className="shrink-0 text-[#0f2a44]/25 hover:text-red-400 transition-colors disabled:opacity-50"
+          >
+            <XCircle size={14} />
+          </button>
+        )}
+      </div>
 
       {task.stage === 'closure' && isPending && (
-        <EvidenceInput
-          urls={evidenceUrls}
-          notes={evidenceNotes}
-          onUrlsChange={onEvidenceUrlsChange}
-          onNotesChange={onEvidenceNotesChange}
-        />
-      )}
-
-      {isPending && (
-        <button
-          onClick={onDefer}
-          disabled={isUpdating}
-          data-testid={`defer-btn-${task.taskId}`}
-          className="flex items-center justify-center gap-2 py-2 font-bold text-xs uppercase tracking-widest text-red-500 border border-red-200 rounded-[4px] hover:bg-red-50 transition-colors disabled:opacity-50"
-        >
-          <XCircle size={12} />
-          Diferir Tarea
-        </button>
+        <div className="px-4 pb-3">
+          <EvidenceInput
+            urls={evidenceUrls}
+            notes={evidenceNotes}
+            onUrlsChange={onEvidenceUrlsChange}
+            onNotesChange={onEvidenceNotesChange}
+          />
+        </div>
       )}
     </div>
   );
@@ -634,10 +663,10 @@ const UpaWorkspace: React.FC<UpaWorkspaceProps> = ({
               {isOpen && (
                 <div
                   data-testid={`accordion-content-${stage}`}
-                  className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200"
+                  className="divide-y divide-slate-100 animate-in fade-in duration-200"
                 >
                   {tasks.map((task) => (
-                    <TaskCard
+                    <ChecklistRow
                       key={task.taskId}
                       task={task}
                       isUpdating={!!upa.taskUpdating[task.taskId]}
