@@ -41,13 +41,18 @@ const RoleSwitcher: React.FC = () => {
   if (isImpersonating) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest bg-amber-50 border border-amber-300 rounded px-2 py-1 whitespace-nowrap">
-          Viendo como {effectiveUser?.roleName}
-        </span>
+        <div className="bg-pinnacle-navy rounded-[4px] px-2.5 py-1 flex items-center gap-1.5 scale-[0.67] origin-right">
+          <span className="text-[8px] font-bold text-pinnacle-yellow/60 uppercase tracking-[0.15em] whitespace-nowrap">
+            Vista
+          </span>
+          <span className="text-[8px] font-bold text-pinnacle-yellow uppercase tracking-widest whitespace-nowrap">
+            {effectiveUser?.roleName}
+          </span>
+        </div>
         <button
           type="button"
           onClick={stopImpersonation}
-          className="text-[10px] font-semibold text-slate-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors whitespace-nowrap"
+          className="text-[9px] font-bold text-pinnacle-navy/40 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-[4px] transition-colors uppercase tracking-widest whitespace-nowrap scale-[0.67] origin-right"
         >
           Salir
         </button>
@@ -82,31 +87,41 @@ const RoleSwitcher: React.FC = () => {
       <button
         type="button"
         onClick={(): void => setOpen((v) => !v)}
-        className="bg-pinnacle-navy rounded-[4px] px-3 py-1.5 shadow-sm scale-[0.67] origin-right text-white text-[10px] font-bold uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity"
+        className="bg-pinnacle-navy rounded-[4px] px-3 py-1.5 shadow-sm scale-[0.67] origin-right text-pinnacle-yellow text-[10px] font-bold uppercase tracking-widest hover:shadow-pinnacle transition-shadow"
       >
         God Mode
       </button>
       {open && (
-        <div className="absolute bottom-full right-0 mb-2 bg-white border border-slate-200 rounded-[4px] shadow-lg min-w-[160px] z-50 overflow-hidden">
+        <div className="absolute bottom-full right-0 mb-2 bg-white border border-pinnacle-navy/15 rounded-[4px] shadow-pinnacle-hover min-w-[180px] z-50 overflow-hidden">
+          <div className="bg-pinnacle-navy px-3 py-2">
+            <span className="text-[8px] font-bold text-pinnacle-yellow uppercase tracking-[0.2em]">
+              God Mode
+            </span>
+          </div>
           <button
             type="button"
             onClick={(): void => handleSelectRole(ARCHON_MASTER_ROLE)}
-            className="w-full text-left px-3 py-2 text-xs font-bold text-pinnacle-navy hover:bg-slate-50 border-b border-slate-200"
+            className="w-full text-left px-3 py-2.5 text-xs font-bold text-pinnacle-navy bg-pinnacle-yellow/15 hover:bg-pinnacle-yellow/25 border-b border-pinnacle-navy/20 transition-colors"
           >
             Master (Archon)
           </button>
+          <div className="px-3 pt-2 pb-1">
+            <span className="text-[8px] font-bold text-pinnacle-navy/40 uppercase tracking-[0.15em]">
+              Cambiar Vista
+            </span>
+          </div>
           {roles.map((role) => (
             <button
               key={role.id}
               type="button"
               onClick={(): void => handleSelectRole(role)}
-              className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+              className="w-full text-left px-3 py-2 text-xs text-pinnacle-navy/80 hover:bg-pinnacle-navy/5 border-b border-pinnacle-navy/10 last:border-0 transition-colors"
             >
               {role.name}
             </button>
           ))}
           {roles.length === 0 && (
-            <p className="px-3 py-2 text-xs text-slate-400">Sin roles disponibles</p>
+            <p className="px-3 py-2 text-xs text-pinnacle-navy/40">Sin roles disponibles</p>
           )}
         </div>
       )}

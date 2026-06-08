@@ -123,7 +123,8 @@ describe('RoleSwitcher', () => {
     };
     mockAuth({ isImpersonating: true, effectiveUser: impersonatedUser });
     render(<RoleSwitcher />);
-    expect(await screen.findByText(/Viendo como Operador/)).toBeInTheDocument();
+    expect(await screen.findByText('Vista')).toBeInTheDocument();
+    expect(screen.getByText('Operador')).toBeInTheDocument();
     expect(screen.getByText('Salir')).toBeInTheDocument();
     expect(screen.queryByText('God Mode')).not.toBeInTheDocument();
   });
