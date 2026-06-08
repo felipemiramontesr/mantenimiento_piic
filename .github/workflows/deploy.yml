@@ -198,9 +198,6 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build --workspace=@mantenimiento/web
 
-      - name: Build API
-        run: npm run build --workspace=@mantenimiento/api
-
       - name: 🚀 Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
@@ -213,17 +210,4 @@ jobs:
           lftp -c "set ftp:ssl-allow no;
           open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER;
           mirror -R ./apps/web/dist/ .;
-          quit"
-
-      - name: 🚀 Deploy API bundle via Native LFTP
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_API_PATH: ${{ secrets.FTP_API_PATH }}
-        run: |
-          lftp -c "set ftp:ssl-allow no;
-          open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER;
-          put ./apps/api/dist/index.js -o $FTP_API_PATH/index.js;
-          put ./apps/api/package.json -o $FTP_API_PATH/package.json;
           quit"
