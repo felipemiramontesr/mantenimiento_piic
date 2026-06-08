@@ -344,4 +344,53 @@ describe('FleetMaintenance — UPA Bridge (PATCH accept)', () => {
     expect(res.statusCode).toBe(500);
     expect(rollbackMock).toHaveBeenCalledOnce();
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RED-first: JS filter correctness (filter((r) => r.status_code === 'N_A'))
+  // Escenario: el mock devuelve rows que incluyen PASS junto a N_A.
+  // La capa SQL WHERE ya filtra, pero este test verifica la capa JS como
+  // segunda línea de defensa. Si la condición fuera mal escrita (e.g., !==),
+  // este test falla y el UPDATE tocaría tareas incorrectas.
+  // ─────────────────────────────────────────────────────────────────────────
+  it('Bridge — JS filter excludes PASS rows even when present in mock result', async () => {
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[openMovement], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      // Bridge SELECT returns PASS + N_A rows (simulates SQL bypass to test JS filter)
+      .mockResolvedValueOnce([
+        [
+          { task_code: 'triage_pass_task', status_code: 'PASS' },
+          { task_code: 'triage_na_task', status_code: 'N_A' },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]); // UPDATE N_A_STRUCTURAL — only for triage_na_task
+
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: executeMock,
+      commit: vi.fn(),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/open-uuid/accept',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    // Exactly 6 calls: 4 pre-bridge + 1 bridge SELECT + 1 N_A UPDATE (no PASS UPDATE)
+    expect(executeMock).toHaveBeenCalledTimes(6);
+    const naUpdateCall = executeMock.mock.calls[5][0];
+    expect(naUpdateCall).toContain('N_A_STRUCTURAL');
+    // The params array must contain only 'triage_na_task', NOT 'triage_pass_task'
+    const naUpdateParams = executeMock.mock.calls[5][1] as unknown[];
+    expect(naUpdateParams).toContain('triage_na_task');
+    expect(naUpdateParams).not.toContain('triage_pass_task');
+  });
 });

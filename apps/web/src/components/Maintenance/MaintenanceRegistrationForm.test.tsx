@@ -155,3 +155,124 @@ describe('MaintenanceRegistrationForm', () => {
     expect(screen.queryByText('Tarea Aprobada')).not.toBeInTheDocument();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// computeServiceType — badge via odometry (RED-first: zero tests existed)
+// Lógica pura con condiciones: ciclo 60,000 km + ventanas ± tolerancia.
+// ─────────────────────────────────────────────────────────────────────────────
+const makeUnit = (id: string, odometer: number, maintIntervalKm: number): typeof TOYOTA_UNIT => ({
+  id,
+  marca: 'Test',
+  modelo: 'Unit',
+  status: 'Disponible',
+  odometer,
+  maintIntervalKm,
+  fuelTypeId: 11,
+  placas: 'TST-001',
+  departamento: 'MINA',
+});
+
+describe('computeServiceType — service badge via odometry', () => {
+  beforeEach(() => {
+    server.use(
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({ success: true, data: { vehicleId: '', odometer: 0, tasks: [] } })
+      )
+    );
+  });
+
+  const assertBadge = async (unit: typeof TOYOTA_UNIT, expectedLabel: string): Promise<void> => {
+    server.use(http.get('*/fleet', () => HttpResponse.json({ success: true, data: [unit] })));
+    renderForm();
+    await selectUnit(new RegExp(`${unit.id} - Test Unit`));
+    await waitFor(() => {
+      expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+    });
+  };
+
+  it('odometer=10,000 km → Básico 10,000 km (within BASIC_10K window 9k–11k)', async () => {
+    await assertBadge(makeUnit('U-10K', 10000, 10000), 'Básico 10,000 km');
+  });
+
+  it('odometer=20,000 km → Intermedio 20,000 km (within INTERMEDIATE_20K window 19k–21k)', async () => {
+    await assertBadge(makeUnit('U-20K', 20000, 10000), 'Intermedio 20,000 km');
+  });
+
+  it('odometer=35,000 km → Mayor 30,000 km (within MAJOR_30K window 29k–41k)', async () => {
+    await assertBadge(makeUnit('U-35K', 35000, 10000), 'Mayor 30,000 km');
+  });
+
+  it('odometer=50,000 km → Avanzado 50,000 km (within ADVANCED_50K window 49k–51k)', async () => {
+    await assertBadge(makeUnit('U-50K', 50000, 10000), 'Avanzado 50,000 km');
+  });
+
+  it('odometer=59,500 km → Avanzado 50,000 km (upper tolerance: remainder 59500 ≥ 59000)', async () => {
+    await assertBadge(makeUnit('U-TOL', 59500, 10000), 'Avanzado 50,000 km');
+  });
+
+  it('mine unit at 22,000 km → Servicio Menor (falls through all windows, isMineUnit=true)', async () => {
+    await assertBadge(makeUnit('U-MINE', 22000, 5000), 'Servicio Menor');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UPA panel — behavioral invariant: unit re-selection resets task decisions
+// ─────────────────────────────────────────────────────────────────────────────
+describe('UPA panel — unit re-selection resets task decisions', () => {
+  const UNIT_A = makeUnit('UPA-A', 10000, 10000);
+  const UNIT_B = makeUnit('UPA-B', 20000, 10000);
+
+  const TASK_ALPHA = {
+    id: 'alpha_triage',
+    stage: 'triage',
+    description: 'Tarea Alpha Triaje',
+    packageLevel: null,
+  } as const;
+  const TASK_BETA = {
+    id: 'beta_triage',
+    stage: 'triage',
+    description: 'Tarea Beta Triaje',
+    packageLevel: null,
+  } as const;
+
+  beforeEach(() => {
+    server.use(
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [UNIT_A, UNIT_B] })),
+      http.get('*/work-orders/preview/:vehicleId', ({ params }) => {
+        const tasks = params.vehicleId === 'UPA-A' ? [TASK_ALPHA] : [TASK_BETA];
+        return HttpResponse.json({
+          success: true,
+          data: { vehicleId: params.vehicleId as string, odometer: 10000, tasks },
+        });
+      })
+    );
+  });
+
+  it('Should reset all task decisions to PASS when a different unit is selected', async () => {
+    renderForm();
+    await selectUnit(/UPA-A - Test Unit/);
+
+    await waitFor(() => {
+      expect(screen.getByText('Tarea Alpha Triaje')).toBeInTheDocument();
+    });
+
+    // Change alpha task to N_A
+    fireEvent.click(screen.getByText('Tarea Aprobada'));
+    fireEvent.click(await screen.findByText('No Aplica'));
+    await waitFor(() => {
+      expect(screen.getByText('No Aplica')).toBeInTheDocument();
+    });
+
+    // Re-select a different unit by clicking current unit trigger
+    fireEvent.click(screen.getByText('UPA-A - Test Unit'));
+    fireEvent.click(await screen.findByText('UPA-B - Test Unit'));
+
+    // Beta task appears with fresh PASS (not stale N_A from alpha unit)
+    await waitFor(() => {
+      expect(screen.getByText('Tarea Beta Triaje')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Tarea Alpha Triaje')).not.toBeInTheDocument();
+    expect(screen.getByText('Tarea Aprobada')).toBeInTheDocument();
+    expect(screen.queryByText('No Aplica')).not.toBeInTheDocument();
+  });
+});
