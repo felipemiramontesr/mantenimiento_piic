@@ -35,7 +35,8 @@ function mockVehicleRow(overrides: object = {}): object[] {
       id: 'VEH-001',
       odometer: 10200,
       brandLabel: 'Toyota',
-      fuelTypeLabel: 'Gasolina',
+      fuelTypeCode: 'F_GAS',
+      maintIntervalKm: 10000,
       ...overrides,
     },
   ];
@@ -54,12 +55,12 @@ describe('workOrderService', () => {
   describe('createWorkOrder', () => {
     it('throws VEHICLE_NOT_FOUND when vehicle does not exist', async () => {
       (db.execute as any).mockResolvedValueOnce([[]]); // vehicle query returns empty
-      await expect(createWorkOrder('GHOST-999', 'urban')).rejects.toThrow('VEHICLE_NOT_FOUND');
+      await expect(createWorkOrder('GHOST-999')).rejects.toThrow('VEHICLE_NOT_FOUND');
     });
 
     it('does not call getConnection when vehicle is not found', async () => {
       (db.execute as any).mockResolvedValueOnce([[]]);
-      await expect(createWorkOrder('GHOST-999', 'urban')).rejects.toThrow();
+      await expect(createWorkOrder('GHOST-999')).rejects.toThrow();
       expect(db.getConnection).not.toHaveBeenCalled();
     });
 
@@ -75,7 +76,7 @@ describe('workOrderService', () => {
         .mockResolvedValueOnce([{}]) // INSERT upa_work_order_tasks (bulk)
         .mockResolvedValueOnce([[{ uuid: 'test-uuid-1234' }]]); // SELECT uuid
 
-      const result = await createWorkOrder('VEH-001', 'urban');
+      const result = await createWorkOrder('VEH-001');
 
       expect(result.workOrderId).toBe(42);
       expect(result.uuid).toBe('test-uuid-1234');
@@ -84,8 +85,8 @@ describe('workOrderService', () => {
       expect(mockConnection.release).toHaveBeenCalledOnce();
     });
 
-    it('inserts mining triage tasks when fleetType is mining', async () => {
-      (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
+    it('inserts mining triage tasks when maintIntervalKm is 5000 (auto-derives mining)', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ maintIntervalKm: 5000 })]);
       (db.execute as any).mockResolvedValueOnce([[]]);
 
       let capturedTaskValues: any[] = [];
@@ -97,7 +98,7 @@ describe('workOrderService', () => {
         })
         .mockResolvedValueOnce([[{ uuid: 'u-mining' }]]);
 
-      const miningResult = await createWorkOrder('VEH-001', 'mining');
+      const miningResult = await createWorkOrder('VEH-001');
 
       const hasRotatingBeacon = capturedTaskValues.includes('triage_rotating_beacon');
       expect(hasRotatingBeacon).toBe(true);
@@ -129,7 +130,7 @@ describe('workOrderService', () => {
         })
         .mockResolvedValueOnce([[{ uuid: 'u-dedup' }]]);
 
-      await createWorkOrder('VEH-001', 'urban');
+      await createWorkOrder('VEH-001');
 
       // cascade_tire_depth should NOT appear in inserted task_id values
       expect(capturedTaskValues).not.toContain('cascade_tire_depth');
@@ -143,14 +144,14 @@ describe('workOrderService', () => {
         .mockResolvedValueOnce([{ insertId: 99 }]) // INSERT wo succeeds
         .mockRejectedValueOnce(new Error('DB_WRITE_FAILURE')); // INSERT tasks fails
 
-      await expect(createWorkOrder('VEH-001', 'urban')).rejects.toThrow('DB_WRITE_FAILURE');
+      await expect(createWorkOrder('VEH-001')).rejects.toThrow('DB_WRITE_FAILURE');
       expect(mockConnection.rollback).toHaveBeenCalledOnce();
       expect(mockConnection.release).toHaveBeenCalledOnce();
     });
 
-    it('maps Toyota brand label correctly', async () => {
+    it('maps Toyota brand label correctly and diesel via F_DIESEL code', async () => {
       (db.execute as any).mockResolvedValueOnce([
-        mockVehicleRow({ brandLabel: 'TOYOTA', fuelTypeLabel: 'Diesel' }),
+        mockVehicleRow({ brandLabel: 'TOYOTA', fuelTypeCode: 'F_DIESEL' }),
       ]);
       (db.execute as any).mockResolvedValueOnce([[]]);
 
@@ -163,7 +164,7 @@ describe('workOrderService', () => {
         })
         .mockResolvedValueOnce([[{ uuid: 'u-toyota' }]]);
 
-      await createWorkOrder('VEH-001', 'urban');
+      await createWorkOrder('VEH-001');
 
       // Toyota + diesel: toyota brand rule tasks should appear
       expect(capturedTaskValues).toContain('cascade_toyota_10k_pedals');
@@ -171,9 +172,28 @@ describe('workOrderService', () => {
       expect(capturedTaskValues).not.toContain('cascade_spark_plugs_remove');
     });
 
+    it('diesel unit via F_DIESEL code gets water separator, no spark plugs', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ fuelTypeCode: 'F_DIESEL' })]);
+      (db.execute as any).mockResolvedValueOnce([[]]);
+
+      let capturedTaskValues: any[] = [];
+      mockConnection.execute
+        .mockResolvedValueOnce([{ insertId: 7 }])
+        .mockImplementationOnce((_sql: string, vals: any[]) => {
+          capturedTaskValues = vals;
+          return Promise.resolve([{}]);
+        })
+        .mockResolvedValueOnce([[{ uuid: 'u-diesel' }]]);
+
+      await createWorkOrder('VEH-001');
+
+      expect(capturedTaskValues).toContain('minor_water_separator');
+      expect(capturedTaskValues).not.toContain('cascade_spark_plugs_remove');
+    });
+
     it('uses generic brand when label is unrecognized', async () => {
       (db.execute as any).mockResolvedValueOnce([
-        mockVehicleRow({ brandLabel: 'FordMustang', fuelTypeLabel: 'Gasolina' }),
+        mockVehicleRow({ brandLabel: 'FordMustang', fuelTypeCode: 'F_GAS' }),
       ]);
       (db.execute as any).mockResolvedValueOnce([[]]);
 
@@ -182,7 +202,7 @@ describe('workOrderService', () => {
         .mockResolvedValueOnce([{}])
         .mockResolvedValueOnce([[{ uuid: 'u-generic' }]]);
 
-      const result = await createWorkOrder('VEH-001', 'urban');
+      const result = await createWorkOrder('VEH-001');
       // generic brand = no brand-specific tasks → task count is base only
       expect(result.taskCount).toBeGreaterThan(0);
     });
@@ -448,20 +468,20 @@ describe('workOrderService', () => {
   describe('previewWorkOrder', () => {
     it('throws VEHICLE_NOT_FOUND when vehicle does not exist', async () => {
       (db.execute as any).mockResolvedValueOnce([[]]);
-      await expect(previewWorkOrder('GHOST-999', 'urban')).rejects.toThrow('VEHICLE_NOT_FOUND');
+      await expect(previewWorkOrder('GHOST-999')).rejects.toThrow('VEHICLE_NOT_FOUND');
     });
 
     it('does not call getConnection (no DB write)', async () => {
       (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
       (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
-      await previewWorkOrder('VEH-001', 'urban');
+      await previewWorkOrder('VEH-001');
       expect(db.getConnection).not.toHaveBeenCalled();
     });
 
     it('returns vehicleId and odometer from vehicle profile', async () => {
       (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
       (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
-      const result = await previewWorkOrder('VEH-001', 'urban');
+      const result = await previewWorkOrder('VEH-001');
       expect(result.vehicleId).toBe('VEH-001');
       expect(result.odometer).toBe(10200);
     });
@@ -469,7 +489,7 @@ describe('workOrderService', () => {
     it('returns non-empty tasks array for valid urban vehicle', async () => {
       (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
       (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
-      const result = await previewWorkOrder('VEH-001', 'urban');
+      const result = await previewWorkOrder('VEH-001');
       expect(Array.isArray(result.tasks)).toBe(true);
       expect(result.tasks.length).toBeGreaterThan(0);
     });
@@ -477,7 +497,7 @@ describe('workOrderService', () => {
     it('returns tasks with correct shape (id, stage, description, packageLevel)', async () => {
       (db.execute as any).mockResolvedValueOnce([mockVehicleRow()]);
       (db.execute as any).mockResolvedValueOnce([[]]); // no prior order
-      const result = await previewWorkOrder('VEH-001', 'urban');
+      const result = await previewWorkOrder('VEH-001');
       result.tasks.forEach((task) => {
         expect(typeof task.id).toBe('string');
         expect(typeof task.stage).toBe('string');

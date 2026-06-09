@@ -11,7 +11,6 @@ import {
 
 const initSchema = z.object({
   vehicleId: z.string().min(1).max(36),
-  fleetType: z.enum(['urban', 'mining']),
 });
 
 const updateTaskSchema = z.object({
@@ -35,11 +34,9 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
     { preHandler: [requirePermission('fleet:view')] },
     async (request, reply) => {
       const { vehicleId } = request.params as { vehicleId: string };
-      const { fleetType } = request.query as { fleetType?: string };
-      const resolvedFleetType = fleetType === 'mining' ? 'mining' : 'urban';
 
       try {
-        const result = await previewWorkOrder(vehicleId, resolvedFleetType);
+        const result = await previewWorkOrder(vehicleId);
         return reply.code(200).send({ success: true, data: result });
       } catch (error) {
         const msg = (error as Error).message;
@@ -107,7 +104,7 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await createWorkOrder(parsed.data.vehicleId, parsed.data.fleetType);
+        const result = await createWorkOrder(parsed.data.vehicleId);
         return reply.code(201).send({ success: true, data: result });
       } catch (error) {
         const msg = (error as Error).message;

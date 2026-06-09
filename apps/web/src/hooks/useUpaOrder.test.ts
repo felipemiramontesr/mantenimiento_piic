@@ -57,30 +57,13 @@ describe('useUpaOrder', () => {
       const { result } = renderHook(() => useUpaOrder());
 
       await act(async () => {
-        await result.current.startOrder('ASM-001', 'urban');
+        await result.current.startOrder('ASM-001');
       });
 
-      expect(upaApi.initOrder).toHaveBeenCalledWith({ vehicleId: 'ASM-001', fleetType: 'urban' });
+      expect(upaApi.initOrder).toHaveBeenCalledWith({ vehicleId: 'ASM-001' });
       expect(upaApi.getOrderById).toHaveBeenCalledWith(1);
       expect(result.current.workOrder).toEqual(mockWorkOrder);
       expect(result.current.error).toBeNull();
-    });
-
-    it('uses mining fleet type when specified', async () => {
-      vi.mocked(upaApi.initOrder).mockResolvedValue({
-        workOrderId: 2,
-        uuid: 'test-uuid-5678',
-        taskCount: 8,
-      });
-      vi.mocked(upaApi.getOrderById).mockResolvedValue({ ...mockWorkOrder, fleetType: 'mining' });
-
-      const { result } = renderHook(() => useUpaOrder());
-
-      await act(async () => {
-        await result.current.startOrder('MIN-007', 'mining');
-      });
-
-      expect(upaApi.initOrder).toHaveBeenCalledWith({ vehicleId: 'MIN-007', fleetType: 'mining' });
     });
 
     it('sets 404 error when vehicle not found', async () => {
@@ -89,7 +72,7 @@ describe('useUpaOrder', () => {
       const { result } = renderHook(() => useUpaOrder());
 
       await act(async () => {
-        await result.current.startOrder('NONEXISTENT', 'urban');
+        await result.current.startOrder('NONEXISTENT');
       });
 
       expect(result.current.error).toBe('Unidad no encontrada. Verifica el ID de la unidad.');
@@ -102,7 +85,7 @@ describe('useUpaOrder', () => {
       const { result } = renderHook(() => useUpaOrder());
 
       await act(async () => {
-        await result.current.startOrder('ASM-001', 'urban');
+        await result.current.startOrder('ASM-001');
       });
 
       expect(result.current.error).toBe('Error al iniciar la orden de trabajo');

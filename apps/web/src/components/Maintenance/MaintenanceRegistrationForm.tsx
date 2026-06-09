@@ -298,7 +298,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
     }
     setUpaPreviewLoading(true);
     api
-      .get(`/work-orders/preview/${selectedUnit}?fleetType=urban`)
+      .get(`/work-orders/preview/${selectedUnit}`)
       .then((res) => {
         if (res.data.success) setUpaPreview(res.data.data.tasks as UpaPreviewTask[]);
       })

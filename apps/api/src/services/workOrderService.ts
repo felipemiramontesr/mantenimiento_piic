@@ -78,9 +78,14 @@ function mapBrandLabel(label: string | null | undefined): Brand {
   return 'generic';
 }
 
-function mapFuelLabel(label: string | null | undefined): FuelType {
-  if (!label) return 'gasoline';
-  return label.toLowerCase().includes('diesel') ? 'diesel' : 'gasoline';
+const MINE_INTERVAL_KM = 5000;
+
+function mapFuelCode(code: string | null | undefined): FuelType {
+  return code === 'F_DIESEL' ? 'diesel' : 'gasoline';
+}
+
+function deriveFleetType(maintIntervalKm: number | null | undefined): FleetType {
+  return maintIntervalKm === MINE_INTERVAL_KM ? 'mining' : 'urban';
 }
 
 // ============================================================================
@@ -91,7 +96,8 @@ interface VehicleRow extends RowDataPacket {
   id: string;
   odometer: number;
   brandLabel: string | null;
-  fuelTypeLabel: string | null;
+  fuelTypeCode: string | null;
+  maintIntervalKm: number | null;
   lastServiceReading: number | null;
 }
 
@@ -104,13 +110,12 @@ interface WorkOrderRow extends RowDataPacket {
   pending_since: Date | null;
 }
 
-async function fetchVehicleProfile(
-  vehicleId: string
-): Promise<{
+async function fetchVehicleProfile(vehicleId: string): Promise<{
   id: string;
   odometer: number;
   brand: Brand;
   fuelType: FuelType;
+  fleetType: FleetType;
   lastServiceReading: number | null;
 } | null> {
   const [rows] = await db.execute<VehicleRow[]>(
@@ -118,8 +123,9 @@ async function fetchVehicleProfile(
        f.id,
        COALESCE(f.odometer, 0) AS odometer,
        f.lastServiceReading,
+       f.maintIntervalKm,
        c_brand.label AS brandLabel,
-       c_ft.label    AS fuelTypeLabel
+       c_ft.code     AS fuelTypeCode
      FROM fleet_units f
      LEFT JOIN common_catalogs c_brand
        ON c_brand.id = f.brandId AND c_brand.category = 'BRAND'
@@ -135,7 +141,8 @@ async function fetchVehicleProfile(
     id: row.id,
     odometer: row.odometer,
     brand: mapBrandLabel(row.brandLabel),
-    fuelType: mapFuelLabel(row.fuelTypeLabel),
+    fuelType: mapFuelCode(row.fuelTypeCode),
+    fleetType: deriveFleetType(row.maintIntervalKm),
     lastServiceReading: row.lastServiceReading,
   };
 }
@@ -178,10 +185,7 @@ async function fetchLastClosedWorkOrder(vehicleId: string): Promise<WorkOrder | 
 // PUBLIC SERVICE FUNCTIONS
 // ============================================================================
 
-export async function createWorkOrder(
-  vehicleId: string,
-  fleetType: FleetType
-): Promise<CreateWorkOrderResult> {
+export async function createWorkOrder(vehicleId: string): Promise<CreateWorkOrderResult> {
   const vehicle = await fetchVehicleProfile(vehicleId);
   if (!vehicle) {
     throw new Error(`VEHICLE_NOT_FOUND: vehicleId '${vehicleId}' does not exist`);
@@ -193,7 +197,7 @@ export async function createWorkOrder(
     vehicleProfile: {
       brand: vehicle.brand,
       fuelType: vehicle.fuelType,
-      fleetType,
+      fleetType: vehicle.fleetType,
       odometer: vehicle.odometer,
     },
     lastClosedWorkOrder,
@@ -211,7 +215,7 @@ export async function createWorkOrder(
     const [woResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO upa_work_orders (uuid, vehicle_id, fleet_type, status, opened_at)
        VALUES (UUID(), ?, ?, 'IN_PROGRESS', NOW())`,
-      [vehicleId, fleetType]
+      [vehicleId, vehicle.fleetType]
     );
 
     const workOrderId = woResult.insertId;
@@ -252,10 +256,7 @@ export async function createWorkOrder(
   }
 }
 
-export async function previewWorkOrder(
-  vehicleId: string,
-  fleetType: FleetType
-): Promise<PreviewWorkOrderResult> {
+export async function previewWorkOrder(vehicleId: string): Promise<PreviewWorkOrderResult> {
   const vehicle = await fetchVehicleProfile(vehicleId);
   if (!vehicle) {
     throw new Error(`VEHICLE_NOT_FOUND: vehicleId '${vehicleId}' does not exist`);
@@ -267,7 +268,7 @@ export async function previewWorkOrder(
     vehicleProfile: {
       brand: vehicle.brand,
       fuelType: vehicle.fuelType,
-      fleetType,
+      fleetType: vehicle.fleetType,
       odometer: vehicle.odometer,
     },
     lastClosedWorkOrder,

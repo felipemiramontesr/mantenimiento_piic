@@ -60,14 +60,7 @@ describe('UpaWorkspace', () => {
       expect(screen.getByTestId('init-submit-btn')).toBeDefined();
     });
 
-    it('renders both fleet type radio options', () => {
-      vi.mocked(useUpaOrder).mockReturnValue(baseHook);
-      render(<UpaWorkspace />);
-      expect(screen.getByTestId('fleet-type-urban')).toBeDefined();
-      expect(screen.getByTestId('fleet-type-mining')).toBeDefined();
-    });
-
-    it('calls startOrder with vehicle id and urban fleet type by default', () => {
+    it('calls startOrder with vehicle id only (fleet type derived by backend)', () => {
       const startOrder = vi.fn().mockResolvedValue(undefined);
       vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, startOrder });
       render(<UpaWorkspace />);
@@ -77,21 +70,7 @@ describe('UpaWorkspace', () => {
       });
       fireEvent.submit(screen.getByTestId('init-submit-btn').closest('form')!);
 
-      expect(startOrder).toHaveBeenCalledWith('ASM-001', 'urban');
-    });
-
-    it('calls startOrder with mining fleet type when selected', () => {
-      const startOrder = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, startOrder });
-      render(<UpaWorkspace />);
-
-      fireEvent.change(screen.getByTestId('vehicle-id-input'), {
-        target: { value: 'MIN-007' },
-      });
-      fireEvent.click(screen.getByTestId('fleet-type-mining'));
-      fireEvent.submit(screen.getByTestId('init-submit-btn').closest('form')!);
-
-      expect(startOrder).toHaveBeenCalledWith('MIN-007', 'mining');
+      expect(startOrder).toHaveBeenCalledWith('ASM-001');
     });
 
     it('trims whitespace from vehicle id before submit', () => {
@@ -104,7 +83,7 @@ describe('UpaWorkspace', () => {
       });
       fireEvent.submit(screen.getByTestId('init-submit-btn').closest('form')!);
 
-      expect(startOrder).toHaveBeenCalledWith('ASM-001', 'urban');
+      expect(startOrder).toHaveBeenCalledWith('ASM-001');
     });
 
     it('shows loading state on submit button', () => {

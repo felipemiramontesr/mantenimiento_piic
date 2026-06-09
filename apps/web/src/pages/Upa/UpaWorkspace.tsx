@@ -8,11 +8,9 @@ import {
   ShieldAlert,
   XCircle,
   ClipboardList,
-  Truck,
   CheckSquare,
   Plus,
   Trash2,
-  Activity,
   ArrowLeft,
   ChevronDown,
   ChevronRight,
@@ -23,7 +21,6 @@ import type {
   UpaTaskDetail,
   UpaWorkOrderDetail,
   UpaDeferredType,
-  UpaFleetType,
   UpaTaskStage,
 } from '../../types/upa';
 
@@ -282,18 +279,17 @@ const DeferModal: React.FC<DeferModalProps> = ({
 // ─── Init Form ────────────────────────────────────────────────────────────────
 
 interface InitFormProps {
-  onSubmit: (vehicleId: string, fleetType: UpaFleetType) => void;
+  onSubmit: (vehicleId: string) => void;
   loading: boolean;
   error: string | null;
 }
 
 const InitForm: React.FC<InitFormProps> = ({ onSubmit, loading, error }) => {
   const [vehicleId, setVehicleId] = useState('');
-  const [fleetType, setFleetType] = useState<UpaFleetType>('urban');
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
-    if (vehicleId.trim()) onSubmit(vehicleId.trim(), fleetType);
+    if (vehicleId.trim()) onSubmit(vehicleId.trim());
   };
 
   return (
@@ -322,39 +318,6 @@ const InitForm: React.FC<InitFormProps> = ({ onSubmit, loading, error }) => {
               data-testid="vehicle-id-input"
               className="w-full px-4 py-3 font-bold text-[#0f2a44] border border-slate-200 rounded-[4px] bg-white focus:outline-none focus:border-[#10b981]/50 text-sm"
             />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f2a44]/60">
-              Tipo de Flotilla
-            </label>
-            <div className="flex gap-3">
-              {(['urban', 'mining'] as UpaFleetType[]).map((ft) => (
-                <label
-                  key={ft}
-                  className={`
-                    flex-1 flex items-center justify-center gap-2 py-3 rounded-[4px] cursor-pointer border-2 font-black text-sm uppercase tracking-wider transition-all duration-200
-                    ${
-                      fleetType === ft
-                        ? 'border-[#0f2a44] bg-[#0f2a44] text-white'
-                        : 'border-slate-200 bg-white text-[#0f2a44]/50 hover:border-[#0f2a44]/30'
-                    }
-                  `}
-                >
-                  <input
-                    type="radio"
-                    name="fleetType"
-                    value={ft}
-                    checked={fleetType === ft}
-                    onChange={(): void => setFleetType(ft)}
-                    className="sr-only"
-                    data-testid={`fleet-type-${ft}`}
-                  />
-                  {ft === 'urban' ? <Truck size={16} /> : <Activity size={16} />}
-                  {ft === 'urban' ? 'Urbana' : 'Minería'}
-                </label>
-              ))}
-            </div>
           </div>
 
           {error && (

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { UpaWorkOrderDetail, UpaFleetType, UpaDeferredType } from '../types/upa';
+import type { UpaWorkOrderDetail, UpaDeferredType } from '../types/upa';
 import * as upaApi from '../api/upa';
 
 export interface UseUpaOrderReturn {
@@ -9,7 +9,7 @@ export interface UseUpaOrderReturn {
   initLoading: boolean;
   taskUpdating: Record<string, boolean>;
   closingOrder: boolean;
-  startOrder: (vehicleId: string, fleetType: UpaFleetType) => Promise<void>;
+  startOrder: (vehicleId: string) => Promise<void>;
   loadOrder: (workOrderId: number) => Promise<void>;
   completeTask: (taskId: string, evidenceUrls?: string[], evidenceNotes?: string) => Promise<void>;
   deferTask: (taskId: string, deferType: UpaDeferredType) => Promise<void>;
@@ -39,11 +39,11 @@ export function useUpaOrder(): UseUpaOrderReturn {
   }, []);
 
   const startOrder = useCallback(
-    async (vehicleId: string, fleetType: UpaFleetType): Promise<void> => {
+    async (vehicleId: string): Promise<void> => {
       setInitLoading(true);
       setError(null);
       try {
-        const result = await upaApi.initOrder({ vehicleId, fleetType });
+        const result = await upaApi.initOrder({ vehicleId });
         await loadOrder(result.workOrderId);
       } catch (err: unknown) {
         const status = (err as { response?: { status?: number } })?.response?.status;

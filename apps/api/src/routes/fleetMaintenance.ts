@@ -980,8 +980,6 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         }
 
         const unitId = movement.unit_id as string;
-        const serviceType = movement.service_type as string;
-        const fleetType = serviceType === 'MINOR_MINING' ? 'mining' : 'urban';
 
         // OPEN → ACTIVE + lock unit
         await connection.execute(
@@ -995,8 +993,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           [UNIT_STATUS.MAINTENANCE, unitId]
         );
 
-        // Create UPA work order (uses its own connection internally)
-        const workOrderResult = await createWorkOrder(unitId, fleetType as 'urban' | 'mining');
+        // Create UPA work order — fleet type auto-derived from maintIntervalKm
+        const workOrderResult = await createWorkOrder(unitId);
 
         // Link work order to maintenance movement
         await connection.execute(

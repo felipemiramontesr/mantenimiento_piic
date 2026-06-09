@@ -30,7 +30,6 @@ export interface UpaWorkOrderDetail {
 
 export interface UpaInitPayload {
   vehicleId: string;
-  fleetType: UpaFleetType;
 }
 
 export interface UpaInitResult {
