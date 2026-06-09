@@ -152,7 +152,7 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
 
       // 2. Open incidents
       const [incidentRows] = await db.execute<RowDataPacket[]>(
-        `SELECT i.id, i.category, i.description, i.severity, i.reported_at,
+        `SELECT i.id, i.category, i.description, i.reported_at,
                 fm.unit_id
          FROM route_incidents i
          JOIN fleet_movements fm ON i.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
@@ -165,7 +165,7 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
         alerts.push({
           id: `INCIDENT_${row.id}`,
           type: 'INCIDENT_OPEN',
-          severity: (row.severity as AlertSeverity) ?? 'MEDIUM',
+          severity: 'CRITICAL',
           title: `Incidente abierto — ${row.category} · ${row.unit_id}`,
           description: String(row.description).substring(0, 120),
           unitId: String(row.unit_id),
