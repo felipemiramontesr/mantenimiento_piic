@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Wrench,
   DollarSign,
@@ -278,9 +278,15 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
   const { unitId } = useParams<{ unitId: string }>();
   const { setSectionData } = useSovereignLayout();
   const navigate = useNavigate();
+  const location = useLocation();
   const [node, setNode] = useState<NodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const navState = location.state as { from?: string; fromLabel?: string } | null;
+  const backTo = navState?.from ?? '/dashboard/fleet';
+  const backLabel = navState?.fromLabel ?? 'Flota';
+  const fromAlerts = backTo === '/dashboard/alerts';
 
   useEffect(() => {
     setSectionData(
@@ -289,17 +295,17 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
       null,
       {
         variant: 'emerald',
-        headerTitle: 'Administrar Unidades',
+        headerTitle: fromAlerts ? 'Alertas del Sistema' : 'Administrar Unidades',
         HeaderIcon: ChevronLeft,
         PayloadIcon: Truck,
         actionTitle: 'Retorno',
-        description: 'Volver al listado de flota',
-        buttonText: 'Flota',
+        description: fromAlerts ? 'Volver al panel de alertas' : 'Volver al listado de flota',
+        buttonText: backLabel,
         isActive: false,
-        onClick: (): void => navigate('/dashboard/fleet'),
+        onClick: (): void => navigate(backTo),
       }
     );
-  }, [unitId, setSectionData, navigate]);
+  }, [unitId, setSectionData, navigate, backTo, backLabel, fromAlerts]);
 
   useEffect(() => {
     if (!unitId) return;

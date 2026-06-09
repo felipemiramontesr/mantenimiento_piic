@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Wrench, AlertTriangle, Lock, RefreshCw, Truck, ExternalLink } from 'lucide-react';
+import { Wrench, AlertTriangle, Lock, RefreshCw, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAlerts, { Alert, AlertSeverity, AlertType } from '../../hooks/useAlerts';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -81,13 +81,13 @@ function AlertRow(alert: Alert): React.JSX.Element {
       <td className="px-3 py-3 text-center">
         <Link
           to={`/dashboard/fleet/${alert.unitId}`}
-          className="inline-flex items-center gap-1.5 text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors duration-200 group"
+          state={{ from: '/dashboard/alerts', fromLabel: 'Alertas' }}
           title={`Ver nodo · ${alert.unitId}`}
+          className="flex items-center justify-center w-10 h-10 mx-auto text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group"
         >
-          <Truck size={13} />
           <ExternalLink
-            size={10}
-            className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            size={16}
+            className="transition-transform duration-300 group-hover:scale-110"
           />
         </Link>
       </td>
