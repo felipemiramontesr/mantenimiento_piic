@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Wrench, AlertTriangle, Lock, RefreshCw, ArrowRight } from 'lucide-react';
+import { Wrench, AlertTriangle, Lock, RefreshCw, Truck, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAlerts, { Alert, AlertSeverity, AlertType } from '../../hooks/useAlerts';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -37,12 +37,6 @@ const TYPE_LABEL: Record<AlertType, string> = {
   MAINTENANCE_OVERDUE: 'Mantenimiento vencido',
   INCIDENT_OPEN: 'Incidente abierto',
   UNIT_CRITICAL: 'Unidad bloqueada',
-};
-
-const TYPE_ROUTE: Record<AlertType, string> = {
-  MAINTENANCE_OVERDUE: '/dashboard/maintenance',
-  INCIDENT_OPEN: '/dashboard/incidents',
-  UNIT_CRITICAL: '/dashboard/maintenance',
 };
 
 const HEADERS: ArchonTableHeader[] = [
@@ -86,13 +80,14 @@ function AlertRow(alert: Alert): React.JSX.Element {
 
       <td className="px-3 py-3 text-center">
         <Link
-          to={TYPE_ROUTE[alert.type]}
-          className="inline-flex items-center gap-1.5 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/50 hover:text-[#0f2a44] transition-colors duration-200 group"
+          to={`/dashboard/fleet/${alert.unitId}`}
+          className="inline-flex items-center gap-1.5 text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors duration-200 group"
+          title={`Ver nodo · ${alert.unitId}`}
         >
-          Ir al módulo
-          <ArrowRight
-            size={11}
-            className="transition-transform duration-200 group-hover:translate-x-1"
+          <Truck size={13} />
+          <ExternalLink
+            size={10}
+            className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
           />
         </Link>
       </td>
