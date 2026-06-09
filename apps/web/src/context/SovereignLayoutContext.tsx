@@ -39,6 +39,7 @@ interface LayoutData {
     onClick: () => void;
     testId?: string;
   } | null;
+  headerSlot?: React.ReactNode;
 }
 
 interface SovereignLayoutContextType {
@@ -51,7 +52,8 @@ interface SovereignLayoutContextType {
     title: string,
     description: string,
     subheaderActions?: React.ReactNode,
-    headerAction?: LayoutData['headerAction']
+    headerAction?: LayoutData['headerAction'],
+    headerSlot?: React.ReactNode
   ) => void;
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (isOpen: boolean) => void;
@@ -76,9 +78,10 @@ export const SovereignLayoutProvider: React.FC<{ children: ReactNode }> = ({ chi
       title: string,
       description: string,
       subheaderActions?: React.ReactNode,
-      headerAction?: LayoutData['headerAction']
+      headerAction?: LayoutData['headerAction'],
+      headerSlot?: React.ReactNode
     ): void => {
-      setLayoutData({ title, description, subheaderActions, headerAction });
+      setLayoutData({ title, description, subheaderActions, headerAction, headerSlot });
     },
     []
   );

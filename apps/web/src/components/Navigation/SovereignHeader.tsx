@@ -90,6 +90,32 @@ const SovereignHeader: React.FC = () => {
 
   const { main: MainIcon, sub: SubIcon } = getHeaderIcons(layoutData.title);
 
+  const renderColBeta = (): React.ReactNode => {
+    if (layoutData.headerSlot != null) {
+      return <div className="w-full">{layoutData.headerSlot}</div>;
+    }
+    if (layoutData.headerAction) {
+      return (
+        <div className="w-full">
+          <ArchonManagementCard
+            variant={layoutData.headerAction.variant}
+            layout="horizontal"
+            headerTitle={layoutData.headerAction.headerTitle}
+            HeaderIcon={layoutData.headerAction.HeaderIcon}
+            PayloadIcon={layoutData.headerAction.PayloadIcon}
+            actionTitle={layoutData.headerAction.actionTitle}
+            description={layoutData.headerAction.description}
+            buttonText={layoutData.headerAction.buttonText}
+            isActive={layoutData.headerAction.isActive}
+            onClick={layoutData.headerAction.onClick}
+            testId={layoutData.headerAction.testId}
+          />
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <header className="flex flex-row items-center w-full border-b border-pinnacle-navy/5 px-4 md:pl-10 md:pr-[46px] min-h-[10vh] py-2 bg-white relative z-50 mt-[10px]">
       <div className="archon-grid-2-sovereign items-center w-full flex-col md:flex-row gap-4 md:gap-10">
@@ -199,25 +225,7 @@ const SovereignHeader: React.FC = () => {
         </div>
 
         {/* ⚡ Dynamic Action Button (Col Beta) */}
-        <div className="flex justify-end items-center w-full">
-          {layoutData.headerAction && (
-            <div className="w-full">
-              <ArchonManagementCard
-                variant={layoutData.headerAction.variant}
-                layout="horizontal"
-                headerTitle={layoutData.headerAction.headerTitle}
-                HeaderIcon={layoutData.headerAction.HeaderIcon}
-                PayloadIcon={layoutData.headerAction.PayloadIcon}
-                actionTitle={layoutData.headerAction.actionTitle}
-                description={layoutData.headerAction.description}
-                buttonText={layoutData.headerAction.buttonText}
-                isActive={layoutData.headerAction.isActive}
-                onClick={layoutData.headerAction.onClick}
-                testId={layoutData.headerAction.testId}
-              />
-            </div>
-          )}
-        </div>
+        <div className="flex justify-end items-center w-full">{renderColBeta()}</div>
       </div>
     </header>
   );

@@ -1,5 +1,15 @@
-﻿import React from 'react';
-import { Wrench, AlertTriangle, Lock, RefreshCw, ExternalLink } from 'lucide-react';
+import React from 'react';
+import {
+  Wrench,
+  AlertTriangle,
+  Lock,
+  RefreshCw,
+  ExternalLink,
+  ShieldAlert,
+  AlertCircle,
+  Info,
+  LucideIcon,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAlerts, { Alert, AlertSeverity, AlertType } from '../../hooks/useAlerts';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
@@ -38,6 +48,58 @@ const TYPE_LABEL: Record<AlertType, string> = {
   INCIDENT_OPEN: 'Incidente abierto',
   UNIT_CRITICAL: 'Unidad bloqueada',
 };
+
+const SEVERITY_CONFIG: Array<{
+  severity: AlertSeverity;
+  icon: LucideIcon;
+  bg: string;
+  border: string;
+  iconClass: string;
+  countClass: string;
+  labelClass: string;
+  label: string;
+}> = [
+  {
+    severity: 'CRITICAL',
+    icon: ShieldAlert,
+    bg: 'bg-red-50',
+    border: 'border-red-200',
+    iconClass: 'text-red-500',
+    countClass: 'text-red-700',
+    labelClass: 'text-red-500/60',
+    label: 'Crítica',
+  },
+  {
+    severity: 'HIGH',
+    icon: AlertTriangle,
+    bg: 'bg-orange-50',
+    border: 'border-orange-200',
+    iconClass: 'text-orange-500',
+    countClass: 'text-orange-700',
+    labelClass: 'text-orange-500/60',
+    label: 'Alta',
+  },
+  {
+    severity: 'MEDIUM',
+    icon: AlertCircle,
+    bg: 'bg-amber-50',
+    border: 'border-amber-200',
+    iconClass: 'text-amber-500',
+    countClass: 'text-amber-700',
+    labelClass: 'text-amber-500/60',
+    label: 'Moderada',
+  },
+  {
+    severity: 'LOW',
+    icon: Info,
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    iconClass: 'text-blue-400',
+    countClass: 'text-[#0f2a44]/60',
+    labelClass: 'text-blue-400/60',
+    label: 'Baja',
+  },
+];
 
 const HEADERS: ArchonTableHeader[] = [
   { key: 'severity', label: 'Severidad', align: 'center', width: '13%' },
@@ -97,7 +159,7 @@ function AlertRow(alert: Alert): React.JSX.Element {
 
 const AlertsPanel: React.FC = (): React.JSX.Element => {
   const { alerts, isSyncing, refresh } = useAlerts();
-  const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
+  const { searchTerm, setSearchTerm, setSearchConfig, setSectionData } = useSovereignLayout();
 
   // 🛡️ Universal Search Protocol — Alertas
   React.useEffect(() => {
@@ -129,7 +191,7 @@ const AlertsPanel: React.FC = (): React.JSX.Element => {
     return () => setSearchConfig(null);
   }, [alerts, setSearchConfig, setSearchTerm]);
 
-  React.useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
+  React.useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
 
   const filtered = React.useMemo(() => {
     if (!searchTerm.trim()) return alerts;
@@ -143,40 +205,54 @@ const AlertsPanel: React.FC = (): React.JSX.Element => {
     );
   }, [alerts, searchTerm]);
 
-  const criticalCount = filtered.filter((a) => a.severity === 'CRITICAL').length;
-  const highCount = filtered.filter((a) => a.severity === 'HIGH').length;
+  // 🔱 Sovereign Header — Severity Summary Cards
+  React.useEffect(() => {
+    const countFor = (sev: AlertSeverity): number =>
+      filtered.filter((a) => a.severity === sev).length;
+
+    const headerSlot = (
+      <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-2 w-full">
+        {SEVERITY_CONFIG.map(
+          ({ severity, icon: Icon, bg, border, iconClass, countClass, labelClass, label }) => (
+            <div
+              key={severity}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-[4px] border ${bg} ${border}`}
+            >
+              <Icon size={15} className={iconClass} strokeWidth={2.5} />
+              <div className="flex flex-col items-start leading-none gap-0.5">
+                <span className={`text-[20px] font-black tabular-nums leading-none ${countClass}`}>
+                  {countFor(severity)}
+                </span>
+                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${labelClass}`}>
+                  {label}
+                </span>
+              </div>
+            </div>
+          )
+        )}
+        <button
+          onClick={(): void => {
+            refresh();
+          }}
+          className="flex items-center justify-center w-8 h-8 text-[#0f2a44]/25 hover:text-[#0f2a44]/60 bg-slate-50 hover:bg-slate-100 rounded-[4px] border border-slate-200 hover:border-slate-300 transition-all duration-300"
+          title="Actualizar alertas"
+        >
+          <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
+        </button>
+      </div>
+    );
+
+    setSectionData(
+      'Alertas del Sistema',
+      'Monitor de alertas operativas de la flota',
+      null,
+      null,
+      headerSlot
+    );
+  }, [filtered, isSyncing, refresh, setSectionData]);
 
   return (
     <div className="flex flex-col gap-3 animate-in fade-in duration-500">
-      {filtered.length > 0 && (
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            {criticalCount > 0 && (
-              <span
-                className={`inline-flex items-center gap-1 text-archon-sm font-black uppercase tracking-widest px-1.5 py-0.5 rounded-[2px] ${SEVERITY_BADGE.CRITICAL}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_DOT.CRITICAL}`} />
-                {criticalCount} crítica{criticalCount !== 1 ? 's' : ''}
-              </span>
-            )}
-            {highCount > 0 && (
-              <span
-                className={`inline-flex items-center gap-1 text-archon-sm font-black uppercase tracking-widest px-1.5 py-0.5 rounded-[2px] ${SEVERITY_BADGE.HIGH}`}
-              >
-                {highCount} alta{highCount !== 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={refresh}
-            className="text-[#0f2a44]/30 hover:text-[#0f2a44]/60 transition-colors"
-            title="Actualizar alertas"
-          >
-            <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
-          </button>
-        </div>
-      )}
-
       <ArchonDataTable<Alert>
         data={filtered}
         headers={HEADERS}
