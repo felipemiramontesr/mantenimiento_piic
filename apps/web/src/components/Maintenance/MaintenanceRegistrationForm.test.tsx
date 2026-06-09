@@ -254,8 +254,70 @@ describe('UPA service badge — derived from preview cascade level', () => {
     );
   });
 
-  it('mine unit → Servicio Menor regardless of preview tasks', async () => {
+  it('mine unit without cascade → Servicio Menor badge', async () => {
     await assertBadge(makeUnit('U-MINE', 22000, 5000), [], 'Servicio Menor');
+  });
+
+  it('mine unit WITH cascade tasks → shows cascade level badge (not Servicio Menor)', async () => {
+    await assertBadge(
+      makeUnit('U-MINE-CASCADE', 50000, 5000),
+      [
+        makeCascadeTask('10k'),
+        makeCascadeTask('20k'),
+        makeCascadeTask('30k'),
+        makeCascadeTask('50k'),
+      ],
+      'Avanzado 50,000 km'
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// isInProgress auto-derivation from UPA preview cascade stage
+// ─────────────────────────────────────────────────────────────────────────────
+describe('isInProgress derivation — UPA cascade overrides mine classification', () => {
+  it('mine unit WITHOUT cascade tasks → In Situ mode', async () => {
+    server.use(
+      http.get('*/fleet', () =>
+        HttpResponse.json({ success: true, data: [makeUnit('U-MINE-INS', 22000, 5000)] })
+      ),
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: { vehicleId: 'U-MINE-INS', odometer: 22000, tasks: [] },
+        })
+      )
+    );
+    renderForm();
+    await selectUnit(/U-MINE-INS - Test Unit/);
+    await waitFor(() => {
+      expect(screen.getByText('In Situ — Registro Inmediato')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Ingreso a Taller — Downtime')).not.toBeInTheDocument();
+  });
+
+  it('mine unit WITH cascade tasks → TALLER mode (is_in_progress overridden)', async () => {
+    server.use(
+      http.get('*/fleet', () =>
+        HttpResponse.json({ success: true, data: [makeUnit('U-MINE-TALLER', 50000, 5000)] })
+      ),
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            vehicleId: 'U-MINE-TALLER',
+            odometer: 50000,
+            tasks: [makeCascadeTask('10k')],
+          },
+        })
+      )
+    );
+    renderForm();
+    await selectUnit(/U-MINE-TALLER - Test Unit/);
+    await waitFor(() => {
+      expect(screen.getByText('Ingreso a Taller — Downtime')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('In Situ — Registro Inmediato')).not.toBeInTheDocument();
   });
 });
 

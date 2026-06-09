@@ -262,8 +262,9 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
   const isMineUnit =
     Number(unit?.maintIntervalKm ?? MAINTENANCE.AGENCY_DEFAULT_INTERVAL_KM) ===
     MAINTENANCE.MINE_UNIT_INTERVAL_KM;
-  // MINE units → In Situ; all agency milestones → Taller (Downtime)
-  const isInProgress = !isMineUnit;
+  const hasCascadeTasks = upaPreview !== null && upaPreview.some((t) => t.stage === 'cascade');
+  // Mine units without cascade → In Situ; agency milestones + mine cascade → Taller
+  const isInProgress = !isMineUnit || hasCascadeTasks;
   const cascadeLevel: UpaPackageLevel | null = ((): UpaPackageLevel | null => {
     if (!upaPreview) return null;
     const levels: UpaPackageLevel[] = ['50k', '30k', '20k', '10k'];
@@ -273,7 +274,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
       ) ?? null
     );
   })();
-  const upaBadge = getUpaBadgeInfo(isMineUnit, cascadeLevel);
+  const upaBadge = getUpaBadgeInfo(isMineUnit && !hasCascadeTasks, cascadeLevel);
 
   useEffect(() => {
     api.get('/fleet').then((res) => {
