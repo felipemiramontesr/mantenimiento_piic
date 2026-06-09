@@ -15,6 +15,13 @@ export interface Alert {
   createdAt: string;
 }
 
+function formatDateEsMx(value: unknown): string {
+  if (value == null) return 'N/D';
+  const d = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export function buildOverdueDescription(
   odometer: number,
   nextServiceForecast: number | null,
@@ -24,7 +31,7 @@ export function buildOverdueDescription(
   if (nextServiceForecast != null && odometer >= nextServiceForecast) {
     return `Odómetro ${odometer} km supera el pronóstico de ${nextServiceForecast} km`;
   }
-  return `Última revisión: ${String(lastServiceDate ?? 'N/D')} · Intervalo: ${String(
+  return `Última revisión: ${formatDateEsMx(lastServiceDate)} · Intervalo: ${String(
     maintIntervalDays ?? 'N/D'
   )} días`;
 }
