@@ -15,6 +15,20 @@ export interface Alert {
   createdAt: string;
 }
 
+export function buildOverdueDescription(
+  odometer: number,
+  nextServiceForecast: number | null,
+  lastServiceDate: unknown,
+  maintIntervalDays: unknown
+): string {
+  if (nextServiceForecast != null && odometer >= nextServiceForecast) {
+    return `Odómetro ${odometer} km supera el pronóstico de ${nextServiceForecast} km`;
+  }
+  return `Última revisión: ${String(lastServiceDate ?? 'N/D')} · Intervalo: ${String(
+    maintIntervalDays ?? 'N/D'
+  )} días`;
+}
+
 export default async function alertsRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
@@ -49,10 +63,12 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
           type: 'MAINTENANCE_OVERDUE',
           severity: 'HIGH',
           title: `Mantenimiento vencido — ${row.id}`,
-          description:
-            row.odometer >= row.nextServiceReading_forecast
-              ? `Odómetro ${row.odometer} km supera el pronóstico de ${row.nextServiceReading_forecast} km`
-              : `Última revisión: ${row.lastServiceDate} · Intervalo: ${row.maintIntervalDays} días`,
+          description: buildOverdueDescription(
+            row.odometer,
+            row.nextServiceReading_forecast,
+            row.lastServiceDate,
+            row.maintIntervalDays
+          ),
           unitId: String(row.id),
           createdAt: new Date().toISOString(),
         });
