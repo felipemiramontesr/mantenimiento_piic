@@ -351,4 +351,94 @@ describe('authIntegration.test', () => {
       payload: { username: 'e@e.com', password: 'p' },
     });
   });
+
+  // ─── GET /users/:uuid/node ────────────────────────────────────────────────────
+
+  it('GET /users/:uuid/node — happy path returns user + permissions + routes', async () => {
+    const omniToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });
+    const uuid = 'fd88fbc8-6060-11f1-8001-30f6ef81858e';
+    const userRow = {
+      id: 10,
+      uuid,
+      username: 'graymantest',
+      full_name: 'Test User',
+      email: 'enc_test@a.mx',
+      role_id: 2,
+      employee_number: 'E001',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: 1,
+      role_name: 'Admin',
+      department_name: 'IT',
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow]])
+      .mockResolvedValueOnce([[{ slug: 'user:admin', description: 'Manage users' }]])
+      .mockResolvedValueOnce([
+        [
+          {
+            uuid: 'r-uuid',
+            unit_id: 'ASM-001',
+            destination: 'Mina',
+            status: 'COMPLETED',
+            start_at: null,
+            end_at: null,
+          },
+        ],
+      ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/auth/users/${uuid}/node`,
+      headers: { Authorization: `Bearer ${omniToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload) as {
+      success: boolean;
+      data: { user: { username: string } };
+    };
+    expect(body.success).toBe(true);
+    expect(body.data.user.username).toBe('graymantest');
+  });
+
+  it('GET /users/:uuid/node — 404 when user not found', async () => {
+    const omniToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });
+    (db.execute as Mock).mockResolvedValueOnce([[]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/nonexistent-uuid/node',
+      headers: { Authorization: `Bearer ${omniToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /users/:uuid/node — 403 without user:admin permission', async () => {
+    const noPermToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['fleet:view'] });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/any-uuid/node',
+      headers: { Authorization: `Bearer ${noPermToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('GET /users/:uuid/node — 500 on DB error', async () => {
+    const omniToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });
+    (db.execute as Mock).mockRejectedValueOnce(new Error('DB error'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/any-uuid/node',
+      headers: { Authorization: `Bearer ${omniToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+  });
 });

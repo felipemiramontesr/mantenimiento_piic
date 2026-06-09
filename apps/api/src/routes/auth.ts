@@ -5,7 +5,6 @@ import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
 import { recordAuditLog } from '../services/auditService';
-import requirePermission from '../middleware/requirePermission';
 
 /**
  * 🔱 Archon Auth Engine (v.8.7.0) - THE NUCLEUS
@@ -419,67 +418,71 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   });
 
   // GET /v1/auth/users/:uuid/node — Sovereign node: full user profile + permissions + recent activity
-  fastify.get(
-    '/auth/users/:uuid/node',
-    { preHandler: [requirePermission('user:admin')] },
-    async (request, reply) => {
-      try {
-        const { uuid } = request.params as { uuid: string };
-        const [userRows] = await db.execute<RowDataPacket[]>(
-          `SELECT u.id, u.uuid, u.username, u.full_name, u.email, u.role_id,
-                u.employee_number, u.is_active, u.last_login, u.created_at,
-                u.profile_picture_url, u.department_id,
-                r.name AS role_name,
-                cat.label AS department_name
-         FROM users u
-         JOIN roles r ON u.role_id = r.id
-         LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
-         WHERE u.uuid = ?`,
-          [uuid]
-        );
-        if (userRows.length === 0)
-          return reply.code(404).send({ success: false, message: 'Usuario no encontrado' });
-
-        const user = userRows[0];
-        const [permRows, routeRows] = await Promise.all([
-          db.execute<RowDataPacket[]>(
-            `SELECT p.slug, p.description
-           FROM role_permissions rp
-           JOIN permissions p ON p.id = rp.permission_id
-           WHERE rp.role_id = ?
-           ORDER BY p.slug`,
-            [user.role_id]
-          ),
-          db.execute<RowDataPacket[]>(
-            `SELECT fm.uuid, fm.unit_id, fre.destination, fm.status,
-                  fm.start_at, fm.end_at
-           FROM fleet_movements fm
-           JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-           WHERE fre.driver_id = ? AND fm.movement_type = 'ROUTE'
-           ORDER BY fm.created_at DESC LIMIT 5`,
-            [user.id]
-          ),
-        ]);
-
-        let emailDecrypted = user.email as string;
-        try {
-          emailDecrypted = EncryptionService.decrypt(user.email as string) ?? user.email;
-        } catch {
-          /* keep raw if not encrypted */
-        }
-
-        return reply.send({
-          success: true,
-          data: {
-            user: { ...user, email: emailDecrypted },
-            permissions: permRows[0],
-            recentRoutes: routeRows[0],
-          },
-        });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.code(500).send({ success: false, message: 'Error al cargar nodo de usuario' });
+  fastify.get('/users/:uuid/node', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+      const jwtUser = request.user as { permissions?: string[] };
+      const perms = jwtUser?.permissions ?? [];
+      if (!perms.includes('*') && !perms.includes('user:admin')) {
+        return reply
+          .code(403)
+          .send({ success: false, code: 'FORBIDDEN', message: 'Permission required: user:admin' });
       }
+      const { uuid } = request.params as { uuid: string };
+      const [userRows] = await db.execute<RowDataPacket[]>(
+        `SELECT u.id, u.uuid, u.username, u.full_name, u.email, u.role_id,
+              u.employee_number, u.is_active, u.last_login, u.created_at,
+              u.profile_picture_url, u.department_id,
+              r.name AS role_name,
+              cat.label AS department_name
+       FROM users u
+       JOIN roles r ON u.role_id = r.id
+       LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
+       WHERE u.uuid = ?`,
+        [uuid]
+      );
+      if (userRows.length === 0)
+        return reply.code(404).send({ success: false, message: 'Usuario no encontrado' });
+
+      const user = userRows[0];
+      const [permRows, routeRows] = await Promise.all([
+        db.execute<RowDataPacket[]>(
+          `SELECT p.slug, p.description
+         FROM role_permissions rp
+         JOIN permissions p ON p.id = rp.permission_id
+         WHERE rp.role_id = ?
+         ORDER BY p.slug`,
+          [user.role_id]
+        ),
+        db.execute<RowDataPacket[]>(
+          `SELECT fm.uuid, fm.unit_id, fre.destination, fm.status,
+                fm.start_at, fm.end_at
+         FROM fleet_movements fm
+         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
+         WHERE fre.driver_id = ? AND fm.movement_type = 'ROUTE'
+         ORDER BY fm.created_at DESC LIMIT 5`,
+          [user.id]
+        ),
+      ]);
+
+      let emailDecrypted = user.email as string;
+      try {
+        emailDecrypted = EncryptionService.decrypt(user.email as string) ?? user.email;
+      } catch {
+        /* keep raw if not encrypted */
+      }
+
+      return reply.send({
+        success: true,
+        data: {
+          user: { ...user, email: emailDecrypted },
+          permissions: permRows[0],
+          recentRoutes: routeRows[0],
+        },
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ success: false, message: 'Error al cargar nodo de usuario' });
     }
-  );
+  });
 }
