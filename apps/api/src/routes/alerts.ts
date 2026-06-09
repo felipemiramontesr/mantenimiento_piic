@@ -15,11 +15,52 @@ export interface Alert {
   createdAt: string;
 }
 
+const SEVERITY_RANK: Record<AlertSeverity, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+
+function maxSeverity(a: AlertSeverity, b: AlertSeverity): AlertSeverity {
+  return SEVERITY_RANK[a] >= SEVERITY_RANK[b] ? a : b;
+}
+
 function formatDateEsMx(value: unknown): string {
   if (value == null) return 'N/D';
   const d = value instanceof Date ? value : new Date(String(value));
   if (Number.isNaN(d.getTime())) return String(value);
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function daysOverdueFrom(lastServiceDate: unknown, maintIntervalDays: unknown): number {
+  const base =
+    lastServiceDate instanceof Date ? lastServiceDate : new Date(String(lastServiceDate));
+  const due = new Date(base);
+  due.setDate(due.getDate() + Number(maintIntervalDays));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.floor((today.getTime() - due.getTime()) / 86_400_000);
+}
+
+export function computeOverdueSeverity(
+  odometer: number,
+  nextServiceForecast: number | null,
+  lastServiceDate: unknown,
+  maintIntervalDays: unknown
+): AlertSeverity {
+  let result: AlertSeverity = 'LOW';
+
+  if (nextServiceForecast != null && nextServiceForecast > 0) {
+    const ratio = odometer / nextServiceForecast;
+    if (ratio >= 1.5) result = maxSeverity(result, 'CRITICAL');
+    else if (ratio >= 1.1) result = maxSeverity(result, 'HIGH');
+    else if (ratio >= 1.0) result = maxSeverity(result, 'MEDIUM');
+  }
+
+  if (lastServiceDate != null && maintIntervalDays != null) {
+    const days = daysOverdueFrom(lastServiceDate, maintIntervalDays);
+    if (days > 60) result = maxSeverity(result, 'CRITICAL');
+    else if (days > 30) result = maxSeverity(result, 'HIGH');
+    else if (days > 14) result = maxSeverity(result, 'MEDIUM');
+  }
+
+  return result;
 }
 
 export function buildOverdueDescription(
@@ -28,12 +69,28 @@ export function buildOverdueDescription(
   lastServiceDate: unknown,
   maintIntervalDays: unknown
 ): string {
-  if (nextServiceForecast != null && odometer >= nextServiceForecast) {
-    return `Odómetro ${odometer} km supera el pronóstico de ${nextServiceForecast} km`;
+  if (nextServiceForecast != null) {
+    if (odometer >= nextServiceForecast) {
+      return `Odómetro ${odometer} km supera el pronóstico de ${nextServiceForecast} km`;
+    }
+    const remaining = nextServiceForecast - odometer;
+    return `Odómetro ${odometer} km · Pronóstico: ${nextServiceForecast} km (faltan ${remaining} km)`;
   }
-  return `Último Mantenimiento: ${formatDateEsMx(lastServiceDate)} · Intervalo: ${String(
-    maintIntervalDays ?? 'N/D'
-  )} días`;
+
+  const dateStr = formatDateEsMx(lastServiceDate);
+  if (lastServiceDate != null && maintIntervalDays != null) {
+    const days = daysOverdueFrom(lastServiceDate, maintIntervalDays);
+    if (days > 0) {
+      return `Último Mantenimiento: ${dateStr} · ${days} días vencido`;
+    }
+    const base =
+      lastServiceDate instanceof Date ? lastServiceDate : new Date(String(lastServiceDate));
+    const due = new Date(base);
+    due.setDate(due.getDate() + Number(maintIntervalDays));
+    return `Próximo Mantenimiento: ${formatDateEsMx(due)} · en ${Math.abs(days)} días`;
+  }
+
+  return `Último Mantenimiento: ${dateStr} · Intervalo: ${String(maintIntervalDays ?? 'N/D')} días`;
 }
 
 export default async function alertsRoutes(fastify: FastifyInstance): Promise<void> {
@@ -50,26 +107,38 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
     try {
       const alerts: Alert[] = [];
 
-      // 1. Maintenance overdue
+      // 1. Maintenance — vencidas y por vencer (90% forecast km, o ≤14 días del vencimiento)
       const [overdueRows] = await db.execute<RowDataPacket[]>(
         `SELECT id, status, odometer, nextServiceReading_forecast,
                 lastServiceDate, maintIntervalDays
          FROM fleet_units
          WHERE status != 'Descontinuada'
            AND (
-             odometer >= nextServiceReading_forecast
+             (nextServiceReading_forecast IS NOT NULL
+              AND odometer >= nextServiceReading_forecast * 0.9)
              OR (lastServiceDate IS NOT NULL
-                 AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY) < CURDATE())
+                 AND maintIntervalDays IS NOT NULL
+                 AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
+                     <= DATE_ADD(CURDATE(), INTERVAL 14 DAY))
            )
          LIMIT 50`
       );
 
       overdueRows.forEach((row) => {
+        const severity = computeOverdueSeverity(
+          row.odometer,
+          row.nextServiceReading_forecast,
+          row.lastServiceDate,
+          row.maintIntervalDays
+        );
         alerts.push({
           id: `MAINT_OVERDUE_${row.id}`,
           type: 'MAINTENANCE_OVERDUE',
-          severity: 'HIGH',
-          title: `Mantenimiento vencido — ${row.id}`,
+          severity,
+          title:
+            severity === 'LOW'
+              ? `Mantenimiento próximo — ${row.id}`
+              : `Mantenimiento vencido — ${row.id}`,
           description: buildOverdueDescription(
             row.odometer,
             row.nextServiceReading_forecast,
