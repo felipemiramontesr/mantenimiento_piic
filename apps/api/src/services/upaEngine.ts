@@ -216,14 +216,9 @@ const TRIAGE_MINING: Task[] = [
 // ============================================================================
 const MINOR_SERVICE_BASE: Task[] = [
   {
-    id: 'minor_oil_drain',
+    id: 'minor_oil_change',
     stage: 'minor_service',
-    description: 'Drenado de aceite viejo de motor',
-  },
-  {
-    id: 'minor_oil_fill',
-    stage: 'minor_service',
-    description: 'Llenado de aceite nuevo de motor al nivel especificado',
+    description: 'Cambio de aceite de motor (drenado + llenado al nivel especificado)',
   },
   {
     id: 'minor_oil_filter',

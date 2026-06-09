@@ -377,28 +377,27 @@ describe('getTriageTasks — fleet_type determines mining tasks', () => {
 // PHASE 6 — Stage 2 Minor Service: fuel type branching
 // ─────────────────────────────────────────────────────────────────────────────
 describe('getMinorServiceTasks — fuel type determines filter task', () => {
-  it('gasoline: 6 tasks including cabin filter, not water separator', () => {
+  it('gasoline: 5 tasks including cabin filter, not water separator', () => {
     const tasks = getMinorServiceTasks('gasoline');
     const ids = tasks.map((t) => t.id);
-    expect(tasks).toHaveLength(6);
+    expect(tasks).toHaveLength(5);
     expect(ids).toContain('minor_cabin_filter');
     expect(ids).not.toContain('minor_water_separator');
   });
 
-  it('diesel: 6 tasks including water separator, not cabin filter', () => {
+  it('diesel: 5 tasks including water separator, not cabin filter', () => {
     const tasks = getMinorServiceTasks('diesel');
     const ids = tasks.map((t) => t.id);
-    expect(tasks).toHaveLength(6);
+    expect(tasks).toHaveLength(5);
     expect(ids).toContain('minor_water_separator');
     expect(ids).not.toContain('minor_cabin_filter');
   });
 
-  it('both fuel types share the same 5 base tasks', () => {
+  it('both fuel types share the same 4 base tasks', () => {
     const gasoline = getMinorServiceTasks('gasoline').map((t) => t.id);
     const diesel = getMinorServiceTasks('diesel').map((t) => t.id);
     const shared = [
-      'minor_oil_drain',
-      'minor_oil_fill',
+      'minor_oil_change',
       'minor_oil_filter',
       'minor_air_filter',
       'minor_fuel_filter',
