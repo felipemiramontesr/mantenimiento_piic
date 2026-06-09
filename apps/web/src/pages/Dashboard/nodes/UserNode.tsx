@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { User, Shield, Map, ExternalLink } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { User, Shield, Map, ExternalLink, ChevronLeft } from 'lucide-react';
 import api from '../../../api/client';
 import { useSovereignLayout } from '../../../context/SovereignLayoutContext';
 import AT from '../../../styles/archonTypography';
@@ -9,7 +9,6 @@ import {
   SectionCard,
   NodeLoadingState,
   NodeErrorState,
-  NodeBackLink,
   formatDate,
   formatDateTime,
   MOVEMENT_STATUS_BADGE,
@@ -58,6 +57,7 @@ interface NodeData {
 const UserNode: React.FC = (): React.JSX.Element => {
   const { uuid } = useParams<{ uuid: string }>();
   const { setSectionData } = useSovereignLayout();
+  const navigate = useNavigate();
   const [node, setNode] = useState<NodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,9 +66,21 @@ const UserNode: React.FC = (): React.JSX.Element => {
   useEffect(() => {
     setSectionData(
       uuid ? uuid.slice(0, 8).toUpperCase() : 'Usuario',
-      'Perfil · Permisos · Actividad reciente'
+      'Perfil · Permisos · Actividad reciente',
+      null,
+      {
+        variant: 'emerald',
+        headerTitle: 'Administrar Personal',
+        HeaderIcon: ChevronLeft,
+        PayloadIcon: User,
+        actionTitle: 'Retorno',
+        description: 'Volver al directorio de personal',
+        buttonText: 'Personal',
+        isActive: false,
+        onClick: (): void => navigate('/dashboard/users'),
+      }
     );
-  }, [uuid, setSectionData]);
+  }, [uuid, setSectionData, navigate]);
 
   useEffect(() => {
     if (!uuid) return;
@@ -92,8 +104,6 @@ const UserNode: React.FC = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 pb-12">
-      <NodeBackLink to="/dashboard/users" label="Personal" />
-
       {/* Cabecera */}
       <div className="card-archon-sovereign !flex-row !items-center gap-6 !p-6">
         <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden bg-slate-50 border border-slate-100">
@@ -213,10 +223,6 @@ const UserNode: React.FC = (): React.JSX.Element => {
           </div>
         </SectionCard>
       )}
-
-      <div className="flex items-center pt-4 border-t border-slate-100">
-        <NodeBackLink to="/dashboard/users" label="Volver a Personal" />
-      </div>
     </div>
   );
 };

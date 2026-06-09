@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { AlertTriangle, Truck, Map, ExternalLink } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { AlertTriangle, Truck, Map, ExternalLink, ChevronLeft } from 'lucide-react';
 import api from '../../../api/client';
 import { useSovereignLayout } from '../../../context/SovereignLayoutContext';
 import AT from '../../../styles/archonTypography';
@@ -9,7 +9,6 @@ import {
   SectionCard,
   NodeLoadingState,
   NodeErrorState,
-  NodeBackLink,
   formatDate,
   formatDateTime,
   SEVERITY_BADGE,
@@ -56,6 +55,7 @@ const STATUS_BADGE: Record<string, string> = {
 const IncidentNode: React.FC = (): React.JSX.Element => {
   const { uuid } = useParams<{ uuid: string }>();
   const { setSectionData } = useSovereignLayout();
+  const navigate = useNavigate();
   const [incident, setIncident] = useState<IncidentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,9 +63,21 @@ const IncidentNode: React.FC = (): React.JSX.Element => {
   useEffect(() => {
     setSectionData(
       uuid ? uuid.slice(0, 8).toUpperCase() : 'Incidente',
-      'Detalle de incidente · Contexto de ruta · Unidad'
+      'Detalle de incidente · Contexto de ruta · Unidad',
+      null,
+      {
+        variant: 'emerald',
+        headerTitle: 'Incidentes',
+        HeaderIcon: ChevronLeft,
+        PayloadIcon: AlertTriangle,
+        actionTitle: 'Retorno',
+        description: 'Volver al registro de incidentes',
+        buttonText: 'Incidentes',
+        isActive: false,
+        onClick: (): void => navigate('/dashboard/incidents'),
+      }
     );
-  }, [uuid, setSectionData]);
+  }, [uuid, setSectionData, navigate]);
 
   useEffect(() => {
     if (!uuid) return;
@@ -86,8 +98,6 @@ const IncidentNode: React.FC = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 pb-12">
-      <NodeBackLink to="/dashboard/incidents" label="Incidentes" />
-
       {/* Cabecera */}
       <div className="card-archon-sovereign !p-6 flex flex-col gap-3">
         <div className="flex items-center gap-3 flex-wrap">
@@ -186,10 +196,6 @@ const IncidentNode: React.FC = (): React.JSX.Element => {
           />
         </SectionCard>
       )}
-
-      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-        <NodeBackLink to="/dashboard/incidents" label="Volver a Incidentes" />
-      </div>
     </div>
   );
 };

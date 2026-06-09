@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Wrench, Truck, CheckSquare, ExternalLink } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Wrench, Truck, CheckSquare, ExternalLink, ChevronLeft } from 'lucide-react';
 import api from '../../../api/client';
 import { useSovereignLayout } from '../../../context/SovereignLayoutContext';
 import ArchonDataTable, { ArchonTableHeader } from '../../../components/UI/ArchonDataTable';
@@ -10,7 +10,6 @@ import {
   SectionCard,
   NodeLoadingState,
   NodeErrorState,
-  NodeBackLink,
   formatMXN,
   formatDate,
   formatDateTime,
@@ -132,13 +131,29 @@ function TaskRow(t: TaskDetail): React.JSX.Element {
 const MaintenanceNode: React.FC = (): React.JSX.Element => {
   const { uuid } = useParams<{ uuid: string }>();
   const { setSectionData } = useSovereignLayout();
+  const navigate = useNavigate();
   const [node, setNode] = useState<NodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSectionData(uuid ?? 'Orden', 'Detalle de orden de mantenimiento · Tareas · Telemetría');
-  }, [uuid, setSectionData]);
+    setSectionData(
+      uuid ?? 'Orden',
+      'Detalle de orden de mantenimiento · Tareas · Telemetría',
+      null,
+      {
+        variant: 'emerald',
+        headerTitle: 'Administrar Mantenimientos',
+        HeaderIcon: ChevronLeft,
+        PayloadIcon: Wrench,
+        actionTitle: 'Retorno',
+        description: 'Volver al historial de mantenimiento',
+        buttonText: 'Mantenimiento',
+        isActive: false,
+        onClick: (): void => navigate('/dashboard/maintenance'),
+      }
+    );
+  }, [uuid, setSectionData, navigate]);
 
   useEffect(() => {
     if (!uuid) return;
@@ -163,8 +178,6 @@ const MaintenanceNode: React.FC = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 pb-12">
-      <NodeBackLink to="/dashboard/maintenance" label="Mantenimiento" />
-
       {/* ── Cabecera ── */}
       <div className="card-archon-sovereign !p-6 flex flex-col gap-3">
         <div className="flex items-center gap-3 flex-wrap">

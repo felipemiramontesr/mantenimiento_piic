@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Wrench,
   DollarSign,
@@ -11,6 +11,7 @@ import {
   FileText,
   Hash,
   ChevronLeft,
+  Truck,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -276,6 +277,7 @@ function MaintenanceRow(r: MaintenanceRecord): React.JSX.Element {
 const FleetUnitNode: React.FC = (): React.JSX.Element => {
   const { unitId } = useParams<{ unitId: string }>();
   const { setSectionData } = useSovereignLayout();
+  const navigate = useNavigate();
   const [node, setNode] = useState<NodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -283,9 +285,21 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
   useEffect(() => {
     setSectionData(
       unitId ?? 'Unidad',
-      'Perfil completo de activo · Mantenimiento · Finanzas · Cumplimiento'
+      'Perfil completo de activo · Mantenimiento · Finanzas · Cumplimiento',
+      null,
+      {
+        variant: 'emerald',
+        headerTitle: 'Administrar Unidades',
+        HeaderIcon: ChevronLeft,
+        PayloadIcon: Truck,
+        actionTitle: 'Retorno',
+        description: 'Volver al listado de flota',
+        buttonText: 'Flota',
+        isActive: false,
+        onClick: (): void => navigate('/dashboard/fleet'),
+      }
     );
-  }, [unitId, setSectionData]);
+  }, [unitId, setSectionData, navigate]);
 
   useEffect(() => {
     if (!unitId) return;
@@ -311,13 +325,6 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 pb-12">
-      <Link
-        to="/dashboard/fleet"
-        className="inline-flex items-center gap-1.5 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/40 hover:text-[#0f2a44] transition-colors w-fit"
-      >
-        <ChevronLeft size={13} /> Flota
-      </Link>
-
       <UnitHeader unit={unit} openIncidents={incidents.openCount} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -460,13 +467,7 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
         </SectionCard>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-        <Link
-          to="/dashboard/fleet"
-          className="inline-flex items-center gap-1.5 text-archon-sm font-black uppercase tracking-widest text-[#0f2a44]/30 hover:text-[#0f2a44] transition-colors"
-        >
-          <ChevronLeft size={13} /> Volver a Flota
-        </Link>
+      <div className="flex justify-end pt-4 border-t border-slate-100">
         <span className={AT.sectionDescription}>
           Última actualización: {formatDate(unit.updatedAt)}
         </span>

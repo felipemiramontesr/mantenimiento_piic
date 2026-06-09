@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Map, Truck, Fuel, AlertTriangle, ExternalLink } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Map, Truck, Fuel, AlertTriangle, ExternalLink, ChevronLeft } from 'lucide-react';
 import api from '../../../api/client';
 import { useSovereignLayout } from '../../../context/SovereignLayoutContext';
 import AT from '../../../styles/archonTypography';
@@ -9,7 +9,6 @@ import {
   SectionCard,
   NodeLoadingState,
   NodeErrorState,
-  NodeBackLink,
   formatMXN,
   formatDate,
   formatDateTime,
@@ -72,13 +71,24 @@ interface NodeData {
 const RouteNode: React.FC = (): React.JSX.Element => {
   const { uuid } = useParams<{ uuid: string }>();
   const { setSectionData } = useSovereignLayout();
+  const navigate = useNavigate();
   const [node, setNode] = useState<NodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSectionData(uuid ?? 'Ruta', 'Detalle de despacho · Telemetría · Incidentes');
-  }, [uuid, setSectionData]);
+    setSectionData(uuid ?? 'Ruta', 'Detalle de despacho · Telemetría · Incidentes', null, {
+      variant: 'emerald',
+      headerTitle: 'Administrar Rutas',
+      HeaderIcon: ChevronLeft,
+      PayloadIcon: Map,
+      actionTitle: 'Retorno',
+      description: 'Volver al registro de rutas',
+      buttonText: 'Rutas',
+      isActive: false,
+      onClick: (): void => navigate('/dashboard/routes'),
+    });
+  }, [uuid, setSectionData, navigate]);
 
   useEffect(() => {
     if (!uuid) return;
@@ -106,8 +116,6 @@ const RouteNode: React.FC = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700 pb-12">
-      <NodeBackLink to="/dashboard/routes" label="Rutas" />
-
       {/* Cabecera */}
       <div className="card-archon-sovereign !p-6 flex flex-col gap-3">
         <div className="flex items-center gap-3 flex-wrap">
@@ -230,8 +238,7 @@ const RouteNode: React.FC = (): React.JSX.Element => {
         </SectionCard>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-        <NodeBackLink to="/dashboard/routes" label="Volver a Rutas" />
+      <div className="flex justify-end pt-4 border-t border-slate-100">
         <span className={AT.sectionDescription}>Creado: {formatDateTime(route.created_at)}</span>
       </div>
     </div>
