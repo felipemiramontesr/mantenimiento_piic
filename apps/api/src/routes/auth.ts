@@ -430,15 +430,11 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       const { uuid } = request.params as { uuid: string };
       const [userRows] = await db.execute<RowDataPacket[]>(
-        `SELECT u.id, u.uuid, u.username, u.full_name, u.email, u.role_id,
-              u.employee_number, u.is_active, u.last_login, u.created_at,
-              u.profile_picture_url, u.department_id,
-              r.name AS role_name,
-              cat.label AS department_name
-       FROM users u
-       JOIN roles r ON u.role_id = r.id
-       LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
-       WHERE u.uuid = ?`,
+        `SELECT u.*, r.name AS role_name, cat.label AS department_name
+         FROM users u
+         JOIN roles r ON u.role_id = r.id
+         LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
+         WHERE u.uuid = ?`,
         [uuid]
       );
       if (userRows.length === 0)
