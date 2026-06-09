@@ -3,7 +3,6 @@ import {
   Wrench,
   AlertTriangle,
   Lock,
-  RefreshCw,
   ExternalLink,
   ShieldAlert,
   AlertCircle,
@@ -158,7 +157,7 @@ function AlertRow(alert: Alert): React.JSX.Element {
 }
 
 const AlertsPanel: React.FC = (): React.JSX.Element => {
-  const { alerts, isSyncing, refresh } = useAlerts();
+  const { alerts, isSyncing } = useAlerts();
   const { searchTerm, setSearchTerm, setSearchConfig, setSectionData } = useSovereignLayout();
 
   // 🛡️ Universal Search Protocol — Alertas
@@ -211,34 +210,23 @@ const AlertsPanel: React.FC = (): React.JSX.Element => {
       filtered.filter((a) => a.severity === sev).length;
 
     const headerSlot = (
-      <div className="flex flex-wrap md:flex-nowrap items-center justify-end gap-2 w-full">
+      <div className="flex items-stretch gap-2 w-full">
         {SEVERITY_CONFIG.map(
           ({ severity, icon: Icon, bg, border, iconClass, countClass, labelClass, label }) => (
             <div
               key={severity}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-[4px] border ${bg} ${border}`}
+              className={`flex-1 flex flex-col items-center justify-center gap-1.5 p-4 rounded-[4px] border ${bg} ${border}`}
             >
-              <Icon size={15} className={iconClass} strokeWidth={2.5} />
-              <div className="flex flex-col items-start leading-none gap-0.5">
-                <span className={`text-[20px] font-black tabular-nums leading-none ${countClass}`}>
-                  {countFor(severity)}
-                </span>
-                <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${labelClass}`}>
-                  {label}
-                </span>
-              </div>
+              <Icon size={18} className={iconClass} strokeWidth={2.5} />
+              <span className={`text-[24px] font-black tabular-nums leading-none ${countClass}`}>
+                {countFor(severity)}
+              </span>
+              <span className={`text-[9px] font-black uppercase tracking-[0.12em] ${labelClass}`}>
+                {label}
+              </span>
             </div>
           )
         )}
-        <button
-          onClick={(): void => {
-            refresh();
-          }}
-          className="flex items-center justify-center w-8 h-8 text-[#0f2a44]/25 hover:text-[#0f2a44]/60 bg-slate-50 hover:bg-slate-100 rounded-[4px] border border-slate-200 hover:border-slate-300 transition-all duration-300"
-          title="Actualizar alertas"
-        >
-          <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
-        </button>
       </div>
     );
 
@@ -249,7 +237,7 @@ const AlertsPanel: React.FC = (): React.JSX.Element => {
       null,
       headerSlot
     );
-  }, [filtered, isSyncing, refresh, setSectionData]);
+  }, [filtered, setSectionData]);
 
   return (
     <div className="flex flex-col gap-3 animate-in fade-in duration-500">
