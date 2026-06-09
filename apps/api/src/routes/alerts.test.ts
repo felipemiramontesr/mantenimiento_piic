@@ -11,12 +11,12 @@ describe('buildOverdueDescription', () => {
   it('does not produce "null" in output when nextServiceForecast is null', () => {
     const result = buildOverdueDescription(50000, null, '2025-01-01', 180);
     expect(result).not.toContain('null');
-    expect(result).toContain('Última revisión');
+    expect(result).toContain('Último Mantenimiento');
   });
 
   it('uses date description when odometer is below nextServiceForecast', () => {
     const result = buildOverdueDescription(30000, 45000, '2025-01-01', 180);
-    expect(result).toContain('Última revisión');
+    expect(result).toContain('Último Mantenimiento');
     expect(result).not.toContain('pronóstico');
   });
 
@@ -38,12 +38,12 @@ describe('buildOverdueDescription', () => {
     expect(result).not.toMatch(/Mon|Tue|Wed|Thu|Fri|Sat|Sun/);
     expect(result).not.toContain('GMT');
     expect(result).not.toContain('hora estándar');
-    expect(result).toContain('Última revisión');
+    expect(result).toContain('Último Mantenimiento');
   });
 
   it('formats ISO string date in Spanish locale', () => {
     const result = buildOverdueDescription(50000, null, '2025-12-01', 180);
     expect(result).not.toMatch(/Mon|Tue|Wed|Thu|Fri|Sat|Sun/);
-    expect(result).toContain('Última revisión');
+    expect(result).toContain('Último Mantenimiento');
   });
 });

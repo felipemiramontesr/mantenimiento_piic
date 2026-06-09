@@ -31,7 +31,7 @@ export function buildOverdueDescription(
   if (nextServiceForecast != null && odometer >= nextServiceForecast) {
     return `Odómetro ${odometer} km supera el pronóstico de ${nextServiceForecast} km`;
   }
-  return `Última revisión: ${formatDateEsMx(lastServiceDate)} · Intervalo: ${String(
+  return `Último Mantenimiento: ${formatDateEsMx(lastServiceDate)} · Intervalo: ${String(
     maintIntervalDays ?? 'N/D'
   )} días`;
 }
