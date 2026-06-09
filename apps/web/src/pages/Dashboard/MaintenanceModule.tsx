@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BarChart3, ClipboardList, Cpu, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { MaintenancePanel, MaintenanceLog } from '../../types/maintenance';
@@ -12,6 +13,7 @@ import { acceptMaintenance, rejectMaintenance } from '../../api/maintenance';
 
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
+  const [searchParams] = useSearchParams();
   const [activePanel, setActivePanel] = useState<MaintenancePanel>('FORECAST');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [completingLog, setCompletingLog] = useState<MaintenanceLog | null>(null);
@@ -27,6 +29,14 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
       }, 100);
     }
   };
+
+  useEffect(() => {
+    const unitId = searchParams.get('unitId');
+    if (unitId) {
+      setScheduleInitialUnit(unitId);
+      setActivePanel('SCHEDULE');
+    }
+  }, [searchParams]);
 
   const handleReturnToGrid = (): void => {
     setActivePanel('HISTORY');

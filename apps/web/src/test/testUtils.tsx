@@ -129,6 +129,32 @@ const renderWithProviders = (
   options?: Omit<RenderOptions, 'wrapper'>
 ): ReturnType<typeof render> => render(ui, { wrapper: AllTheProviders, ...options });
 
+const makeWrapper = (
+  initialRoute: string
+): (({ children }: { children: ReactNode }) => ReactElement) => {
+  const RouteWrapper = ({ children }: { children: ReactNode }): ReactElement => (
+    <MemoryRouter initialEntries={[initialRoute]}>
+      <AuthProvider>
+        <SovereignLayoutProvider>
+          <UserContext.Provider value={MockUserContext as any}>
+            <FleetContext.Provider value={MockFleetContext as any}>
+              {children}
+              <LayoutMetadataObserver />
+            </FleetContext.Provider>
+          </UserContext.Provider>
+        </SovereignLayoutProvider>
+      </AuthProvider>
+    </MemoryRouter>
+  );
+  return RouteWrapper;
+};
+
+const renderWithRoute = (
+  ui: ReactElement,
+  initialRoute: string,
+  options?: Omit<RenderOptions, 'wrapper'>
+): ReturnType<typeof render> => render(ui, { wrapper: makeWrapper(initialRoute), ...options });
+
 const renderHookWithProviders = <Result, Props>(
   renderCallback: (props: Props) => Result,
   options?: Omit<RenderHookOptions<Props>, 'wrapper'>
@@ -137,4 +163,4 @@ const renderHookWithProviders = <Result, Props>(
 
 // Re-export everything from RTL
 export * from '@testing-library/react';
-export { renderWithProviders as render, renderHookWithProviders as renderHook };
+export { renderWithProviders as render, renderHookWithProviders as renderHook, renderWithRoute };

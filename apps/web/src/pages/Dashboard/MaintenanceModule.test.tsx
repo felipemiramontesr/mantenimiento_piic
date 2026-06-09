@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { render, screen, fireEvent } from '../../test/testUtils';
+import { render, renderWithRoute, screen, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
 import MaintenanceModule from './MaintenanceModule';
 
@@ -264,6 +264,17 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     fireEvent.click(techCell.closest('tr') || techCell);
     // detailLog.unit_id is null → `?? ''` fallback covers line 86
     expect(await screen.findByTestId('layout-title')).toHaveTextContent('Detalle de Servicio');
+  });
+
+  it('?unitId query param → auto-opens SCHEDULE panel pre-selected for that unit', async () => {
+    server.use(
+      http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] }))
+    );
+    renderWithRoute(<MaintenanceModule />, '/?unitId=ASM-021');
+    expect(await screen.findByText('CONFIGURACIÓN')).toBeInTheDocument();
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent(
+      'Administrar Mantenimientos'
+    );
   });
 
   it('FORECAST → SCHEDULE transition via Programar button', async () => {

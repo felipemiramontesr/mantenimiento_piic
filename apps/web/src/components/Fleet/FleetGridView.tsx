@@ -368,15 +368,18 @@ const ServiceForecastCluster = ({
 
 const HealthStatusCluster = ({
   forecast,
+  unitId,
 }: {
   forecast: MaintenanceForecast | null;
+  unitId: string;
 }): React.JSX.Element => {
   const isOverdue = !!forecast?.isOverdue;
-  return (
+
+  const inner = (
     <div
       className={`flex flex-col items-center p-3.5 rounded-[4px] shadow-md transition-all duration-500 min-w-[110px] ${
         isOverdue
-          ? 'bg-red-500 scale-105 shadow-red-200'
+          ? 'bg-red-500 scale-105 shadow-red-200 cursor-pointer hover:bg-red-600'
           : 'bg-emerald-50 border border-emerald-100'
       }`}
     >
@@ -403,6 +406,8 @@ const HealthStatusCluster = ({
       </span>
     </div>
   );
+
+  return isOverdue ? <Link to={`/dashboard/maintenance?unitId=${unitId}`}>{inner}</Link> : inner;
 };
 
 // ============================================================================
@@ -518,7 +523,7 @@ const FleetUnitRow = React.memo(
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <HealthStatusCluster forecast={forecast} />
+          <HealthStatusCluster forecast={forecast} unitId={unit.id} />
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
