@@ -4,6 +4,10 @@ import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import RouteService from '../services/routeService';
 import requirePermission from '../middleware/requirePermission';
+import NotificationService, {
+  ArchonNotificationType,
+  ArchonNotificationPriority,
+} from '../services/notification.service';
 
 /**
  * 🔱 Archon Fleet Routes — CTI Architecture (V2)
@@ -364,6 +368,21 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           data.severity,
           data.evidenceImage
         );
+
+        // Notify transit supervisor (fire-and-forget)
+        NotificationService.dispatch({
+          permission: 'route:write',
+          type: ArchonNotificationType.SYSTEM,
+          priority:
+            data.severity === 'CRITICAL'
+              ? ArchonNotificationPriority.CRITICAL
+              : ArchonNotificationPriority.HIGH,
+          title: 'Incidencia reportada',
+          message: `Incidencia ${data.severity} reportada en ruta ${uuid}: ${data.category}.`,
+          metadata: { uuid, category: data.category, severity: data.severity },
+        }).catch(() => {
+          // Notification failure is non-fatal per zero-noise policy
+        });
 
         return reply.code(201).send({
           success: true,

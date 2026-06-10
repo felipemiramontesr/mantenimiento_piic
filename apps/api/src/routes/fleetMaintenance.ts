@@ -788,6 +788,18 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
               // Notification failure is non-fatal per zero-noise policy
             });
 
+          // Notify maintenance supervisor of new OPEN order (fire-and-forget)
+          NotificationService.dispatch({
+            permission: 'maint:write',
+            type: ArchonNotificationType.MAINTENANCE_ALERT,
+            priority: ArchonNotificationPriority.MEDIUM,
+            title: 'Nueva orden de mantenimiento creada',
+            message: `Nueva orden OPEN creada para unidad #${data.unitId}. Pendiente de aceptación por técnico.`,
+            metadata: { uuid: logUuid, unitId: data.unitId },
+          }).catch(() => {
+            // Notification failure is non-fatal per zero-noise policy
+          });
+
           return reply.code(201).send({
             success: true,
             message: 'Maintenance order created. Awaiting technician acceptance.',
@@ -928,6 +940,29 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         );
 
         await connection.commit();
+
+        // Notify supervisors: unit back to Disponible (fire-and-forget)
+        NotificationService.dispatch({
+          permission: 'maint:write',
+          type: ArchonNotificationType.MAINTENANCE_ALERT,
+          priority: ArchonNotificationPriority.HIGH,
+          title: 'Unidad lista para operación',
+          message: `Orden ${uuid} completada. Unidad #${unitId} liberada a Disponible.`,
+          metadata: { uuid, unitId },
+        }).catch(() => {
+          // Notification failure is non-fatal per zero-noise policy
+        });
+        NotificationService.dispatch({
+          permission: 'fleet:write',
+          type: ArchonNotificationType.MAINTENANCE_ALERT,
+          priority: ArchonNotificationPriority.HIGH,
+          title: 'Unidad lista para operación',
+          message: `Orden ${uuid} completada. Unidad #${unitId} liberada a Disponible.`,
+          metadata: { uuid, unitId },
+        }).catch(() => {
+          // Notification failure is non-fatal per zero-noise policy
+        });
+
         return reply.send({
           success: true,
           message: 'Maintenance completed. Unit released to Disponible.',

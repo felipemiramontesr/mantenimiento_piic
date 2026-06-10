@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
 import RouteService from '../services/routeService';
+import NotificationService from '../services/notification.service';
 
 // 🔱 Nucleus Mocks
 vi.mock('../services/db', () => ({
@@ -20,6 +21,12 @@ vi.mock('../services/routeService', () => ({
     getIncidents: vi.fn(),
     getAllIncidents: vi.fn(),
   },
+}));
+
+vi.mock('../services/notification.service', () => ({
+  default: { dispatch: vi.fn().mockResolvedValue(undefined) },
+  ArchonNotificationType: { MAINTENANCE_ALERT: 'MAINTENANCE_ALERT', SYSTEM: 'SYSTEM' },
+  ArchonNotificationPriority: { HIGH: 'HIGH', MEDIUM: 'MEDIUM', CRITICAL: 'CRITICAL' },
 }));
 
 describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
@@ -296,6 +303,50 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
 
       expect(response.statusCode).toBe(400);
+    });
+
+    it('POST /v1/routes/:uuid/incidents — dispatch CRITICAL when severity=CRITICAL', async (): Promise<void> => {
+      (RouteService.reportIncident as Mock).mockResolvedValue(undefined);
+
+      await app.inject({
+        method: 'POST',
+        url: '/v1/routes/UUID-123/incidents',
+        payload: { category: 'SINIESTRO', description: 'Accidente grave', severity: 'CRITICAL' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledWith(
+        expect.objectContaining({ permission: 'route:write', priority: 'CRITICAL' })
+      );
+    });
+
+    it('POST /v1/routes/:uuid/incidents — dispatch HIGH when severity=HIGH', async (): Promise<void> => {
+      (RouteService.reportIncident as Mock).mockResolvedValue(undefined);
+
+      await app.inject({
+        method: 'POST',
+        url: '/v1/routes/UUID-123/incidents',
+        payload: { category: 'MECANICA', description: 'Falla de frenos', severity: 'HIGH' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledWith(
+        expect.objectContaining({ permission: 'route:write', priority: 'HIGH' })
+      );
+    });
+
+    it('POST /v1/routes/:uuid/incidents — HTTP 201 even if dispatch throws', async (): Promise<void> => {
+      (RouteService.reportIncident as Mock).mockResolvedValue(undefined);
+      vi.mocked(NotificationService.dispatch).mockRejectedValue(new Error('FCM down'));
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/routes/UUID-123/incidents',
+        payload: { category: 'OPERATIVA', description: 'Falla leve', severity: 'LOW' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(201);
     });
   });
 });
