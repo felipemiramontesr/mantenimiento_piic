@@ -443,7 +443,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         [id]
       );
       if (userRows.length === 0)
-        return reply.code(404).send({ success: false, message: 'Usuario no encontrado' });
+        return reply
+          .code(404)
+          .send({ success: false, code: 'NOT_FOUND', message: 'Usuario no encontrado' });
 
       const user = userRows[0];
 
@@ -477,7 +479,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       });
     } catch (error) {
       fastify.log.error(error);
-      return reply.code(500).send({ success: false, message: 'Error al cargar perfil' });
+      return reply
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al cargar perfil' });
     }
   });
 

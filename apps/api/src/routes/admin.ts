@@ -3,18 +3,16 @@ import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
 
-const OMNIPOTENT_USERNAMES = ['archon', 'greyman', 'grayman'];
-
-function isOmnipotent(permissions: string[], username: string): boolean {
-  return permissions.includes('*') && OMNIPOTENT_USERNAMES.includes(username.toLowerCase());
+function canAccessAdmin(permissions: string[]): boolean {
+  return permissions.includes('*') || permissions.includes('system:manage_roles');
 }
 
 export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
-      const { permissions, username } = request.user as { permissions: string[]; username: string };
-      if (!isOmnipotent(permissions, username)) {
+      const { permissions } = request.user as { permissions: string[] };
+      if (!canAccessAdmin(permissions)) {
         reply
           .code(403)
           .send({ success: false, code: 'FORBIDDEN', message: 'Acceso restringido a GrayMan' });
@@ -94,13 +92,11 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
     });
     const parsed = schema.safeParse(request.body);
     if (!parsed.success)
-      return reply
-        .code(400)
-        .send({
-          success: false,
-          code: 'VALIDATION_ERROR',
-          message: parsed.error.issues[0].message,
-        });
+      return reply.code(400).send({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: parsed.error.issues[0].message,
+      });
 
     const { name, description } = parsed.data;
     try {
@@ -142,13 +138,11 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
 
     const parsed = schema.safeParse(request.body);
     if (!parsed.success)
-      return reply
-        .code(400)
-        .send({
-          success: false,
-          code: 'VALIDATION_ERROR',
-          message: parsed.error.issues[0].message,
-        });
+      return reply.code(400).send({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: parsed.error.issues[0].message,
+      });
 
     const { name, description } = parsed.data;
     if (!name && description === undefined)
@@ -191,13 +185,11 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
     const { roleId } = request.params as { roleId: string };
     const parsedId = parseInt(roleId, 10);
     if (Number.isNaN(parsedId) || parsedId <= 0)
-      return reply
-        .code(400)
-        .send({
-          success: false,
-          code: 'VALIDATION_ERROR',
-          message: 'roleId inválido — no se puede eliminar el rol Archon (id=0)',
-        });
+      return reply.code(400).send({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: 'roleId inválido — no se puede eliminar el rol Archon (id=0)',
+      });
 
     try {
       const [roleCheck] = await db.execute<RowDataPacket[]>('SELECT id FROM roles WHERE id = ?', [
@@ -213,13 +205,11 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
         [parsedId]
       );
       if ((usersWithRole[0].cnt as number) > 0)
-        return reply
-          .code(409)
-          .send({
-            success: false,
-            code: 'CONFLICT',
-            message: 'No se puede eliminar un rol con usuarios asignados',
-          });
+        return reply.code(409).send({
+          success: false,
+          code: 'CONFLICT',
+          message: 'No se puede eliminar un rol con usuarios asignados',
+        });
 
       await db.execute('DELETE FROM roles WHERE id = ?', [parsedId]);
       return reply.send({ success: true });

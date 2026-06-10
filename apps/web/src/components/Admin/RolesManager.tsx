@@ -137,7 +137,9 @@ const RolesManager: React.FC = (): React.ReactElement => {
               <th className="text-left py-2.5 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50">
                 Descripción
               </th>
-              <th className="py-2.5 px-4 w-24" />
+              <th className="text-left py-2.5 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 w-24">
+                ACCIONES
+              </th>
             </tr>
           </thead>
           <tbody>
