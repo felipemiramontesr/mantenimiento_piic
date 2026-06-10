@@ -47,6 +47,8 @@ describe('authIntegration.test', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    // Restore default after reset — login now makes 2 extra db.execute calls (user_roles + perms)
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
     (argon2.verify as Mock).mockResolvedValue(true);
     (argon2.hash as Mock).mockResolvedValue('hash_value');
   });
@@ -111,6 +113,8 @@ describe('authIntegration.test', () => {
         ],
         undefined,
       ])
+      // user_roles query (V.124) — empty → falls back to roleId for permission resolution
+      .mockResolvedValueOnce([[], undefined])
       // permissions query for non-master role
       .mockResolvedValueOnce([[{ slug: 'fleet:view' }, { slug: 'maint:view' }], undefined]);
     const r2 = await app.inject({
