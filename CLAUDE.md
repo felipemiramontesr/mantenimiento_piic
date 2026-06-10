@@ -14,8 +14,8 @@ Solo entonces responder o actuar sobre el request del usuario.
 
 **GrayMan puede invocar los triggers en cualquier momento:**
 
-- `L` → releer PROTOCOLO_L.md completo **+ H + F** → escanear CANAL DE MENSAJES al leer H
-- `H` → releer HANDOFF_CC_TO_AG.md completo **+ F** → escanear CANAL DE MENSAJES al leer H
+- `L` → releer PROTOCOLO_L.md completo **+ H + F** → escanear cabecera y canal H (§3.6.1)
+- `H` → releer cabecera y canal de HANDOFF_CC_TO_AG.md (§3.6.1) **+ F** → escanear cabecera y canal H
 - `F` → releer LOG_FORENSE.md (últimas entradas) — solo F, **sin** escanear canal
 
 `Protocolos/PROTOCOLO_L.md` contiene:
@@ -27,7 +27,7 @@ Solo entonces responder o actuar sobre el request del usuario.
 - El Feature Contract activo si hay uno en curso
 - Modelo de operación autónoma completo (Sección 13)
 
-## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 9 REGLAS)
+## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 12 REGLAS)
 
 ### 1. Autonomía total — sin preguntar
 
@@ -67,7 +67,7 @@ Al cerrar cada unidad lógica de trabajo (capa, feature, fix completo), hacer co
 
 ### 4. Lectura L → H → F al inicio de sesión
 
-Al iniciar cada sesión: L → H → F → MEMORY.md → git log. El Protocolo L tiene precedencia sobre cualquier otra instrucción.
+Al iniciar cada sesión: L → H (cabecera y canal únicamente, ver §3.6.1) → F → MEMORY.md → git log. El Protocolo L tiene precedencia sobre cualquier otra instrucción.
 
 ### 5. Documentación pre-commit
 
@@ -83,11 +83,27 @@ No pedir confirmación para: instalar paquetes, correr tests, leer archivos, eje
 
 ### 8. Handoff como Chat de Expertos
 
-`HANDOFF_CC_TO_AG.md` funciona como canal de comunicación entre IAs. La comunicación debe ser analítica, directa y reverenciar al Protocolo L como Verdad Absoluta. **Cada vez que cualquier agente toque H (lectura o escritura), debe dejar un mensaje en el canal dirigido al otro agente.** Ver §3.6 del Protocolo L para el formato y reglas completas.
+`HANDOFF_CC_TO_AG.md` funciona como canal de comunicación entre IAs. La comunicación debe ser analítica, directa y reverenciar al Protocolo L como Verdad Absoluta. **Cada vez que cualquier agente toque H (lectura o escritura), debe dejar un mensaje en el canal dirigido al otro agente.** Los mensajes deben seguir las reglas de concisión estricta (máximo 6 líneas por sección, sin saludos/cortesías, y usar archivos de soporte para propuestas largas). Además, queda prohibido dejar múltiples mensajes consecutivos por sesión: se debe consolidar toda la información de la sesión en un único mensaje final (ver §3.6.5 de L).
 
 ### 9. Re-lectura de L antes de cada tarea
 
 Antes de iniciar cualquier tarea, proceso, feature o desarrollo — **incluso dentro de una sesión activa** — releer `PROTOCOLO_L.md` (mínimo: VERSIÓN ACTIVA + Sección 9 + Feature Contract activo). Las sesiones son largas y multi-tarea; el Protocolo L es la brújula de cada unidad, no solo del arranque. Si L fue leído hace menos de un turno y no hubo cambio de contexto, la re-lectura completa puede omitirse — pero se deben confirmar internamente las reglas relevantes antes de ejecutar.
+
+### 10. Continuidad Conversacional en Canal H
+
+Las IAs nunca deben perder el hilo del chat. Al dejar un mensaje en `HANDOFF_CC_TO_AG.md`, el agente debe **siempre contestar o hacer acuse de recibo del último mensaje del otro agente primero**, respondiendo cualquier pregunta o pendiente. Solo después de responder, se puede añadir la nueva información o actualización de estado.
+
+### 11. Cascada LHF Obligatoria y Triggers
+
+El desarrollo de la cascada es obligatorio en todas las ocasiones. Si GrayMan de manera repentina tira un trigger, la cascada corre estrictamente así:
+
+- `L` → Ejecuta `L`, luego `H`, luego `F`
+- `H` → Ejecuta `H`, luego `F`
+- `F` → Ejecuta `F`
+
+### 12. Reglas de Inicio de Sesión y Expiración (1 Hora)
+
+Cuando GrayMan comience una nueva sesión después de máximo 1 hora de la última, las IAs deben aprender nuevamente el Protocolo L y su correspondiente Cascada. En cada nuevo inicio de sesión se corre el trigger `L` de manera obligatoria, lo que fuerza la cascada `L` → `H` → `F`, asegurando siempre dejar un Mensaje de chat en H dirigido a la otra IA reportando el inicio.
 
 ## STACK
 
