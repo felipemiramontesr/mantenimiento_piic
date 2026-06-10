@@ -65,7 +65,7 @@ const NavItem: React.FC<NavItemProps> = ({
       tabIndex={0}
       className={`
         nav-item-pro cursor-pointer group flex items-center transition-all duration-200 rounded-[4px] my-1
-        ${isCollapsed ? 'justify-center h-[52px]' : 'justify-start py-4 px-4 gap-3'}
+        ${isCollapsed ? 'justify-center py-4' : 'justify-start py-4 px-4 gap-3'}
         ${
           active
             ? 'border-l-[3px] border-pinnacle-yellow bg-pinnacle-yellow/5'
@@ -75,7 +75,7 @@ const NavItem: React.FC<NavItemProps> = ({
       title={isCollapsed ? label : ''}
       data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <div className="flex flex-col items-center justify-center gap-0.5">
+      <div className="flex flex-col items-center gap-0.5">
         <div
           className={`${
             active
