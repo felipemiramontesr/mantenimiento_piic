@@ -780,7 +780,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
                   priority: ArchonNotificationPriority.HIGH,
                   title: 'Nueva Orden de Servicio Asignada',
                   message: `Se te ha asignado una orden de mantenimiento para la unidad ${data.unitId}. Acepta o rechaza desde el módulo de Mantenimiento.`,
-                  metadata: { uuid: logUuid, unitId: data.unitId },
+                  metadata: { uuid: logUuid, unitId: data.unitId, actionRequired: true },
                 });
               }
               return Promise.resolve();
