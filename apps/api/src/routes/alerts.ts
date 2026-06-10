@@ -102,6 +102,51 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
     }
   });
 
+  // GET /v1/alerts/count
+  fastify.get('/alerts/count', async (_request, reply) => {
+    try {
+      const [overdueRows] = await db.execute<RowDataPacket[]>(
+        `SELECT COUNT(*) as overdueCount
+         FROM fleet_units
+         WHERE status != 'Descontinuada'
+           AND (
+             (nextServiceReading_forecast IS NOT NULL
+              AND odometer >= nextServiceReading_forecast * 0.9)
+             OR (lastServiceDate IS NOT NULL
+                 AND maintIntervalDays IS NOT NULL
+                 AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
+                     <= DATE_ADD(CURDATE(), INTERVAL 14 DAY))
+           )`
+      );
+      const [incidentRows] = await db.execute<RowDataPacket[]>(
+        `SELECT COUNT(*) as incidentCount FROM route_incidents WHERE status = 'OPEN'`
+      );
+      const [criticalRows] = await db.execute<RowDataPacket[]>(
+        `SELECT COUNT(*) as criticalCount
+         FROM fleet_movements
+         WHERE movement_type = 'MAINTENANCE'
+           AND status = 'ACTIVE'
+           AND TIMESTAMPDIFF(HOUR, start_at, NOW()) > 48`
+      );
+
+      const total =
+        Number(overdueRows[0].overdueCount) +
+        Number(incidentRows[0].incidentCount) +
+        Number(criticalRows[0].criticalCount);
+
+      return reply.send({ success: true, count: total });
+    } catch (error) {
+      fastify.log.error({ err: (error as Error).message }, 'Alerts count fetch error');
+      return reply
+        .code(500)
+        .send({
+          success: false,
+          code: 'INTERNAL_ERROR',
+          message: 'Error al obtener conteo de alertas',
+        });
+    }
+  });
+
   // GET /v1/alerts
   fastify.get('/alerts', async (_request, reply) => {
     try {

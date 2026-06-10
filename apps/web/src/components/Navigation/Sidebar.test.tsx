@@ -10,6 +10,11 @@ const usePermissionsMock = vi.hoisted(() => vi.fn());
 const setIsMobileMenuOpenMock = vi.hoisted(() => vi.fn());
 const useSovereignLayoutMock = vi.hoisted(() => vi.fn());
 const mockLocation = vi.hoisted(() => ({ pathname: '/dashboard/fleet' }));
+const useAlertsCountMock = vi.hoisted(() => vi.fn());
+
+vi.mock('../../hooks/useAlertsCount', () => ({
+  default: useAlertsCountMock,
+}));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
@@ -58,6 +63,7 @@ describe('Sidebar Component (Archon Core)', () => {
     usePermissionsMock.mockReturnValue(defaultPermissions);
     useAuthMock.mockReturnValue(defaultAuth);
     useSovereignLayoutMock.mockReturnValue(defaultLayout);
+    useAlertsCountMock.mockReturnValue({ count: 0, isLoading: false });
   });
 
   it('renders all navigation items properly and avoids redundancy', () => {
@@ -348,5 +354,35 @@ describe('Sidebar Component (Archon Core)', () => {
     const img = screen.getByAltText('Profile') as HTMLImageElement;
     // The src should contain the path with a slash inserted before 'uploads'
     expect(img.getAttribute('src')).toContain('uploads/avatar.jpg');
+  });
+
+  it('shows numeric badge on Alertas when count > 0 (expanded)', () => {
+    useAlertsCountMock.mockReturnValue({ count: 5, isLoading: false });
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    expect(screen.getByTestId('alerts-badge').textContent).toBe('5');
+  });
+
+  it('hides badge when count is 0', () => {
+    useAlertsCountMock.mockReturnValue({ count: 0, isLoading: false });
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    expect(screen.queryByTestId('alerts-badge')).toBeNull();
+  });
+
+  it('shows 99+ cap when count exceeds 99', () => {
+    useAlertsCountMock.mockReturnValue({ count: 150, isLoading: false });
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+    expect(screen.getByTestId('alerts-badge').textContent).toBe('99+');
   });
 });

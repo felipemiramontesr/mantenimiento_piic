@@ -19,6 +19,7 @@ import usePermissions from '../../hooks/usePermissions';
 import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import api from '../../api/client';
+import useAlertsCount from '../../hooks/useAlertsCount';
 
 /**
  * 🔱 Archon Component: Sidebar
@@ -38,11 +39,21 @@ interface NavItemProps {
   path: string;
   active?: boolean;
   isCollapsed: boolean;
+  badgeCount?: number;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapsed }) => {
+const NavItem: React.FC<NavItemProps> = ({
+  icon,
+  label,
+  path,
+  active,
+  isCollapsed,
+  badgeCount,
+}) => {
   const navigate = useNavigate();
   const { setIsMobileMenuOpen } = useSovereignLayout();
+  const showBadge = badgeCount != null && badgeCount > 0;
+  const badgeLabel = badgeCount != null && badgeCount > 99 ? '99+' : String(badgeCount ?? 0);
 
   return (
     <div
@@ -64,14 +75,24 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
       title={isCollapsed ? label : ''}
       data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <div
-        className={`${
-          active
-            ? 'text-pinnacle-yellow'
-            : 'text-white/40 group-hover:text-white/70 transition-colors'
-        }`}
-      >
-        {icon}
+      <div className="relative flex-shrink-0">
+        <div
+          className={`${
+            active
+              ? 'text-pinnacle-yellow'
+              : 'text-white/40 group-hover:text-white/70 transition-colors'
+          }`}
+        >
+          {icon}
+        </div>
+        {showBadge && isCollapsed && (
+          <span
+            data-testid="alerts-badge"
+            className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+          >
+            {badgeLabel}
+          </span>
+        )}
       </div>
       {!isCollapsed && (
         <span
@@ -81,6 +102,14 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active, isCollapse
           `}
         >
           {label}
+        </span>
+      )}
+      {showBadge && !isCollapsed && (
+        <span
+          data-testid="alerts-badge"
+          className="ml-auto min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+        >
+          {badgeLabel}
         </span>
       )}
     </div>
@@ -93,6 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const { hasPermission, isOmnipotent } = usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
+  const { count: alertsCount } = useAlertsCount();
 
   const resolveImageUrl = (url: string | null | undefined): string | null => {
     if (!url) return null;
@@ -193,6 +223,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 path="/dashboard/alerts"
                 active={location.pathname === '/dashboard/alerts'}
                 isCollapsed={isCollapsed}
+                badgeCount={alertsCount}
               />
             )}
             <NavItem
