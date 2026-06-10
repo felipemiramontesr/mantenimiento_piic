@@ -88,7 +88,7 @@ const NavItem: React.FC<NavItemProps> = ({
         {showBadge && isCollapsed && (
           <span
             data-testid="alerts-badge"
-            className="absolute -bottom-1 -left-1 min-w-[16px] h-4 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center leading-none"
+            className="absolute -bottom-5 left-0 min-w-[16px] h-4 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center leading-none"
           >
             {badgeLabel}
           </span>
