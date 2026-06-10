@@ -186,6 +186,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         {/* 🗺️ BODY (80%) */}
         <main className="h-[80%] py-6 px-3 overflow-y-auto custom-scrollbar">
           <nav className="flex flex-col">
+            {hasPermission('maint:view') && (
+              <NavItem
+                icon={<Bell size={20} />}
+                label="Alertas"
+                path="/dashboard/alerts"
+                active={location.pathname === '/dashboard/alerts'}
+                isCollapsed={isCollapsed}
+              />
+            )}
             <NavItem
               icon={<LayoutDashboard size={20} />}
               label="Comando"
@@ -235,15 +244,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 label="Mantenimiento"
                 path="/dashboard/maintenance"
                 active={location.pathname === '/dashboard/maintenance'}
-                isCollapsed={isCollapsed}
-              />
-            )}
-            {hasPermission('maint:view') && (
-              <NavItem
-                icon={<Bell size={20} />}
-                label="Alertas"
-                path="/dashboard/alerts"
-                active={location.pathname === '/dashboard/alerts'}
                 isCollapsed={isCollapsed}
               />
             )}
