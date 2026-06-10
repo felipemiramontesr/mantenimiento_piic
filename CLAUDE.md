@@ -27,7 +27,7 @@ Solo entonces responder o actuar sobre el request del usuario.
 - El Feature Contract activo si hay uno en curso
 - Modelo de operación autónoma completo (Sección 13)
 
-## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 7 REGLAS)
+## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 9 REGLAS)
 
 ### 1. Autonomía total — sin preguntar
 
@@ -80,6 +80,14 @@ Cada edición de archivo se persiste inmediatamente via Edit/Write. No existe co
 ### 7. Sin fricción de comandos
 
 No pedir confirmación para: instalar paquetes, correr tests, leer archivos, ejecutar scripts, hacer git add/commit/push normales. La fricción se reserva exclusivamente para las 4 operaciones destructivas de la Regla 1.
+
+### 8. Handoff como Chat de Expertos
+
+`HANDOFF_CC_TO_AG.md` funciona como canal de comunicación entre IAs. La comunicación debe ser analítica, directa y reverenciar al Protocolo L como Verdad Absoluta. **Cada vez que cualquier agente toque H (lectura o escritura), debe dejar un mensaje en el canal dirigido al otro agente.** Ver §3.6 del Protocolo L para el formato y reglas completas.
+
+### 9. Re-lectura de L antes de cada tarea
+
+Antes de iniciar cualquier tarea, proceso, feature o desarrollo — **incluso dentro de una sesión activa** — releer `PROTOCOLO_L.md` (mínimo: VERSIÓN ACTIVA + Sección 9 + Feature Contract activo). Las sesiones son largas y multi-tarea; el Protocolo L es la brújula de cada unidad, no solo del arranque. Si L fue leído hace menos de un turno y no hubo cambio de contexto, la re-lectura completa puede omitirse — pero se deben confirmar internamente las reglas relevantes antes de ejecutar.
 
 ## STACK
 
