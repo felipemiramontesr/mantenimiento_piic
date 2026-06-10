@@ -11,6 +11,7 @@ import NotificationService, {
   ArchonNotificationPriority,
 } from '../services/notification.service';
 import { createWorkOrder } from '../services/workOrderService';
+import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -941,6 +942,11 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
 
         await connection.commit();
 
+        // Clear outbox so this order can't be re-alerted as "too long open/active"
+        purgeOutboxForOrder(uuid).catch(() => {
+          // Outbox purge failure is non-fatal per zero-noise policy
+        });
+
         // Notify supervisors: unit back to Disponible (fire-and-forget)
         NotificationService.dispatch({
           permission: 'maint:write',
@@ -1148,6 +1154,11 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         );
 
         await connection.commit();
+
+        // Clear outbox so CRON can re-alert if order stays OPEN after rejection
+        purgeOutboxForOrder(uuid).catch(() => {
+          // Outbox purge failure is non-fatal per zero-noise policy
+        });
 
         // Notify responsable asynchronously
         const createdByUserId = movement.created_by_user_id as number | null;

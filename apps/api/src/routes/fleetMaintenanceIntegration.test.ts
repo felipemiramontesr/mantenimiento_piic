@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
 import NotificationService from '../services/notification.service';
+import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
 
 /**
  * 🔱 Archon Integration Test: FleetMaintenance Routes — Security Guard
@@ -26,6 +27,11 @@ vi.mock('../services/notification.service', () => ({
   default: { dispatch: vi.fn().mockResolvedValue(undefined) },
   ArchonNotificationType: { MAINTENANCE_ALERT: 'MAINTENANCE_ALERT', SYSTEM: 'SYSTEM' },
   ArchonNotificationPriority: { HIGH: 'HIGH', MEDIUM: 'MEDIUM', CRITICAL: 'CRITICAL' },
+}));
+
+vi.mock('../services/notificationsOutboxService', () => ({
+  purgeOutboxForOrder: vi.fn().mockResolvedValue(undefined),
+  processPendingAlerts: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('FleetMaintenance Routes — Security (A01:2021)', () => {
@@ -529,5 +535,51 @@ describe('FleetMaintenance — Push Hooks Capa 2a (PATCH complete + POST OPEN)',
     expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledWith(
       expect.objectContaining({ permission: 'maint:write', priority: 'MEDIUM' })
     );
+  });
+
+  it('PATCH /complete — purgeOutboxForOrder called with correct uuid', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce(buildCompleteMock() as any);
+
+    await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/test-uuid/complete',
+      payload: { odometerAtService: 50000, cost: 500, details: [] },
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(vi.mocked(purgeOutboxForOrder)).toHaveBeenCalledWith('test-uuid');
+  });
+
+  it('PATCH /reject — purgeOutboxForOrder called with correct uuid', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce([
+          [
+            {
+              id: 7,
+              uuid: 'rej-uuid',
+              status: 'OPEN',
+              technician: 'Tech B',
+              unit_id: 'ASM-002',
+              created_by_user_id: 1,
+            },
+          ],
+          undefined,
+        ])
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]),
+      commit: vi.fn(),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+
+    await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/rej-uuid/reject',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(vi.mocked(purgeOutboxForOrder)).toHaveBeenCalledWith('rej-uuid');
   });
 });

@@ -152,9 +152,16 @@ if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
       // UPA Stage-5 timeout sweep — every hour on the hour
       const cron = await import('node-cron');
       const { checkAndTimeoutStage5Orders } = await import('./services/workOrderService');
+      const { processPendingAlerts } = await import('./services/notificationsOutboxService');
       cron.schedule('0 * * * *', () => {
         checkAndTimeoutStage5Orders().catch((err: unknown) => {
           server.log.error({ err }, 'UPA stage5 timeout sweep failed');
+        });
+      });
+      // Slow-state push alerts: OPEN orders > 2h, ACTIVE orders > 48h
+      cron.schedule('0 * * * *', () => {
+        processPendingAlerts().catch((err: unknown) => {
+          server.log.error({ err }, 'Outbox pending alerts sweep failed');
         });
       });
     } catch (err) {
