@@ -324,7 +324,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
               `}
                 >
-                  <span>Administración</span>
+                  <span>Panel de Control</span>
                 </div>
               </button>
 

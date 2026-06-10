@@ -40,28 +40,30 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     expect(result.current.hasAnyPermission(['fleet:read', 'fleet:write'])).toBe(false);
   });
 
-  it('should grant absolute power to Archon roleId 0', () => {
-    mockAuth({ id: '1', username: 'admin', roleId: 0, roleName: 'Admin', permissions: [] });
-    const { result } = renderHook(() => usePermissions());
-    expect(result.current.hasPermission('any:permission')).toBe(true);
-  });
-
-  it('should grant absolute power to Master (Archon) roleName', () => {
+  it('should grant absolute power to user with wildcard permissions', () => {
     mockAuth({
-      id: '2',
-      username: 'user',
-      roleId: 5,
+      id: '1',
+      username: 'admin',
+      roleId: 0,
       roleName: 'Master (Archon)',
-      permissions: [],
+      permissions: ['*'],
     });
     const { result } = renderHook(() => usePermissions());
     expect(result.current.hasPermission('any:permission')).toBe(true);
   });
 
-  it('should grant absolute power to greyman username', () => {
-    mockAuth({ id: '3', username: 'GrayMan', roleId: 5, roleName: 'Operador', permissions: [] });
+  it('should grant specific permission to user with system:manage_roles', () => {
+    mockAuth({
+      id: '2',
+      username: 'user',
+      roleId: 5,
+      roleName: 'Admin',
+      permissions: ['system:manage_roles', 'fleet:view'],
+    });
     const { result } = renderHook(() => usePermissions());
-    expect(result.current.hasPermission('any:permission')).toBe(true);
+    expect(result.current.hasPermission('system:manage_roles')).toBe(true);
+    expect(result.current.hasPermission('fleet:view')).toBe(true);
+    expect(result.current.hasPermission('financial:view')).toBe(false);
   });
 
   it('should check actual permissions for regular users', () => {
@@ -91,31 +93,31 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     expect(result.current.isOmnipotent()).toBe(false);
   });
 
-  it('isOmnipotent returns true for roleId 0', () => {
-    mockAuth({ id: '1', username: 'admin', roleId: 0, roleName: 'Admin', permissions: [] });
-    const { result } = renderHook(() => usePermissions());
-    expect(result.current.isOmnipotent()).toBe(true);
-  });
-
-  it('isOmnipotent returns true for Master (Archon) roleName', () => {
+  it('isOmnipotent returns true for wildcard permissions', () => {
     mockAuth({
-      id: '2',
-      username: 'user',
-      roleId: 5,
+      id: '1',
+      username: 'admin',
+      roleId: 0,
       roleName: 'Master (Archon)',
-      permissions: [],
+      permissions: ['*'],
     });
     const { result } = renderHook(() => usePermissions());
     expect(result.current.isOmnipotent()).toBe(true);
   });
 
-  it('isOmnipotent returns true for grayman username', () => {
-    mockAuth({ id: '3', username: 'grayman', roleId: 5, roleName: 'Operador', permissions: [] });
+  it('isOmnipotent returns true for system:manage_roles permission', () => {
+    mockAuth({
+      id: '2',
+      username: 'user',
+      roleId: 5,
+      roleName: 'Admin',
+      permissions: ['system:manage_roles'],
+    });
     const { result } = renderHook(() => usePermissions());
     expect(result.current.isOmnipotent()).toBe(true);
   });
 
-  it('isOmnipotent returns false for regular user', () => {
+  it('isOmnipotent returns false for regular user without manage_roles', () => {
     mockAuth({
       id: '4',
       username: 'operator',
@@ -134,7 +136,7 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
       username: 'grayman',
       roleId: 0,
       roleName: 'Master (Archon)',
-      permissions: [],
+      permissions: ['*'],
     };
     const limitedUser = {
       id: 'impersonated-3',
@@ -155,7 +157,7 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
       username: 'grayman',
       roleId: 0,
       roleName: 'Master (Archon)',
-      permissions: [],
+      permissions: ['*'],
     };
     const limitedUser = {
       id: 'impersonated-3',

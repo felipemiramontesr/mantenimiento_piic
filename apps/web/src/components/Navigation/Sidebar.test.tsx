@@ -80,7 +80,7 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Incidencias')).toBeDefined();
     expect(screen.getByText('Seguridad')).toBeDefined();
     expect(screen.getByText('Personal')).toBeDefined();
-    expect(screen.getByText('Administración')).toBeDefined();
+    expect(screen.getByText('Panel de Control')).toBeDefined();
   });
 
   it('navigates to dashboard items when clicking main nav items', () => {

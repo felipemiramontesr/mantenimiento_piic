@@ -5,12 +5,14 @@ import AdminModule from './AdminModule';
 
 import usePermissions from '../../hooks/usePermissions';
 
-// Mock the permissions matrix to avoid complex admin UI in unit tests
 vi.mock('../../components/Admin/RolePermissionsMatrix', () => ({
   default: (): React.JSX.Element => <div data-testid="permissions-matrix">Permissions Matrix</div>,
 }));
 
-// Mock usePermissions to control omnipotent check
+vi.mock('../../components/Admin/RolesManager', () => ({
+  default: (): React.JSX.Element => <div data-testid="roles-manager">Roles Manager</div>,
+}));
+
 vi.mock('../../hooks/usePermissions', () => ({
   default: vi.fn(),
 }));
@@ -26,18 +28,18 @@ describe('AdminModule', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the permissions matrix when user is omnipotent', async () => {
+  it('renders both cards when user has system:manage_roles', async () => {
     vi.mocked(usePermissions).mockReturnValue({
-      hasPermission: () => true,
+      hasPermission: (p: string) => p === 'system:manage_roles',
       hasAnyPermission: () => true,
       isOmnipotent: () => true,
     });
     render(<AdminModule />);
     await waitFor(() => expect(screen.getByTestId('permissions-matrix')).toBeInTheDocument());
-    expect(screen.getAllByText(/Roles y Permisos/i).length).toBeGreaterThan(0);
+    expect(screen.getByTestId('roles-manager')).toBeInTheDocument();
   });
 
-  it('renders empty fragment and redirects when user is not omnipotent', async () => {
+  it('redirects when user lacks system:manage_roles', async () => {
     vi.mocked(usePermissions).mockReturnValue({
       hasPermission: () => false,
       hasAnyPermission: () => false,
@@ -46,17 +48,38 @@ describe('AdminModule', () => {
     render(<AdminModule />);
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true }));
     expect(screen.queryByTestId('permissions-matrix')).toBeNull();
+    expect(screen.queryByTestId('roles-manager')).toBeNull();
   });
 
-  it('sets correct layout section data when omnipotent', async () => {
+  it('sets section title to Panel de Control', async () => {
     vi.mocked(usePermissions).mockReturnValue({
-      hasPermission: () => true,
+      hasPermission: (p: string) => p === 'system:manage_roles',
       hasAnyPermission: () => true,
       isOmnipotent: () => true,
     });
     render(<AdminModule />);
     await waitFor(() =>
-      expect(screen.getByTestId('layout-title')).toHaveTextContent('Administración')
+      expect(screen.getByTestId('layout-title')).toHaveTextContent('Panel de Control')
     );
+  });
+
+  it('renders Card 1 heading Gestión de Roles', async () => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: (p: string) => p === 'system:manage_roles',
+      hasAnyPermission: () => true,
+      isOmnipotent: () => true,
+    });
+    render(<AdminModule />);
+    await waitFor(() => expect(screen.getByText(/Gestión de Roles/i)).toBeInTheDocument());
+  });
+
+  it('renders Card 2 heading Matriz de Permisos', async () => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: (p: string) => p === 'system:manage_roles',
+      hasAnyPermission: () => true,
+      isOmnipotent: () => true,
+    });
+    render(<AdminModule />);
+    await waitFor(() => expect(screen.getByText(/Matriz de Permisos/i)).toBeInTheDocument());
   });
 });

@@ -131,20 +131,30 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           return reply.code(401).send({ error: 'L4' });
         }
         const mapped = mapUserResponse(user);
-        const isMaster = mapped.roleId === 0 || mapped.roleId === 1 || user.username === 'GrayMan';
+
+        // Multi-role: resolve permissions as union of all assigned roles
+        const [userRoleRows] = await db.execute<RowDataPacket[]>(
+          'SELECT role_id FROM user_roles WHERE user_id = ?',
+          [mapped.id]
+        );
+        const roleIds: number[] =
+          userRoleRows.length > 0 ? userRoleRows.map((r) => r.role_id as number) : [mapped.roleId]; // backward compat: fall back to users.role_id
+
         let permissions: string[];
-        if (isMaster) {
+        if (roleIds.includes(0)) {
           permissions = ['*'];
         } else {
+          const placeholders = roleIds.map(() => '?').join(',');
           const [permRows] = await db.execute<RowDataPacket[]>(
-            `SELECT p.slug
+            `SELECT DISTINCT p.slug
              FROM role_permissions rp
              JOIN permissions p ON p.id = rp.permission_id
-             WHERE rp.role_id = ?`,
-            [mapped.roleId]
+             WHERE rp.role_id IN (${placeholders})`,
+            roleIds
           );
           permissions = permRows.map((r) => r.slug as string);
         }
+
         const token = fastify.jwt.sign({
           id: user.id,
           username: user.username,
@@ -418,6 +428,59 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   });
 
   // GET /v1/auth/users/:uuid/node — Sovereign node: full user profile + permissions + recent activity
+  // GET /v1/auth/me — resolved user profile + capabilities (union of all assigned roles)
+  fastify.get('/me', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+      const { id } = request.user as { id: number };
+
+      const [userRows] = await db.execute<RowDataPacket[]>(
+        `SELECT u.*, r.name AS role_name, cat.label AS department_name
+         FROM users u
+         JOIN roles r ON u.role_id = r.id
+         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
+         WHERE u.id = ?`,
+        [id]
+      );
+      if (userRows.length === 0)
+        return reply.code(404).send({ success: false, message: 'Usuario no encontrado' });
+
+      const user = userRows[0];
+
+      const [userRoleRows] = await db.execute<RowDataPacket[]>(
+        'SELECT role_id FROM user_roles WHERE user_id = ?',
+        [id]
+      );
+      const roleIds: number[] =
+        userRoleRows.length > 0
+          ? userRoleRows.map((r) => r.role_id as number)
+          : [user.role_id as number];
+
+      let capabilities: string[];
+      if (roleIds.includes(0)) {
+        capabilities = ['*'];
+      } else {
+        const placeholders = roleIds.map(() => '?').join(',');
+        const [permRows] = await db.execute<RowDataPacket[]>(
+          `SELECT DISTINCT p.slug
+           FROM role_permissions rp
+           JOIN permissions p ON p.id = rp.permission_id
+           WHERE rp.role_id IN (${placeholders})`,
+          roleIds
+        );
+        capabilities = permRows.map((r) => r.slug as string);
+      }
+
+      return reply.send({
+        success: true,
+        data: { ...mapUserResponse(user), capabilities },
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ success: false, message: 'Error al cargar perfil' });
+    }
+  });
+
   fastify.get('/users/:uuid/node', async (request, reply) => {
     try {
       await request.jwtVerify();

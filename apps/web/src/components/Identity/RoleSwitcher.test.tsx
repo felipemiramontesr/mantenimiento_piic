@@ -32,7 +32,7 @@ const ADMIN_USER = {
   department: '',
   employeeNumber: '',
   is_active: true,
-  permissions: [],
+  permissions: ['*'],
 };
 
 const mockAuth = (
@@ -62,8 +62,20 @@ describe('RoleSwitcher', () => {
 
   it('renders null for non-omnipotent users', () => {
     mockAuth({
-      currentUser: { ...ADMIN_USER, roleId: 3, roleName: 'Operador', username: 'operator' },
-      effectiveUser: { ...ADMIN_USER, roleId: 3, roleName: 'Operador', username: 'operator' },
+      currentUser: {
+        ...ADMIN_USER,
+        roleId: 3,
+        roleName: 'Operador',
+        username: 'operator',
+        permissions: [],
+      },
+      effectiveUser: {
+        ...ADMIN_USER,
+        roleId: 3,
+        roleName: 'Operador',
+        username: 'operator',
+        permissions: [],
+      },
     });
     render(<RoleSwitcher />);
     expect(screen.queryByText('God Mode')).not.toBeInTheDocument();

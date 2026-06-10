@@ -71,25 +71,29 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // PUT /v1/admin/roles/:roleId/permissions
-  fastify.put('/admin/roles/:roleId/permissions', async (request, reply) => {
-    const schema = z.object({ permissions: z.array(z.string()).min(0) });
-    const { roleId } = request.params as { roleId: string };
-    const parsedRoleId = parseInt(roleId, 10);
-
-    if (Number.isNaN(parsedRoleId) || parsedRoleId <= 0) {
+  // GET /v1/admin/roles — list all roles (for Card 1 CRUD)
+  fastify.get('/admin/roles', async (_request, reply) => {
+    try {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT id, name, description FROM roles ORDER BY id'
+      );
+      return reply.send({ success: true, data: rows });
+    } catch (error) {
+      fastify.log.error({ err: (error as Error).message }, 'Admin get roles error');
       return reply
-        .code(400)
-        .send({
-          success: false,
-          code: 'VALIDATION_ERROR',
-          message: 'roleId inválido',
-          field: 'roleId',
-        });
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al obtener roles' });
     }
+  });
 
+  // POST /v1/admin/roles — create new role
+  fastify.post('/admin/roles', async (request, reply) => {
+    const schema = z.object({
+      name: z.string().min(2).max(64),
+      description: z.string().max(255).optional().default(''),
+    });
     const parsed = schema.safeParse(request.body);
-    if (!parsed.success) {
+    if (!parsed.success)
       return reply
         .code(400)
         .send({
@@ -97,6 +101,158 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
           code: 'VALIDATION_ERROR',
           message: parsed.error.issues[0].message,
         });
+
+    const { name, description } = parsed.data;
+    try {
+      const [existing] = await db.execute<RowDataPacket[]>('SELECT id FROM roles WHERE name = ?', [
+        name,
+      ]);
+      if (existing.length > 0)
+        return reply
+          .code(409)
+          .send({ success: false, code: 'CONFLICT', message: 'Ya existe un rol con ese nombre' });
+
+      const [result] = await db.execute<ResultSetHeader>(
+        'INSERT INTO roles (name, description) VALUES (?, ?)',
+        [name, description]
+      );
+      return reply
+        .code(201)
+        .send({ success: true, data: { id: result.insertId, name, description } });
+    } catch (error) {
+      fastify.log.error({ err: (error as Error).message }, 'Admin create role error');
+      return reply
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al crear rol' });
+    }
+  });
+
+  // PATCH /v1/admin/roles/:roleId — update role name/description
+  fastify.patch('/admin/roles/:roleId', async (request, reply) => {
+    const schema = z.object({
+      name: z.string().min(2).max(64).optional(),
+      description: z.string().max(255).optional(),
+    });
+    const { roleId } = request.params as { roleId: string };
+    const parsedId = parseInt(roleId, 10);
+    if (Number.isNaN(parsedId) || parsedId < 0)
+      return reply
+        .code(400)
+        .send({ success: false, code: 'VALIDATION_ERROR', message: 'roleId inválido' });
+
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success)
+      return reply
+        .code(400)
+        .send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: parsed.error.issues[0].message,
+        });
+
+    const { name, description } = parsed.data;
+    if (!name && description === undefined)
+      return reply
+        .code(400)
+        .send({ success: false, code: 'VALIDATION_ERROR', message: 'Nada que actualizar' });
+
+    try {
+      const [roleCheck] = await db.execute<RowDataPacket[]>('SELECT id FROM roles WHERE id = ?', [
+        parsedId,
+      ]);
+      if (roleCheck.length === 0)
+        return reply
+          .code(404)
+          .send({ success: false, code: 'NOT_FOUND', message: 'Rol no encontrado' });
+
+      const fields: string[] = [];
+      const values: (string | number)[] = [];
+      if (name) {
+        fields.push('name = ?');
+        values.push(name);
+      }
+      if (description !== undefined) {
+        fields.push('description = ?');
+        values.push(description);
+      }
+      values.push(parsedId);
+      await db.execute(`UPDATE roles SET ${fields.join(', ')} WHERE id = ?`, values);
+      return reply.send({ success: true });
+    } catch (error) {
+      fastify.log.error({ err: (error as Error).message }, 'Admin update role error');
+      return reply
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al actualizar rol' });
+    }
+  });
+
+  // DELETE /v1/admin/roles/:roleId — delete role (guard: no assigned users)
+  fastify.delete('/admin/roles/:roleId', async (request, reply) => {
+    const { roleId } = request.params as { roleId: string };
+    const parsedId = parseInt(roleId, 10);
+    if (Number.isNaN(parsedId) || parsedId <= 0)
+      return reply
+        .code(400)
+        .send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: 'roleId inválido — no se puede eliminar el rol Archon (id=0)',
+        });
+
+    try {
+      const [roleCheck] = await db.execute<RowDataPacket[]>('SELECT id FROM roles WHERE id = ?', [
+        parsedId,
+      ]);
+      if (roleCheck.length === 0)
+        return reply
+          .code(404)
+          .send({ success: false, code: 'NOT_FOUND', message: 'Rol no encontrado' });
+
+      const [usersWithRole] = await db.execute<RowDataPacket[]>(
+        'SELECT COUNT(*) as cnt FROM user_roles WHERE role_id = ?',
+        [parsedId]
+      );
+      if ((usersWithRole[0].cnt as number) > 0)
+        return reply
+          .code(409)
+          .send({
+            success: false,
+            code: 'CONFLICT',
+            message: 'No se puede eliminar un rol con usuarios asignados',
+          });
+
+      await db.execute('DELETE FROM roles WHERE id = ?', [parsedId]);
+      return reply.send({ success: true });
+    } catch (error) {
+      fastify.log.error({ err: (error as Error).message }, 'Admin delete role error');
+      return reply
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al eliminar rol' });
+    }
+  });
+
+  // PUT /v1/admin/roles/:roleId/permissions
+  fastify.put('/admin/roles/:roleId/permissions', async (request, reply) => {
+    const schema = z.object({ permissions: z.array(z.string()).min(0) });
+    const { roleId } = request.params as { roleId: string };
+    const parsedRoleId = parseInt(roleId, 10);
+
+    if (Number.isNaN(parsedRoleId) || parsedRoleId <= 0) {
+      return reply.code(400).send({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: 'roleId inválido',
+        field: 'roleId',
+      });
+    }
+
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: parsed.error.issues[0].message,
+      });
     }
 
     const { permissions } = parsed.data;

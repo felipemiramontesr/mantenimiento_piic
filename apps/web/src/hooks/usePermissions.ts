@@ -14,30 +14,19 @@ export default function usePermissions(): {
 
   const hasPermission = (permission: string): boolean => {
     if (!effectiveUser) return false;
-
-    if (
-      Number(effectiveUser.roleId) === 0 ||
-      effectiveUser.roleName === 'Master (Archon)' ||
-      ['archon', 'greyman', 'grayman'].includes(effectiveUser.username.toLowerCase())
-    ) {
-      return true;
-    }
-
+    if (effectiveUser.permissions?.includes('*')) return true;
     return effectiveUser.permissions?.includes(permission) || false;
   };
 
   const hasAnyPermission = (permissions: string[]): boolean =>
     permissions.some((p) => hasPermission(p));
 
-  // isOmnipotent always reads currentUser (not effectiveUser) so the
-  // God Mode switcher remains visible even while impersonating a limited role.
+  // isOmnipotent reads currentUser (not effectiveUser) so the God Mode switcher
+  // stays visible while impersonating a limited role. Delegates to system:manage_roles.
   const isOmnipotent = (): boolean => {
     if (!currentUser) return false;
-    return (
-      Number(currentUser.roleId) === 0 ||
-      currentUser.roleName === 'Master (Archon)' ||
-      ['archon', 'greyman', 'grayman'].includes(currentUser.username.toLowerCase())
-    );
+    if (currentUser.permissions?.includes('*')) return true;
+    return currentUser.permissions?.includes('system:manage_roles') ?? false;
   };
 
   return { hasPermission, hasAnyPermission, isOmnipotent };
