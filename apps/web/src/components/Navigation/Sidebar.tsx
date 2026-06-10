@@ -65,7 +65,7 @@ const NavItem: React.FC<NavItemProps> = ({
       tabIndex={0}
       className={`
         nav-item-pro cursor-pointer group flex items-center transition-all duration-200 rounded-[4px] my-1
-        ${isCollapsed ? 'justify-center py-4' : 'justify-start py-4 px-4 gap-3'}
+        ${isCollapsed ? 'justify-center h-[52px]' : 'justify-start py-4 px-4 gap-3'}
         ${
           active
             ? 'border-l-[3px] border-pinnacle-yellow bg-pinnacle-yellow/5'
@@ -75,7 +75,7 @@ const NavItem: React.FC<NavItemProps> = ({
       title={isCollapsed ? label : ''}
       data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <div className="relative flex-shrink-0">
+      <div className="flex flex-col items-center justify-center gap-0.5">
         <div
           className={`${
             active
@@ -88,7 +88,7 @@ const NavItem: React.FC<NavItemProps> = ({
         {showBadge && isCollapsed && (
           <span
             data-testid="alerts-badge"
-            className="absolute -bottom-5 left-0 min-w-[16px] h-4 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center leading-none"
+            className="min-w-[16px] h-4 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center leading-none"
           >
             {badgeLabel}
           </span>
@@ -107,7 +107,7 @@ const NavItem: React.FC<NavItemProps> = ({
       {showBadge && !isCollapsed && (
         <span
           data-testid="alerts-badge"
-          className="ml-auto min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
+          className="ml-auto min-w-[20px] h-5 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center"
         >
           {badgeLabel}
         </span>
