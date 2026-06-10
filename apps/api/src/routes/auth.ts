@@ -162,7 +162,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           roleName: mapped.roleName,
           permissions,
         });
-        return reply.send({ success: true, token, user: mapped });
+        return reply.send({ success: true, token, user: { ...mapped, permissions } });
       } catch (e) {
         fastify.log.error(e);
         return reply.code(500).send({ error: 'LOGIN_FAIL' });
