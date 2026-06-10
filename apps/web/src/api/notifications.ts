@@ -14,3 +14,14 @@ export async function getNotifications(): Promise<SystemNotification[]> {
 export async function markNotificationRead(id: number): Promise<void> {
   await api.patch(`/notifications/${id}/read`);
 }
+
+export async function registerPushToken(
+  token: string,
+  deviceType: 'web' | 'android' | 'ios' = 'web'
+): Promise<void> {
+  await api.post('/notifications/push-token', { token, deviceType });
+}
+
+export async function unregisterPushToken(token: string): Promise<void> {
+  await api.post('/notifications/push-token/unregister', { token });
+}

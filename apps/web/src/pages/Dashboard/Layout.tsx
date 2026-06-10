@@ -7,6 +7,7 @@ import SovereignFooter from '../../components/Navigation/SovereignFooter';
 import ArchonNetworkBanner from '../../components/Navigation/ArchonNetworkBanner';
 import { FleetProvider } from '../../context/FleetContext';
 import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
+import usePushNotifications from '../../hooks/usePushNotifications';
 
 /**
  * 🏛️ Archon Component: DashboardLayout
@@ -16,6 +17,7 @@ import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 
 const DashboardLayout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = React.useState(true);
+  usePushNotifications(true);
 
   return (
     <SovereignLayoutProvider>

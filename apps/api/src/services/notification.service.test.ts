@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import NotificationService, {
   ArchonNotificationType,
   ArchonNotificationPriority,
@@ -8,7 +8,7 @@ import db from './db';
 
 vi.mock('./db', () => ({
   default: {
-    execute: vi.fn().mockResolvedValue([{ insertId: 1 }]),
+    execute: vi.fn(),
   },
 }));
 
@@ -22,23 +22,70 @@ describe('NotificationService (Intelligence Orchestrator)', () => {
     metadata: { routeId: 101 },
   };
 
-  it('should successfully dispatch a notification through all channels', async () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(db.execute).mockResolvedValue([[{ insertId: 1 }], undefined] as any);
+  });
+
+  it('should successfully dispatch a notification through all channels to a single user', async () => {
     const persistSpy = vi.spyOn(NotificationService as any, 'persistToSystem');
     const emailSpy = vi.spyOn(NotificationService as any, 'sendEmail');
     const pushSpy = vi.spyOn(NotificationService as any, 'sendPush');
 
     await NotificationService.dispatch(mockPayload);
 
-    expect(persistSpy).toHaveBeenCalledWith(mockPayload);
+    expect(persistSpy).toHaveBeenCalledWith([1], mockPayload);
     expect(emailSpy).toHaveBeenCalled();
-    expect(pushSpy).toHaveBeenCalled();
+    expect(pushSpy).toHaveBeenCalledWith([1], mockPayload);
     expect(db.execute).toHaveBeenCalled();
+  });
+
+  it('should resolve users by permission and dispatch to all of them', async () => {
+    // Mock user resolution query to return user IDs 42 and 43
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ id: 42 }, { id: 43 }], undefined] as any) // resolve query
+      .mockResolvedValue([[{ insertId: 1 }], undefined] as any); // persist queries
+
+    const payloadWithPermission = {
+      permission: 'maint:view',
+      type: ArchonNotificationType.MAINTENANCE_ALERT,
+      title: 'Alerta de Mantenimiento',
+      message: 'Mantenimiento preventivo requerido.',
+    };
+
+    const persistSpy = vi.spyOn(NotificationService as any, 'persistToSystem');
+    await NotificationService.dispatch(payloadWithPermission);
+
+    expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('p.slug = ?'), ['maint:view']);
+    expect(persistSpy).toHaveBeenCalledWith([42, 43], payloadWithPermission);
+  });
+
+  it('should resolve users by role and dispatch to all of them', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ id: 10 }, { id: 20 }], undefined] as any) // resolve query
+      .mockResolvedValue([[{ insertId: 1 }], undefined] as any); // persist queries
+
+    const payloadWithRole = {
+      roleId: 2,
+      type: ArchonNotificationType.SYSTEM,
+      title: 'Mantenimiento Programado',
+      message: 'Revisión técnica de flota.',
+    };
+
+    const persistSpy = vi.spyOn(NotificationService as any, 'persistToSystem');
+    await NotificationService.dispatch(payloadWithRole);
+
+    expect(db.execute).toHaveBeenCalledWith(
+      expect.stringContaining('COALESCE(ur.role_id, u.role_id) = ?'),
+      [2]
+    );
+    expect(persistSpy).toHaveBeenCalledWith([10, 20], payloadWithRole);
   });
 
   it('should persist notification to system with default priority if not provided', async () => {
     const payloadNoPriority = { ...mockPayload, priority: undefined };
 
-    await (NotificationService as any).persistToSystem(payloadNoPriority);
+    await (NotificationService as any).persistToSystem([1], payloadNoPriority);
 
     expect(db.execute).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO system_notifications'),
@@ -49,7 +96,7 @@ describe('NotificationService (Intelligence Orchestrator)', () => {
   it('should handle metadata being null correctly during persistence', async () => {
     const payloadNoMeta = { ...mockPayload, metadata: undefined };
 
-    await (NotificationService as any).persistToSystem(payloadNoMeta);
+    await (NotificationService as any).persistToSystem([1], payloadNoMeta);
 
     expect(db.execute).toHaveBeenCalledWith(
       expect.stringContaining('VALUES (?, ?, ?, ?, ?, ?)'),
@@ -67,9 +114,22 @@ describe('NotificationService (Intelligence Orchestrator)', () => {
     expect(errorSpy).toHaveBeenCalled();
   });
 
-  it('should execute functional stubs (sendEmail, sendPush) for coverage', async () => {
-    // These methods currently return Promise<void> and do nothing
+  it('should execute functional stubs (sendEmail) for coverage', async () => {
     await expect((NotificationService as any).sendEmail()).resolves.toBeUndefined();
-    await expect((NotificationService as any).sendPush()).resolves.toBeUndefined();
+  });
+
+  it('should dry-run sendPush when FCM credentials are not configured', async () => {
+    const originalEnv = { ...process.env };
+    delete process.env.FCM_PROJECT_ID;
+    delete process.env.FCM_CLIENT_EMAIL;
+    delete process.env.FCM_PRIVATE_KEY;
+
+    const executeSpy = vi.spyOn(db, 'execute');
+    await (NotificationService as any).sendPush([1], mockPayload);
+
+    expect(executeSpy).not.toHaveBeenCalled();
+
+    // Restore env
+    process.env = originalEnv;
   });
 });

@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { z } from 'zod';
 import db from '../services/db';
 
 export type NotificationType =
@@ -21,6 +22,15 @@ export interface SystemNotification {
   isRead: boolean;
   createdAt: string;
 }
+
+const registerPushTokenSchema = z.object({
+  token: z.string().min(1).max(512),
+  deviceType: z.enum(['web', 'android', 'ios']).optional(),
+});
+
+const unregisterPushTokenSchema = z.object({
+  token: z.string().min(1).max(512),
+});
 
 export default async function notificationsRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.addHook('onRequest', async (request, reply) => {
@@ -94,6 +104,68 @@ export default async function notificationsRoutes(fastify: FastifyInstance): Pro
       return reply
         .code(500)
         .send({ success: false, code: 'INTERNAL_ERROR', message: 'Failed to update notification' });
+    }
+  });
+
+  // POST /v1/notifications/push-token — Register FCM token
+  fastify.post('/notifications/push-token', async (request, reply) => {
+    const user = request.user as { id: number };
+    try {
+      const data = registerPushTokenSchema.parse(request.body);
+      const query = `
+        INSERT INTO user_push_tokens (user_id, token, device_type)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE device_type = VALUES(device_type), updated_at = CURRENT_TIMESTAMP
+      `;
+      await db.execute(query, [user.id, data.token, data.deviceType || null]);
+      return reply.send({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: error.errors[0].message,
+        });
+      }
+      return reply.code(500).send({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to register push token',
+      });
+    }
+  });
+
+  // POST /v1/notifications/push-token/unregister — Delete FCM token
+  fastify.post('/notifications/push-token/unregister', async (request, reply) => {
+    const user = request.user as { id: number };
+    try {
+      const data = unregisterPushTokenSchema.parse(request.body);
+      const query = `
+        DELETE FROM user_push_tokens
+        WHERE user_id = ? AND token = ?
+      `;
+      const [result] = await db.execute<ResultSetHeader>(query, [user.id, data.token]);
+      if (result.affectedRows === 0) {
+        return reply.code(404).send({
+          success: false,
+          code: 'NOT_FOUND',
+          message: 'Token not found for this user',
+        });
+      }
+      return reply.send({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: error.errors[0].message,
+        });
+      }
+      return reply.code(500).send({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to unregister push token',
+      });
     }
   });
 }

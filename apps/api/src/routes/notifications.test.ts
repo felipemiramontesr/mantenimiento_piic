@@ -148,4 +148,81 @@ describe('Notifications Routes — Security & Behaviour', () => {
     const body = JSON.parse(res.body);
     expect(body.success).toBe(true);
   });
+
+  // ─── POST /v1/notifications/push-token ──────────────────────────────────────
+
+  it('POST /v1/notifications/push-token — 400 on invalid payload', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {}, // missing token
+    });
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('POST /v1/notifications/push-token — 200 on success', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([{ affectedRows: 1 }, undefined] as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {
+        token: 'fcm-token-12345',
+        deviceType: 'web',
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(db.execute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO user_push_tokens'),
+      expect.arrayContaining([42, 'fcm-token-12345', 'web'])
+    );
+  });
+
+  // ─── POST /v1/notifications/push-token/unregister ───────────────────────────
+
+  it('POST /v1/notifications/push-token/unregister — 400 on invalid payload', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token/unregister',
+      headers: { authorization: `Bearer ${token}` },
+      payload: {},
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('POST /v1/notifications/push-token/unregister — 404 when token not found', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([{ affectedRows: 0 }, undefined] as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token/unregister',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { token: 'non-existent' },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('POST /v1/notifications/push-token/unregister — 200 on success', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([{ affectedRows: 1 }, undefined] as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token/unregister',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { token: 'fcm-token-12345' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+  });
 });
