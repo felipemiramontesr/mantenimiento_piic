@@ -304,4 +304,138 @@ describe('Alerts Routes — Integration', () => {
       expect(res.json().code).toBe('INTERNAL_ERROR');
     });
   });
+
+  // ─── Role-Scoped Alerts (Feature Contract: Alerts_Role_Scoped_Panel) ─────────
+
+  describe('GET /v1/alerts — role-scoped', () => {
+    const signWith = (permissions: string[]): string =>
+      app.jwt.sign({ id: 2, username: 'scoped', roleId: 5, roleName: 'Scoped', permissions });
+
+    const authWith = (permissions: string[]) => ({
+      authorization: `Bearer ${signWith(permissions)}`,
+    });
+
+    const overdueRow = {
+      id: 'ASM-101',
+      odometer: 15000,
+      nextServiceReading_forecast: 10000,
+      lastServiceDate: null,
+      maintIntervalDays: null,
+    };
+    const incidentRow = {
+      id: 300,
+      category: 'COLLISION',
+      description: 'Choque lateral',
+      reported_at: '2026-06-01T10:00:00Z',
+      unit_id: 'ASM-102',
+    };
+    const criticalRow = {
+      uuid: 'crit-uuid-9',
+      unit_id: 'ASM-103',
+      start_at: '2026-06-01T00:00:00Z',
+      hours_active: 60,
+    };
+
+    it('Scenario 1: maint:view only receives only MAINTENANCE_OVERDUE and skips other queries', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[overdueRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['maint:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.count).toBe(1);
+      expect(body.data[0].type).toBe('MAINTENANCE_OVERDUE');
+      expect(db.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('Scenario 2: empty permissions return 200 with empty data and zero queries', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith([]),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.success).toBe(true);
+      expect(body.count).toBe(0);
+      expect(body.data).toEqual([]);
+      expect(db.execute).not.toHaveBeenCalled();
+    });
+
+    it('Scenario 3: omnipotent * receives all three types', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[overdueRow], undefined])
+        .mockResolvedValueOnce([[incidentRow], undefined])
+        .mockResolvedValueOnce([[criticalRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['*']),
+      });
+      expect(res.statusCode).toBe(200);
+      const types = res.json().data.map((a: { type: string }) => a.type);
+      expect(types).toContain('MAINTENANCE_OVERDUE');
+      expect(types).toContain('INCIDENT_OPEN');
+      expect(types).toContain('UNIT_CRITICAL');
+      expect(db.execute).toHaveBeenCalledTimes(3);
+    });
+
+    it('Scenario 4: maint:view + fleet:view receive their two types, never INCIDENT_OPEN', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[overdueRow], undefined])
+        .mockResolvedValueOnce([[criticalRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['maint:view', 'fleet:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      const types = res.json().data.map((a: { type: string }) => a.type);
+      expect(types).toContain('MAINTENANCE_OVERDUE');
+      expect(types).toContain('UNIT_CRITICAL');
+      expect(types).not.toContain('INCIDENT_OPEN');
+      expect(db.execute).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('GET /v1/alerts/count — role-scoped', () => {
+    const authWith = (permissions: string[]) => ({
+      authorization: `Bearer ${app.jwt.sign({
+        id: 2,
+        username: 'scoped',
+        roleId: 5,
+        roleName: 'Scoped',
+        permissions,
+      })}`,
+    });
+
+    it('Scenario 1: maint:view only counts MAINTENANCE_OVERDUE and skips other queries', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ overdueCount: '4' }], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts/count',
+        headers: authWith(['maint:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().count).toBe(4);
+      expect(db.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('Scenario 2: empty permissions return count 0 with zero queries', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts/count',
+        headers: authWith([]),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().count).toBe(0);
+      expect(db.execute).not.toHaveBeenCalled();
+    });
+  });
 });

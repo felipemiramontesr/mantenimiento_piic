@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildOverdueDescription, computeOverdueSeverity } from './alerts';
+import { buildOverdueDescription, computeOverdueSeverity, resolveAlertScope } from './alerts';
 
 // ─── computeOverdueSeverity ───────────────────────────────────────────────────
 
@@ -142,5 +142,51 @@ describe('buildOverdueDescription', () => {
     const dateStr = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
     const result = buildOverdueDescription(0, null, dateStr, 90);
     expect(result).toContain('Próximo Mantenimiento');
+  });
+});
+
+// ─── resolveAlertScope (Feature Contract: Alerts_Role_Scoped_Panel) ──────────
+
+describe('resolveAlertScope — mapeo alerta→permiso', () => {
+  it('maint:view grants only MAINTENANCE_OVERDUE', () => {
+    expect(resolveAlertScope(['maint:view'])).toEqual(new Set(['MAINTENANCE_OVERDUE']));
+  });
+
+  it('route:view grants only INCIDENT_OPEN', () => {
+    expect(resolveAlertScope(['route:view'])).toEqual(new Set(['INCIDENT_OPEN']));
+  });
+
+  it('fleet:view grants only UNIT_CRITICAL', () => {
+    expect(resolveAlertScope(['fleet:view'])).toEqual(new Set(['UNIT_CRITICAL']));
+  });
+
+  it('omnipotent * grants all three types', () => {
+    expect(resolveAlertScope(['*'])).toEqual(
+      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL'])
+    );
+  });
+
+  it('empty permissions resolve to empty scope (deny-by-default)', () => {
+    expect(resolveAlertScope([]).size).toBe(0);
+  });
+
+  it('irrelevant slugs resolve to empty scope', () => {
+    expect(resolveAlertScope(['financial:view', 'report:export', 'user:admin']).size).toBe(0);
+  });
+
+  it('multi-domain permissions accumulate their types', () => {
+    expect(resolveAlertScope(['maint:view', 'fleet:view'])).toEqual(
+      new Set(['MAINTENANCE_OVERDUE', 'UNIT_CRITICAL'])
+    );
+  });
+
+  it('* mixed with specific slugs still grants all three (early return)', () => {
+    expect(resolveAlertScope(['maint:view', '*'])).toEqual(
+      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL'])
+    );
+  });
+
+  it('write slugs do NOT grant view scope (least privilege)', () => {
+    expect(resolveAlertScope(['maint:write', 'route:write', 'fleet:write']).size).toBe(0);
   });
 });
