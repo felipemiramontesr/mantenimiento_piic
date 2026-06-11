@@ -27,7 +27,7 @@ Solo entonces responder o actuar sobre el request del usuario.
 - El Feature Contract activo si hay uno en curso
 - Modelo de operación autónoma completo (Sección 13)
 
-## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 14 REGLAS)
+## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 15 REGLAS)
 
 ### 1. Autonomía total — sin preguntar
 
@@ -112,6 +112,10 @@ Las IAs siempre buscarán mantener el COVERAGE de tests lo más cercano al 100% 
 ### 14. Validación Estricta de Tipos (Static TS)
 
 El typechecking via `tsc --noEmit` es obligatorio al finalizar cada tarea (Fase 4 del Pre-Flight Check) y en el pipeline de CI/CD (Archon Certification Dashboard) para garantizar que ningún cambio introduzca errores de tipado en el monorepo.
+
+### 15. Inclusión de información completa bajo demanda
+
+Cuando GrayMan solicite incluir toda la información o la información completa respecto a cualquier situación, debe realizarse únicamente ante su petición explícita; esta es la única excepción admitida en el Protocolo L.
 
 ## STACK
 
