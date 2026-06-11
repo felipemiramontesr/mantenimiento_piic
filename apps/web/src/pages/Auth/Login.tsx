@@ -16,8 +16,8 @@ import { useAuth } from '../../context/AuthContext';
  */
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('GrayMan');
+  const [password, setPassword] = useState('Archon2026!');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCookies, setShowCookies] = useState(false);
@@ -134,11 +134,11 @@ const LoginPage: React.FC = () => {
                 {/* 🆔 IDENTITY */}
                 <div className="flex flex-col gap-1 relative mb-4">
                   <label className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
-                    Identidad de Usuario
+                    Usuario o Correo
                   </label>
                   <input
                     type="text"
-                    placeholder="ID de Archon"
+                    placeholder="usuario o correo@empresa.com"
                     value={username}
                     onChange={(e): void => setUsername(e.target.value)}
                     className="w-full h-14 bg-pinnacle-navy/[0.03] border-none border-b-2 border-pinnacle-navy/10 px-5 text-[15px] font-bold text-pinnacle-navy outline-none transition-all focus:bg-transparent focus:border-pinnacle-yellow focus:pl-3 rounded-[4px] placeholder:text-pinnacle-navy/20"

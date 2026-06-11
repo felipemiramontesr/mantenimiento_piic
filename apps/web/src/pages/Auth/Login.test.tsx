@@ -40,7 +40,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
   it('renders login form and inputs correctly', () => {
     renderComponent();
-    expect(screen.getByPlaceholderText('ID de Archon')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('usuario o correo@empresa.com')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /acceder al sistema/i })).toBeInTheDocument();
   });
@@ -81,7 +81,9 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
     renderComponent();
 
-    fireEvent.change(screen.getByPlaceholderText('ID de Archon'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByPlaceholderText('usuario o correo@empresa.com'), {
+      target: { value: 'admin' },
+    });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'password123' } });
 
     fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
@@ -119,7 +121,9 @@ describe('LoginPage Component (ARCHON CORE)', () => {
 
     renderComponent();
 
-    fireEvent.change(screen.getByPlaceholderText('ID de Archon'), { target: { value: 'user' } });
+    fireEvent.change(screen.getByPlaceholderText('usuario o correo@empresa.com'), {
+      target: { value: 'user' },
+    });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'pass' } });
     fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
 
@@ -129,7 +133,7 @@ describe('LoginPage Component (ARCHON CORE)', () => {
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByPlaceholderText('ID de Archon')).not.toBeDisabled();
+    expect(screen.getByPlaceholderText('usuario o correo@empresa.com')).not.toBeDisabled();
     expect(screen.getByPlaceholderText('••••••••')).not.toBeDisabled();
   });
 });
