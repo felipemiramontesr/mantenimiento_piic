@@ -105,6 +105,20 @@ describe('NotificationService (Intelligence Orchestrator)', () => {
     );
   });
 
+  it('returns early without dispatching when permission resolves to no users (line 115)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined] as any); // permission query: 0 users
+    const persistSpy = vi.spyOn(NotificationService as any, 'persistToSystem');
+
+    await NotificationService.dispatch({
+      permission: 'nonexistent:perm',
+      type: ArchonNotificationType.SYSTEM,
+      title: 'Test',
+      message: 'no recipients',
+    });
+
+    expect(persistSpy).not.toHaveBeenCalled();
+  });
+
   it('should suppress errors during dispatch to maintain zero-noise policy', async () => {
     const errorSpy = vi
       .spyOn(NotificationService as any, 'persistToSystem')

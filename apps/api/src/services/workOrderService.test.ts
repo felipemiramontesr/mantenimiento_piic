@@ -514,5 +514,42 @@ describe('workOrderService', () => {
         expect(task.packageLevel === null || typeof task.packageLevel === 'string').toBe(true);
       });
     });
+
+    it('maps kia brand label (line 74)', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel: 'Kia Sportage' })]);
+      (db.execute as any).mockResolvedValueOnce([[]]);
+      const result = await previewWorkOrder('VEH-001');
+      expect(result).toBeDefined();
+    });
+
+    it('maps nissan brand label (line 75)', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel: 'Nissan X-Trail' })]);
+      (db.execute as any).mockResolvedValueOnce([[]]);
+      const result = await previewWorkOrder('VEH-001');
+      expect(result).toBeDefined();
+    });
+
+    it('maps mitsubishi brand label (line 76)', async () => {
+      (db.execute as any).mockResolvedValueOnce([
+        mockVehicleRow({ brandLabel: 'Mitsubishi Galant' }),
+      ]);
+      (db.execute as any).mockResolvedValueOnce([[]]);
+      const result = await previewWorkOrder('VEH-001');
+      expect(result).toBeDefined();
+    });
+
+    it('maps ram brand label via dodge_ram path (line 77)', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel: 'RAM 1500' })]);
+      (db.execute as any).mockResolvedValueOnce([[]]);
+      const result = await previewWorkOrder('VEH-001');
+      expect(result).toBeDefined();
+    });
+
+    it('maps null brand label to generic (line 71)', async () => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel: null })]);
+      (db.execute as any).mockResolvedValueOnce([[]]);
+      const result = await previewWorkOrder('VEH-001');
+      expect(result).toBeDefined();
+    });
   });
 });

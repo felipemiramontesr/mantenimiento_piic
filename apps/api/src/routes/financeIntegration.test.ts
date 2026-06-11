@@ -90,6 +90,32 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
   // ─── 200 con token ───────────────────────────────────────────────────────────
 
   describe('GET /finance/dashboard — con token válido', () => {
+    it('returns 200 with byMonth and topUnits populated (lines 200-201, 204-205)', async (): Promise<void> => {
+      const monthRow = { period: '2026-05', amount: '120000' };
+      const topUnitRow = { unitId: 'ASM-001', amount: '75000' };
+      (db.execute as Mock)
+        .mockResolvedValueOnce([KPI_ROW, undefined])
+        .mockResolvedValueOnce([UNIT_COUNT_ROW, undefined])
+        .mockResolvedValueOnce([[], undefined]) // byCategory empty
+        .mockResolvedValueOnce([[monthRow], undefined]) // byMonth
+        .mockResolvedValueOnce([[topUnitRow], undefined]); // topUnits
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/dashboard',
+        headers: authHeader(),
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.data.byMonth).toHaveLength(1);
+      expect(body.data.byMonth[0].period).toBe('2026-05');
+      expect(body.data.byMonth[0].amount).toBe(120000);
+      expect(body.data.topUnits).toHaveLength(1);
+      expect(body.data.topUnits[0].unitId).toBe('ASM-001');
+      expect(body.data.topUnits[0].amount).toBe(75000);
+    });
+
     it('returns 200 with dashboard data', async (): Promise<void> => {
       (db.execute as Mock)
         .mockResolvedValueOnce([KPI_ROW, undefined])

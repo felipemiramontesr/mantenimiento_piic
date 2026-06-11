@@ -33,6 +33,32 @@ Toda sesión registrada en este log debe apegarse a las reglas, versión activa 
 
 ---
 
+### V.78.101.153 — 2026-06-11 — CC
+
+**Sesión:** Coverage max sprint — 661 tests, 99.74% statements / 97.68% branches
+**Archivos tocados:**
+
+- `apps/api/src/services/fleetService.test.ts` (+2 tests: null branch líneas 320 y 333)
+- `apps/api/src/routes/fleetMaintenanceCoverage.test.ts` (+2 tests: minorRows forEach body líneas 414-426, DISTRIBUTION_KIT_WATER_PUMP líneas 267-273)
+- `apps/api/src/routes/admin.test.ts` (+1 test: schema validation failure 400 líneas 142-145)
+- `apps/api/src/routes/alertsIntegration.test.ts` (+1 test: same-severity sort by createdAt desc línea 258)
+- `apps/api/src/routes/financeIntegration.test.ts` (+1 test: byMonth/topUnits populated líneas 200-201,204-205)
+- `apps/api/src/services/fleetIntelligence.test.ts` (+2 tests: year truthy branch línea 178, BCK-only defaults() línea 280)
+- `apps/api/src/services/notification.service.test.ts` (+1 test: early return sin usuarios línea 115)
+- `apps/api/src/services/notificationsOutboxService.test.ts` (+1 test: scheduled overdue already-sent skip línea 127)
+- `apps/api/src/services/workOrderService.test.ts` (+5 tests: brand-label kia/nissan/mitsubishi/dodge_ram/null en previewWorkOrder)
+- `Protocolos/PROTOCOLO_L.md` (version bump V.153)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (ESTADO ACTUAL V.153 + canal)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Sprint de coverage máximo. Identificados y cubiertos: null branches en fleetService.ts preparePayload (líneas 320, 333), minorRows.forEach body en fleetMaintenance.ts (líneas 414-426) requería mine unit con odómetro en ventana BASIC_10K (10000) + minorRows no vacíos, appendPredictiveAlerts DISTRIBUTION_KIT_WATER_PUMP (líneas 267-273) requería odómetro=100000 ≥ 100000 threshold. Además commit acumulado de 7 archivos de la sesión anterior. API: 637→661 tests. **99.74% statements / 97.68% branches**.
+
+**Por qué:** GrayMan solicitó "llega hasta donde puedas" y luego "continua".
+
+**Decisiones tomadas:** minorRows test requirió odómetro=10000 (remainder=10000 → BASIC_10K window → resolvedType≠MINOR_MINING) para activar el bloque minorRows. Si odómetro=5000 → remainder=5000 → MINOR_MINING → bloque saltado. Gaps permanentes documentados: finally blocks en fleetMaintenance.ts:982,1105,1186 son artefactos V8.
+
+---
+
 ### V.78.101.152 — 2026-06-11 — CC
 
 **Sesión:** Coverage sprint finale — 5 archivos a 100%, 637 tests totales

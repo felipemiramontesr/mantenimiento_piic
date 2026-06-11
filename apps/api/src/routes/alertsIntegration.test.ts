@@ -242,6 +242,35 @@ describe('Alerts Routes — Integration', () => {
       expect(res.json().data[0].createdAt).toBe('2026-06-01T00:00:00.000Z');
     });
 
+    it('sorts two CRITICAL alerts with same severity by createdAt descending (line 258)', async () => {
+      const incidentOlder = {
+        id: 200,
+        category: 'SINIESTRO',
+        description: 'Colision trasera',
+        reported_at: '2026-05-01T08:00:00Z',
+        unit_id: 'ASM-030',
+      };
+      const incidentNewer = {
+        id: 201,
+        category: 'MECANICA',
+        description: 'Falla motor',
+        reported_at: '2026-06-01T08:00:00Z',
+        unit_id: 'ASM-031',
+      };
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[incidentOlder, incidentNewer], undefined])
+        .mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
+      expect(res.statusCode).toBe(200);
+      const alerts = res.json().data;
+      expect(alerts).toHaveLength(2);
+      // Both CRITICAL → same severity → sorted by createdAt desc → newer first
+      expect(alerts[0].unitId).toBe('ASM-031');
+      expect(alerts[1].unitId).toBe('ASM-030');
+    });
+
     it('sorts mixed alerts CRITICAL → HIGH → MEDIUM → LOW', async () => {
       const overdueRowLow = {
         id: 'ASM-010',

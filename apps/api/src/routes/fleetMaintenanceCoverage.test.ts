@@ -188,6 +188,115 @@ describe('FleetMaintenance GET /maintenance/template/:unitId', () => {
     expect(deferred.isDeferredCarry).toBe(true);
   });
 
+  it('executes minorRows.forEach and pushes FUEL_FILTER_MINING (always-include, lines 414-426)', async () => {
+    const unitRow = {
+      brandId: 1,
+      fuelTypeId: 2,
+      maintIntervalKm: 5000, // isMineUnit = true
+      maintIntervalDays: 0,
+      odometer: 10000, // remainder=10000 → BASIC_10K window → resolvedType != MINOR_MINING
+      lastServiceReading: 5000,
+      last_chassis_inspection_odometer: 0,
+      last_distribution_change_odometer: 0,
+    };
+    const minorRow = {
+      code: 'FUEL_FILTER_MINING',
+      label: 'Filtro de combustible minero',
+      isCritical: 0,
+    };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[unitRow], undefined]) // fleet_units
+      .mockResolvedValueOnce([[], undefined]) // tasks (main service type)
+      .mockResolvedValueOnce([[minorRow], undefined]); // minorRows (non-empty triggers forEach body)
+    // fetchDeferredTasks uses default [[], undefined] → lastOrderRows empty → early return
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-MINOR-ROWS',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks as { code: string }[];
+    expect(tasks.find((t) => t.code === 'FUEL_FILTER_MINING')).toBeDefined();
+  });
+
+  it('appends DISTRIBUTION_KIT_WATER_PUMP for mine unit with odometer>=100000 (lines 267-273)', async () => {
+    const unitRow = {
+      brandId: 1,
+      fuelTypeId: 2,
+      maintIntervalKm: 5000, // isMineUnit = true
+      maintIntervalDays: 0,
+      odometer: 100000, // remainder=40000 → MAJOR_30K window → resolvedType != MINOR_MINING
+      lastServiceReading: 5000, // currentOdometer - lastDistOdo = 100000 - 0 >= 100000 (DISTRIBUTION_KIT_KM)
+      last_chassis_inspection_odometer: 0,
+      last_distribution_change_odometer: 0,
+    };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[unitRow], undefined]) // fleet_units
+      .mockResolvedValueOnce([[], undefined]) // tasks
+      .mockResolvedValueOnce([[], undefined]); // minorRows (empty)
+    // fetchDeferredTasks uses default → early return
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-DIST-KIT',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks as { code: string }[];
+    expect(tasks.find((t) => t.code === 'DISTRIBUTION_KIT_WATER_PUMP')).toBeDefined();
+    // CHASSIS_SHOCKS_HEAVY also appended (100000 >= 80000)
+    expect(tasks.find((t) => t.code === 'CHASSIS_SHOCKS_HEAVY')).toBeDefined();
+  });
+
+  it('removes CABIN_FILTER_MINING for mine unit with fuelTypeId=10 (lines 432-440)', async () => {
+    const unitRow = {
+      brandId: 1,
+      fuelTypeId: 10, // diesel-electric mine variant → removes CABIN_FILTER_MINING
+      maintIntervalKm: 5000, // mine unit
+      maintIntervalDays: 0,
+      odometer: 10000,
+      lastServiceReading: 5000,
+      last_chassis_inspection_odometer: 0,
+      last_distribution_change_odometer: 0,
+    };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[unitRow], undefined])
+      .mockResolvedValueOnce([[], undefined]) // tasks query
+      .mockResolvedValueOnce([[], undefined]); // deferred
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-MINE-10',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks as { code: string }[];
+    expect(tasks.find((t) => t.code === 'CABIN_FILTER_MINING')).toBeUndefined();
+  });
+
+  it('removes WATER_SEPARATOR_MINING for mine unit with fuelTypeId=11 (lines 432-440)', async () => {
+    const unitRow = {
+      brandId: 1,
+      fuelTypeId: 11, // gasoline-electric mine variant → removes WATER_SEPARATOR_MINING
+      maintIntervalKm: 5000,
+      maintIntervalDays: 0,
+      odometer: 10000,
+      lastServiceReading: 5000,
+      last_chassis_inspection_odometer: 0,
+      last_distribution_change_odometer: 0,
+    };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[unitRow], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-MINE-11',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks as { code: string }[];
+    expect(tasks.find((t) => t.code === 'WATER_SEPARATOR_MINING')).toBeUndefined();
+  });
+
   it('returns 404 when unit not found', async () => {
     vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
     const res = await app.inject({
@@ -245,6 +354,33 @@ describe('FleetMaintenance GET /maintenance/forecast', () => {
     const data = res.json().data;
     expect(data).toHaveLength(1);
     expect(['CRITICAL', 'WARNING', 'OK']).toContain(data[0].urgency);
+  });
+
+  it('returns 200 with WARNING urgency (winnerDays 8-30, line 535)', async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastSvcDate = new Date(today);
+    lastSvcDate.setDate(lastSvcDate.getDate() - 350); // 350 days ago, 365-day interval → ~15 days left
+    const unitRow = {
+      unitId: 'ASM-WARN',
+      marca: 'Nissan',
+      modelo: 'Frontier',
+      departamento: 'Operaciones',
+      currentOdometer: '2000',
+      dailyUsageAvg: '0', // date trigger only
+      maintIntervalKm: '10000',
+      maintIntervalDays: 365,
+      lastServiceReading: '0',
+      lastServiceDate: lastSvcDate.toISOString().split('T')[0],
+    };
+    vi.mocked(db.execute).mockResolvedValueOnce([[unitRow], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data[0].urgency).toBe('WARNING');
   });
 
   it('returns 200 with OK urgency (winnerDays > 30)', async () => {

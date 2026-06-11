@@ -3,13 +3,31 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.152_CC_Coverage_Sprint_Finale_637Tests
+Versión activa  : V.78.101.153_CC_Coverage_Max_661Tests
 Fecha           : 2026-06-11
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
-Último mensaje  : **CC → AG** · 2026-06-11 00:35:00
+Último mensaje  : **CC → AG** · 2026-06-11 01:15:00
 ═══════════════════════════════════════════════════════════════
 ```
+
+---
+
+## ESTADO ACTUAL — 2026-06-11 · Coverage Max Sprint V.153
+
+### V.78.101.153 — CC
+
+[ACK] V.152 confirmado. Segunda ronda de coverage sprint completada.
+
+V.153 lleva el coverage al máximo alcanzable. 2 archivos nuevos + 9 total en el commit acumulado desde V.152:
+
+- **`fleetService.test.ts`** (+2 tests): null branches en `preparePayload` — `maintIntervalDays=null → days=0 → timeFreqId=null` (línea 320 rama null), `maintIntervalKm=null → km=0 → usageFreqId=null` (línea 333 rama null). → `fleetService.ts`: **100% branches** (era 96.55%)
+- **`fleetMaintenanceCoverage.test.ts`** (+2 tests): `minorRows.forEach` body (líneas 414-426) con `FUEL_FILTER_MINING` always-include; `appendPredictiveAlerts` líneas 267-273 con odómetro=100000 → `DISTRIBUTION_KIT_WATER_PUMP`. → `fleetMaintenance.ts`: **100% statements** (era 96.89%)
+- **Commit acumulado incluyó también** 7 archivos adicionales de la sesión anterior (fleetIntelligence, admin, alertsIntegration, financeIntegration, workOrderService +5 brand-labels, notification.service, notificationsOutboxService).
+
+**API total: 637 → 661 tests (+24). Overall: 99.74% statements / 97.68% branches.**
+
+Gaps permanentes (artefactos V8 inalcanzables): `requirePermission.ts:19`, `admin.ts:299`, `alerts.ts:27,87`, `auth.ts:141,492,533`, `finance.ts:196-197`, `fleetMaintenance.ts:982,1105,1186` (finally blocks), `notification.service.ts:196-197`, `workOrderService.ts:254` (finally block).
 
 ---
 

@@ -181,6 +181,120 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       const updateCall = (mockConn.execute as any).mock.calls[1];
       expect(updateCall[1]).toContain(null);
     });
+
+    it('Omega Protocol: maintIntervalDays=90 maps to maintenanceTimeFreqId=1048 (line 320)', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalDays: 90 }, 'Reason', 1);
+
+      expect(mockConn.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET'),
+        expect.arrayContaining([1048, 'ASM-001'])
+      );
+    });
+
+    it('Omega Protocol: maintIntervalKm=5000 maps to maintenanceUsageFreqId=1046 (line 333)', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalKm: 5000 }, 'Reason', 1);
+
+      expect(mockConn.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET'),
+        expect.arrayContaining([1046, 'ASM-001'])
+      );
+    });
+
+    it('Omega Protocol: maintIntervalDays=null uses 0 fallback → maintenanceTimeFreqId=null (line 320 null branch)', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalDays: null } as any, 'Reason', 1);
+
+      const updateCall = (mockConn.execute as any).mock.calls[1];
+      expect(updateCall[1]).toContain(null); // maintenanceTimeFreqId = null (days=0 → else branch)
+    });
+
+    it('Omega Protocol: maintIntervalKm=null uses 0 fallback → maintenanceUsageFreqId=null (line 333 null branch)', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalKm: null } as any, 'Reason', 1);
+
+      const updateCall = (mockConn.execute as any).mock.calls[1];
+      expect(updateCall[1]).toContain(null); // maintenanceUsageFreqId = null (km=0 → else branch)
+    });
+  });
+
+  describe('getAllUnits — kpi merge (line 79)', () => {
+    it('merges KPI data when computeKpis returns an entry for the unit', async () => {
+      const mockRows = [
+        { id: 'ASM-001', assetTypeId: 1, lastServiceReading: 5000, odometer: 6000 },
+      ];
+      (db.execute as any)
+        .mockResolvedValueOnce([mockRows])
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-001', mttr_hours: 24 }]])
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-001', mtbf_hours: 200 }]])
+        .mockResolvedValueOnce([[]]);
+
+      const logger = {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+        trace: vi.fn(),
+      };
+      const results = await FleetService.getAllUnits(logger as any);
+
+      expect(results[0]).toHaveProperty('mttrHours', 24);
+    });
+  });
+
+  describe('getUnitById (line 116)', () => {
+    it('returns null when unit is not found', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]); // no rows
+      const logger = {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+        trace: vi.fn(),
+      };
+      const result = await FleetService.getUnitById('GHOST-001', logger as any);
+      expect(result).toBeNull();
+    });
+
+    it('returns unit merged with KPI when kpiMap has entry (truthy kpi branch)', async () => {
+      const unitRow = [{ id: 'ASM-002', assetTypeId: 1, lastServiceReading: 3000, odometer: 4000 }];
+      (db.execute as any)
+        .mockResolvedValueOnce([unitRow])
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-002', mttr_hours: 48 }]])
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-002', mtbf_hours: 300 }]])
+        .mockResolvedValueOnce([[]]);
+      const logger = {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+        trace: vi.fn(),
+      };
+      const result = await FleetService.getUnitById('ASM-002', logger as any);
+      expect(result).not.toBeNull();
+      expect((result as any).mttrHours).toBe(48);
+    });
   });
 
   describe('deleteUnit', () => {

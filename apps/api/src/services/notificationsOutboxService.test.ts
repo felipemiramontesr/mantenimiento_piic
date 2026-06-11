@@ -167,6 +167,25 @@ describe('NotificationsOutboxService', () => {
       expect(vi.mocked(NotificationService.dispatch)).not.toHaveBeenCalled();
     });
 
+    it('skips scheduled overdue alert already recorded in outbox (line 127)', async () => {
+      (db.execute as ReturnType<typeof vi.fn>).mockImplementation((sql: string) => {
+        if (
+          sql.includes('fleet_maintenance_extensions') &&
+          sql.includes('service_date < CURDATE')
+        ) {
+          return Promise.resolve([[{ uuid: 'ORD-OVER-SKIP' }], undefined]);
+        }
+        if (sql.includes('SELECT id FROM notifications_outbox')) {
+          return Promise.resolve([[{ id: 7 }], undefined]); // already sent
+        }
+        return Promise.resolve([[], undefined]);
+      });
+
+      await processPendingAlerts();
+
+      expect(vi.mocked(NotificationService.dispatch)).not.toHaveBeenCalled();
+    });
+
     it('dispatches MEDIUM to maint:write for scheduled order overdue', async () => {
       (db.execute as ReturnType<typeof vi.fn>).mockImplementation((sql: string) => {
         if (

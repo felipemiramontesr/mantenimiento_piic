@@ -241,6 +241,18 @@ describe('Admin Routes', () => {
   // ─── PATCH /v1/admin/roles/:roleId ──────────────────────────────────────────
 
   describe('PATCH /v1/admin/roles/:roleId', () => {
+    it('returns 400 when body fails schema validation (name too short → lines 142-145)', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/admin/roles/1',
+        headers: auth(adminToken),
+        payload: { name: 'a' }, // min 2 chars → safeParse fails
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('VALIDATION_ERROR');
+      expect(typeof res.json().message).toBe('string');
+    });
+
     it('returns 400 for NaN roleId', async () => {
       const res = await app.inject({
         method: 'PATCH',

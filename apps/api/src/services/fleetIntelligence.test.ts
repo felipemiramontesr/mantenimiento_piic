@@ -85,6 +85,25 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
     expect(result.healthScore).toBe(0); // Overdue because 11,000 > 10,000
   });
 
+  it('converts year to Number when unit.year is truthy (line 178 truthy branch)', () => {
+    const unitWithYear = {
+      ...mockUnit,
+      id: 'ASM-YEAR',
+      year: 2020,
+      odometer: 5000,
+      lastServiceDate: new Date().toISOString(),
+    };
+    const mockLogger = {
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+      trace: vi.fn(),
+    };
+    const result = FleetIntelligenceEngine.processUnit(unitWithYear as any, mockLogger as any);
+    expect(result.year).toBe(2020);
+  });
+
   describe('computeKpis — KPI Aggregation Engine', () => {
     beforeEach(() => {
       vi.mocked(db.execute).mockReset();
@@ -191,6 +210,17 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
 
       const result = await FleetIntelligenceEngine.computeKpis(['ASM-005']);
       expect(result.get('ASM-005').backlogCount).toBe(0);
+    });
+
+    it('triggers defaults() for unit in BCK not previously seen in MTTR/MTBF (line 280)', async () => {
+      vi.mocked(db.execute)
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-BCK-ONLY', backlog_count: 5 }]]);
+
+      const result = await FleetIntelligenceEngine.computeKpis(['ASM-BCK-ONLY']);
+      const kpi = result.get('ASM-BCK-ONLY');
+      expect(kpi?.backlogCount).toBe(5);
     });
 
     it('handles null/missing DB values gracefully (coerces to 0)', async () => {
