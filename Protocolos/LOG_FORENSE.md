@@ -33,6 +33,24 @@ Toda sesión registrada en este log debe apegarse a las reglas, versión activa 
 
 ---
 
+### V.78.101.150 — 2026-06-10 — CC
+
+**Sesión:** FleetRoutes coverage sprint — GET /routes/:uuid/node + GET /incidents/:uuid/node
+**Archivos tocados:**
+
+- `apps/api/src/routes/fleetRoutesCoverage.test.ts` (nuevo — 6 tests)
+- `Protocolos/PROTOCOLO_L.md` (version bump V.150)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (ESTADO ACTUAL V.150 + canal)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** `fleetRoutes.ts` tenía 87.68% — líneas 480-519 (GET /routes/:uuid/node) y 524-550 (GET /incidents/:uuid/node) sin cubrir. Creado `fleetRoutesCoverage.test.ts` con 6 tests: para cada endpoint (404, 200 con datos, 500 db throw). `fleetRoutes.ts`: 87.68% → **100%**. API total: 606→612 tests, 32→33 suites, 95.62% → **96.23%** overall.
+
+**Por qué:** Continuación del coverage sprint bajo Regla 13. Siguiente gap mayor después de V.149.
+
+**Decisiones tomadas:** Mock de `routeService` completo para evitar conflictos. Endpoints simples (no async fire-and-forget) — tests directos sin setTimeout drain.
+
+---
+
 ### V.78.101.149 — 2026-06-10 — CC
 
 **Sesión:** Fleet Node coverage sprint — `fleet.ts` GET /fleet/:id/node
@@ -2137,10 +2155,10 @@ _Próxima entrada: al cierre de la siguiente sesión de trabajo._
 - `apps/web/src/components/Maintenance/MaintenanceRegistrationForm.test.tsx`
 - `apps/api/src/routes/fleetMaintenance.ts`
 - `apps/api/src/routes/fleetMaintenanceIntegration.test.ts`
-  **Qué se hizo:** Eliminado checklist legacy. Implementado panel "REVISIÓN DE TAREAS UPA" con decisión (PASS/N_A/DEFERRED) por tarea antes del accept. Modificado el PATCH `/maintenance/:uuid/accept` para propagar estas decisiones al `upa_work_order_tasks`.
+  **Qué se hizo:** Eliminado checklist legacy. Implementado panel "REVISIÓN DE TAREAS UPA" con decisión (PASS/N*A/DEFERRED) por tarea antes del accept. Modificado el PATCH `/maintenance/:uuid/accept` para propagar estas decisiones al `upa_work_order_tasks`.
   **Por qué:** Para cumplir la Regla 5 y Etapa 4 de UPA, permitiendo al encargado de mina omitir o diferir tareas en el punto de registro.
   **Decisiones tomadas:** UPDATE directo en base de datos en lugar de llamar `updateTaskStatus()` para evitar que la orden pase inadvertidamente a `AWAITING_AUTH`. Optimización `IN(...)` en la consulta SQL.
-  **Pendiente / Notas:** N/A. _Nota: Reconstruido por AG debido a falla de registro de CC._
+  **Pendiente / Notas:** N/A. \_Nota: Reconstruido por AG debido a falla de registro de CC.*
 
 ---
 
