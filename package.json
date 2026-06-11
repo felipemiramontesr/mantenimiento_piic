@@ -20,6 +20,7 @@
     "test:e2e:ui": "npx playwright test --ui",
     "lint": "npm run lint --workspaces --if-present",
     "db:validate": "tsx packages/database/scripts/validate-sql.ts",
+    "protocol:verify": "tsx scripts/verify-protocol-l.ts",
     "prepare": "husky install"
   },
   "devDependencies": {

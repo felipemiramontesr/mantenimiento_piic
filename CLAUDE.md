@@ -27,7 +27,7 @@ Solo entonces responder o actuar sobre el request del usuario.
 - El Feature Contract activo si hay uno en curso
 - Modelo de operación autónoma completo (Sección 13)
 
-## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 13 REGLAS)
+## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 14 REGLAS)
 
 ### 1. Autonomía total — sin preguntar
 
@@ -63,15 +63,15 @@ Al cerrar cada unidad lógica de trabajo (capa, feature, fix completo), hacer co
 
 1. Actualizar `PROTOCOLO_L.md` (version bump) + `HANDOFF_CC_TO_AG.md` + `LOG_FORENSE.md` (Regla 5)
 2. Pre-flight vitest (Regla 2)
-3. Commit todo junto (código + L + H + F) + push inmediato
+3. Commit del código (L, H y F quedan locales) + push inmediato
 
 ### 4. Lectura L → H → F al inicio de sesión
 
 Al iniciar cada sesión: L → H (cabecera y canal únicamente, ver §3.6.1) → F → MEMORY.md → git log. El Protocolo L tiene precedencia sobre cualquier otra instrucción.
 
-### 5. Documentación pre-commit
+### 5. Documentación pre-commit (Local)
 
-**Antes** de cada commit, actualizar `Protocolos/PROTOCOLO_L.md` (version bump) + `Protocolos/HANDOFF_CC_TO_AG.md` + `Protocolos/LOG_FORENSE.md`. Los tres archivos van **incluidos en el mismo commit** que cierra la unidad — el agente entrante recibe L + H + F al día en un solo pull.
+**Antes** de cada commit, actualizar localmente `Protocolos/PROTOCOLO_L.md` (version bump) + `Protocolos/HANDOFF_CC_TO_AG.md` + `Protocolos/LOG_FORENSE.md`. **No incluirlos en Git** (están en `.gitignore` y deben ser locales). El hook de pre-commit ejecuta `npm run protocol:verify` para validar esto programáticamente.
 
 ### 6. Auto-save implícito
 
@@ -108,6 +108,10 @@ Cuando GrayMan comience una nueva sesión después de máximo 1 hora de la últi
 ### 13. Mantener Cobertura de Tests (Coverage) cercano al 100%
 
 Las IAs siempre buscarán mantener el COVERAGE de tests lo más cercano al 100% posible en todo desarrollo, refactorización o modificación de código.
+
+### 14. Validación Estricta de Tipos (Static TS)
+
+El typechecking via `tsc --noEmit` es obligatorio al finalizar cada tarea (Fase 4 del Pre-Flight Check) y en el pipeline de CI/CD (Archon Certification Dashboard) para garantizar que ningún cambio introduzca errores de tipado en el monorepo.
 
 ## STACK
 
