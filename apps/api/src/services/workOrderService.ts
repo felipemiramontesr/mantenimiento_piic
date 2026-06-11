@@ -331,11 +331,11 @@ export async function updateTaskStatus(
     }
 
     await connection.commit();
+    connection.release();
   } catch (error) {
     await connection.rollback();
-    throw error;
-  } finally {
     connection.release();
+    throw error;
   }
 }
 
@@ -370,11 +370,11 @@ export async function closeWorkOrder(workOrderId: number): Promise<void> {
     );
 
     await connection.commit();
+    connection.release();
   } catch (error) {
     await connection.rollback();
-    throw error;
-  } finally {
     connection.release();
+    throw error;
   }
 }
 
