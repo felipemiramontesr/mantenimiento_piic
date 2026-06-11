@@ -311,4 +311,122 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     // SCHEDULE panel renders the registration form with CONFIGURACIÓN section
     expect(await screen.findByText('CONFIGURACIÓN')).toBeInTheDocument();
   });
+
+  it('handleRejectOrder: clicking reject-btn on OPEN log calls rejectMaintenance', async () => {
+    const openLog = {
+      id: 10,
+      uuid: 'uuid-open-reject',
+      unit_id: 'ASM-099',
+      service_date: '2026-06-10',
+      odometer_at_service: 60000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 0,
+      technician: 'TechB',
+      created_at: '2026-06-10T08:00:00Z',
+      start_at: null,
+      end_at: null,
+      movement_status: 'OPEN',
+      upa_work_order_id: null,
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [openLog], nextCursor: null })
+      ),
+      http.patch('*/maintenance/*/reject', () => new HttpResponse(null, { status: 200 }))
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const rejectBtn = await screen.findByTestId('reject-btn-uuid-open-reject');
+    fireEvent.click(rejectBtn);
+    // After reject, refreshTrigger increments → grid re-fetches; panel stays on HISTORY
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent(
+      'Administrar Mantenimientos'
+    );
+  });
+
+  it('handleRejectOrder: reject API error is silenced and refreshTrigger still increments', async () => {
+    const openLog = {
+      id: 11,
+      uuid: 'uuid-open-reject-err',
+      unit_id: 'ASM-100',
+      service_date: '2026-06-10',
+      odometer_at_service: 62000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 0,
+      technician: 'TechC',
+      created_at: '2026-06-10T09:00:00Z',
+      start_at: null,
+      end_at: null,
+      movement_status: 'OPEN',
+      upa_work_order_id: null,
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [openLog], nextCursor: null })
+      ),
+      http.patch('*/maintenance/*/reject', () => new HttpResponse(null, { status: 500 }))
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const rejectBtn = await screen.findByTestId('reject-btn-uuid-open-reject-err');
+    fireEvent.click(rejectBtn);
+    // Error is swallowed — panel stays on HISTORY without crashing
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent(
+      'Administrar Mantenimientos'
+    );
+  });
+
+  it('UPA panel: clicking open-upa-btn on ACTIVE log with upa_work_order_id opens UPA panel', async () => {
+    const activeLog = {
+      id: 20,
+      uuid: 'uuid-upa-active',
+      unit_id: 'ASM-042',
+      service_date: '2026-06-10',
+      odometer_at_service: 75000,
+      service_type: 'MAJOR_50K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'MAJOR_50K',
+      cost: 0,
+      technician: 'TechUPA',
+      created_at: '2026-06-10T08:00:00Z',
+      start_at: '2026-06-10T08:30:00Z',
+      end_at: null,
+      movement_status: 'ACTIVE',
+      upa_work_order_id: 1,
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [activeLog], nextCursor: null })
+      ),
+      http.get('*/work-orders/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            id: 1,
+            uuid: 'upa-order-test',
+            vehicleId: 'ASM-042',
+            fleetType: 'urban',
+            status: 'IN_PROGRESS',
+            pendingSince: null,
+            openedAt: '2026-06-10T08:30:00Z',
+            closedAt: null,
+            tasks: [],
+          },
+        })
+      )
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const upaBtn = await screen.findByTestId('open-upa-btn-uuid-upa-active');
+    fireEvent.click(upaBtn);
+    // activePanel → 'UPA' → setSectionData('Proceso UPA', ...) → layout title updates
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent('Proceso UPA');
+  });
 });

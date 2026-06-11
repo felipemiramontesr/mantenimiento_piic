@@ -435,4 +435,124 @@ describe('UpaWorkspace', () => {
       expect(screen.getByTestId('task-card-triage_horn')).toBeDefined();
     });
   });
+
+  // ─── handleComplete (lines 474-479) ─────────────────────────────────────────
+
+  describe('handleComplete via complete-btn click', () => {
+    it('calls completeTask with undefined urls/notes when no evidence provided', () => {
+      const completeTask = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: mockWorkOrder,
+        completeTask,
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('complete-btn-triage_dashboard_lights'));
+      expect(completeTask).toHaveBeenCalledWith('triage_dashboard_lights', undefined, undefined);
+    });
+
+    it('filters out empty URL strings before passing to completeTask', () => {
+      const completeTask = vi.fn().mockResolvedValue(undefined);
+      const closureTask = { ...mockTask, taskId: 'closure_check_final', stage: 'closure' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [closureTask] },
+        completeTask,
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
+      fireEvent.click(screen.getByTestId('add-evidence-url-btn'));
+      // URL input is added but left empty → filtered out
+      fireEvent.click(screen.getByTestId('complete-btn-closure_check_final'));
+      expect(completeTask).toHaveBeenCalledWith('closure_check_final', undefined, undefined);
+    });
+
+    it('passes non-empty evidence URLs to completeTask', () => {
+      const completeTask = vi.fn().mockResolvedValue(undefined);
+      const closureTask = { ...mockTask, taskId: 'closure_check_final', stage: 'closure' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [closureTask] },
+        completeTask,
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
+      fireEvent.click(screen.getByTestId('add-evidence-url-btn'));
+      fireEvent.change(screen.getByTestId('evidence-url-input-0'), {
+        target: { value: 'https://example.com/photo.jpg' },
+      });
+      fireEvent.click(screen.getByTestId('complete-btn-closure_check_final'));
+      expect(completeTask).toHaveBeenCalledWith(
+        'closure_check_final',
+        ['https://example.com/photo.jpg'],
+        undefined
+      );
+    });
+
+    it('passes notes to completeTask when notes textarea has content', () => {
+      const completeTask = vi.fn().mockResolvedValue(undefined);
+      const closureTask = { ...mockTask, taskId: 'closure_check_final', stage: 'closure' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [closureTask] },
+        completeTask,
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
+      fireEvent.change(screen.getByTestId('evidence-notes-input'), {
+        target: { value: 'Notas de cierre' },
+      });
+      fireEvent.click(screen.getByTestId('complete-btn-closure_check_final'));
+      expect(completeTask).toHaveBeenCalledWith(
+        'closure_check_final',
+        undefined,
+        'Notas de cierre'
+      );
+    });
+  });
+
+  // ─── onEvidenceNotesChange (line 644) ───────────────────────────────────────
+
+  describe('Evidence notes change callback', () => {
+    it('typing in evidence-notes-input updates controlled textarea value', () => {
+      const closureTask = { ...mockTask, taskId: 'closure_check_final', stage: 'closure' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [closureTask] },
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
+      const notesInput = screen.getByTestId('evidence-notes-input') as HTMLTextAreaElement;
+      fireEvent.change(notesInput, { target: { value: 'Notas de evidencia' } });
+      expect(notesInput.value).toBe('Notas de evidencia');
+    });
+  });
+
+  // ─── ChecklistRow: isUpdating spinner (lines 393-394) ───────────────────────
+
+  describe('ChecklistRow isUpdating state', () => {
+    it('disables complete button and shows spinner when task is updating', () => {
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: mockWorkOrder,
+        taskUpdating: { triage_dashboard_lights: true },
+      });
+      render(<UpaWorkspace />);
+      const btn = screen.getByTestId('complete-btn-triage_dashboard_lights') as HTMLButtonElement;
+      expect(btn.disabled).toBe(true);
+    });
+
+    it('does not call completeTask when task is updating (onClick guard)', () => {
+      const completeTask = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: mockWorkOrder,
+        completeTask,
+        taskUpdating: { triage_dashboard_lights: true },
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('complete-btn-triage_dashboard_lights'));
+      expect(completeTask).not.toHaveBeenCalled();
+    });
+  });
 });
