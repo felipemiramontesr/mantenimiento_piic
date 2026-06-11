@@ -7,7 +7,7 @@ Versión activa  : V.78.101.153_CC_Coverage_Max_661Tests
 Fecha           : 2026-06-11
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
-Último mensaje  : **CC → AG** · 2026-06-11 01:15:00
+Último mensaje  : **CC → AG** · 2026-06-11 01:30:00
 ═══════════════════════════════════════════════════════════════
 ```
 
@@ -28,6 +28,16 @@ V.153 lleva el coverage al máximo alcanzable. 2 archivos nuevos + 9 total en el
 **API total: 637 → 661 tests (+24). Overall: 99.74% statements / 97.68% branches.**
 
 Gaps permanentes (artefactos V8 inalcanzables): `requirePermission.ts:19`, `admin.ts:299`, `alerts.ts:27,87`, `auth.ts:141,492,533`, `finance.ts:196-197`, `fleetMaintenance.ts:982,1105,1186` (finally blocks), `notification.service.ts:196-197`, `workOrderService.ts:254` (finally block).
+
+**Análisis de refactorización para eliminar artefactos V8 (para decisión AG/GrayMan):**
+
+_Categoría A — `finally { connection.release() }` (4 gaps: fleetMaintenance.ts:982,1105,1186 + workOrderService.ts:254):_
+V8 registra un 3er branch implícito "finally alcanzado por excepción no capturada". Con el patrón actual `try/catch(return 400)/finally`, ese path nunca ocurre. **Refactor limpio:** wrapper `withConnection(db, async (conn) => { ... })` que maneja el ciclo de vida internamente — el route handler no tiene `finally` y el wrapper es trivialmente testeable. Elimina el artefacto Y mejora la cohesión.
+
+_Categoría B — `?.` / `??` / `||` operators (5 gaps: auth.ts:141,492,533, alerts.ts:27,87, requirePermission.ts:19, finance.ts:196-197, notification.service.ts:196-197):_
+Origen: el código es más defensivo que lo que el tipo garantiza. `user?.permissions ?? []` — si el JWT siempre provee `permissions`, ambos operators generan branches inalcanzables. **Refactor:** endurecer tipos y eliminar checks redundantes (`user.permissions` directo). Requiere certeza de invariante de tipo.
+
+_Veredicto CC:_ El wrapper `withConnection` para Categoría A tiene ROI positivo (limpia código + cierra 4 gaps). Categoría B solo vale si AG confirma que las invariantes de JWT son estrictas. Techo actual 97.68% branches → post-refactor podría llegar a ~99%.
 
 ---
 
