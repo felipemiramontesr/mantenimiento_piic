@@ -33,6 +33,28 @@ Toda sesión registrada en este log debe apegarse a las reglas, versión activa 
 
 ---
 
+### V.78.101.152 — 2026-06-11 — CC
+
+**Sesión:** Coverage sprint finale — 5 archivos a 100%, 637 tests totales
+**Archivos tocados:**
+
+- `apps/api/src/routes/authIntegration.test.ts` (+7 tests: GET /me paths + corrupted email catch)
+- `apps/api/src/services/fleetService.test.ts` (+5 tests: Omega Protocol preparePayload branches)
+- `apps/api/src/services/notificationsOutboxService.test.ts` (+2 tests: verificacion + legal compliance 15D)
+- `apps/api/src/services/workOrderService.test.ts` (+1 test: VALIDATION_ERROR odometer<0)
+- `apps/api/src/services/routeService.test.ts` (+4 tests: neighborhood prefix truthy+falsy for startRoute+updateRoute)
+- `Protocolos/PROTOCOLO_L.md` (version bump V.152)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (ESTADO ACTUAL V.152 + canal)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** Continuación de sesión anterior (contexto agotado). Sprint de cobertura masivo completado: auth.ts 90.79%→100%, routeService.ts 91.38%→100% (incluyendo ternary falsy branches en líneas 114 y 453), notificationsOutboxService.ts 91.79%→100%, fleetService.ts 95.14%→100% (Omega Protocol preparePayload), workOrderService.ts 99.24%→100%. API total: 617→637 tests, **98.51% statements / 96.27% branches**.
+
+**Por qué:** GrayMan solicitó "sigue con los pendientes restantes" en sesión anterior.
+
+**Decisiones tomadas:** Tests de ternary falsy branch en routeService requirieron destino que empiece exactamente con el nombre del barrio → `parts[0]=''` → `prefix=''` → ternary falsy → `finalDestination = suffix`. Patrón elegido: `destination='Col Norte y algo mas'` con `neighborhood='Col Norte'`.
+
+---
+
 ### V.78.101.151 — 2026-06-11 — CC
 
 **Sesión:** Notifications route coverage sprint — 500 paths + null branch

@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.151_CC_Notifications_Coverage_100pct
+VERSIÓN ACTUAL: V.78.101.152_CC_Coverage_Sprint_Finale_637Tests
 ```
 
 ---

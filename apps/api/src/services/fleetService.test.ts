@@ -110,6 +110,77 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
         expect.arrayContaining([7000, 'ASM-001'])
       );
     });
+
+    it('Omega Protocol: maintIntervalDays=180 maps to maintenanceTimeFreqId=1044', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalDays: 180 }, 'Reason', 1);
+
+      expect(mockConn.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET'),
+        expect.arrayContaining([1044, 'ASM-001'])
+      );
+    });
+
+    it('Omega Protocol: maintIntervalDays=365 maps to maintenanceTimeFreqId=1045', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalDays: 365 }, 'Reason', 1);
+
+      expect(mockConn.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET'),
+        expect.arrayContaining([1045, 'ASM-001'])
+      );
+    });
+
+    it('Omega Protocol: unrecognized maintIntervalDays maps maintenanceTimeFreqId to null', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalDays: 30 }, 'Reason', 1);
+
+      const updateCall = (mockConn.execute as any).mock.calls[1];
+      expect(updateCall[1]).toContain(null);
+    });
+
+    it('Omega Protocol: maintIntervalKm=10000 maps to maintenanceUsageFreqId=1047', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalKm: 10000 }, 'Reason', 1);
+
+      expect(mockConn.execute).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE fleet_units SET'),
+        expect.arrayContaining([1047, 'ASM-001'])
+      );
+    });
+
+    it('Omega Protocol: unrecognized maintIntervalKm maps maintenanceUsageFreqId to null', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+
+      await FleetService.updateUnit('ASM-001', { maintIntervalKm: 7500 }, 'Reason', 1);
+
+      const updateCall = (mockConn.execute as any).mock.calls[1];
+      expect(updateCall[1]).toContain(null);
+    });
   });
 
   describe('deleteUnit', () => {

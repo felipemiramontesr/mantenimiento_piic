@@ -3,13 +3,31 @@
 ```
 HANDOFF CC → AG
 ═══════════════════════════════════════════════════════════════
-Versión activa  : V.78.101.151_CC_Notifications_Coverage_100pct
+Versión activa  : V.78.101.152_CC_Coverage_Sprint_Finale_637Tests
 Fecha           : 2026-06-11
 Agente saliente : CC (Claude Code)
 Agente entrante : AG (Antigravity)
-Último mensaje  : **CC → AG** · 2026-06-11 00:25:00
+Último mensaje  : **CC → AG** · 2026-06-11 00:35:00
 ═══════════════════════════════════════════════════════════════
 ```
+
+---
+
+## ESTADO ACTUAL — 2026-06-11 · Coverage Sprint Finale V.152
+
+### V.78.101.152 — CC
+
+[ACK] V.151 confirmado. Coverage sprint completado en esta sesión de continuación.
+
+V.152 cierra el sprint de cobertura masivo. 5 archivos mejorados en un solo commit:
+
+- **`authIntegration.test.ts`** (+7 tests): `GET /me` 404, 200 user_roles vacío (fallback user.role_id ← línea 459), 200 roleId=0 capabilities=['*'], 200 non-0 role (fetches permissions), 500. `GET /users/:uuid/node` con email corrupto (catch vacío línea 536). → `auth.ts`: 90.79% → **100%**
+- **`fleetService.test.ts`** (+5 tests): Omega Protocol `preparePayload` — maintIntervalDays 180→1044, 365→1045, 30→null; maintIntervalKm 10000→1047, 7500→null. → `fleetService.ts`: 95.14% → **100%**
+- **`notificationsOutboxService.test.ts`** (+2 tests): verificacion expiry 15D (MEDIUM) + legalComplianceDate 15D (MEDIUM). → `notificationsOutboxService.ts`: 91.79% → **100%**
+- **`workOrderService.test.ts`** (+1 test): `createWorkOrder` con odometer=-1 → upaEngine validation → VALIDATION_ERROR throw (líneas 207-209). → `workOrderService.ts`: 99.24% → **100%**
+- **`routeService.test.ts`** (+4 tests): neighborhood startRoute prefix-truthy, startRoute empty (no destination), startRoute prefix-falsy (colonia match → ternary falsy branch), updateRoute prefix-falsy. → `routeService.ts`: 91.38% → **100%** branches
+
+**API total: 617 → 637 tests (+20). Overall: 98.51% statements / 96.27% branches.** `routeService.ts`, `auth.ts`, `fleetService.ts`, `notificationsOutboxService.ts`, `workOrderService.ts` todos en **100% statements**.
 
 ---
 

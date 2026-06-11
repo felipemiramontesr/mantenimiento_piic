@@ -206,6 +206,15 @@ describe('workOrderService', () => {
       // generic brand = no brand-specific tasks → task count is base only
       expect(result.taskCount).toBeGreaterThan(0);
     });
+
+    it('throws VALIDATION_ERROR when upaEngine reports invalid vehicle profile', async () => {
+      // odometer < 0 triggers validateVehicleProfile: 'odometer must be >= 0'
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ odometer: -1 })]);
+      (db.execute as any).mockResolvedValueOnce([[]]); // no last closed WO
+
+      await expect(createWorkOrder('VEH-BAD')).rejects.toThrow(/VALIDATION_ERROR/);
+      expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+    });
   });
 
   // ── updateTaskStatus ────────────────────────────────────────────────────────

@@ -65,6 +65,81 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       );
     });
 
+    it('resolves destination from neighborhood catalog with prefix (destinationNeighborhoodId)', async () => {
+      const coloniaRow = { neighborhood: 'Col Norte', municipality: 'Hermosillo', state: 'Sonora' };
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ status: 'Disponible', odometer: 1000 }]]) // unit check
+        .mockResolvedValueOnce([[coloniaRow]]) // neighborhood query
+        .mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }]) // INSERT fleet_movements
+        .mockResolvedValueOnce([{ affectedRows: 1 }]) // INSERT fleet_route_extensions
+        .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE fleet_units
+        .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT unit_activity_logs
+
+      const uuid = await RouteService.startRoute(
+        'UNIT-001',
+        1,
+        1000,
+        100,
+        'Mina Sur',
+        undefined,
+        undefined,
+        42
+      );
+
+      expect(uuid).toBeDefined();
+      const insertRouteCall = mockConnection.execute.mock.calls[2];
+      expect(insertRouteCall[0]).toContain('INSERT INTO fleet_movements');
+    });
+
+    it('resolves destination to pure suffix when destination not provided with neighborhoodId', async () => {
+      const coloniaRow = { neighborhood: 'Col Sur', municipality: 'Nogales', state: 'Sonora' };
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ status: 'Disponible', odometer: 500 }]])
+        .mockResolvedValueOnce([[coloniaRow]])
+        .mockResolvedValueOnce([{ insertId: 2, affectedRows: 1 }])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      const uuid = await RouteService.startRoute(
+        'UNIT-002',
+        2,
+        500,
+        80,
+        '',
+        undefined,
+        undefined,
+        55
+      );
+
+      expect(uuid).toBeDefined();
+    });
+
+    it('resolves to pure suffix when destination starts with neighborhood (empty prefix branch)', async () => {
+      const coloniaRow = { neighborhood: 'Col Norte', municipality: 'Hermosillo', state: 'Sonora' };
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ status: 'Disponible', odometer: 800 }]])
+        .mockResolvedValueOnce([[coloniaRow]])
+        .mockResolvedValueOnce([{ insertId: 3, affectedRows: 1 }])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      // destination starts with neighborhood → split gives empty parts[0] → prefix='' → falsy ternary branch
+      const uuid = await RouteService.startRoute(
+        'UNIT-003',
+        3,
+        800,
+        70,
+        'Col Norte y algo mas',
+        undefined,
+        undefined,
+        66
+      );
+
+      expect(uuid).toBeDefined();
+    });
+
     it('should throw error if unit is already in transit', async () => {
       mockConnection.execute.mockResolvedValueOnce([[{ status: 'En Ruta', odometer: 1000 }]]);
 
@@ -422,6 +497,94 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       await expect(RouteService.updateRoute('', {}, 'Reason', 1)).rejects.toThrow(
         'Missing route UUID for update'
       );
+    });
+
+    it('resolves destination with prefix when destinationNeighborhoodId provided and destination differs from suffix', async () => {
+      const mockBefore = {
+        uuid: 'UUID-N',
+        id: 10,
+        status: 'ACTIVE',
+        start_reading: 100,
+        end_reading: null,
+        unit_id: 'ASM-001',
+      };
+      const mockAfter = { ...mockBefore, destination: 'Mina Sur, Col Norte, Hermosillo, Sonora' };
+      const coloniaRow = { neighborhood: 'Col Norte', municipality: 'Hermosillo', state: 'Sonora' };
+
+      mockConnection.execute
+        .mockResolvedValueOnce([[mockBefore]]) // SELECT snapshot before
+        .mockResolvedValueOnce([[coloniaRow]]) // SELECT neighborhood
+        .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE fleet_route_extensions
+        .mockResolvedValueOnce([[mockAfter]]) // SELECT snapshot after
+        .mockResolvedValueOnce([[]]); // syncUnitState → no completed route
+
+      await RouteService.updateRoute(
+        'UUID-N',
+        { destinationNeighborhoodId: 99, destination: 'Mina Sur' },
+        'Test',
+        1
+      );
+
+      const updateCall = mockConnection.execute.mock.calls[2];
+      expect(updateCall[1]).toEqual(
+        expect.arrayContaining(['Mina Sur, Col Norte, Hermosillo, Sonora'])
+      );
+    });
+
+    it('resolves destination to pure suffix when no input destination provided', async () => {
+      const mockBefore = {
+        uuid: 'UUID-N2',
+        id: 11,
+        status: 'ACTIVE',
+        start_reading: 200,
+        end_reading: null,
+        unit_id: 'ASM-002',
+      };
+      const coloniaRow = { neighborhood: 'Col Sur', municipality: 'Hermosillo', state: 'Sonora' };
+      const mockAfter = { ...mockBefore };
+
+      mockConnection.execute
+        .mockResolvedValueOnce([[mockBefore]])
+        .mockResolvedValueOnce([[coloniaRow]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[mockAfter]])
+        .mockResolvedValueOnce([[]]);
+
+      await RouteService.updateRoute('UUID-N2', { destinationNeighborhoodId: 100 }, 'Test', 1);
+
+      const updateCall = mockConnection.execute.mock.calls[2];
+      expect(updateCall[1]).toEqual(expect.arrayContaining(['Col Sur, Hermosillo, Sonora']));
+    });
+
+    it('resolves to pure suffix when existing destination starts with neighborhood (empty prefix branch)', async () => {
+      const mockBefore = {
+        uuid: 'UUID-N3',
+        id: 12,
+        status: 'ACTIVE',
+        start_reading: 300,
+        end_reading: null,
+        unit_id: 'ASM-003',
+      };
+      const coloniaRow = { neighborhood: 'Col Norte', municipality: 'Hermosillo', state: 'Sonora' };
+      const mockAfter = { ...mockBefore };
+
+      mockConnection.execute
+        .mockResolvedValueOnce([[mockBefore]])
+        .mockResolvedValueOnce([[coloniaRow]])
+        .mockResolvedValueOnce([{ affectedRows: 1 }])
+        .mockResolvedValueOnce([[mockAfter]])
+        .mockResolvedValueOnce([[]]);
+
+      // destination starts with neighborhood → parts[0]='' → prefix='' → falsy ternary branch → pure suffix
+      await RouteService.updateRoute(
+        'UUID-N3',
+        { destinationNeighborhoodId: 101, destination: 'Col Norte y algo mas' },
+        'Test',
+        1
+      );
+
+      const updateCall = mockConnection.execute.mock.calls[2];
+      expect(updateCall[1]).toEqual(expect.arrayContaining(['Col Norte, Hermosillo, Sonora']));
     });
 
     it('should handle non-Error exceptions in catch block', async () => {

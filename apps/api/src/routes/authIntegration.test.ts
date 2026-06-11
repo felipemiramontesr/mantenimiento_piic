@@ -358,6 +358,128 @@ describe('authIntegration.test', () => {
 
   // ─── GET /users/:uuid/node ────────────────────────────────────────────────────
 
+  // ─── GET /me ─────────────────────────────────────────────────────────────────
+
+  it('GET /me — 404 when user not found in DB', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: authHeader(),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.payload).code).toBe('NOT_FOUND');
+  });
+
+  it('GET /me — 200 uses user.role_id when user_roles table returns empty', async () => {
+    const userRow = {
+      id: 1,
+      uuid: 'uuid-1',
+      username: 'tech02',
+      full_name: 'Tecnico 2',
+      email: 'enc_t2@piic.mx',
+      role_id: 5,
+      employee_number: 'E005',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      role_name: 'Tecnico',
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow], undefined]) // SELECT user JOIN roles
+      .mockResolvedValueOnce([[], undefined]) // SELECT user_roles → empty → fallback to role_id=5
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]); // SELECT permissions for role 5
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: authHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).data.capabilities).toContain('fleet:view');
+  });
+
+  it('GET /me — 200 with roleId=0 returns capabilities=[*]', async () => {
+    const userRow = {
+      id: 1,
+      uuid: 'uuid-1',
+      username: 'admin',
+      full_name: 'Admin User',
+      email: 'enc_admin@piic.mx',
+      role_id: 0,
+      employee_number: 'E000',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      role_name: 'ARCHON',
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow], undefined]) // SELECT user JOIN roles
+      .mockResolvedValueOnce([[{ role_id: 0 }], undefined]); // SELECT user_roles
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: authHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(body.data.capabilities).toEqual(['*']);
+  });
+
+  it('GET /me — 200 with non-0 role fetches permissions from DB', async () => {
+    const userRow = {
+      id: 1,
+      uuid: 'uuid-1',
+      username: 'tech01',
+      full_name: 'Tecnico',
+      email: 'enc_tech@piic.mx',
+      role_id: 3,
+      employee_number: 'E003',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: 2,
+      role_name: 'Tecnico',
+      department_name: 'Taller',
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow], undefined]) // SELECT user JOIN roles
+      .mockResolvedValueOnce([[{ role_id: 3 }], undefined]) // SELECT user_roles
+      .mockResolvedValueOnce([[{ slug: 'maint:write' }], undefined]); // SELECT permissions
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: authHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(body.data.capabilities).toContain('maint:write');
+  });
+
+  it('GET /me — 500 on DB error', async () => {
+    (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: authHeader(),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).code).toBe('INTERNAL_ERROR');
+  });
+
+  // ─── GET /users/:uuid/node ────────────────────────────────────────────────────
+
   it('GET /users/:uuid/node — happy path returns user + permissions + routes', async () => {
     const omniToken = await (
       app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
@@ -444,5 +566,39 @@ describe('authIntegration.test', () => {
       headers: { Authorization: `Bearer ${omniToken}` },
     });
     expect(res.statusCode).toBe(500);
+  });
+
+  it('GET /users/:uuid/node — keeps raw email when decryption throws (line 536 catch)', async () => {
+    const omniToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });
+    const userRow = {
+      id: 10,
+      uuid: 'uuid-corrupted',
+      username: 'user10',
+      full_name: 'User Ten',
+      email: 'corrupted',
+      role_id: 2,
+      employee_number: 'E010',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      role_name: 'Admin',
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/uuid-corrupted/node',
+      headers: { Authorization: `Bearer ${omniToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).data.user.email).toBe('corrupted');
   });
 });

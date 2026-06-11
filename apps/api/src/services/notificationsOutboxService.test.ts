@@ -185,6 +185,44 @@ describe('NotificationsOutboxService', () => {
         expect.objectContaining({ permission: 'maint:write', priority: 'MEDIUM' })
       );
     });
+
+    it('dispatches MEDIUM to fleet:write for verificacion expiry within 15D', async () => {
+      (db.execute as ReturnType<typeof vi.fn>).mockImplementation((sql: string) => {
+        if (sql.includes('vencimientoVerificacion') && sql.includes('BETWEEN 0 AND 15')) {
+          return Promise.resolve([
+            [{ uuid: 'unit-uuid-ver', unitId: 'ASM-V01', daysLeft: 5 }],
+            undefined,
+          ]);
+        }
+        return Promise.resolve([[], undefined]);
+      });
+
+      await processPendingAlerts();
+
+      expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledOnce();
+      expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledWith(
+        expect.objectContaining({ permission: 'fleet:write', priority: 'MEDIUM', type: 'SYSTEM' })
+      );
+    });
+
+    it('dispatches MEDIUM to fleet:write for legal compliance expiry within 15D', async () => {
+      (db.execute as ReturnType<typeof vi.fn>).mockImplementation((sql: string) => {
+        if (sql.includes('legalComplianceDate') && sql.includes('BETWEEN 0 AND 15')) {
+          return Promise.resolve([
+            [{ uuid: 'unit-uuid-legal', unitId: 'ASM-L01', daysLeft: 8 }],
+            undefined,
+          ]);
+        }
+        return Promise.resolve([[], undefined]);
+      });
+
+      await processPendingAlerts();
+
+      expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledOnce();
+      expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledWith(
+        expect.objectContaining({ permission: 'fleet:write', priority: 'MEDIUM', type: 'SYSTEM' })
+      );
+    });
   });
 
   describe('purgeOutboxForOrder', () => {
