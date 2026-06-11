@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildOverdueDescription, computeOverdueSeverity, resolveAlertScope } from './alerts';
+import {
+  buildOverdueDescription,
+  computeOverdueSeverity,
+  resolveAlertScope,
+  computeComplianceSeverity,
+  buildComplianceDescription,
+} from './alerts';
 
 // ─── computeOverdueSeverity ───────────────────────────────────────────────────
 
@@ -156,13 +162,15 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
     expect(resolveAlertScope(['route:view'])).toEqual(new Set(['INCIDENT_OPEN']));
   });
 
-  it('fleet:view grants only UNIT_CRITICAL', () => {
-    expect(resolveAlertScope(['fleet:view'])).toEqual(new Set(['UNIT_CRITICAL']));
+  it('fleet:view grants UNIT_CRITICAL and COMPLIANCE_EXPIRY (Fase 4)', () => {
+    expect(resolveAlertScope(['fleet:view'])).toEqual(
+      new Set(['UNIT_CRITICAL', 'COMPLIANCE_EXPIRY'])
+    );
   });
 
-  it('omnipotent * grants all three types', () => {
+  it('omnipotent * grants all four types', () => {
     expect(resolveAlertScope(['*'])).toEqual(
-      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL'])
+      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL', 'COMPLIANCE_EXPIRY'])
     );
   });
 
@@ -176,17 +184,57 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
 
   it('multi-domain permissions accumulate their types', () => {
     expect(resolveAlertScope(['maint:view', 'fleet:view'])).toEqual(
-      new Set(['MAINTENANCE_OVERDUE', 'UNIT_CRITICAL'])
+      new Set(['MAINTENANCE_OVERDUE', 'UNIT_CRITICAL', 'COMPLIANCE_EXPIRY'])
     );
   });
 
-  it('* mixed with specific slugs still grants all three (early return)', () => {
+  it('* mixed with specific slugs still grants all four (early return)', () => {
     expect(resolveAlertScope(['maint:view', '*'])).toEqual(
-      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL'])
+      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL', 'COMPLIANCE_EXPIRY'])
     );
   });
 
   it('write slugs do NOT grant view scope (least privilege)', () => {
     expect(resolveAlertScope(['maint:write', 'route:write', 'fleet:write']).size).toBe(0);
+  });
+});
+
+// ─── Fase 4 — COMPLIANCE_EXPIRY (vencimientos legales) ───────────────────────
+
+describe('computeComplianceSeverity — escalado por días restantes', () => {
+  it('CRITICAL when document is already expired (negative days)', () => {
+    expect(computeComplianceSeverity(-1)).toBe('CRITICAL');
+    expect(computeComplianceSeverity(-30)).toBe('CRITICAL');
+  });
+
+  it('HIGH when expiring within 3 days (including today)', () => {
+    expect(computeComplianceSeverity(0)).toBe('HIGH');
+    expect(computeComplianceSeverity(3)).toBe('HIGH');
+  });
+
+  it('MEDIUM when expiring within 15 days', () => {
+    expect(computeComplianceSeverity(4)).toBe('MEDIUM');
+    expect(computeComplianceSeverity(15)).toBe('MEDIUM');
+  });
+
+  it('LOW when expiring within 30 days', () => {
+    expect(computeComplianceSeverity(16)).toBe('LOW');
+    expect(computeComplianceSeverity(30)).toBe('LOW');
+  });
+});
+
+describe('buildComplianceDescription — es-MX', () => {
+  it('describes expired document with elapsed days', () => {
+    expect(buildComplianceDescription('Seguro', -5)).toBe('Seguro vencido hace 5 días');
+  });
+
+  it('describes document expiring today', () => {
+    expect(buildComplianceDescription('Verificación', 0)).toBe('Verificación vence hoy');
+  });
+
+  it('describes upcoming expiry with remaining days', () => {
+    expect(buildComplianceDescription('Cumplimiento legal', 12)).toBe(
+      'Cumplimiento legal vence en 12 días'
+    );
   });
 });

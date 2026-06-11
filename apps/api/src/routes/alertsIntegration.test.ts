@@ -82,11 +82,12 @@ describe('Alerts Routes — Integration', () => {
   // ─── GET /v1/alerts/count ────────────────────────────────────────────────────
 
   describe('GET /v1/alerts/count', () => {
-    it('returns 200 with correct total count', async () => {
+    it('returns 200 with correct total count including compliance', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ overdueCount: '3' }], undefined])
         .mockResolvedValueOnce([[{ incidentCount: '2' }], undefined])
-        .mockResolvedValueOnce([[{ criticalCount: '1' }], undefined]);
+        .mockResolvedValueOnce([[{ criticalCount: '1' }], undefined])
+        .mockResolvedValueOnce([[{ complianceCount: '2' }], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -96,14 +97,15 @@ describe('Alerts Routes — Integration', () => {
       expect(res.statusCode).toBe(200);
       const body = res.json();
       expect(body.success).toBe(true);
-      expect(body.count).toBe(6);
+      expect(body.count).toBe(8);
     });
 
     it('returns 200 with zero when all counts are 0', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ overdueCount: '0' }], undefined])
         .mockResolvedValueOnce([[{ incidentCount: '0' }], undefined])
-        .mockResolvedValueOnce([[{ criticalCount: '0' }], undefined]);
+        .mockResolvedValueOnce([[{ criticalCount: '0' }], undefined])
+        .mockResolvedValueOnce([[{ complianceCount: null }], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -335,6 +337,12 @@ describe('Alerts Routes — Integration', () => {
       start_at: '2026-06-01T00:00:00Z',
       hours_active: 60,
     };
+    const complianceRow = {
+      id: 'ASM-104',
+      insuranceDays: -5,
+      verificationDays: 10,
+      legalDays: null,
+    };
 
     it('Scenario 1: maint:view only receives only MAINTENANCE_OVERDUE and skips other queries', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[overdueRow], undefined]);
@@ -365,11 +373,12 @@ describe('Alerts Routes — Integration', () => {
       expect(db.execute).not.toHaveBeenCalled();
     });
 
-    it('Scenario 3: omnipotent * receives all three types', async () => {
+    it('Scenario 3: omnipotent * receives all four types', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[overdueRow], undefined])
         .mockResolvedValueOnce([[incidentRow], undefined])
-        .mockResolvedValueOnce([[criticalRow], undefined]);
+        .mockResolvedValueOnce([[criticalRow], undefined])
+        .mockResolvedValueOnce([[complianceRow], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -381,13 +390,15 @@ describe('Alerts Routes — Integration', () => {
       expect(types).toContain('MAINTENANCE_OVERDUE');
       expect(types).toContain('INCIDENT_OPEN');
       expect(types).toContain('UNIT_CRITICAL');
-      expect(db.execute).toHaveBeenCalledTimes(3);
+      expect(types).toContain('COMPLIANCE_EXPIRY');
+      expect(db.execute).toHaveBeenCalledTimes(4);
     });
 
-    it('Scenario 4: maint:view + fleet:view receive their two types, never INCIDENT_OPEN', async () => {
+    it('Scenario 4: maint:view + fleet:view receive their three types, never INCIDENT_OPEN', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[overdueRow], undefined])
-        .mockResolvedValueOnce([[criticalRow], undefined]);
+        .mockResolvedValueOnce([[criticalRow], undefined])
+        .mockResolvedValueOnce([[], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -399,7 +410,47 @@ describe('Alerts Routes — Integration', () => {
       expect(types).toContain('MAINTENANCE_OVERDUE');
       expect(types).toContain('UNIT_CRITICAL');
       expect(types).not.toContain('INCIDENT_OPEN');
+      expect(db.execute).toHaveBeenCalledTimes(3);
+    });
+
+    // ─── Fase 4 — COMPLIANCE_EXPIRY ───────────────────────────────────────────
+
+    it('Fase 4: fleet:view receives COMPLIANCE_EXPIRY alerts per expiring document', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[complianceRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['fleet:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      // complianceRow: seguro vencido (-5d), verificación en 10d, legal null → 2 alertas
+      expect(body.count).toBe(2);
+      const insurance = body.data.find((a: { id: string }) => a.id.includes('INSURANCE'));
+      const verification = body.data.find((a: { id: string }) => a.id.includes('VERIFICATION'));
+      expect(insurance.type).toBe('COMPLIANCE_EXPIRY');
+      expect(insurance.severity).toBe('CRITICAL');
+      expect(insurance.description).toBe('Seguro vencido hace 5 días');
+      expect(verification.severity).toBe('MEDIUM');
+      expect(verification.description).toBe('Verificación vence en 10 días');
       expect(db.execute).toHaveBeenCalledTimes(2);
+    });
+
+    it('Fase 4: maint:view-only never executes the compliance query', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[overdueRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['maint:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      const types = res.json().data.map((a: { type: string }) => a.type);
+      expect(types).not.toContain('COMPLIANCE_EXPIRY');
+      expect(db.execute).toHaveBeenCalledTimes(1);
     });
   });
 

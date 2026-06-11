@@ -1,7 +1,11 @@
 import useSilkHydration from './useSilkHydration';
 
 export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type AlertType = 'MAINTENANCE_OVERDUE' | 'INCIDENT_OPEN' | 'UNIT_CRITICAL';
+export type AlertType =
+  | 'MAINTENANCE_OVERDUE'
+  | 'INCIDENT_OPEN'
+  | 'UNIT_CRITICAL'
+  | 'COMPLIANCE_EXPIRY';
 
 export interface Alert {
   id: string;

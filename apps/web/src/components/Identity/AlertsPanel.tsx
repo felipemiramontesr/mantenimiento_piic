@@ -7,6 +7,7 @@ import {
   ShieldAlert,
   AlertCircle,
   Info,
+  FileWarning,
   LucideIcon,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -44,12 +45,14 @@ const TYPE_ICON: Record<AlertType, React.ReactNode> = {
   MAINTENANCE_OVERDUE: <Wrench size={12} />,
   INCIDENT_OPEN: <AlertTriangle size={12} />,
   UNIT_CRITICAL: <Lock size={12} />,
+  COMPLIANCE_EXPIRY: <FileWarning size={12} />,
 };
 
 const TYPE_LABEL: Record<AlertType, string> = {
   MAINTENANCE_OVERDUE: 'Mantenimiento vencido',
   INCIDENT_OPEN: 'Incidente abierto',
   UNIT_CRITICAL: 'Unidad bloqueada',
+  COMPLIANCE_EXPIRY: 'Cumplimiento por vencer',
 };
 
 const SEVERITY_CONFIG: Array<{

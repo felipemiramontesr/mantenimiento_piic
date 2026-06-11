@@ -110,4 +110,28 @@ describe('AlertsPanel — role-scoped guard (Feature Contract Alerts_Role_Scoped
     expect(lastCall[0]).toBe('Alertas del Sistema');
     expect(lastCall[4]).not.toBeNull();
   });
+
+  it('Fase 4: renders COMPLIANCE_EXPIRY alert with es-MX label and description', () => {
+    grantAccess(true);
+    useAlertsMock.mockReturnValue({
+      alerts: [
+        {
+          id: 'COMPLIANCE_INSURANCE_ASM-104',
+          type: 'COMPLIANCE_EXPIRY',
+          severity: 'CRITICAL',
+          title: 'Documento vencido — ASM-104',
+          description: 'Seguro vencido hace 5 días',
+          unitId: 'ASM-104',
+          createdAt: '2026-06-11T00:00:00.000Z',
+        } satisfies Alert,
+      ],
+      isSyncing: false,
+      refresh: vi.fn(),
+    });
+    renderPanel();
+
+    expect(screen.getByText('Cumplimiento por vencer')).toBeInTheDocument();
+    expect(screen.getByText('Seguro vencido hace 5 días')).toBeInTheDocument();
+    expect(screen.getByText('ASM-104')).toBeInTheDocument();
+  });
 });

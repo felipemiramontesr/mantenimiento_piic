@@ -3,7 +3,11 @@ import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 
 export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type AlertType = 'MAINTENANCE_OVERDUE' | 'INCIDENT_OPEN' | 'UNIT_CRITICAL';
+export type AlertType =
+  | 'MAINTENANCE_OVERDUE'
+  | 'INCIDENT_OPEN'
+  | 'UNIT_CRITICAL'
+  | 'COMPLIANCE_EXPIRY';
 
 export interface Alert {
   id: string;
@@ -22,7 +26,31 @@ const ALERT_TYPE_PERMISSION: Record<AlertType, string> = {
   MAINTENANCE_OVERDUE: 'maint:view',
   INCIDENT_OPEN: 'route:view',
   UNIT_CRITICAL: 'fleet:view',
+  COMPLIANCE_EXPIRY: 'fleet:view',
 };
+
+/** Fase 4 — ventana de monitoreo de vencimientos legales (días) */
+const COMPLIANCE_WINDOW_DAYS = 30;
+
+export function computeComplianceSeverity(daysLeft: number): AlertSeverity {
+  if (daysLeft < 0) return 'CRITICAL';
+  if (daysLeft <= 3) return 'HIGH';
+  if (daysLeft <= 15) return 'MEDIUM';
+  return 'LOW';
+}
+
+export function buildComplianceDescription(docLabel: string, daysLeft: number): string {
+  if (daysLeft < 0) return `${docLabel} vencido hace ${Math.abs(daysLeft)} días`;
+  if (daysLeft === 0) return `${docLabel} vence hoy`;
+  return `${docLabel} vence en ${daysLeft} días`;
+}
+
+/** Documentos de cumplimiento monitoreados — campo días calculado en SQL → etiqueta es-MX */
+const COMPLIANCE_DOCUMENTS: Array<{ daysField: string; idTag: string; label: string }> = [
+  { daysField: 'insuranceDays', idTag: 'INSURANCE', label: 'Seguro' },
+  { daysField: 'verificationDays', idTag: 'VERIFICATION', label: 'Verificación' },
+  { daysField: 'legalDays', idTag: 'LEGAL', label: 'Cumplimiento legal' },
+];
 
 const ALL_ALERT_TYPES = Object.keys(ALERT_TYPE_PERMISSION) as AlertType[];
 
@@ -165,6 +193,24 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
         total += Number(criticalRows[0].criticalCount);
       }
 
+      if (scope.has('COMPLIANCE_EXPIRY')) {
+        const [complianceRows] = await db.execute<RowDataPacket[]>(
+          `SELECT
+             SUM(CASE WHEN insuranceExpiryDate IS NOT NULL
+                       AND DATEDIFF(insuranceExpiryDate, CURDATE()) <= ${COMPLIANCE_WINDOW_DAYS}
+                  THEN 1 ELSE 0 END)
+           + SUM(CASE WHEN vencimientoVerificacion IS NOT NULL
+                       AND DATEDIFF(vencimientoVerificacion, CURDATE()) <= ${COMPLIANCE_WINDOW_DAYS}
+                  THEN 1 ELSE 0 END)
+           + SUM(CASE WHEN legalComplianceDate IS NOT NULL
+                       AND DATEDIFF(legalComplianceDate, CURDATE()) <= ${COMPLIANCE_WINDOW_DAYS}
+                  THEN 1 ELSE 0 END) AS complianceCount
+           FROM fleet_units
+           WHERE status != 'Descontinuada'`
+        );
+        total += Number(complianceRows[0].complianceCount);
+      }
+
       return reply.send({ success: true, count: total });
     } catch (error) {
       fastify.log.error({ err: (error as Error).message }, 'Alerts count fetch error');
@@ -278,6 +324,47 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
             unitId: String(row.unit_id),
             createdAt:
               row.start_at instanceof Date ? row.start_at.toISOString() : String(row.start_at),
+          });
+        });
+      }
+
+      // 4. Compliance — vencimientos legales (seguro, verificación, cumplimiento legal)
+      if (scope.has('COMPLIANCE_EXPIRY')) {
+        const [complianceRows] = await db.execute<RowDataPacket[]>(
+          `SELECT id,
+                  DATEDIFF(insuranceExpiryDate, CURDATE()) AS insuranceDays,
+                  DATEDIFF(vencimientoVerificacion, CURDATE()) AS verificationDays,
+                  DATEDIFF(legalComplianceDate, CURDATE()) AS legalDays
+           FROM fleet_units
+           WHERE status != 'Descontinuada'
+             AND (
+               (insuranceExpiryDate IS NOT NULL
+                AND DATEDIFF(insuranceExpiryDate, CURDATE()) <= ${COMPLIANCE_WINDOW_DAYS})
+               OR (vencimientoVerificacion IS NOT NULL
+                   AND DATEDIFF(vencimientoVerificacion, CURDATE()) <= ${COMPLIANCE_WINDOW_DAYS})
+               OR (legalComplianceDate IS NOT NULL
+                   AND DATEDIFF(legalComplianceDate, CURDATE()) <= ${COMPLIANCE_WINDOW_DAYS})
+             )
+           LIMIT 50`
+        );
+
+        complianceRows.forEach((row) => {
+          COMPLIANCE_DOCUMENTS.forEach(({ daysField, idTag, label }) => {
+            const daysLeft = row[daysField] as number | null;
+            if (daysLeft == null || daysLeft > COMPLIANCE_WINDOW_DAYS) return;
+            const severity = computeComplianceSeverity(daysLeft);
+            alerts.push({
+              id: `COMPLIANCE_${idTag}_${row.id}`,
+              type: 'COMPLIANCE_EXPIRY',
+              severity,
+              title:
+                daysLeft < 0
+                  ? `Documento vencido — ${row.id}`
+                  : `Cumplimiento por vencer — ${row.id}`,
+              description: buildComplianceDescription(label, daysLeft),
+              unitId: String(row.id),
+              createdAt: new Date().toISOString(),
+            });
           });
         });
       }
