@@ -33,6 +33,24 @@ Toda sesión registrada en este log debe apegarse a las reglas, versión activa 
 
 ---
 
+### V.78.101.151 — 2026-06-11 — CC
+
+**Sesión:** Notifications route coverage sprint — 500 paths + null branch
+**Archivos tocados:**
+
+- `apps/api/src/routes/notifications.test.ts` (+5 tests)
+- `Protocolos/PROTOCOLO_L.md` (version bump V.151)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (ESTADO ACTUAL V.151 + canal)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:** `notifications.ts` tenía 83.19% — faltaban 500 paths en GET, PATCH, POST push-token, POST unregister, y el branch `|| null` de deviceType (línea 120). Añadidos 5 tests al archivo existente. `notifications.ts`: 83.19% → **100%**. API total: 612→617 tests, **96.60%** overall.
+
+**Por qué:** GrayMan solicitó explícitamente mejorar `notifications.ts`. Era el gap más alto de la lista pendiente (83.19%).
+
+**Decisiones tomadas:** Tests añadidos al archivo existente (no coverage file separado) porque el archivo era compacto y los patrones eran homogéneos.
+
+---
+
 ### V.78.101.150 — 2026-06-10 — CC
 
 **Sesión:** FleetRoutes coverage sprint — GET /routes/:uuid/node + GET /incidents/:uuid/node

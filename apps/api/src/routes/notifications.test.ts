@@ -87,6 +87,21 @@ describe('Notifications Routes — Security & Behaviour', () => {
     });
   });
 
+  it('GET /v1/notifications — 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/notifications',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(500);
+    const body = JSON.parse(res.body);
+    expect(body.code).toBe('INTERNAL_ERROR');
+    expect(body.message).toBe('Failed to fetch notifications');
+  });
+
   it('GET /v1/notifications — maps is_read=1 as isRead=true', async () => {
     vi.mocked(db.execute).mockResolvedValueOnce([
       [
@@ -115,6 +130,21 @@ describe('Notifications Routes — Security & Behaviour', () => {
   });
 
   // ─── PATCH /v1/notifications/:id/read ───────────────────────────────────────
+
+  it('PATCH /v1/notifications/:id/read — 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/notifications/7/read',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(500);
+    const body = JSON.parse(res.body);
+    expect(body.code).toBe('INTERNAL_ERROR');
+    expect(body.message).toBe('Failed to update notification');
+  });
 
   it('PATCH /v1/notifications/:id/read — 400 on non-numeric id', async () => {
     const res = await app.inject({
@@ -186,6 +216,39 @@ describe('Notifications Routes — Security & Behaviour', () => {
     );
   });
 
+  it('POST /v1/notifications/push-token — 200 without deviceType (null branch)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([{ affectedRows: 1 }, undefined] as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { token: 'fcm-token-no-device' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(db.execute).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO user_push_tokens'),
+      [42, 'fcm-token-no-device', null]
+    );
+  });
+
+  it('POST /v1/notifications/push-token — 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { token: 'fcm-token-12345', deviceType: 'android' },
+    });
+
+    expect(res.statusCode).toBe(500);
+    const body = JSON.parse(res.body);
+    expect(body.code).toBe('INTERNAL_ERROR');
+    expect(body.message).toBe('Failed to register push token');
+  });
+
   // ─── POST /v1/notifications/push-token/unregister ───────────────────────────
 
   it('POST /v1/notifications/push-token/unregister — 400 on invalid payload', async () => {
@@ -224,5 +287,21 @@ describe('Notifications Routes — Security & Behaviour', () => {
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
     expect(body.success).toBe(true);
+  });
+
+  it('POST /v1/notifications/push-token/unregister — 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/notifications/push-token/unregister',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { token: 'fcm-token-12345' },
+    });
+
+    expect(res.statusCode).toBe(500);
+    const body = JSON.parse(res.body);
+    expect(body.code).toBe('INTERNAL_ERROR');
+    expect(body.message).toBe('Failed to unregister push token');
   });
 });
