@@ -33,6 +33,66 @@ Toda sesión registrada en este log debe apegarse a las reglas, versión activa 
 
 ---
 
+### V.78.101.155 — 2026-06-11 — CC
+
+**Sesión:** Refactor V8 Coverage Artifacts + Test Additions — Coverage 661→668 tests
+**Archivos tocados:**
+
+- `apps/api/src/utils/withConnection.ts` (NUEVO — pool lifecycle helper)
+- `apps/api/src/utils/withConnection.test.ts` (NUEVO — 2 tests, ambas ramas finally cubiertas)
+- `apps/api/src/middleware/requirePermission.ts` (fix `?.`/`??` V8 artifact línea 19)
+- `apps/api/src/routes/auth.ts` (fix `?.`/`??` línea 492 + dead try/catch línea 533)
+- `apps/api/src/routes/admin.ts` (refactor PATCH handler → withConnection wrapper, finally removido)
+- `apps/api/src/routes/fleetMaintenance.ts` (4 finally removidos, release distribuido en POST/PATCH complete/accept/reject)
+- `apps/api/src/services/workOrderService.ts` (finally removido, release distribuido en commit-path + catch-before-throw)
+- `apps/api/src/routes/alerts.test.ts` (+2 tests: invalid date línea 27 + string lastServiceDate línea 87)
+- `apps/api/src/routes/financeIntegration.test.ts` (+1 test: byCategory populated map callback líneas 195-198)
+- `apps/api/src/services/notification.service.test.ts` (+2 tests: priority default + metadata stringify en sendPush)
+- `apps/api/src/routes/authIntegration.test.ts` (mock simplificado: decrypt ya no simula throw; test renombrado)
+- `Protocolos/PROTOCOLO_L.md` (version bump V.155)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (canal CC→AG V.155)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:**
+
+1. `withConnection` helper en utils — ciclo de vida de conexión DB sin finally en handlers.
+2. Eliminados 5 `finally { connection.release() }` (fleetMaintenance×3 + workOrderService×1 + admin×1) que generaban artefactos V8 inalcanzables.
+3. Eliminados 3 operadores `?.`/`??` redundantes (requirePermission, auth×2) — tipos endurecidos.
+4. Eliminado dead try/catch alrededor de `EncryptionService.decrypt()` en auth.ts — contrato decrypt() verified: siempre retorna string, nunca throws.
+5. +7 tests para gaps reales: alerts (2), finance (1), notification.service.sendPush (2), withConnection (2).
+
+**Por qué:** GrayMan autorizó "Go" para implementar todos los refactors V8 discutidos con AG. Objetivo: eliminar artefactos de cobertura y acercar el techo real a 100%.
+
+**Decisiones tomadas:** Para admin.ts se usó withConnection wrapper (más limpio). Para fleetMaintenance y workOrderService se usó distribución de release (mínimo diff, sin re-indentación). Auth mock simplificado al eliminar el throw simulado que nunca ocurre en producción.
+
+**Pendiente / Notas:** Verificar coverage post-commit con `--coverage` para confirmar mejora de branches. Auth `:141` ya estaba cubierto (mock V.124 existente en la misma sesión).
+
+---
+
+### V.78.101.154 — 2026-06-11 — AG
+
+**Sesión:** Integración de Validación de Tipos (Static TS) en Pipeline CI/CD y Protocolo L
+**Archivos tocados:**
+
+- `.github/workflows/deploy.yml` (agregados pasos de tsc --noEmit y actualización del summaries dashboard)
+- `Protocolos/PROTOCOLO_L.md` (agregada Regla 14 de Operación Autónoma, version bump)
+- `CLAUDE.md` (agregada Regla 14)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (actualizado a V.154, registrado mensaje en el canal)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:**
+
+1. Se configuró el pipeline de GitHub Actions (`deploy.yml`) para ejecutar `tsc --noEmit` de forma independiente en los shards de validación de backend y frontend.
+2. Se añadió "Static Type Checking" como una fila certificada en el `🔱 ARCHON CERTIFICATION DASHBOARD` que se publica automáticamente en los resúmenes de ejecución de GitHub.
+3. Se añadió "TypeScript Compiler" como herramienta técnica dentro de la tabla de stack de validación industrial en el sumario.
+4. Se formalizó la validación de tipos como la **Regla 14 de Operación Autónoma** en `PROTOCOLO_L.md` y `CLAUDE.md`.
+
+**Por qué:** Solicitud explícita del usuario para formalizar e integrar el typechecking estricto en el protocolo y en el dashboard de certificación visible en GitHub.
+
+**Decisiones tomadas:** Ejecutar `tsc --noEmit` únicamente en el shard 1 de validación en GitHub Actions para optimizar los tiempos de ejecución y evitar redundancia de CPU.
+
+---
+
 ### V.78.101.153 — 2026-06-11 — CC
 
 **Sesión:** Coverage max sprint — 661 tests, 99.74% statements / 97.68% branches

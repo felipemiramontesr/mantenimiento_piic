@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
+import withConnection from '../utils/withConnection';
 
 function canAccessAdmin(permissions: string[]): boolean {
   return permissions.includes('*') || permissions.includes('system:manage_roles');
@@ -246,59 +247,62 @@ export async function adminRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     const { permissions } = parsed.data;
-    const connection = await db.getConnection();
 
-    try {
+    return withConnection(async (connection) => {
       await connection.beginTransaction();
+      try {
+        const [roleCheck] = await connection.execute<RowDataPacket[]>(
+          'SELECT id FROM roles WHERE id = ?',
+          [parsedRoleId]
+        );
+        if (roleCheck.length === 0) {
+          await connection.rollback();
+          return reply
+            .code(404)
+            .send({ success: false, code: 'NOT_FOUND', message: 'Rol no encontrado' });
+        }
 
-      const [roleCheck] = await connection.execute<RowDataPacket[]>(
-        'SELECT id FROM roles WHERE id = ?',
-        [parsedRoleId]
-      );
-      if (roleCheck.length === 0) {
-        await connection.rollback();
-        return reply
-          .code(404)
-          .send({ success: false, code: 'NOT_FOUND', message: 'Rol no encontrado' });
-      }
-
-      await connection.execute<ResultSetHeader>('DELETE FROM role_permissions WHERE role_id = ?', [
-        parsedRoleId,
-      ]);
-
-      if (permissions.length > 0) {
-        const [permRows] = await connection.execute<RowDataPacket[]>(
-          `SELECT id, slug FROM permissions WHERE slug IN (${permissions
-            .map(() => '?')
-            .join(',')})`,
-          permissions
+        await connection.execute<ResultSetHeader>(
+          'DELETE FROM role_permissions WHERE role_id = ?',
+          [parsedRoleId]
         );
 
-        const insertValues = (permRows as RowDataPacket[]).map((p) => [
-          parsedRoleId,
-          p.id as number,
-        ]);
-        if (insertValues.length > 0) {
-          await connection.execute<ResultSetHeader>(
-            `INSERT INTO role_permissions (role_id, permission_id) VALUES ${insertValues
-              .map(() => '(?,?)')
-              .join(',')}`,
-            insertValues.flat()
+        if (permissions.length > 0) {
+          const [permRows] = await connection.execute<RowDataPacket[]>(
+            `SELECT id, slug FROM permissions WHERE slug IN (${permissions
+              .map(() => '?')
+              .join(',')})`,
+            permissions
           );
-        }
-      }
 
-      await connection.commit();
-      return reply.send({ success: true, data: { roleId: parsedRoleId, permissions } });
-    } catch (error) {
-      await connection.rollback();
-      fastify.log.error({ err: (error as Error).message }, 'Admin update permissions error');
-      return reply
-        .code(500)
-        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al actualizar permisos' });
-    } finally {
-      connection.release();
-    }
+          const insertValues = (permRows as RowDataPacket[]).map((p) => [
+            parsedRoleId,
+            p.id as number,
+          ]);
+          if (insertValues.length > 0) {
+            await connection.execute<ResultSetHeader>(
+              `INSERT INTO role_permissions (role_id, permission_id) VALUES ${insertValues
+                .map(() => '(?,?)')
+                .join(',')}`,
+              insertValues.flat()
+            );
+          }
+        }
+
+        await connection.commit();
+        return reply.send({ success: true, data: { roleId: parsedRoleId, permissions } });
+      } catch (error) {
+        await connection.rollback();
+        fastify.log.error({ err: (error as Error).message }, 'Admin update permissions error');
+        return reply
+          .code(500)
+          .send({
+            success: false,
+            code: 'INTERNAL_ERROR',
+            message: 'Error al actualizar permisos',
+          });
+      }
+    });
   });
 }
 

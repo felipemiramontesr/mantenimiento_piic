@@ -132,4 +132,15 @@ describe('buildOverdueDescription', () => {
     const result = buildOverdueDescription(50000, null, '2025-12-01', 180);
     expect(result).not.toMatch(/Mon|Tue|Wed|Thu|Fri|Sat|Sun/);
   });
+
+  it('line 27: invalid date string returns raw value via formatDateEsMx NaN path', () => {
+    const result = buildOverdueDescription(50000, null, 'not-a-date', null);
+    expect(result).toContain('not-a-date');
+  });
+
+  it('line 87: string lastServiceDate in not-yet-due path hits instanceof false branch', () => {
+    const dateStr = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
+    const result = buildOverdueDescription(0, null, dateStr, 90);
+    expect(result).toContain('Próximo Mantenimiento');
+  });
 });

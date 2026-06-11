@@ -213,6 +213,27 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       });
       expect(res.statusCode).toBe(500);
     });
+
+    it('returns 200 with byCategory populated (lines 195-198 map callback)', async () => {
+      const categoryRow = { category: 'MAINTENANCE', amount: '85000' };
+      (db.execute as Mock)
+        .mockResolvedValueOnce([KPI_ROW, undefined])
+        .mockResolvedValueOnce([UNIT_COUNT_ROW, undefined])
+        .mockResolvedValueOnce([[categoryRow], undefined])
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/dashboard',
+        headers: authHeader(),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.data.byCategory).toHaveLength(1);
+      expect(body.data.byCategory[0].category).toBe('MAINTENANCE');
+      expect(body.data.byCategory[0].amount).toBe(85000);
+    });
   });
 
   // ─── GET /finance/transactions ───────────────────────────────────────────────

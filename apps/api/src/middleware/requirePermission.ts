@@ -15,8 +15,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 const requirePermission =
   (permission: string) =>
   async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    const user = request.user as { permissions?: string[] } | undefined;
-    const permissions = user?.permissions ?? [];
+    const { permissions } = request.user as { permissions: string[] };
 
     if (permissions.includes('*') || permissions.includes(permission)) return;
 

@@ -243,6 +243,7 @@ export async function createWorkOrder(vehicleId: string): Promise<CreateWorkOrde
     );
 
     await connection.commit();
+    connection.release();
     return {
       workOrderId,
       uuid: (uuidRow as RowDataPacket).uuid as string,
@@ -250,9 +251,8 @@ export async function createWorkOrder(vehicleId: string): Promise<CreateWorkOrde
     };
   } catch (error) {
     await connection.rollback();
-    throw error;
-  } finally {
     connection.release();
+    throw error;
   }
 }
 

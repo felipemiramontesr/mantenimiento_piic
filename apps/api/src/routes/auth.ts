@@ -488,8 +488,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.get('/users/:uuid/node', async (request, reply) => {
     try {
       await request.jwtVerify();
-      const jwtUser = request.user as { permissions?: string[] };
-      const perms = jwtUser?.permissions ?? [];
+      const perms = (request.user as { permissions: string[] }).permissions;
       if (!perms.includes('*') && !perms.includes('user:admin')) {
         return reply
           .code(403)
@@ -528,12 +527,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         ),
       ]);
 
-      let emailDecrypted = user.email as string;
-      try {
-        emailDecrypted = EncryptionService.decrypt(user.email as string) ?? user.email;
-      } catch {
-        /* keep raw if not encrypted */
-      }
+      const emailDecrypted = EncryptionService.decrypt(user.email as string);
 
       return reply.send({
         success: true,

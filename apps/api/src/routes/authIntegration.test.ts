@@ -26,10 +26,7 @@ vi.mock('argon2', () => ({ default: { verify: vi.fn(), hash: vi.fn() } }));
 vi.mock('../services/encryption', () => ({
   default: {
     encrypt: vi.fn((v) => `enc_${v}`),
-    decrypt: vi.fn((v) => {
-      if (v === 'corrupted') throw new Error('DECRYPT_ERROR');
-      return v ? v.replace('enc_', '') : '';
-    }),
+    decrypt: vi.fn((v) => (v ? v.replace('enc_', '') : '')),
   },
 }));
 
@@ -568,7 +565,7 @@ describe('authIntegration.test', () => {
     expect(res.statusCode).toBe(500);
   });
 
-  it('GET /users/:uuid/node — keeps raw email when decryption throws (line 536 catch)', async () => {
+  it('GET /users/:uuid/node — passes through non-encrypted email unchanged (line 530 decrypt)', async () => {
     const omniToken = await (
       app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
     ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });

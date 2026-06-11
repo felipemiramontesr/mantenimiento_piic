@@ -278,4 +278,40 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
 
     await expect((NotificationService as any).sendPush([1], payload)).resolves.not.toThrow();
   });
+
+  it('line 196: priority undefined falls back to MEDIUM in FCM body', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ token: 'device-token' }], undefined] as any);
+    const capturedBodies: string[] = [];
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'tok' }) })
+      .mockImplementationOnce((_url: string, opts: { body: string }) => {
+        capturedBodies.push(opts.body);
+        return Promise.resolve({ ok: true });
+      });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const noPriorityPayload = { ...payload, priority: undefined as any };
+    await (NotificationService as any).sendPush([1], noPriorityPayload);
+
+    expect(capturedBodies[0]).toContain('"priority":"MEDIUM"');
+  });
+
+  it('line 197: metadata present gets JSON.stringify in FCM body', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ token: 'device-token' }], undefined] as any);
+    const capturedBodies: string[] = [];
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: 'tok' }) })
+      .mockImplementationOnce((_url: string, opts: { body: string }) => {
+        capturedBodies.push(opts.body);
+        return Promise.resolve({ ok: true });
+      });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const metaPayload = { ...payload, metadata: { orderId: 99 } };
+    await (NotificationService as any).sendPush([1], metaPayload);
+
+    expect(capturedBodies[0]).toContain('"metadata":"{\\"orderId\\":99}"');
+  });
 });

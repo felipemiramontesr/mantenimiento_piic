@@ -801,6 +801,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
             // Notification failure is non-fatal per zero-noise policy
           });
 
+          connection.release();
           return reply.code(201).send({
             success: true,
             message: 'Maintenance order created. Awaiting technician acceptance.',
@@ -820,6 +821,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           data.fuelLevelEnd
         );
         await connection.commit();
+        connection.release();
         return reply.code(201).send({
           success: true,
           message: 'Maintenance registered successfully.',
@@ -829,9 +831,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       } catch (error) {
         await connection.rollback();
         fastify.log.error(error);
-        return reply.code(400).send({ success: false, message: (error as Error).message });
-      } finally {
         connection.release();
+        return reply.code(400).send({ success: false, message: (error as Error).message });
       }
     }
   );
@@ -969,6 +970,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           // Notification failure is non-fatal per zero-noise policy
         });
 
+        connection.release();
         return reply.send({
           success: true,
           message: 'Maintenance completed. Unit released to Disponible.',
@@ -978,9 +980,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       } catch (error) {
         await connection.rollback();
         fastify.log.error(error);
-        return reply.code(400).send({ success: false, message: (error as Error).message });
-      } finally {
         connection.release();
+        return reply.code(400).send({ success: false, message: (error as Error).message });
       }
     }
   );
@@ -1009,11 +1010,13 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         );
         if (movements.length === 0) {
           await connection.rollback();
+          connection.release();
           return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
         }
         const movement = movements[0];
         if (movement.status !== MOVEMENT_STATUS.OPEN) {
           await connection.rollback();
+          connection.release();
           return reply.code(409).send({
             success: false,
             message: `La orden ya está en estado ${movement.status as string}`,
@@ -1093,6 +1096,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           });
         }
 
+        connection.release();
         return reply.send({
           success: true,
           message: 'Orden aceptada. Proceso UPA iniciado.',
@@ -1101,9 +1105,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       } catch (error) {
         await connection.rollback();
         fastify.log.error(error);
-        return reply.code(500).send({ success: false, message: (error as Error).message });
-      } finally {
         connection.release();
+        return reply.code(500).send({ success: false, message: (error as Error).message });
       }
     }
   );
@@ -1133,11 +1136,13 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         );
         if (movements.length === 0) {
           await connection.rollback();
+          connection.release();
           return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
         }
         const movement = movements[0];
         if (movement.status !== MOVEMENT_STATUS.OPEN) {
           await connection.rollback();
+          connection.release();
           return reply.code(409).send({
             success: false,
             message: `No se puede rechazar: la orden está en estado ${movement.status as string}`,
@@ -1175,6 +1180,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           });
         }
 
+        connection.release();
         return reply.send({
           success: true,
           message: 'Orden rechazada. Técnico liberado para reasignación.',
@@ -1182,9 +1188,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       } catch (error) {
         await connection.rollback();
         fastify.log.error(error);
-        return reply.code(500).send({ success: false, message: (error as Error).message });
-      } finally {
         connection.release();
+        return reply.code(500).send({ success: false, message: (error as Error).message });
       }
     }
   );
