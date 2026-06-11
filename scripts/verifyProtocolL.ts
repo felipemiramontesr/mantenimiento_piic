@@ -29,18 +29,19 @@ function runCommand(cmd: string): string {
   }
 }
 
-// 1. Guard: No permitir archivos de Protocolos/ en Git Staged
+// 1. Guard: No permitir archivos de Protocolos/ o CLAUDE.md en Git Staged
 function verifyNoProtocolStaged(stagedFiles: string[]): void {
-  const protocolStagedFiles = stagedFiles.filter((file) =>
-    file.toLowerCase().startsWith('protocolos/')
-  );
+  const protocolStagedFiles = stagedFiles.filter((file) => {
+    const lower = file.toLowerCase();
+    return lower.startsWith('protocolos/') || lower === 'claude.md';
+  });
 
   if (protocolStagedFiles.length > 0) {
     logError(
-      `Se detectaron archivos de Protocolos/ en git staged:\n${protocolStagedFiles.join(
+      `Se detectaron archivos locales protegidos (Protocolos/ o CLAUDE.md) en git staged:\n${protocolStagedFiles.join(
         '\n'
-      )}\nLos archivos L, H y F son estrictamente locales y están en .gitignore. Remuévelos con:\n` +
-        `  git restore --staged Protocolos/`
+      )}\nEstos archivos son estrictamente locales y están en .gitignore. Remuévelos con:\n` +
+        `  git restore --staged <archivo>`
     );
     process.exit(1);
   }
@@ -265,8 +266,8 @@ function verify(): void {
   const masterPath = path.join(rootDir, 'Protocolos', 'PROTOCOLO_L.md');
   const forensePath = path.join(rootDir, 'Protocolos', 'LOG_FORENSE.md');
 
-  // 1. Obtener archivos en staged (git diff --cached)
-  const stagedFilesStr = runCommand('git diff --cached --name-only');
+  // 1. Obtener archivos en staged (git diff --cached, excluyendo eliminados)
+  const stagedFilesStr = runCommand('git diff --cached --name-only --diff-filter=d');
   if (!stagedFilesStr) {
     logSuccess('No hay archivos staged para commitear. Omitiendo validación.');
     process.exit(0);
