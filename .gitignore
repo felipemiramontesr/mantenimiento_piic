@@ -54,3 +54,8 @@ Protocolos/
 **/scratch/
 apps/api/scratch/
 apps/web/scratch/
+
+# Build caches and IDE settings
+*.tsbuildinfo
+.gemini/
+.gemini_scratch/
