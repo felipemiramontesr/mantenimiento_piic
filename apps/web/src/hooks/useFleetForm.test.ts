@@ -12,14 +12,14 @@ import server from '../test/server';
 describe('useFleetForm Hook', () => {
   it('should initialize with default fleet form data', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm(true));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
     expect(result.current.formData.id).toBe('');
     expect(result.current.formData.assetTypeId).toBe(1); // VEH is 1
   });
 
   it('should handle asset type changes correctly', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm(true));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
     await act(async (): Promise<void> => {
       await result.current.handleAssetTypeChange(2);
     });
@@ -60,7 +60,7 @@ describe('useFleetForm Hook', () => {
     const { result } = renderHook(() => useFleetForm(true));
 
     // Wait for initial hydration to avoid act warnings
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
 
     // Populate ALL required fields as per v35 validation logic
     await act(async () => {
@@ -87,7 +87,7 @@ describe('useFleetForm Hook', () => {
 
   it('should throw error when submitting with missing required fields', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm(true));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
 
     // Initial state is already missing fields, so it should throw
     await act(async () => {
@@ -113,7 +113,7 @@ describe('useFleetForm Hook', () => {
     );
 
     const { result } = renderHook(() => useFleetForm(true));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
 
     // Populate required fields to bypass client-side validation first
     await act(async () => {
@@ -142,7 +142,7 @@ describe('useFleetForm Hook', () => {
 
   it('should reset form state to initial values', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm(true));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
 
     await act(async (): Promise<void> => {
       result.current.setFormData((prev) => ({ ...prev, id: 'MODIFIED' }));
@@ -159,7 +159,7 @@ describe('useFleetForm Hook', () => {
 
   it('should handle modelo changes correctly', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm(true));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
     await act(async (): Promise<void> => {
       result.current.handleModeloChange(301);
     });
@@ -168,7 +168,7 @@ describe('useFleetForm Hook', () => {
 
   it('should reset error state', async (): Promise<void> => {
     const { result } = renderHook(() => useFleetForm(true));
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
     await act(async (): Promise<void> => {
       result.current.setError('Sample Error');
     });

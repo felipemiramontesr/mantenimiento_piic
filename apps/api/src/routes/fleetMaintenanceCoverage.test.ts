@@ -1,0 +1,951 @@
+/* eslint-disable */
+// @ts-nocheck
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+import buildApp from '../index';
+import db from '../services/db';
+import NotificationService from '../services/notification.service';
+import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
+
+vi.mock('../services/db', () => ({
+  default: {
+    execute: vi.fn().mockResolvedValue([[], undefined]),
+    query: vi.fn().mockResolvedValue([[], undefined]),
+    getConnection: vi.fn(),
+  },
+}));
+
+vi.mock('../services/workOrderService', () => ({
+  createWorkOrder: vi.fn().mockResolvedValue({ workOrderId: 'WO-MOCK-1' }),
+}));
+
+vi.mock('../services/notification.service', () => ({
+  default: { dispatch: vi.fn().mockResolvedValue(undefined) },
+  ArchonNotificationType: { MAINTENANCE_ALERT: 'MAINTENANCE_ALERT', SYSTEM: 'SYSTEM' },
+  ArchonNotificationPriority: { HIGH: 'HIGH', MEDIUM: 'MEDIUM', CRITICAL: 'CRITICAL' },
+}));
+
+vi.mock('../services/notificationsOutboxService', () => ({
+  purgeOutboxForOrder: vi.fn().mockResolvedValue(undefined),
+  processPendingAlerts: vi.fn().mockResolvedValue(undefined),
+}));
+
+// ─── Shared setup ─────────────────────────────────────────────────────────────
+
+const makeApp = () => {
+  const app = buildApp();
+  let token: string;
+  return {
+    app,
+    getToken: () => token,
+    init: async () => {
+      await app.ready();
+      token = app.jwt.sign({
+        id: 1,
+        username: 'admin',
+        roleId: 1,
+        roleName: 'Director',
+        permissions: ['*'],
+      });
+    },
+  };
+};
+
+// ─── GET /maintenance ─────────────────────────────────────────────────────────
+
+describe('FleetMaintenance GET /maintenance', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 200 with basic result (no cursor)', async () => {
+    const row = {
+      id: 1,
+      uuid: 'maint-uuid-1',
+      unit_id: 'ASM-001',
+      movement_status: 'COMPLETED',
+      created_at: new Date('2026-06-01T10:00:00Z'),
+    };
+    vi.mocked(db.execute).mockResolvedValueOnce([[row], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+    expect(res.json().data).toHaveLength(1);
+    expect(res.json().nextCursor).toBeNull();
+  });
+
+  it('returns nextCursor when rows exceed limit', async () => {
+    const makeRow = (id: number) => ({
+      id,
+      uuid: `maint-${id}`,
+      unit_id: 'ASM-001',
+      movement_status: 'COMPLETED',
+      created_at: new Date('2026-06-01T10:00:00Z'),
+    });
+    const rows = [makeRow(1), makeRow(2), makeRow(3)];
+    vi.mocked(db.execute).mockResolvedValueOnce([rows, undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance?limit=2',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.nextCursor).not.toBeNull();
+    expect(body.data).toHaveLength(2);
+  });
+
+  it('accepts cursor param and returns 200', async () => {
+    const cursor = Buffer.from('2026-06-01T10:00:00.000Z|5').toString('base64');
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/maintenance?cursor=${encodeURIComponent(cursor)}`,
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('returns 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+// ─── GET /maintenance/template/:unitId ────────────────────────────────────────
+
+describe('FleetMaintenance GET /maintenance/template/:unitId', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 200 with task list for agency unit', async () => {
+    const unitRow = {
+      brandId: 1,
+      fuelTypeId: 2,
+      maintIntervalKm: 10000,
+      maintIntervalDays: 0,
+      odometer: 45000,
+      lastServiceReading: 40000,
+      last_chassis_inspection_odometer: 0,
+      last_distribution_change_odometer: 0,
+    };
+    const taskRow = { code: 'OIL_CHANGE', label: 'Cambio de aceite', isCritical: 1 };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[unitRow], undefined]) // SELECT fleet_units
+      .mockResolvedValueOnce([[taskRow], undefined]) // SELECT tasks
+      .mockResolvedValueOnce([[], undefined]); // fetchDeferredTasks: last COMPLETED order
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-001',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+    expect(res.json().tasks).toHaveLength(1);
+    expect(res.json().tasks[0].code).toBe('OIL_CHANGE');
+  });
+
+  it('includes deferred carry-over task from last completed order', async () => {
+    const unitRow = {
+      brandId: 1,
+      fuelTypeId: 2,
+      maintIntervalKm: 10000,
+      maintIntervalDays: 0,
+      odometer: 45000,
+      lastServiceReading: 40000,
+      last_chassis_inspection_odometer: 0,
+      last_distribution_change_odometer: 0,
+    };
+    const taskRow = { code: 'OIL_CHANGE', label: 'Cambio de aceite', isCritical: 1 };
+    const deferredRow = { task_code: 'BRAKE_FLUID', label: 'Líquido de frenos', isCritical: 0 };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[unitRow], undefined]) // SELECT fleet_units
+      .mockResolvedValueOnce([[taskRow], undefined]) // SELECT tasks
+      .mockResolvedValueOnce([[{ id: 99 }], undefined]) // fetchDeferred: last order
+      .mockResolvedValueOnce([[deferredRow], undefined]); // fetchDeferred: DEFERRED tasks
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-001',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks;
+    const deferred = tasks.find((t: any) => t.code === 'BRAKE_FLUID');
+    expect(deferred).toBeDefined();
+    expect(deferred.isDeferredCarry).toBe(true);
+  });
+
+  it('returns 404 when unit not found', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/NONEXISTENT',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB fail'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-001',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+// ─── GET /maintenance/forecast ────────────────────────────────────────────────
+
+describe('FleetMaintenance GET /maintenance/forecast', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 200 with CRITICAL urgency (winnerDays <= 7)', async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastSvcDate = new Date(today);
+    lastSvcDate.setDate(lastSvcDate.getDate() - 363); // ~1 year ago so nextSvcDate is 2 days away
+    const unitRow = {
+      unitId: 'ASM-001',
+      marca: 'Toyota',
+      modelo: 'Hilux',
+      departamento: 'Operaciones',
+      currentOdometer: '9500',
+      dailyUsageAvg: '100',
+      maintIntervalKm: '10000',
+      maintIntervalDays: 365,
+      lastServiceReading: '0',
+      lastServiceDate: lastSvcDate.toISOString().split('T')[0],
+    };
+    vi.mocked(db.execute).mockResolvedValueOnce([[unitRow], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const data = res.json().data;
+    expect(data).toHaveLength(1);
+    expect(['CRITICAL', 'WARNING', 'OK']).toContain(data[0].urgency);
+  });
+
+  it('returns 200 with OK urgency (winnerDays > 30)', async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastSvcDate = new Date(today);
+    lastSvcDate.setDate(lastSvcDate.getDate() - 100);
+    const unitRow = {
+      unitId: 'ASM-002',
+      marca: 'Ford',
+      modelo: 'Ranger',
+      departamento: 'Flota',
+      currentOdometer: '5000',
+      dailyUsageAvg: '50',
+      maintIntervalKm: '10000',
+      maintIntervalDays: 365,
+      lastServiceReading: '0',
+      lastServiceDate: lastSvcDate.toISOString().split('T')[0],
+    };
+    vi.mocked(db.execute).mockResolvedValueOnce([[unitRow], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data[0].urgency).toBe('OK');
+  });
+
+  it('returns 200 with dailyUsageAvg=0 (triggerType DATE, daysForKm=Infinity)', async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastSvcDate = new Date(today);
+    lastSvcDate.setDate(lastSvcDate.getDate() - 10);
+    const unitRow = {
+      unitId: 'ASM-003',
+      marca: null,
+      modelo: null,
+      departamento: null,
+      currentOdometer: '1000',
+      dailyUsageAvg: '0',
+      maintIntervalKm: '10000',
+      maintIntervalDays: 365,
+      lastServiceReading: '0',
+      lastServiceDate: lastSvcDate.toISOString().split('T')[0],
+    };
+    vi.mocked(db.execute).mockResolvedValueOnce([[unitRow], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const row = res.json().data[0];
+    expect(row.triggerType).toBe('DATE');
+    expect(row.marca).toBe('—');
+  });
+
+  it('returns 200 with empty units list', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toEqual([]);
+  });
+
+  it('sorts multiple units correctly (covers ternary uDiff=0 and uDiff!=0 branches)', async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Unit A: CRITICAL (daysUntilService ~2, km trigger)
+    const lastSvcA = new Date(today);
+    lastSvcA.setDate(lastSvcA.getDate() - 363);
+    // Unit B: CRITICAL same urgency, higher daysUntilService (covers uDiff=0 secondary sort)
+    const lastSvcB = new Date(today);
+    lastSvcB.setDate(lastSvcB.getDate() - 362);
+    // Unit C: OK urgency (covers uDiff!=0 branch)
+    const lastSvcC = new Date(today);
+    lastSvcC.setDate(lastSvcC.getDate() - 10);
+    const makeUnit = (
+      id: string,
+      svcDate: Date,
+      odo: string,
+      dailyAvg: string,
+      intervalDays: number
+    ) => ({
+      unitId: id,
+      marca: 'Toyota',
+      modelo: 'Hilux',
+      departamento: 'Ops',
+      currentOdometer: odo,
+      dailyUsageAvg: dailyAvg,
+      maintIntervalKm: '10000',
+      maintIntervalDays: intervalDays,
+      lastServiceReading: '0',
+      lastServiceDate: svcDate.toISOString().split('T')[0],
+    });
+    vi.mocked(db.execute).mockResolvedValueOnce([
+      [
+        makeUnit('A', lastSvcA, '9500', '100', 365),
+        makeUnit('B', lastSvcB, '9400', '100', 365),
+        makeUnit('C', lastSvcC, '1000', '50', 365),
+      ],
+      undefined,
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const data = res.json().data;
+    expect(data).toHaveLength(3);
+    // CRITICAL units come before OK
+    expect(data[0].urgency).not.toBe('OK');
+    expect(data[data.length - 1].urgency).toBe('OK');
+  });
+
+  it('returns 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+// ─── GET /maintenance/:uuid ───────────────────────────────────────────────────
+
+describe('FleetMaintenance GET /maintenance/:uuid', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 200 with order and details', async () => {
+    const movRow = {
+      id: 10,
+      uuid: 'detail-uuid',
+      unit_id: 'ASM-001',
+      movement_status: 'COMPLETED',
+      service_date: '2026-06-01',
+      odometer_at_service: 45000,
+      odometer_at_close: 45200,
+      service_type: 'BASIC_10K',
+      cost: 500,
+      technician: 'Tech A',
+      created_at: new Date(),
+    };
+    const detailRow = {
+      taskCode: 'OIL_CHANGE',
+      status: 'PASS',
+      notes: null,
+      label: 'Cambio de aceite',
+      isCritical: 1,
+      statusLabel: 'Aprobado',
+    };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[movRow], undefined])
+      .mockResolvedValueOnce([[detailRow], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/detail-uuid',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+    expect(res.json().data.uuid).toBe('detail-uuid');
+    expect(res.json().data.details).toHaveLength(1);
+  });
+
+  it('returns 404 when order not found', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/nonexistent-uuid',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/err-uuid',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+// ─── GET /maintenance/:uuid/node ──────────────────────────────────────────────
+
+describe('FleetMaintenance GET /maintenance/:uuid/node', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 200 with order, details and unit context', async () => {
+    const movRow = {
+      id: 20,
+      uuid: 'node-uuid',
+      unit_id: 'ASM-002',
+      movement_status: 'ACTIVE',
+      service_type: 'BASIC_10K',
+      created_at: new Date(),
+    };
+    const detailRow = {
+      taskCode: 'OIL_CHANGE',
+      status: 'PASS',
+      notes: null,
+      label: 'Cambio de aceite',
+      isCritical: 1,
+      statusLabel: 'Aprobado',
+    };
+    const unitRow = {
+      id: 'ASM-002',
+      status: 'En Mantenimiento',
+      marca: 'Toyota',
+      modelo: 'Hilux',
+      year: 2022,
+      odometer: 45000,
+      maintIntervalKm: 10000,
+      lastFuelLevel: 80,
+    };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[movRow], undefined]) // SELECT movements
+      .mockResolvedValueOnce([[detailRow], undefined]) // Promise.all[0]: details
+      .mockResolvedValueOnce([[unitRow], undefined]); // Promise.all[1]: unit
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/node-uuid/node',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+    expect(res.json().data.order.uuid).toBe('node-uuid');
+    expect(res.json().data.unit.id).toBe('ASM-002');
+  });
+
+  it('returns 404 when order not found', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/missing-uuid/node',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 500 on db error', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB down'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/err-uuid/node',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+// ─── POST /maintenance — COMPLETED (is_in_progress: false) ───────────────────
+
+describe('POST /maintenance — COMPLETED path (is_in_progress: false)', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 201 with COMPLETED status when is_in_progress=false', async () => {
+    const unitRow = {
+      id: 'ASM-001',
+      odometer: 45000,
+      maintIntervalKm: 10000,
+      status: 'Disponible',
+      lastFuelLevel: 75,
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[unitRow], undefined]) // SELECT fleet_units
+      .mockResolvedValueOnce([{ insertId: 50, affectedRows: 1 }, undefined]) // INSERT fleet_movements COMPLETED
+      .mockResolvedValueOnce([{ insertId: 51, affectedRows: 1 }, undefined]) // INSERT extensions
+      .mockResolvedValueOnce([[{ odometer: 45000 }], undefined]) // applyCompletion: SELECT odometer
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // applyCompletion: UPDATE fleet_units
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-001',
+        serviceDate: '2026-06-10',
+        odometerAtService: 45000,
+        cost: 800,
+        technician: 'Tech B',
+        is_in_progress: false,
+        details: [],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().movement_status).toBe('COMPLETED');
+  });
+
+  it('returns 201 COMPLETED with details inserting task rows', async () => {
+    const unitRow = {
+      id: 'ASM-001',
+      odometer: 45000,
+      maintIntervalKm: 10000,
+      status: 'Disponible',
+      lastFuelLevel: null,
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[unitRow], undefined])
+      .mockResolvedValueOnce([{ insertId: 52, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ insertId: 53, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT detail
+      .mockResolvedValueOnce([[{ odometer: 45000 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-001',
+        serviceDate: '2026-06-10',
+        odometerAtService: 45000,
+        cost: 800,
+        technician: 'Tech B',
+        is_in_progress: false,
+        details: [{ taskCode: 'OIL_CHANGE', status: 'PASS', notes: null }],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(201);
+  });
+
+  it('OPEN path — dispatches tech userId notification when user found by name (covers lines 776-785)', async () => {
+    const unitRow = {
+      id: 'ASM-010',
+      odometer: 40000,
+      maintIntervalKm: 10000,
+      status: 'Disponible',
+      lastFuelLevel: 60,
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[unitRow], undefined]) // SELECT fleet_units (connection)
+      .mockResolvedValueOnce([{ insertId: 77, affectedRows: 1 }, undefined]) // INSERT fleet_movements OPEN
+      .mockResolvedValueOnce([{ insertId: 78, affectedRows: 1 }, undefined]); // INSERT extensions
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    // Fire-and-forget db.execute for "SELECT id FROM users WHERE fullName = ?" returns a user row
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ id: 42 }], undefined] as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-010',
+        serviceDate: '2026-06-10',
+        odometerAtService: 40000,
+        cost: 0,
+        technician: 'Tech Known',
+        is_in_progress: true,
+        details: [],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+
+    expect(res.statusCode).toBe(201);
+    // Wait for fire-and-forget chain to settle
+    await new Promise((r) => setTimeout(r, 30));
+    expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 42, priority: 'HIGH' })
+    );
+  });
+
+  it('returns 400 when unit not found', async () => {
+    const executeMock = vi.fn().mockResolvedValueOnce([[], undefined]); // unit not found
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn(),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'GHOST',
+        serviceDate: '2026-06-10',
+        odometerAtService: 10000,
+        cost: 0,
+        technician: 'Tech C',
+        is_in_progress: false,
+        details: [],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('not found');
+  });
+});
+
+// ─── PATCH /maintenance/:uuid/complete — error paths ─────────────────────────
+
+describe('PATCH /maintenance/:uuid/complete — error paths', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 400 when order not found', async () => {
+    const executeMock = vi.fn().mockResolvedValueOnce([[], undefined]); // no movement found
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/ghost-uuid/complete',
+      payload: { odometerAtService: 50000, cost: 500, details: [] },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('not found');
+  });
+
+  it('returns 400 when order is not ACTIVE (already COMPLETED)', async () => {
+    const completedMovement = {
+      id: 77,
+      unit_id: 'ASM-001',
+      status: 'COMPLETED',
+      service_date: '2026-06-01',
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      technician: 'Tech A',
+      cost: 500,
+    };
+    const executeMock = vi.fn().mockResolvedValueOnce([[completedMovement], undefined]);
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/completed-uuid/complete',
+      payload: { odometerAtService: 50000, cost: 500, details: [] },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('Cannot complete');
+  });
+});
+
+// ─── PATCH /maintenance/:uuid/reject — success and error paths ────────────────
+
+describe('PATCH /maintenance/:uuid/reject — success & 500', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 200 and dispatches notification when createdByUserId is set', async () => {
+    const openMovement = {
+      id: 88,
+      unit_id: 'ASM-003',
+      status: 'OPEN',
+      created_by_user_id: 5,
+      technician: 'Tech X',
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[openMovement], undefined]) // SELECT movements
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE technician = NULL
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/open-to-reject/reject',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+    expect(vi.mocked(purgeOutboxForOrder)).toHaveBeenCalledWith('open-to-reject');
+    expect(vi.mocked(NotificationService.dispatch)).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 5, priority: 'HIGH' })
+    );
+  });
+
+  it('returns 200 without notification when createdByUserId is null', async () => {
+    const openMovement = {
+      id: 89,
+      unit_id: 'ASM-004',
+      status: 'OPEN',
+      created_by_user_id: null,
+      technician: 'Tech Y',
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[openMovement], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/null-creator-uuid/reject',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(vi.mocked(NotificationService.dispatch)).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 on unexpected db error in reject handler', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: vi.fn().mockRejectedValueOnce(new Error('DB exploded')),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/err-uuid/reject',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+// ─── PATCH /complete — with details (lines 919-929) ──────────────────────────
+
+describe('PATCH /maintenance/:uuid/complete — with task details', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('inserts CHASSIS_SHOCKS_HEAVY and DISTRIBUTION_KIT_WATER_PUMP details (covers applyCompletion branches)', async () => {
+    const activeMovement = {
+      id: 55,
+      unit_id: 'ASM-009',
+      status: 'ACTIVE',
+      service_date: '2026-06-10',
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      technician: 'Tech Z',
+      cost: 700,
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[activeMovement], undefined]) // SELECT movements
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements COMPLETED
+      .mockResolvedValueOnce([[{ maintIntervalKm: 10000 }], undefined]) // SELECT maintIntervalKm
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_maintenance_extensions
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT detail 1 (CHASSIS)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT detail 2 (DISTRIBUTION)
+      .mockResolvedValueOnce([[{ odometer: 45000 }], undefined]) // applyCompletion: SELECT odometer
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // applyCompletion: UPDATE fleet_units (includes chassis+dist columns)
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/active-uuid-2/complete',
+      payload: {
+        odometerAtService: 45000,
+        cost: 700,
+        details: [
+          { taskCode: 'CHASSIS_SHOCKS_HEAVY', status: 'PASS', notes: null },
+          { taskCode: 'DISTRIBUTION_KIT_WATER_PUMP', status: 'REPLACED', notes: 'Kit nuevo' },
+        ],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(executeMock).toHaveBeenCalledTimes(8);
+  });
+});
+
+// ─── PATCH /accept — notification dispatch rejection suppressed (line 1092) ──
+
+describe('PATCH /maintenance/:uuid/accept — notification catch branch', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(async () => {
+    await app.ready();
+    const t = app.jwt.sign({
+      id: 1,
+      username: 'admin',
+      roleId: 1,
+      roleName: 'Director',
+      permissions: ['*'],
+    });
+    (init as any).__token = t;
+  });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('accept succeeds and dispatch rejection is suppressed (covers line 1092)', async () => {
+    const token = app.jwt.sign({
+      id: 9,
+      username: 'tech9',
+      roleId: 2,
+      roleName: 'Tecnico',
+      permissions: ['*'],
+    });
+    const openMovement = {
+      id: 99,
+      unit_id: 'ASM-099',
+      status: 'OPEN',
+      created_by_user_id: 3,
+      service_type: 'BASIC_10K',
+      technician: 'Tech Q',
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[openMovement], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined]); // bridge SELECT empty
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    vi.mocked(NotificationService.dispatch).mockRejectedValueOnce(new Error('push fail'));
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/qa-uuid/accept',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    // drain microtask queue so .catch() body on line 1092 executes
+    await new Promise((r) => setTimeout(r, 20));
+  });
+});

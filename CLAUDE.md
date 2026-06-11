@@ -27,7 +27,7 @@ Solo entonces responder o actuar sobre el request del usuario.
 - El Feature Contract activo si hay uno en curso
 - Modelo de operación autónoma completo (Sección 13)
 
-## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 12 REGLAS)
+## REGLAS DE OPERACIÓN AUTÓNOMA (VIGENTES — 13 REGLAS)
 
 ### 1. Autonomía total — sin preguntar
 
@@ -104,6 +104,10 @@ El desarrollo de la cascada es obligatorio en todas las ocasiones. Si GrayMan de
 ### 12. Reglas de Inicio de Sesión y Expiración (1 Hora)
 
 Cuando GrayMan comience una nueva sesión después de máximo 1 hora de la última, las IAs deben aprender nuevamente el Protocolo L y su correspondiente Cascada. En cada nuevo inicio de sesión se corre el trigger `L` de manera obligatoria, lo que fuerza la cascada `L` → `H` → `F`, asegurando siempre dejar un Mensaje de chat en H dirigido a la otra IA reportando el inicio.
+
+### 13. Mantener Cobertura de Tests (Coverage) cercano al 100%
+
+Las IAs siempre buscarán mantener el COVERAGE de tests lo más cercano al 100% posible en todo desarrollo, refactorización o modificación de código.
 
 ## STACK
 
