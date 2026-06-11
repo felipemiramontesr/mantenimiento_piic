@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterEach } from 'vitest';
+import crypto from 'node:crypto';
 import NotificationService, {
   ArchonNotificationType,
   ArchonNotificationPriority,
@@ -131,5 +132,136 @@ describe('NotificationService (Intelligence Orchestrator)', () => {
 
     // Restore env
     process.env = originalEnv;
+  });
+});
+
+// ─── sendPush — FCM credentials configured ───────────────────────────────────
+
+describe('NotificationService.sendPush — with FCM credentials', () => {
+  let testPem: string;
+
+  beforeAll(() => {
+    const { privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 1024 });
+    testPem = privateKey.export({ type: 'pkcs1', format: 'pem' }) as string;
+  });
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(db.execute).mockResolvedValue([[{ insertId: 1 }], undefined] as any);
+    process.env.FCM_PROJECT_ID = 'test-project';
+    process.env.FCM_CLIENT_EMAIL = 'test@test.iam.gserviceaccount.com';
+    process.env.FCM_PRIVATE_KEY = testPem;
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.FCM_PROJECT_ID;
+    delete process.env.FCM_CLIENT_EMAIL;
+    delete process.env.FCM_PRIVATE_KEY;
+  });
+
+  const payload = {
+    userId: 1,
+    type: 'ROUTE_ASSIGNED' as any,
+    priority: 'HIGH' as any,
+    title: 'Test',
+    message: 'Test message',
+  };
+
+  it('returns early when no push tokens found for user', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined] as any);
+
+    await (NotificationService as any).sendPush([1], payload);
+
+    expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('SELECT token'), [1]);
+  });
+
+  it('sends FCM notification when token exists and OAuth2 succeeds', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([
+      [{ token: 'device-token-abc' }],
+      undefined,
+    ] as any);
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'mock-oauth-token' }),
+      })
+      .mockResolvedValueOnce({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await (NotificationService as any).sendPush([1], payload);
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('deletes dead token when FCM returns 400', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ token: 'dead-token-400' }], undefined] as any)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined] as any);
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'mock-oauth-token' }),
+      })
+      .mockResolvedValueOnce({ ok: false, status: 400 });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await (NotificationService as any).sendPush([1], payload);
+
+    expect(db.execute).toHaveBeenCalledWith('DELETE FROM user_push_tokens WHERE token = ?', [
+      'dead-token-400',
+    ]);
+  });
+
+  it('deletes dead token when FCM returns 404', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ token: 'dead-token-404' }], undefined] as any)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined] as any);
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'mock-oauth-token' }),
+      })
+      .mockResolvedValueOnce({ ok: false, status: 404 });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await (NotificationService as any).sendPush([1], payload);
+
+    expect(db.execute).toHaveBeenCalledWith('DELETE FROM user_push_tokens WHERE token = ?', [
+      'dead-token-404',
+    ]);
+  });
+
+  it('suppresses individual token send error (inner catch)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ token: 'throw-token' }], undefined] as any);
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'mock-oauth-token' }),
+      })
+      .mockRejectedValueOnce(new Error('Network error'));
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect((NotificationService as any).sendPush([1], payload)).resolves.not.toThrow();
+  });
+
+  it('suppresses OAuth2 failure (outer catch in sendPush)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ token: 'some-token' }], undefined] as any);
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      statusText: 'Unauthorized',
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect((NotificationService as any).sendPush([1], payload)).resolves.not.toThrow();
   });
 });
