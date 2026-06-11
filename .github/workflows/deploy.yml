@@ -35,6 +35,9 @@ jobs:
       - name: Lint
         if: matrix.shard == 1
         run: npm run lint --workspace=@mantenimiento/api
+      - name: Type Check (TypeScript)
+        if: matrix.shard == 1
+        run: npx tsc --noEmit -p apps/api/tsconfig.json
       - name: Test Shard
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
@@ -73,6 +76,9 @@ jobs:
       - name: Lint
         if: matrix.shard == 1
         run: npm run lint --workspace=@mantenimiento/web
+      - name: Type Check (TypeScript)
+        if: matrix.shard == 1
+        run: npx tsc --noEmit -p apps/web/tsconfig.json
       - name: Test Shard
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
@@ -106,9 +112,24 @@ jobs:
       - name: Validate SQL Schema
         run: npm run db:validate
 
+  security-scan:
+    name: 🔍 Secret Scan (TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.before || '' }}
+          head: HEAD
+          extra_args: --only-verified
+
   global-certification:
     name: 🔱 Archon Global Certification
-    needs: [backend-validation, frontend-validation, database-validation]
+    needs: [backend-validation, frontend-validation, database-validation, security-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Download Shard Artifacts
@@ -154,6 +175,7 @@ jobs:
           echo "| :--- | :---: | :---: | :---: |" >> $GITHUB_STEP_SUMMARY
           echo "| 🛡️ Backend API | ✅ PASSED | $B_PASSED / $B_TESTS | 100% |" >> $GITHUB_STEP_SUMMARY
           echo "| 🎨 Frontend Web | ✅ PASSED | $F_PASSED / $F_TESTS | 100% |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏷️ Static Type Checking | ✅ PASSED | 0 Errors / 0 Warnings | 100% |" >> $GITHUB_STEP_SUMMARY
           echo "| **TOTAL** | **CERTIFICADO** | **$TOTAL_PASSED / $TOTAL_TESTS** | **100%** |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🛡️ OWASP SECURITY CERTIFICATION (TOP 10)" >> $GITHUB_STEP_SUMMARY
@@ -170,6 +192,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Herramienta | Técnica | Función |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **TypeScript Compiler** | Static Type Checking | Validación estricta de tipos de datos en la compilación |" >> $GITHUB_STEP_SUMMARY
           echo "| **Vitest** | Unit Testing | Validación atómica de componentes UI |" >> $GITHUB_STEP_SUMMARY
           echo "| **Vitest (Integration)** | Integration | Pruebas de endpoints y contratos API |" >> $GITHUB_STEP_SUMMARY
           echo "| **Playwright** | E2E Testing | Simulación forense de navegación y paridad |" >> $GITHUB_STEP_SUMMARY
@@ -177,6 +200,8 @@ jobs:
           echo "| **SonarJS / OWASP** | Security Audit | Análisis de vulnerabilidades y complejidad |" >> $GITHUB_STEP_SUMMARY
           echo "| **Husky** | Git Hooks | Blindaje de integridad pre-commit |" >> $GITHUB_STEP_SUMMARY
           echo "| **lftp (Native)** | Native Sync | Despliegue industrial mediante protocolo seguro |" >> $GITHUB_STEP_SUMMARY
+          echo "| **TruffleHog** | Secret Scanning | Detección de credenciales y secretos filtrados en el historial Git |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Rollup Visualizer** | Bundle Analysis | Auditoría ad-hoc del tamaño y composición del bundle frontend |" >> $GITHUB_STEP_SUMMARY
 
   hostinger-deployment:
     name: 🚀 Deployment to Hostinger

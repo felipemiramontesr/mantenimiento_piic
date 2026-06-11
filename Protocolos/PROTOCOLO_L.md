@@ -15,7 +15,7 @@
 > **IMPERATIVO:** Antes de proponer o ejecutar cualquier operación Git (commit o push), el agente DEBE actualizar esta línea e incluir el archivo en el mismo `git add`.
 
 ```
-VERSIÓN ACTUAL: V.78.101.155_CC_V8Artifact_Fix_Coverage668Tests
+VERSIÓN ACTUAL: V.78.101.156_CC_TruffleHog_Visualizer_CI
 ```
 
 ---

@@ -33,6 +33,30 @@ Toda sesión registrada en este log debe apegarse a las reglas, versión activa 
 
 ---
 
+### V.78.101.156 — 2026-06-11 — CC
+
+**Sesión:** TruffleHog CI + Rollup Visualizer — Nuevas herramientas en pipeline y dashboard
+**Archivos tocados:**
+
+- `.github/workflows/deploy.yml` (nuevo job `security-scan` + 2 filas dashboard)
+- `apps/web/vite.config.ts` (import visualizer + plugin condicional `ANALYZE`)
+- `apps/web/package.json` (script `analyze` + devDep `rollup-plugin-visualizer@7.0.1`)
+- `Protocolos/PROTOCOLO_L.md` (version bump V.156)
+- `Protocolos/HANDOFF_CC_TO_AG.md` (canal CC→AG V.156)
+- `Protocolos/LOG_FORENSE.md` (esta entrada)
+
+**Qué se hizo:**
+
+1. Job `security-scan` en CI: TruffleHog `--only-verified` con `fetch-depth: 0`. Bloquea `global-certification` si detecta secreto verificado en el historial Git.
+2. `rollup-plugin-visualizer@7.0.1`: instalado en apps/web devDeps. Plugin condicional en vite.config.ts activado con `ANALYZE=true`. Script `npm run analyze` genera `dist/stats.html`.
+3. Ambas herramientas añadidas al **Stack de Validación Industrial** del Archon Certification Dashboard en GitHub.
+
+**Por qué:** GrayMan autorizó "Go" + quiere todas las herramientas nuevas visibles en el dashboard de GitHub. Consenso CC↔AG: TruffleHog es prioridad alta; visualizer ad-hoc. Ningún test nuevo requerido (infraestructura CI + build scripts).
+
+**Decisiones tomadas:** `trufflesecurity/trufflehog@main` (versión flotante según docs oficiales). Plugin visualizer desactivado por defecto (no impacta CI ni bundle de producción). Sin cross-env para `analyze` script — funciona en Linux/Mac; en Windows: `SET ANALYZE=true && npm run build`.
+
+---
+
 ### V.78.101.155 — 2026-06-11 — CC
 
 **Sesión:** Refactor V8 Coverage Artifacts + Test Additions — Coverage 661→668 tests

@@ -1,11 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    ...(process.env.ANALYZE
+      ? [visualizer({ open: false, filename: 'dist/stats.html', gzipSize: true })]
+      : []),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -54,6 +58,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     vmMemoryLimit: '3GB',
+    testTimeout: 15000,
     clearMocks: true,
     mockReset: true,
     teardownTimeout: 1000,

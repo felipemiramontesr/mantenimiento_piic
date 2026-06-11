@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "analyze": "ANALYZE=true vite build"
   },
   "dependencies": {
     "apexcharts": "^5.10.6",
@@ -33,6 +34,7 @@
     "autoprefixer": "^10.4.15",
     "jsdom": "^29.0.2",
     "postcss": "^8.4.28",
+    "rollup-plugin-visualizer": "^7.0.1",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
