@@ -11,9 +11,13 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useAlerts, { Alert, AlertSeverity, AlertType } from '../../hooks/useAlerts';
+import usePermissions from '../../hooks/usePermissions';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AT from '../../styles/archonTypography';
+
+/** Feature Contract Alerts_Role_Scoped_Panel — slugs que habilitan la vista de alertas */
+const ALERT_VIEW_PERMISSIONS = ['maint:view', 'route:view', 'fleet:view'];
 
 const SEVERITY_BADGE: Record<AlertSeverity, string> = {
   CRITICAL: 'bg-red-100 text-red-700 border border-red-200',
@@ -156,7 +160,36 @@ function AlertRow(alert: Alert): React.JSX.Element {
   );
 }
 
-const AlertsPanel: React.FC = (): React.JSX.Element => {
+const AlertsAccessFallback: React.FC = (): React.JSX.Element => {
+  const { setSectionData } = useSovereignLayout();
+
+  React.useEffect(() => {
+    setSectionData(
+      'Alertas del Sistema',
+      'Monitor de alertas operativas de la flota',
+      null,
+      null,
+      null
+    );
+  }, [setSectionData]);
+
+  return (
+    <div
+      data-testid="alerts-access-fallback"
+      className="flex flex-col items-center justify-center gap-3 p-16 bg-white rounded-[4px] border border-slate-200/50 animate-in fade-in duration-500"
+    >
+      <ShieldAlert size={28} className="text-[#0f2a44]/30" strokeWidth={2} />
+      <p className="text-[13px] font-bold text-[#0f2a44]/60">
+        Sin alertas disponibles para tu perfil
+      </p>
+      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#0f2a44]/40">
+        Tu rol no incluye permisos de visualización de alertas
+      </p>
+    </div>
+  );
+};
+
+const AlertsPanelContent: React.FC = (): React.JSX.Element => {
   const { alerts, isSyncing } = useAlerts();
   const { searchTerm, setSearchTerm, setSearchConfig, setSectionData } = useSovereignLayout();
 
@@ -253,6 +286,15 @@ const AlertsPanel: React.FC = (): React.JSX.Element => {
       />
     </div>
   );
+};
+
+const AlertsPanel: React.FC = (): React.JSX.Element => {
+  const { hasAnyPermission } = usePermissions();
+
+  if (!hasAnyPermission(ALERT_VIEW_PERMISSIONS)) {
+    return <AlertsAccessFallback />;
+  }
+  return <AlertsPanelContent />;
 };
 
 export default AlertsPanel;
