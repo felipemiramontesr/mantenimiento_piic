@@ -17,6 +17,14 @@ dotenv.config({ path: '../../.env' });
 // Environmental Fallback Logic (Certified for High-Availability)
 export const resolveDbHost = (): string => process.env.DB_HOST || 'localhost';
 
+/**
+ * Zona horaria operativa de la flota (México/Zacatecas).
+ * Offset fijo: México abolió el horario de verano en 2022 — sin riesgo DST.
+ * Ancla CURDATE()/NOW()/TIMESTAMPDIFF a hora local en cualquier servidor (Hostinger corre UTC),
+ * eliminando el corrimiento de +1 día en alertas, forecast y outbox después de las 18:00 MX.
+ */
+export const MEXICO_TZ_OFFSET = '-06:00';
+
 const db = mysql.createPool({
   host: resolveDbHost(),
   user: process.env.DB_USER,
@@ -25,6 +33,10 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+});
+
+db.on('connection', (connection) => {
+  connection.query(`SET time_zone = '${MEXICO_TZ_OFFSET}'`);
 });
 
 export default db;
