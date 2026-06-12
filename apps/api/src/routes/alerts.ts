@@ -39,17 +39,33 @@ export function computeComplianceSeverity(daysLeft: number): AlertSeverity {
   return 'LOW';
 }
 
-export function buildComplianceDescription(docLabel: string, daysLeft: number): string {
-  if (daysLeft < 0) return `${docLabel} vencido hace ${Math.abs(daysLeft)} días`;
+type ExpiredParticiple = 'vencido' | 'vencida';
+
+export function buildComplianceDescription(
+  docLabel: string,
+  daysLeft: number,
+  participle: ExpiredParticiple = 'vencido'
+): string {
+  if (daysLeft < 0) return `${docLabel} ${participle} hace ${Math.abs(daysLeft)} días`;
   if (daysLeft === 0) return `${docLabel} vence hoy`;
   return `${docLabel} vence en ${daysLeft} días`;
 }
 
-/** Documentos de cumplimiento monitoreados — campo días calculado en SQL → etiqueta es-MX */
-const COMPLIANCE_DOCUMENTS: Array<{ daysField: string; idTag: string; label: string }> = [
-  { daysField: 'insuranceDays', idTag: 'INSURANCE', label: 'Seguro' },
-  { daysField: 'verificationDays', idTag: 'VERIFICATION', label: 'Verificación' },
-  { daysField: 'legalDays', idTag: 'LEGAL', label: 'Cumplimiento legal' },
+/** Documentos de cumplimiento monitoreados — campo días calculado en SQL → etiqueta es-MX con género */
+const COMPLIANCE_DOCUMENTS: Array<{
+  daysField: string;
+  idTag: string;
+  label: string;
+  participle: ExpiredParticiple;
+}> = [
+  { daysField: 'insuranceDays', idTag: 'INSURANCE', label: 'Seguro', participle: 'vencido' },
+  {
+    daysField: 'verificationDays',
+    idTag: 'VERIFICATION',
+    label: 'Verificación',
+    participle: 'vencida',
+  },
+  { daysField: 'legalDays', idTag: 'LEGAL', label: 'Cumplimiento legal', participle: 'vencido' },
 ];
 
 const ALL_ALERT_TYPES = Object.keys(ALERT_TYPE_PERMISSION) as AlertType[];
@@ -349,7 +365,7 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
         );
 
         complianceRows.forEach((row) => {
-          COMPLIANCE_DOCUMENTS.forEach(({ daysField, idTag, label }) => {
+          COMPLIANCE_DOCUMENTS.forEach(({ daysField, idTag, label, participle }) => {
             const daysLeft = row[daysField] as number | null;
             if (daysLeft == null || daysLeft > COMPLIANCE_WINDOW_DAYS) return;
             const severity = computeComplianceSeverity(daysLeft);
@@ -361,7 +377,7 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
                 daysLeft < 0
                   ? `Documento vencido — ${row.id}`
                   : `Cumplimiento por vencer — ${row.id}`,
-              description: buildComplianceDescription(label, daysLeft),
+              description: buildComplianceDescription(label, daysLeft, participle),
               unitId: String(row.id),
               createdAt: new Date().toISOString(),
             });

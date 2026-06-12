@@ -3,6 +3,7 @@ import { ArchonDoctor } from '../../ArchonDoctor';
 import ArchonLogo from '../Logo/ArchonLogo';
 import RoleSwitcher from '../Identity/RoleSwitcher';
 import usePermissions from '../../hooks/usePermissions';
+import { SYSTEM_VERSION } from '../../constants/versionConstants';
 
 /**
  * 🔱 Archon Component: SovereignFooter
@@ -18,7 +19,7 @@ const SovereignFooter: React.FC = () => {
     <footer className="h-[10%] min-h-[60px] flex items-center justify-between w-full border-t border-pinnacle-navy/5 px-[60px] bg-white shrink-0">
       {/* ⚖️ Legal Metadata (Col Alfa) */}
       <div className="flex-1 text-archon-base font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left whitespace-nowrap">
-        © Copyright ArchonCore by Dreamtek Versión V.78.100.154
+        © Copyright ArchonCore by Dreamtek Versión V.{SYSTEM_VERSION}
       </div>
 
       {/* 🔱 Forensic Bridge (Col Gamma) */}

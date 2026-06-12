@@ -237,4 +237,16 @@ describe('buildComplianceDescription — es-MX', () => {
       'Cumplimiento legal vence en 12 días'
     );
   });
+
+  it('concuerda género femenino: Verificación vencida (no "vencido")', () => {
+    expect(buildComplianceDescription('Verificación', -25, 'vencida')).toBe(
+      'Verificación vencida hace 25 días'
+    );
+  });
+
+  it('participio por defecto es masculino', () => {
+    expect(buildComplianceDescription('Cumplimiento legal', -3)).toBe(
+      'Cumplimiento legal vencido hace 3 días'
+    );
+  });
 });

@@ -2,9 +2,37 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+/**
+ * Resuelve la versión del sistema en build-time — nunca hardcodeada.
+ * Cadena de resolución: env ARCHON_VERSION → último commit (V.x.y.z_Desc) → package.json raíz.
+ */
+function resolveArchonVersion(): string {
+  if (process.env.ARCHON_VERSION) return process.env.ARCHON_VERSION;
+  try {
+    const subject = execSync('git log -1 --pretty=%s', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim();
+    const match = subject.match(/^V\.(\d+\.\d+\.\d+)/);
+    if (match) return match[1];
+  } catch {
+    // sin repositorio git en el entorno de build — usar fallback
+  }
+  const rootPkg = JSON.parse(
+    readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')
+  ) as { version: string };
+  return rootPkg.version;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    __ARCHON_VERSION__: JSON.stringify(resolveArchonVersion()),
+  },
   plugins: [
     react(),
     ...(process.env.ANALYZE

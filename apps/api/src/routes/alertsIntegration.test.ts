@@ -340,8 +340,8 @@ describe('Alerts Routes — Integration', () => {
     const complianceRow = {
       id: 'ASM-104',
       insuranceDays: -5,
-      verificationDays: 10,
-      legalDays: null,
+      verificationDays: -10,
+      legalDays: 8,
     };
 
     it('Scenario 1: maint:view only receives only MAINTENANCE_OVERDUE and skips other queries', async () => {
@@ -416,9 +416,16 @@ describe('Alerts Routes — Integration', () => {
     // ─── Fase 4 — COMPLIANCE_EXPIRY ───────────────────────────────────────────
 
     it('Fase 4: fleet:view receives COMPLIANCE_EXPIRY alerts per expiring document', async () => {
+      // ASM-105: seguro null (skip) + verificación a 45d fuera de ventana (skip) + legal vencido
+      const compliancePartialRow = {
+        id: 'ASM-105',
+        insuranceDays: null,
+        verificationDays: 45,
+        legalDays: -1,
+      };
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined])
-        .mockResolvedValueOnce([[complianceRow], undefined]);
+        .mockResolvedValueOnce([[complianceRow, compliancePartialRow], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -427,15 +434,29 @@ describe('Alerts Routes — Integration', () => {
       });
       expect(res.statusCode).toBe(200);
       const body = res.json();
-      // complianceRow: seguro vencido (-5d), verificación en 10d, legal null → 2 alertas
-      expect(body.count).toBe(2);
-      const insurance = body.data.find((a: { id: string }) => a.id.includes('INSURANCE'));
-      const verification = body.data.find((a: { id: string }) => a.id.includes('VERIFICATION'));
+      // ASM-104: seguro -5d, verificación -10d, legal 8d (3) · ASM-105: solo legal -1d (1) → 4
+      expect(body.count).toBe(4);
+      const insurance = body.data.find(
+        (a: { id: string }) => a.id === 'COMPLIANCE_INSURANCE_ASM-104'
+      );
+      const verification = body.data.find(
+        (a: { id: string }) => a.id === 'COMPLIANCE_VERIFICATION_ASM-104'
+      );
+      const legal = body.data.find((a: { id: string }) => a.id === 'COMPLIANCE_LEGAL_ASM-104');
       expect(insurance.type).toBe('COMPLIANCE_EXPIRY');
       expect(insurance.severity).toBe('CRITICAL');
       expect(insurance.description).toBe('Seguro vencido hace 5 días');
-      expect(verification.severity).toBe('MEDIUM');
-      expect(verification.description).toBe('Verificación vence en 10 días');
+      expect(insurance.title).toBe('Documento vencido — ASM-104');
+      expect(verification.severity).toBe('CRITICAL');
+      expect(verification.description).toBe('Verificación vencida hace 10 días');
+      expect(legal.severity).toBe('MEDIUM');
+      expect(legal.description).toBe('Cumplimiento legal vence en 8 días');
+      expect(legal.title).toBe('Cumplimiento por vencer — ASM-104');
+      // ASM-105: insurance null y verificación 45d no generan alerta — solo legal vencido
+      const partialIds = body.data
+        .filter((a: { unitId: string }) => a.unitId === 'ASM-105')
+        .map((a: { id: string }) => a.id);
+      expect(partialIds).toEqual(['COMPLIANCE_LEGAL_ASM-105']);
       expect(db.execute).toHaveBeenCalledTimes(2);
     });
 
