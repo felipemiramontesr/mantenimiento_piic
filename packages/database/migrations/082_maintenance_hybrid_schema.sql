@@ -1,0 +1,45 @@
+START TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS fleet_maintenance_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    uuid CHAR(36) NOT NULL UNIQUE,
+    unit_id VARCHAR(50) NOT NULL,
+    service_date DATE NOT NULL,
+    odometer_at_service DECIMAL(12,2) NOT NULL,
+    service_type ENUM('BASIC_10K', 'INTERMEDIATE_20K', 'MAJOR_30K', 'ADVANCED_50K', 'MINOR_MINING') NOT NULL,
+    cost DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    technician VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_maint_cursor (created_at DESC, id DESC),
+    INDEX idx_maint_unit (unit_id, service_date DESC),
+    CONSTRAINT fk_maintenance_unit FOREIGN KEY (unit_id) REFERENCES fleet_units(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS fleet_maintenance_details (
+    maintenance_id INT NOT NULL,
+    task_code VARCHAR(50) NOT NULL COMMENT 'e.g. FILTER_OIL, CVT_CHECK, WATER_SEP',
+    status ENUM('PASS', 'FAIL', 'REPLACED', 'N_A') NOT NULL,
+    notes VARCHAR(255) NULL,
+    PRIMARY KEY (maintenance_id, task_code),
+    CONSTRAINT fk_maint_detail FOREIGN KEY (maintenance_id) 
+        REFERENCES fleet_maintenance_logs(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Add predictive next service reading logic to units
+DELIMITER //
+CREATE PROCEDURE AddNextServiceColumnIfNotExists()
+BEGIN
+    IF NOT EXISTS (
+        SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() 
+        AND TABLE_NAME = 'fleet_units' 
+        AND COLUMN_NAME = 'nextServiceReading_forecast'
+    ) THEN
+        ALTER TABLE fleet_units ADD COLUMN nextServiceReading_forecast DECIMAL(12,2) NULL;
+    END IF;
+END //
+DELIMITER ;
+CALL AddNextServiceColumnIfNotExists();
+DROP PROCEDURE AddNextServiceColumnIfNotExists;
+
+COMMIT;
