@@ -7,7 +7,10 @@ export type AlertType =
   | 'MAINTENANCE_OVERDUE'
   | 'INCIDENT_OPEN'
   | 'UNIT_CRITICAL'
-  | 'COMPLIANCE_EXPIRY';
+  | 'COMPLIANCE_EXPIRY'
+  | 'LEASE_PAYMENT_MISSING'
+  | 'FINE_REGISTERED'
+  | 'EXPENSE_ANOMALY';
 
 export interface Alert {
   id: string;
@@ -27,6 +30,9 @@ const ALERT_TYPE_PERMISSION: Record<AlertType, string> = {
   INCIDENT_OPEN: 'route:view',
   UNIT_CRITICAL: 'fleet:view',
   COMPLIANCE_EXPIRY: 'fleet:view',
+  LEASE_PAYMENT_MISSING: 'financial:view',
+  FINE_REGISTERED: 'financial:view',
+  EXPENSE_ANOMALY: 'financial:view',
 };
 
 /** Fase 4 — ventana de monitoreo de vencimientos legales (días) */
@@ -49,6 +55,52 @@ export function buildComplianceDescription(
   if (daysLeft < 0) return `${docLabel} ${participle} hace ${Math.abs(daysLeft)} días`;
   if (daysLeft === 0) return `${docLabel} vence hoy`;
   return `${docLabel} vence en ${daysLeft} días`;
+}
+
+/**
+ * Contrato Alerts_Finance_Domain — umbrales de negocio aprobados por GrayMan (2026-06-11).
+ * Los cortes de renta (10/20) son provisionales: se ajustarán cuando el PO defina el ciclo real de pagos.
+ */
+const LEASE_GRACE_DAY_LOW = 10;
+const LEASE_GRACE_DAY_MEDIUM = 20;
+const FINE_WINDOW_DAYS = 7;
+const ANOMALY_WINDOW_MONTHS = 6;
+const ANOMALY_MIN_HISTORY_PERIODS = 3;
+const ANOMALY_RATIO_MEDIUM = 1.5;
+const ANOMALY_RATIO_HIGH = 2;
+const ANOMALY_RATIO_CRITICAL = 3;
+
+export function computeLeaseMissingSeverity(dayOfMonth: number): AlertSeverity {
+  if (dayOfMonth <= LEASE_GRACE_DAY_LOW) return 'LOW';
+  if (dayOfMonth <= LEASE_GRACE_DAY_MEDIUM) return 'MEDIUM';
+  return 'HIGH';
+}
+
+export function computeAnomalySeverity(ratio: number): AlertSeverity {
+  if (ratio >= ANOMALY_RATIO_CRITICAL) return 'CRITICAL';
+  if (ratio >= ANOMALY_RATIO_HIGH) return 'HIGH';
+  return 'MEDIUM';
+}
+
+function formatMoneyMx(amount: number): string {
+  return `$${amount.toLocaleString('es-MX', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function buildLeaseMissingDescription(amount: number, dayOfMonth: number): string {
+  return `Renta de ${formatMoneyMx(amount)} sin registrar este mes (van ${dayOfMonth} días)`;
+}
+
+export function buildFineDescription(amount: number, vendor: string | null): string {
+  return `Multa registrada: ${formatMoneyMx(amount)} — ${vendor || 'sin proveedor'}`;
+}
+
+export function buildAnomalyDescription(current: number, avg: number, ratio: number): string {
+  return `Gasto del mes ${formatMoneyMx(current)} — ${ratio.toFixed(
+    1
+  )}× su promedio semestral (${formatMoneyMx(avg)})`;
 }
 
 /** Documentos de cumplimiento monitoreados — campo días calculado en SQL → etiqueta es-MX con género */
@@ -227,6 +279,48 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
         total += Number(complianceRows[0].complianceCount);
       }
 
+      if (scope.has('LEASE_PAYMENT_MISSING')) {
+        const [leaseRows] = await db.execute<RowDataPacket[]>(
+          `SELECT COUNT(*) AS leaseMissingCount
+           FROM fleet_units u
+           WHERE u.status != 'Descontinuada'
+             AND u.monthlyLeasePayment IS NOT NULL AND u.monthlyLeasePayment > 0
+             AND NOT EXISTS (
+               SELECT 1 FROM financial_transactions ft
+               WHERE ft.unit_id = u.id AND ft.category = 'LEASE'
+                 AND ft.period = DATE_FORMAT(CURDATE(), '%Y-%m')
+             )`
+        );
+        total += Number(leaseRows[0].leaseMissingCount);
+      }
+
+      if (scope.has('FINE_REGISTERED')) {
+        const [fineRows] = await db.execute<RowDataPacket[]>(
+          `SELECT COUNT(*) AS fineCount
+           FROM financial_transactions
+           WHERE category = 'FINE'
+             AND created_at >= DATE_SUB(NOW(), INTERVAL ${FINE_WINDOW_DAYS} DAY)`
+        );
+        total += Number(fineRows[0].fineCount);
+      }
+
+      if (scope.has('EXPENSE_ANOMALY')) {
+        const [anomalyRows] = await db.execute<RowDataPacket[]>(
+          `SELECT COUNT(*) AS anomalyCount FROM (
+             SELECT unit_id
+             FROM financial_transactions
+             WHERE period >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL ${ANOMALY_WINDOW_MONTHS} MONTH), '%Y-%m')
+             GROUP BY unit_id
+             HAVING COUNT(DISTINCT CASE WHEN period <> DATE_FORMAT(CURDATE(), '%Y-%m') THEN period END) >= ${ANOMALY_MIN_HISTORY_PERIODS}
+                AND SUM(CASE WHEN period <> DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END) > 0
+                AND SUM(CASE WHEN period = DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END) >=
+                    (SUM(CASE WHEN period <> DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END)
+                     / COUNT(DISTINCT CASE WHEN period <> DATE_FORMAT(CURDATE(), '%Y-%m') THEN period END)) * ${ANOMALY_RATIO_MEDIUM}
+           ) anomalies`
+        );
+        total += Number(anomalyRows[0].anomalyCount);
+      }
+
       return reply.send({ success: true, count: total });
     } catch (error) {
       fastify.log.error({ err: (error as Error).message }, 'Alerts count fetch error');
@@ -381,6 +475,99 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
               unitId: String(row.id),
               createdAt: new Date().toISOString(),
             });
+          });
+        });
+      }
+
+      // 5. Finanzas — renta del mes sin registrar (Contrato Alerts_Finance_Domain)
+      if (scope.has('LEASE_PAYMENT_MISSING')) {
+        const [leaseRows] = await db.execute<RowDataPacket[]>(
+          `SELECT u.id, u.monthlyLeasePayment, DAY(CURDATE()) AS dayOfMonth
+           FROM fleet_units u
+           WHERE u.status != 'Descontinuada'
+             AND u.monthlyLeasePayment IS NOT NULL AND u.monthlyLeasePayment > 0
+             AND NOT EXISTS (
+               SELECT 1 FROM financial_transactions ft
+               WHERE ft.unit_id = u.id AND ft.category = 'LEASE'
+                 AND ft.period = DATE_FORMAT(CURDATE(), '%Y-%m')
+             )
+           LIMIT 50`
+        );
+
+        leaseRows.forEach((row) => {
+          const dayOfMonth = Number(row.dayOfMonth);
+          alerts.push({
+            id: `LEASE_MISSING_${row.id}`,
+            type: 'LEASE_PAYMENT_MISSING',
+            severity: computeLeaseMissingSeverity(dayOfMonth),
+            title: `Renta sin registrar — ${row.id}`,
+            description: buildLeaseMissingDescription(Number(row.monthlyLeasePayment), dayOfMonth),
+            unitId: String(row.id),
+            createdAt: new Date().toISOString(),
+          });
+        });
+      }
+
+      // 6. Finanzas — multas registradas recientemente
+      if (scope.has('FINE_REGISTERED')) {
+        const [fineRows] = await db.execute<RowDataPacket[]>(
+          `SELECT id, unit_id, amount, vendor, created_at
+           FROM financial_transactions
+           WHERE category = 'FINE'
+             AND created_at >= DATE_SUB(NOW(), INTERVAL ${FINE_WINDOW_DAYS} DAY)
+           ORDER BY created_at DESC
+           LIMIT 50`
+        );
+
+        fineRows.forEach((row) => {
+          alerts.push({
+            id: `FINE_${row.id}`,
+            type: 'FINE_REGISTERED',
+            severity: 'HIGH',
+            title: `Multa registrada — ${row.unit_id}`,
+            description: buildFineDescription(Number(row.amount), row.vendor as string | null),
+            unitId: String(row.unit_id),
+            createdAt:
+              row.created_at instanceof Date
+                ? row.created_at.toISOString()
+                : String(row.created_at),
+          });
+        });
+      }
+
+      // 7. Finanzas — gasto del mes anómalo vs promedio semestral
+      if (scope.has('EXPENSE_ANOMALY')) {
+        const [anomalyRows] = await db.execute<RowDataPacket[]>(
+          `SELECT unit_id,
+                  SUM(CASE WHEN period = DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END) AS currentTotal,
+                  SUM(CASE WHEN period <> DATE_FORMAT(CURDATE(), '%Y-%m') THEN amount ELSE 0 END) AS prevTotal,
+                  COUNT(DISTINCT CASE WHEN period <> DATE_FORMAT(CURDATE(), '%Y-%m') THEN period END) AS prevPeriods
+           FROM financial_transactions
+           WHERE period >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL ${ANOMALY_WINDOW_MONTHS} MONTH), '%Y-%m')
+           GROUP BY unit_id
+           HAVING prevPeriods >= ${ANOMALY_MIN_HISTORY_PERIODS}
+              AND prevTotal > 0
+              AND currentTotal >= (prevTotal / prevPeriods) * ${ANOMALY_RATIO_MEDIUM}
+           LIMIT 50`
+        );
+
+        anomalyRows.forEach((row) => {
+          const prevPeriods = Number(row.prevPeriods);
+          const prevTotal = Number(row.prevTotal);
+          // Guard defensivo espejo del HAVING — testeable sin SQL real
+          if (prevPeriods < ANOMALY_MIN_HISTORY_PERIODS || prevTotal <= 0) return;
+          const currentTotal = Number(row.currentTotal);
+          const avg = prevTotal / prevPeriods;
+          const ratio = currentTotal / avg;
+          if (ratio < ANOMALY_RATIO_MEDIUM) return;
+          alerts.push({
+            id: `EXPENSE_ANOMALY_${row.unit_id}`,
+            type: 'EXPENSE_ANOMALY',
+            severity: computeAnomalySeverity(ratio),
+            title: `Gasto anómalo — ${row.unit_id}`,
+            description: buildAnomalyDescription(currentTotal, avg, ratio),
+            unitId: String(row.unit_id),
+            createdAt: new Date().toISOString(),
           });
         });
       }

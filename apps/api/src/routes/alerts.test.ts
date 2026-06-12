@@ -5,6 +5,11 @@ import {
   resolveAlertScope,
   computeComplianceSeverity,
   buildComplianceDescription,
+  computeLeaseMissingSeverity,
+  computeAnomalySeverity,
+  buildLeaseMissingDescription,
+  buildFineDescription,
+  buildAnomalyDescription,
 } from './alerts';
 
 // ─── computeOverdueSeverity ───────────────────────────────────────────────────
@@ -168,9 +173,17 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
     );
   });
 
-  it('omnipotent * grants all four types', () => {
+  it('omnipotent * grants every registered type', () => {
     expect(resolveAlertScope(['*'])).toEqual(
-      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL', 'COMPLIANCE_EXPIRY'])
+      new Set([
+        'MAINTENANCE_OVERDUE',
+        'INCIDENT_OPEN',
+        'UNIT_CRITICAL',
+        'COMPLIANCE_EXPIRY',
+        'LEASE_PAYMENT_MISSING',
+        'FINE_REGISTERED',
+        'EXPENSE_ANOMALY',
+      ])
     );
   });
 
@@ -179,7 +192,7 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
   });
 
   it('irrelevant slugs resolve to empty scope', () => {
-    expect(resolveAlertScope(['financial:view', 'report:export', 'user:admin']).size).toBe(0);
+    expect(resolveAlertScope(['report:export', 'user:admin', 'financial:write']).size).toBe(0);
   });
 
   it('multi-domain permissions accumulate their types', () => {
@@ -188,14 +201,82 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
     );
   });
 
-  it('* mixed with specific slugs still grants all four (early return)', () => {
-    expect(resolveAlertScope(['maint:view', '*'])).toEqual(
-      new Set(['MAINTENANCE_OVERDUE', 'INCIDENT_OPEN', 'UNIT_CRITICAL', 'COMPLIANCE_EXPIRY'])
-    );
+  it('* mixed with specific slugs still grants every type (early return)', () => {
+    expect(resolveAlertScope(['maint:view', '*']).size).toBe(7);
   });
 
   it('write slugs do NOT grant view scope (least privilege)', () => {
     expect(resolveAlertScope(['maint:write', 'route:write', 'fleet:write']).size).toBe(0);
+  });
+
+  it('financial:view grants the three finance types (Contrato Finanzas)', () => {
+    expect(resolveAlertScope(['financial:view'])).toEqual(
+      new Set(['LEASE_PAYMENT_MISSING', 'FINE_REGISTERED', 'EXPENSE_ANOMALY'])
+    );
+  });
+
+  it('omnipotent * grants all seven types', () => {
+    expect(resolveAlertScope(['*']).size).toBe(7);
+  });
+});
+
+// ─── Contrato Alerts_Finance_Domain — severidades y descripciones ────────────
+
+describe('computeLeaseMissingSeverity — escalado por día del mes (10/20, ajustable por PO)', () => {
+  it('LOW durante los primeros 10 días', () => {
+    expect(computeLeaseMissingSeverity(1)).toBe('LOW');
+    expect(computeLeaseMissingSeverity(10)).toBe('LOW');
+  });
+
+  it('MEDIUM del día 11 al 20', () => {
+    expect(computeLeaseMissingSeverity(11)).toBe('MEDIUM');
+    expect(computeLeaseMissingSeverity(20)).toBe('MEDIUM');
+  });
+
+  it('HIGH después del día 20', () => {
+    expect(computeLeaseMissingSeverity(21)).toBe('HIGH');
+    expect(computeLeaseMissingSeverity(31)).toBe('HIGH');
+  });
+});
+
+describe('computeAnomalySeverity — escalado por ratio', () => {
+  it('MEDIUM desde 1.5×', () => {
+    expect(computeAnomalySeverity(1.5)).toBe('MEDIUM');
+    expect(computeAnomalySeverity(1.99)).toBe('MEDIUM');
+  });
+
+  it('HIGH desde 2×', () => {
+    expect(computeAnomalySeverity(2)).toBe('HIGH');
+    expect(computeAnomalySeverity(2.9)).toBe('HIGH');
+  });
+
+  it('CRITICAL desde 3×', () => {
+    expect(computeAnomalySeverity(3)).toBe('CRITICAL');
+    expect(computeAnomalySeverity(5.2)).toBe('CRITICAL');
+  });
+});
+
+describe('descripciones financieras — es-MX con moneda formateada', () => {
+  it('renta sin registrar incluye monto y días transcurridos', () => {
+    expect(buildLeaseMissingDescription(11535, 11)).toBe(
+      'Renta de $11,535.00 sin registrar este mes (van 11 días)'
+    );
+  });
+
+  it('multa con proveedor', () => {
+    expect(buildFineDescription(2500, 'Tránsito ZAC')).toBe(
+      'Multa registrada: $2,500.00 — Tránsito ZAC'
+    );
+  });
+
+  it('multa sin proveedor usa fallback es-MX', () => {
+    expect(buildFineDescription(1800, null)).toBe('Multa registrada: $1,800.00 — sin proveedor');
+  });
+
+  it('gasto anómalo incluye monto, ratio y promedio', () => {
+    expect(buildAnomalyDescription(20000, 8000, 2.5)).toBe(
+      'Gasto del mes $20,000.00 — 2.5× su promedio semestral ($8,000.00)'
+    );
   });
 });
 

@@ -82,12 +82,15 @@ describe('Alerts Routes — Integration', () => {
   // ─── GET /v1/alerts/count ────────────────────────────────────────────────────
 
   describe('GET /v1/alerts/count', () => {
-    it('returns 200 with correct total count including compliance', async () => {
+    it('returns 200 with correct total count including compliance and finance', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ overdueCount: '3' }], undefined])
         .mockResolvedValueOnce([[{ incidentCount: '2' }], undefined])
         .mockResolvedValueOnce([[{ criticalCount: '1' }], undefined])
-        .mockResolvedValueOnce([[{ complianceCount: '2' }], undefined]);
+        .mockResolvedValueOnce([[{ complianceCount: '2' }], undefined])
+        .mockResolvedValueOnce([[{ leaseMissingCount: '2' }], undefined])
+        .mockResolvedValueOnce([[{ fineCount: '1' }], undefined])
+        .mockResolvedValueOnce([[{ anomalyCount: '1' }], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -97,7 +100,7 @@ describe('Alerts Routes — Integration', () => {
       expect(res.statusCode).toBe(200);
       const body = res.json();
       expect(body.success).toBe(true);
-      expect(body.count).toBe(8);
+      expect(body.count).toBe(12);
     });
 
     it('returns 200 with zero when all counts are 0', async () => {
@@ -105,7 +108,10 @@ describe('Alerts Routes — Integration', () => {
         .mockResolvedValueOnce([[{ overdueCount: '0' }], undefined])
         .mockResolvedValueOnce([[{ incidentCount: '0' }], undefined])
         .mockResolvedValueOnce([[{ criticalCount: '0' }], undefined])
-        .mockResolvedValueOnce([[{ complianceCount: null }], undefined]);
+        .mockResolvedValueOnce([[{ complianceCount: null }], undefined])
+        .mockResolvedValueOnce([[{ leaseMissingCount: '0' }], undefined])
+        .mockResolvedValueOnce([[{ fineCount: '0' }], undefined])
+        .mockResolvedValueOnce([[{ anomalyCount: null }], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -343,6 +349,24 @@ describe('Alerts Routes — Integration', () => {
       verificationDays: -10,
       legalDays: 8,
     };
+    const leaseMissingRow = {
+      id: 'ASM-106',
+      monthlyLeasePayment: '11535.00',
+      dayOfMonth: 25,
+    };
+    const fineRow = {
+      id: 501,
+      unit_id: 'ASM-107',
+      amount: '2500.00',
+      vendor: 'Tránsito ZAC',
+      created_at: '2026-06-09T10:00:00.000Z',
+    };
+    const anomalyRow = {
+      unit_id: 'ASM-108',
+      currentTotal: '20000.00',
+      prevTotal: '48000.00',
+      prevPeriods: 6,
+    };
 
     it('Scenario 1: maint:view only receives only MAINTENANCE_OVERDUE and skips other queries', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[overdueRow], undefined]);
@@ -373,12 +397,15 @@ describe('Alerts Routes — Integration', () => {
       expect(db.execute).not.toHaveBeenCalled();
     });
 
-    it('Scenario 3: omnipotent * receives all four types', async () => {
+    it('Scenario 3: omnipotent * receives all seven types', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[overdueRow], undefined])
         .mockResolvedValueOnce([[incidentRow], undefined])
         .mockResolvedValueOnce([[criticalRow], undefined])
-        .mockResolvedValueOnce([[complianceRow], undefined]);
+        .mockResolvedValueOnce([[complianceRow], undefined])
+        .mockResolvedValueOnce([[leaseMissingRow], undefined])
+        .mockResolvedValueOnce([[fineRow], undefined])
+        .mockResolvedValueOnce([[anomalyRow], undefined]);
 
       const res = await app.inject({
         method: 'GET',
@@ -391,7 +418,10 @@ describe('Alerts Routes — Integration', () => {
       expect(types).toContain('INCIDENT_OPEN');
       expect(types).toContain('UNIT_CRITICAL');
       expect(types).toContain('COMPLIANCE_EXPIRY');
-      expect(db.execute).toHaveBeenCalledTimes(4);
+      expect(types).toContain('LEASE_PAYMENT_MISSING');
+      expect(types).toContain('FINE_REGISTERED');
+      expect(types).toContain('EXPENSE_ANOMALY');
+      expect(db.execute).toHaveBeenCalledTimes(7);
     });
 
     it('Scenario 4: maint:view + fleet:view receive their three types, never INCIDENT_OPEN', async () => {
@@ -472,6 +502,158 @@ describe('Alerts Routes — Integration', () => {
       const types = res.json().data.map((a: { type: string }) => a.type);
       expect(types).not.toContain('COMPLIANCE_EXPIRY');
       expect(db.execute).toHaveBeenCalledTimes(1);
+    });
+
+    // ─── Contrato Alerts_Finance_Domain ───────────────────────────────────────
+
+    it('Finanzas 1: financial:view receives only finance types with exactly 3 queries', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[leaseMissingRow], undefined])
+        .mockResolvedValueOnce([[fineRow], undefined])
+        .mockResolvedValueOnce([[anomalyRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['financial:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.count).toBe(3);
+      const types = body.data.map((a: { type: string }) => a.type);
+      expect(types).toContain('LEASE_PAYMENT_MISSING');
+      expect(types).toContain('FINE_REGISTERED');
+      expect(types).toContain('EXPENSE_ANOMALY');
+      expect(types).not.toContain('MAINTENANCE_OVERDUE');
+      expect(db.execute).toHaveBeenCalledTimes(3);
+    });
+
+    it('Finanzas 2: renta sin registrar el día 25 escala a HIGH con descripción es-MX', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[leaseMissingRow], undefined])
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['financial:view']),
+      });
+      const alert = res.json().data[0];
+      expect(alert.id).toBe('LEASE_MISSING_ASM-106');
+      expect(alert.severity).toBe('HIGH');
+      expect(alert.description).toBe('Renta de $11,535.00 sin registrar este mes (van 25 días)');
+      expect(alert.title).toBe('Renta sin registrar — ASM-106');
+    });
+
+    it('Finanzas 3: multa reciente HIGH con monto y proveedor', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[fineRow], undefined])
+        .mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['financial:view']),
+      });
+      const alert = res.json().data[0];
+      expect(alert.id).toBe('FINE_501');
+      expect(alert.type).toBe('FINE_REGISTERED');
+      expect(alert.severity).toBe('HIGH');
+      expect(alert.description).toBe('Multa registrada: $2,500.00 — Tránsito ZAC');
+      expect(alert.unitId).toBe('ASM-107');
+      expect(alert.createdAt).toBe('2026-06-09T10:00:00.000Z');
+    });
+
+    it('Finanzas 4: gasto anómalo 2.5× escala a HIGH con promedio semestral', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[anomalyRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['financial:view']),
+      });
+      const alert = res.json().data[0];
+      expect(alert.id).toBe('EXPENSE_ANOMALY_ASM-108');
+      expect(alert.severity).toBe('HIGH');
+      expect(alert.description).toBe(
+        'Gasto del mes $20,000.00 — 2.5× su promedio semestral ($8,000.00)'
+      );
+    });
+
+    it('Finanzas 5: guard JS — historial corto, sin gasto previo o ratio bajo no generan alerta', async () => {
+      const sparseRow = {
+        unit_id: 'ASM-109',
+        currentTotal: '9000.00',
+        prevTotal: '4000.00',
+        prevPeriods: 2,
+      };
+      const zeroHistoryRow = {
+        unit_id: 'ASM-110',
+        currentTotal: '9000.00',
+        prevTotal: '0.00',
+        prevPeriods: 4,
+      };
+      const lowRatioRow = {
+        unit_id: 'ASM-111',
+        currentTotal: '8000.00',
+        prevTotal: '48000.00',
+        prevPeriods: 6,
+      };
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[sparseRow, zeroHistoryRow, lowRatioRow], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['financial:view']),
+      });
+      expect(res.json().count).toBe(0);
+    });
+
+    it('Finanzas 3b: multa con created_at tipo Date serializa ISO', async () => {
+      const fineDateRow = {
+        id: 502,
+        unit_id: 'ASM-112',
+        amount: '1200.00',
+        vendor: null,
+        created_at: new Date('2026-06-10T08:00:00.000Z'),
+      };
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[fineDateRow], undefined])
+        .mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['financial:view']),
+      });
+      const alert = res.json().data[0];
+      expect(alert.createdAt).toBe('2026-06-10T08:00:00.000Z');
+      expect(alert.description).toBe('Multa registrada: $1,200.00 — sin proveedor');
+    });
+
+    it('Finanzas 6: /alerts/count con financial:view ejecuta solo las 3 queries financieras', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ leaseMissingCount: '2' }], undefined])
+        .mockResolvedValueOnce([[{ fineCount: '1' }], undefined])
+        .mockResolvedValueOnce([[{ anomalyCount: '0' }], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts/count',
+        headers: authWith(['financial:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().count).toBe(3);
+      expect(db.execute).toHaveBeenCalledTimes(3);
     });
   });
 
