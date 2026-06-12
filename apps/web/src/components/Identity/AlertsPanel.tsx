@@ -8,6 +8,9 @@ import {
   AlertCircle,
   Info,
   FileWarning,
+  DollarSign,
+  Receipt,
+  TrendingUp,
   LucideIcon,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -18,7 +21,20 @@ import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AT from '../../styles/archonTypography';
 
 /** Feature Contract Alerts_Role_Scoped_Panel — slugs que habilitan la vista de alertas */
-const ALERT_VIEW_PERMISSIONS = ['maint:view', 'route:view', 'fleet:view'];
+const ALERT_VIEW_PERMISSIONS = ['maint:view', 'route:view', 'fleet:view', 'financial:view'];
+
+/** Contrato Alerts_Finance_Domain — chip-filter por dominio (mitigación de fatiga de alertas) */
+const DOMAIN_FILTERS: Array<{ key: string; label: string; types: AlertType[] | null }> = [
+  { key: 'all', label: 'Todos', types: null },
+  { key: 'maint', label: 'Mantenimiento', types: ['MAINTENANCE_OVERDUE'] },
+  { key: 'routes', label: 'Rutas', types: ['INCIDENT_OPEN'] },
+  { key: 'fleet', label: 'Flota', types: ['UNIT_CRITICAL', 'COMPLIANCE_EXPIRY'] },
+  {
+    key: 'finance',
+    label: 'Finanzas',
+    types: ['LEASE_PAYMENT_MISSING', 'FINE_REGISTERED', 'EXPENSE_ANOMALY'],
+  },
+];
 
 const SEVERITY_BADGE: Record<AlertSeverity, string> = {
   CRITICAL: 'bg-red-100 text-red-700 border border-red-200',
@@ -46,6 +62,9 @@ const TYPE_ICON: Record<AlertType, React.ReactNode> = {
   INCIDENT_OPEN: <AlertTriangle size={12} />,
   UNIT_CRITICAL: <Lock size={12} />,
   COMPLIANCE_EXPIRY: <FileWarning size={12} />,
+  LEASE_PAYMENT_MISSING: <DollarSign size={12} />,
+  FINE_REGISTERED: <Receipt size={12} />,
+  EXPENSE_ANOMALY: <TrendingUp size={12} />,
 };
 
 const TYPE_LABEL: Record<AlertType, string> = {
@@ -53,6 +72,9 @@ const TYPE_LABEL: Record<AlertType, string> = {
   INCIDENT_OPEN: 'Incidente abierto',
   UNIT_CRITICAL: 'Unidad bloqueada',
   COMPLIANCE_EXPIRY: 'Cumplimiento por vencer',
+  LEASE_PAYMENT_MISSING: 'Renta sin registrar',
+  FINE_REGISTERED: 'Multa registrada',
+  EXPENSE_ANOMALY: 'Gasto anómalo',
 };
 
 const SEVERITY_CONFIG: Array<{
@@ -195,6 +217,7 @@ const AlertsAccessFallback: React.FC = (): React.JSX.Element => {
 const AlertsPanelContent: React.FC = (): React.JSX.Element => {
   const { alerts, isSyncing } = useAlerts();
   const { searchTerm, setSearchTerm, setSearchConfig, setSectionData } = useSovereignLayout();
+  const [activeDomain, setActiveDomain] = React.useState<string>('all');
 
   // 🛡️ Universal Search Protocol — Alertas
   React.useEffect(() => {
@@ -229,16 +252,20 @@ const AlertsPanelContent: React.FC = (): React.JSX.Element => {
   React.useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
 
   const filtered = React.useMemo(() => {
-    if (!searchTerm.trim()) return alerts;
+    const domainTypes = DOMAIN_FILTERS.find((d) => d.key === activeDomain)?.types ?? null;
+    const domainFiltered = domainTypes
+      ? alerts.filter((a) => domainTypes.includes(a.type))
+      : alerts;
+    if (!searchTerm.trim()) return domainFiltered;
     const q = searchTerm.toLowerCase().trim();
-    return alerts.filter(
+    return domainFiltered.filter(
       (a) =>
         a.unitId.toLowerCase().includes(q) ||
         TYPE_LABEL[a.type].toLowerCase().includes(q) ||
         SEVERITY_LABEL[a.severity].toLowerCase().includes(q) ||
         a.description.toLowerCase().includes(q)
     );
-  }, [alerts, searchTerm]);
+  }, [alerts, searchTerm, activeDomain]);
 
   // 🔱 Sovereign Header — Severity Summary Cards
   React.useEffect(() => {
@@ -277,6 +304,32 @@ const AlertsPanelContent: React.FC = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-3 animate-in fade-in duration-500">
+      {/* 🔱 Chip-filter por dominio — Contrato Alerts_Finance_Domain */}
+      <div
+        data-testid="alerts-domain-filter"
+        className="flex items-center gap-2 flex-wrap"
+        role="group"
+        aria-label="Filtrar alertas por dominio"
+      >
+        {DOMAIN_FILTERS.map(({ key, label }) => {
+          const isActive = activeDomain === key;
+          const chipClass = isActive
+            ? 'bg-[#0f2a44] text-white shadow-sm'
+            : 'bg-[#0f2a44]/5 text-[#0f2a44]/60 hover:bg-[#0f2a44]/10';
+          return (
+            <button
+              key={key}
+              type="button"
+              data-testid={`domain-chip-${key}`}
+              onClick={(): void => setActiveDomain(key)}
+              className={`px-3 py-1.5 rounded-[4px] border-none outline-none text-[10px] font-black uppercase tracking-[0.12em] transition-all duration-300 ${chipClass}`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       <ArchonDataTable<Alert>
         data={filtered}
         headers={HEADERS}

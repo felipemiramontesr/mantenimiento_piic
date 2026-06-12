@@ -5,7 +5,10 @@ export type AlertType =
   | 'MAINTENANCE_OVERDUE'
   | 'INCIDENT_OPEN'
   | 'UNIT_CRITICAL'
-  | 'COMPLIANCE_EXPIRY';
+  | 'COMPLIANCE_EXPIRY'
+  | 'LEASE_PAYMENT_MISSING'
+  | 'FINE_REGISTERED'
+  | 'EXPENSE_ANOMALY';
 
 export interface Alert {
   id: string;
