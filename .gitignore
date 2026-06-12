@@ -42,6 +42,8 @@ uploads/
 apps/api/uploads/
 apps/web/public/uploads/
 *.sql
+# Las migraciones canónicas (§2.7) SÍ se versionan — la regla *.sql solo bloquea dumps/datos
+!packages/database/migrations/*.sql
 
 # Archon Dev Lore
 checkpoints.md
