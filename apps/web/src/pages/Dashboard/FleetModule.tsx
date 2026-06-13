@@ -4,6 +4,7 @@ import { PlusCircle, ShieldAlert } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { FleetUnit, CreateFleetUnit, ManagementPanel } from '../../types/fleet';
+import usePermissions from '../../hooks/usePermissions';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
 import FleetGridView from '../../components/Fleet/FleetGridView';
@@ -82,6 +83,9 @@ const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
 const FleetModule: React.FC = (): React.ReactElement => {
   const { refreshUnits, units, loading } = useFleet();
   const { setSectionData, setSearchTerm } = useSovereignLayout();
+  const { hasPermission } = usePermissions();
+  const canCreate = hasPermission('fleet:write');
+  const canScopedWrite = hasPermission('fleet:write:scoped');
   const location = useLocation();
   const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
   const [editingUnit, setEditingUnit] = useState<FleetUnit | null>(null);
@@ -149,27 +153,22 @@ const FleetModule: React.FC = (): React.ReactElement => {
     }
   };
 
-  useEffect(() => {
-    setSectionData(
-      editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades',
-      editingUnit
-        ? 'Protocolo de Gestión Forense Archon'
-        : 'Administración de Activos, Registro Técnico & Optimización de Flota',
-      null,
-      {
-        variant: activePanel === 'EXPANSION' || !!editingUnit ? 'navy' : 'emerald',
-        headerTitle:
-          activePanel === 'EXPANSION' || !!editingUnit ? 'Cancelar' : 'Expansión de Flota',
-        HeaderIcon: activePanel === 'EXPANSION' || !!editingUnit ? ShieldAlert : PlusCircle,
-        PayloadIcon: activePanel === 'EXPANSION' || !!editingUnit ? ShieldAlert : PlusCircle,
-        actionTitle: activePanel === 'EXPANSION' || !!editingUnit ? 'Retorno' : 'Registrar',
-        description:
-          activePanel === 'EXPANSION' || !!editingUnit ? 'Cancelar Registro' : 'Alta de Activos',
-        buttonText:
-          activePanel === 'EXPANSION' || !!editingUnit ? 'Cerrar Formulario' : 'Iniciar Registro',
-        isActive: activePanel === 'EXPANSION' || !!editingUnit,
+  const isExpanding = activePanel === 'EXPANSION' || !!editingUnit;
+  // canCreate: gates the "Iniciar Registro" new-unit flow (fleet:write only).
+  // Scoped-write users still get the cancel button when already in edit mode.
+  const showActionButton = canCreate || (canScopedWrite && isExpanding);
+  const actionButton = showActionButton
+    ? {
+        variant: (isExpanding ? 'navy' : 'emerald') as 'navy' | 'emerald',
+        headerTitle: isExpanding ? 'Cancelar' : 'Expansión de Flota',
+        HeaderIcon: isExpanding ? ShieldAlert : PlusCircle,
+        PayloadIcon: isExpanding ? ShieldAlert : PlusCircle,
+        actionTitle: isExpanding ? 'Retorno' : 'Registrar',
+        description: isExpanding ? 'Cancelar Registro' : 'Alta de Activos',
+        buttonText: isExpanding ? 'Cerrar Formulario' : 'Iniciar Registro',
+        isActive: isExpanding,
         testId: 'fleet-registration-btn',
-        onClick: () => {
+        onClick: (): void => {
           if (editingUnit) {
             handleReturnToGrid();
           } else {
@@ -177,8 +176,18 @@ const FleetModule: React.FC = (): React.ReactElement => {
           }
         },
       }
+    : undefined;
+
+  useEffect(() => {
+    setSectionData(
+      editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades',
+      editingUnit
+        ? 'Protocolo de Gestión Forense Archon'
+        : 'Administración de Activos, Registro Técnico & Optimización de Flota',
+      null,
+      actionButton
     );
-  }, [editingUnit, activePanel, setSectionData]);
+  }, [editingUnit, activePanel, setSectionData, canCreate, canScopedWrite]);
 
   return (
     <div className="animate-in fade-in duration-700">

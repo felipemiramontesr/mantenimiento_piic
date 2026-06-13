@@ -268,7 +268,7 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(img.src).toBe('http://localhost:3000/');
   });
 
-  it('does not render admin/logout buttons when user is not omnipotent', () => {
+  it('does not render admin button when user is not omnipotent (logout always visible)', () => {
     usePermissionsMock.mockReturnValue({
       hasPermission: (): boolean => true,
       hasAnyPermission: (): boolean => true,
@@ -283,7 +283,7 @@ describe('Sidebar Component (Archon Core)', () => {
     );
 
     expect(screen.queryByTestId('nav-item-admin')).toBeNull();
-    expect(screen.queryByTestId('nav-item-logout')).toBeNull();
+    expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
   });
 
   it('hides permission-gated nav items when all permissions are denied', () => {

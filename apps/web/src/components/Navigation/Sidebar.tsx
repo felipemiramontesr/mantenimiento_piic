@@ -304,10 +304,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         {/* ⚙️ FOOTER (15%) */}
         <footer className="h-[15%] flex flex-col items-center justify-center px-4 gap-2 border-t border-white/5">
           {isOmnipotent() && (
-            <>
-              <button
-                onClick={goToAdmin}
-                className={`
+            <button
+              onClick={goToAdmin}
+              className={`
                 flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
                 ${
                   location.pathname === '/dashboard/admin'
@@ -316,42 +315,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 }
                 ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
               `}
-                title="Administración del Sistema"
-                data-testid="nav-item-admin"
-              >
-                <Users size={14} className="shrink-0" />
-                <div
-                  className={`
-                transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
-                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
-              `}
-                >
-                  <span>Panel de Control</span>
-                </div>
-              </button>
-
-              <button
-                onClick={logout}
+              title="Administración del Sistema"
+              data-testid="nav-item-admin"
+            >
+              <Users size={14} className="shrink-0" />
+              <div
                 className={`
-                flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
-                bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110
-                ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
-              `}
-                title="Cerrar Sesión"
-                data-testid="nav-item-logout"
-              >
-                <LogOut size={14} className="shrink-0" />
-                <div
-                  className={`
                 transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
                 ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
               `}
-                >
-                  <span>Cerrar Sesión</span>
-                </div>
-              </button>
-            </>
+              >
+                <span>Panel de Control</span>
+              </div>
+            </button>
           )}
+
+          <button
+            onClick={logout}
+            className={`
+              flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
+              bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110
+              ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
+            `}
+            title="Cerrar Sesión"
+            data-testid="nav-item-logout"
+          >
+            <LogOut size={14} className="shrink-0" />
+            <div
+              className={`
+                transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
+              `}
+            >
+              <span>Cerrar Sesión</span>
+            </div>
+          </button>
         </footer>
       </aside>
     </>
