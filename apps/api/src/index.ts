@@ -48,6 +48,7 @@ const ALLOWED_ORIGINS =
 const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   const fastify = Fastify({
     logger: true,
+    bodyLimit: 10 * 1024 * 1024, // 10MB — allows up to 4 base64 JPEG images in fleet payload
     ...opts,
   });
 

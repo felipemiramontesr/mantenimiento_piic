@@ -111,6 +111,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
     formData,
     error,
     resetError,
+    setError,
     setFormData,
     isSubmitting,
     isLoading,
@@ -183,9 +184,11 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         data: { reason },
       });
       await onSuccess();
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('🔱 [Fleet Delete Error]:', err);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } }).response?.data?.error ??
+        (err instanceof Error ? err.message : 'Error al eliminar la unidad');
+      setError(msg);
     } finally {
       setIsProcessing(false);
       setIsAuditModalOpen(false);
@@ -206,9 +209,11 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         });
       }
       await onSuccess();
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('🔱 [Fleet Audit Error]:', err);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } }).response?.data?.error ??
+        (err instanceof Error ? err.message : 'Error al sincronizar la unidad');
+      setError(msg);
     } finally {
       setIsProcessing(false);
       setIsAuditModalOpen(false);
@@ -1122,6 +1127,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             : `Baja definitiva del activo ${unitId} del inventario industrial`
         }
         actionType={auditAction}
+        loading={isProcessing}
       />
     </form>
   );

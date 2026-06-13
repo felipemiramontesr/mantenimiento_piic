@@ -69,6 +69,7 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4 mt-8 w-full">
             <button
+              type="button"
               onClick={onClose}
               disabled={loading}
               className="btn-sentinel-red text-sm disabled:opacity-50 w-full py-2.5"
@@ -76,6 +77,7 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
               Cancelar
             </button>
             <button
+              type="button"
               onClick={(): void => onConfirm(reason)}
               disabled={reason.length < 5 || loading}
               className={`${
