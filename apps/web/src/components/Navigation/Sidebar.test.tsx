@@ -41,6 +41,7 @@ const defaultPermissions = {
   hasPermission: (): boolean => true,
   hasAnyPermission: (): boolean => true,
   isOmnipotent: (): boolean => true,
+  isExternalClientOnly: (): boolean => false,
 };
 
 const defaultAuth = {
@@ -81,6 +82,54 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Seguridad')).toBeDefined();
     expect(screen.getByText('Personal')).toBeDefined();
     expect(screen.getByText('Panel de Control')).toBeDefined();
+  });
+
+  it('Owner-Scoped F1-A: Cliente Externo (fleet:view + fleet:scoped) solo ve Unidades', () => {
+    const clientPerms = ['fleet:view', 'fleet:scoped'];
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (p: string): boolean => clientPerms.includes(p),
+      hasAnyPermission: (ps: string[]): boolean => ps.some((p) => clientPerms.includes(p)),
+      isOmnipotent: (): boolean => false,
+      isExternalClientOnly: (): boolean => true,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('Unidades')).toBeDefined();
+    expect(screen.queryByText('Comando')).toBeNull();
+    expect(screen.queryByText('Rutas')).toBeNull();
+    expect(screen.queryByText('Alertas')).toBeNull();
+    expect(screen.queryByText('Finanzas')).toBeNull();
+    expect(screen.queryByText('Incidencias')).toBeNull();
+    expect(screen.queryByText('Mantenimiento')).toBeNull();
+    expect(screen.queryByText('Personal')).toBeNull();
+    expect(screen.queryByText('Seguridad')).toBeNull();
+    expect(screen.queryByText('Panel de Control')).toBeNull();
+  });
+
+  it('Matriz 095: el item Rutas requiere route:view, no fleet:view', () => {
+    const financePerms = ['financial:view', 'fleet:view'];
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (p: string): boolean => financePerms.includes(p),
+      hasAnyPermission: (ps: string[]): boolean => ps.some((p) => financePerms.includes(p)),
+      isOmnipotent: (): boolean => false,
+      isExternalClientOnly: (): boolean => false,
+    });
+
+    render(
+      <BrowserRouter>
+        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+      </BrowserRouter>
+    );
+
+    // Director de Finanzas: fleet:view sin route:view — no debe ver Rutas
+    expect(screen.getByText('Unidades')).toBeDefined();
+    expect(screen.getByText('Finanzas')).toBeDefined();
+    expect(screen.queryByText('Rutas')).toBeNull();
   });
 
   it('navigates to dashboard items when clicking main nav items', () => {
@@ -224,6 +273,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (): boolean => true,
       hasAnyPermission: (): boolean => true,
       isOmnipotent: (): boolean => false,
+      isExternalClientOnly: (): boolean => false,
     });
 
     render(
@@ -241,6 +291,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (): boolean => false,
       hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
+      isExternalClientOnly: (): boolean => false,
     });
 
     render(

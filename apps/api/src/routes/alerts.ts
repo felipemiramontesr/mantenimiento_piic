@@ -126,9 +126,15 @@ export function resolveAlertScope(permissions: string[]): Set<AlertType> {
   if (permissions.includes('*')) {
     return new Set<AlertType>(ALL_ALERT_TYPES);
   }
+  // Owner-Scoped Fleet Access (F1-A): fleet:scoped carriers only see units of
+  // their linked owners — fleet-wide alert types (fleet:view) are suppressed
+  // for them; alert types from other domains remain governed by their slug.
+  const isOwnerScoped = permissions.includes('fleet:scoped');
   const scope = new Set<AlertType>();
   ALL_ALERT_TYPES.forEach((type) => {
-    if (permissions.includes(ALERT_TYPE_PERMISSION[type])) scope.add(type);
+    const requiredSlug = ALERT_TYPE_PERMISSION[type];
+    if (isOwnerScoped && requiredSlug === 'fleet:view') return;
+    if (permissions.includes(requiredSlug)) scope.add(type);
   });
   return scope;
 }

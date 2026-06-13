@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket } from 'mysql2';
 import FleetService from '../services/fleetService';
@@ -73,6 +73,18 @@ const createFleetSchema = z.object({
 
 const updateFleetSchema = createFleetSchema.partial();
 
+/**
+ * Owner-Scoped Fleet Access (F1-A).
+ * Returns null for unscoped carriers (full fleet visibility) or the list of
+ * FLEET_OWNER ids linked to the user for fleet:scoped carriers.
+ * An empty array means deny-by-default: the user sees nothing.
+ */
+const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
+  const { id, permissions } = request.user as { id: number; permissions: string[] };
+  if (permissions.includes('*') || !permissions.includes('fleet:scoped')) return null;
+  return FleetService.getUserOwnerIds(id);
+};
+
 export default async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   // Security Hook
   fastify.addHook('onRequest', async (request, reply) => {
@@ -87,10 +99,14 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
   /**
    * GET /api/v1/fleet
    */
-  fastify.get('/fleet', async (_request, reply) => {
+  fastify.get('/fleet', async (request, reply) => {
     reply.header('Cache-Control', 'no-store, no-cache, must-revalidate');
     try {
-      const units = await FleetService.getAllUnits(fastify.log);
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.send({ success: true, count: 0, data: [] });
+      }
+      const units = await FleetService.getAllUnits(fastify.log, ownerScope ?? undefined);
       return reply.send({ success: true, count: units.length, data: units });
     } catch (error) {
       fastify.log.error(error);
@@ -106,7 +122,11 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
   fastify.get('/fleet/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
-      const unit = await FleetService.getUnitById(id, fastify.log);
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.code(404).send({ error: 'Unit not found' });
+      }
+      const unit = await FleetService.getUnitById(id, fastify.log, ownerScope ?? undefined);
       if (!unit) return reply.code(404).send({ error: 'Unit not found' });
       return reply.send({ success: true, data: unit });
     } catch (error) {

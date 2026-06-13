@@ -173,6 +173,16 @@ describe('resolveAlertScope — mapeo alerta→permiso', () => {
     );
   });
 
+  it('fleet:scoped suppresses fleet-wide alert types (Owner-Scoped F1-A)', () => {
+    expect(resolveAlertScope(['fleet:view', 'fleet:scoped']).size).toBe(0);
+  });
+
+  it('fleet:scoped only suppresses fleet:view types — other domains stay intact', () => {
+    expect(resolveAlertScope(['fleet:view', 'fleet:scoped', 'maint:view'])).toEqual(
+      new Set(['MAINTENANCE_OVERDUE'])
+    );
+  });
+
   it('omnipotent * grants every registered type', () => {
     expect(resolveAlertScope(['*'])).toEqual(
       new Set([

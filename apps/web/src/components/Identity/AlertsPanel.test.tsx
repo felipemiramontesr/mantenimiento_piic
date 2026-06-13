@@ -101,6 +101,33 @@ describe('AlertsPanel — role-scoped guard (Feature Contract Alerts_Role_Scoped
     expect(screen.getByText('ASM-001')).toBeInTheDocument();
   });
 
+  it('Owner-Scoped F1-A: Cliente Externo (fleet:view + fleet:scoped) ve fallback, no el panel', () => {
+    const clientPerms = ['fleet:view', 'fleet:scoped'];
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (p: string): boolean => clientPerms.includes(p),
+      hasAnyPermission: (ps: string[]): boolean => ps.some((p) => clientPerms.includes(p)),
+      isOmnipotent: (): boolean => false,
+    });
+    renderPanel();
+
+    expect(screen.getByTestId('alerts-access-fallback')).toBeInTheDocument();
+    expect(screen.queryByTestId('alerts-table')).not.toBeInTheDocument();
+    expect(useAlertsMock).not.toHaveBeenCalled();
+  });
+
+  it('Owner-Scoped F1-A: fleet:scoped con otro dominio de alertas sí accede al panel', () => {
+    const mixedPerms = ['fleet:view', 'fleet:scoped', 'maint:view'];
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (p: string): boolean => mixedPerms.includes(p),
+      hasAnyPermission: (ps: string[]): boolean => ps.some((p) => mixedPerms.includes(p)),
+      isOmnipotent: (): boolean => false,
+    });
+    renderPanel();
+
+    expect(screen.getByTestId('alerts-table')).toBeInTheDocument();
+    expect(screen.queryByTestId('alerts-access-fallback')).not.toBeInTheDocument();
+  });
+
   it('renders severity summary cards in the sovereign header when access is granted', () => {
     grantAccess(true);
     renderPanel();

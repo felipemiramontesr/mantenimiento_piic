@@ -14,6 +14,7 @@ import {
   Eye,
   EyeOff,
   Trash2,
+  Building2,
 } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
@@ -32,6 +33,22 @@ import AuditJustificationModal from '../Common/AuditJustificationModal';
 interface SuccessViewProps {
   data: { tempPass?: string; isEdit?: boolean };
   onClose: () => void;
+}
+
+/**
+ * Owner-Scoped Fleet Access (F1-A): roles whose users are linked to
+ * FLEET_OWNER catalog rows — 4 Gestor de Flotilla · 9 Cliente Externo.
+ */
+const OWNER_SCOPED_ROLE_IDS = [4, 9];
+
+interface OwnerOption {
+  id: number;
+  label: string;
+}
+
+interface OwnerLink {
+  ownerId: number;
+  label: string;
 }
 
 const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
@@ -92,6 +109,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
 
+  // 🔱 Owner-Scoped Fleet Access (F1-A)
+  const [ownerCatalog, setOwnerCatalog] = useState<OwnerOption[]>([]);
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<number[]>([]);
+
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
@@ -119,6 +140,44 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       });
     }
   }, [editingUser, roles]);
+
+  const isOwnerScopedRole = OWNER_SCOPED_ROLE_IDS.includes(parseInt(formData.roleId, 10));
+
+  useEffect(() => {
+    if (!isOwnerScopedRole) return;
+    const loadOwnersData = async (): Promise<void> => {
+      try {
+        const catalogRes = await api.get<{ success: boolean; data: OwnerOption[] }>(
+          '/catalogs/FLEET_OWNER'
+        );
+        const rawCatalog = catalogRes.data?.data || [];
+        setOwnerCatalog(Array.isArray(rawCatalog) ? rawCatalog : []);
+        if (editingUser) {
+          const linksRes = await api.get<{ success: boolean; data: OwnerLink[] }>(
+            `/auth/users/${editingUser.id}/owners`
+          );
+          const links = linksRes.data?.data || [];
+          setSelectedOwnerIds(links.map((l: OwnerLink): number => l.ownerId));
+        }
+      } catch {
+        setOwnerCatalog([]);
+      }
+    };
+    loadOwnersData();
+  }, [isOwnerScopedRole, editingUser]);
+
+  const toggleOwner = (ownerId: number): void => {
+    setSelectedOwnerIds((prev: number[]): number[] =>
+      prev.includes(ownerId) ? prev.filter((id) => id !== ownerId) : [...prev, ownerId]
+    );
+  };
+
+  const persistOwnerLinks = async (userId: number | string, reason: string): Promise<void> => {
+    await api.put(`/auth/users/${userId}/owners`, {
+      ownerIds: selectedOwnerIds,
+      reason,
+    });
+  };
 
   const generateTempPassword = (length = 12): string => {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -152,6 +211,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         await api.post(`/users/${editingUser.id}/upload-profile`, formDataUpload, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+      }
+      if (isOwnerScopedRole) {
+        await persistOwnerLinks(editingUser.id, reason);
       }
       setSuccessData({ isEdit: true });
     } else {
@@ -190,6 +252,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         await api.post(`/users/${userId}/upload-profile`, formDataUpload, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+      }
+      if (isOwnerScopedRole && selectedOwnerIds.length > 0 && userId) {
+        await persistOwnerLinks(userId, 'Alta de usuario con propietarios asignados');
       }
       setSuccessData({ tempPass });
       await fetchUsers();
@@ -387,6 +452,40 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 />
               </ArchonField>
             </div>
+
+            {isOwnerScopedRole && (
+              <div
+                data-testid="owners-assignment"
+                className="pt-6 border-t border-pinnacle-navy/5 animate-in fade-in slide-in-from-top-2 duration-300"
+              >
+                <ArchonField label="Propietarios Asignados" icon={Building2}>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {ownerCatalog.map((owner: OwnerOption) => {
+                      const isSelected = selectedOwnerIds.includes(owner.id);
+                      return (
+                        <button
+                          key={owner.id}
+                          type="button"
+                          data-testid={`owner-chip-${owner.id}`}
+                          aria-pressed={isSelected}
+                          onClick={(): void => toggleOwner(owner.id)}
+                          className={`px-4 py-2 rounded-[4px] text-archon-md font-bold uppercase tracking-wider border-none outline-none transition-all duration-300 ${
+                            isSelected
+                              ? 'bg-pinnacle-navy text-white shadow-sm'
+                              : 'bg-pinnacle-navy/5 text-pinnacle-navy/60 hover:bg-pinnacle-navy/10'
+                          }`}
+                        >
+                          {owner.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ArchonField>
+                <p className="text-archon-base uppercase tracking-widest opacity-40 mt-3">
+                  El usuario solo verá unidades de los propietarios seleccionados
+                </p>
+              </div>
+            )}
 
             <div className="relative">
               <ArchonField

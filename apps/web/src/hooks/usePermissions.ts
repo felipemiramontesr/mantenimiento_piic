@@ -5,10 +5,18 @@ import { useAuth } from '../context/AuthContext';
  * Implementation: Sovereign Authorization Sensor
  * v.1.0.0 - Logic-based UI visibility control
  */
+/**
+ * Owner-Scoped Fleet Access (F1-A): the exact permission envelope of the
+ * Cliente Externo role (9). A user whose permissions are a subset of this
+ * set only operates the fleet administration panel.
+ */
+const EXTERNAL_CLIENT_PERMISSIONS = ['fleet:view', 'fleet:scoped'];
+
 export default function usePermissions(): {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmnipotent: () => boolean;
+  isExternalClientOnly: () => boolean;
 } {
   const { currentUser, effectiveUser } = useAuth();
 
@@ -29,5 +37,15 @@ export default function usePermissions(): {
     return currentUser.permissions?.includes('system:manage_roles') ?? false;
   };
 
-  return { hasPermission, hasAnyPermission, isOmnipotent };
+  // True only when the user carries fleet:scoped and nothing beyond the
+  // external-client envelope — rol 4 (Gestor variable, F1-B) carries
+  // fleet:write/delete and therefore never qualifies.
+  const isExternalClientOnly = (): boolean => {
+    const permissions = effectiveUser?.permissions;
+    if (!permissions || permissions.length === 0) return false;
+    if (!permissions.includes('fleet:scoped')) return false;
+    return permissions.every((p) => EXTERNAL_CLIENT_PERMISSIONS.includes(p));
+  };
+
+  return { hasPermission, hasAnyPermission, isOmnipotent, isExternalClientOnly };
 }

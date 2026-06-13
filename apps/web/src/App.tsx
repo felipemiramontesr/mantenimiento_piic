@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import LoginPage from './pages/Auth/Login';
 import DashboardLayout from './pages/Dashboard/Layout';
 import ArchonCenter from './pages/Dashboard/ArchonCenter';
@@ -20,6 +20,7 @@ import IncidentNode from './pages/Dashboard/nodes/IncidentNode';
 import UserNode from './pages/Dashboard/nodes/UserNode';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider } from './context/AuthContext';
+import ClientScopeGate from './components/Common/ClientScopeGate';
 import './index.css';
 
 /**
@@ -59,22 +60,30 @@ const App: React.FC = () => (
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<ArchonCenter />} />
-                <Route path="fleet" element={<FleetModule />} />
-                <Route path="fleet/:unitId" element={<FleetUnitNode />} />
-                <Route path="maintenance" element={<MaintenanceModule />} />
-                <Route path="maintenance/:uuid" element={<MaintenanceNode />} />
-                <Route path="routes" element={<RoutesModule />} />
-                <Route path="routes/:uuid" element={<RouteNode />} />
-                <Route path="financial" element={<FinancialHealthModule />} />
-                <Route path="logs" element={<LogsModule />} />
-                <Route path="settings" element={<SettingsModule />} />
-                <Route path="alerts" element={<AlertsModule />} />
-                <Route path="admin" element={<AdminModule />} />
-                <Route path="incidents" element={<IncidentsModule />} />
-                <Route path="incidents/:uuid" element={<IncidentNode />} />
-                <Route path="users" element={<UsersModule />} />
-                <Route path="users/:uuid" element={<UserNode />} />
+                <Route
+                  element={
+                    <ClientScopeGate>
+                      <Outlet />
+                    </ClientScopeGate>
+                  }
+                >
+                  <Route index element={<ArchonCenter />} />
+                  <Route path="fleet" element={<FleetModule />} />
+                  <Route path="fleet/:unitId" element={<FleetUnitNode />} />
+                  <Route path="maintenance" element={<MaintenanceModule />} />
+                  <Route path="maintenance/:uuid" element={<MaintenanceNode />} />
+                  <Route path="routes" element={<RoutesModule />} />
+                  <Route path="routes/:uuid" element={<RouteNode />} />
+                  <Route path="financial" element={<FinancialHealthModule />} />
+                  <Route path="logs" element={<LogsModule />} />
+                  <Route path="settings" element={<SettingsModule />} />
+                  <Route path="alerts" element={<AlertsModule />} />
+                  <Route path="admin" element={<AdminModule />} />
+                  <Route path="incidents" element={<IncidentsModule />} />
+                  <Route path="incidents/:uuid" element={<IncidentNode />} />
+                  <Route path="users" element={<UsersModule />} />
+                  <Route path="users/:uuid" element={<UserNode />} />
+                </Route>
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/login" replace />} />

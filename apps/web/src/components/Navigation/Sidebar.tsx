@@ -119,7 +119,7 @@ const NavItem: React.FC<NavItemProps> = ({
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission, isOmnipotent } = usePermissions();
+  const { hasPermission, isOmnipotent, isExternalClientOnly } = usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
   const { count: alertsCount } = useAlertsCount();
@@ -226,13 +226,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 badgeCount={alertsCount}
               />
             )}
-            <NavItem
-              icon={<LayoutDashboard size={20} />}
-              label="Comando"
-              path="/dashboard"
-              active={location.pathname === '/dashboard'}
-              isCollapsed={isCollapsed}
-            />
+            {!isExternalClientOnly() && (
+              <NavItem
+                icon={<LayoutDashboard size={20} />}
+                label="Comando"
+                path="/dashboard"
+                active={location.pathname === '/dashboard'}
+                isCollapsed={isCollapsed}
+              />
+            )}
             {hasPermission('financial:view') && (
               <NavItem
                 icon={<Wallet size={20} />}
@@ -251,7 +253,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 isCollapsed={isCollapsed}
               />
             )}
-            {hasPermission('fleet:view') && (
+            {hasPermission('route:view') && (
               <NavItem
                 icon={<Navigation size={20} />}
                 label="Rutas"

@@ -345,9 +345,15 @@ const AlertsPanelContent: React.FC = (): React.JSX.Element => {
 };
 
 const AlertsPanel: React.FC = (): React.JSX.Element => {
-  const { hasAnyPermission } = usePermissions();
+  const { hasAnyPermission, hasPermission } = usePermissions();
 
-  if (!hasAnyPermission(ALERT_VIEW_PERMISSIONS)) {
+  // Owner-Scoped Fleet Access (F1-A): para portadores de fleet:scoped las
+  // alertas de flota completa (fleet:view) no califican — espejo del backend.
+  const qualifyingPermissions = hasPermission('fleet:scoped')
+    ? ALERT_VIEW_PERMISSIONS.filter((slug) => slug !== 'fleet:view')
+    : ALERT_VIEW_PERMISSIONS;
+
+  if (!hasAnyPermission(qualifyingPermissions)) {
     return <AlertsAccessFallback />;
   }
   return <AlertsPanelContent />;

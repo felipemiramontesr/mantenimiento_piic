@@ -52,6 +52,60 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     expect(result.current.hasPermission('any:permission')).toBe(true);
   });
 
+  describe('isExternalClientOnly (Owner-Scoped F1-A)', () => {
+    it('is true for the exact Cliente Externo permission set', () => {
+      mockAuth({
+        id: '9',
+        username: 'juan.perez',
+        roleId: 9,
+        roleName: 'Cliente Externo',
+        permissions: ['fleet:view', 'fleet:scoped'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isExternalClientOnly()).toBe(true);
+    });
+
+    it('is false for scoped carriers with extra permissions (F1-B Gestor variable)', () => {
+      mockAuth({
+        id: '4',
+        username: 'gestor',
+        roleId: 4,
+        roleName: 'Gestor de Flotilla',
+        permissions: ['fleet:view', 'fleet:write', 'fleet:delete', 'fleet:scoped'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isExternalClientOnly()).toBe(false);
+    });
+
+    it('is false for unscoped staff and omnipotent users', () => {
+      mockAuth({
+        id: '1',
+        username: 'staff',
+        roleId: 1,
+        roleName: 'Operador General',
+        permissions: ['fleet:view'],
+      });
+      const { result: staff } = renderHook(() => usePermissions());
+      expect(staff.current.isExternalClientOnly()).toBe(false);
+
+      mockAuth({
+        id: '0',
+        username: 'archon',
+        roleId: 0,
+        roleName: 'Master (Archon)',
+        permissions: ['*'],
+      });
+      const { result: archon } = renderHook(() => usePermissions());
+      expect(archon.current.isExternalClientOnly()).toBe(false);
+    });
+
+    it('is false without an effective user', () => {
+      mockAuth(null);
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isExternalClientOnly()).toBe(false);
+    });
+  });
+
   it('should grant specific permission to user with system:manage_roles', () => {
     mockAuth({
       id: '2',

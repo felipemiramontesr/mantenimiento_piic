@@ -1,10 +1,54 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import argon2 from 'argon2';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
 import { recordAuditLog } from '../services/auditService';
+import requirePermission from '../middleware/requirePermission';
+import withConnection from '../utils/withConnection';
+
+/** Owner-Scoped Fleet Access (F1-A): role whose users are external clients. */
+const EXTERNAL_CLIENT_ROLE_ID = 9;
+
+/**
+ * Links a freshly registered external client (role 9) to its FLEET_OWNER
+ * catalog row, creating the row when the owner label does not exist yet.
+ * common_catalogs.id has no AUTO_INCREMENT — next id is resolved with
+ * MAX(id)+1 inside the same transaction (FOR UPDATE serializes concurrents).
+ */
+async function linkExternalClientOwner(userId: number, ownerLabel: string): Promise<void> {
+  return withConnection(async (connection) => {
+    await connection.beginTransaction();
+    try {
+      const [existing] = await connection.execute<RowDataPacket[]>(
+        "SELECT id FROM common_catalogs WHERE category = 'FLEET_OWNER' AND label = ? LIMIT 1",
+        [ownerLabel]
+      );
+      let ownerId: number;
+      if (existing.length > 0) {
+        ownerId = existing[0].id as number;
+      } else {
+        const [nextRows] = await connection.execute<RowDataPacket[]>(
+          'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
+        );
+        ownerId = nextRows[0].nextId as number;
+        await connection.execute<ResultSetHeader>(
+          "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
+          [ownerId, `OWN_U${userId}`, ownerLabel]
+        );
+      }
+      await connection.execute<ResultSetHeader>(
+        'INSERT IGNORE INTO user_fleet_owners (user_id, owner_id) VALUES (?, ?)',
+        [userId, ownerId]
+      );
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    }
+  });
+}
 
 /**
  * 🔱 Archon Auth Engine (v.8.7.0) - THE NUCLEUS
@@ -202,6 +246,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [username, enc, hash, roleId, fullName || '', departmentId || null, employeeNumber || null]
       );
+      if (roleId === EXTERNAL_CLIENT_ROLE_ID) {
+        await linkExternalClientOwner(res.insertId, fullName || username);
+      }
       return reply.code(201).send({ success: true, userId: res.insertId });
     } catch (e) {
       fastify.log.error(e);
@@ -404,6 +451,130 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       fastify.log.error(e);
       return reply.code(500).send({ error: 'DELETE_FAIL' });
     }
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Owner-Scoped Fleet Access (F1-A · A3): user ↔ FLEET_OWNER links
+  // Guard: user:admin — only user administrators manage owner assignments.
+  // ──────────────────────────────────────────────────────────────────────────
+  const ownersGuard = {
+    onRequest: async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+      try {
+        await request.jwtVerify();
+      } catch {
+        reply.code(401).send({ error: 'Archon Protection: Session required' });
+      }
+    },
+    preHandler: [requirePermission('user:admin')],
+  };
+
+  fastify.get('/users/:id/owners', ownersGuard, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        `SELECT ufo.owner_id AS ownerId, cc.label
+         FROM user_fleet_owners ufo
+         JOIN common_catalogs cc ON cc.id = ufo.owner_id AND cc.category = 'FLEET_OWNER'
+         WHERE ufo.user_id = ?`,
+        [id]
+      );
+      return reply.send({ success: true, data: rows });
+    } catch (e) {
+      fastify.log.error({ err: (e as Error).message }, 'User owners fetch failed');
+      return reply
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'OWNERS_FAIL' });
+    }
+  });
+
+  fastify.put('/users/:id/owners', ownersGuard, async (request, reply) => {
+    const schema = z.object({
+      ownerIds: z.array(z.number().int()),
+      reason: z.string().min(5),
+    });
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: parsed.error.issues[0].message,
+      });
+    }
+    const { id } = request.params as { id: string };
+    const { ownerIds, reason } = parsed.data;
+    const admin = request.user as { id: number };
+
+    return withConnection(async (connection) => {
+      await connection.beginTransaction();
+      try {
+        const [userRows] = await connection.execute<RowDataPacket[]>(
+          'SELECT id FROM users WHERE id = ? FOR UPDATE',
+          [id]
+        );
+        if (userRows.length === 0) {
+          await connection.rollback();
+          return reply
+            .code(404)
+            .send({ success: false, code: 'NOT_FOUND', message: 'Usuario no encontrado' });
+        }
+
+        if (ownerIds.length > 0) {
+          const [catalogRows] = await connection.execute<RowDataPacket[]>(
+            `SELECT id FROM common_catalogs WHERE category = 'FLEET_OWNER' AND id IN (${ownerIds
+              .map(() => '?')
+              .join(',')})`,
+            ownerIds
+          );
+          if (catalogRows.length !== ownerIds.length) {
+            await connection.rollback();
+            return reply.code(400).send({
+              success: false,
+              code: 'VALIDATION_ERROR',
+              message: 'Propietario inválido: no existe en el catálogo FLEET_OWNER',
+              field: 'ownerIds',
+            });
+          }
+        }
+
+        const [beforeRows] = await connection.execute<RowDataPacket[]>(
+          'SELECT owner_id FROM user_fleet_owners WHERE user_id = ?',
+          [id]
+        );
+
+        await connection.execute<ResultSetHeader>(
+          'DELETE FROM user_fleet_owners WHERE user_id = ?',
+          [id]
+        );
+
+        if (ownerIds.length > 0) {
+          await connection.execute<ResultSetHeader>(
+            `INSERT INTO user_fleet_owners (user_id, owner_id) VALUES ${ownerIds
+              .map(() => '(?,?)')
+              .join(',')}`,
+            ownerIds.flatMap((ownerId) => [Number(id), ownerId])
+          );
+        }
+
+        await recordAuditLog({
+          entity_type: 'user',
+          entity_id: String(id),
+          action: 'UPDATE',
+          snapshot_before: { ownerIds: beforeRows.map((r) => r.owner_id as number) },
+          snapshot_after: { ownerIds },
+          reason,
+          user_id: admin.id,
+        });
+
+        await connection.commit();
+        return reply.send({ success: true, data: { ownerIds } });
+      } catch (error) {
+        await connection.rollback();
+        fastify.log.error({ err: (error as Error).message }, 'User owners update failed');
+        return reply
+          .code(500)
+          .send({ success: false, code: 'INTERNAL_ERROR', message: 'OWNERS_UPDATE_FAIL' });
+      }
+    });
   });
 
   fastify.get('/roles', async (request, reply) => {

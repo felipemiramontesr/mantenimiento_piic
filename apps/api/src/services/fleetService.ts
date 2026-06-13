@@ -14,12 +14,33 @@ import { recordAuditLog } from './auditService';
  */
 export default class FleetService {
   /**
-   * Retrieves all units from the registry and processes them through the Archon Engine.
+   * Owner-Scoped Fleet Access (F1-A): resolves the FLEET_OWNER catalog ids
+   * linked to a user through user_fleet_owners. Empty array = deny-by-default.
    */
-  static async getAllUnits(logger: {
-    info: (m: string, p?: Record<string, unknown>) => void;
-    error: (m: string, p?: Record<string, unknown>) => void;
-  }): Promise<Record<string, unknown>[]> {
+  static async getUserOwnerIds(userId: number): Promise<number[]> {
+    const [rows] = await db.execute<RowDataPacket[]>(
+      'SELECT owner_id FROM user_fleet_owners WHERE user_id = ?',
+      [userId]
+    );
+    return rows.map((r) => r.owner_id as number);
+  }
+
+  /**
+   * Retrieves all units from the registry and processes them through the Archon Engine.
+   * When ownerIds is provided (fleet:scoped carriers), the list is filtered to
+   * units whose ownerId belongs to that set.
+   */
+  static async getAllUnits(
+    logger: {
+      info: (m: string, p?: Record<string, unknown>) => void;
+      error: (m: string, p?: Record<string, unknown>) => void;
+    },
+    ownerIds?: number[]
+  ): Promise<Record<string, unknown>[]> {
+    const scopeFilter =
+      ownerIds && ownerIds.length > 0
+        ? `WHERE f.ownerId IN (${ownerIds.map(() => '?').join(', ')})`
+        : '';
     const query = `
       SELECT 
         f.*,
@@ -67,10 +88,11 @@ export default class FleetService {
       LEFT JOIN common_catalogs c_ins ON f.insuranceCompanyId = c_ins.id AND c_ins.category = 'INSURANCE_COMPANY'
       LEFT JOIN common_catalogs ct ON f.maintenanceTimeFreqId = ct.id AND ct.category = 'MAINTENANCE_TIME_FREQ'
       LEFT JOIN common_catalogs cu ON f.maintenanceUsageFreqId = cu.id AND cu.category = 'MAINTENANCE_USAGE_FREQ'
+      ${scopeFilter}
       ORDER BY f.createdAt DESC
     `;
 
-    const [rows] = await db.execute<FleetUnit[]>(query);
+    const [rows] = await db.execute<FleetUnit[]>(query, ownerIds ?? []);
     const unitIds = rows.map((u) => u.id);
     const kpiMap = await FleetIntelligenceEngine.computeKpis(unitIds).catch(() => new Map());
     return rows.map((unit) => {
@@ -82,11 +104,18 @@ export default class FleetService {
 
   /**
    * Retrieves a single unit by ID with full technical profile (including images).
+   * When ownerIds is provided (fleet:scoped carriers), units outside the set
+   * resolve to null — indistinguishable from a missing unit (anti-IDOR).
    */
   static async getUnitById(
     id: string,
-    logger: FastifyBaseLogger
+    logger: FastifyBaseLogger,
+    ownerIds?: number[]
   ): Promise<Record<string, unknown> | null> {
+    const scopeFilter =
+      ownerIds && ownerIds.length > 0
+        ? ` AND f.ownerId IN (${ownerIds.map(() => '?').join(', ')})`
+        : '';
     const query = `
       SELECT f.*, 
         c_at.label AS assetType, c_brand.label AS marca, c_model.label AS modelo,
@@ -105,10 +134,10 @@ export default class FleetService {
       LEFT JOIN common_catalogs c_tire_brand ON f.tireBrandId = c_tire_brand.id AND c_tire_brand.category = 'TIRE_BRAND'
       LEFT JOIN common_catalogs c_color ON f.colorId = c_color.id AND c_color.category = 'VEHICLE_COLOR'
       LEFT JOIN common_catalogs c_eng ON f.engineTypeId = c_eng.id AND c_eng.category = 'ENGINE_TYPE'
-      WHERE f.id = ?
+      WHERE f.id = ?${scopeFilter}
     `;
 
-    const [rows] = await db.execute<FleetUnit[]>(query, [id]);
+    const [rows] = await db.execute<FleetUnit[]>(query, [id, ...(ownerIds ?? [])]);
     if (rows.length === 0) return null;
     const kpiMap = await FleetIntelligenceEngine.computeKpis([id]).catch(() => new Map());
     const processed = FleetIntelligenceEngine.processUnit(rows[0], logger);
