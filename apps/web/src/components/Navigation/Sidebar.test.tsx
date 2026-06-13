@@ -109,6 +109,7 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.queryByText('Personal')).toBeNull();
     expect(screen.queryByText('Seguridad')).toBeNull();
     expect(screen.queryByText('Panel de Control')).toBeNull();
+    expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
   });
 
   it('Matriz 095: el item Rutas requiere route:view, no fleet:view', () => {
@@ -304,6 +305,7 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.queryByText('Unidades')).toBeNull();
     expect(screen.queryByText('Mantenimiento')).toBeNull();
     expect(screen.queryByText('Personal')).toBeNull();
+    expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
   });
 
   it('renders mobile overlay when isMobileMenuOpen is true', () => {
@@ -405,6 +407,55 @@ describe('Sidebar Component (Archon Core)', () => {
     const img = screen.getByAltText('Profile') as HTMLImageElement;
     // The src should contain the path with a slash inserted before 'uploads'
     expect(img.getAttribute('src')).toContain('uploads/avatar.jpg');
+  });
+
+  describe('logout button invariant — always visible regardless of role', () => {
+    const roleMatrix = [
+      {
+        label: 'Omnipotente (rol 0 — Master Archon)',
+        perms: { isOmnipotent: true, isExternalClientOnly: false, hasPermission: true },
+      },
+      {
+        label: 'Operador General (rol 1 — sin permisos admin)',
+        perms: { isOmnipotent: false, isExternalClientOnly: false, hasPermission: true },
+      },
+      {
+        label: 'Cliente Externo (rol 9 — fleet:scoped only)',
+        perms: { isOmnipotent: false, isExternalClientOnly: true, hasPermission: false },
+      },
+      {
+        label: 'Sin ningún permiso (rol huérfano)',
+        perms: { isOmnipotent: false, isExternalClientOnly: false, hasPermission: false },
+      },
+    ];
+
+    roleMatrix.forEach(({ label, perms }) => {
+      it(`logout visible: ${label}`, () => {
+        usePermissionsMock.mockReturnValue({
+          hasPermission: (): boolean => perms.hasPermission,
+          hasAnyPermission: (): boolean => perms.hasPermission,
+          isOmnipotent: (): boolean => perms.isOmnipotent,
+          isExternalClientOnly: (): boolean => perms.isExternalClientOnly,
+        });
+
+        render(
+          <BrowserRouter>
+            <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+          </BrowserRouter>
+        );
+
+        expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
+      });
+    });
+
+    it('logout visible in collapsed state (icon-only mode)', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
+    });
   });
 
   it('shows numeric badge on Alertas when count > 0 (expanded)', () => {
