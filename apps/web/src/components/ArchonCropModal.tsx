@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, X, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface CropOffset {
@@ -156,7 +157,7 @@ const ArchonCropModal: React.FC<ArchonCropModalProps> = ({ imageSrc, onConfirm, 
     onConfirm(canvas.toDataURL('image/jpeg', 0.92));
   };
 
-  return (
+  return createPortal(
     <div
       data-testid="archon-crop-modal"
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70"
@@ -246,7 +247,8 @@ const ArchonCropModal: React.FC<ArchonCropModalProps> = ({ imageSrc, onConfirm, 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
