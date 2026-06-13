@@ -31,6 +31,7 @@ import { checkHoyNoCircula } from '../../utils/fleetCompliance';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import usePermissions from '../../hooks/usePermissions';
 import AT from '../../styles/archonTypography';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
@@ -440,6 +441,8 @@ const FleetUnitRow = React.memo(
   }): React.JSX.Element => {
     const forecast = getUnitForecast(unit);
     const isOverdue = !!forecast?.isOverdue;
+    const { hasPermission } = usePermissions();
+    const canEdit = hasPermission('fleet:write') || hasPermission('fleet:write:scoped');
 
     const usageUnit = unit.usageUnitName || 'KM';
 
@@ -553,16 +556,18 @@ const FleetUnitRow = React.memo(
                 className="transition-transform duration-300 group-hover:scale-110"
               />
             </Link>
-            <button
-              onClick={(): void => onEdit(unit)}
-              title="Editar Activo (Auditado)"
-              className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
-            >
-              <Pencil
-                size={18}
-                className="transition-transform duration-300 group-hover:rotate-12"
-              />
-            </button>
+            {canEdit && (
+              <button
+                onClick={(): void => onEdit(unit)}
+                title="Editar Activo (Auditado)"
+                className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all duration-300 rounded-[4px] hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm group border-none outline-none"
+              >
+                <Pencil
+                  size={18}
+                  className="transition-transform duration-300 group-hover:rotate-12"
+                />
+              </button>
+            )}
           </div>
         </td>
       </motion.tr>

@@ -48,11 +48,18 @@ const scopedUnit = {
   nextServiceReading: 5000,
 };
 
+const VALID_PATCH_BODY = {
+  data: { odometer: 15000 },
+  reason: 'Actualización odometría mensual',
+};
+
 describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
   const app = buildApp();
   let scopedToken: string;
+  let scopedWriteToken: string;
   let staffToken: string;
   let omnipotentToken: string;
+  let fullWriteToken: string;
 
   beforeAll(async () => {
     await app.ready();
@@ -64,12 +71,26 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
       roleName: 'Cliente Externo',
       permissions: ['fleet:view', 'fleet:scoped'],
     });
+    scopedWriteToken = jwt.sign({
+      id: CLIENT_USER_ID,
+      username: 'cliente.externo',
+      roleId: 9,
+      roleName: 'Cliente Externo',
+      permissions: ['fleet:view', 'fleet:scoped', 'fleet:write:scoped'],
+    });
     staffToken = jwt.sign({
       id: 7,
       username: 'staff',
       roleId: 1,
       roleName: 'Operador General',
       permissions: ['fleet:view'],
+    });
+    fullWriteToken = jwt.sign({
+      id: 3,
+      username: 'gestor',
+      roleId: 4,
+      roleName: 'Gestor de Flotilla',
+      permissions: ['fleet:view', 'fleet:write'],
     });
     omnipotentToken = jwt.sign({
       id: 0,
@@ -187,6 +208,114 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
 
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body).data.id).toBe('ASM-001');
+    });
+  });
+
+  describe('PATCH /v1/fleet/:id — scoped write + anti-IDOR (S5)', () => {
+    it('returns 403 when user has neither fleet:write nor fleet:write:scoped', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(scopedToken),
+        payload: VALID_PATCH_BODY,
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it('returns 403 when user only has fleet:view (staff without write)', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(staffToken),
+        payload: VALID_PATCH_BODY,
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it('allows PATCH on owned unit with fleet:write:scoped (anti-IDOR pass)', async (): Promise<void> => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_AS }], undefined]) // owners lookup
+        .mockResolvedValueOnce([[scopedUnit], undefined]) // getUnitById scoped → found
+        .mockResolvedValueOnce([[], undefined]); // KPIs for getUnitById (MTTR)
+
+      const mockConn = {
+        beginTransaction: vi.fn(),
+        execute: vi
+          .fn()
+          .mockResolvedValueOnce([[scopedUnit], undefined]) // snapshot SELECT
+          .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE
+          .mockResolvedValueOnce([{ insertId: 1 }, undefined]), // forensic INSERT
+        commit: vi.fn(),
+        rollback: vi.fn(),
+        release: vi.fn(),
+      };
+      (db.getConnection as unknown as Mock).mockResolvedValue(mockConn);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(scopedWriteToken),
+        payload: VALID_PATCH_BODY,
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('returns 404 when scoped writer targets a foreign unit (anti-IDOR block)', async (): Promise<void> => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_AS }], undefined]) // owners lookup
+        .mockResolvedValueOnce([[], undefined]); // getUnitById scoped → not found
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/FOREIGN-99',
+        headers: authHeader(scopedWriteToken),
+        payload: VALID_PATCH_BODY,
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('returns 404 when scoped writer has no linked owners (deny-by-default)', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // owners lookup → none
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(scopedWriteToken),
+        payload: VALID_PATCH_BODY,
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('full fleet:write bypasses owner-scope check entirely', async (): Promise<void> => {
+      const mockConn = {
+        beginTransaction: vi.fn(),
+        execute: vi
+          .fn()
+          .mockResolvedValueOnce([[scopedUnit], undefined]) // snapshot SELECT
+          .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE
+          .mockResolvedValueOnce([{ insertId: 1 }, undefined]), // forensic INSERT
+        commit: vi.fn(),
+        rollback: vi.fn(),
+        release: vi.fn(),
+      };
+      (db.getConnection as unknown as Mock).mockResolvedValue(mockConn);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(fullWriteToken),
+        payload: VALID_PATCH_BODY,
+      });
+
+      expect(response.statusCode).toBe(200);
+      // owners lookup must NOT have been called (no fleet:scoped on this token)
+      expect(db.execute as Mock).not.toHaveBeenCalled();
     });
   });
 

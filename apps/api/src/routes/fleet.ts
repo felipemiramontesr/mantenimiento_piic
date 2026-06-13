@@ -172,37 +172,57 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
 
   /**
    * PATCH /api/v1/fleet/:id
+   * Access: fleet:write (full CRUD roles) OR fleet:write:scoped (rol 9 — own units only).
+   * Anti-IDOR: scoped writers are owner-validated before the mutation executes.
    */
-  fastify.patch(
-    '/fleet/:id',
-    { preHandler: [requirePermission('fleet:write')] },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const schema = z.object({
-        data: updateFleetSchema,
-        reason: z.string().min(5),
+  fastify.patch('/fleet/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = request.user as { id: number; permissions: string[] };
+    const perms = user.permissions;
+    const canFullWrite = perms.includes('*') || perms.includes('fleet:write');
+    const canScopedWrite = perms.includes('fleet:write:scoped');
+
+    if (!canFullWrite && !canScopedWrite) {
+      return reply.code(403).send({
+        success: false,
+        code: 'FORBIDDEN',
+        message: 'Permission required: fleet:write or fleet:write:scoped',
       });
-
-      const parse = schema.safeParse(request.body);
-      if (!parse.success) {
-        return reply
-          .code(400)
-          .send({ error: 'Invalid update format', details: parse.error.format() });
-      }
-
-      const { data, reason } = parse.data;
-      const user = request.user as { id: number };
-
-      try {
-        const success = await FleetService.updateUnit(id, data, reason, user.id);
-        if (!success) return reply.code(404).send({ error: 'Unit not found' });
-        return reply.send({ success: true });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.code(500).send({ error: 'Critical failure during update' });
-      }
     }
-  );
+
+    const schema = z.object({
+      data: updateFleetSchema,
+      reason: z.string().min(5),
+    });
+
+    const parse = schema.safeParse(request.body);
+    if (!parse.success) {
+      return reply
+        .code(400)
+        .send({ error: 'Invalid update format', details: parse.error.format() });
+    }
+
+    const { data, reason } = parse.data;
+
+    try {
+      // Anti-IDOR: scoped writers may only modify units belonging to their linked owners.
+      if (!canFullWrite && canScopedWrite) {
+        const ownerScope = await resolveOwnerScope(request);
+        if (ownerScope !== null) {
+          if (ownerScope.length === 0) return reply.code(404).send({ error: 'Unit not found' });
+          const unit = await FleetService.getUnitById(id, fastify.log, ownerScope);
+          if (!unit) return reply.code(404).send({ error: 'Unit not found' });
+        }
+      }
+
+      const success = await FleetService.updateUnit(id, data, reason, user.id);
+      if (!success) return reply.code(404).send({ error: 'Unit not found' });
+      return reply.send({ success: true });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ error: 'Critical failure during update' });
+    }
+  });
 
   /**
    * DELETE /api/v1/fleet/:id
