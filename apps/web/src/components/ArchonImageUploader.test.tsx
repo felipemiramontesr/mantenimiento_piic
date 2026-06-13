@@ -2,11 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ArchonImageUploader from './ArchonImageUploader';
 
-/**
- * 🔱 Archon UI Suite: Image Uploader Tests
- * Architecture: Sovereign Registry Validation
- * Version: 1.0.0
- */
+// Auto-confirm crop modal so uploader unit tests focus on file-handling logic,
+// not on the crop UI interaction (covered in ArchonCropModal.test.tsx)
+vi.mock('./ArchonCropModal', () => ({
+  default: ({ onConfirm }: { onConfirm: (url: string) => void }): null => {
+    onConfirm('data:image/jpeg;base64,mock-cropped');
+    return null;
+  },
+}));
 
 // Mock FileReader
 class MockFileReader {
@@ -50,7 +53,7 @@ describe('ArchonImageUploader Component', () => {
     expect(screen.getByText('Arrastra imágenes de la unidad')).toBeInTheDocument();
   });
 
-  it('should process dropped files', async () => {
+  it('should call onFileChange and then onChange (via crop confirm) on drop', async () => {
     const file = new File(['image-content'], 'test.png', { type: 'image/png' });
     render(
       <ArchonImageUploader images={[]} onChange={mockOnChange} onFileChange={mockOnFileChange} />
@@ -59,11 +62,7 @@ describe('ArchonImageUploader Component', () => {
 
     if (!dropzone) throw new Error('Dropzone not found');
 
-    fireEvent.drop(dropzone, {
-      dataTransfer: {
-        files: [file],
-      },
-    });
+    fireEvent.drop(dropzone, { dataTransfer: { files: [file] } });
 
     expect(mockOnFileChange).toHaveBeenCalledWith([file]);
     await waitFor(() => {
@@ -71,7 +70,7 @@ describe('ArchonImageUploader Component', () => {
     });
   });
 
-  it('should process files from input change', async () => {
+  it('should call onFileChange and then onChange (via crop confirm) on input change', async () => {
     const file = new File(['image-content'], 'test.png', { type: 'image/png' });
     render(
       <ArchonImageUploader images={[]} onChange={mockOnChange} onFileChange={mockOnFileChange} />
@@ -102,8 +101,11 @@ describe('ArchonImageUploader Component', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file1, file2] } });
 
-    // Since maxImages=1, it should clear the existing and strictly pick only the first file
+    // maxImages=1 → only first file, replaces existing
     expect(mockOnFileChange).toHaveBeenCalledWith([file1]);
+    await waitFor(() => {
+      expect(mockOnChange).toHaveBeenCalledWith(['data:image/jpeg;base64,mock-cropped']);
+    });
   });
 
   it('should respect maxImages limit for multiple images', async () => {
@@ -112,7 +114,7 @@ describe('ArchonImageUploader Component', () => {
 
     render(
       <ArchonImageUploader
-        images={['img1', 'img2', 'img3']} // Already has 3
+        images={['img1', 'img2', 'img3']}
         onChange={mockOnChange}
         onFileChange={mockOnFileChange}
         maxImages={4}
@@ -122,7 +124,7 @@ describe('ArchonImageUploader Component', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file1, file2] } });
 
-    // Limit is 4, already have 3, so only 1 more can be added
+    // 3 already, limit 4 → only 1 more
     expect(mockOnFileChange).toHaveBeenCalledWith([file1]);
   });
 
@@ -141,8 +143,6 @@ describe('ArchonImageUploader Component', () => {
       <ArchonImageUploader images={['img1.png']} onChange={mockOnChange} maxImages={4} />
     );
 
-    // Should have 1 image + 3 empty slots = 4 slots total in the grid
-    // The grid is only rendered if images.length > 0
     const slots = container.querySelectorAll('.aspect-square');
     expect(slots.length).toBe(4);
   });
@@ -166,7 +166,6 @@ describe('ArchonImageUploader Component', () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     expect(onFileChange).toHaveBeenCalledWith([file]);
-    // No unhandled rejection — promise is caught internally
     await waitFor(() => expect(mockOnChange).toHaveBeenCalled());
   });
 
@@ -188,7 +187,6 @@ describe('ArchonImageUploader Component', () => {
     render(<ArchonImageUploader images={[]} onChange={mockOnChange} disabled={true} />);
     const dropzone = screen.getByText('Arrastra imágenes de la unidad').closest('div');
     if (!dropzone) throw new Error('Dropzone not found');
-    // Drag events on disabled zone should not change isDragging state
     fireEvent.dragOver(dropzone);
     expect(screen.queryByText('¡Suelta para capturar!')).toBeNull();
     fireEvent.drop(dropzone, { dataTransfer: { files: [] } });

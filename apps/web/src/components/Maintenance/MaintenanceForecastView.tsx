@@ -257,13 +257,13 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
                       className="w-20 h-20 block mx-auto rounded-[4px] shadow-sm object-cover mb-2"
                       alt={row.unitId}
                       onError={({ currentTarget }): void => {
-                        currentTarget.setAttribute('src', '/img/archon-unit-placeholder.png');
+                        currentTarget.setAttribute('src', '/img/archon-unit-default.png');
                       }}
                     />
                   ) : (
                     <div className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden">
                       <img
-                        src="/img/archon-unit-placeholder.png"
+                        src="/img/archon-unit-default.png"
                         alt="Archon Unit Placeholder"
                         className="w-full h-full object-cover"
                       />

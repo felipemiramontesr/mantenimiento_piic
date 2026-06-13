@@ -3,6 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import IncidentReportForm from './IncidentReportForm';
 import { FleetContext } from '../../context/FleetContext';
 
+// Auto-confirm crop modal so uploader tests work without UI interaction
+vi.mock('../ArchonCropModal', () => ({
+  default: ({ onConfirm }: { onConfirm: (url: string) => void }): null => {
+    onConfirm('data:image/jpeg;base64,mock-cropped');
+    return null;
+  },
+}));
+
 /**
  * @file IncidentReportForm.test.tsx
  * @description Suite de validación para el Protocolo Sentinel.

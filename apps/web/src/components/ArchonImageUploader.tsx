@@ -1,9 +1,11 @@
-﻿/* eslint-disable sonarjs/cognitive-complexity */
+/* eslint-disable sonarjs/cognitive-complexity */
 import React, { useState, useRef } from 'react';
 import { Image as ImageIcon, X, UploadCloud } from 'lucide-react';
+import ArchonCropModal from './ArchonCropModal';
 
-// ⚡ ARCHON IMAGE PROTOCOL: DRAG & DROP UPLOADER
-// High-fidelity industrial visual identity component with 4-slot limit
+interface CropQueueItem {
+  dataUrl: string;
+}
 
 interface ArchonImageUploaderProps {
   compact?: boolean;
@@ -33,6 +35,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   reducedHeight = false,
 }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [cropQueue, setCropQueue] = useState<CropQueueItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ⚡ ARCHON LINT COMPLIANT CLASS RESOLUTION
@@ -51,45 +54,59 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   }
 
   const handleFiles = (files: FileList | File[]): void => {
-    let newImages = [...images];
-    let filesArray = Array.from(files);
+    let filesArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
 
-    // If maxImages is 1, auto-replace the existing image and strictly pick only the first file
-    if (maxImages === 1 && filesArray.length > 0) {
-      newImages = [];
+    if (maxImages === 1) {
+      if (filesArray.length === 0) return;
       filesArray = [filesArray[0]];
-    }
-
-    let currentImageCount = newImages.length;
-    const selectedFiles: File[] = [];
-
-    filesArray.forEach((file: File): void => {
-      if (currentImageCount < maxImages && file.type.startsWith('image/')) {
-        currentImageCount += 1;
-        selectedFiles.push(file);
+      if (onFileChange) {
+        const result = onFileChange([filesArray[0]]);
+        if (result instanceof Promise) {
+          result.catch((): void => undefined);
+        }
+      }
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>): void => {
+        const dataUrl = e.target?.result as string;
+        if (dataUrl) setCropQueue([{ dataUrl }]);
+      };
+      reader.readAsDataURL(filesArray[0]);
+    } else {
+      const available = maxImages - images.length;
+      const toProcess = filesArray.slice(0, Math.max(0, available));
+      if (onFileChange && toProcess.length > 0) {
+        const result = onFileChange(toProcess);
+        if (result instanceof Promise) {
+          result.catch((): void => undefined);
+        }
+      }
+      toProcess.forEach((file): void => {
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>): void => {
-          const result = e.target?.result as string;
-          if (result && !newImages.includes(result)) {
-            newImages.push(result);
-            onChange([...newImages]);
-          }
+          const dataUrl = e.target?.result as string;
+          if (dataUrl) setCropQueue((prev) => [...prev, { dataUrl }]);
         };
         reader.readAsDataURL(file);
-      }
-    });
-
-    if (onFileChange) {
-      const result = onFileChange(selectedFiles);
-      if (result instanceof Promise) {
-        result.catch(() => undefined);
-      }
+      });
     }
 
-    // Reset input so same file can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleCropConfirm = (croppedUrl: string): void => {
+    onChange(maxImages === 1 ? [croppedUrl] : [...images, croppedUrl]);
+    setCropQueue((prev) => prev.slice(1));
+  };
+
+  const handleCropCancel = (): void => {
+    setCropQueue((prev) => prev.slice(1));
+  };
+
+  const removeImage = (index: number): void => {
+    const updated = images.filter((_, i) => i !== index);
+    onChange(updated);
   };
 
   const onDragOver = (e: React.DragEvent): void => {
@@ -113,20 +130,24 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
     }
   };
 
-  const removeImage = (index: number): void => {
-    const updated = images.filter((_, i) => i !== index);
-    onChange(updated);
-  };
-
   return (
-    <div className={compact ? 'space-y-2' : 'space-y-4'}>
-      {/* Drag & Drop Zone */}
-      <div
-        onDragOver={disabled ? undefined : onDragOver}
-        onDragLeave={disabled ? undefined : onDragLeave}
-        onDrop={disabled ? undefined : onDrop}
-        onClick={disabled ? undefined : (): void => fileInputRef.current?.click()}
-        className={`
+    <>
+      {cropQueue[0] && (
+        <ArchonCropModal
+          imageSrc={cropQueue[0].dataUrl}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
+
+      <div className={compact ? 'space-y-2' : 'space-y-4'}>
+        {/* Drag & Drop Zone */}
+        <div
+          onDragOver={disabled ? undefined : onDragOver}
+          onDragLeave={disabled ? undefined : onDragLeave}
+          onDrop={disabled ? undefined : onDrop}
+          onClick={disabled ? undefined : (): void => fileInputRef.current?.click()}
+          className={`
           relative border-2 border-dashed rounded-[4px] transition-all duration-300
           ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
           flex ${containerSpacingClasses} group
@@ -136,21 +157,21 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
               : 'border-[#0f2a44]/10 hover:border-[#f2b705]/40 bg-gray-50/50'
           }
         `}
-      >
-        <input
-          type="file"
-          multiple={maxImages > 1}
-          accept={accept}
-          className="hidden"
-          ref={fileInputRef}
-          disabled={disabled}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-            if (e.target.files) handleFiles(e.target.files);
-          }}
-        />
+        >
+          <input
+            type="file"
+            multiple={maxImages > 1}
+            accept={accept}
+            className="hidden"
+            ref={fileInputRef}
+            disabled={disabled}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
+              if (e.target.files) handleFiles(e.target.files);
+            }}
+          />
 
-        <div
-          className={`
+          <div
+            className={`
           rounded-[4px] transition-transform duration-500
           ${iconPaddingClasses}
           ${
@@ -159,100 +180,86 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
               : 'bg-[#0f2a44]/5 text-[#0f2a44]/40 group-hover:scale-110'
           }
         `}
-        >
-          <UploadCloud size={compact ? 16 : 24} />
-        </div>
+          >
+            <UploadCloud size={compact ? 16 : 24} />
+          </div>
 
-        <div className={compact ? 'flex items-center gap-2' : 'text-center'}>
-          <p className="text-[#0f2a44] font-bold text-archon-lg">
-            {isDragging ? '¡Suelta para capturar!' : title}
-          </p>
-          {!compact && (
-            <p
-              className={`text-archon-base uppercase tracking-widest opacity-40 ${
-                reducedHeight ? 'mt-1' : 'mt-4'
-              }`}
-            >
-              Máximo {maxImages} fotos • {allowedFormats}
+          <div className={compact ? 'flex items-center gap-2' : 'text-center'}>
+            <p className="text-[#0f2a44] font-bold text-archon-lg">
+              {isDragging ? '¡Suelta para capturar!' : title}
             </p>
-          )}
-        </div>
-      </div>
-
-      {/* Preview Grid */}
-      {images.length > 0 && (
-        <div className={`grid grid-cols-4 ${compact ? 'gap-2' : 'gap-12'}`}>
-          {images.map(
-            (src, idx): React.ReactElement => (
-              <div
-                key={idx}
-                className={`relative group animate-in fade-in zoom-in duration-300 ${
-                  variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
+            {!compact && (
+              <p
+                className={`text-archon-base uppercase tracking-widest opacity-40 ${
+                  reducedHeight ? 'mt-1' : 'mt-4'
                 }`}
               >
-                <div className="w-full h-full overflow-hidden border border-[#0f2a44]/10 rounded-[4px]">
-                  <img
-                    src={src}
-                    alt={`Vista ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-
-                {!disabled && (
-                  <>
-                    {variant === 'circle' ? (
-                      <button
-                        type="button"
-                        onClick={(e: React.MouseEvent): void => {
-                          e.stopPropagation();
-                          removeImage(idx);
-                        }}
-                        className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
-                      >
-                        <X size={18} strokeWidth={1} />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e: React.MouseEvent): void => {
-                          e.stopPropagation();
-                          removeImage(idx);
-                        }}
-                        className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
-                      >
-                        <X size={18} strokeWidth={1} />
-                      </button>
-                    )}
-                  </>
-                )}
-                {variant === 'square' && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-4 pointer-events-none">
-                    <span className="text-archon-xs text-white font-black uppercase tracking-tighter shadow-sm">
-                      Slot 0{idx + 1}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )
-          )}
-
-          {/* Empty Slots Placeholder (Industrial feel) */}
-          {Array.from({ length: maxImages - images.length }).map(
-            (_, i): React.ReactElement => (
-              <div
-                key={`empty-${i}`}
-                className={`${
-                  variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
-                } rounded-[4px] border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10`}
-              >
-                <ImageIcon size={16} />
-              </div>
-            )
-          )}
+                Máximo {maxImages} fotos • {allowedFormats}
+              </p>
+            )}
+          </div>
         </div>
-      )}
-    </div>
+
+        {/* Preview Grid */}
+        {images.length > 0 && (
+          <div className={`grid grid-cols-4 ${compact ? 'gap-2' : 'gap-12'}`}>
+            {images.map(
+              (src, idx): React.ReactElement => (
+                <div
+                  key={idx}
+                  className={`relative group animate-in fade-in zoom-in duration-300 ${
+                    variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
+                  }`}
+                >
+                  <div className="w-full h-full overflow-hidden border border-[#0f2a44]/10 rounded-[4px]">
+                    <img
+                      src={src}
+                      alt={`Vista ${idx + 1}`}
+                      className="w-full h-full object-contain bg-slate-100"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  {!disabled && (
+                    <button
+                      type="button"
+                      onClick={(e: React.MouseEvent): void => {
+                        e.stopPropagation();
+                        removeImage(idx);
+                      }}
+                      className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
+                    >
+                      <X size={18} strokeWidth={1} />
+                    </button>
+                  )}
+                  {variant === 'square' && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-4 pointer-events-none">
+                      <span className="text-archon-xs text-white font-black uppercase tracking-tighter shadow-sm">
+                        Slot 0{idx + 1}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+
+            {/* Empty slots — dashed fill to reinforce grid capacity */}
+            {Array.from({ length: maxImages - images.length }).map(
+              (_, i): React.ReactElement => (
+                <div
+                  key={`empty-${i}`}
+                  className={`${
+                    variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
+                  } rounded-[4px] border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10`}
+                >
+                  <ImageIcon size={16} />
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

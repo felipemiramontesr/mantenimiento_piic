@@ -255,13 +255,13 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
                       alt={log.unit_id}
                       onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
                         const img = e.currentTarget;
-                        img.src = '/img/archon-unit-placeholder.png';
+                        img.src = '/img/archon-unit-default.png';
                       }}
                     />
                   ) : (
                     <div className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden">
                       <img
-                        src="/img/archon-unit-placeholder.png"
+                        src="/img/archon-unit-default.png"
                         alt="Archon Unit Placeholder"
                         className="w-full h-full object-cover"
                       />

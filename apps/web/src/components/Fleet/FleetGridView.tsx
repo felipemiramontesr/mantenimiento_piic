@@ -456,25 +456,29 @@ const FleetUnitRow = React.memo(
       >
         <td className="py-4 px-2 text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
           {unit.images?.[0] ? (
-            <img
-              src={unit.images[0]}
-              className="w-20 h-20 block mx-auto rounded-[4px] shadow-sm object-cover cursor-pointer hover:scale-105 transition-transform"
-              onClick={(): void => onSelectImage(unit)}
-              alt={unit.id}
-              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
-                const imgElement = e.currentTarget;
-                imgElement.src = '/img/archon-unit-placeholder.png';
-              }}
-            />
-          ) : (
             <div
-              className="w-20 h-20 mx-auto rounded-[4px] bg-gray-50 flex items-center justify-center border border-dashed border-gray-200 cursor-pointer overflow-hidden relative"
+              className="w-20 h-20 mx-auto rounded-[4px] shadow-sm bg-slate-100 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
               onClick={(): void => onSelectImage(unit)}
             >
               <img
-                src="/img/archon-unit-placeholder.png"
-                alt="Archon Unit Placeholder"
-                className="w-full h-full object-cover"
+                src={unit.images[0]}
+                className="w-full h-full object-contain"
+                alt={unit.id}
+                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+                  const imgElement = e.currentTarget;
+                  imgElement.src = '/img/archon-unit-default.png';
+                }}
+              />
+            </div>
+          ) : (
+            <div
+              className="w-20 h-20 mx-auto rounded-[4px] bg-slate-100 flex items-center justify-center border border-dashed border-slate-200 cursor-pointer overflow-hidden relative"
+              onClick={(): void => onSelectImage(unit)}
+            >
+              <img
+                src="/img/archon-unit-default.png"
+                alt="Archon Unit Default"
+                className="w-full h-full object-contain"
               />
             </div>
           )}
@@ -912,7 +916,7 @@ export const FleetGridView = ({
           images={
             selectedGalleryUnit.images && selectedGalleryUnit.images.length > 0
               ? selectedGalleryUnit.images
-              : ['/img/archon-unit-placeholder.png']
+              : ['/img/archon-unit-default.png']
           }
           assetId={selectedGalleryUnit.id}
           onClose={(): void => setSelectedGalleryUnit(null)}

@@ -345,7 +345,7 @@ describe('FleetUnitNode', () => {
     const unitImg = document.querySelector('img[alt="ASM-001"]') as HTMLImageElement | null;
     expect(unitImg?.getAttribute('src')).toBe('https://cdn.example.com/unit.jpg');
     if (unitImg) fireEvent.error(unitImg);
-    expect(unitImg?.getAttribute('src')).toBe('/img/archon-unit-placeholder.png');
+    expect(unitImg?.getAttribute('src')).toBe('/img/archon-unit-default.png');
   });
 
   it('renders non-COMPLETED maintenance as Activo and unknown service_type as raw value', async () => {

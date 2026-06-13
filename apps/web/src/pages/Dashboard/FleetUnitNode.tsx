@@ -105,9 +105,7 @@ function UnitHeader({
   unit: NodeUnit;
   openIncidents: number;
 }): React.JSX.Element {
-  const [imgSrc, setImgSrc] = React.useState(
-    unit.images?.[0] ?? '/img/archon-unit-placeholder.png'
-  );
+  const [imgSrc, setImgSrc] = React.useState(unit.images?.[0] ?? '/img/archon-unit-default.png');
   const badge = statusBadgeClass(unit.status);
   const kpis = [
     { label: 'Disponibilidad', value: formatPct(unit.availabilityIndex ?? 100) },
@@ -123,7 +121,7 @@ function UnitHeader({
           src={imgSrc}
           alt={unit.id}
           className="w-full h-full object-cover"
-          onError={(): void => setImgSrc('/img/archon-unit-placeholder.png')}
+          onError={(): void => setImgSrc('/img/archon-unit-default.png')}
         />
       </div>
 

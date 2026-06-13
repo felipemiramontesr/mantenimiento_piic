@@ -14,6 +14,9 @@ import {
   ListChecks,
   ChevronDown,
   ChevronUp,
+  Clock,
+  CheckCircle,
+  ListTree,
 } from 'lucide-react';
 import {
   MaintenanceSchedulePayload,
@@ -82,6 +85,14 @@ const UPA_STAGE_LABELS: Record<UpaTaskStage, string> = {
   cascade: 'Cascada',
   deferred: 'Diferidos',
   closure: 'Cierre',
+};
+
+const UPA_STAGE_ICONS: Record<UpaTaskStage, React.ElementType> = {
+  triage: ClipboardCheck,
+  minor_service: Wrench,
+  cascade: ListTree,
+  deferred: Clock,
+  closure: CheckCircle,
 };
 
 const getSubmitBtnClass = (inProgress: boolean): string =>
@@ -545,7 +556,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
 
       {/* ── VISTA PREVIA UPA ─────────────────────────────────────────────────── */}
       {selectedUnit && (
-        <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#7c3aed]">
+        <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#0f2a44]">
           <div className="card-sovereign-header p-10 pb-6">
             <ListChecks className="text-[var(--card-accent)]" size={22} />
             <h3 className="card-sovereign-title text-archon-xl opacity-100">
@@ -568,6 +579,7 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                 (stage) => {
                   const stageTasks = upaPreview.filter((t) => t.stage === stage);
                   const isOpen = openPreviewStages[stage] ?? false;
+                  const StageIcon = UPA_STAGE_ICONS[stage];
                   return (
                     <div
                       key={stage}
@@ -581,10 +593,10 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                         className="w-full flex items-center justify-between px-5 py-3.5 bg-[#0f2a44]/[0.03] hover:bg-[#0f2a44]/[0.06] transition-colors"
                       >
                         <div className="flex items-center gap-2.5">
-                          <span className="text-archon-md font-black text-[#7c3aed] uppercase tracking-[0.15em]">
+                          <span className="text-archon-md font-black text-[#0f2a44] uppercase tracking-[0.15em]">
                             {UPA_STAGE_LABELS[stage]}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md bg-[#7c3aed]/10 text-[#7c3aed] text-archon-sm font-black">
+                          <span className="px-2 py-0.5 rounded-md bg-[#0f2a44]/10 text-[#0f2a44] text-archon-sm font-black">
                             {stageTasks.length}
                           </span>
                         </div>
@@ -599,9 +611,10 @@ const MaintenanceRegistrationForm: React.FC<MaintenanceRegistrationFormProps> = 
                           {stageTasks.map((task) => (
                             <div
                               key={task.id}
-                              className="px-5 py-3.5 flex items-center gap-4 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
+                              className="px-5 py-4 flex items-center gap-3 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
                             >
-                              <span className="flex-1 text-archon-base text-[#0f2a44]/80 min-w-0">
+                              <StageIcon size={13} className="text-[#f2b705] shrink-0" />
+                              <span className="flex-1 text-archon-lg text-[#0f2a44] min-w-0">
                                 {task.description}
                               </span>
                               <div className="w-52 shrink-0">
