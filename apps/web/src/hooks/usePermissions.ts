@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
  * Cliente Externo role (9). A user whose permissions are a subset of this
  * set only operates the fleet administration panel.
  */
-const EXTERNAL_CLIENT_PERMISSIONS = ['fleet:view', 'fleet:scoped'];
+const EXTERNAL_CLIENT_PERMISSIONS = ['fleet:view', 'fleet:scoped', 'fleet:write:scoped'];
 
 export default function usePermissions(): {
   hasPermission: (permission: string) => boolean;
