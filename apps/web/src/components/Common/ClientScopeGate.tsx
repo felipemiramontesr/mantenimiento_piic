@@ -6,7 +6,12 @@ const ClientScopeGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { isExternalClientOnly } = usePermissions();
   const location = useLocation();
 
-  if (isExternalClientOnly() && !location.pathname.startsWith('/dashboard/fleet')) {
+  const isAllowedForClient =
+    location.pathname.startsWith('/dashboard/fleet') ||
+    location.pathname.startsWith('/dashboard/alerts') ||
+    location.pathname.startsWith('/dashboard/maintenance');
+
+  if (isExternalClientOnly() && !isAllowedForClient) {
     return <Navigate to="/dashboard/fleet" replace />;
   }
 

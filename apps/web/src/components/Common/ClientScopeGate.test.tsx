@@ -82,4 +82,40 @@ describe('ClientScopeGate — candado de panel único para Cliente Externo', () 
     );
     expect(screen.getByTestId('unit-content')).toBeInTheDocument();
   });
+
+  it('allows the external client inside the alerts panel (V.201)', () => {
+    mockClient(true);
+    render(
+      <MemoryRouter initialEntries={['/dashboard/alerts']}>
+        <ClientScopeGate>
+          <div data-testid="alerts-content">alertas</div>
+        </ClientScopeGate>
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('alerts-content')).toBeInTheDocument();
+  });
+
+  it('allows the external client inside the maintenance panel (V.201)', () => {
+    mockClient(true);
+    render(
+      <MemoryRouter initialEntries={['/dashboard/maintenance']}>
+        <ClientScopeGate>
+          <div data-testid="maint-content">mantenimiento</div>
+        </ClientScopeGate>
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('maint-content')).toBeInTheDocument();
+  });
+
+  it('allows the external client inside a maintenance sub-route (V.201)', () => {
+    mockClient(true);
+    render(
+      <MemoryRouter initialEntries={['/dashboard/maintenance/abc-123']}>
+        <ClientScopeGate>
+          <div data-testid="maint-node-content">nodo</div>
+        </ClientScopeGate>
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('maint-node-content')).toBeInTheDocument();
+  });
 });
