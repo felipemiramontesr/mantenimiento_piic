@@ -171,6 +171,8 @@ describe('authIntegration.test', () => {
       .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot After 2
       .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before 3
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update 3
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // DELETE user_roles 3
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_roles 3
       .mockResolvedValueOnce([[{ id: 1 }], undefined]); // Snapshot After 3
     await app.inject({
       method: 'PATCH',
@@ -200,6 +202,23 @@ describe('authIntegration.test', () => {
       payload: { data: p3, reason: 'Rectification C' },
     });
     expect(r3.statusCode).toBe(200);
+  });
+
+  it('PATCH — roleId=0 (Archon) persists role change and syncs user_roles', async () => {
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 5 }], undefined]) // Snapshot Before
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE users SET role_id=0
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // DELETE user_roles
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_roles
+      .mockResolvedValueOnce([[{ id: 5, role_id: 0 }], undefined]); // Snapshot After
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/5',
+      headers: authHeader(),
+      payload: { data: { roleId: 0 }, reason: 'Revert to Archon role' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(JSON.parse(r.payload).success).toBe(true);
   });
 
   it('Resilience: Catch Block Nucleus (Aggressive Rejection)', async () => {

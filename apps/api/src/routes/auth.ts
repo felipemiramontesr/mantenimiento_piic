@@ -341,7 +341,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         fields.push('password_hash = ?');
         values.push(await argon2.hash(updates.password));
       }
-      if (updates.roleId) {
+      if (updates.roleId !== undefined) {
         fields.push('role_id = ?');
         values.push(updates.roleId);
       }
@@ -365,6 +365,15 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       if (fields.length > 0) {
         values.push(id);
         await connection.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+      }
+
+      // Sync user_roles when role changes — keeps login resolution consistent
+      if (updates.roleId !== undefined) {
+        await connection.execute('DELETE FROM user_roles WHERE user_id = ?', [id]);
+        await connection.execute('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [
+          Number(id),
+          updates.roleId,
+        ]);
       }
 
       // 3. Snapshot After
