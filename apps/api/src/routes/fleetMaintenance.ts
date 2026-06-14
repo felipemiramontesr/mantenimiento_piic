@@ -328,7 +328,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       const params: (string | number)[] = [];
 
       if (ownerScope !== null) {
-        query += ` AND u.owner_id IN (${ownerScope.map(() => '?').join(',')}) `;
+        query += ` AND u.ownerId IN (${ownerScope.map(() => '?').join(',')}) `;
         params.push(...ownerScope);
       }
 
@@ -370,7 +370,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         if (ownerScope.length === 0)
           return reply.code(404).send({ success: false, message: 'Unit not found' });
         const [owned] = await db.execute<RowDataPacket[]>(
-          `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+          `SELECT id FROM fleet_units WHERE id = ? AND ownerId IN (${ownerScope
             .map(() => '?')
             .join(',')})`,
           [unitId, ...ownerScope]
@@ -504,7 +504,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       }
 
       const ownerFilter =
-        ownerScope !== null ? `AND fu.owner_id IN (${ownerScope.map(() => '?').join(',')})` : '';
+        ownerScope !== null ? `AND fu.ownerId IN (${ownerScope.map(() => '?').join(',')})` : '';
 
       const [units] = await db.execute<RowDataPacket[]>(
         `
@@ -643,7 +643,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         if (ownerScope.length === 0)
           return reply.code(404).send({ success: false, message: 'Order not found' });
         const [owned] = await db.execute<RowDataPacket[]>(
-          `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+          `SELECT id FROM fleet_units WHERE id = ? AND ownerId IN (${ownerScope
             .map(() => '?')
             .join(',')})`,
           [movement.unit_id, ...ownerScope]
@@ -694,7 +694,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         if (ownerScope.length === 0)
           return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
         const [owned] = await db.execute<RowDataPacket[]>(
-          `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+          `SELECT id FROM fleet_units WHERE id = ? AND ownerId IN (${ownerScope
             .map(() => '?')
             .join(',')})`,
           [movement.unit_id, ...ownerScope]
@@ -759,7 +759,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         const logUuid = crypto.randomUUID();
 
         const [units] = await connection.execute<RowDataPacket[]>(
-          'SELECT id, odometer, maintIntervalKm, status, lastFuelLevel, owner_id FROM fleet_units WHERE id = ? FOR UPDATE',
+          'SELECT id, odometer, maintIntervalKm, status, lastFuelLevel, ownerId FROM fleet_units WHERE id = ? FOR UPDATE',
           [data.unitId]
         );
         if (units.length === 0) throw new Error('Fleet unit not found');
@@ -767,7 +767,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         const ownerScope = await resolveOwnerScope(request);
         if (
           ownerScope !== null &&
-          (ownerScope.length === 0 || !ownerScope.includes(unit.owner_id as number))
+          (ownerScope.length === 0 || !ownerScope.includes(unit.ownerId as number))
         ) {
           throw new Error('Fleet unit not found');
         }
@@ -950,7 +950,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         if (ownerScope !== null) {
           if (ownerScope.length === 0) throw new Error('Maintenance order not found');
           const [owned] = await connection.execute<RowDataPacket[]>(
-            `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+            `SELECT id FROM fleet_units WHERE id = ? AND ownerId IN (${ownerScope
               .map(() => '?')
               .join(',')})`,
             [movement.unit_id, ...ownerScope]

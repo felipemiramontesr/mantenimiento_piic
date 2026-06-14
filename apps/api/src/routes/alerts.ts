@@ -238,7 +238,7 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
         const ownerIds = isOwnerScoped ? await FleetService.getUserOwnerIds(userId) : null;
         if (ownerIds === null || ownerIds.length > 0) {
           const ownerFilter =
-            ownerIds !== null ? ` AND owner_id IN (${ownerIds.map(() => '?').join(',')})` : '';
+            ownerIds !== null ? ` AND ownerId IN (${ownerIds.map(() => '?').join(',')})` : '';
           const [overdueRows] = await db.execute<RowDataPacket[]>(
             `SELECT COUNT(*) as overdueCount
              FROM fleet_units
@@ -375,7 +375,7 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
                                <= DATE_ADD(CURDATE(), INTERVAL 14 DAY))
                      )${
                        ownerIds !== null
-                         ? ` AND owner_id IN (${ownerIds.map(() => '?').join(',')})`
+                         ? ` AND ownerId IN (${ownerIds.map(() => '?').join(',')})`
                          : ''
                      }
                    LIMIT 50`,

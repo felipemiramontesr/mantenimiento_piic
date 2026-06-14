@@ -1248,21 +1248,19 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
 
   it('POST /maintenance — returns 400 when user has no owned units', async () => {
     vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
-    const executeMock = vi
-      .fn()
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 'ASM-001',
-            odometer: 45000,
-            maintIntervalKm: 10000,
-            status: 'Disponible',
-            lastFuelLevel: null,
-            owner_id: 711,
-          },
-        ],
-        undefined,
-      ]); // unit found
+    const executeMock = vi.fn().mockResolvedValueOnce([
+      [
+        {
+          id: 'ASM-001',
+          odometer: 45000,
+          maintIntervalKm: 10000,
+          status: 'Disponible',
+          lastFuelLevel: null,
+          ownerId: 711,
+        },
+      ],
+      undefined,
+    ]); // unit found
     vi.mocked(db.getConnection).mockResolvedValueOnce({
       beginTransaction: vi.fn().mockResolvedValue(undefined),
       execute: executeMock,
@@ -1289,21 +1287,19 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
 
   it('POST /maintenance — returns 400 when unit not in owner scope', async () => {
     vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
-    const executeMock = vi
-      .fn()
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 'ASM-FOREIGN',
-            odometer: 45000,
-            maintIntervalKm: 10000,
-            status: 'Disponible',
-            lastFuelLevel: null,
-            owner_id: 999,
-          },
-        ],
-        undefined,
-      ]);
+    const executeMock = vi.fn().mockResolvedValueOnce([
+      [
+        {
+          id: 'ASM-FOREIGN',
+          odometer: 45000,
+          maintIntervalKm: 10000,
+          status: 'Disponible',
+          lastFuelLevel: null,
+          ownerId: 999,
+        },
+      ],
+      undefined,
+    ]);
     vi.mocked(db.getConnection).mockResolvedValueOnce({
       beginTransaction: vi.fn().mockResolvedValue(undefined),
       execute: executeMock,
@@ -1330,23 +1326,21 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
 
   it('PATCH /maintenance/:uuid/complete — returns 400 when user has no owned units', async () => {
     vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
-    const executeMock = vi
-      .fn()
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 55,
-            unit_id: 'ASM-001',
-            status: 'ACTIVE',
-            service_date: '2026-06-10',
-            service_type: 'BASIC_10K',
-            service_mode: 'WORKSHOP',
-            technician: 'T',
-            cost: 0,
-          },
-        ],
-        undefined,
-      ]);
+    const executeMock = vi.fn().mockResolvedValueOnce([
+      [
+        {
+          id: 55,
+          unit_id: 'ASM-001',
+          status: 'ACTIVE',
+          service_date: '2026-06-10',
+          service_type: 'BASIC_10K',
+          service_mode: 'WORKSHOP',
+          technician: 'T',
+          cost: 0,
+        },
+      ],
+      undefined,
+    ]);
     vi.mocked(db.getConnection).mockResolvedValueOnce({
       beginTransaction: vi.fn().mockResolvedValue(undefined),
       execute: executeMock,
