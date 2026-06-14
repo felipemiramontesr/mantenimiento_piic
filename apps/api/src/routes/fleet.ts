@@ -107,7 +107,13 @@ const updateFleetSchema = z.preprocess((raw) => {
   if (typeof raw !== 'object' || raw === null) return raw;
   return Object.fromEntries(
     Object.entries(raw as Record<string, unknown>)
-      .filter(([k, v]) => k !== 'id' && v !== null && v !== undefined && v !== '')
+      .filter(([k, v]) => {
+        if (k === 'id') return false;
+        if (v === null || v === undefined || v === '') return false;
+        // Exclude empty arrays to avoid silently erasing existing DB data
+        if (Array.isArray(v) && v.length === 0) return false;
+        return true;
+      })
       .map(([k, v]) => [k, numericFleetKeys.has(k) && typeof v === 'string' ? Number(v) : v])
   );
 }, createFleetSchema.partial());

@@ -293,6 +293,43 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(200);
     });
 
+    it('should exclude empty arrays from update to prevent erasing existing DB images', async (): Promise<void> => {
+      // images: [] must be filtered out so existing DB images are not overwritten
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update (odometer only)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]); // Snapshot After
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: {
+          data: { images: [], odometer: 500 },
+          reason: 'Odometer correction, no image change',
+        },
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('should include non-empty images array in update', async (): Promise<void> => {
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]); // Snapshot After
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: {
+          data: { images: ['data:image/jpeg;base64,/9j/abc123'] },
+          reason: 'Uploading vehicle photo',
+        },
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
     it('should handle db error on update', async (): Promise<void> => {
       mockConnection.execute
         .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
