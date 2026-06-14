@@ -219,7 +219,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       username: z.string().min(3),
       email: z.string().email(),
       password: z.string().min(8),
-      roleId: z.number().int().default(2),
+      roleId: z
+        .number()
+        .int()
+        .refine((id) => [1, 2].includes(id), {
+          message: 'roleId must be 1 (Flotilla) or 2 (Privado)',
+        }),
       fullName: z.string().optional(),
       departmentId: z.number().int().optional(),
       employeeNumber: z.string().optional(),

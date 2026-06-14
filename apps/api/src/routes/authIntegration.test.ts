@@ -124,13 +124,20 @@ describe('authIntegration.test', () => {
   });
 
   it('Path: Register & Conflict Sovereign Logic', async () => {
+    // roleId: 1 triggers linkExternalClientOwner — restore connection mocks cleared by vi.resetAllMocks()
+    (db.getConnection as Mock).mockResolvedValue(mockConnection);
+    (mockConnection.execute as Mock)
+      .mockResolvedValueOnce([[], undefined]) // owner label lookup → none
+      .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // catalog insert + link
+
     (db.execute as Mock)
       .mockResolvedValueOnce([[], undefined])
       .mockResolvedValueOnce([{ insertId: 70 }, undefined]);
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 0 },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 1 },
     });
     expect(r1.statusCode).toBe(201);
 
@@ -138,7 +145,7 @@ describe('authIntegration.test', () => {
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 0 },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 1 },
     });
     expect(r2.statusCode).toBe(409);
   });
@@ -233,7 +240,7 @@ describe('authIntegration.test', () => {
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user80', email: 'e@e.com', password: 'password123' },
+      payload: { username: 'user80', email: 'e@e.com', password: 'password123', roleId: 1 },
     });
     const r3 = await app.inject({
       method: 'GET',

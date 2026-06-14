@@ -297,18 +297,14 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(linkInsert?.[1]).toEqual([56, 880]);
     });
 
-    it('does not touch the catalog for non-owner roles (Archon)', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[], undefined]) // username unique check
-        .mockResolvedValueOnce([{ insertId: 57 }, undefined]); // user insert
-
+    it('returns 400 for roleId outside [1,2] — schema rejects non-owner roles', async (): Promise<void> => {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/auth/register',
         payload: { ...clientPayload, username: 'staff.user', roleId: 0 },
       });
 
-      expect(response.statusCode).toBe(201);
+      expect(response.statusCode).toBe(400);
       expect(mockConnection.execute).not.toHaveBeenCalled();
     });
 
