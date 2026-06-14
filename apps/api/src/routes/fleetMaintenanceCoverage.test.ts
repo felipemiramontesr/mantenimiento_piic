@@ -1103,9 +1103,9 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
     await init();
     scopedToken = app.jwt.sign({
       id: 42,
-      username: 'cliente.externo',
-      roleId: 9,
-      roleName: 'Cliente Externo',
+      username: 'prop.flotilla',
+      roleId: 1,
+      roleName: 'Propietario de Flotilla',
       permissions: ['fleet:scoped', 'fleet:view', 'maint:view', 'maint:write'],
     });
   });

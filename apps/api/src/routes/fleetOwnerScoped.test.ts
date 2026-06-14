@@ -66,16 +66,16 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
     const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
     scopedToken = jwt.sign({
       id: CLIENT_USER_ID,
-      username: 'cliente.externo',
-      roleId: 9,
-      roleName: 'Cliente Externo',
+      username: 'prop.flotilla',
+      roleId: 1,
+      roleName: 'Propietario de Flotilla',
       permissions: ['fleet:view', 'fleet:scoped'],
     });
     scopedWriteToken = jwt.sign({
       id: CLIENT_USER_ID,
-      username: 'cliente.externo',
-      roleId: 9,
-      roleName: 'Cliente Externo',
+      username: 'prop.privado',
+      roleId: 2,
+      roleName: 'Propietario Privado',
       permissions: ['fleet:view', 'fleet:scoped', 'fleet:write:scoped'],
     });
     staffToken = jwt.sign({

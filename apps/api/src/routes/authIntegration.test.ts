@@ -130,7 +130,7 @@ describe('authIntegration.test', () => {
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'password123' },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 0 },
     });
     expect(r1.statusCode).toBe(201);
 
@@ -138,7 +138,7 @@ describe('authIntegration.test', () => {
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'password123' },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 0 },
     });
     expect(r2.statusCode).toBe(409);
   });

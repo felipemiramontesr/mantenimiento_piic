@@ -6,9 +6,9 @@ import { useAuth } from '../context/AuthContext';
  * v.1.0.0 - Logic-based UI visibility control
  */
 /**
- * Owner-Scoped Fleet Access (F1-A): the exact permission envelope of the
- * Cliente Externo role (9). A user whose permissions are a subset of this
- * set only operates the fleet administration panel.
+ * Owner-Scoped Fleet Access (F1-A): the base permission envelope of
+ * Propietario de Flotilla (1) and Propietario Privado (2). A user whose
+ * permissions are a subset of this set only operates the fleet panel.
  */
 const EXTERNAL_CLIENT_PERMISSIONS = [
   'fleet:view',
@@ -44,8 +44,7 @@ export default function usePermissions(): {
   };
 
   // True only when the user carries fleet:scoped and nothing beyond the
-  // external-client envelope — rol 4 (Gestor variable, F1-B) carries
-  // fleet:write/delete and therefore never qualifies.
+  // owner-scoped envelope — a Gestor with fleet:write/delete never qualifies.
   const isExternalClientOnly = (): boolean => {
     const permissions = effectiveUser?.permissions;
     if (!permissions || permissions.length === 0) return false;

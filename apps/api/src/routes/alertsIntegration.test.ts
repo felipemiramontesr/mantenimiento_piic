@@ -695,15 +695,15 @@ describe('Alerts Routes — Integration', () => {
     });
   });
 
-  // ─── Owner-Scoped MAINTENANCE_OVERDUE (Rol 9 — fleet:scoped) ─────────────────
+  // ─── Owner-Scoped MAINTENANCE_OVERDUE (Rol 1/2 — fleet:scoped) ─────────────────
 
   describe('GET /v1/alerts/count — fleet:scoped owner filter', () => {
     const scopedAuth = () => ({
       authorization: `Bearer ${app.jwt.sign({
         id: 42,
-        username: 'cliente.externo',
-        roleId: 9,
-        roleName: 'Cliente Externo',
+        username: 'prop.flotilla',
+        roleId: 1,
+        roleName: 'Propietario de Flotilla',
         permissions: ['fleet:scoped', 'fleet:view', 'maint:view', 'maint:write'],
       })}`,
     });
@@ -742,9 +742,9 @@ describe('Alerts Routes — Integration', () => {
     const scopedAuth = () => ({
       authorization: `Bearer ${app.jwt.sign({
         id: 42,
-        username: 'cliente.externo',
-        roleId: 9,
-        roleName: 'Cliente Externo',
+        username: 'prop.privado',
+        roleId: 2,
+        roleName: 'Propietario Privado',
         permissions: ['fleet:scoped', 'fleet:view', 'maint:view', 'maint:write'],
       })}`,
     });

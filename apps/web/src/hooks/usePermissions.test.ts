@@ -53,36 +53,36 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
   });
 
   describe('isExternalClientOnly (Owner-Scoped F1-A)', () => {
-    it('is true for read-only Cliente Externo (fleet:view + fleet:scoped)', () => {
+    it('is true for Propietario de Flotilla (fleet:view + fleet:scoped)', () => {
       mockAuth({
-        id: '9',
+        id: '19',
         username: 'juan.perez',
-        roleId: 9,
-        roleName: 'Cliente Externo',
+        roleId: 1,
+        roleName: 'Propietario de Flotilla',
         permissions: ['fleet:view', 'fleet:scoped'],
       });
       const { result } = renderHook(() => usePermissions());
       expect(result.current.isExternalClientOnly()).toBe(true);
     });
 
-    it('is true for Cliente Externo with scoped-write (fleet:view + fleet:scoped + fleet:write:scoped)', () => {
+    it('is true for Propietario Privado with scoped-write (fleet:view + fleet:scoped + fleet:write:scoped)', () => {
       mockAuth({
-        id: '9',
-        username: 'juan.perez',
-        roleId: 9,
-        roleName: 'Cliente Externo',
+        id: '20',
+        username: 'maria.privada',
+        roleId: 2,
+        roleName: 'Propietario Privado',
         permissions: ['fleet:view', 'fleet:scoped', 'fleet:write:scoped'],
       });
       const { result } = renderHook(() => usePermissions());
       expect(result.current.isExternalClientOnly()).toBe(true);
     });
 
-    it('is true for Cliente Externo with full V.200 permissions (fleet + maint)', () => {
+    it('is true for owner-scoped user with full V.200 permissions (fleet + maint)', () => {
       mockAuth({
-        id: '9',
-        username: 'client.v200',
-        roleId: 9,
-        roleName: 'Cliente Externo',
+        id: '19',
+        username: 'flotilla.v200',
+        roleId: 1,
+        roleName: 'Propietario de Flotilla',
         permissions: [
           'fleet:view',
           'fleet:scoped',

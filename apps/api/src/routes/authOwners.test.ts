@@ -235,12 +235,12 @@ describe('User Fleet-Owner Links (A3)', () => {
     });
   });
 
-  describe('POST /v1/auth/register — role 9 auto-links a FLEET_OWNER', () => {
+  describe('POST /v1/auth/register — roles 1 and 2 auto-link a FLEET_OWNER', () => {
     const clientPayload = {
       username: 'juan.perez',
       email: 'juan@cliente.mx',
       password: 'super-secret-1',
-      roleId: 9,
+      roleId: 1,
       fullName: 'Juan Pérez',
     };
 
@@ -297,7 +297,7 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(linkInsert?.[1]).toEqual([56, 880]);
     });
 
-    it('does not touch the catalog for non-client roles', async (): Promise<void> => {
+    it('does not touch the catalog for non-owner roles (Archon)', async (): Promise<void> => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined]) // username unique check
         .mockResolvedValueOnce([{ insertId: 57 }, undefined]); // user insert
@@ -305,7 +305,7 @@ describe('User Fleet-Owner Links (A3)', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/auth/register',
-        payload: { ...clientPayload, username: 'staff.user', roleId: 2 },
+        payload: { ...clientPayload, username: 'staff.user', roleId: 0 },
       });
 
       expect(response.statusCode).toBe(201);

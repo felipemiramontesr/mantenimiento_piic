@@ -8,11 +8,11 @@ import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 
-/** Owner-Scoped Fleet Access (F1-A): role whose users are external clients. */
-const EXTERNAL_CLIENT_ROLE_ID = 9;
+/** Owner-scoped roles that receive a FLEET_OWNER link on registration. */
+const OWNER_SCOPED_ROLE_IDS = [1, 2]; // 1=Propietario de Flotilla, 2=Propietario Privado
 
 /**
- * Links a freshly registered external client (role 9) to its FLEET_OWNER
+ * Links a freshly registered owner-scoped user (roles 1 or 2) to its FLEET_OWNER
  * catalog row, creating the row when the owner label does not exist yet.
  * common_catalogs.id has no AUTO_INCREMENT — next id is resolved with
  * MAX(id)+1 inside the same transaction (FOR UPDATE serializes concurrents).
@@ -246,7 +246,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [username, enc, hash, roleId, fullName || '', departmentId || null, employeeNumber || null]
       );
-      if (roleId === EXTERNAL_CLIENT_ROLE_ID) {
+      if (OWNER_SCOPED_ROLE_IDS.includes(roleId)) {
         await linkExternalClientOwner(res.insertId, fullName || username);
       }
       return reply.code(201).send({ success: true, userId: res.insertId });
