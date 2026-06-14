@@ -61,24 +61,36 @@ export default class HandoffReporter implements Reporter {
         const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
         // Formatear mensaje de falla
-        let messageBlock = `\n---\n\n`;
-        messageBlock += `**Archon → CC/AG** · ${timestamp}\n`;
-        messageBlock += `[REPORTE] Se detectaron ${failures.length} pruebas fallidas en la terminal.\n`;
-
+        let entryBlock = `[REPORTE] Se detectaron ${failures.length} pruebas fallidas en la terminal.\n`;
         failures.forEach((fail, index) => {
-          messageBlock += `${index + 1}. [${fail.filepath}] ${fail.testName}\n`;
-          messageBlock += `   ↳ ${fail.errorMessage}\n`;
+          entryBlock += `${index + 1}. [${fail.filepath}] ${fail.testName}\n`;
+          entryBlock += `   ↳ ${fail.errorMessage}\n`;
         });
-        messageBlock += `[ESTADO] Tests rotos en local. Detener ejecuciones hasta solucionar.\n`;
+        entryBlock += `[ESTADO] Tests rotos en local. Detener ejecuciones hasta solucionar.\n`;
 
         try {
           // Leer y actualizar la metadata en la cabecera
           let content = fs.readFileSync(handoffPath, 'utf8');
 
-          // Compactor Layer: Remove any existing Archon block at the end of the file to maintain 1 single message per interaction
+          // Compactor Layer: Check if an Archon block already exists at the end of the file
           const archonBlockRegex =
-            /\r?\n---\r?\n\s*(?:\*\*)?Archon\s*→\s*CC\/AG(?:\*\*)?\s*·[\s\S]*$/i;
-          content = content.replace(archonBlockRegex, '');
+            /\r?\n---\r?\n\s*(?:\*\*)?Archon\s*→\s*CC\/AG(?:\*\*)?\s*·\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\r?\n([\s\S]*)$/i;
+          const match = content.match(archonBlockRegex);
+
+          let finalMessageBlock = '';
+          if (match) {
+            const existingBody = match[1].trim();
+            content = content.replace(archonBlockRegex, '');
+
+            finalMessageBlock = `\n---\n\n`;
+            finalMessageBlock += `**Archon → CC/AG** · ${timestamp}\n`;
+            finalMessageBlock += `${existingBody}\n\n---\n\n${entryBlock}`;
+          } else {
+            // If it doesn't exist, we create a new one
+            finalMessageBlock = `\n---\n\n`;
+            finalMessageBlock += `**Archon → CC/AG** · ${timestamp}\n`;
+            finalMessageBlock += `${entryBlock}`;
+          }
 
           // Actualizar Último mensaje
           content = content.replace(
@@ -102,7 +114,7 @@ export default class HandoffReporter implements Reporter {
           }
 
           // Escribir archivo consolidado
-          fs.writeFileSync(handoffPath, content + messageBlock, 'utf8');
+          fs.writeFileSync(handoffPath, content + finalMessageBlock, 'utf8');
           console.log(
             `\n📡 [SYSTEM_DOCTOR] Reportadas ${failures.length} fallas de tests en HANDOFF_CC_TO_AG.md`
           );

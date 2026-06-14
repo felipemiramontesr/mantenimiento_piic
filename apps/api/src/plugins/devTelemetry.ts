@@ -37,24 +37,35 @@ export default async function devTelemetryPlugin(fastify: FastifyInstance): Prom
         );
 
         // Formulate Diagnostics block
-        let messageBlock = `\n---\n\n`;
-        messageBlock += `**Archon → CC/AG** · ${timestamp}\n`;
-        messageBlock += `[DIAGNÓSTICO] API_RUNTIME_ERROR (${error.code || 'UNKNOWN'})\n`;
-        messageBlock += `[ROUTE] ${request.method} ${request.url}\n`;
-        messageBlock += `[MENSAJE] ${error.message}\n`;
-        messageBlock += `[STACK]\n\`\`\`\n${cleanStack
-          .split('\n')
-          .slice(0, 5)
-          .join('\n')}\n\`\`\`\n`;
-        messageBlock += `[ESTADO] Error de ejecución detectado en la API.\n`;
+        let entryBlock = `[DIAGNÓSTICO] API_RUNTIME_ERROR (${error.code || 'UNKNOWN'})\n`;
+        entryBlock += `[ROUTE] ${request.method} ${request.url}\n`;
+        entryBlock += `[MENSAJE] ${error.message}\n`;
+        entryBlock += `[STACK]\n\`\`\`\n${cleanStack.split('\n').slice(0, 5).join('\n')}\n\`\`\`\n`;
+        entryBlock += `[ESTADO] Error de ejecución detectado en la API.\n`;
 
         // Read and update handoff metadata and title
         let content = fs.readFileSync(handoffPath, 'utf8');
 
-        // Compactor Layer: Remove any existing Archon block at the end of the file to maintain 1 single message per interaction
+        // Compactor Layer: Check if an Archon block already exists at the end of the file
         const archonBlockRegex =
-          /\r?\n---\r?\n\s*(?:\*\*)?Archon\s*→\s*CC\/AG(?:\*\*)?\s*·[\s\S]*$/i;
-        content = content.replace(archonBlockRegex, '');
+          /\r?\n---\r?\n\s*(?:\*\*)?Archon\s*→\s*CC\/AG(?:\*\*)?\s*·\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\r?\n([\s\S]*)$/i;
+        const match = content.match(archonBlockRegex);
+
+        let finalMessageBlock = '';
+        if (match) {
+          // If it exists, we preserve its existing body content, remove it from the file, and rebuild it with the new entry appended
+          const existingBody = match[1].trim();
+          content = content.replace(archonBlockRegex, '');
+
+          finalMessageBlock = `\n---\n\n`;
+          finalMessageBlock += `**Archon → CC/AG** · ${timestamp}\n`;
+          finalMessageBlock += `${existingBody}\n\n---\n\n${entryBlock}`;
+        } else {
+          // If it doesn't exist, we create a new one
+          finalMessageBlock = `\n---\n\n`;
+          finalMessageBlock += `**Archon → CC/AG** · ${timestamp}\n`;
+          finalMessageBlock += `${entryBlock}`;
+        }
 
         // Update Último mensaje
         content = content.replace(
@@ -77,7 +88,7 @@ export default async function devTelemetryPlugin(fastify: FastifyInstance): Prom
           );
         }
 
-        fs.writeFileSync(handoffPath, content + messageBlock, 'utf8');
+        fs.writeFileSync(handoffPath, content + finalMessageBlock, 'utf8');
         console.log(`\n📡 [SYSTEM_DOCTOR] Reportada excepción de API en HANDOFF_CC_TO_AG.md`);
       }
     } catch (writeErr) {
