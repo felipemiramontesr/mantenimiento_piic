@@ -32,8 +32,8 @@ const DAYS_ES: string[] = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
 const parseISOParts = (iso: string): { y: number; m: number; d: number } | null => {
   if (!iso) return null;
-  const parts = iso.split('-').map(Number);
-  if (parts.length !== 3) return null;
+  const parts = iso.slice(0, 10).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
   return { y: parts[0], m: parts[1], d: parts[2] };
 };
 

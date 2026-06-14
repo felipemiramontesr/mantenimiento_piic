@@ -5,6 +5,7 @@ import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { FleetUnit, CreateFleetUnit, ManagementPanel } from '../../types/fleet';
 import usePermissions from '../../hooks/usePermissions';
+import { toDateOnly } from '../../utils/dateUtils';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
 import FleetGridView from '../../components/Fleet/FleetGridView';
@@ -45,10 +46,10 @@ const mapOperationalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
   capacidadCarga: unit.capacidadCarga || undefined,
   fuelTankCapacity: unit.fuelTankCapacity || 0,
   odometer: unit.odometer || 0,
-  protocolStartDate: unit.protocolStartDate || undefined,
+  protocolStartDate: toDateOnly(unit.protocolStartDate) || undefined,
   maintIntervalDays: unit.maintIntervalDays || 90,
   maintIntervalKm: unit.maintIntervalKm || 5000,
-  lastServiceDate: unit.lastServiceDate || undefined,
+  lastServiceDate: toDateOnly(unit.lastServiceDate) || undefined,
   lastServiceReading: unit.lastServiceReading || 0,
   dailyUsageAvg: unit.dailyUsageAvg || undefined,
   initialFuelLevel: unit.initialFuelLevel ?? 100,
@@ -56,11 +57,11 @@ const mapOperationalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
 });
 
 const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
-  vencimientoVerificacion: unit.vencimientoVerificacion || undefined,
+  vencimientoVerificacion: toDateOnly(unit.vencimientoVerificacion) || undefined,
   circulationCardNumber: unit.circulationCardNumber || undefined,
   accountingAccount: unit.accountingAccount || undefined,
-  legalComplianceDate: unit.legalComplianceDate || undefined,
-  insuranceExpiryDate: unit.insuranceExpiryDate || undefined,
+  legalComplianceDate: toDateOnly(unit.legalComplianceDate) || undefined,
+  insuranceExpiryDate: toDateOnly(unit.insuranceExpiryDate) || undefined,
   insuranceCompanyId: unit.insuranceCompanyId || undefined,
   environmentalHologram: unit.environmentalHologram || undefined,
   monthlyLeasePayment: unit.monthlyLeasePayment || 0,

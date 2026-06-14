@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 import { describe, test, expect } from 'vitest';
-import { formatDate, formatDateTime, calculateDuration } from './dateUtils';
+import { formatDate, formatDateTime, calculateDuration, toDateOnly } from './dateUtils';
 
 describe('Archon Date Engine (v.1.0.0)', () => {
   const mockDate = '2026-05-04T15:30:00Z';
@@ -50,5 +50,27 @@ describe('Archon Date Engine (v.1.0.0)', () => {
     const start = '2026-05-04T15:00:00Z';
     const end = '2026-05-04T10:00:00Z';
     expect(calculateDuration(start, end)).toBe('0h 0m');
+  });
+});
+
+describe('toDateOnly', () => {
+  test('strips time from full ISO 8601 string', () => {
+    expect(toDateOnly('2026-12-15T06:00:00.000Z')).toBe('2026-12-15');
+  });
+
+  test('passes through a clean YYYY-MM-DD string unchanged', () => {
+    expect(toDateOnly('2026-12-15')).toBe('2026-12-15');
+  });
+
+  test('returns undefined for null', () => {
+    expect(toDateOnly(null)).toBeUndefined();
+  });
+
+  test('returns undefined for undefined', () => {
+    expect(toDateOnly(undefined)).toBeUndefined();
+  });
+
+  test('returns undefined for empty string', () => {
+    expect(toDateOnly('')).toBeUndefined();
   });
 });

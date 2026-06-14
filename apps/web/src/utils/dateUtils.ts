@@ -35,6 +35,16 @@ export const formatDateTime = (date: string | number | Date): string => {
   });
 };
 /**
+ * Normalizes a date string to YYYY-MM-DD, stripping any time component.
+ * MySQL2 serializes DATE columns as full ISO 8601 ("YYYY-MM-DDTHH:mm:ss.sssZ");
+ * ArchonDatePicker requires pure date strings ("YYYY-MM-DD").
+ */
+export const toDateOnly = (date: string | null | undefined): string | undefined => {
+  if (!date) return undefined;
+  return date.slice(0, 10);
+};
+
+/**
  * Calculates the duration between two dates in a human-readable hour format.
  * @param start - Start date
  * @param end - End date
