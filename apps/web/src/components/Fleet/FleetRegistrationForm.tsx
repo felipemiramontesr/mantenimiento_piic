@@ -43,6 +43,13 @@ interface FleetRegistrationFormProps {
   unitId?: string;
 }
 
+const extractApiError = (err: unknown): string => {
+  const errData = (err as { response?: { data?: { error?: string; details?: unknown } } }).response
+    ?.data;
+  if (errData?.details) return `${errData.error} — ${JSON.stringify(errData.details)}`;
+  return errData?.error ?? (err instanceof Error ? err.message : 'Error al sincronizar la unidad');
+};
+
 const getPronosticoArchon = (
   formData: CreateFleetUnit
 ): {
@@ -107,6 +114,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   const [isAuditModalOpen, setIsAuditModalOpen] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [auditAction, setAuditAction] = React.useState<'UPDATE' | 'DELETE'>('UPDATE');
+  const [capturedReason, setCapturedReason] = React.useState<string | null>(null);
   const {
     formData,
     error,
@@ -198,22 +206,10 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   const handleConfirmAudit = async (reason: string): Promise<void> => {
     setIsProcessing(true);
     try {
-      if (auditAction === 'UPDATE') {
-        await api.patch(`/fleet/${unitId}`, {
-          data: formData,
-          reason,
-        });
-      } else {
-        await api.delete(`/fleet/${unitId}`, {
-          data: { reason },
-        });
-      }
+      await api.patch(`/fleet/${unitId}`, { data: formData, reason });
       await onSuccess();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { error?: string } } }).response?.data?.error ??
-        (err instanceof Error ? err.message : 'Error al sincronizar la unidad');
-      setError(msg);
+      setError(extractApiError(err));
     } finally {
       setIsProcessing(false);
       setIsAuditModalOpen(false);
@@ -222,16 +218,20 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
   const handleFormSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    if (isEdit) {
-      setAuditAction('UPDATE');
-      setIsAuditModalOpen(true);
-    } else {
+    if (!isEdit) {
       try {
         await handleSubmit(e, onSuccess);
-      } catch (err: unknown) {
+      } catch {
         // Logic handled by hook state
       }
+      return;
     }
+    if (capturedReason !== null) {
+      await handleConfirmAudit(capturedReason);
+      return;
+    }
+    setAuditAction('UPDATE');
+    setIsAuditModalOpen(true);
   };
 
   return (
@@ -1100,7 +1100,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || isProcessing || !canSubmit}
-            className={`btn-sentinel-emerald w-full ${
+            className={`${
+              capturedReason !== null ? 'btn-sentinel-sky' : 'btn-sentinel-emerald'
+            } w-full ${
               !canSubmit || isSubmitting || isProcessing
                 ? 'opacity-50 grayscale cursor-not-allowed'
                 : ''
@@ -1108,6 +1110,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           >
             {((): string => {
               if (isSubmitting || isProcessing) return 'Transmitiendo...';
+              if (capturedReason !== null) return 'Guardar Cambios';
               return isEdit ? 'Sincronizar Cambios' : 'Confirmar Alta';
             })()}
             <Save size={18} />
@@ -1118,9 +1121,14 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       <AuditJustificationModal
         isOpen={isAuditModalOpen}
         onClose={(): void => setIsAuditModalOpen(false)}
-        onConfirm={(reason: string): Promise<void> =>
-          auditAction === 'UPDATE' ? handleConfirmAudit(reason) : handleConfirmDelete(reason)
-        }
+        onConfirm={(reason: string): Promise<void> => {
+          if (auditAction === 'UPDATE') {
+            setCapturedReason(reason);
+            setIsAuditModalOpen(false);
+            return Promise.resolve();
+          }
+          return handleConfirmDelete(reason);
+        }}
         title={
           auditAction === 'UPDATE'
             ? `Actualización técnica para el activo ${unitId}`

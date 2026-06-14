@@ -121,6 +121,10 @@
     @apply h-11 px-6 rounded-[4px] bg-[#10b981] text-white font-display font-black text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_12px_rgba(16,185,129,0.15)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale;
   }
 
+  .btn-sentinel-sky {
+    @apply h-11 px-6 rounded-[4px] bg-[#0284c7] text-white font-display font-black text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_12px_rgba(2,132,199,0.15)] hover:brightness-90 hover:shadow-[0_6px_16px_rgba(2,132,199,0.25)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale;
+  }
+
   .btn-sentinel-red {
     @apply h-11 px-6 rounded-[4px] bg-[#e11d48] text-white font-display font-black text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_12px_rgba(225,29,72,0.15)] hover:brightness-90 hover:shadow-[0_6px_16px_rgba(225,29,72,0.25)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale;
   }

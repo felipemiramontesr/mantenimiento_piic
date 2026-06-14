@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AuditJustificationModalProps {
   isOpen: boolean;
@@ -22,6 +22,10 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
   loading,
 }) => {
   const [reason, setReason] = useState('');
+
+  useEffect(() => {
+    if (isOpen) setReason('');
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

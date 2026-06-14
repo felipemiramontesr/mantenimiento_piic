@@ -71,7 +71,14 @@ const createFleetSchema = z.object({
   insuranceCost: z.number().min(0).optional().nullable().default(0),
 });
 
-const updateFleetSchema = createFleetSchema.partial();
+const updateFleetSchema = createFleetSchema
+  .partial()
+  .transform(
+    (data) =>
+      Object.fromEntries(
+        Object.entries(data).filter(([k, v]) => k !== 'id' && v !== null && v !== undefined)
+      ) as Record<string, string | number | string[]>
+  );
 
 /**
  * Owner-Scoped Fleet Access (F1-A).
