@@ -1,9 +1,10 @@
 /* eslint-disable sonarjs/cognitive-complexity */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Image as ImageIcon, X, UploadCloud } from 'lucide-react';
 import ArchonCropModal from './ArchonCropModal';
 
 interface CropQueueItem {
+  id: number;
   dataUrl: string;
 }
 
@@ -37,6 +38,15 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [cropQueue, setCropQueue] = useState<CropQueueItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cropIdRef = useRef<number>(0);
+  const imagesRef = useRef<string[]>(images);
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  // maxImages=1 is a "replace" variant — no capacity lock
+  const atCapacity = maxImages > 1 && images.length + cropQueue.length >= maxImages;
+  const isDisabled = disabled || atCapacity;
 
   // ⚡ ARCHON LINT COMPLIANT CLASS RESOLUTION
   let containerSpacingClasses = 'flex-col items-center justify-center gap-12 p-24';
@@ -68,11 +78,15 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
       const reader = new FileReader();
       reader.onload = (e: ProgressEvent<FileReader>): void => {
         const dataUrl = e.target?.result as string;
-        if (dataUrl) setCropQueue([{ dataUrl }]);
+        if (dataUrl) {
+          cropIdRef.current += 1;
+          const id = cropIdRef.current;
+          setCropQueue([{ id, dataUrl }]);
+        }
       };
       reader.readAsDataURL(filesArray[0]);
     } else {
-      const available = maxImages - images.length;
+      const available = maxImages - images.length - cropQueue.length;
       const toProcess = filesArray.slice(0, Math.max(0, available));
       if (onFileChange && toProcess.length > 0) {
         const result = onFileChange(toProcess);
@@ -84,7 +98,11 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>): void => {
           const dataUrl = e.target?.result as string;
-          if (dataUrl) setCropQueue((prev) => [...prev, { dataUrl }]);
+          if (dataUrl) {
+            cropIdRef.current += 1;
+            const id = cropIdRef.current;
+            setCropQueue((prev) => [...prev, { id, dataUrl }]);
+          }
         };
         reader.readAsDataURL(file);
       });
@@ -96,7 +114,8 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
   };
 
   const handleCropConfirm = (croppedUrl: string): void => {
-    onChange(maxImages === 1 ? [croppedUrl] : [...images, croppedUrl]);
+    const { current } = imagesRef;
+    onChange(maxImages === 1 ? [croppedUrl] : [...current, croppedUrl]);
     setCropQueue((prev) => prev.slice(1));
   };
 
@@ -134,6 +153,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
     <>
       {cropQueue[0] && (
         <ArchonCropModal
+          key={cropQueue[0].id}
           imageSrc={cropQueue[0].dataUrl}
           onConfirm={handleCropConfirm}
           onCancel={handleCropCancel}
@@ -143,13 +163,13 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
       <div className={compact ? 'space-y-2' : 'space-y-4'}>
         {/* Drag & Drop Zone */}
         <div
-          onDragOver={disabled ? undefined : onDragOver}
-          onDragLeave={disabled ? undefined : onDragLeave}
-          onDrop={disabled ? undefined : onDrop}
-          onClick={disabled ? undefined : (): void => fileInputRef.current?.click()}
+          onDragOver={isDisabled ? undefined : onDragOver}
+          onDragLeave={isDisabled ? undefined : onDragLeave}
+          onDrop={isDisabled ? undefined : onDrop}
+          onClick={isDisabled ? undefined : (): void => fileInputRef.current?.click()}
           className={`
           relative border-2 border-dashed rounded-[4px] transition-all duration-300
-          ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
+          ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
           flex ${containerSpacingClasses} group
           ${
             isDragging
@@ -164,7 +184,7 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
             accept={accept}
             className="hidden"
             ref={fileInputRef}
-            disabled={disabled}
+            disabled={isDisabled}
             onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
               if (e.target.files) handleFiles(e.target.files);
             }}
@@ -194,7 +214,9 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
                   reducedHeight ? 'mt-1' : 'mt-4'
                 }`}
               >
-                Máximo {maxImages} fotos • {allowedFormats}
+                {atCapacity
+                  ? `Máximo ${maxImages} fotos alcanzado`
+                  : `Máximo ${maxImages} fotos • ${allowedFormats}`}
               </p>
             )}
           </div>

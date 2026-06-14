@@ -193,6 +193,23 @@ describe('ArchonImageUploader Component', () => {
     expect(mockOnChange).not.toHaveBeenCalled();
   });
 
+  it('should disable drop zone when at max capacity', () => {
+    render(
+      <ArchonImageUploader images={['a', 'b', 'c', 'd']} onChange={mockOnChange} maxImages={4} />
+    );
+    const dropzone = screen.getByText('Arrastra imágenes de la unidad').closest('div');
+    if (!dropzone) throw new Error('Dropzone not found');
+    fireEvent.dragOver(dropzone);
+    expect(screen.queryByText('¡Suelta para capturar!')).toBeNull();
+  });
+
+  it('should show "alcanzado" text when at max capacity', () => {
+    render(
+      <ArchonImageUploader images={['a', 'b', 'c', 'd']} onChange={mockOnChange} maxImages={4} />
+    );
+    expect(screen.getByText(/alcanzado/i)).toBeInTheDocument();
+  });
+
   it('clicking the dropzone div triggers file input click', () => {
     const { container } = render(<ArchonImageUploader images={[]} onChange={mockOnChange} />);
     // eslint-disable-next-line @typescript-eslint/no-empty-function
