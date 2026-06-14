@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import api from '../api/client';
 import { FleetUnit } from '../types/fleet';
 import useSilkHydration from '../hooks/useSilkHydration';
+import usePermissions from '../hooks/usePermissions';
 
 import { ASSET_TYPE_MAP, FUEL_TYPE_MAP, DEPT_MAP, ENGINE_MAP } from '../constants/fleetConstants';
 
@@ -56,6 +57,8 @@ interface FleetContextType {
 export const FleetContext = createContext<FleetContextType | undefined>(undefined);
 
 export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { hasPermission } = usePermissions();
+
   // 🔱 PROTOCOL L: NORMALIZATION LAYER (Sovereign Transformation)
   const transformUnits = useMemo(
     () =>
@@ -191,9 +194,9 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const incidentsOptions = useMemo(
     () => ({
       key: 'system_incidents',
-      endpoint: '/incidents',
+      endpoint: hasPermission('route:view') ? '/incidents' : null,
     }),
-    []
+    [hasPermission]
   );
 
   const {

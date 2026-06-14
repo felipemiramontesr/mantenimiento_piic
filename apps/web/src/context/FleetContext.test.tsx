@@ -14,6 +14,15 @@ vi.mock('../api/client', () => ({
   },
 }));
 
+vi.mock('../hooks/usePermissions', () => ({
+  default: (): object => ({
+    hasPermission: (): boolean => true,
+    hasAnyPermission: (): boolean => true,
+    isOmnipotent: (): boolean => false,
+    isExternalClientOnly: (): boolean => false,
+  }),
+}));
+
 vi.mock('../utils/archonCache', () => ({
   archonCache: {
     get: vi.fn(),

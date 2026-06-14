@@ -209,6 +209,17 @@ describe('useSilkHydration', () => {
     expect(result.current.error?.message).toBe('RATE_LIMIT_EXCEEDED');
   });
 
+  it('skips fetch and returns empty data when endpoint is null', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+
+    const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: null }));
+
+    await waitFor(() => expect(result.current.isSyncing).toBe(false));
+    expect(result.current.data).toEqual([]);
+    expect(result.current.error).toBeNull();
+    expect(api.get).not.toHaveBeenCalled();
+  });
+
   it('sets Sync failed error for non-Error non-429 rejection', async () => {
     vi.mocked(archonCache.get).mockReturnValue(null);
     vi.mocked(api.get).mockRejectedValue({ response: { status: 500 } });

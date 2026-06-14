@@ -6,7 +6,7 @@ import { SYSTEM_VERSION } from '../constants/versionConstants';
 
 interface SilkHydrationOptions<T> {
   key: string;
-  endpoint: string;
+  endpoint: string | null;
   initialData?: T[];
   onSuccess?: (data: T[]) => void;
   transform?: (data: unknown) => T[];
@@ -77,7 +77,7 @@ export default function useSilkHydration<T>({
   // 2. Atomic Sync Engine (Sovereign Revalidation)
   const sync = useCallback(
     async (isSilent = false): Promise<void> => {
-      if (!isMounted.current || isSyncingRef.current) return;
+      if (!endpoint || !isMounted.current || isSyncingRef.current) return;
 
       // 🛡️ FAILSAFE TIMEOUT: Force IDLE state after 15s
       const failsafe = setTimeout(() => {
