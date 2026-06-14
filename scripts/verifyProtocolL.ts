@@ -157,7 +157,8 @@ function verifyCanalH(handoffContent: string, forenseContent: string, verF: stri
   }
 
   const canalContent = handoffContent.substring(canalHeaderIndex);
-  const msgRegex = /\*\*(\w+)\s*→\s*(\w+)\*\*\s*·\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/g;
+  const msgRegex =
+    /(?:\*\*)?([\w/]+)\s*→\s*([\w/]+)(?:\*\*)?\s*·\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/g;
   const matches = Array.from(canalContent.matchAll(msgRegex));
 
   if (matches.length === 0) {

@@ -1,11 +1,20 @@
+/* eslint-disable no-underscore-dangle */
 import { defineConfig } from 'vitest/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+/* eslint-enable no-underscore-dangle */
 
 export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
     pool: 'forks',
-    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
+    reporters: process.env.GITHUB_ACTIONS
+      ? ['default', 'github-actions', 'junit']
+      : ['default', path.resolve(__dirname, '../../scripts/vitestHandoffReporter.ts')],
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     env: {
       DB_ENCRYPTION_KEY: '00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff',

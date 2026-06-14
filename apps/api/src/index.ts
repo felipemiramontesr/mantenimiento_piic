@@ -101,6 +101,14 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     prefix: '/uploads/', // URL prefix
   });
 
+  // Dev Telemetry Gated Plugin (Doctor) — only registered in development
+  if (process.env.NODE_ENV === 'development') {
+    fastify.register(async (instance) => {
+      const devTelemetryPlugin = (await import('./plugins/devTelemetry')).default;
+      await instance.register(devTelemetryPlugin);
+    });
+  }
+
   // Routes
   fastify.register(authRoutes, { prefix: '/v1/auth' });
   fastify.register(telemetryRoutes, { prefix: '/v1/archon' });

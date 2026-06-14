@@ -1,9 +1,16 @@
+/* eslint-disable no-underscore-dangle */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+/* eslint-enable no-underscore-dangle */
 
 /**
  * Resuelve la versión del sistema en build-time — nunca hardcodeada.
@@ -90,7 +97,9 @@ export default defineConfig({
     clearMocks: true,
     mockReset: true,
     teardownTimeout: 1000,
-    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
+    reporters: process.env.GITHUB_ACTIONS
+      ? ['default', 'github-actions', 'junit']
+      : ['default', path.resolve(__dirname, '../../scripts/vitestHandoffReporter.ts')],
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
     globalTeardown: './src/test/globalTeardown.ts',
