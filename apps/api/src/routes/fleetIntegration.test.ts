@@ -268,6 +268,31 @@ describe('Fleet Integration Endpoints', () => {
       expect(response.statusCode).toBe(400);
     });
 
+    it('should coerce string numeric fields to numbers (form input compat)', async (): Promise<void> => {
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]); // Snapshot After
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: {
+          data: {
+            year: '2025',
+            odometer: '12500',
+            fuelTankCapacity: '80',
+            dailyUsageAvg: '120.5',
+          },
+          reason: 'Coercion compatibility test',
+        },
+      });
+
+      if (response.statusCode !== 200) throw new Error(`Coercion failed: ${response.body}`);
+      expect(response.statusCode).toBe(200);
+    });
+
     it('should handle db error on update', async (): Promise<void> => {
       mockConnection.execute
         .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before

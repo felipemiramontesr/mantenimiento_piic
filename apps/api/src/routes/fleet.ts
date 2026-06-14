@@ -71,14 +71,46 @@ const createFleetSchema = z.object({
   insuranceCost: z.number().min(0).optional().nullable().default(0),
 });
 
-const updateFleetSchema = createFleetSchema
-  .partial()
-  .transform(
-    (data) =>
-      Object.fromEntries(
-        Object.entries(data).filter(([k, v]) => k !== 'id' && v !== null && v !== undefined)
-      ) as Record<string, string | number | string[]>
+const numericFleetKeys = new Set<string>([
+  'assetTypeId',
+  'brandId',
+  'modelId',
+  'year',
+  'departmentId',
+  'operationalUseId',
+  'locationId',
+  'engineTypeId',
+  'traccionId',
+  'transmisionId',
+  'fuelTypeId',
+  'tireBrandId',
+  'terrainTypeId',
+  'colorId',
+  'maintenanceCenterId',
+  'ownerId',
+  'complianceStatusId',
+  'insuranceCompanyId',
+  'maintIntervalDays',
+  'maintIntervalKm',
+  'capacidadCarga',
+  'fuelTankCapacity',
+  'odometer',
+  'initialFuelLevel',
+  'lastFuelLevel',
+  'lastServiceReading',
+  'dailyUsageAvg',
+  'monthlyLeasePayment',
+  'insuranceCost',
+]);
+
+const updateFleetSchema = z.preprocess((raw) => {
+  if (typeof raw !== 'object' || raw === null) return raw;
+  return Object.fromEntries(
+    Object.entries(raw as Record<string, unknown>)
+      .filter(([k, v]) => k !== 'id' && v !== null && v !== undefined && v !== '')
+      .map(([k, v]) => [k, numericFleetKeys.has(k) && typeof v === 'string' ? Number(v) : v])
   );
+}, createFleetSchema.partial());
 
 /**
  * Owner-Scoped Fleet Access (F1-A).
