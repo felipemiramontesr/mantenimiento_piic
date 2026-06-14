@@ -3,6 +3,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
+import FleetService from '../services/fleetService';
 import NotificationService from '../services/notification.service';
 import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
 
@@ -11,6 +12,12 @@ vi.mock('../services/db', () => ({
     execute: vi.fn().mockResolvedValue([[], undefined]),
     query: vi.fn().mockResolvedValue([[], undefined]),
     getConnection: vi.fn(),
+  },
+}));
+
+vi.mock('../services/fleetService', () => ({
+  default: {
+    getUserOwnerIds: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -1083,5 +1090,312 @@ describe('PATCH /maintenance/:uuid/accept — notification catch branch', () => 
     expect(res.statusCode).toBe(200);
     // drain microtask queue so .catch() body on line 1092 executes
     await new Promise((r) => setTimeout(r, 20));
+  });
+});
+
+// ─── Owner-Scoped Guards (Rol 9 — fleet:scoped) ──────────────────────────────
+
+describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
+  const { app, init } = makeApp();
+  let scopedToken: string;
+
+  beforeAll(async () => {
+    await init();
+    scopedToken = app.jwt.sign({
+      id: 42,
+      username: 'cliente.externo',
+      roleId: 9,
+      roleName: 'Cliente Externo',
+      permissions: ['fleet:scoped', 'fleet:view', 'maint:view', 'maint:write'],
+    });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const auth = () => ({ authorization: `Bearer ${scopedToken}` });
+
+  it('GET /maintenance — returns empty when user has no owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toEqual([]);
+    expect(res.json().nextCursor).toBeNull();
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('GET /maintenance — returns filtered rows when user has owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    vi.mocked(db.execute).mockResolvedValueOnce([
+      [
+        {
+          id: 1,
+          uuid: 'maint-1',
+          unit_id: 'ASM-001',
+          movement_status: 'COMPLETED',
+          created_at: new Date(),
+        },
+      ],
+      undefined,
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toHaveLength(1);
+  });
+
+  it('GET /maintenance/forecast — returns empty when user has no owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toEqual([]);
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
+  it('GET /maintenance/template/:unitId — returns 404 when user has no owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-001',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /maintenance/template/:unitId — returns 404 when unit not in owner scope', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    // Owner check is the FIRST db.execute in the template handler; empty result → 404 immediately
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-FOREIGN',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /maintenance/:uuid — returns 404 when movement found but user has no owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    vi.mocked(db.execute).mockResolvedValueOnce([
+      [{ id: 10, uuid: 'order-1', unit_id: 'ASM-001', movement_status: 'COMPLETED' }],
+      undefined,
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/order-1',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /maintenance/:uuid — returns 404 when unit not in owner scope', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [{ id: 10, uuid: 'order-2', unit_id: 'ASM-FOREIGN', movement_status: 'COMPLETED' }],
+        undefined,
+      ]) // movement found
+      .mockResolvedValueOnce([[], undefined]); // owner check — not owned
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/order-2',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /maintenance/:uuid/node — returns 404 when user has no owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    vi.mocked(db.execute).mockResolvedValueOnce([
+      [{ id: 20, uuid: 'node-1', unit_id: 'ASM-001', movement_status: 'ACTIVE' }],
+      undefined,
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/node-1/node',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('GET /maintenance/:uuid/node — returns 404 when unit not in owner scope', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [{ id: 20, uuid: 'node-2', unit_id: 'ASM-FOREIGN', movement_status: 'ACTIVE' }],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]); // owner check — not owned
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/node-2/node',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('POST /maintenance — returns 400 when user has no owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 'ASM-001',
+            odometer: 45000,
+            maintIntervalKm: 10000,
+            status: 'Disponible',
+            lastFuelLevel: null,
+            owner_id: 711,
+          },
+        ],
+        undefined,
+      ]); // unit found
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-001',
+        serviceDate: '2026-06-10',
+        odometerAtService: 45000,
+        cost: 0,
+        technician: 'Tech',
+        is_in_progress: false,
+        details: [],
+      },
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('not found');
+  });
+
+  it('POST /maintenance — returns 400 when unit not in owner scope', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 'ASM-FOREIGN',
+            odometer: 45000,
+            maintIntervalKm: 10000,
+            status: 'Disponible',
+            lastFuelLevel: null,
+            owner_id: 999,
+          },
+        ],
+        undefined,
+      ]);
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-FOREIGN',
+        serviceDate: '2026-06-10',
+        odometerAtService: 45000,
+        cost: 0,
+        technician: 'Tech',
+        is_in_progress: false,
+        details: [],
+      },
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('not found');
+  });
+
+  it('PATCH /maintenance/:uuid/complete — returns 400 when user has no owned units', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 55,
+            unit_id: 'ASM-001',
+            status: 'ACTIVE',
+            service_date: '2026-06-10',
+            service_type: 'BASIC_10K',
+            service_mode: 'WORKSHOP',
+            technician: 'T',
+            cost: 0,
+          },
+        ],
+        undefined,
+      ]);
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/active-uuid/complete',
+      payload: { odometerAtService: 45000, cost: 0, details: [] },
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('not found');
+  });
+
+  it('PATCH /maintenance/:uuid/complete — returns 400 when unit not in owner scope', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 55,
+            unit_id: 'ASM-FOREIGN',
+            status: 'ACTIVE',
+            service_date: '2026-06-10',
+            service_type: 'BASIC_10K',
+            service_mode: 'WORKSHOP',
+            technician: 'T',
+            cost: 0,
+          },
+        ],
+        undefined,
+      ]) // movement found
+      .mockResolvedValueOnce([[], undefined]); // owner check — not owned
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/active-uuid/complete',
+      payload: { odometerAtService: 45000, cost: 0, details: [] },
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain('not found');
   });
 });

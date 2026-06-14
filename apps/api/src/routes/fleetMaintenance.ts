@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
@@ -12,6 +12,7 @@ import NotificationService, {
 } from '../services/notification.service';
 import { createWorkOrder } from '../services/workOrderService';
 import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
+import FleetService from '../services/fleetService';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -273,6 +274,18 @@ function appendPredictiveAlerts(
   }
 }
 
+// ─── Owner Scope (F1-A mirror for maintenance) ────────────────────────────────
+
+/**
+ * Returns null for full-access carriers, or the FLEET_OWNER id list for fleet:scoped.
+ * Empty array = deny-by-default (user has no linked owners).
+ */
+const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
+  const { id, permissions } = request.user as { id: number; permissions: string[] };
+  if (permissions.includes('*') || !permissions.includes('fleet:scoped')) return null;
+  return FleetService.getUserOwnerIds(id);
+};
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<void> {
@@ -291,6 +304,12 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
     try {
       const { cursor, limit = '50' } = request.query as { cursor?: string; limit?: string };
       const parsedLimit = parseInt(limit, 10);
+
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.send({ success: true, data: [], nextCursor: null });
+      }
+
       let query = `
         SELECT
           fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
@@ -307,6 +326,12 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         WHERE fm.movement_type = 'MAINTENANCE'
       `;
       const params: (string | number)[] = [];
+
+      if (ownerScope !== null) {
+        query += ` AND u.owner_id IN (${ownerScope.map(() => '?').join(',')}) `;
+        params.push(...ownerScope);
+      }
+
       if (cursor) {
         const [cursorDate, cursorId] = Buffer.from(cursor, 'base64').toString('ascii').split('|');
         query += ` AND ((fm.created_at < ?) OR (fm.created_at = ? AND fm.id < ?)) `;
@@ -339,6 +364,21 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         serviceType?: string;
         odometer?: string;
       };
+
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null) {
+        if (ownerScope.length === 0)
+          return reply.code(404).send({ success: false, message: 'Unit not found' });
+        const [owned] = await db.execute<RowDataPacket[]>(
+          `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+            .map(() => '?')
+            .join(',')})`,
+          [unitId, ...ownerScope]
+        );
+        if (owned.length === 0)
+          return reply.code(404).send({ success: false, message: 'Unit not found' });
+      }
+
       const [units] = await db.execute<RowDataPacket[]>(
         `SELECT brandId, fuelTypeId, maintIntervalKm, maintIntervalDays, odometer,
                 lastServiceReading, last_chassis_inspection_odometer, last_distribution_change_odometer
@@ -456,9 +496,18 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
   });
 
   // GET /v1/maintenance/forecast — Per-unit next service forecast (computed, no DB write)
-  fastify.get('/maintenance/forecast', async (_request, reply) => {
+  fastify.get('/maintenance/forecast', async (request, reply) => {
     try {
-      const [units] = await db.execute<RowDataPacket[]>(`
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.send({ success: true, data: [] });
+      }
+
+      const ownerFilter =
+        ownerScope !== null ? `AND fu.owner_id IN (${ownerScope.map(() => '?').join(',')})` : '';
+
+      const [units] = await db.execute<RowDataPacket[]>(
+        `
         SELECT
           fu.id                                                        AS unitId,
           c_brand.label                                                AS marca,
@@ -477,9 +526,10 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
         LEFT JOIN common_catalogs c_dept
           ON fu.departmentId = c_dept.id AND c_dept.category = 'DEPARTMENT'
-        WHERE fu.is_active = 1
-        ORDER BY fu.id
-      `);
+        WHERE fu.is_active = 1 ${ownerFilter}
+        ORDER BY fu.id`,
+        ownerScope ?? []
+      );
 
       type ForecastRow = {
         unitId: string;
@@ -588,6 +638,19 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       if (movements.length === 0)
         return reply.code(404).send({ success: false, message: 'Order not found' });
       const movement = movements[0];
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null) {
+        if (ownerScope.length === 0)
+          return reply.code(404).send({ success: false, message: 'Order not found' });
+        const [owned] = await db.execute<RowDataPacket[]>(
+          `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+            .map(() => '?')
+            .join(',')})`,
+          [movement.unit_id, ...ownerScope]
+        );
+        if ((owned as RowDataPacket[]).length === 0)
+          return reply.code(404).send({ success: false, message: 'Order not found' });
+      }
       const [details] = await db.execute<RowDataPacket[]>(
         `SELECT fmd.task_code AS taskCode, fmd.status_code AS status, fmd.notes,
                 mt.label, mt.is_critical AS isCritical,
@@ -626,6 +689,19 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       if (movements.length === 0)
         return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
       const movement = movements[0];
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null) {
+        if (ownerScope.length === 0)
+          return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
+        const [owned] = await db.execute<RowDataPacket[]>(
+          `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+            .map(() => '?')
+            .join(',')})`,
+          [movement.unit_id, ...ownerScope]
+        );
+        if ((owned as RowDataPacket[]).length === 0)
+          return reply.code(404).send({ success: false, message: 'Orden no encontrada' });
+      }
 
       const [details, unitRows] = await Promise.all([
         db.execute<RowDataPacket[]>(
@@ -683,11 +759,18 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         const logUuid = crypto.randomUUID();
 
         const [units] = await connection.execute<RowDataPacket[]>(
-          'SELECT id, odometer, maintIntervalKm, status, lastFuelLevel FROM fleet_units WHERE id = ? FOR UPDATE',
+          'SELECT id, odometer, maintIntervalKm, status, lastFuelLevel, owner_id FROM fleet_units WHERE id = ? FOR UPDATE',
           [data.unitId]
         );
         if (units.length === 0) throw new Error('Fleet unit not found');
         const unit = units[0];
+        const ownerScope = await resolveOwnerScope(request);
+        if (
+          ownerScope !== null &&
+          (ownerScope.length === 0 || !ownerScope.includes(unit.owner_id as number))
+        ) {
+          throw new Error('Fleet unit not found');
+        }
         const serviceType = computeServiceType(data.odometerAtService, unit.maintIntervalKm);
         const serviceMode = resolveServiceMode(serviceType);
 
@@ -863,6 +946,18 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         );
         if (movements.length === 0) throw new Error('Maintenance order not found');
         const movement = movements[0];
+        const ownerScope = await resolveOwnerScope(request);
+        if (ownerScope !== null) {
+          if (ownerScope.length === 0) throw new Error('Maintenance order not found');
+          const [owned] = await connection.execute<RowDataPacket[]>(
+            `SELECT id FROM fleet_units WHERE id = ? AND owner_id IN (${ownerScope
+              .map(() => '?')
+              .join(',')})`,
+            [movement.unit_id, ...ownerScope]
+          );
+          if ((owned as RowDataPacket[]).length === 0)
+            throw new Error('Maintenance order not found');
+        }
         if (movement.status !== MOVEMENT_STATUS.ACTIVE)
           throw new Error(`Cannot complete: order is already ${movement.status}`);
 

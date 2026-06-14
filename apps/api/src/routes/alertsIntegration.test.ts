@@ -3,6 +3,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
+import FleetService from '../services/fleetService';
 
 vi.mock('../services/db', () => ({
   default: {
@@ -26,6 +27,7 @@ vi.mock('../services/fleetService', () => ({
     createUnit: vi.fn().mockResolvedValue({ id: 'X' }),
     updateUnit: vi.fn().mockResolvedValue(true),
     deleteUnit: vi.fn().mockResolvedValue(true),
+    getUserOwnerIds: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -690,6 +692,101 @@ describe('Alerts Routes — Integration', () => {
       expect(res.statusCode).toBe(200);
       expect(res.json().count).toBe(0);
       expect(db.execute).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Owner-Scoped MAINTENANCE_OVERDUE (Rol 9 — fleet:scoped) ─────────────────
+
+  describe('GET /v1/alerts/count — fleet:scoped owner filter', () => {
+    const scopedAuth = () => ({
+      authorization: `Bearer ${app.jwt.sign({
+        id: 42,
+        username: 'cliente.externo',
+        roleId: 9,
+        roleName: 'Cliente Externo',
+        permissions: ['fleet:scoped', 'fleet:view', 'maint:view', 'maint:write'],
+      })}`,
+    });
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('returns count 0 for overdue when user has no owned units (deny-by-default)', async () => {
+      vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts/count',
+        headers: scopedAuth(),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().count).toBe(0);
+      expect(db.execute).not.toHaveBeenCalled();
+    });
+
+    it('returns filtered count when user has owned units', async () => {
+      vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+      (db.execute as Mock).mockResolvedValueOnce([[{ overdueCount: '2' }], undefined]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts/count',
+        headers: scopedAuth(),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().count).toBe(2);
+      expect(db.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('GET /v1/alerts — fleet:scoped owner filter', () => {
+    const scopedAuth = () => ({
+      authorization: `Bearer ${app.jwt.sign({
+        id: 42,
+        username: 'cliente.externo',
+        roleId: 9,
+        roleName: 'Cliente Externo',
+        permissions: ['fleet:scoped', 'fleet:view', 'maint:view', 'maint:write'],
+      })}`,
+    });
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('returns empty data when user has no owned units (deny-by-default)', async () => {
+      vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: scopedAuth(),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.data).toEqual([]);
+      expect(body.count).toBe(0);
+      expect(db.execute).not.toHaveBeenCalled();
+    });
+
+    it('returns scoped MAINTENANCE_OVERDUE when user has owned units', async () => {
+      vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+      const overdueRow = {
+        id: 'ASM-001',
+        odometer: 15000,
+        nextServiceReading_forecast: 10000,
+        lastServiceDate: null,
+        maintIntervalDays: null,
+      };
+      (db.execute as Mock).mockResolvedValueOnce([[overdueRow], undefined]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: scopedAuth(),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.count).toBe(1);
+      expect(body.data[0].type).toBe('MAINTENANCE_OVERDUE');
+      expect(db.execute).toHaveBeenCalledTimes(1);
     });
   });
 });

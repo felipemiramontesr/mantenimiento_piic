@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
+import FleetService from '../services/fleetService';
 
 export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type AlertType =
@@ -227,26 +228,33 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
   // GET /v1/alerts/count
   fastify.get('/alerts/count', async (request, reply) => {
     try {
-      const { permissions } = request.user as { permissions: string[] };
+      const { id: userId, permissions } = request.user as { id: number; permissions: string[] };
       const scope = resolveAlertScope(permissions);
 
       let total = 0;
 
       if (scope.has('MAINTENANCE_OVERDUE')) {
-        const [overdueRows] = await db.execute<RowDataPacket[]>(
-          `SELECT COUNT(*) as overdueCount
-           FROM fleet_units
-           WHERE status != 'Descontinuada'
-             AND (
-               (nextServiceReading_forecast IS NOT NULL
-                AND odometer >= nextServiceReading_forecast * 0.9)
-               OR (lastServiceDate IS NOT NULL
-                   AND maintIntervalDays IS NOT NULL
-                   AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
-                       <= DATE_ADD(CURDATE(), INTERVAL 14 DAY))
-             )`
-        );
-        total += Number(overdueRows[0].overdueCount);
+        const isOwnerScoped = permissions.includes('fleet:scoped');
+        const ownerIds = isOwnerScoped ? await FleetService.getUserOwnerIds(userId) : null;
+        if (ownerIds === null || ownerIds.length > 0) {
+          const ownerFilter =
+            ownerIds !== null ? ` AND owner_id IN (${ownerIds.map(() => '?').join(',')})` : '';
+          const [overdueRows] = await db.execute<RowDataPacket[]>(
+            `SELECT COUNT(*) as overdueCount
+             FROM fleet_units
+             WHERE status != 'Descontinuada'
+               AND (
+                 (nextServiceReading_forecast IS NOT NULL
+                  AND odometer >= nextServiceReading_forecast * 0.9)
+                 OR (lastServiceDate IS NOT NULL
+                     AND maintIntervalDays IS NOT NULL
+                     AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
+                         <= DATE_ADD(CURDATE(), INTERVAL 14 DAY))
+               )${ownerFilter}`,
+            ownerIds ?? []
+          );
+          total += Number(overdueRows[0].overdueCount);
+        }
       }
 
       if (scope.has('INCIDENT_OPEN')) {
@@ -341,27 +349,39 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
   // GET /v1/alerts
   fastify.get('/alerts', async (request, reply) => {
     try {
-      const { permissions } = request.user as { permissions: string[] };
+      const { id: userId, permissions } = request.user as { id: number; permissions: string[] };
       const scope = resolveAlertScope(permissions);
       const alerts: Alert[] = [];
 
       // 1. Maintenance — vencidas y por vencer (90% forecast km, o ≤14 días del vencimiento)
       if (scope.has('MAINTENANCE_OVERDUE')) {
-        const [overdueRows] = await db.execute<RowDataPacket[]>(
-          `SELECT id, status, odometer, nextServiceReading_forecast,
-                  lastServiceDate, maintIntervalDays
-           FROM fleet_units
-           WHERE status != 'Descontinuada'
-             AND (
-               (nextServiceReading_forecast IS NOT NULL
-                AND odometer >= nextServiceReading_forecast * 0.9)
-               OR (lastServiceDate IS NOT NULL
-                   AND maintIntervalDays IS NOT NULL
-                   AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
-                       <= DATE_ADD(CURDATE(), INTERVAL 14 DAY))
-             )
-           LIMIT 50`
-        );
+        const isOwnerScoped = permissions.includes('fleet:scoped');
+        const ownerIds = isOwnerScoped ? await FleetService.getUserOwnerIds(userId) : null;
+        const overdueRows: RowDataPacket[] =
+          ownerIds !== null && ownerIds.length === 0
+            ? []
+            : await db
+                .execute<RowDataPacket[]>(
+                  `SELECT id, status, odometer, nextServiceReading_forecast,
+                          lastServiceDate, maintIntervalDays
+                   FROM fleet_units
+                   WHERE status != 'Descontinuada'
+                     AND (
+                       (nextServiceReading_forecast IS NOT NULL
+                        AND odometer >= nextServiceReading_forecast * 0.9)
+                       OR (lastServiceDate IS NOT NULL
+                           AND maintIntervalDays IS NOT NULL
+                           AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
+                               <= DATE_ADD(CURDATE(), INTERVAL 14 DAY))
+                     )${
+                       ownerIds !== null
+                         ? ` AND owner_id IN (${ownerIds.map(() => '?').join(',')})`
+                         : ''
+                     }
+                   LIMIT 50`,
+                  ownerIds ?? []
+                )
+                .then(([rows]) => rows);
 
         overdueRows.forEach((row) => {
           const severity = computeOverdueSeverity(

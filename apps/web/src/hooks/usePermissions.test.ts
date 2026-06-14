@@ -77,6 +77,24 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
       expect(result.current.isExternalClientOnly()).toBe(true);
     });
 
+    it('is true for Cliente Externo with full V.200 permissions (fleet + maint)', () => {
+      mockAuth({
+        id: '9',
+        username: 'client.v200',
+        roleId: 9,
+        roleName: 'Cliente Externo',
+        permissions: [
+          'fleet:view',
+          'fleet:scoped',
+          'fleet:write:scoped',
+          'maint:view',
+          'maint:write',
+        ],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isExternalClientOnly()).toBe(true);
+    });
+
     it('is false for scoped carriers with extra permissions (F1-B Gestor variable)', () => {
       mockAuth({
         id: '4',
