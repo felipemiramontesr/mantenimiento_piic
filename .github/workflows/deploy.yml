@@ -199,7 +199,7 @@ jobs:
           echo "| **ESLint / Unicorn** | Static Analysis | Cumplimiento de estándares de código |" >> $GITHUB_STEP_SUMMARY
           echo "| **SonarJS / OWASP** | Security Audit | Análisis de vulnerabilidades y complejidad |" >> $GITHUB_STEP_SUMMARY
           echo "| **Husky** | Git Hooks | Blindaje de integridad pre-commit |" >> $GITHUB_STEP_SUMMARY
-          echo "| **lftp (Native)** | Native Sync | Despliegue industrial mediante protocolo seguro |" >> $GITHUB_STEP_SUMMARY
+          echo "| **rsync (SSH)** | Native Sync | Despliegue industrial mediante protocolo seguro SSH/rsync |" >> $GITHUB_STEP_SUMMARY
           echo "| **TruffleHog** | Secret Scanning | Detección de credenciales y secretos filtrados en el historial Git |" >> $GITHUB_STEP_SUMMARY
           echo "| **Rollup Visualizer** | Bundle Analysis | Auditoría ad-hoc del tamaño y composición del bundle frontend |" >> $GITHUB_STEP_SUMMARY
 
@@ -223,16 +223,16 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build --workspace=@mantenimiento/web
 
-      - name: 🚀 Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
-      - name: 🚀 Deploy Web assets via Native LFTP
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      - name: 🔑 Setup SSH key
         run: |
-          lftp -c "set ftp:ssl-allow no;
-          open -u $FTP_USER,$FTP_PASSWORD $FTP_SERVER;
-          mirror -R ./apps/web/dist/ .;
-          quit"
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/archon_deploy
+          chmod 600 ~/.ssh/archon_deploy
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 🚀 Deploy Web assets via SSH/rsync
+        run: |
+          rsync -avz --delete --exclude='api_service/' \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/archon_deploy" \
+            ./apps/web/dist/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/u701509674/domains/piic.com.mx/public_html/mantenimiento/
