@@ -85,13 +85,13 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
             {images.length > 1 && (
               <>
                 <button
-                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-[4px] bg-black/40 text-white hover:bg-black/60 transition-colors border border-white/10"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-[4px] bg-pinnacle-yellow/40 text-pinnacle-navy hover:bg-pinnacle-yellow/60 transition-colors border border-white/10"
                   onClick={handlePrev}
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-[4px] bg-black/40 text-white hover:bg-black/60 transition-colors border border-white/10"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-[4px] bg-pinnacle-yellow/40 text-pinnacle-navy hover:bg-pinnacle-yellow/60 transition-colors border border-white/10"
                   onClick={handleNext}
                 >
                   <ChevronRight size={24} />
