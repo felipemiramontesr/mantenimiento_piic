@@ -32,6 +32,11 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --legacy-peer-deps
+      - name: Security Audit (informational)
+        if: matrix.shard == 1
+        # fast-jwt CRITICAL (GHSA-gm45/gmvf/mvf2/rp9m/3j8v/hm7r): non-exploitable with HS256 static secret.
+        # Full fix requires Fastify 5 upgrade (@fastify/jwt v10). Tracked as Fase 3 security hardening.
+        run: npm audit --omit=dev --audit-level=critical || true
       - name: Lint
         if: matrix.shard == 1
         run: npm run lint --workspace=@mantenimiento/api
@@ -73,6 +78,11 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --legacy-peer-deps
+      - name: Security Audit (informational)
+        if: matrix.shard == 1
+        # fast-jwt CRITICAL (GHSA-gm45/gmvf/mvf2/rp9m/3j8v/hm7r): non-exploitable with HS256 static secret.
+        # Full fix requires Fastify 5 upgrade (@fastify/jwt v10). Tracked as Fase 3 security hardening.
+        run: npm audit --omit=dev --audit-level=critical || true
       - name: Lint
         if: matrix.shard == 1
         run: npm run lint --workspace=@mantenimiento/web
@@ -120,7 +130,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.82.0
         with:
           path: ./
           base: ${{ github.event.before || '' }}

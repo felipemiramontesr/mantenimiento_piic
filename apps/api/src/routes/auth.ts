@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import '@fastify/cookie';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import argon2 from 'argon2';
 import { z } from 'zod';
@@ -212,15 +213,16 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           { expiresIn: '7d' }
         );
         const isProduction = process.env.NODE_ENV === 'production';
+        const refreshCookieOpts = {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'strict' as const,
+          domain: isProduction ? '.piic.com.mx' : undefined,
+          path: '/v1/auth',
+          maxAge: 7 * 24 * 60 * 60,
+        };
         return reply
-          .setCookie('refresh_token', refreshToken, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: 'strict',
-            domain: isProduction ? '.piic.com.mx' : undefined,
-            path: '/v1/auth',
-            maxAge: 7 * 24 * 60 * 60,
-          })
+          .setCookie('refresh_token', refreshToken, refreshCookieOpts)
           .send({ success: true, token, user: { ...mapped, permissions } });
       } catch (e) {
         fastify.log.error(e);
@@ -279,15 +281,14 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
   fastify.post('/logout', async (_request, reply) => {
     const isProduction = process.env.NODE_ENV === 'production';
-    return reply
-      .clearCookie('refresh_token', {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'strict',
-        domain: isProduction ? '.piic.com.mx' : undefined,
-        path: '/v1/auth',
-      })
-      .send({ success: true });
+    const clearCookieOpts = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict' as const,
+      domain: isProduction ? '.piic.com.mx' : undefined,
+      path: '/v1/auth',
+    };
+    return reply.clearCookie('refresh_token', clearCookieOpts).send({ success: true });
   });
 
   fastify.post('/register', async (request, reply) => {

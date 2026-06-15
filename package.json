@@ -60,7 +60,6 @@
     ]
   },
   "dependencies": {
-    "@fastify/cookie": "^9.4.0",
-    "xlsx": "^0.18.5"
+    "@fastify/cookie": "^9.4.0"
   }
 }

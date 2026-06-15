@@ -1,6 +1,8 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import type { FastifyPluginCallback } from 'fastify';
+import type { FastifyCookieOptions } from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
@@ -54,7 +56,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   });
 
   // Cookie plugin — must register before jwt for cookie-based token extraction
-  fastify.register(cookie);
+  fastify.register(cookie as unknown as FastifyPluginCallback<FastifyCookieOptions>);
 
   // Security headers — must register before cors
   fastify.register(helmet, {
