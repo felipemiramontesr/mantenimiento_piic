@@ -69,12 +69,12 @@ const FLEET_UNIT_ALLOWED_COLUMNS = new Set<string>([
  */
 export default class FleetService {
   /**
-   * Owner-Scoped Fleet Access (F1-A): resolves the FLEET_OWNER catalog ids
-   * linked to a user through user_fleet_owners. Empty array = deny-by-default.
+   * Resolves the owner ids linked to a user through user_owner_membership.
+   * Empty array = deny-by-default.
    */
   static async getUserOwnerIds(userId: number): Promise<number[]> {
     const [rows] = await db.execute<RowDataPacket[]>(
-      'SELECT owner_id FROM user_fleet_owners WHERE user_id = ?',
+      'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
       [userId]
     );
     return rows.map((r) => r.owner_id as number);
@@ -110,7 +110,7 @@ export default class FleetService {
         c_ts.label AS transmision,
         c_tire_brand.label AS tireBrand,
         c_terrain.label AS tipoTerreno,
-        c_owner.label AS owner,
+        o.label AS owner,
         c_compl.label AS complianceStatus,
         c_loc.label AS sede,
         c_mc.label AS centroMantenimiento,
@@ -134,7 +134,7 @@ export default class FleetService {
       LEFT JOIN common_catalogs c_ts ON f.transmisionId = c_ts.id AND c_ts.category = 'TRANSMISSION'
       LEFT JOIN common_catalogs c_tire_brand ON f.tireBrandId = c_tire_brand.id AND c_tire_brand.category = 'TIRE_BRAND'
       LEFT JOIN common_catalogs c_terrain ON f.terrainTypeId = c_terrain.id AND c_terrain.category = 'TERRAIN_TYPE'
-      LEFT JOIN common_catalogs c_owner ON f.ownerId = c_owner.id AND c_owner.category = 'FLEET_OWNER'
+      LEFT JOIN owners o ON f.ownerId = o.id
       LEFT JOIN common_catalogs c_compl ON f.complianceStatusId = c_compl.id AND c_compl.category = 'COMPLIANCE_STATUS'
       LEFT JOIN common_catalogs c_loc ON f.locationId = c_loc.id AND c_loc.category = 'LOCATION'
       LEFT JOIN common_catalogs c_mc ON f.maintenanceCenterId = c_mc.id AND c_mc.category = 'MAINTENANCE_CENTER'

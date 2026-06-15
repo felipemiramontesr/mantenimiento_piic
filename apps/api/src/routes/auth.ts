@@ -9,21 +9,26 @@ import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 
-/** Owner-scoped roles that receive a FLEET_OWNER link on registration. */
+/** Owner-scoped roles that receive an owners row link on registration. */
 const OWNER_SCOPED_ROLE_IDS = [1, 2]; // 1=Propietario de Flotilla, 2=Propietario Privado
 
 /**
- * Links a freshly registered owner-scoped user (roles 1 or 2) to its FLEET_OWNER
- * catalog row, creating the row when the owner label does not exist yet.
+ * Links a freshly registered owner-scoped user (roles 1 or 2) to its owners row,
+ * creating the row when the owner label does not exist yet.
  * common_catalogs.id has no AUTO_INCREMENT — next id is resolved with
  * MAX(id)+1 inside the same transaction (FOR UPDATE serializes concurrents).
+ * Writes to both common_catalogs + owners to maintain backward compat during migration.
  */
-async function linkExternalClientOwner(userId: number, ownerLabel: string): Promise<void> {
+async function linkExternalClientOwner(
+  userId: number,
+  ownerLabel: string,
+  ownerType: 'FLOTILLA' | 'PRIVATE'
+): Promise<void> {
   return withConnection(async (connection) => {
     await connection.beginTransaction();
     try {
       const [existing] = await connection.execute<RowDataPacket[]>(
-        "SELECT id FROM common_catalogs WHERE category = 'FLEET_OWNER' AND label = ? LIMIT 1",
+        'SELECT id FROM owners WHERE label = ? LIMIT 1',
         [ownerLabel]
       );
       let ownerId: number;
@@ -38,9 +43,13 @@ async function linkExternalClientOwner(userId: number, ownerLabel: string): Prom
           "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
           [ownerId, `OWN_U${userId}`, ownerLabel]
         );
+        await connection.execute<ResultSetHeader>(
+          'INSERT INTO owners (id, owner_type, label) VALUES (?, ?, ?)',
+          [ownerId, ownerType, ownerLabel]
+        );
       }
       await connection.execute<ResultSetHeader>(
-        'INSERT IGNORE INTO user_fleet_owners (user_id, owner_id) VALUES (?, ?)',
+        'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
         [userId, ownerId]
       );
       await connection.commit();
@@ -208,6 +217,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           permissions = permRows.map((r) => r.slug as string);
         }
 
+        let ownerType: 'FLOTILLA' | 'PRIVATE' | null = null;
+        if (mapped.roleId === 1) ownerType = 'FLOTILLA';
+        else if (mapped.roleId === 2) ownerType = 'PRIVATE';
         const token = fastify.jwt.sign({
           id: user.id,
           username: user.username,
@@ -215,6 +227,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           roleName: mapped.roleName,
           permissions,
           type: 'access',
+          owner_type: ownerType,
         });
         const refreshToken = fastify.jwt.sign(
           { id: user.id, type: 'refresh' },
@@ -231,7 +244,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         };
         return reply
           .setCookie('refresh_token', refreshToken, refreshCookieOpts)
-          .send({ success: true, token, user: { ...mapped, permissions } });
+          .send({ success: true, token, user: { ...mapped, permissions, ownerType } });
       } catch (e) {
         fastify.log.error(e);
         return reply.code(500).send({ error: 'LOGIN_FAIL' });
@@ -273,6 +286,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         );
         permissions = permRows.map((r) => r.slug as string);
       }
+      let ownerType: 'FLOTILLA' | 'PRIVATE' | null = null;
+      if (mapped.roleId === 1) ownerType = 'FLOTILLA';
+      else if (mapped.roleId === 2) ownerType = 'PRIVATE';
       const accessToken = fastify.jwt.sign({
         id: user.id,
         username: user.username,
@@ -280,8 +296,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         roleName: mapped.roleName,
         permissions,
         type: 'access',
+        owner_type: ownerType,
       });
-      return reply.send({ success: true, token: accessToken, user: { ...mapped, permissions } });
+      return reply.send({
+        success: true,
+        token: accessToken,
+        user: { ...mapped, permissions, ownerType },
+      });
     } catch {
       return reply.code(401).send({ error: 'REFRESH_FAIL' });
     }
@@ -343,7 +364,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         [username, enc, hash, roleId, fullName || '', departmentId || null, employeeNumber || null]
       );
       if (OWNER_SCOPED_ROLE_IDS.includes(roleId)) {
-        await linkExternalClientOwner(res.insertId, fullName || username);
+        const ownerType = roleId === 2 ? 'PRIVATE' : 'FLOTILLA';
+        await linkExternalClientOwner(res.insertId, fullName || username, ownerType);
       }
       return reply.code(201).send({ success: true, userId: res.insertId });
     } catch (e) {
@@ -559,7 +581,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   });
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Owner-Scoped Fleet Access (F1-A · A3): user ↔ FLEET_OWNER links
+  // Archon Master: user ↔ owner membership management
   // Guard: user:admin — only user administrators manage owner assignments.
   // ──────────────────────────────────────────────────────────────────────────
   const ownersGuard = {
@@ -577,10 +599,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     const { id } = request.params as { id: string };
     try {
       const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT ufo.owner_id AS ownerId, cc.label
-         FROM user_fleet_owners ufo
-         JOIN common_catalogs cc ON cc.id = ufo.owner_id AND cc.category = 'FLEET_OWNER'
-         WHERE ufo.user_id = ?`,
+        `SELECT uom.owner_id AS ownerId, o.label
+         FROM user_owner_membership uom
+         JOIN owners o ON o.id = uom.owner_id
+         WHERE uom.user_id = ?`,
         [id]
       );
       return reply.send({ success: true, data: rows });
@@ -624,36 +646,34 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         }
 
         if (ownerIds.length > 0) {
-          const [catalogRows] = await connection.execute<RowDataPacket[]>(
-            `SELECT id FROM common_catalogs WHERE category = 'FLEET_OWNER' AND id IN (${ownerIds
-              .map(() => '?')
-              .join(',')})`,
+          const [ownerRows] = await connection.execute<RowDataPacket[]>(
+            `SELECT id FROM owners WHERE id IN (${ownerIds.map(() => '?').join(',')})`,
             ownerIds
           );
-          if (catalogRows.length !== ownerIds.length) {
+          if (ownerRows.length !== ownerIds.length) {
             await connection.rollback();
             return reply.code(400).send({
               success: false,
               code: 'VALIDATION_ERROR',
-              message: 'Propietario inválido: no existe en el catálogo FLEET_OWNER',
+              message: 'Propietario inválido: no existe en la tabla de propietarios',
               field: 'ownerIds',
             });
           }
         }
 
         const [beforeRows] = await connection.execute<RowDataPacket[]>(
-          'SELECT owner_id FROM user_fleet_owners WHERE user_id = ?',
+          'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
           [id]
         );
 
         await connection.execute<ResultSetHeader>(
-          'DELETE FROM user_fleet_owners WHERE user_id = ?',
+          'DELETE FROM user_owner_membership WHERE user_id = ?',
           [id]
         );
 
         if (ownerIds.length > 0) {
           await connection.execute<ResultSetHeader>(
-            `INSERT INTO user_fleet_owners (user_id, owner_id) VALUES ${ownerIds
+            `INSERT INTO user_owner_membership (user_id, owner_id) VALUES ${ownerIds
               .map(() => '(?,?)')
               .join(',')}`,
             ownerIds.flatMap((ownerId) => [Number(id), ownerId])

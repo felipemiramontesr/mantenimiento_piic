@@ -20,6 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   startImpersonation: (target: UserIndustrial) => void;
   stopImpersonation: () => void;
+  ownerType: 'FLOTILLA' | 'PRIVATE' | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [viewAsUser, setViewAsUser] = useState<UserIndustrial | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const ownerType: 'FLOTILLA' | 'PRIVATE' | null = currentUser?.ownerType ?? null;
 
   const isImpersonating = viewAsUser !== null;
   const effectiveUser = viewAsUser ?? currentUser;
@@ -102,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated,
         startImpersonation,
         stopImpersonation,
+        ownerType,
       }}
     >
       {children}

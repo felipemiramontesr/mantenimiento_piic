@@ -80,6 +80,7 @@ describe('AuthContext', () => {
     expect(mockedSetToken).toHaveBeenCalledWith('tok-xyz');
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
+    expect(result.current.ownerType).toBeNull();
   });
 
   it('logout calls /auth/logout, calls clearToken, marks unauthenticated', async () => {

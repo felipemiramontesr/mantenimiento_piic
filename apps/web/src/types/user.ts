@@ -28,4 +28,5 @@ export interface UserIndustrial {
   password?: string;
   created_at?: string;
   updated_at?: string;
+  ownerType?: 'FLOTILLA' | 'PRIVATE' | null;
 }

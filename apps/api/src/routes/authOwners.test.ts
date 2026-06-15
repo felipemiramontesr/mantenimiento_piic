@@ -3,10 +3,10 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: User ↔ Fleet-Owner Links (F1-A · A3)
- * Feature Contract: Owner_Scoped_Fleet_Access_External_Client
+ * 🔱 Archon Integration Test: User ↔ Owner Membership Links (Archon Master F1)
+ * Feature Contract: Archon_Master_Fase1_Identity_Foundation
  * GET/PUT /v1/auth/users/:id/owners under user:admin guard, plus the
- * auto-creation of the FLEET_OWNER catalog row when registering a role-9 user.
+ * auto-creation of the owners row when registering a role-1/2 user.
  */
 
 const mockConnection = {
@@ -113,7 +113,7 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(body.data).toEqual([{ ownerId: OWNER_AS, label: 'Arian Silver de México' }]);
 
       const { calls } = (db.execute as Mock).mock;
-      expect(calls[0][0]).toContain('user_fleet_owners');
+      expect(calls[0][0]).toContain('user_owner_membership');
       expect(calls[0][1]).toEqual(['5']);
     });
 
@@ -164,10 +164,10 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(mockConnection.rollback).toHaveBeenCalled();
     });
 
-    it('returns 400 when an ownerId is not a FLEET_OWNER catalog row', async (): Promise<void> => {
+    it('returns 400 when an ownerId is not in the owners table', async (): Promise<void> => {
       mockConnection.execute
         .mockResolvedValueOnce([[{ id: 5 }], undefined]) // user lookup
-        .mockResolvedValueOnce([[{ id: OWNER_AS }], undefined]); // catalog check → only 1 of 2
+        .mockResolvedValueOnce([[{ id: OWNER_AS }], undefined]); // owners check → only 1 of 2
 
       const response = await app.inject({
         method: 'PUT',
@@ -198,8 +198,8 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(JSON.parse(response.body).data.ownerIds).toEqual([OWNER_AS, OWNER_HU]);
 
       const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
-      expect(sqls.some((s) => s.includes('DELETE FROM user_fleet_owners'))).toBe(true);
-      expect(sqls.some((s) => s.includes('INSERT INTO user_fleet_owners'))).toBe(true);
+      expect(sqls.some((s) => s.includes('DELETE FROM user_owner_membership'))).toBe(true);
+      expect(sqls.some((s) => s.includes('INSERT INTO user_owner_membership'))).toBe(true);
       expect(mockConnection.commit).toHaveBeenCalled();
     });
 
@@ -218,7 +218,7 @@ describe('User Fleet-Owner Links (A3)', () => {
 
       expect(response.statusCode).toBe(200);
       const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
-      expect(sqls.some((s) => s.includes('INSERT INTO user_fleet_owners'))).toBe(false);
+      expect(sqls.some((s) => s.includes('INSERT INTO user_owner_membership'))).toBe(false);
     });
 
     it('rolls back and returns 500 on db failure', async (): Promise<void> => {
@@ -235,7 +235,7 @@ describe('User Fleet-Owner Links (A3)', () => {
     });
   });
 
-  describe('POST /v1/auth/register — roles 1 and 2 auto-link a FLEET_OWNER', () => {
+  describe('POST /v1/auth/register — roles 1 and 2 auto-link an owners row', () => {
     const clientPayload = {
       username: 'juan.perez',
       email: 'juan@cliente.mx',
@@ -244,14 +244,16 @@ describe('User Fleet-Owner Links (A3)', () => {
       fullName: 'Juan Pérez',
     };
 
-    it('creates the catalog row and the link when the owner does not exist', async (): Promise<void> => {
+    it('creates the owners row and the membership link when the owner does not exist', async (): Promise<void> => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined]) // username unique check
         .mockResolvedValueOnce([{ insertId: 55 }, undefined]); // user insert
       mockConnection.execute
-        .mockResolvedValueOnce([[], undefined]) // owner by label → none
-        .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1
-        .mockResolvedValue([{ affectedRows: 1 }, undefined]); // catalog insert + link
+        .mockResolvedValueOnce([[], undefined]) // owners lookup by label → none
+        .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1 from common_catalogs
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners
+        .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT user_owner_membership
 
       const response = await app.inject({
         method: 'POST',
@@ -268,18 +270,24 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(catalogInsert).toBeDefined();
       expect(catalogInsert?.[1]).toEqual([1051, 'OWN_U55', 'Juan Pérez']);
 
-      const linkInsert = calls.find((c) => (c[0] as string).includes('user_fleet_owners'));
-      expect(linkInsert?.[1]).toEqual([55, 1051]);
+      const ownersInsert = calls.find((c) => (c[0] as string).includes('INSERT INTO owners'));
+      expect(ownersInsert).toBeDefined();
+      expect(ownersInsert?.[1]).toEqual([1051, 'FLOTILLA', 'Juan Pérez']);
+
+      const membershipInsert = calls.find((c) =>
+        (c[0] as string).includes('user_owner_membership')
+      );
+      expect(membershipInsert?.[1]).toEqual([55, 1051]);
       expect(mockConnection.commit).toHaveBeenCalled();
     });
 
-    it('reuses the existing catalog row when the owner label already exists', async (): Promise<void> => {
+    it('reuses the existing owners row when the owner label already exists', async (): Promise<void> => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined]) // username unique check
         .mockResolvedValueOnce([{ insertId: 56 }, undefined]); // user insert
       mockConnection.execute
-        .mockResolvedValueOnce([[{ id: 880 }], undefined]) // owner by label → exists
-        .mockResolvedValue([{ affectedRows: 1 }, undefined]); // link insert
+        .mockResolvedValueOnce([[{ id: 880 }], undefined]) // owners lookup by label → exists
+        .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT user_owner_membership
 
       const response = await app.inject({
         method: 'POST',
@@ -290,11 +298,11 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(response.statusCode).toBe(201);
 
       const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
-      expect(sqls.some((s) => s.includes('INSERT INTO common_catalogs'))).toBe(false);
-      const linkInsert = mockConnection.execute.mock.calls.find((c) =>
-        (c[0] as string).includes('user_fleet_owners')
+      expect(sqls.some((s) => s.includes('INSERT INTO owners '))).toBe(false);
+      const membershipInsert = mockConnection.execute.mock.calls.find((c) =>
+        (c[0] as string).includes('user_owner_membership')
       );
-      expect(linkInsert?.[1]).toEqual([56, 880]);
+      expect(membershipInsert?.[1]).toEqual([56, 880]);
     });
 
     it('returns 400 for roleId outside [1,2] — schema rejects non-owner roles', async (): Promise<void> => {

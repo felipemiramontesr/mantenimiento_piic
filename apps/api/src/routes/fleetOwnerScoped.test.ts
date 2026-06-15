@@ -6,7 +6,7 @@ import db from '../services/db';
  * 🔱 Archon Integration Test: Owner-Scoped Fleet Access (F1-A)
  * Feature Contract: Owner_Scoped_Fleet_Access_External_Client
  * Carriers of fleet:scoped only see units whose ownerId belongs to the
- * owners linked to them in user_fleet_owners. Deny-by-default.
+ * owners linked to them in user_owner_membership. Deny-by-default.
  */
 
 const mockConnection = {
@@ -133,7 +133,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
 
       const { calls } = (db.execute as Mock).mock;
       // 1st query resolves the user's owners
-      expect(calls[0][0]).toContain('user_fleet_owners');
+      expect(calls[0][0]).toContain('user_owner_membership');
       expect(calls[0][1]).toEqual([CLIENT_USER_ID]);
       // 2nd query is the fleet list filtered by those owners
       expect(calls[1][0]).toContain('f.ownerId IN');
@@ -335,7 +335,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
 
       expect(response.statusCode).toBe(200);
       const { calls } = (db.execute as Mock).mock;
-      expect(calls[0][0]).not.toContain('user_fleet_owners');
+      expect(calls[0][0]).not.toContain('user_owner_membership');
       expect(calls[0][0]).not.toContain('f.ownerId IN');
     });
 
@@ -353,7 +353,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect((db.execute as Mock).mock.calls[0][0]).not.toContain('user_fleet_owners');
+      expect((db.execute as Mock).mock.calls[0][0]).not.toContain('user_owner_membership');
     });
   });
 });
