@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserIndustrial } from '../types/user';
 import api from '../api/client';
