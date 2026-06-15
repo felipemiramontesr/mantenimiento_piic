@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import '@fastify/cookie';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import argon2 from 'argon2';
+import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import { z } from 'zod';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
@@ -180,7 +180,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         if (!hash) {
           hash = user.passwordHash;
         }
-        if (!hash || !(await argon2.verify(hash, password))) {
+        if (!hash || !(await argon2Verify(hash, password))) {
           return reply.code(401).send({ error: 'L4' });
         }
         const mapped = mapUserResponse(user);
@@ -336,7 +336,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           return reply.code(409).send({ error: 'R2' });
         }
       }
-      const hash = await argon2.hash(password);
+      const hash = await argon2Hash(password);
       const enc = EncryptionService.encrypt(email);
       const [res] = await db.execute<ResultSetHeader>(
         'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -435,7 +435,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       if (updates.password) {
         fields.push('password_hash = ?');
-        values.push(await argon2.hash(updates.password));
+        values.push(await argon2Hash(updates.password));
       }
       if (updates.roleId !== undefined) {
         fields.push('role_id = ?');

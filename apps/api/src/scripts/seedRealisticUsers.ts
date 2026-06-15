@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-import argon2 from 'argon2';
+import { hash as argon2Hash } from '@node-rs/argon2';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import EncryptionService from '../services/encryption';
 
@@ -84,7 +84,7 @@ async function main() {
         continue;
       }
 
-      const passwordHash = await argon2.hash(u.password);
+      const passwordHash = await argon2Hash(u.password);
       const encryptedEmail = EncryptionService.encrypt(u.email);
 
       const [res] = await connection.execute<ResultSetHeader>(

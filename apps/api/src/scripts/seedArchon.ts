@@ -1,4 +1,4 @@
-import argon2 from 'argon2';
+import { hash as argon2Hash } from '@node-rs/argon2';
 import dotenv from 'dotenv';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
@@ -14,7 +14,7 @@ async function seed() {
 
   try {
     // 1. Hash Password
-    const passwordHash = await argon2.hash(password);
+    const passwordHash = await argon2Hash(password);
 
     // 2. Encrypt Email
     const encryptedEmail = EncryptionService.encrypt(email);

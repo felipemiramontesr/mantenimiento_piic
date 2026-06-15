@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
-import argon2 from 'argon2';
+import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import buildApp from '../index';
 import db from '../services/db';
 
@@ -22,7 +22,7 @@ vi.mock('../services/db', () => ({
     getConnection: vi.fn(() => Promise.resolve(mockConnection)),
   },
 }));
-vi.mock('argon2', () => ({ default: { verify: vi.fn(), hash: vi.fn() } }));
+vi.mock('@node-rs/argon2', () => ({ hash: vi.fn(), verify: vi.fn() }));
 vi.mock('../services/encryption', () => ({
   default: {
     encrypt: vi.fn((v) => `enc_${v}`),
@@ -46,8 +46,8 @@ describe('authIntegration.test', () => {
     vi.resetAllMocks();
     // Restore default after reset — login now makes 2 extra db.execute calls (user_roles + perms)
     (db.execute as Mock).mockResolvedValue([[], undefined]);
-    (argon2.verify as Mock).mockResolvedValue(true);
-    (argon2.hash as Mock).mockResolvedValue('hash_value');
+    (argon2Verify as Mock).mockResolvedValue(true);
+    (argon2Hash as Mock).mockResolvedValue('hash_value');
   });
 
   const authHeader = (): Record<string, string> => ({
@@ -303,7 +303,7 @@ describe('authIntegration.test', () => {
     });
 
     // Login fail password
-    (argon2.verify as Mock).mockResolvedValueOnce(false);
+    (argon2Verify as Mock).mockResolvedValueOnce(false);
     (db.execute as Mock).mockResolvedValueOnce([
       [{ id: 1, username: 'u', password_hash: 'h', role_id: 2 }],
     ]);

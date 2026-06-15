@@ -1,4 +1,4 @@
-import argon2 from 'argon2';
+import { hash as argon2Hash } from '@node-rs/argon2';
 import dotenv from 'dotenv';
 import EncryptionService from '../services/encryption';
 
@@ -10,7 +10,7 @@ async function generateSQL() {
   const email = 'admin@piic.com.mx';
 
   try {
-    const passwordHash = await argon2.hash(password);
+    const passwordHash = await argon2Hash(password);
     const encryptedEmail = EncryptionService.encrypt(email);
 
     console.log('\n🚀 COPIA Y PEGA ESTO EN PHPMYADMIN (Pestaña SQL):\n');
