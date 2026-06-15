@@ -32,11 +32,9 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Security Audit (informational)
+      - name: Security Audit (blocking — CRITICAL gate)
         if: matrix.shard == 1
-        # fast-jwt CRITICAL (GHSA-gm45/gmvf/mvf2/rp9m/3j8v/hm7r): non-exploitable with HS256 static secret.
-        # Full fix requires Fastify 5 upgrade (@fastify/jwt v10). Tracked as Fase 3 security hardening.
-        run: npm audit --omit=dev --audit-level=critical || true
+        run: npm audit --omit=dev --audit-level=critical
       - name: Lint
         if: matrix.shard == 1
         run: npm run lint --workspace=@mantenimiento/api
@@ -78,11 +76,9 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Security Audit (informational)
+      - name: Security Audit (blocking — CRITICAL gate)
         if: matrix.shard == 1
-        # fast-jwt CRITICAL (GHSA-gm45/gmvf/mvf2/rp9m/3j8v/hm7r): non-exploitable with HS256 static secret.
-        # Full fix requires Fastify 5 upgrade (@fastify/jwt v10). Tracked as Fase 3 security hardening.
-        run: npm audit --omit=dev --audit-level=critical || true
+        run: npm audit --omit=dev --audit-level=critical
       - name: Lint
         if: matrix.shard == 1
         run: npm run lint --workspace=@mantenimiento/web
