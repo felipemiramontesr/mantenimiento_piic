@@ -410,7 +410,11 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       'Password change reason'
     );
     // line 149 false: selectedFile=null → no upload-profile call
-    expect(api.post).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalledWith(
+      expect.stringContaining('/upload-profile'),
+      expect.any(FormData),
+      expect.any(Object)
+    );
     expect(await screen.findByText(/Actualización Exitosa/i)).toBeInTheDocument();
   });
 

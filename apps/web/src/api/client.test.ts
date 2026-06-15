@@ -3,32 +3,39 @@ import type { InternalAxiosRequestConfig } from 'axios';
 import api from './client';
 import { redirectUserToLogin } from './navigation';
 
+import { getToken, clearToken } from './tokenStore';
+
 // 🔱 Mock the Navigation Bridge to prevent JSDOM proxy context crashes
 vi.mock('./navigation', () => ({
   redirectUserToLogin: vi.fn(),
 }));
 
+// 🔱 Mock tokenStore — client now reads from in-memory store, not localStorage
+vi.mock('./tokenStore', () => ({
+  getToken: vi.fn(),
+  clearToken: vi.fn(),
+  setToken: vi.fn(),
+}));
+
 describe('Axios API Client (ARCHON CORE)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Storage.prototype.getItem = vi.fn();
-    Storage.prototype.removeItem = vi.fn();
   });
 
-  it('should add Authorization header if token exists in localStorage', async () => {
-    vi.mocked(localStorage.getItem).mockReturnValue('mocked-token');
+  it('should add Authorization header if token exists in memory store', async () => {
+    vi.mocked(getToken).mockReturnValue('mocked-token');
 
     const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestInterceptor = (api.interceptors.request as any).handlers[0].fulfilled;
     const result = await requestInterceptor(config);
 
-    expect(localStorage.getItem).toHaveBeenCalledWith('auth_token');
+    expect(getToken).toHaveBeenCalled();
     expect(result.headers.Authorization).toBe('Bearer mocked-token');
   });
 
   it('should not add Authorization header if no token', async () => {
-    vi.mocked(localStorage.getItem).mockReturnValue(null);
+    vi.mocked(getToken).mockReturnValue(null);
 
     const config = { headers: {} } as unknown as InternalAxiosRequestConfig;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +45,8 @@ describe('Axios API Client (ARCHON CORE)', () => {
     expect(result.headers.Authorization).toBeUndefined();
   });
 
-  it('should remove token and redirect to login on 401 response error', async () => {
+  it('should call clearToken and redirect to login on 401 response error', async () => {
+    vi.mocked(getToken).mockReturnValue('some-token');
     const errorWith401 = { response: { status: 401 } };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,7 +54,7 @@ describe('Axios API Client (ARCHON CORE)', () => {
 
     await expect(responseInterceptorError(errorWith401)).rejects.toEqual(errorWith401);
 
-    expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
+    expect(clearToken).toHaveBeenCalled();
     expect(redirectUserToLogin).toHaveBeenCalled();
   });
 
@@ -58,7 +66,7 @@ describe('Axios API Client (ARCHON CORE)', () => {
 
     await expect(responseInterceptorError(errorWith500)).rejects.toEqual(errorWith500);
 
-    expect(localStorage.removeItem).not.toHaveBeenCalled();
+    expect(clearToken).not.toHaveBeenCalled();
     expect(redirectUserToLogin).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 /* eslint-disable */
 import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { redirectUserToLogin } from './navigation';
+import { getToken, clearToken } from './tokenStore';
 
 const isProduction = import.meta.env.PROD;
 const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
@@ -19,9 +20,8 @@ export const currentTelemetry = {
 
 const api = axios.create({
   baseURL: currentTelemetry.baseUrl,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 // 🛡️ Zero-Noise Test Shield
@@ -32,7 +32,7 @@ if (typeof process === 'undefined' || (process.env.NODE_ENV !== 'test' && !proce
 
 // Request Interceptor for JWT & Telemetry
 api.interceptors.request.use((config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-  const token = localStorage.getItem('auth_token');
+  const token = getToken();
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -87,10 +87,10 @@ api.interceptors.response.use(
         console.error('🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.', {
           url: error.config?.url,
           method: error.config?.method,
-          token_present: !!localStorage.getItem('auth_token'),
+          token_present: !!getToken(),
         });
       }
-      localStorage.removeItem('auth_token');
+      clearToken();
       redirectUserToLogin();
     }
     return Promise.reject(error);

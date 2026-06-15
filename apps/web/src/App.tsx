@@ -19,19 +19,20 @@ import RouteNode from './pages/Dashboard/nodes/RouteNode';
 import IncidentNode from './pages/Dashboard/nodes/IncidentNode';
 import UserNode from './pages/Dashboard/nodes/UserNode';
 import { UserProvider } from './context/UserContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ClientScopeGate from './components/Common/ClientScopeGate';
 import './index.css';
 
 /**
  * 🔱 Archon Root: App
  * Implementation: Sovereign Identity Orchestration
- * v.28.26.0 - Forensic Independence for AuthDebug
+ * v.28.27.0 - In-Memory Auth Guard (httpOnly cookie flow)
  */
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const token = localStorage.getItem('auth_token');
-  if (!token) return <Navigate to="/login" replace />;
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 

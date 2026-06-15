@@ -1,5 +1,6 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
@@ -52,6 +53,9 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     ...opts,
   });
 
+  // Cookie plugin — must register before jwt for cookie-based token extraction
+  fastify.register(cookie);
+
   // Security headers — must register before cors
   fastify.register(helmet, {
     contentSecurityPolicy: {
@@ -80,6 +84,8 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
 
   fastify.register(jwt, {
     secret: process.env.JWT_SECRET ?? 'dev-secret-do-not-use-in-prod',
+    cookie: { cookieName: 'refresh_token', signed: false },
+    sign: { expiresIn: '15m' },
   });
 
   // 🔱 Rate Limiting: Environment-Aware Shield

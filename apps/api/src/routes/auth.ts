@@ -205,14 +205,90 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           roleId: mapped.roleId,
           roleName: mapped.roleName,
           permissions,
+          type: 'access',
         });
-        return reply.send({ success: true, token, user: { ...mapped, permissions } });
+        const refreshToken = fastify.jwt.sign(
+          { id: user.id, type: 'refresh' },
+          { expiresIn: '7d' }
+        );
+        const isProduction = process.env.NODE_ENV === 'production';
+        return reply
+          .setCookie('refresh_token', refreshToken, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'strict',
+            domain: isProduction ? '.piic.com.mx' : undefined,
+            path: '/v1/auth',
+            maxAge: 7 * 24 * 60 * 60,
+          })
+          .send({ success: true, token, user: { ...mapped, permissions } });
       } catch (e) {
         fastify.log.error(e);
         return reply.code(500).send({ error: 'LOGIN_FAIL' });
       }
     }
   );
+
+  fastify.post('/refresh', async (request, reply) => {
+    try {
+      const decoded = await request.jwtVerify<{ id: number; type: string }>();
+      if (!decoded || decoded.type !== 'refresh') {
+        return reply.code(401).send({ error: 'INVALID_TOKEN_TYPE' });
+      }
+      const [userRows] = await db.execute<RowDataPacket[]>(
+        `SELECT u.*, r.name as role_name, cat.label as department_name
+         FROM users u JOIN roles r ON u.role_id = r.id
+         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
+         WHERE u.id = ? AND u.is_active = 1`,
+        [decoded.id]
+      );
+      if (!userRows.length) return reply.code(401).send({ error: 'USER_NOT_FOUND' });
+      const user = userRows[0];
+      const mapped = mapUserResponse(user);
+      const [roleRows] = await db.execute<RowDataPacket[]>(
+        'SELECT role_id FROM user_roles WHERE user_id = ?',
+        [mapped.id]
+      );
+      const roleIds: number[] =
+        roleRows.length > 0 ? roleRows.map((r) => r.role_id as number) : [mapped.roleId];
+      let permissions: string[];
+      if (roleIds.includes(0)) {
+        permissions = ['*'];
+      } else {
+        const ph = roleIds.map(() => '?').join(',');
+        const [permRows] = await db.execute<RowDataPacket[]>(
+          `SELECT DISTINCT p.slug FROM role_permissions rp
+           JOIN permissions p ON p.id = rp.permission_id WHERE rp.role_id IN (${ph})`,
+          roleIds
+        );
+        permissions = permRows.map((r) => r.slug as string);
+      }
+      const accessToken = fastify.jwt.sign({
+        id: user.id,
+        username: user.username,
+        roleId: mapped.roleId,
+        roleName: mapped.roleName,
+        permissions,
+        type: 'access',
+      });
+      return reply.send({ success: true, token: accessToken, user: { ...mapped, permissions } });
+    } catch {
+      return reply.code(401).send({ error: 'REFRESH_FAIL' });
+    }
+  });
+
+  fastify.post('/logout', async (_request, reply) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return reply
+      .clearCookie('refresh_token', {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'strict',
+        domain: isProduction ? '.piic.com.mx' : undefined,
+        path: '/v1/auth',
+      })
+      .send({ success: true });
+  });
 
   fastify.post('/register', async (request, reply) => {
     const schema = z.object({

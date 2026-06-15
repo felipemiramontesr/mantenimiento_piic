@@ -624,4 +624,163 @@ describe('authIntegration.test', () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.payload).data.user.email).toBe('corrupted');
   });
+
+  // ─── POST /login — access token claims ───────────────────────────────────────
+
+  it('POST /login — access token has exp claim and type=access', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 5,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 1,
+          role_name: 'Admin',
+          profile_picture_url: null,
+        },
+      ],
+      undefined,
+    ]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: validCreds,
+    });
+    expect(res.statusCode).toBe(200);
+    const { token } = JSON.parse(res.body);
+    const decoded = app.jwt.decode<{ exp: number; type: string }>(token);
+    expect(decoded).not.toBeNull();
+    expect(decoded!.type).toBe('access');
+    expect(typeof decoded!.exp).toBe('number');
+  });
+
+  // ─── POST /refresh ────────────────────────────────────────────────────────────
+
+  it('POST /refresh — 401 REFRESH_FAIL when no cookie', async () => {
+    const res = await app.inject({ method: 'POST', url: '/v1/auth/refresh' });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('REFRESH_FAIL');
+  });
+
+  it('POST /refresh — 401 INVALID_TOKEN_TYPE when cookie has access token', async () => {
+    // Sign a token with type='access' (not 'refresh')
+    const wrongToken = app.jwt.sign({ id: 1, type: 'access' });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: wrongToken },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('INVALID_TOKEN_TYPE');
+  });
+
+  it('POST /refresh — 401 USER_NOT_FOUND when user is inactive/missing', async () => {
+    const refreshToken = app.jwt.sign({ id: 99, type: 'refresh' }, { expiresIn: '7d' });
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // user not found
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('USER_NOT_FOUND');
+  });
+
+  it('POST /refresh — 200 with new access token (Archon role, permissions=[*])', async () => {
+    const refreshToken = app.jwt.sign({ id: 1, type: 'refresh' }, { expiresIn: '7d' });
+    const userRow = {
+      id: 1,
+      uuid: 'uuid-1',
+      username: 'grayman',
+      full_name: 'GrayMan',
+      email: 'enc_gm@piic.mx',
+      role_id: 0,
+      employee_number: 'E000',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      role_name: 'ARCHON',
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow], undefined]) // user query
+      .mockResolvedValueOnce([[{ role_id: 0 }], undefined]); // user_roles
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(typeof body.token).toBe('string');
+    const decoded = app.jwt.decode<{ type: string; permissions: string[] }>(body.token);
+    expect(decoded!.type).toBe('access');
+    expect(decoded!.permissions).toEqual(['*']);
+  });
+
+  it('POST /refresh — 200 with new access token (non-zero role, fetches permissions)', async () => {
+    const refreshToken = app.jwt.sign({ id: 2, type: 'refresh' }, { expiresIn: '7d' });
+    const userRow = {
+      id: 2,
+      uuid: 'uuid-2',
+      username: 'operador',
+      full_name: 'Operador',
+      email: 'enc_op@piic.mx',
+      role_id: 3,
+      employee_number: 'E003',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      role_name: 'Tecnico',
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow], undefined]) // user query
+      .mockResolvedValueOnce([[{ role_id: 3 }], undefined]) // user_roles
+      .mockResolvedValueOnce([[{ slug: 'maint:view' }], undefined]); // permissions
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    const decoded = app.jwt.decode<{ type: string; permissions: string[] }>(body.token);
+    expect(decoded!.type).toBe('access');
+    expect(decoded!.permissions).toContain('maint:view');
+  });
+
+  it('POST /refresh — 401 REFRESH_FAIL on DB error', async () => {
+    const refreshToken = app.jwt.sign({ id: 1, type: 'refresh' }, { expiresIn: '7d' });
+    (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('REFRESH_FAIL');
+  });
+
+  // ─── POST /logout ─────────────────────────────────────────────────────────────
+
+  it('POST /logout — 200 clears refresh_token cookie', async () => {
+    const res = await app.inject({ method: 'POST', url: '/v1/auth/logout' });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).success).toBe(true);
+    // Cookie should be cleared (empty value or Set-Cookie with expired date)
+    const setCookieHeader = res.headers['set-cookie'];
+    expect(setCookieHeader).toBeDefined();
+    const cookieStr = Array.isArray(setCookieHeader)
+      ? setCookieHeader.join('; ')
+      : String(setCookieHeader);
+    expect(cookieStr).toContain('refresh_token');
+  });
 });

@@ -27,6 +27,8 @@ describe('LoginPage Component (ARCHON CORE)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // AuthProvider calls /auth/refresh on mount — always reject (no active session)
+    (api.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('no session'));
   });
 
   const renderComponent = (): ReturnType<typeof render> =>

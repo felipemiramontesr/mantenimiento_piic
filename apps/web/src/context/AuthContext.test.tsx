@@ -1,100 +1,130 @@
 import React from 'react';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthProvider, useAuth } from './AuthContext';
+import api from '../api/client';
+import { setToken, clearToken } from '../api/tokenStore';
+
+// Mock api client
+vi.mock('../api/client', () => ({
+  default: {
+    post: vi.fn(),
+  },
+}));
+
+// Mock tokenStore
+vi.mock('../api/tokenStore', () => ({
+  setToken: vi.fn(),
+  clearToken: vi.fn(),
+  getToken: vi.fn(() => null),
+}));
+
+const mockedApi = api as { post: ReturnType<typeof vi.fn> };
+const mockedSetToken = setToken as ReturnType<typeof vi.fn>;
+const mockedClearToken = clearToken as ReturnType<typeof vi.fn>;
 
 const wrapper = ({ children }: { children: React.ReactNode }): React.JSX.Element => (
   <AuthProvider>{children}</AuthProvider>
 );
 
-const flushEffects = (): Promise<void> => act(() => Promise.resolve());
+const stubUser = { id: 1, username: 'grayman', roleId: 1, roleName: 'Admin' } as never;
 
 describe('AuthContext', () => {
   beforeEach(() => {
-    localStorage.clear();
+    vi.clearAllMocks();
+    // Default: refresh fails (no active session)
+    mockedApi.post.mockImplementation((url: string) => {
+      if (url === '/auth/refresh') return Promise.reject(new Error('No session'));
+      return Promise.resolve({ data: { success: true } });
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('initializes as unauthenticated when localStorage is empty', () => {
+  it('initializes with isLoading=true and isAuthenticated=false before refresh resolves', () => {
+    // Never resolves during this synchronous check
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    mockedApi.post.mockReturnValue(new Promise(() => {}));
     const { result } = renderHook(() => useAuth(), { wrapper });
+    expect(result.current.isLoading).toBe(true);
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.currentUser).toBeNull();
   });
 
-  it('initializes as authenticated when auth_token is in localStorage', () => {
-    localStorage.setItem('auth_token', 'tok-abc');
+  it('after failed /auth/refresh, isLoading=false and isAuthenticated=false', async () => {
+    mockedApi.post.mockRejectedValueOnce(new Error('No session'));
     const { result } = renderHook(() => useAuth(), { wrapper });
-    expect(result.current.isAuthenticated).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(mockedClearToken).toHaveBeenCalled();
   });
 
-  it('login stores token, sets user, and marks authenticated', async () => {
-    const { result } = renderHook(() => useAuth(), { wrapper });
-    const user = { id: '1', username: 'grayman' } as never;
-    await act(async () => {
-      result.current.login('tok-xyz', user);
+  it('after successful /auth/refresh, isLoading=false and isAuthenticated=true', async () => {
+    mockedApi.post.mockResolvedValueOnce({
+      data: { success: true, token: 'tok-refreshed', user: stubUser },
     });
-    expect(localStorage.getItem('auth_token')).toBe('tok-xyz');
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
+    expect(mockedSetToken).toHaveBeenCalledWith('tok-refreshed');
+  });
+
+  it('login calls setToken, sets user, and marks authenticated', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => {
+      result.current.login('tok-xyz', stubUser);
+    });
+    expect(mockedSetToken).toHaveBeenCalledWith('tok-xyz');
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
   });
 
-  it('logout clears storage and marks unauthenticated', async () => {
-    localStorage.setItem('auth_token', 'tok-abc');
-    localStorage.setItem('user_data', JSON.stringify({ username: 'grayman' }));
+  it('logout calls /auth/logout, calls clearToken, marks unauthenticated', async () => {
+    mockedApi.post
+      .mockResolvedValueOnce({ data: { success: true, token: 'tok-r', user: stubUser } }) // refresh
+      .mockResolvedValueOnce({ data: { success: true } }); // logout
     const { result } = renderHook(() => useAuth(), { wrapper });
-    await flushEffects();
-    const errSpy = vi.spyOn(console, 'error').mockImplementation((): void => undefined);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async () => {
-      result.current.logout();
+      await result.current.logout();
     });
-    errSpy.mockRestore();
-    expect(localStorage.getItem('auth_token')).toBeNull();
+    expect(mockedApi.post).toHaveBeenCalledWith('/auth/logout');
+    expect(mockedClearToken).toHaveBeenCalled();
     expect(result.current.isAuthenticated).toBe(false);
   });
 
-  it('restores currentUser from valid user_data in localStorage', async () => {
-    const stored = { username: 'grayman', id: '1' };
-    localStorage.setItem('user_data', JSON.stringify(stored));
+  it('logout marks unauthenticated even if API call fails', async () => {
+    mockedApi.post
+      .mockResolvedValueOnce({ data: { success: true, token: 'tok-r', user: stubUser } })
+      .mockRejectedValueOnce(new Error('Network error'));
     const { result } = renderHook(() => useAuth(), { wrapper });
-    await flushEffects();
-    expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => {
+      await result.current.logout();
+    });
+    expect(mockedClearToken).toHaveBeenCalled();
+    expect(result.current.isAuthenticated).toBe(false);
   });
 
-  it('calls logout (clears storage) when user_data is missing username', async () => {
-    localStorage.setItem('user_data', JSON.stringify({ id: '99' }));
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation((): void => undefined);
-    renderHook(() => useAuth(), { wrapper });
-    await flushEffects();
-    expect(warnSpy).toHaveBeenCalled();
-    expect(localStorage.getItem('user_data')).toBeNull();
-    warnSpy.mockRestore();
-  });
-
-  it('calls logout when user_data is corrupt JSON', async () => {
-    localStorage.setItem('user_data', '{ NOT VALID JSON !!!');
-    localStorage.setItem('auth_token', 'tok-abc');
-    renderHook(() => useAuth(), { wrapper });
-    await flushEffects();
-    expect(localStorage.getItem('auth_token')).toBeNull();
-  });
-
-  it('updateCurrentUser merges data and persists to localStorage', async () => {
-    const stored = { username: 'grayman', id: '1', email: 'old@piic.com' };
-    localStorage.setItem('user_data', JSON.stringify(stored));
+  it('updateCurrentUser merges data into currentUser', async () => {
+    const userWithEmail = { ...stubUser, email: 'old@piic.com' } as never;
+    mockedApi.post.mockResolvedValueOnce({
+      data: { success: true, token: 'tok-r', user: userWithEmail },
+    });
     const { result } = renderHook(() => useAuth(), { wrapper });
-    await flushEffects();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async () => {
       result.current.updateCurrentUser({ email: 'new@piic.com' });
     });
-    const saved = JSON.parse(localStorage.getItem('user_data') ?? '{}');
-    expect(saved.email).toBe('new@piic.com');
+    expect(result.current.currentUser).toMatchObject({ email: 'new@piic.com' });
   });
 
   it('updateCurrentUser is a no-op when currentUser is null', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async () => {
       result.current.updateCurrentUser({ email: 'any@piic.com' });
     });
@@ -102,7 +132,7 @@ describe('AuthContext', () => {
   });
 
   it('useAuth throws when used outside AuthProvider', () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation((): void => undefined);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(vi.fn());
     expect(() => renderHook(() => useAuth())).toThrow(
       'useAuth must be used within an AuthProvider'
     );
@@ -110,39 +140,38 @@ describe('AuthContext', () => {
   });
 
   // Impersonation
-  it('startImpersonation sets effectiveUser and isImpersonating without touching localStorage', async () => {
-    const admin = { id: '1', username: 'grayman' } as never;
+  it('startImpersonation sets effectiveUser and isImpersonating', async () => {
+    mockedApi.post.mockResolvedValueOnce({
+      data: { success: true, token: 'tok-r', user: stubUser },
+    });
     const target = {
-      id: 'impersonated-3',
+      id: 3,
       username: '[Operador]',
       roleId: 3,
       roleName: 'Operador',
     } as never;
     const { result } = renderHook(() => useAuth(), { wrapper });
-    await act(async () => {
-      result.current.login('tok-admin', admin);
-    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async () => {
       result.current.startImpersonation(target);
     });
     expect(result.current.isImpersonating).toBe(true);
     expect(result.current.effectiveUser).toMatchObject({ username: '[Operador]' });
     expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
-    expect(localStorage.getItem('user_data')).toContain('grayman');
   });
 
-  it('stopImpersonation restores effectiveUser to currentUser without touching localStorage', async () => {
-    const admin = { id: '1', username: 'grayman' } as never;
+  it('stopImpersonation restores effectiveUser to currentUser', async () => {
+    mockedApi.post.mockResolvedValueOnce({
+      data: { success: true, token: 'tok-r', user: stubUser },
+    });
     const target = {
-      id: 'impersonated-3',
+      id: 3,
       username: '[Operador]',
       roleId: 3,
       roleName: 'Operador',
     } as never;
     const { result } = renderHook(() => useAuth(), { wrapper });
-    await act(async () => {
-      result.current.login('tok-admin', admin);
-    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     await act(async () => {
       result.current.startImpersonation(target);
     });
@@ -154,11 +183,11 @@ describe('AuthContext', () => {
   });
 
   it('effectiveUser equals currentUser when not impersonating', async () => {
-    const user = { id: '1', username: 'grayman' } as never;
-    const { result } = renderHook(() => useAuth(), { wrapper });
-    await act(async () => {
-      result.current.login('tok', user);
+    mockedApi.post.mockResolvedValueOnce({
+      data: { success: true, token: 'tok-r', user: stubUser },
     });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.effectiveUser).toMatchObject({ username: 'grayman' });
     expect(result.current.isImpersonating).toBe(false);
   });
