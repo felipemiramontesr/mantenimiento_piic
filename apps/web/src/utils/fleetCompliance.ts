@@ -75,6 +75,36 @@ export const checkHoyNoCircula = (
   return { isRestricted: false, reason: 'Circula sin restricciones', color: 'emerald' };
 };
 
+/**
+ * Calcula la fecha de vencimiento de la verificación ambiental (SEDEMA).
+ * Devuelve 'YYYY-MM-DD' o undefined si el holograma es exento/foráneo.
+ *
+ * Frecuencias oficiales:
+ *   Holograma 00 / Exento / Foráneo → sin vencimiento
+ *   Holograma 0  → anual   (+12 meses)
+ *   Holograma 1  → semestral (+6 meses)
+ *   Holograma 2  → semestral (+6 meses)
+ */
+export const calcularVencimientoVerificacion = (
+  lastVerification: string | null | undefined,
+  hologram: string | null | undefined
+): string | undefined => {
+  if (!lastVerification || !hologram) return undefined;
+
+  const exemptHolograms = ['00', 'Exento', 'Foráneo'];
+  if (exemptHolograms.includes(hologram)) return undefined;
+
+  const monthsToAdd = hologram === '0' ? 12 : 6;
+  const parts = lastVerification.slice(0, 10).split('-');
+  if (parts.length !== 3) return undefined;
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  const d = parseInt(parts[2], 10);
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return undefined;
+
+  return new Date(Date.UTC(y, m + monthsToAdd, d)).toISOString().slice(0, 10);
+};
+
 export const predecirHologramaYEngomado = (
   placas: string | null,
   year: number | null,

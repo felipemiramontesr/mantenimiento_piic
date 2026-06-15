@@ -86,9 +86,8 @@ export interface FleetUnit {
   status: FleetStatus;
   assignedOperatorId: number | null;
   updatedAt: string;
-  // 🔱 Dispatch & Routes (v.28.1.0)
-  routeDescription?: string;
-  routeDestination?: string;
+  // 🔱 Factory specs / notes
+  description?: string | null;
   // 🔱 Relational ID Fields (v.21.0.0)
   assetTypeId: number;
   fuelTypeId: number;

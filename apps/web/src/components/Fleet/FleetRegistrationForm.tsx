@@ -26,7 +26,10 @@ import ArchonFeedbackBanner from '../ArchonFeedbackBanner';
 import AuditJustificationModal from '../Common/AuditJustificationModal';
 import api from '../../api/client';
 import { calculateMaintForecast } from '../../utils/fleetPredictiveEngine';
-import { predecirHologramaYEngomado } from '../../utils/fleetCompliance';
+import {
+  predecirHologramaYEngomado,
+  calcularVencimientoVerificacion,
+} from '../../utils/fleetCompliance';
 import { UseFleetFormReturn, CatalogOption, CreateFleetUnit } from '../../types/fleet';
 
 /**
@@ -184,6 +187,11 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       setPrediction(null);
     }
   }, [formData.placas, formData.year, formData.assetTypeId, assetTypes]);
+
+  const vencimientoVerif = calcularVencimientoVerificacion(
+    formData.lastEnvironmentalVerification,
+    formData.environmentalHologram
+  );
 
   const handleConfirmDelete = async (reason: string): Promise<void> => {
     setIsProcessing(true);
@@ -484,9 +492,23 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 <ArchonDatePicker
                   value={formData.lastEnvironmentalVerification || ''}
                   onChange={(val: string): void =>
-                    setFormData({ ...formData, lastEnvironmentalVerification: val })
+                    setFormData({
+                      ...formData,
+                      lastEnvironmentalVerification: val,
+                      vencimientoVerificacion:
+                        calcularVencimientoVerificacion(val, formData.environmentalHologram) ||
+                        undefined,
+                    })
                   }
                 />
+                {vencimientoVerif && (
+                  <div className="mt-2 p-2.5 rounded bg-amber-50 border border-amber-200/60 flex items-center gap-2 transition-all duration-300">
+                    <Calendar size={11} className="text-amber-600 shrink-0" />
+                    <p className="text-archon-sm font-black uppercase text-amber-700 tracking-wider">
+                      Vence: {formatDate(`${vencimientoVerif}T12:00:00`)}
+                    </p>
+                  </div>
+                )}
               </ArchonField>
               <ArchonField label="Inspección Físico-Mecánica" icon={Settings}>
                 <ArchonDatePicker
@@ -506,7 +528,15 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 }))}
                 value={formData.environmentalHologram || ''}
                 onChange={(val: string): void =>
-                  setFormData({ ...formData, environmentalHologram: val })
+                  setFormData({
+                    ...formData,
+                    environmentalHologram: val,
+                    vencimientoVerificacion:
+                      calcularVencimientoVerificacion(
+                        formData.lastEnvironmentalVerification,
+                        val
+                      ) || undefined,
+                  })
                 }
               />
               {prediction && (
@@ -926,6 +956,17 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                 </div>
               </ArchonField>
             </div>
+
+            {!isEdit && (
+              <ArchonField label="Inicio de Protocolo Archon" icon={Calendar}>
+                <ArchonDatePicker
+                  value={formData.protocolStartDate || new Date().toISOString().slice(0, 10)}
+                  onChange={(val: string): void =>
+                    setFormData({ ...formData, protocolStartDate: val })
+                  }
+                />
+              </ArchonField>
+            )}
 
             <div className="grid grid-cols-2 gap-6">
               <ArchonField label="Última Fecha de Servicio" icon={Calendar}>

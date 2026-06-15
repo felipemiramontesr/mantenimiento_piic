@@ -62,20 +62,23 @@ const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
   accountingAccount: unit.accountingAccount || undefined,
   legalComplianceDate: toDateOnly(unit.legalComplianceDate) || undefined,
   insuranceExpiryDate: toDateOnly(unit.insuranceExpiryDate) || undefined,
+  insurancePolicyNumber: unit.insurancePolicyNumber || undefined,
   insuranceCompanyId: unit.insuranceCompanyId || undefined,
+  insuranceCost: unit.insuranceCost || 0,
+  lastEnvironmentalVerification: toDateOnly(unit.lastEnvironmentalVerification) || undefined,
+  lastMechanicalVerification: toDateOnly(unit.lastMechanicalVerification) || undefined,
   environmentalHologram: unit.environmentalHologram || undefined,
   monthlyLeasePayment: unit.monthlyLeasePayment || 0,
-  insuranceCost: unit.insuranceCost || 0,
   ownerId: unit.ownerId || undefined,
   complianceStatusId: unit.complianceStatusId || undefined,
 });
 
-const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
+export const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
   ({
     id: unit.id,
     images: unit.images || [],
     status: unit.status,
-    description: unit.routeDescription || undefined,
+    description: unit.description || undefined,
     ...mapBaseIds(unit),
     ...mapOperationalData(unit),
     ...mapLegalData(unit),

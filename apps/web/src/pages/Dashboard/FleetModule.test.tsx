@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, RenderResult } from '../../test/testUtils';
-import FleetModule from './FleetModule';
-import { UseFleetFormReturn, CatalogOption } from '../../types/fleet';
+import FleetModule, { mapUnitToFormData } from './FleetModule';
+import { UseFleetFormReturn, CatalogOption, FleetUnit } from '../../types/fleet';
 import useFleetForm from '../../hooks/useFleetForm';
 
 /**
@@ -180,5 +180,90 @@ describe('FleetModule Orchestrator', () => {
     rerender(<FleetModule />);
 
     expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();
+  });
+});
+
+describe('mapUnitToFormData — legal data parity (Fase 1 fix)', () => {
+  const baseUnit: FleetUnit = {
+    id: 'VEH-001',
+    uuid: 'test-uuid',
+    placas: null,
+    numeroSerie: null,
+    marca: null,
+    brandId: 1,
+    modelo: null,
+    modelId: 1,
+    images: null,
+    year: 2024,
+    departamento: null,
+    departmentId: null,
+    uso: null,
+    operationalUseId: null,
+    locationId: null,
+    engineTypeId: null,
+    colorId: null,
+    motor: null,
+    tireSpec: null,
+    tireBrand: null,
+    tireBrandId: null,
+    tipoTerreno: null,
+    terrainTypeId: null,
+    capacidadCarga: null,
+    fuelTankCapacity: null,
+    odometer: 0,
+    sede: null,
+    centroMantenimiento: null,
+    maintenanceCenterId: null,
+    protocolStartDate: null,
+    vigenciaSeguro: null,
+    vencimientoVerificacion: null,
+    lubeType: null,
+    filterBrand: null,
+    ownerId: null,
+    complianceStatusId: null,
+    accountingAccount: null,
+    legalComplianceDate: null,
+    insuranceExpiryDate: null,
+    insurancePolicyNumber: null,
+    insuranceCompanyId: null,
+    insuranceCost: null,
+    lastEnvironmentalVerification: null,
+    lastMechanicalVerification: null,
+    environmentalHologram: null,
+    circulationCardNumber: null,
+    monthlyLeasePayment: 0,
+    status: 'ACTIVE',
+    assignedOperatorId: null,
+    updatedAt: '2026-01-01',
+    assetTypeId: 1,
+    fuelTypeId: 1,
+    traccionId: 1,
+    transmisionId: 1,
+    lastFuelLevel: 100,
+    initialFuelLevel: 100,
+  };
+
+  it('should map insurancePolicyNumber to form data', (): void => {
+    const unit = { ...baseUnit, insurancePolicyNumber: 'POL-2026-001' };
+    const result = mapUnitToFormData(unit);
+    expect(result.insurancePolicyNumber).toBe('POL-2026-001');
+  });
+
+  it('should map lastEnvironmentalVerification normalizing ISO date', (): void => {
+    const unit = { ...baseUnit, lastEnvironmentalVerification: '2026-03-15T06:00:00.000Z' };
+    const result = mapUnitToFormData(unit);
+    expect(result.lastEnvironmentalVerification).toBe('2026-03-15');
+  });
+
+  it('should map lastMechanicalVerification normalizing ISO date', (): void => {
+    const unit = { ...baseUnit, lastMechanicalVerification: '2026-06-01T00:00:00.000Z' };
+    const result = mapUnitToFormData(unit);
+    expect(result.lastMechanicalVerification).toBe('2026-06-01');
+  });
+
+  it('should map description (factory specs) from unit.description — not routeDescription', (): void => {
+    const unit = { ...baseUnit, description: 'Hilux Medio Ambiente' };
+    const result = mapUnitToFormData(unit);
+    expect(result.description).toBe('Hilux Medio Ambiente');
   });
 });

@@ -2,7 +2,11 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkHoyNoCircula, predecirHologramaYEngomado } from './fleetCompliance';
+import {
+  checkHoyNoCircula,
+  predecirHologramaYEngomado,
+  calcularVencimientoVerificacion,
+} from './fleetCompliance';
 
 /**
  * 🔱 Archon Compliance Engine: Hoy No Circula Logic Tests
@@ -183,5 +187,45 @@ describe('predecirHologramaYEngomado', () => {
     const result = predecirHologramaYEngomado('ABC-5', null, null);
     expect(result.hologramaSugerido).toBe('0');
     expect(result.engomadoColor).toBe('Amarillo');
+  });
+});
+
+// ─── calcularVencimientoVerificacion ─────────────────────────────────────────
+
+describe('calcularVencimientoVerificacion', () => {
+  it('returns undefined when lastVerification is null', () => {
+    expect(calcularVencimientoVerificacion(null, '1')).toBeUndefined();
+  });
+
+  it('returns undefined when hologram is null', () => {
+    expect(calcularVencimientoVerificacion('2026-03-15', null)).toBeUndefined();
+  });
+
+  it('returns undefined for holograma 00 (exento)', () => {
+    expect(calcularVencimientoVerificacion('2026-03-15', '00')).toBeUndefined();
+  });
+
+  it('returns undefined for holograma Exento', () => {
+    expect(calcularVencimientoVerificacion('2026-03-15', 'Exento')).toBeUndefined();
+  });
+
+  it('returns undefined for holograma Foráneo', () => {
+    expect(calcularVencimientoVerificacion('2026-03-15', 'Foráneo')).toBeUndefined();
+  });
+
+  it('adds 12 months for holograma 0 (anual)', () => {
+    expect(calcularVencimientoVerificacion('2026-03-15', '0')).toBe('2027-03-15');
+  });
+
+  it('adds 6 months for holograma 1 (semestral)', () => {
+    expect(calcularVencimientoVerificacion('2026-03-15', '1')).toBe('2026-09-15');
+  });
+
+  it('adds 6 months for holograma 2 (semestral)', () => {
+    expect(calcularVencimientoVerificacion('2026-06-01', '2')).toBe('2026-12-01');
+  });
+
+  it('handles full ISO string input (normalizes to date-only first)', () => {
+    expect(calcularVencimientoVerificacion('2026-03-15T06:00:00.000Z', '1')).toBe('2026-09-15');
   });
 });
