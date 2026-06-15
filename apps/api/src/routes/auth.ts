@@ -10,10 +10,10 @@ import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 
 /** Owner-scoped roles that receive an owners row link on registration. */
-const OWNER_SCOPED_ROLE_IDS = [1, 2]; // 1=Propietario de Flotilla, 2=Propietario Privado
+const OWNER_SCOPED_ROLE_IDS = [1, 3, 4]; // 1=Flotilla, 3=Centro Especializado, 4=Propietario Privado
 
 /**
- * Links a freshly registered owner-scoped user (roles 1 or 2) to its owners row,
+ * Links a freshly registered owner-scoped user (roles 1, 3, or 4) to its owners row,
  * creating the row when the owner label does not exist yet.
  * common_catalogs.id has no AUTO_INCREMENT — next id is resolved with
  * MAX(id)+1 inside the same transaction (FOR UPDATE serializes concurrents).
@@ -22,7 +22,7 @@ const OWNER_SCOPED_ROLE_IDS = [1, 2]; // 1=Propietario de Flotilla, 2=Propietari
 async function linkExternalClientOwner(
   userId: number,
   ownerLabel: string,
-  ownerType: 'FLOTILLA' | 'PRIVATE'
+  ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER'
 ): Promise<void> {
   return withConnection(async (connection) => {
     await connection.beginTransaction();
@@ -217,9 +217,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           permissions = permRows.map((r) => r.slug as string);
         }
 
-        let ownerType: 'FLOTILLA' | 'PRIVATE' | null = null;
+        let ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
         if (mapped.roleId === 1) ownerType = 'FLOTILLA';
-        else if (mapped.roleId === 2) ownerType = 'PRIVATE';
+        else if (mapped.roleId === 3) ownerType = 'CENTER';
+        else if (mapped.roleId === 4) ownerType = 'PRIVATE';
         const token = fastify.jwt.sign({
           id: user.id,
           username: user.username,
@@ -286,9 +287,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         );
         permissions = permRows.map((r) => r.slug as string);
       }
-      let ownerType: 'FLOTILLA' | 'PRIVATE' | null = null;
+      let ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
       if (mapped.roleId === 1) ownerType = 'FLOTILLA';
-      else if (mapped.roleId === 2) ownerType = 'PRIVATE';
+      else if (mapped.roleId === 3) ownerType = 'CENTER';
+      else if (mapped.roleId === 4) ownerType = 'PRIVATE';
       const accessToken = fastify.jwt.sign({
         id: user.id,
         username: user.username,
@@ -334,8 +336,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       roleId: z
         .number()
         .int()
-        .refine((id) => [1, 2].includes(id), {
-          message: 'roleId must be 1 (Flotilla) or 2 (Privado)',
+        .refine((id) => [1, 3, 4].includes(id), {
+          message: 'roleId must be 1 (Flotilla), 3 (Centro) or 4 (Privado)',
         }),
       fullName: z.string().optional(),
       departmentId: z.number().int().optional(),
@@ -364,7 +366,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         [username, enc, hash, roleId, fullName || '', departmentId || null, employeeNumber || null]
       );
       if (OWNER_SCOPED_ROLE_IDS.includes(roleId)) {
-        const ownerType = roleId === 2 ? 'PRIVATE' : 'FLOTILLA';
+        let ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' = 'FLOTILLA';
+        if (roleId === 4) ownerType = 'PRIVATE';
+        else if (roleId === 3) ownerType = 'CENTER';
         await linkExternalClientOwner(res.insertId, fullName || username, ownerType);
       }
       return reply.code(201).send({ success: true, userId: res.insertId });

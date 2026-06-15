@@ -235,7 +235,7 @@ describe('User Fleet-Owner Links (A3)', () => {
     });
   });
 
-  describe('POST /v1/auth/register — roles 1 and 2 auto-link an owners row', () => {
+  describe('POST /v1/auth/register — roles 1, 3 and 4 auto-link an owners row', () => {
     const clientPayload = {
       username: 'juan.perez',
       email: 'juan@cliente.mx',
@@ -305,7 +305,7 @@ describe('User Fleet-Owner Links (A3)', () => {
       expect(membershipInsert?.[1]).toEqual([56, 880]);
     });
 
-    it('returns 400 for roleId outside [1,2] — schema rejects non-owner roles', async (): Promise<void> => {
+    it('returns 400 for roleId outside [1,3,4] — schema rejects non-owner roles', async (): Promise<void> => {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/auth/register',
