@@ -239,7 +239,7 @@ describe('User Fleet-Owner Links (A3)', () => {
     const clientPayload = {
       username: 'juan.perez',
       email: 'juan@cliente.mx',
-      password: 'super-secret-1',
+      password: 'Archon@1234!',
       roleId: 1,
       fullName: 'Juan Pérez',
     };

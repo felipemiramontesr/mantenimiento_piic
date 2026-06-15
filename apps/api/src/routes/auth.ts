@@ -142,6 +142,14 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Body: { username?: string; password?: string } }>(
     '/login',
+    {
+      config: {
+        rateLimit: {
+          max: process.env.NODE_ENV === 'production' ? 10 : 1000,
+          timeWindow: '1 minute',
+        },
+      },
+    },
     async (request, reply) => {
       const { username, password } = request.body;
       if (!username) {
@@ -295,7 +303,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     const schema = z.object({
       username: z.string().min(3),
       email: z.string().email(),
-      password: z.string().min(8),
+      password: z
+        .string()
+        .min(10)
+        .regex(/[A-Z]/, 'R3_UPPER')
+        .regex(/[a-z]/, 'R3_LOWER')
+        .regex(/\d/, 'R3_DIGIT')
+        .regex(/[^A-Za-z0-9]/, 'R3_SPECIAL'),
       roleId: z
         .number()
         .int()

@@ -137,7 +137,7 @@ describe('authIntegration.test', () => {
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 1 },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'Archon@1234!', roleId: 1 },
     });
     expect(r1.statusCode).toBe(201);
 
@@ -145,7 +145,7 @@ describe('authIntegration.test', () => {
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'password123', roleId: 1 },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'Archon@1234!', roleId: 1 },
     });
     expect(r2.statusCode).toBe(409);
   });
@@ -240,7 +240,7 @@ describe('authIntegration.test', () => {
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user80', email: 'e@e.com', password: 'password123', roleId: 1 },
+      payload: { username: 'user80', email: 'e@e.com', password: 'Archon@1234!', roleId: 1 },
     });
     const r3 = await app.inject({
       method: 'GET',

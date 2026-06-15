@@ -8,6 +8,61 @@ import EncryptionService from './encryption';
 import { FleetIntelligenceEngine, FleetUnit } from './fleetIntelligence';
 import { recordAuditLog } from './auditService';
 
+// SQL injection guard: only these column names are allowed in dynamic SET/INSERT clauses.
+const FLEET_UNIT_ALLOWED_COLUMNS = new Set<string>([
+  'assetTypeId',
+  'id',
+  'uuid',
+  'placas',
+  'placasHash',
+  'numeroSerie',
+  'numeroSerieHash',
+  'images',
+  'brandId',
+  'modelId',
+  'year',
+  'departmentId',
+  'operationalUseId',
+  'locationId',
+  'engineTypeId',
+  'traccionId',
+  'transmisionId',
+  'fuelTypeId',
+  'tireSpec',
+  'tireBrandId',
+  'terrainTypeId',
+  'capacidadCarga',
+  'fuelTankCapacity',
+  'odometer',
+  'initialFuelLevel',
+  'lastFuelLevel',
+  'maintenanceCenterId',
+  'protocolStartDate',
+  'vencimientoVerificacion',
+  'circulationCardNumber',
+  'lastEnvironmentalVerification',
+  'lastMechanicalVerification',
+  'status',
+  'colorId',
+  'description',
+  'maintIntervalDays',
+  'maintIntervalKm',
+  'maintenanceTimeFreqId',
+  'maintenanceUsageFreqId',
+  'lastServiceDate',
+  'lastServiceReading',
+  'dailyUsageAvg',
+  'ownerId',
+  'complianceStatusId',
+  'accountingAccount',
+  'legalComplianceDate',
+  'insuranceExpiryDate',
+  'insuranceCompanyId',
+  'environmentalHologram',
+  'monthlyLeasePayment',
+  'insuranceCost',
+]);
+
 /**
  * 🔱 Archon FleetService (SOLID: SRP & High Cohesion)
  * Centralized service for fleet unit operations and persistence.
@@ -182,6 +237,12 @@ export default class FleetService {
     };
 
     const fields = Object.keys(intelligencePayload);
+    const invalidCols = fields.filter((f) => !FLEET_UNIT_ALLOWED_COLUMNS.has(f));
+    if (invalidCols.length > 0) {
+      throw new Error(
+        `SQL_INJECTION_GUARD: unexpected columns in INSERT: ${invalidCols.join(', ')}`
+      );
+    }
     const placeholders = fields.map(() => '?').join(', ');
     const values = Object.values(intelligencePayload).map((v) => {
       if (v && typeof v === 'object') {
@@ -229,6 +290,13 @@ export default class FleetService {
       if (fields.length === 0) {
         connection.release();
         return false;
+      }
+      const invalidCols = fields.filter((f) => !FLEET_UNIT_ALLOWED_COLUMNS.has(f));
+      if (invalidCols.length > 0) {
+        connection.release();
+        throw new Error(
+          `SQL_INJECTION_GUARD: unexpected columns in UPDATE: ${invalidCols.join(', ')}`
+        );
       }
 
       const setClause = fields.map((f) => `${f} = ?`).join(', ');

@@ -72,6 +72,19 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       );
     });
 
+    it('SQL_INJECTION_GUARD: rejects unknown column in INSERT', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]); // ID check → free
+      await expect(
+        FleetService.createUnit({
+          id: 'X',
+          assetTypeId: 1,
+          brandId: 1,
+          modelId: 1,
+          'evil; DROP TABLE fleet_units; --': 'x',
+        } as any)
+      ).rejects.toThrow(/SQL_INJECTION_GUARD/);
+    });
+
     it('should throw conflict error if serial number (Blind Index) exists', async () => {
       (db.execute as any)
         .mockResolvedValueOnce([[]]) // ID is free
@@ -236,6 +249,20 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
 
       const updateCall = (mockConn.execute as any).mock.calls[1];
       expect(updateCall[1]).toContain(null); // maintenanceUsageFreqId = null (km=0 → else branch)
+    });
+
+    it('SQL_INJECTION_GUARD: rejects unknown column in UPDATE', async () => {
+      const mockConn = await db.getConnection();
+      (mockConn.execute as any).mockResolvedValueOnce([[{ id: 'ASM-001' }]]); // Snapshot Before
+      await expect(
+        FleetService.updateUnit(
+          'ASM-001',
+          { 'evil; DROP TABLE fleet_units; --': 'x' } as any,
+          'Reason',
+          1
+        )
+      ).rejects.toThrow(/SQL_INJECTION_GUARD/);
+      expect(mockConn.release).toHaveBeenCalled();
     });
   });
 

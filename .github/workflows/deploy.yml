@@ -238,11 +238,13 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/archon_deploy
           chmod 600 ~/.ssh/archon_deploy
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          # Primary: live keyscan. Fallback: pre-stored host key from secret (add SSH_KNOWN_HOSTS to GitHub Secrets).
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || \
+            printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
       - name: 🚀 Deploy Web assets via SSH/rsync
         run: |
           rsync -avz --delete --exclude='api_service/' \
-            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/archon_deploy -o StrictHostKeyChecking=no -o ConnectTimeout=30" \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/archon_deploy -o StrictHostKeyChecking=yes -o ConnectTimeout=30" \
             ./apps/web/dist/ \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/u701509674/domains/piic.com.mx/public_html/mantenimiento/
