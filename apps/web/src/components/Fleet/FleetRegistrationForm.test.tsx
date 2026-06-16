@@ -9,6 +9,9 @@ import { UseFleetFormReturn, CatalogOption, FleetStatus } from '../../types/flee
  * Logic: Production-Grade Type Parity (v.21.0.0)
  */
 
+const mockUseAuth = vi.hoisted(() => vi.fn());
+vi.mock('../../context/AuthContext', () => ({ useAuth: mockUseAuth }));
+
 vi.mock('../../hooks/useFleetForm');
 
 describe('FleetRegistrationForm Component', () => {
@@ -91,6 +94,7 @@ describe('FleetRegistrationForm Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ ownerType: 'FLOTILLA' });
     vi.mocked(useFleetForm).mockReturnValue(mockController);
   });
 
@@ -123,5 +127,27 @@ describe('FleetRegistrationForm Component', () => {
       expect(mockSubmit).toHaveBeenCalled();
       expect(mockProps.onSuccess).toHaveBeenCalled();
     });
+  });
+
+  it('PRIVATE owners do not see departmentId or accountingAccount fields', (): void => {
+    mockUseAuth.mockReturnValue({ ownerType: 'PRIVATE' });
+    const privateController = {
+      ...mockController,
+      formData: { ...mockController.formData, departmentId: null },
+    } as unknown as UseFleetFormReturn;
+    render(<FleetRegistrationForm controller={privateController} {...mockProps} />);
+    expect(screen.queryByText(/Departamento Responsable/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Cuenta Contable/i)).not.toBeInTheDocument();
+  });
+
+  it('CENTER owners do not see departmentId or accountingAccount fields', (): void => {
+    mockUseAuth.mockReturnValue({ ownerType: 'CENTER' });
+    const centerController = {
+      ...mockController,
+      formData: { ...mockController.formData, departmentId: null },
+    } as unknown as UseFleetFormReturn;
+    render(<FleetRegistrationForm controller={centerController} {...mockProps} />);
+    expect(screen.queryByText(/Departamento Responsable/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Cuenta Contable/i)).not.toBeInTheDocument();
   });
 });

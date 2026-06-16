@@ -31,6 +31,7 @@ import {
   calcularVencimientoVerificacion,
 } from '../../utils/fleetCompliance';
 import { UseFleetFormReturn, CatalogOption, CreateFleetUnit } from '../../types/fleet';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * 🔱 Archon Alpha v.37.2.0 - "2x2 AXIAL ARCHITECTURE"
@@ -107,6 +108,28 @@ const getPronosticoArchon = (
   return result;
 };
 
+function getIsFlotillaOrInternal(ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null): boolean {
+  return ownerType === 'FLOTILLA' || ownerType === null;
+}
+
+function isDeptOk(show: boolean, departmentId: number | null | undefined): boolean {
+  return !show || Boolean(departmentId);
+}
+
+function flotillaGridClass(show: boolean): string {
+  return `grid gap-6 ${show ? 'grid-cols-2' : 'grid-cols-1'}`;
+}
+
+interface FlotillaOnlyFieldProps {
+  show: boolean;
+  children: React.ReactNode;
+}
+
+const FlotillaOnlyField: React.FC<FlotillaOnlyFieldProps> = ({ show, children }) => {
+  if (!show) return null;
+  return <>{children}</>;
+};
+
 const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   controller,
   onSuccess,
@@ -114,6 +137,9 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
   isEdit = false,
   unitId,
 }: FleetRegistrationFormProps): React.JSX.Element => {
+  const { ownerType } = useAuth();
+  const isFlotillaOrInternal = getIsFlotillaOrInternal(ownerType);
+
   const [isAuditModalOpen, setIsAuditModalOpen] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [auditAction, setAuditAction] = React.useState<'UPDATE' | 'DELETE'>('UPDATE');
@@ -150,7 +176,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
       formData.year >= 1990 &&
       formData.id.trim() !== '' &&
       formData.operationalUseId &&
-      formData.departmentId &&
+      isDeptOk(isFlotillaOrInternal, formData.departmentId) &&
       formData.dailyUsageAvg != null &&
       formData.dailyUsageAvg > 0
   );
@@ -348,7 +374,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className={flotillaGridClass(isFlotillaOrInternal)}>
               <ArchonField label="Uso Operativo" icon={Activity} required>
                 <ArchonSelect
                   options={useTypes.map((u: CatalogOption) => ({
@@ -361,18 +387,20 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   }
                 />
               </ArchonField>
-              <ArchonField label="Departamento Responsable" icon={Wrench} required>
-                <ArchonSelect
-                  options={departments.map((d: CatalogOption) => ({
-                    value: d.id.toString(),
-                    label: d.label,
-                  }))}
-                  value={formData.departmentId?.toString() ?? ''}
-                  onChange={(val: string): void =>
-                    setFormData({ ...formData, departmentId: parseInt(val, 10) })
-                  }
-                />
-              </ArchonField>
+              <FlotillaOnlyField show={isFlotillaOrInternal}>
+                <ArchonField label="Departamento Responsable" icon={Wrench} required>
+                  <ArchonSelect
+                    options={departments.map((d: CatalogOption) => ({
+                      value: d.id.toString(),
+                      label: d.label,
+                    }))}
+                    value={formData.departmentId?.toString() ?? ''}
+                    onChange={(val: string): void =>
+                      setFormData({ ...formData, departmentId: parseInt(val, 10) })
+                    }
+                  />
+                </ArchonField>
+              </FlotillaOnlyField>
             </div>
 
             <ArchonField label="Evidencia Fotográfica" icon={PlusCircle}>
@@ -588,18 +616,20 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
 
             {/* 💰 GESTIÓN FINANCIERA */}
             <div className="pt-4 border-t border-slate-100 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <ArchonField label="Cuenta Contable" icon={Tag}>
-                  <input
-                    type="text"
-                    placeholder="8019-XXX-XXX"
-                    className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal outline-none font-mono"
-                    value={formData.accountingAccount || ''}
-                    onChange={(
-                      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-                    ): void => setFormData({ ...formData, accountingAccount: e.target.value })}
-                  />
-                </ArchonField>
+              <div className={flotillaGridClass(isFlotillaOrInternal)}>
+                <FlotillaOnlyField show={isFlotillaOrInternal}>
+                  <ArchonField label="Cuenta Contable" icon={Tag}>
+                    <input
+                      type="text"
+                      placeholder="8019-XXX-XXX"
+                      className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal outline-none font-mono"
+                      value={formData.accountingAccount || ''}
+                      onChange={(
+                        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+                      ): void => setFormData({ ...formData, accountingAccount: e.target.value })}
+                    />
+                  </ArchonField>
+                </FlotillaOnlyField>
                 <ArchonField label="Cuota Mensual / Arrend." icon={Zap}>
                   <div className="flex items-center bg-pinnacle-navy/5 border border-pinnacle-navy/10 rounded-[4px] overflow-hidden focus-within:ring-2 focus-within:ring-pinnacle-navy/20 focus-within:border-pinnacle-navy/30 transition-all duration-300">
                     <span className="px-4 py-3 text-pinnacle-navy/40 font-bold border-r border-pinnacle-navy/10 bg-pinnacle-navy/5 flex-shrink-0">

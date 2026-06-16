@@ -706,6 +706,135 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     });
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Archon Master: create sub-user (Área role_id=2 / Familiar role_id=5)
+  // Guard: caller must own the parentOwnerId via user_owner_membership
+  // ──────────────────────────────────────────────────────────────────────────
+  fastify.post('/sub-users', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Session required' });
+    }
+    const caller = request.user as { id: number };
+
+    const schema = z.object({
+      username: z.string().min(3),
+      email: z.string().email(),
+      password: z
+        .string()
+        .min(10)
+        .regex(/[A-Z]/, 'R3_UPPER')
+        .regex(/[a-z]/, 'R3_LOWER')
+        .regex(/\d/, 'R3_DIGIT')
+        .regex(/[^A-Za-z0-9]/, 'R3_SPECIAL'),
+      roleId: z
+        .number()
+        .int()
+        .refine((id) => [2, 5].includes(id), {
+          message: 'roleId must be 2 (Área) or 5 (Familiar)',
+        }),
+      parentOwnerId: z.number().int().positive(),
+      areaId: z.number().int().positive().optional(),
+      familiarType: z.enum(['PAREJA', 'HIJO_A']).optional(),
+      fullName: z.string().optional(),
+    });
+
+    const parsed = schema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'SU_VALIDATION', details: parsed.error.format() });
+    }
+    const { username, email, password, roleId, parentOwnerId, areaId, familiarType, fullName } =
+      parsed.data;
+
+    const [callerOwnerRows] = await db.execute<RowDataPacket[]>(
+      'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
+      [caller.id]
+    );
+    const callerOwnerIds = callerOwnerRows.map((r) => r.owner_id as number);
+    if (!callerOwnerIds.includes(parentOwnerId)) {
+      return reply.code(403).send({ error: 'OWNER_MISMATCH' });
+    }
+
+    const [ownerRows] = await db.execute<RowDataPacket[]>(
+      'SELECT id, owner_type FROM owners WHERE id = ?',
+      [parentOwnerId]
+    );
+    if (ownerRows.length === 0) {
+      return reply.code(400).send({ error: 'OWNER_NOT_FOUND' });
+    }
+    const ownerType = ownerRows[0].owner_type as string;
+
+    if (roleId === 2 && ownerType !== 'FLOTILLA') {
+      return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
+    }
+    if (roleId === 5 && !['PRIVATE', 'CENTER'].includes(ownerType)) {
+      return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
+    }
+
+    if (roleId === 2) {
+      if (!areaId) {
+        return reply.code(400).send({ error: 'AREA_REQUIRED' });
+      }
+      const [areaRows] = await db.execute<RowDataPacket[]>(
+        'SELECT id FROM areas WHERE id = ? AND owner_id = ? AND is_active = 1',
+        [areaId, parentOwnerId]
+      );
+      if (areaRows.length === 0) {
+        return reply.code(400).send({ error: 'AREA_NOT_FOUND' });
+      }
+    }
+
+    if (roleId === 5 && !familiarType) {
+      return reply.code(400).send({ error: 'FAMILIAR_TYPE_REQUIRED' });
+    }
+
+    const [existing] = await db.execute<RowDataPacket[]>(
+      'SELECT id FROM users WHERE username = ?',
+      [username]
+    );
+    if (existing.length > 0) {
+      return reply.code(409).send({ error: 'SU_USERNAME_EXISTS' });
+    }
+
+    try {
+      const passwordHash = await argon2Hash(password);
+      const encEmail = EncryptionService.encrypt(email);
+
+      return await withConnection(async (connection) => {
+        await connection.beginTransaction();
+        try {
+          const [insertResult] = await connection.execute<ResultSetHeader>(
+            'INSERT INTO users (username, email, password_hash, role_id, full_name, is_active) VALUES (?, ?, ?, ?, ?, 1)',
+            [username, encEmail, passwordHash, roleId, fullName ?? '']
+          );
+          const newUserId = insertResult.insertId;
+
+          await connection.execute('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [
+            newUserId,
+            roleId,
+          ]);
+
+          await connection.execute(
+            'INSERT INTO user_owner_membership (user_id, owner_id, familiar_type, area_id) VALUES (?, ?, ?, ?)',
+            [newUserId, parentOwnerId, familiarType ?? null, areaId ?? null]
+          );
+
+          await connection.commit();
+          return reply
+            .code(201)
+            .send({ success: true, data: { id: newUserId, username, roleId, parentOwnerId } });
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        }
+      });
+    } catch (e) {
+      fastify.log.error(e);
+      return reply.code(500).send({ error: 'SUB_USER_CREATE_FAIL' });
+    }
+  });
+
   fastify.get('/roles', async (request, reply) => {
     await request.jwtVerify();
     try {

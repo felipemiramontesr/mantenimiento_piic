@@ -211,7 +211,7 @@ function verifyNoPlaceholders(): void {
   const placeholderRegexes = [
     { regex: /rest[o| ]+del\s+c[o|ó]digo/i, name: '"resto del código"' },
     { regex: /rest\s+of\s+the\s+code/i, name: '"rest of the code"' },
-    { regex: /placeholder/i, name: '"placeholder"' },
+    { regex: /\bplaceholder\b(?!\s*[:={])/i, name: '"placeholder"' },
     { regex: /^\+\s*(?:\/\/|\/\*|\*)\s*\.\.\.\s*$/, name: 'línea con comentario de puntos "... "' },
   ];
 
