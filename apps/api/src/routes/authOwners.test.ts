@@ -242,6 +242,7 @@ describe('User Fleet-Owner Links (A3)', () => {
       password: 'Archon@1234!',
       roleId: 1,
       fullName: 'Juan Pérez',
+      profile: { rfc: 'RFC_TEST001' },
     };
 
     it('creates the owners row and the membership link when the owner does not exist', async (): Promise<void> => {

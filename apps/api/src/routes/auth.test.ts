@@ -58,7 +58,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
 
   // ── Scenario 8 — Centro con owner_profiles ──────────────────────────────
 
-  it('returns 400 VALIDATION_ERROR when roleId=3 and rfc is missing — Scenario 8', async () => {
+  it('returns 400 MISSING_RFC when roleId=3 and rfc is missing — Scenario 4', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
@@ -73,7 +73,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
     });
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
-    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.code).toBe('MISSING_RFC');
   });
 
   it('returns 400 VALIDATION_ERROR when roleId=3 and profile.rfc is empty — Scenario 8', async () => {
@@ -158,6 +158,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
         password: BASE_PASSWORD,
         roleId: 1,
         fullName: 'Flotilla Tres',
+        profile: { rfc: 'RFC_FLOTILLA' },
         areas: ['Operaciones', 'Logística', 'Administración'],
       },
     });
@@ -190,6 +191,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
         password: BASE_PASSWORD,
         roleId: 1,
         fullName: 'Flotilla Cuatro',
+        profile: { rfc: 'RFC_FLOTILLA' },
         // areas omitted
       },
     });
@@ -219,5 +221,100 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
 
     expect(res.statusCode).toBe(500);
     expect(mockConnection.rollback).toHaveBeenCalled();
+  });
+
+  // ── Scenario 1 — Flotilla con perfil + dirección multicampo ─────────────
+
+  it('creates Flotilla with profile and address transactionally — Scenario 1', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 70 }, undefined]) // INSERT users
+      .mockResolvedValueOnce([[], undefined]) // owner label check → not exists
+      .mockResolvedValueOnce([[{ nextId: 600 }], undefined]) // MAX(id)+1
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (FLOTILLA)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owner_profiles
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'flotilla.perfilada',
+        email: 'flotilla.p@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 1,
+        fullName: 'Flotilla SA',
+        profile: { rfc: 'ABC010101000', razon_social: 'Flotilla SA', telefono: '3310001000' },
+        address: { neighborhoodId: 500, calle: 'Av. Reforma', numeroExt: '42' },
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
+    expect(sqls.some((s) => s.includes('owner_profiles'))).toBe(true);
+    const profileInsert = mockConnection.execute.mock.calls.find((c) =>
+      (c[0] as string).includes('INSERT INTO owner_profiles')
+    );
+    expect(profileInsert?.[1]).toEqual(expect.arrayContaining([500, 'Av. Reforma', '42']));
+    expect(mockConnection.commit).toHaveBeenCalled();
+  });
+
+  // ── Scenario 2 — Privado sin RFC (opcional para Rol 4) ──────────────────
+
+  it('creates Privado without rfc transactionally — Scenario 2', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 80 }, undefined]) // INSERT users
+      .mockResolvedValueOnce([[], undefined]) // owner label check
+      .mockResolvedValueOnce([[{ nextId: 700 }], undefined]) // MAX(id)+1
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (PRIVATE)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owner_profiles
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'privado.sinrfc',
+        email: 'privado@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 4,
+        fullName: 'López Sánchez',
+        profile: { razon_social: 'López Sánchez' }, // rfc omitted — nullable for Rol 4
+        address: { neighborhoodId: 600, calle: 'Calle Hidalgo', numeroExt: '8' },
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const ownersInsert = mockConnection.execute.mock.calls.find((c) =>
+      (c[0] as string).includes('INSERT INTO owners')
+    );
+    expect(ownersInsert?.[1]).toEqual(expect.arrayContaining(['PRIVATE']));
+    const profileInsert = mockConnection.execute.mock.calls.find((c) =>
+      (c[0] as string).includes('INSERT INTO owner_profiles')
+    );
+    expect((profileInsert?.[1] as unknown[])?.[1]).toBeNull(); // rfc param → null
+    expect(mockConnection.commit).toHaveBeenCalled();
+  });
+
+  // ── Scenario 3 — Flotilla sin RFC → 400 MISSING_RFC ─────────────────────
+
+  it('returns 400 MISSING_RFC when roleId=1 and rfc is missing — Scenario 3', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'flotilla.sinrfc',
+        email: 'flotilla.sinrfc@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 1,
+        fullName: 'Sin RFC SA',
+        profile: { razon_social: 'Sin RFC SA' }, // rfc omitted
+      },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
   });
 });

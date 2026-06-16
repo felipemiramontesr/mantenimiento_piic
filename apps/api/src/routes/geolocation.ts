@@ -1,14 +1,15 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
-import requirePermission from '../middleware/requirePermission';
 
 /**
- * 🔱 ARCHON GEOLOCATION ROUTER (v.2.0.0)
+ * 🔱 ARCHON GEOLOCATION ROUTER (v.3.0.0)
  * Provides optimized endpoints for cascading State ➔ Municipality ➔ Neighborhood dropdowns.
+ * Auth: any authenticated user (jwtVerify only — no fleet:view required).
+ * Rationale: geographic reference data has no PII; needed by owner profile forms (Rol 1/3/4).
  */
 export default async function geolocationRoutes(fastify: FastifyInstance): Promise<void> {
-  // Security Hook — A01:2021 Broken Access Control
+  // Security Hook — A01:2021 Broken Access Control (JWT required, no fleet:view restriction)
   fastify.addHook('onRequest', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -16,7 +17,6 @@ export default async function geolocationRoutes(fastify: FastifyInstance): Promi
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
     }
   });
-  fastify.addHook('preHandler', requirePermission('fleet:view'));
 
   // 1. Fetch States
   fastify.get('/states', async (_request, reply) => {

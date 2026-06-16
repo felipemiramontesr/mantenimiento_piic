@@ -69,7 +69,26 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
     }
   );
 
-  // 2. Fetch specific item by Code
+  // 2. Fetch Center owners list (for Rol 4 centro selector in registration form)
+  fastify.get('/centers', async (_request, reply) => {
+    try {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        `SELECT o.id, cc.label
+         FROM owners o
+         JOIN common_catalogs cc ON o.catalog_id = cc.id
+         WHERE o.owner_type = 'CENTER' AND o.is_active = 1
+         ORDER BY cc.label ASC`
+      );
+      return reply.send({ success: true, data: rows });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply
+        .status(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Failed to fetch centers' });
+    }
+  });
+
+  // 3. Fetch specific item by Code
   fastify.get(
     '/item/:code',
     async (request: FastifyRequest<{ Params: { code: string } }>, reply) => {

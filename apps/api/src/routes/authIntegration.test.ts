@@ -136,7 +136,13 @@ describe('authIntegration.test', () => {
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'Archon@1234!', roleId: 1 },
+      payload: {
+        username: 'user70',
+        email: 'e70@e.com',
+        password: 'Archon@1234!',
+        roleId: 1,
+        profile: { rfc: 'ABC010101000' },
+      },
     });
     expect(r1.statusCode).toBe(201);
 
@@ -144,7 +150,13 @@ describe('authIntegration.test', () => {
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user70', email: 'e70@e.com', password: 'Archon@1234!', roleId: 1 },
+      payload: {
+        username: 'user70',
+        email: 'e70@e.com',
+        password: 'Archon@1234!',
+        roleId: 1,
+        profile: { rfc: 'ABC010101000' },
+      },
     });
     expect(r2.statusCode).toBe(409);
   });
@@ -239,7 +251,13 @@ describe('authIntegration.test', () => {
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: { username: 'user80', email: 'e@e.com', password: 'Archon@1234!', roleId: 1 },
+      payload: {
+        username: 'user80',
+        email: 'e@e.com',
+        password: 'Archon@1234!',
+        roleId: 1,
+        profile: { rfc: 'RFC_FATAL' },
+      },
     });
     const r3 = await app.inject({
       method: 'GET',

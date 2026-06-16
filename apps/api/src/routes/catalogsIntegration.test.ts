@@ -125,4 +125,46 @@ describe('Catalogs Integration Endpoints', () => {
       expect(JSON.parse(response.body).error).toBe('Failed to fetch item');
     });
   });
+
+  // ── Scenario 7 — GET /v1/catalogs/centers ────────────────────────────────
+
+  describe('GET /v1/catalogs/centers — Scenario 7', () => {
+    it('returns list of CENTER owners for authenticated user', async (): Promise<void> => {
+      const mockCenters = [
+        { id: 10, label: 'Centro A' },
+        { id: 11, label: 'Centro B' },
+      ];
+      (db.execute as Mock).mockResolvedValueOnce([mockCenters]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/centers',
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.data).toEqual(mockCenters);
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining("owner_type = 'CENTER'"));
+    });
+
+    it('returns 401 for unauthenticated request to /centers', async (): Promise<void> => {
+      const response = await app.inject({ method: 'GET', url: '/v1/catalogs/centers' });
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('returns 500 on database error for /centers', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/centers',
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).code).toBe('INTERNAL_ERROR');
+    });
+  });
 });

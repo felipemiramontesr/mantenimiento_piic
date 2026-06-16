@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { PoolConnection } from 'mysql2/promise';
 import '@fastify/cookie';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
@@ -9,55 +10,67 @@ import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 
-/** Owner-scoped roles that receive an owners row link on registration. */
-const OWNER_SCOPED_ROLE_IDS = [1, 3, 4]; // 1=Flotilla, 3=Centro Especializado, 4=Propietario Privado
+type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE';
 
-/**
- * Links a freshly registered owner-scoped user (roles 1, 3, or 4) to its owners row,
- * creating the row when the owner label does not exist yet.
- * common_catalogs.id has no AUTO_INCREMENT — next id is resolved with
- * MAX(id)+1 inside the same transaction (FOR UPDATE serializes concurrents).
- * Writes to both common_catalogs + owners to maintain backward compat during migration.
- */
-async function linkExternalClientOwner(
+/** Finds or creates the owners + common_catalogs rows inside an existing transaction. */
+async function resolveOwnerRow(
+  connection: PoolConnection,
   userId: number,
   ownerLabel: string,
-  ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER'
+  ownerType: OwnerType
+): Promise<number> {
+  const [existing] = await connection.execute<RowDataPacket[]>(
+    'SELECT id FROM owners WHERE label = ? LIMIT 1',
+    [ownerLabel]
+  );
+  if ((existing as RowDataPacket[]).length > 0) {
+    return (existing as RowDataPacket[])[0].id as number;
+  }
+  const [nextRows] = await connection.execute<RowDataPacket[]>(
+    'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
+  );
+  const ownerId = (nextRows as RowDataPacket[])[0].nextId as number;
+  await connection.execute<ResultSetHeader>(
+    "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
+    [ownerId, `OWN_U${userId}`, ownerLabel]
+  );
+  await connection.execute<ResultSetHeader>(
+    'INSERT INTO owners (id, owner_type, label) VALUES (?, ?, ?)',
+    [ownerId, ownerType, ownerLabel]
+  );
+  return ownerId;
+}
+
+type ProfileData =
+  | { rfc?: string; razon_social?: string; telefono?: string; especialidades?: string }
+  | undefined;
+type AddressData =
+  | { calle: string; numeroExt: string; numeroInt?: string; neighborhoodId: number }
+  | undefined;
+
+/** Inserts owner_profiles row inside an existing transaction (no-op when profile is absent). */
+async function insertOwnerProfile(
+  connection: PoolConnection,
+  ownerId: number,
+  roleId: number,
+  profile: ProfileData,
+  address: AddressData
 ): Promise<void> {
-  return withConnection(async (connection) => {
-    await connection.beginTransaction();
-    try {
-      const [existing] = await connection.execute<RowDataPacket[]>(
-        'SELECT id FROM owners WHERE label = ? LIMIT 1',
-        [ownerLabel]
-      );
-      let ownerId: number;
-      if (existing.length > 0) {
-        ownerId = existing[0].id as number;
-      } else {
-        const [nextRows] = await connection.execute<RowDataPacket[]>(
-          'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
-        );
-        ownerId = nextRows[0].nextId as number;
-        await connection.execute<ResultSetHeader>(
-          "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
-          [ownerId, `OWN_U${userId}`, ownerLabel]
-        );
-        await connection.execute<ResultSetHeader>(
-          'INSERT INTO owners (id, owner_type, label) VALUES (?, ?, ?)',
-          [ownerId, ownerType, ownerLabel]
-        );
-      }
-      await connection.execute<ResultSetHeader>(
-        'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
-        [userId, ownerId]
-      );
-      await connection.commit();
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    }
-  });
+  if (!profile) return;
+  await connection.execute<ResultSetHeader>(
+    'INSERT INTO owner_profiles (owner_id, rfc, razon_social, telefono, especialidades, calle, numero_exterior, numero_interior, neighborhood_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+      ownerId,
+      profile.rfc || null,
+      profile.razon_social || null,
+      profile.telefono || null,
+      roleId === 3 ? profile.especialidades || null : null,
+      address?.calle || null,
+      address?.numeroExt || null,
+      address?.numeroInt || null,
+      address?.neighborhoodId || null,
+    ]
+  );
 }
 
 /**
@@ -344,11 +357,18 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       employeeNumber: z.string().optional(),
       profile: z
         .object({
-          rfc: z.string().min(1).max(13),
+          rfc: z.string().min(1).max(20).optional(),
           razon_social: z.string().optional(),
-          direccion: z.string().optional(),
           telefono: z.string().optional(),
           especialidades: z.string().optional(),
+        })
+        .optional(),
+      address: z
+        .object({
+          neighborhoodId: z.number().int().positive(),
+          calle: z.string().min(1).max(200),
+          numeroExt: z.string().min(1).max(20),
+          numeroInt: z.string().optional(),
         })
         .optional(),
       areas: z.array(z.string().min(1).max(100)).optional(),
@@ -366,11 +386,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       departmentId,
       employeeNumber,
       profile,
+      address,
       areas,
     } = body.data;
 
-    if (roleId === 3 && (!profile || !profile.rfc)) {
-      return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
+    if ([1, 3].includes(roleId) && !profile?.rfc) {
+      return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
     }
 
     try {
@@ -387,97 +408,55 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       const hash = await argon2Hash(password);
       const enc = EncryptionService.encrypt(email);
 
-      if (roleId === 3 || roleId === 1) {
-        return await withConnection(async (connection) => {
-          await connection.beginTransaction();
-          try {
-            const [res] = await connection.execute<ResultSetHeader>(
-              'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
-              [
-                username,
-                enc,
-                hash,
-                roleId,
-                fullName || '',
-                departmentId || null,
-                employeeNumber || null,
-              ]
-            );
-            const userId = res.insertId;
-            const ownerType: 'FLOTILLA' | 'CENTER' = roleId === 1 ? 'FLOTILLA' : 'CENTER';
-            const ownerLabel = fullName || username;
+      return await withConnection(async (connection) => {
+        await connection.beginTransaction();
+        try {
+          const [res] = await connection.execute<ResultSetHeader>(
+            'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+              username,
+              enc,
+              hash,
+              roleId,
+              fullName || '',
+              departmentId || null,
+              employeeNumber || null,
+            ]
+          );
+          const userId = res.insertId;
+          let ownerType: OwnerType;
+          if (roleId === 1) ownerType = 'FLOTILLA';
+          else if (roleId === 4) ownerType = 'PRIVATE';
+          else ownerType = 'CENTER';
+          const ownerLabel = fullName || username;
 
-            const [existingOwner] = await connection.execute<RowDataPacket[]>(
-              'SELECT id FROM owners WHERE label = ? LIMIT 1',
-              [ownerLabel]
-            );
-            let ownerId: number;
-            if ((existingOwner as RowDataPacket[]).length > 0) {
-              ownerId = (existingOwner as RowDataPacket[])[0].id as number;
-            } else {
-              const [nextRows] = await connection.execute<RowDataPacket[]>(
-                'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
-              );
-              ownerId = (nextRows as RowDataPacket[])[0].nextId as number;
-              await connection.execute<ResultSetHeader>(
-                "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
-                [ownerId, `OWN_U${userId}`, ownerLabel]
-              );
-              await connection.execute<ResultSetHeader>(
-                'INSERT INTO owners (id, owner_type, label) VALUES (?, ?, ?)',
-                [ownerId, ownerType, ownerLabel]
-              );
-            }
-            await connection.execute<ResultSetHeader>(
-              'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
-              [userId, ownerId]
-            );
+          const ownerId = await resolveOwnerRow(connection, userId, ownerLabel, ownerType);
 
-            if (roleId === 3 && profile) {
-              await connection.execute<ResultSetHeader>(
-                'INSERT INTO owner_profiles (owner_id, rfc, razon_social, direccion, telefono, especialidades) VALUES (?, ?, ?, ?, ?, ?)',
-                [
-                  ownerId,
-                  profile.rfc,
-                  profile.razon_social || null,
-                  profile.direccion || null,
-                  profile.telefono || null,
-                  profile.especialidades || null,
-                ]
-              );
-            }
+          await connection.execute<ResultSetHeader>(
+            'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
+            [userId, ownerId]
+          );
 
-            if (roleId === 1 && areas && areas.length > 0) {
-              await Promise.all(
-                areas.map((areaName) =>
-                  connection.execute<ResultSetHeader>(
-                    'INSERT INTO areas (owner_id, name) VALUES (?, ?)',
-                    [ownerId, areaName]
-                  )
+          await insertOwnerProfile(connection, ownerId, roleId, profile, address);
+
+          if (roleId === 1 && areas && areas.length > 0) {
+            await Promise.all(
+              areas.map((areaName) =>
+                connection.execute<ResultSetHeader>(
+                  'INSERT INTO areas (owner_id, name) VALUES (?, ?)',
+                  [ownerId, areaName]
                 )
-              );
-            }
-
-            await connection.commit();
-            return reply.code(201).send({ success: true, userId });
-          } catch (error) {
-            await connection.rollback();
-            throw error;
+              )
+            );
           }
-        });
-      }
 
-      const [res] = await db.execute<ResultSetHeader>(
-        'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [username, enc, hash, roleId, fullName || '', departmentId || null, employeeNumber || null]
-      );
-      if (OWNER_SCOPED_ROLE_IDS.includes(roleId)) {
-        let ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' = 'FLOTILLA';
-        if (roleId === 4) ownerType = 'PRIVATE';
-        else if (roleId === 3) ownerType = 'CENTER';
-        await linkExternalClientOwner(res.insertId, fullName || username, ownerType);
-      }
-      return reply.code(201).send({ success: true, userId: res.insertId });
+          await connection.commit();
+          return reply.code(201).send({ success: true, userId });
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        }
+      });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ error: 'REG_FAIL' });
