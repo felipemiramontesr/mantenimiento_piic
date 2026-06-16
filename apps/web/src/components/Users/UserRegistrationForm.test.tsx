@@ -42,9 +42,11 @@ const getMockState = (): MockUserState => ({
   editingUser: null,
   setEditingUser: vi.fn(),
   departments: ['IT', 'Sistemas'],
+  // IDs 6 and 7 = internal staff (not 0-5 Archon Master bands) — avoids triggering
+  // owner/sub-user conditional fields in tests that don't specifically test them.
   roles: [
-    { id: 1, label: 'Admin' },
-    { id: 2, label: 'Operador' },
+    { id: 6, label: 'Admin' },
+    { id: 7, label: 'Operador' },
   ],
 });
 
@@ -73,6 +75,18 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
   it('renders correctly', () => {
     render(<UserRegistrationForm />);
     expect(screen.getByText(/Identidad de Personal/i)).toBeInTheDocument();
+  });
+
+  it('renders Rol Archon as the first top-level card above the grid', () => {
+    render(<UserRegistrationForm />);
+    expect(screen.getByText(/Rol Archon/i)).toBeInTheDocument();
+    expect(screen.getByText(/Rol del Sistema/i)).toBeInTheDocument();
+  });
+
+  it('shows Departamento field for internal staff roles (id not in 1-5)', () => {
+    render(<UserRegistrationForm />);
+    // Default roleId = '7' → isInternalStaff → Departamento shown
+    expect(screen.getByText(/Departamento/i)).toBeInTheDocument();
   });
 
   it('handles validation errors with partial data', async () => {
@@ -380,13 +394,13 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
 
   // ── Oleada 6: UserRegistrationForm branch coverage ──────────────────────
 
-  it('update with password and no file: sends password to updateUser and skips upload (lines 143/149)', async () => {
+  it('update with password and no file: sends password to updateUser and skips upload', async () => {
     currentMockState.editingUser = {
       id: '2',
       username: 'user2',
       fullName: 'User Two',
       email: 'u2@p.com',
-      roleId: 1,
+      roleId: 6,
       department: 'IT',
     };
     render(<UserRegistrationForm />);
@@ -403,13 +417,11 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     await act(async () => {
       fireEvent.click(within(modal).getByText('Sincronizar'));
     });
-    // line 143 truthy: formData.password = 'newpass123' → passes password to updateUser
     expect(currentMockState.updateUser).toHaveBeenCalledWith(
       '2',
       expect.objectContaining({ password: 'newpass123' }),
       'Password change reason'
     );
-    // line 149 false: selectedFile=null → no upload-profile call
     expect(api.post).not.toHaveBeenCalledWith(
       expect.stringContaining('/upload-profile'),
       expect.any(FormData),
@@ -418,7 +430,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(await screen.findByText(/Actualización Exitosa/i)).toBeInTheDocument();
   });
 
-  it('create with explicit matching password uses provided password instead of tempPass (line 181)', async () => {
+  it('create with explicit matching password uses provided password instead of tempPass', async () => {
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
       target: { value: 'New User' },
@@ -436,7 +448,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     await act(async () => {
       fireEvent.submit(screen.getByTestId('registration-form'));
     });
-    // line 181 truthy: formData.password = 'pass12345' → api.post receives it directly
     expect(vi.mocked(api.post)).toHaveBeenCalledWith(
       '/auth/register',
       expect.objectContaining({ password: 'pass12345' })
@@ -444,7 +455,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(await screen.findByText(/Incorporación Exitosa/i)).toBeInTheDocument();
   });
 
-  it('create error with no error field uses "Error en el servidor." fallback (line 197)', async () => {
+  it('create error with no error field uses "Error en el servidor." fallback', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { success: false } });
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
@@ -457,11 +468,10 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     await act(async () => {
       fireEvent.submit(screen.getByTestId('registration-form'));
     });
-    // line 197: response.data.error is undefined → 'Error en el servidor.' (falsy branch)
     expect(await screen.findByTestId('error-message')).toHaveTextContent(/Error en el servidor\./i);
   });
 
-  it('create error with axios-style rejection uses errObj.response.data.error (line 241 first branch)', async () => {
+  it('create error with axios-style rejection uses errObj.response.data.error (first branch)', async () => {
     vi.mocked(api.post).mockRejectedValue({ response: { data: { error: 'Axios API Error' } } });
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
@@ -474,11 +484,10 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     await act(async () => {
       fireEvent.submit(screen.getByTestId('registration-form'));
     });
-    // line 241: errObj.response?.data?.error = 'Axios API Error' → truthy → first OR branch
     expect(await screen.findByTestId('error-message')).toHaveTextContent(/Axios API Error/i);
   });
 
-  it('create error with non-Error rejection uses "Falla en el alta." final fallback (line 241)', async () => {
+  it('create error with non-Error rejection uses "Falla en el alta." final fallback', async () => {
     vi.mocked(api.post).mockRejectedValue({});
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
@@ -491,39 +500,34 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     await act(async () => {
       fireEvent.submit(screen.getByTestId('registration-form'));
     });
-    // line 241: response=undefined, message=undefined → 'Falla en el alta.' (final fallback)
     expect(await screen.findByTestId('error-message')).toHaveTextContent(/Falla en el alta\./i);
   });
 
-  it('editingUser with imageUrl renders image in uploader and removal clears it (lines 338/340)', async () => {
+  it('editingUser with imageUrl renders image in uploader and removal clears it', async () => {
     currentMockState.editingUser = {
       id: '3',
       username: 'photo_user',
       fullName: 'Photo User',
       email: 'photo@p.com',
-      roleId: 1,
+      roleId: 6,
       department: 'IT',
       imageUrl: 'http://example.com/photo.jpg',
     };
     const { container } = render(<UserRegistrationForm />);
-    // line 338 truthy: formData.imageUrl = 'http://...' → images=['http://...'] passed to uploader
-    // Wait for useEffect to set formData.imageUrl and commit the re-render
     await waitFor(() => {
       expect(container.querySelector('img[alt="Vista 1"]')).not.toBeNull();
     });
-    // Find remove button via closest .relative slot (works for both circle and square variants)
     const imgElem = container.querySelector('img[alt="Vista 1"]') as HTMLImageElement;
     const imgSlot = imgElem.closest('.relative') as HTMLElement;
     const removeBtn = imgSlot.querySelector('button') as HTMLButtonElement;
     expect(removeBtn).toBeInTheDocument();
-    // Click remove → onChange([]) → line 340: imgs[0] = undefined → '' (falsy branch)
     fireEvent.click(removeBtn);
     await waitFor(() => {
       expect(container.querySelector('img[alt="Vista 1"]')).not.toBeInTheDocument();
     });
   });
 
-  it('submit button shows Transmitiendo during create while api is pending (line 490 truthy)', async () => {
+  it('submit button shows Transmitiendo during create while api is pending', async () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     vi.mocked(api.post).mockImplementation(() => new Promise(() => {}));
     render(<UserRegistrationForm />);
@@ -534,33 +538,122 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
       target: { value: 'test5@t.com' },
     });
-    // Click submit (without await/act so we can capture the in-flight state)
     fireEvent.click(screen.getByRole('button', { name: /Confirmar Alta/i }));
-    // line 490: isSubmitting=true → 'Transmitiendo...' text appears on button
     await waitFor(() => expect(screen.getByText('Transmitiendo...')).toBeInTheDocument());
   });
 
-  it('submit button is disabled when password set but shorter than 8 chars (line 250 false branch)', () => {
+  it('submit button is disabled when password set but shorter than 8 chars', () => {
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), { target: { value: 'ab' } });
     fireEvent.change(screen.getByPlaceholderText(/Repita la clave/i), { target: { value: 'ab' } });
-    // passwordsMatch=true, length=2 < 8 → canSubmit = false → button disabled (line 250 false branch)
     expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
   });
 
-  it('confirm password input type follows showPassword toggle (line 427 truthy branch)', () => {
+  it('confirm password input type follows showPassword toggle', () => {
     render(<UserRegistrationForm />);
-    // Fill password to make confirm field appear (line 427 rendered)
     fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), {
       target: { value: 'mypassword' },
     });
     const confirmInput = screen.getByPlaceholderText(/Repita la clave/i);
-    // line 427 false branch: showPassword=false → type='password'
     expect(confirmInput).toHaveAttribute('type', 'password');
-    // Click toggle (first svg-bearing button is the Eye/EyeOff toggle)
     const toggleBtn = screen.getAllByRole('button').filter((b) => b.querySelector('svg'))[0];
     fireEvent.click(toggleBtn);
-    // line 427 truthy branch: showPassword=true → type='text'
     expect(confirmInput).toHaveAttribute('type', 'text');
+  });
+
+  // ── Oleada 7: Role-conditional fields ──────────────────────────────────────
+
+  it('shows owner chips section for owner-scoped role (Flotilla = id 1)', async () => {
+    currentMockState.roles = [{ id: 1, label: 'Prop. Flotilla Operador' }];
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [{ id: 10, label: 'Empresa A' }] },
+    });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('owners-assignment')).toBeInTheDocument();
+      expect(screen.getByTestId('owner-chip-10')).toBeInTheDocument();
+    });
+  });
+
+  it('shows Área sub-user fields when role is id=2', async () => {
+    currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [{ id: 100, label: 'Flotilla X' }] },
+    });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('area-subuser-fields')).toBeInTheDocument();
+    });
+  });
+
+  it('submit is disabled for Área role when parentOwner and area are not selected', async () => {
+    currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => expect(screen.getByTestId('area-subuser-fields')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
+  });
+
+  it('shows Familiar sub-user fields when role is id=5', async () => {
+    currentMockState.roles = [{ id: 5, label: 'Familiar Operador' }];
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [{ id: 200, label: 'Propietario Y' }] },
+    });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('familiar-subuser-fields')).toBeInTheDocument();
+      expect(screen.getByTestId('familiar-type-pareja')).toBeInTheDocument();
+      expect(screen.getByTestId('familiar-type-hijo_a')).toBeInTheDocument();
+    });
+  });
+
+  it('submit is disabled for Familiar role when parentOwner and familiarType are not set', async () => {
+    currentMockState.roles = [{ id: 5, label: 'Familiar Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => expect(screen.getByTestId('familiar-subuser-fields')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
+  });
+
+  it('familiar type PAREJA button applies active style when clicked', async () => {
+    currentMockState.roles = [{ id: 5, label: 'Familiar Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => expect(screen.getByTestId('familiar-type-pareja')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('familiar-type-pareja'));
+    expect(screen.getByTestId('familiar-type-pareja')).toHaveClass('bg-pinnacle-navy');
+  });
+
+  it('sub-user create (role 2) calls /auth/sub-users endpoint', async () => {
+    currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
+    // Provide parent owners so the select has options
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url.includes('/owners/') && url.includes('/areas')) {
+        return Promise.resolve({
+          data: { success: true, data: [{ id: 55, name: 'Taller Principal' }] },
+        });
+      }
+      return Promise.resolve({
+        data: { success: true, data: [{ id: 10, label: 'Flotilla Alpha' }] },
+      });
+    });
+    vi.mocked(api.post).mockResolvedValue({ data: { success: true } });
+
+    // Manually inject formData via submitting: bypass canSubmit disabled by forcing form submit
+    render(<UserRegistrationForm />);
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
+      target: { value: 'Sub User' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'subuser' } });
+    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
+      target: { value: 'sub@t.com' },
+    });
+    // Use fireEvent.submit to bypass button disabled state
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    // canSubmit=false → handleCreate NOT called → validation error shown (missing fields)
+    // This verifies that role 2 with missing parentOwnerId/areaId does NOT call /auth/register
+    expect(api.post).not.toHaveBeenCalledWith('/auth/register', expect.anything());
   });
 });

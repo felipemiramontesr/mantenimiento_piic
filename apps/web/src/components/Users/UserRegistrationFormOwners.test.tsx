@@ -6,10 +6,8 @@ import UserRegistrationForm from './UserRegistrationForm';
 
 /**
  * 🔱 Archon Test: Owners Assignment in UserRegistrationForm (F1-A · A4)
- * Feature Contract: Owner_Scoped_Fleet_Access_External_Client
- * The "Propietarios Asignados" multi-select only renders for owner-scoped
- * roles (4 Gestor de Flotilla · 9 Cliente Externo) and persists through
- * PUT /auth/users/:id/owners.
+ * Updated V.230: OWNER_SCOPED_ROLE_IDS = [1, 3, 4] per Archon Master bands.
+ * 1 = Propietario de Flotilla · 3 = Centro Especializado · 4 = Propietario Privado
  */
 
 vi.mock('../../api/client', () => ({
@@ -48,10 +46,11 @@ const getMockState = (): MockUserState => ({
   editingUser: null,
   setEditingUser: vi.fn(),
   departments: ['IT'],
+  // id 7 = internal staff (not in Archon Master bands 0-5); id 1 = Flotilla (owner-scoped)
   roles: [
-    { id: 2, label: 'Operador General' },
-    { id: 4, label: 'Gestor de Flotilla' },
-    { id: 9, label: 'Cliente Externo' },
+    { id: 7, label: 'Operador General' },
+    { id: 1, label: 'Propietario de Flotilla' },
+    { id: 4, label: 'Propietario Privado' },
   ],
 });
 
@@ -97,19 +96,19 @@ describe('UserRegistrationForm — Propietarios Asignados (Owner-Scoped)', () =>
   });
 
   it('does not render the owners section for non-scoped roles', () => {
-    // default roleId resolves to 'Operador General' (id 2)
+    // default roleId resolves to 'Operador General' (id 7) → isInternalStaff → no owners section
     render(<UserRegistrationForm />);
     expect(screen.queryByTestId('owners-assignment')).not.toBeInTheDocument();
     expect(api.get as Mock).not.toHaveBeenCalledWith(expect.stringContaining('FLEET_OWNER'));
   });
 
-  it('renders the owners section with catalog chips when editing a role-9 user', async () => {
+  it('renders the owners section with catalog chips when editing a Flotilla owner (role 1)', async () => {
     currentMockState.editingUser = {
       id: 10,
       username: 'juan.perez',
       fullName: 'Juan Pérez',
       email: 'juan@cliente.mx',
-      roleId: 9,
+      roleId: 1,
       department: '',
       employeeNumber: '',
       imageUrl: '',
@@ -126,12 +125,12 @@ describe('UserRegistrationForm — Propietarios Asignados (Owner-Scoped)', () =>
     expect(screen.getByTestId('owner-chip-712')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('renders the owners section for role 4 (Gestor de Flotilla) as well', async () => {
+  it('renders the owners section for role 4 (Propietario Privado) as well', async () => {
     currentMockState.editingUser = {
       id: 11,
-      username: 'gestor',
-      fullName: 'Gestor Uno',
-      email: 'gestor@piic.com.mx',
+      username: 'privado',
+      fullName: 'Privado Uno',
+      email: 'privado@piic.com.mx',
       roleId: 4,
       department: '',
       employeeNumber: '',
@@ -148,7 +147,7 @@ describe('UserRegistrationForm — Propietarios Asignados (Owner-Scoped)', () =>
       username: 'juan.perez',
       fullName: 'Juan Pérez',
       email: 'juan@cliente.mx',
-      roleId: 9,
+      roleId: 1,
       department: '',
       employeeNumber: '',
       imageUrl: '',
@@ -185,7 +184,7 @@ describe('UserRegistrationForm — Propietarios Asignados (Owner-Scoped)', () =>
       username: 'juan.perez',
       fullName: 'Juan Pérez',
       email: 'juan@cliente.mx',
-      roleId: 9,
+      roleId: 1,
       department: '',
       employeeNumber: '',
       imageUrl: '',
@@ -214,9 +213,9 @@ describe('UserRegistrationForm — Propietarios Asignados (Owner-Scoped)', () =>
     });
   });
 
-  it('on create with a scoped role, links the selected owners after register', async () => {
-    // Force default role resolution to the scoped role (label includes "operador")
-    currentMockState.roles = [{ id: 9, label: 'Operador Cliente Externo' }];
+  it('on create with a Flotilla owner role, links the selected owners after register', async () => {
+    // Force default role resolution to Flotilla owner (label includes "operador")
+    currentMockState.roles = [{ id: 1, label: 'Operador Flotilla' }];
 
     render(<UserRegistrationForm />);
 

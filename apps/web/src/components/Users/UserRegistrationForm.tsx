@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Mail,
@@ -15,6 +15,8 @@ import {
   EyeOff,
   Trash2,
   Building2,
+  Users,
+  MapPin,
 } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
@@ -26,8 +28,8 @@ import AuditJustificationModal from '../Common/AuditJustificationModal';
 /**
  * 🔱 Archon Component: UserRegistrationForm
  * Implementation: Sovereign Identity Enrollment (Axios-based)
- * v.78.100.105 - Forensic Purge (Zero-Noise Compliance)
- * Refactor: 100% Pure Tailwind (Purged HEX & Legacy Classes).
+ * v.78.100.230 - Role-First Conditional Fields
+ * Refactor: Rol Archon first; role-scoped conditional fields per Archon Master bands.
  */
 
 interface SuccessViewProps {
@@ -35,11 +37,8 @@ interface SuccessViewProps {
   onClose: () => void;
 }
 
-/**
- * Owner-Scoped Fleet Access (F1-A): roles whose users are linked to
- * FLEET_OWNER catalog rows — 4 Gestor de Flotilla · 9 Cliente Externo.
- */
-const OWNER_SCOPED_ROLE_IDS = [4, 9];
+/** Archon Master role bands whose users link to FLEET_OWNER catalog rows. */
+const OWNER_SCOPED_ROLE_IDS = [1, 3, 4];
 
 interface OwnerOption {
   id: number;
@@ -49,6 +48,72 @@ interface OwnerOption {
 interface OwnerLink {
   ownerId: number;
   label: string;
+}
+
+interface ParentOwnerOption {
+  id: number;
+  label: string;
+}
+
+interface AreaOption {
+  id: number;
+  name: string;
+}
+
+// ── Role classification helpers (outside component for cognitive-complexity budget) ──
+
+function isOwnerRole(roleId: number): boolean {
+  return OWNER_SCOPED_ROLE_IDS.includes(roleId);
+}
+
+function isAreaSubUser(roleId: number): boolean {
+  return roleId === 2;
+}
+
+function isFamiliarSubUser(roleId: number): boolean {
+  return roleId === 5;
+}
+
+function isInternalStaff(roleId: number): boolean {
+  return !isOwnerRole(roleId) && !isAreaSubUser(roleId) && !isFamiliarSubUser(roleId);
+}
+
+function getRoleFieldsValid(
+  roleId: number,
+  parentOwnerId: string,
+  areaId: string,
+  familiarType: string
+): boolean {
+  if (isAreaSubUser(roleId)) return Boolean(parentOwnerId && areaId);
+  if (isFamiliarSubUser(roleId)) return Boolean(parentOwnerId && familiarType);
+  return true;
+}
+
+function buildSubUserPayload(
+  roleId: number,
+  username: string,
+  fullName: string,
+  email: string,
+  password: string,
+  parentOwnerId: string,
+  areaId: string,
+  familiarType: string,
+  tempPass: string
+): Record<string, unknown> {
+  const base: Record<string, unknown> = {
+    username: username.toLowerCase(),
+    fullName,
+    email: email.toLowerCase(),
+    roleId,
+    password: password || tempPass,
+    parentOwnerId: parseInt(parentOwnerId, 10),
+  };
+  if (isAreaSubUser(roleId)) {
+    base.areaId = parseInt(areaId, 10);
+  } else {
+    base.familiarType = familiarType;
+  }
+  return base;
 }
 
 const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
@@ -113,6 +178,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const [ownerCatalog, setOwnerCatalog] = useState<OwnerOption[]>([]);
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<number[]>([]);
 
+  // 🔱 Sub-user parent catalog
+  const [parentOwners, setParentOwners] = useState<ParentOwnerOption[]>([]);
+  const [areas, setAreas] = useState<AreaOption[]>([]);
+
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
@@ -123,6 +192,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     imageUrl: '',
     password: '',
     confirmPassword: '',
+    parentOwnerId: '',
+    areaId: '',
+    familiarType: '',
   });
 
   useEffect(() => {
@@ -137,11 +209,15 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         imageUrl: editingUser.imageUrl || '',
         password: '',
         confirmPassword: '',
+        parentOwnerId: '',
+        areaId: '',
+        familiarType: '',
       });
     }
   }, [editingUser, roles]);
 
-  const isOwnerScopedRole = OWNER_SCOPED_ROLE_IDS.includes(parseInt(formData.roleId, 10));
+  const roleIdNum = parseInt(formData.roleId, 10) || 0;
+  const isOwnerScopedRole = isOwnerRole(roleIdNum);
 
   useEffect(() => {
     if (!isOwnerScopedRole) return;
@@ -165,6 +241,36 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     };
     loadOwnersData();
   }, [isOwnerScopedRole, editingUser]);
+
+  useEffect(() => {
+    if (!isAreaSubUser(roleIdNum) && !isFamiliarSubUser(roleIdNum)) return;
+    const loadParentOwners = async (): Promise<void> => {
+      try {
+        const res = await api.get<{ success: boolean; data: ParentOwnerOption[] }>(
+          '/catalogs/FLEET_OWNER'
+        );
+        setParentOwners(res.data?.data || []);
+      } catch {
+        setParentOwners([]);
+      }
+    };
+    loadParentOwners();
+  }, [roleIdNum]);
+
+  useEffect(() => {
+    if (!isAreaSubUser(roleIdNum) || !formData.parentOwnerId) return;
+    const loadAreas = async (): Promise<void> => {
+      try {
+        const res = await api.get<{ success: boolean; data: AreaOption[] }>(
+          `/owners/${formData.parentOwnerId}/areas`
+        );
+        setAreas(res.data?.data || []);
+      } catch {
+        setAreas([]);
+      }
+    };
+    loadAreas();
+  }, [roleIdNum, formData.parentOwnerId]);
 
   const toggleOwner = (ownerId: number): void => {
     setSelectedOwnerIds((prev: number[]): number[] =>
@@ -231,13 +337,37 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     }
   };
 
+  const handleCreateSubUser = async (tempPass: string): Promise<void> => {
+    const payload = buildSubUserPayload(
+      roleIdNum,
+      formData.username,
+      formData.fullName,
+      formData.email,
+      formData.password,
+      formData.parentOwnerId,
+      formData.areaId,
+      formData.familiarType,
+      tempPass
+    );
+    const response = await api.post('/auth/sub-users', payload);
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Error en el servidor.');
+    }
+    setSuccessData({ tempPass });
+    await fetchUsers();
+  };
+
   const handleCreate = async (): Promise<void> => {
     const tempPass = generateTempPassword();
+    if (isAreaSubUser(roleIdNum) || isFamiliarSubUser(roleIdNum)) {
+      await handleCreateSubUser(tempPass);
+      return;
+    }
     const response = await api.post('/auth/register', {
       username: formData.username.toLowerCase(),
       fullName: formData.fullName,
       email: formData.email.toLowerCase(),
-      roleId: parseInt(formData.roleId, 10),
+      roleId: roleIdNum,
       department: formData.department,
       employeeNumber: formData.employeeNumber,
       password: formData.password || tempPass,
@@ -312,7 +442,11 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   };
 
   const passwordsMatch = formData.password === formData.confirmPassword;
-  const canSubmit = !formData.password || (passwordsMatch && formData.password.length >= 8);
+  const canSubmit =
+    (!formData.password || (passwordsMatch && formData.password.length >= 8)) &&
+    getRoleFieldsValid(roleIdNum, formData.parentOwnerId, formData.areaId, formData.familiarType);
+
+  const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
 
   if (successData) {
     return (
@@ -349,6 +483,30 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
             </div>
           </div>
         )}
+
+        {/* 🔱 ROL ARCHON — primer campo, ancho completo */}
+        <div className="card-archon-sovereign bg-white px-10 py-8 [--card-accent:#0f2a44]">
+          <div className="card-sovereign-header mb-6">
+            <Shield size={22} className="text-pinnacle-navy" />
+            <h3 className="card-sovereign-title text-archon-xl opacity-100">Rol Archon</h3>
+          </div>
+          <ArchonField label="Rol del Sistema" icon={Shield} required>
+            <ArchonSelect
+              options={sortedRoles.map((r) => ({ value: r.id.toString(), label: r.label }))}
+              value={formData.roleId}
+              onChange={(val: string): void =>
+                setFormData({
+                  ...formData,
+                  roleId: val,
+                  parentOwnerId: '',
+                  areaId: '',
+                  familiarType: '',
+                })
+              }
+            />
+          </ArchonField>
+        </div>
+
         <div className="archon-grid-2-sovereign">
           <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#10b981]">
             <div className="card-sovereign-header">
@@ -436,23 +594,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               />
             </ArchonField>
 
-            <div className="grid grid-cols-2 gap-8">
-              <ArchonField label="Rol Archon" icon={Shield} required>
-                <ArchonSelect
-                  options={roles.map((r) => ({ value: r.id.toString(), label: r.label }))}
-                  value={formData.roleId}
-                  onChange={(val: string): void => setFormData({ ...formData, roleId: val })}
-                />
-              </ArchonField>
-              <ArchonField label="Departamento" icon={Briefcase}>
-                <ArchonSelect
-                  options={departments}
-                  value={formData.department}
-                  onChange={(val: string): void => setFormData({ ...formData, department: val })}
-                />
-              </ArchonField>
-            </div>
-
             {isOwnerScopedRole && (
               <div
                 data-testid="owners-assignment"
@@ -485,6 +626,78 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   El usuario solo verá unidades de los propietarios seleccionados
                 </p>
               </div>
+            )}
+
+            {isAreaSubUser(roleIdNum) && (
+              <div
+                data-testid="area-subuser-fields"
+                className="pt-6 border-t border-pinnacle-navy/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300"
+              >
+                <ArchonField label="Propietario de Flotilla" icon={Building2} required>
+                  <ArchonSelect
+                    options={parentOwners.map((o) => ({ value: o.id.toString(), label: o.label }))}
+                    value={formData.parentOwnerId}
+                    onChange={(val: string): void =>
+                      setFormData({ ...formData, parentOwnerId: val, areaId: '' })
+                    }
+                  />
+                </ArchonField>
+                {formData.parentOwnerId && (
+                  <ArchonField label="Área de Trabajo" icon={MapPin} required>
+                    <ArchonSelect
+                      options={areas.map((a) => ({ value: a.id.toString(), label: a.name }))}
+                      value={formData.areaId}
+                      onChange={(val: string): void => setFormData({ ...formData, areaId: val })}
+                    />
+                  </ArchonField>
+                )}
+              </div>
+            )}
+
+            {isFamiliarSubUser(roleIdNum) && (
+              <div
+                data-testid="familiar-subuser-fields"
+                className="pt-6 border-t border-pinnacle-navy/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300"
+              >
+                <ArchonField label="Propietario Familiar" icon={Users} required>
+                  <ArchonSelect
+                    options={parentOwners.map((o) => ({ value: o.id.toString(), label: o.label }))}
+                    value={formData.parentOwnerId}
+                    onChange={(val: string): void =>
+                      setFormData({ ...formData, parentOwnerId: val })
+                    }
+                  />
+                </ArchonField>
+                <ArchonField label="Tipo de Familiar" icon={Users} required>
+                  <div className="flex gap-3 pt-1">
+                    {(['PAREJA', 'HIJO_A'] as const).map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        data-testid={`familiar-type-${type.toLowerCase()}`}
+                        onClick={(): void => setFormData({ ...formData, familiarType: type })}
+                        className={`flex-1 py-2.5 rounded-[4px] text-archon-md font-black uppercase tracking-widest transition-all duration-300 ${
+                          formData.familiarType === type
+                            ? 'bg-pinnacle-navy text-white'
+                            : 'bg-pinnacle-navy/5 text-pinnacle-navy/60 hover:bg-pinnacle-navy/10'
+                        }`}
+                      >
+                        {type === 'HIJO_A' ? 'HIJO/A' : type}
+                      </button>
+                    ))}
+                  </div>
+                </ArchonField>
+              </div>
+            )}
+
+            {isInternalStaff(roleIdNum) && (
+              <ArchonField label="Departamento" icon={Briefcase}>
+                <ArchonSelect
+                  options={departments}
+                  value={formData.department}
+                  onChange={(val: string): void => setFormData({ ...formData, department: val })}
+                />
+              </ArchonField>
             )}
 
             <div className="relative">
