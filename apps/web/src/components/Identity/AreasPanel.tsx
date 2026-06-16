@@ -13,6 +13,9 @@ interface Area {
 
 const AreasPanel: React.FC = () => {
   const { currentUser } = useAuth();
+  const permissions: string[] =
+    (currentUser as { permissions?: string[] } | null)?.permissions ?? [];
+  const isAdmin = permissions.includes('*') || permissions.includes('user:admin');
   const [ownerId, setOwnerId] = useState<number | null>(null);
   const [areas, setAreas] = useState<Area[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,29 +115,31 @@ const AreasPanel: React.FC = () => {
         </div>
       )}
 
-      <div className="flex gap-3">
-        <input
-          type="text"
-          placeholder="Nombre del área (ej: Mantenimiento)"
-          className="flex-1 h-10 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] px-4 rounded-[4px] text-sm font-medium text-[#0f2a44] outline-none transition-all"
-          value={newAreaName}
-          onChange={(e): void => setNewAreaName(e.target.value)}
-          onKeyDown={(e): void => {
-            if (e.key === 'Enter') createArea();
-          }}
-          data-testid="new-area-input"
-        />
-        <button
-          type="button"
-          onClick={createArea}
-          disabled={isCreating || !newAreaName.trim()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#0f2a44] text-white rounded-md text-sm font-semibold disabled:opacity-50 hover:bg-[#0f2a44]/90 transition-colors"
-          data-testid="create-area-btn"
-        >
-          <Plus size={14} />
-          Crear
-        </button>
-      </div>
+      {isAdmin && (
+        <div className="flex gap-3">
+          <input
+            type="text"
+            placeholder="Nombre del área (ej: Mantenimiento)"
+            className="flex-1 h-10 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] px-4 rounded-[4px] text-sm font-medium text-[#0f2a44] outline-none transition-all"
+            value={newAreaName}
+            onChange={(e): void => setNewAreaName(e.target.value)}
+            onKeyDown={(e): void => {
+              if (e.key === 'Enter') createArea();
+            }}
+            data-testid="new-area-input"
+          />
+          <button
+            type="button"
+            onClick={createArea}
+            disabled={isCreating || !newAreaName.trim()}
+            className="flex items-center gap-2 px-4 py-2 bg-[#0f2a44] text-white rounded-md text-sm font-semibold disabled:opacity-50 hover:bg-[#0f2a44]/90 transition-colors"
+            data-testid="create-area-btn"
+          >
+            <Plus size={14} />
+            Crear
+          </button>
+        </div>
+      )}
 
       {areas.length === 0 ? (
         <p className="text-[#0f2a44]/40 text-sm text-center py-6" data-testid="areas-empty">
@@ -174,7 +179,7 @@ const AreasPanel: React.FC = () => {
                 </span>
               )}
               <div className="flex items-center gap-2">
-                {area.is_active && (
+                {area.is_active && isAdmin && (
                   <>
                     {editId === area.id ? (
                       <button

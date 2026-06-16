@@ -624,6 +624,54 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(screen.getByTestId('familiar-type-pareja')).toHaveClass('bg-pinnacle-navy');
   });
 
+  // ── Oleada 8: Fase 5 — role-scoped new fields ──────────────────────────────
+
+  it('shows profile section for Rol 3 (Centro Especializado)', async () => {
+    currentMockState.roles = [{ id: 3, label: 'Centro Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('centro-profile-section')).toBeInTheDocument();
+      expect(screen.getByTestId('centro-rfc-input')).toBeInTheDocument();
+      expect(screen.getByTestId('centro-razon-social-input')).toBeInTheDocument();
+    });
+  });
+
+  it('shows areas chips input for Rol 1 (Flotilla)', async () => {
+    currentMockState.roles = [{ id: 1, label: 'Flotilla Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('flotilla-areas-section')).toBeInTheDocument();
+      expect(screen.getByTestId('area-chip-input')).toBeInTheDocument();
+      expect(screen.getByTestId('area-chip-add-btn')).toBeInTheDocument();
+    });
+  });
+
+  it('shows CENTER selector for Rol 4 (Propietario Privado)', async () => {
+    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url.includes('/catalogs/centers')) {
+        return Promise.resolve({
+          data: { success: true, data: [{ id: 10, label: 'Centro Uno' }] },
+        });
+      }
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('privado-centro-section')).toBeInTheDocument();
+    });
+  });
+
+  it('submit is disabled for Rol 4 when no centro selected', async () => {
+    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => expect(screen.getByTestId('privado-centro-section')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
+  });
+
   it('sub-user create (role 2) calls /auth/sub-users endpoint', async () => {
     currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
     // Provide parent owners so the select has options

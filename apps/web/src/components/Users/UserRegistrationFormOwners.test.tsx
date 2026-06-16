@@ -125,7 +125,7 @@ describe('UserRegistrationForm — Propietarios Asignados (Owner-Scoped)', () =>
     expect(screen.getByTestId('owner-chip-712')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('renders the owners section for role 4 (Propietario Privado) as well', async () => {
+  it('does not render owners-assignment for role 4 (Propietario Privado) — uses centro section instead', async () => {
     currentMockState.editingUser = {
       id: 11,
       username: 'privado',
@@ -138,7 +138,10 @@ describe('UserRegistrationForm — Propietarios Asignados (Owner-Scoped)', () =>
     };
 
     render(<UserRegistrationForm />);
-    expect(await screen.findByTestId('owners-assignment')).toBeInTheDocument();
+    // Rol 4 removed from OWNER_SCOPED_ROLE_IDS — owner chips no longer shown
+    expect(screen.queryByTestId('owners-assignment')).not.toBeInTheDocument();
+    // Centro section only shown for new users (!editingUser)
+    expect(screen.queryByTestId('privado-centro-section')).not.toBeInTheDocument();
   });
 
   it('persists the new owner set via PUT on edit save (with audit reason)', async () => {

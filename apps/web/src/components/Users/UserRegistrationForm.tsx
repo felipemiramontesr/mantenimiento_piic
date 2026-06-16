@@ -37,8 +37,8 @@ interface SuccessViewProps {
   onClose: () => void;
 }
 
-/** Archon Master role bands whose users link to FLEET_OWNER catalog rows. */
-const OWNER_SCOPED_ROLE_IDS = [1, 3, 4];
+/** Archon Master role bands whose users link to FLEET_OWNER catalog rows (Rol 4 uses CENTER selector). */
+const OWNER_SCOPED_ROLE_IDS = [1, 3];
 
 interface OwnerOption {
   id: number;
@@ -60,6 +60,11 @@ interface AreaOption {
   name: string;
 }
 
+interface CenterOption {
+  id: number;
+  label: string;
+}
+
 // ── Role classification helpers (outside component for cognitive-complexity budget) ──
 
 function isOwnerRole(roleId: number): boolean {
@@ -74,6 +79,10 @@ function isFamiliarSubUser(roleId: number): boolean {
   return roleId === 5;
 }
 
+function isPrivadoRole(roleId: number): boolean {
+  return roleId === 4;
+}
+
 function isInternalStaff(roleId: number): boolean {
   return !isOwnerRole(roleId) && !isAreaSubUser(roleId) && !isFamiliarSubUser(roleId);
 }
@@ -82,10 +91,12 @@ function getRoleFieldsValid(
   roleId: number,
   parentOwnerId: string,
   areaId: string,
-  familiarType: string
+  familiarType: string,
+  centroOwnerId: string
 ): boolean {
   if (isAreaSubUser(roleId)) return Boolean(parentOwnerId && areaId);
   if (isFamiliarSubUser(roleId)) return Boolean(parentOwnerId && familiarType);
+  if (isPrivadoRole(roleId)) return Boolean(centroOwnerId);
   return true;
 }
 
@@ -182,6 +193,11 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const [parentOwners, setParentOwners] = useState<ParentOwnerOption[]>([]);
   const [areas, setAreas] = useState<AreaOption[]>([]);
 
+  // 🔱 Fase 5: Rol 4 CENTER catalog, Rol 1 area chips
+  const [centers, setCenters] = useState<CenterOption[]>([]);
+  const [areaChips, setAreaChips] = useState<string[]>([]);
+  const [areaInputValue, setAreaInputValue] = useState('');
+
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
@@ -195,6 +211,13 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     parentOwnerId: '',
     areaId: '',
     familiarType: '',
+    // Fase 5 fields:
+    rfc: '',
+    razonSocial: '',
+    direccion: '',
+    telefono: '',
+    especialidades: '',
+    centroOwnerId: '',
   });
 
   useEffect(() => {
@@ -212,12 +235,19 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         parentOwnerId: '',
         areaId: '',
         familiarType: '',
+        rfc: '',
+        razonSocial: '',
+        direccion: '',
+        telefono: '',
+        especialidades: '',
+        centroOwnerId: '',
       });
     }
   }, [editingUser, roles]);
 
   const roleIdNum = parseInt(formData.roleId, 10) || 0;
   const isOwnerScopedRole = isOwnerRole(roleIdNum);
+  const isPrivadoOwner = isPrivadoRole(roleIdNum);
 
   useEffect(() => {
     if (!isOwnerScopedRole) return;
@@ -241,6 +271,19 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     };
     loadOwnersData();
   }, [isOwnerScopedRole, editingUser]);
+
+  useEffect(() => {
+    if (!isPrivadoOwner) return;
+    const loadCenters = async (): Promise<void> => {
+      try {
+        const res = await api.get<{ success: boolean; data: CenterOption[] }>('/catalogs/centers');
+        setCenters(res.data?.data || []);
+      } catch {
+        setCenters([]);
+      }
+    };
+    loadCenters();
+  }, [isPrivadoOwner]);
 
   useEffect(() => {
     if (!isAreaSubUser(roleIdNum) && !isFamiliarSubUser(roleIdNum)) return;
@@ -372,6 +415,18 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       employeeNumber: formData.employeeNumber,
       password: formData.password || tempPass,
       profile_picture_url: formData.imageUrl,
+      ...(roleIdNum === 3 && {
+        rfc: formData.rfc,
+        razonSocial: formData.razonSocial,
+        direccion: formData.direccion,
+        telefono: formData.telefono,
+        ...(formData.especialidades && { especialidades: formData.especialidades }),
+      }),
+      ...(roleIdNum === 1 && areaChips.length > 0 && { areas: areaChips }),
+      ...(roleIdNum === 4 &&
+        formData.centroOwnerId && {
+          centroOwnerId: parseInt(formData.centroOwnerId, 10),
+        }),
     });
 
     if (response.data.success) {
@@ -444,7 +499,14 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const passwordsMatch = formData.password === formData.confirmPassword;
   const canSubmit =
     (!formData.password || (passwordsMatch && formData.password.length >= 8)) &&
-    getRoleFieldsValid(roleIdNum, formData.parentOwnerId, formData.areaId, formData.familiarType);
+    (!!editingUser ||
+      getRoleFieldsValid(
+        roleIdNum,
+        formData.parentOwnerId,
+        formData.areaId,
+        formData.familiarType,
+        formData.centroOwnerId
+      ));
 
   const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
 
@@ -765,6 +827,182 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
             )}
           </div>
         </div>
+
+        {/* 🔱 Fase 5: Rol 3 — Perfil Centro Especializado */}
+        {roleIdNum === 3 && !editingUser && (
+          <div
+            data-testid="centro-profile-section"
+            className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#8b5cf6]"
+          >
+            <div className="card-sovereign-header">
+              <Building2 size={22} className="text-[var(--card-accent)]" />
+              <h3 className="card-sovereign-title text-archon-xl opacity-100">
+                Perfil Centro Especializado
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-8">
+              <ArchonField label="RFC" icon={Shield} required>
+                <input
+                  type="text"
+                  placeholder="RFC del Centro"
+                  className="archon-input"
+                  data-testid="centro-rfc-input"
+                  value={formData.rfc}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, rfc: e.target.value })
+                  }
+                />
+              </ArchonField>
+              <ArchonField label="Razón Social" icon={Briefcase} required>
+                <input
+                  type="text"
+                  placeholder="Nombre legal del centro"
+                  className="archon-input"
+                  data-testid="centro-razon-social-input"
+                  value={formData.razonSocial}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, razonSocial: e.target.value })
+                  }
+                />
+              </ArchonField>
+            </div>
+            <ArchonField label="Dirección" icon={MapPin}>
+              <input
+                type="text"
+                placeholder="Dirección del centro"
+                className="archon-input"
+                data-testid="centro-direccion-input"
+                value={formData.direccion}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setFormData({ ...formData, direccion: e.target.value })
+                }
+              />
+            </ArchonField>
+            <div className="grid grid-cols-2 gap-8">
+              <ArchonField label="Teléfono" icon={Contact}>
+                <input
+                  type="tel"
+                  placeholder="Teléfono del centro"
+                  className="archon-input"
+                  data-testid="centro-telefono-input"
+                  value={formData.telefono}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, telefono: e.target.value })
+                  }
+                />
+              </ArchonField>
+              <ArchonField label="Especialidades (Opcional)" icon={Briefcase}>
+                <input
+                  type="text"
+                  placeholder="Ej: Frenos, Eléctrico, Transmisión"
+                  className="archon-input"
+                  data-testid="centro-especialidades-input"
+                  value={formData.especialidades}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                    setFormData({ ...formData, especialidades: e.target.value })
+                  }
+                />
+              </ArchonField>
+            </div>
+          </div>
+        )}
+
+        {/* 🔱 Fase 5: Rol 1 — Áreas Iniciales (chips) */}
+        {roleIdNum === 1 && !editingUser && (
+          <div
+            data-testid="flotilla-areas-section"
+            className="card-archon-sovereign bg-white p-8 space-y-4 [--card-accent:#0f2a44]"
+          >
+            <div className="card-sovereign-header">
+              <Building2 size={20} className="text-[var(--card-accent)]" />
+              <h3 className="card-sovereign-title text-archon-xl opacity-100">Áreas Iniciales</h3>
+            </div>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Nombre del área (Enter para agregar)"
+                className="flex-1 h-10 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] px-4 rounded-[4px] text-sm font-medium text-[#0f2a44] outline-none transition-all"
+                data-testid="area-chip-input"
+                value={areaInputValue}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                  setAreaInputValue(e.target.value)
+                }
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>): void => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const trimmed = areaInputValue.trim();
+                    if (trimmed && !areaChips.includes(trimmed)) {
+                      setAreaChips((prev) => [...prev, trimmed]);
+                      setAreaInputValue('');
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                data-testid="area-chip-add-btn"
+                onClick={(): void => {
+                  const trimmed = areaInputValue.trim();
+                  if (trimmed && !areaChips.includes(trimmed)) {
+                    setAreaChips((prev) => [...prev, trimmed]);
+                    setAreaInputValue('');
+                  }
+                }}
+                className="px-4 py-2 bg-[#0f2a44] text-white rounded-md text-sm font-semibold hover:bg-[#0f2a44]/90 transition-colors"
+              >
+                Agregar
+              </button>
+            </div>
+            {areaChips.length > 0 && (
+              <div className="flex flex-wrap gap-2" data-testid="area-chips-list">
+                {areaChips.map((chip) => (
+                  <span
+                    key={chip}
+                    className="flex items-center gap-1 px-3 py-1 bg-[#0f2a44] text-white rounded-full text-sm font-semibold"
+                  >
+                    {chip}
+                    <button
+                      type="button"
+                      onClick={(): void => setAreaChips((prev) => prev.filter((c) => c !== chip))}
+                      className="ml-1 hover:text-red-300 transition-colors"
+                      data-testid={`area-chip-remove-${chip}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="text-archon-base uppercase tracking-widest opacity-40 text-sm">
+              Estas áreas se crearán al registrar. Pueden gestionarse después en el panel de áreas.
+            </p>
+          </div>
+        )}
+
+        {/* 🔱 Fase 5: Rol 4 — Centro de Servicio Asignado */}
+        {isPrivadoOwner && !editingUser && (
+          <div
+            data-testid="privado-centro-section"
+            className="card-archon-sovereign bg-white p-8 space-y-4 [--card-accent:#0f2a44]"
+          >
+            <div className="card-sovereign-header">
+              <Building2 size={20} className="text-[var(--card-accent)]" />
+              <h3 className="card-sovereign-title text-archon-xl opacity-100">
+                Centro de Servicio
+              </h3>
+            </div>
+            <ArchonField label="Centro Especializado Asignado" icon={Building2} required>
+              <ArchonSelect
+                options={centers.map((c) => ({ value: c.id.toString(), label: c.label }))}
+                value={formData.centroOwnerId}
+                onChange={(val: string): void => setFormData({ ...formData, centroOwnerId: val })}
+              />
+            </ArchonField>
+            <p className="text-archon-base uppercase tracking-widest opacity-40 text-sm">
+              El propietario privado quedará vinculado operativamente a este centro.
+            </p>
+          </div>
+        )}
 
         <div className="archon-grid-2-sovereign mt-5 pt-0 border-t border-pinnacle-navy/5">
           <div className="flex gap-4">

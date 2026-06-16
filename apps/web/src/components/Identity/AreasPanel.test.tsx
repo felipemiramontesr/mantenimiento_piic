@@ -43,8 +43,13 @@ const makeArea = (id: number, name: string, isActive = true): AreaFixture => ({
   created_at: '2026-01-01T00:00:00.000Z',
 });
 
-const setupAuthMock = (): void => {
-  mockUseAuth.mockReturnValue({ currentUser: { id: USER_ID } });
+const setupAuthMock = (admin = true): void => {
+  mockUseAuth.mockReturnValue({
+    currentUser: {
+      id: USER_ID,
+      permissions: admin ? ['user:admin'] : ['fleet:scoped'],
+    },
+  });
 };
 
 const setupOwnerAndAreas = (areas: ReturnType<typeof makeArea>[]): void => {
@@ -205,5 +210,28 @@ describe('AreasPanel', () => {
     render(<AreasPanel />);
     await waitFor(() => expect(screen.getByTestId('areas-empty')).toBeInTheDocument());
     expect(screen.getByTestId('create-area-btn')).toBeDisabled();
+  });
+
+  // ── Fase 5: Admin-gate CRUD controls ──────────────────────────────────────
+
+  it('hides create and CRUD controls for non-admin user', async () => {
+    setupAuthMock(false);
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento')]);
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('area-name-1')).toBeInTheDocument());
+    expect(screen.queryByTestId('new-area-input')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('create-area-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('edit-btn-1')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('deactivate-btn-1')).not.toBeInTheDocument();
+  });
+
+  it('shows create and CRUD controls for admin user', async () => {
+    setupAuthMock(true);
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento')]);
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('new-area-input')).toBeInTheDocument());
+    expect(screen.getByTestId('create-area-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('edit-btn-1')).toBeInTheDocument();
+    expect(screen.getByTestId('deactivate-btn-1')).toBeInTheDocument();
   });
 });
