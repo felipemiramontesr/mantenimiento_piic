@@ -731,8 +731,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       roleId: z
         .number()
         .int()
-        .refine((id) => [2, 5].includes(id), {
-          message: 'roleId must be 2 (Área) or 5 (Familiar)',
+        .refine((id) => [2, 4, 5].includes(id), {
+          message: 'roleId must be 2 (Área), 4 (Privado) or 5 (Familiar)',
         }),
       parentOwnerId: z.number().int().positive(),
       areaId: z.number().int().positive().optional(),
@@ -768,7 +768,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     if (roleId === 2 && ownerType !== 'FLOTILLA') {
       return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
     }
-    if (roleId === 5 && !['PRIVATE', 'CENTER'].includes(ownerType)) {
+    if (roleId === 4 && ownerType !== 'CENTER') {
+      return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
+    }
+    if (roleId === 5 && ownerType !== 'PRIVATE') {
       return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
     }
 
@@ -804,6 +807,24 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       return await withConnection(async (connection) => {
         await connection.beginTransaction();
         try {
+          let membershipOwnerId = parentOwnerId;
+
+          if (roleId === 4) {
+            const [nextRows] = await connection.execute<RowDataPacket[]>(
+              'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
+            );
+            const newPrivateOwnerId = (nextRows as RowDataPacket[])[0].nextId as number;
+            await connection.execute<ResultSetHeader>(
+              "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
+              [newPrivateOwnerId, `OWN_U${newPrivateOwnerId}`, fullName || username]
+            );
+            await connection.execute<ResultSetHeader>(
+              'INSERT INTO owners (id, owner_type, label, parent_owner_id) VALUES (?, ?, ?, ?)',
+              [newPrivateOwnerId, 'PRIVATE', fullName || username, parentOwnerId]
+            );
+            membershipOwnerId = newPrivateOwnerId;
+          }
+
           const [insertResult] = await connection.execute<ResultSetHeader>(
             'INSERT INTO users (username, email, password_hash, role_id, full_name, is_active) VALUES (?, ?, ?, ?, ?, 1)',
             [username, encEmail, passwordHash, roleId, fullName ?? '']
@@ -817,7 +838,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
           await connection.execute(
             'INSERT INTO user_owner_membership (user_id, owner_id, familiar_type, area_id) VALUES (?, ?, ?, ?)',
-            [newUserId, parentOwnerId, familiarType ?? null, areaId ?? null]
+            [newUserId, membershipOwnerId, familiarType ?? null, areaId ?? null]
           );
 
           await connection.commit();

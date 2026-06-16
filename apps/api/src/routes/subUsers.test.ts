@@ -3,10 +3,10 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: POST /v1/auth/sub-users (Archon Master F2-F)
- * Feature Contract: Archon_Master_Fase2_Areas_y_SubUsuarios
- * Creates Área (role_id=2) and Familiar (role_id=5) sub-users.
- * Guard: caller must own parentOwnerId.
+ * Archon Integration Test: POST /v1/auth/sub-users
+ * Feature Contracts: Archon_Master_Fase2_Areas_y_SubUsuarios + Archon_Master_Fase3_VIM_Hierarchy
+ * Creates Área (role_id=2), Privado (role_id=4) and Familiar (role_id=5) sub-users.
+ * Guard: caller must own parentOwnerId; type constraints per role.
  */
 
 const mockConnection = {
@@ -86,7 +86,7 @@ describe('POST /v1/auth/sub-users', () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it('returns 400 for invalid roleId (not 2 or 5)', async () => {
+  it('returns 400 for invalid roleId (not 2, 4 or 5)', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/v1/auth/sub-users',
@@ -147,7 +147,7 @@ describe('POST /v1/auth/sub-users', () => {
     expect(JSON.parse(res.body).error).toBe('ROLE_OWNER_MISMATCH');
   });
 
-  it('returns 400 when roleId=5 but parent is not PRIVATE or CENTER', async () => {
+  it('returns 400 when roleId=5 but parent is not PRIVATE (FLOTILLA)', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ owner_id: PARENT_OWNER_ID }], undefined])
       .mockResolvedValueOnce([[{ id: PARENT_OWNER_ID, owner_type: 'FLOTILLA' }], undefined]);
@@ -159,6 +159,101 @@ describe('POST /v1/auth/sub-users', () => {
     });
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).error).toBe('ROLE_OWNER_MISMATCH');
+  });
+
+  // FC Fase3 — Scenario 3: CENTER ya no puede crear Familiar
+  it('returns 400 when roleId=5 and parent is CENTER (Scenario 3)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ owner_id: PARENT_OWNER_ID }], undefined])
+      .mockResolvedValueOnce([[{ id: PARENT_OWNER_ID, owner_type: 'CENTER' }], undefined]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sub-users',
+      headers: auth(flotillaToken),
+      payload: { ...basePayload, roleId: 5, familiarType: 'PAREJA' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('ROLE_OWNER_MISMATCH');
+  });
+
+  // FC Fase3 — Scenario 2: FLOTILLA no puede crear Privado
+  it('returns 400 when roleId=4 but parent is FLOTILLA (Scenario 2)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ owner_id: PARENT_OWNER_ID }], undefined])
+      .mockResolvedValueOnce([[{ id: PARENT_OWNER_ID, owner_type: 'FLOTILLA' }], undefined]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sub-users',
+      headers: auth(flotillaToken),
+      payload: { ...basePayload, roleId: 4, areaId: undefined },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('ROLE_OWNER_MISMATCH');
+  });
+
+  // FC Fase3 — Scenario 2 (variante): PRIVATE no puede crear Privado
+  it('returns 400 when roleId=4 but parent is PRIVATE', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ owner_id: PARENT_OWNER_ID }], undefined])
+      .mockResolvedValueOnce([[{ id: PARENT_OWNER_ID, owner_type: 'PRIVATE' }], undefined]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sub-users',
+      headers: auth(flotillaToken),
+      payload: { ...basePayload, roleId: 4, areaId: undefined },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('ROLE_OWNER_MISMATCH');
+  });
+
+  // FC Fase3 — Scenario 1: CENTER crea P. Privado (happy path)
+  it('creates a Privado sub-user (roleId=4) under a CENTER and creates owner row (Scenario 1)', async () => {
+    const CENTER_OWNER_ID = 200;
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    const centerToken = jwt.sign({
+      id: 20,
+      username: 'centro.owner',
+      roleId: 3,
+      roleName: 'Centro Especializado',
+      permissions: ['vim:scoped'],
+    });
+
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ owner_id: CENTER_OWNER_ID }], undefined]) // callerOwnerIds
+      .mockResolvedValueOnce([[{ id: CENTER_OWNER_ID, owner_type: 'CENTER' }], undefined]) // owner type
+      .mockResolvedValueOnce([[], undefined]); // username unique
+
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ nextId: 300 }], undefined]) // MAX(id)+1 FOR UPDATE
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (PRIVATE)
+      .mockResolvedValueOnce([{ insertId: 77 }, undefined]) // INSERT users
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_roles
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT membership
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sub-users',
+      headers: auth(centerToken),
+      payload: {
+        username: 'privado.user',
+        email: 'privado@centro.mx',
+        password: 'Archon@1234!',
+        roleId: 4,
+        parentOwnerId: CENTER_OWNER_ID,
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.data.roleId).toBe(4);
+
+    const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
+    expect(sqls.some((s) => s.includes('INSERT INTO owners'))).toBe(true);
+    expect(sqls.some((s) => s.includes('parent_owner_id'))).toBe(true);
+    expect(sqls.some((s) => s.includes('user_owner_membership'))).toBe(true);
+    expect(mockConnection.commit).toHaveBeenCalled();
   });
 
   it('returns 400 when roleId=2 but areaId is missing', async () => {
