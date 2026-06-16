@@ -124,16 +124,15 @@ describe('authIntegration.test', () => {
   });
 
   it('Path: Register & Conflict Sovereign Logic', async () => {
-    // roleId: 1 triggers linkExternalClientOwner — restore connection mocks cleared by vi.resetAllMocks()
+    // roleId: 1 — user INSERT now inside withConnection transaction (Fase 3)
     (db.getConnection as Mock).mockResolvedValue(mockConnection);
     (mockConnection.execute as Mock)
+      .mockResolvedValueOnce([{ insertId: 70 }, undefined]) // INSERT users (inside transaction)
       .mockResolvedValueOnce([[], undefined]) // owner label lookup → none
       .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1
-      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // catalog insert + link
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // catalog + owners + membership
 
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([{ insertId: 70 }, undefined]);
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check only
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',

@@ -3,10 +3,10 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * 🔱 Archon Integration Test: Areas CRUD (Archon Master F2-A)
- * Feature Contract: Archon_Master_Fase2_Areas_y_SubUsuarios
- * GET/POST /v1/owners/:id/areas · PUT/DELETE /v1/owners/:id/areas/:areaId
- * GET /v1/areas/templates
+ * Archon Integration Test: Areas CRUD
+ * Feature Contracts: Archon_Master_Fase2_Areas_y_SubUsuarios + Archon_Master_Fase3_VIM_Hierarchy
+ * GET/POST /v1/owners/:id/areas · PUT/DELETE /v1/owners/:id/areas/:areaId · GET /v1/areas/templates
+ * POST/PUT/DELETE restricted to Archon Master (isAdmin) per Scenarios 6/7.
  */
 
 vi.mock('../services/db', () => ({
@@ -175,8 +175,20 @@ describe('Areas Routes (Archon Master F2)', () => {
       expect(res.statusCode).toBe(400);
     });
 
-    it('returns 403 for wrong owner', async () => {
-      (db.execute as Mock).mockResolvedValueOnce([[{ owner_id: 999 }], undefined]);
+    // FC Fase3 — Scenario 6: Flotilla NO puede crear Área
+    it('returns 403 FORBIDDEN for Rol 1 (Flotilla) caller — Scenario 6', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: `/v1/owners/${OWNER_ID}/areas`,
+        headers: auth(ownerToken),
+        payload: { name: 'Logística' },
+      });
+      expect(res.statusCode).toBe(403);
+      const body = JSON.parse(res.body);
+      expect(body.code).toBe('FORBIDDEN');
+    });
+
+    it('returns 403 for any non-admin caller', async () => {
       const res = await app.inject({
         method: 'POST',
         url: `/v1/owners/${OWNER_ID}/areas`,
@@ -187,29 +199,27 @@ describe('Areas Routes (Archon Master F2)', () => {
     });
 
     it('returns 400 when owner is not FLOTILLA type', async () => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // callerOwnerIds
-        .mockResolvedValueOnce([[], undefined]); // owner type check → not FLOTILLA
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // owner type check → not FLOTILLA
       const res = await app.inject({
         method: 'POST',
         url: `/v1/owners/${OWNER_ID}/areas`,
-        headers: auth(ownerToken),
+        headers: auth(adminToken),
         payload: { name: 'Logística' },
       });
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(res.body).error).toBe('INVALID_OWNER');
     });
 
-    it('creates an area and returns 201', async () => {
+    // FC Fase3 — Scenario 7: Archon Master SÍ puede crear Área
+    it('creates an area for admin and returns 201 — Scenario 7', async () => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
         .mockResolvedValueOnce([[{ id: OWNER_ID }], undefined]) // FLOTILLA check
         .mockResolvedValueOnce([{ insertId: 7 }, undefined]);
 
       const res = await app.inject({
         method: 'POST',
         url: `/v1/owners/${OWNER_ID}/areas`,
-        headers: auth(ownerToken),
+        headers: auth(adminToken),
         payload: { name: 'Logística' },
       });
       expect(res.statusCode).toBe(201);
@@ -220,13 +230,11 @@ describe('Areas Routes (Archon Master F2)', () => {
     });
 
     it('returns 500 on db failure', async () => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
-        .mockRejectedValueOnce(new Error('DB_FAIL'));
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
       const res = await app.inject({
         method: 'POST',
         url: `/v1/owners/${OWNER_ID}/areas`,
-        headers: auth(ownerToken),
+        headers: auth(adminToken),
         payload: { name: 'Finanzas' },
       });
       expect(res.statusCode).toBe(500);
@@ -245,7 +253,6 @@ describe('Areas Routes (Archon Master F2)', () => {
     });
 
     it('returns 400 for invalid payload', async () => {
-      (db.execute as Mock).mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]);
       const res = await app.inject({
         method: 'PUT',
         url: `/v1/owners/${OWNER_ID}/areas/5`,
@@ -255,8 +262,7 @@ describe('Areas Routes (Archon Master F2)', () => {
       expect(res.statusCode).toBe(400);
     });
 
-    it('returns 403 for wrong owner', async () => {
-      (db.execute as Mock).mockResolvedValueOnce([[{ owner_id: 999 }], undefined]);
+    it('returns 403 for non-admin caller', async () => {
       const res = await app.inject({
         method: 'PUT',
         url: `/v1/owners/${OWNER_ID}/areas/5`,
@@ -266,14 +272,23 @@ describe('Areas Routes (Archon Master F2)', () => {
       expect(res.statusCode).toBe(403);
     });
 
+    it('returns 403 for Rol 1 (Flotilla) caller', async () => {
+      const res = await app.inject({
+        method: 'PUT',
+        url: `/v1/owners/${OWNER_ID}/areas/5`,
+        headers: auth(ownerToken),
+        payload: { name: 'Compras' },
+      });
+      expect(res.statusCode).toBe(403);
+      expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
+    });
+
     it('returns 404 when area not found', async () => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
-        .mockResolvedValueOnce([[], undefined]); // area not found
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // area not found
       const res = await app.inject({
         method: 'PUT',
         url: `/v1/owners/${OWNER_ID}/areas/999`,
-        headers: auth(ownerToken),
+        headers: auth(adminToken),
         payload: { name: 'Compras' },
       });
       expect(res.statusCode).toBe(404);
@@ -281,14 +296,13 @@ describe('Areas Routes (Archon Master F2)', () => {
 
     it('updates the area name', async () => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
         .mockResolvedValueOnce([[{ id: 5 }], undefined]) // area exists
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // update
 
       const res = await app.inject({
         method: 'PUT',
         url: `/v1/owners/${OWNER_ID}/areas/5`,
-        headers: auth(ownerToken),
+        headers: auth(adminToken),
         payload: { name: 'Compras Actualizadas' },
       });
       expect(res.statusCode).toBe(200);
@@ -304,8 +318,7 @@ describe('Areas Routes (Archon Master F2)', () => {
       expect(res.statusCode).toBe(401);
     });
 
-    it('returns 403 for wrong owner', async () => {
-      (db.execute as Mock).mockResolvedValueOnce([[{ owner_id: 999 }], undefined]);
+    it('returns 403 for non-admin caller', async () => {
       const res = await app.inject({
         method: 'DELETE',
         url: `/v1/owners/${OWNER_ID}/areas/5`,
@@ -314,28 +327,35 @@ describe('Areas Routes (Archon Master F2)', () => {
       expect(res.statusCode).toBe(403);
     });
 
+    it('returns 403 for Rol 1 (Flotilla) caller', async () => {
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/v1/owners/${OWNER_ID}/areas/5`,
+        headers: auth(ownerToken),
+      });
+      expect(res.statusCode).toBe(403);
+      expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
+    });
+
     it('returns 404 when area not found', async () => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
-        .mockResolvedValueOnce([[], undefined]);
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
       const res = await app.inject({
         method: 'DELETE',
         url: `/v1/owners/${OWNER_ID}/areas/999`,
-        headers: auth(ownerToken),
+        headers: auth(adminToken),
       });
       expect(res.statusCode).toBe(404);
     });
 
     it('soft-deletes the area', async () => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
         .mockResolvedValueOnce([[{ id: 5 }], undefined])
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
 
       const res = await app.inject({
         method: 'DELETE',
         url: `/v1/owners/${OWNER_ID}/areas/5`,
-        headers: auth(ownerToken),
+        headers: auth(adminToken),
       });
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body).success).toBe(true);

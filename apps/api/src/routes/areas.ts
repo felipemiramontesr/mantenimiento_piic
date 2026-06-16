@@ -57,7 +57,7 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
     }
   });
 
-  // POST /v1/owners/:id/areas
+  // POST /v1/owners/:id/areas — Archon Master only (Scenario 6/7)
   fastify.post('/owners/:id/areas', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -71,9 +71,8 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
     }
     const { id } = request.params as { id: string };
     const caller = request.user as { id: number; permissions: string[] };
-    const ownerIds = await getCallerOwnerIds(caller.id);
-    if (!hasAdminAccess(caller.permissions) && !ownerIds.includes(Number(id))) {
-      return reply.code(403).send({ error: 'Access denied' });
+    if (!hasAdminAccess(caller.permissions)) {
+      return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
     }
     try {
       const [ownerRows] = await db.execute<RowDataPacket[]>(
@@ -102,7 +101,7 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
     }
   });
 
-  // PUT /v1/owners/:id/areas/:areaId
+  // PUT /v1/owners/:id/areas/:areaId — Archon Master only
   fastify.put('/owners/:id/areas/:areaId', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -116,9 +115,8 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
     }
     const { id, areaId } = request.params as { id: string; areaId: string };
     const caller = request.user as { id: number; permissions: string[] };
-    const ownerIds = await getCallerOwnerIds(caller.id);
-    if (!hasAdminAccess(caller.permissions) && !ownerIds.includes(Number(id))) {
-      return reply.code(403).send({ error: 'Access denied' });
+    if (!hasAdminAccess(caller.permissions)) {
+      return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
     }
     try {
       const [existing] = await db.execute<RowDataPacket[]>(
@@ -143,7 +141,7 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
     }
   });
 
-  // DELETE /v1/owners/:id/areas/:areaId (soft delete)
+  // DELETE /v1/owners/:id/areas/:areaId (soft delete) — Archon Master only
   fastify.delete('/owners/:id/areas/:areaId', async (request, reply) => {
     try {
       await request.jwtVerify();
@@ -152,9 +150,8 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
     }
     const { id, areaId } = request.params as { id: string; areaId: string };
     const caller = request.user as { id: number; permissions: string[] };
-    const ownerIds = await getCallerOwnerIds(caller.id);
-    if (!hasAdminAccess(caller.permissions) && !ownerIds.includes(Number(id))) {
-      return reply.code(403).send({ error: 'Access denied' });
+    if (!hasAdminAccess(caller.permissions)) {
+      return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
     }
     try {
       const [existing] = await db.execute<RowDataPacket[]>(

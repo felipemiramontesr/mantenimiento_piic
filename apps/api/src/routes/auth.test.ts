@@ -1,0 +1,223 @@
+import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
+import buildApp from '../index';
+import db from '../services/db';
+
+/**
+ * Archon Integration Test: POST /v1/auth/register — Fase 3 extensions
+ * Feature Contract: Archon_Master_Fase3_VIM_Hierarchy
+ * Scenario 8: Rol 3 (CENTER) with owner_profiles (rfc mandatory)
+ * Scenario 9: Rol 1 (FLOTILLA) with initial areas (optional)
+ */
+
+const mockConnection = {
+  beginTransaction: vi.fn(),
+  commit: vi.fn(),
+  rollback: vi.fn(),
+  release: vi.fn(),
+  execute: vi.fn().mockResolvedValue([[], undefined]),
+  query: vi.fn().mockResolvedValue([[], undefined]),
+};
+
+vi.mock('../services/db', () => ({
+  default: {
+    execute: vi.fn().mockResolvedValue([[], undefined]),
+    query: vi.fn().mockResolvedValue([[], undefined]),
+    getConnection: vi.fn(() => Promise.resolve(mockConnection)),
+  },
+}));
+
+vi.mock('../services/encryption', () => ({
+  default: {
+    encrypt: vi.fn((v) => `enc_${v}`),
+    decrypt: vi.fn((v) => (v && typeof v === 'string' ? v.replace('enc_', '') : v)),
+    generateBlindIndex: vi.fn((v) => `hash_${v}`),
+  },
+}));
+
+vi.mock('@node-rs/argon2', () => ({
+  hash: vi.fn(() => Promise.resolve('hashed_pw')),
+  verify: vi.fn(() => Promise.resolve(true)),
+}));
+
+const BASE_PASSWORD = 'Archon@1234!';
+
+describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
+  const app = buildApp();
+
+  beforeAll(async () => {
+    await app.ready();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (db.execute as Mock).mockReset();
+    mockConnection.execute.mockReset();
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
+    mockConnection.execute.mockResolvedValue([[], undefined]);
+  });
+
+  // ── Scenario 8 — Centro con owner_profiles ──────────────────────────────
+
+  it('returns 400 VALIDATION_ERROR when roleId=3 and rfc is missing — Scenario 8', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'centro.uno',
+        email: 'centro@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 3,
+        fullName: 'Taller Uno',
+        // profile omitted → rfc missing
+      },
+    });
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
+    expect(body.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns 400 VALIDATION_ERROR when roleId=3 and profile.rfc is empty — Scenario 8', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'centro.uno',
+        email: 'centro@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 3,
+        fullName: 'Taller Uno',
+        profile: { rfc: '' },
+      },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('creates Centro with owner_profiles transactionally — Scenario 8', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 50 }, undefined]) // INSERT users
+      .mockResolvedValueOnce([[], undefined]) // owner label check → not exists
+      .mockResolvedValueOnce([[{ nextId: 400 }], undefined]) // MAX(id)+1
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (CENTER)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owner_profiles
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'centro.dos',
+        email: 'centro2@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 3,
+        fullName: 'Taller Dos',
+        profile: {
+          rfc: 'RFC123456789',
+          razon_social: 'Taller Dos S.A.',
+          direccion: 'Av. 1 #100',
+          telefono: '5551234567',
+          especialidades: 'Diésel,Motor',
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.body).success).toBe(true);
+
+    const { calls } = mockConnection.execute.mock;
+    const sqls = calls.map((c) => c[0] as string);
+    expect(sqls.some((s) => s.includes('owner_profiles'))).toBe(true);
+    const ownersInsert = calls.find((c) => (c[0] as string).includes('INSERT INTO owners'));
+    expect(ownersInsert).toBeDefined();
+    expect((ownersInsert?.[1] as unknown[])?.includes('CENTER')).toBe(true);
+    expect(mockConnection.commit).toHaveBeenCalled();
+  });
+
+  // ── Scenario 9 — Flotilla con áreas iniciales ───────────────────────────
+
+  it('creates Flotilla with areas transactionally — Scenario 9', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 60 }, undefined]) // INSERT users
+      .mockResolvedValueOnce([[], undefined]) // owner label check → not exists
+      .mockResolvedValueOnce([[{ nextId: 500 }], undefined]) // MAX(id)+1
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (FLOTILLA)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT areas[0]
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT areas[1]
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT areas[2]
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'flotilla.tres',
+        email: 'flotilla3@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 1,
+        fullName: 'Flotilla Tres',
+        areas: ['Operaciones', 'Logística', 'Administración'],
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.body).success).toBe(true);
+
+    const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
+    const areaInserts = sqls.filter((s) => s.includes('INSERT INTO areas'));
+    expect(areaInserts).toHaveLength(3);
+    expect(mockConnection.commit).toHaveBeenCalled();
+  });
+
+  it('creates Flotilla without areas when areas field is omitted — Scenario 9', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 61 }, undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ nextId: 501 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'flotilla.cuatro',
+        email: 'flotilla4@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 1,
+        fullName: 'Flotilla Cuatro',
+        // areas omitted
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
+    expect(sqls.some((s) => s.includes('INSERT INTO areas'))).toBe(false);
+    expect(mockConnection.commit).toHaveBeenCalled();
+  });
+
+  it('rolls back and returns 500 on transaction failure during register', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    mockConnection.execute.mockRejectedValueOnce(new Error('TX_FAIL'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'centro.fail',
+        email: 'fail@test.mx',
+        password: BASE_PASSWORD,
+        roleId: 3,
+        fullName: 'Centro Fail',
+        profile: { rfc: 'RFC999' },
+      },
+    });
+
+    expect(res.statusCode).toBe(500);
+    expect(mockConnection.rollback).toHaveBeenCalled();
+  });
+});

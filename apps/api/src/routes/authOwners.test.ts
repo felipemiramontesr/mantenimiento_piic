@@ -245,10 +245,9 @@ describe('User Fleet-Owner Links (A3)', () => {
     };
 
     it('creates the owners row and the membership link when the owner does not exist', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[], undefined]) // username unique check
-        .mockResolvedValueOnce([{ insertId: 55 }, undefined]); // user insert
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
       mockConnection.execute
+        .mockResolvedValueOnce([{ insertId: 55 }, undefined]) // INSERT users (inside transaction)
         .mockResolvedValueOnce([[], undefined]) // owners lookup by label → none
         .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1 from common_catalogs
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
@@ -282,10 +281,9 @@ describe('User Fleet-Owner Links (A3)', () => {
     });
 
     it('reuses the existing owners row when the owner label already exists', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[], undefined]) // username unique check
-        .mockResolvedValueOnce([{ insertId: 56 }, undefined]); // user insert
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
       mockConnection.execute
+        .mockResolvedValueOnce([{ insertId: 56 }, undefined]) // INSERT users (inside transaction)
         .mockResolvedValueOnce([[{ id: 880 }], undefined]) // owners lookup by label → exists
         .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT user_owner_membership
 

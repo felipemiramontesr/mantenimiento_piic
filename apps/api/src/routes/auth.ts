@@ -342,12 +342,37 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       fullName: z.string().optional(),
       departmentId: z.number().int().optional(),
       employeeNumber: z.string().optional(),
+      profile: z
+        .object({
+          rfc: z.string().min(1).max(13),
+          razon_social: z.string().optional(),
+          direccion: z.string().optional(),
+          telefono: z.string().optional(),
+          especialidades: z.string().optional(),
+        })
+        .optional(),
+      areas: z.array(z.string().min(1).max(100)).optional(),
     });
     const body = schema.safeParse(request.body);
     if (!body.success) {
       return reply.code(400).send({ error: 'R1' });
     }
-    const { username, email, password, roleId, fullName, departmentId, employeeNumber } = body.data;
+    const {
+      username,
+      email,
+      password,
+      roleId,
+      fullName,
+      departmentId,
+      employeeNumber,
+      profile,
+      areas,
+    } = body.data;
+
+    if (roleId === 3 && (!profile || !profile.rfc)) {
+      return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
+    }
+
     try {
       const existing = await db.execute<RowDataPacket[]>(
         'SELECT id FROM users WHERE username = ?',
@@ -361,6 +386,87 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       const hash = await argon2Hash(password);
       const enc = EncryptionService.encrypt(email);
+
+      if (roleId === 3 || roleId === 1) {
+        return await withConnection(async (connection) => {
+          await connection.beginTransaction();
+          try {
+            const [res] = await connection.execute<ResultSetHeader>(
+              'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
+              [
+                username,
+                enc,
+                hash,
+                roleId,
+                fullName || '',
+                departmentId || null,
+                employeeNumber || null,
+              ]
+            );
+            const userId = res.insertId;
+            const ownerType: 'FLOTILLA' | 'CENTER' = roleId === 1 ? 'FLOTILLA' : 'CENTER';
+            const ownerLabel = fullName || username;
+
+            const [existingOwner] = await connection.execute<RowDataPacket[]>(
+              'SELECT id FROM owners WHERE label = ? LIMIT 1',
+              [ownerLabel]
+            );
+            let ownerId: number;
+            if ((existingOwner as RowDataPacket[]).length > 0) {
+              ownerId = (existingOwner as RowDataPacket[])[0].id as number;
+            } else {
+              const [nextRows] = await connection.execute<RowDataPacket[]>(
+                'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
+              );
+              ownerId = (nextRows as RowDataPacket[])[0].nextId as number;
+              await connection.execute<ResultSetHeader>(
+                "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
+                [ownerId, `OWN_U${userId}`, ownerLabel]
+              );
+              await connection.execute<ResultSetHeader>(
+                'INSERT INTO owners (id, owner_type, label) VALUES (?, ?, ?)',
+                [ownerId, ownerType, ownerLabel]
+              );
+            }
+            await connection.execute<ResultSetHeader>(
+              'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
+              [userId, ownerId]
+            );
+
+            if (roleId === 3 && profile) {
+              await connection.execute<ResultSetHeader>(
+                'INSERT INTO owner_profiles (owner_id, rfc, razon_social, direccion, telefono, especialidades) VALUES (?, ?, ?, ?, ?, ?)',
+                [
+                  ownerId,
+                  profile.rfc,
+                  profile.razon_social || null,
+                  profile.direccion || null,
+                  profile.telefono || null,
+                  profile.especialidades || null,
+                ]
+              );
+            }
+
+            if (roleId === 1 && areas && areas.length > 0) {
+              await Promise.all(
+                areas.map((areaName) =>
+                  connection.execute<ResultSetHeader>(
+                    'INSERT INTO areas (owner_id, name) VALUES (?, ?)',
+                    [ownerId, areaName]
+                  )
+                )
+              );
+            }
+
+            await connection.commit();
+            return reply.code(201).send({ success: true, userId });
+          } catch (error) {
+            await connection.rollback();
+            throw error;
+          }
+        });
+      }
+
       const [res] = await db.execute<ResultSetHeader>(
         'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [username, enc, hash, roleId, fullName || '', departmentId || null, employeeNumber || null]
