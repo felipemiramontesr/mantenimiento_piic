@@ -26,6 +26,7 @@ import workOrderRoutes from './routes/workOrders';
 import notificationsRoutes from './routes/notifications';
 import areasRoutes from './routes/areas';
 import serviceCentersRoutes from './routes/serviceCenters';
+import ownerProfileRoutes from './routes/ownerProfile';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -135,6 +136,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(notificationsRoutes, { prefix: '/v1' });
   fastify.register(areasRoutes, { prefix: '/v1' });
   fastify.register(serviceCentersRoutes, { prefix: '/v1' });
+  fastify.register(ownerProfileRoutes, { prefix: '/v1' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(
