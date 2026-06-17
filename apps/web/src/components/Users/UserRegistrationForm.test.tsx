@@ -631,7 +631,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
     render(<UserRegistrationForm />);
     await waitFor(() => {
-      expect(screen.getByTestId('centro-profile-section')).toBeInTheDocument();
+      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
       expect(screen.getByTestId('centro-rfc-input')).toBeInTheDocument();
       expect(screen.getByTestId('centro-razon-social-input')).toBeInTheDocument();
     });
@@ -703,5 +703,70 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     // canSubmit=false → handleCreate NOT called → validation error shown (missing fields)
     // This verifies that role 2 with missing parentOwnerId/areaId does NOT call /auth/register
     expect(api.post).not.toHaveBeenCalledWith('/auth/register', expect.anything());
+  });
+
+  // ── Scenario 11 — Fase 6-C: owner-profile-section for Rol 1 ─────────────
+
+  it('shows owner-profile-section for Rol 1 (Flotilla) with Perfil Empresarial title — Scenario 11', async () => {
+    currentMockState.roles = [{ id: 1, label: 'Flotilla Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
+      expect(screen.getByText('Perfil Empresarial')).toBeInTheDocument();
+      expect(screen.getByTestId('centro-rfc-input')).toBeInTheDocument();
+      expect(screen.getByTestId('centro-razon-social-input')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('centro-especialidades-input')).not.toBeInTheDocument();
+  });
+
+  it('shows owner-profile-section for Rol 4 (Privado) with Perfil Personal title — Scenario 11', async () => {
+    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url.includes('/catalogs/centers')) {
+        return Promise.resolve({
+          data: { success: true, data: [{ id: 10, label: 'Centro Uno' }] },
+        });
+      }
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
+      expect(screen.getByText('Perfil Personal')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('centro-especialidades-input')).not.toBeInTheDocument();
+  });
+
+  it('shows especialidades only for Rol 3 inside owner-profile-section — Scenario 11', async () => {
+    currentMockState.roles = [{ id: 3, label: 'Centro Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
+      expect(screen.getByTestId('centro-especialidades-input')).toBeInTheDocument();
+    });
+  });
+
+  // ── Scenario 12 — Fase 6-C: ArchonAddressField rendered inside profile section ─────
+
+  it('renders ArchonAddressField inside owner-profile-section for Rol 3 — Scenario 12', async () => {
+    currentMockState.roles = [{ id: 3, label: 'Centro Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
+      expect(screen.getByTestId('archon-address-field')).toBeInTheDocument();
+    });
+  });
+
+  it('renders ArchonAddressField inside owner-profile-section for Rol 1 — Scenario 12', async () => {
+    currentMockState.roles = [{ id: 1, label: 'Flotilla Operador' }];
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<UserRegistrationForm />);
+    await waitFor(() => {
+      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
+      expect(screen.getByTestId('archon-address-field')).toBeInTheDocument();
+    });
   });
 });

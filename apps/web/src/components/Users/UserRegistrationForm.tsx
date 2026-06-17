@@ -24,6 +24,7 @@ import ArchonSelect from '../ArchonSelect';
 import ArchonImageUploader from '../ArchonImageUploader';
 import api from '../../api/client';
 import AuditJustificationModal from '../Common/AuditJustificationModal';
+import ArchonAddressField, { AddressValue, EMPTY_ADDRESS } from '../Common/ArchonAddressField';
 
 /**
  * 🔱 Archon Component: UserRegistrationForm
@@ -127,6 +128,56 @@ function buildSubUserPayload(
   return base;
 }
 
+function computeCanSubmit(
+  password: string,
+  passwordsMatch: boolean,
+  hasEditingUser: boolean,
+  roleId: number,
+  parentOwnerId: string,
+  areaId: string,
+  familiarType: string,
+  centroOwnerId: string
+): boolean {
+  const passwordValid = !password || (passwordsMatch && password.length >= 8);
+  const roleValid =
+    hasEditingUser ||
+    getRoleFieldsValid(roleId, parentOwnerId, areaId, familiarType, centroOwnerId);
+  return passwordValid && roleValid;
+}
+
+function getProfileTitle(roleId: number): string {
+  if (roleId === 3) return 'Perfil Centro Especializado';
+  if (roleId === 1) return 'Perfil Empresarial';
+  return 'Perfil Personal';
+}
+
+function buildOwnerProfilePayload(
+  roleId: number,
+  rfc: string,
+  razonSocial: string,
+  telefono: string,
+  especialidades: string,
+  addressVal: AddressValue
+): Record<string, unknown> {
+  if (![1, 3, 4].includes(roleId)) return {};
+  const profile: Record<string, unknown> = {};
+  if (rfc) profile.rfc = rfc;
+  if (razonSocial) profile.razon_social = razonSocial;
+  if (telefono) profile.telefono = telefono;
+  if (roleId === 3 && especialidades) profile.especialidades = especialidades;
+  const result: Record<string, unknown> = { profile };
+  if (addressVal.neighborhoodId) {
+    const address: Record<string, unknown> = {
+      neighborhoodId: parseInt(addressVal.neighborhoodId, 10),
+    };
+    if (addressVal.calle) address.calle = addressVal.calle;
+    if (addressVal.numeroExt) address.numeroExt = addressVal.numeroExt;
+    if (addressVal.numeroInt) address.numeroInt = addressVal.numeroInt;
+    result.address = address;
+  }
+  return result;
+}
+
 const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
   <div className="card-archon-sovereign bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px] border-t-emerald-500">
     <CheckCircle size={64} className="text-emerald-500 animate-in zoom-in duration-500" />
@@ -198,6 +249,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const [areaChips, setAreaChips] = useState<string[]>([]);
   const [areaInputValue, setAreaInputValue] = useState('');
 
+  // 🔱 Fase 6: Multi-campo address for Rol 1/3/4
+  const [addressValue, setAddressValue] = useState<AddressValue>(EMPTY_ADDRESS);
+
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
@@ -211,10 +265,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     parentOwnerId: '',
     areaId: '',
     familiarType: '',
-    // Fase 5 fields:
+    // Fase 6 profile fields (Rol 1/3/4):
     rfc: '',
     razonSocial: '',
-    direccion: '',
     telefono: '',
     especialidades: '',
     centroOwnerId: '',
@@ -237,11 +290,11 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         familiarType: '',
         rfc: '',
         razonSocial: '',
-        direccion: '',
         telefono: '',
         especialidades: '',
         centroOwnerId: '',
       });
+      setAddressValue(EMPTY_ADDRESS);
     }
   }, [editingUser, roles]);
 
@@ -415,13 +468,14 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       employeeNumber: formData.employeeNumber,
       password: formData.password || tempPass,
       profile_picture_url: formData.imageUrl,
-      ...(roleIdNum === 3 && {
-        rfc: formData.rfc,
-        razonSocial: formData.razonSocial,
-        direccion: formData.direccion,
-        telefono: formData.telefono,
-        ...(formData.especialidades && { especialidades: formData.especialidades }),
-      }),
+      ...buildOwnerProfilePayload(
+        roleIdNum,
+        formData.rfc,
+        formData.razonSocial,
+        formData.telefono,
+        formData.especialidades,
+        addressValue
+      ),
       ...(roleIdNum === 1 && areaChips.length > 0 && { areas: areaChips }),
       ...(roleIdNum === 4 &&
         formData.centroOwnerId && {
@@ -497,16 +551,16 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   };
 
   const passwordsMatch = formData.password === formData.confirmPassword;
-  const canSubmit =
-    (!formData.password || (passwordsMatch && formData.password.length >= 8)) &&
-    (!!editingUser ||
-      getRoleFieldsValid(
-        roleIdNum,
-        formData.parentOwnerId,
-        formData.areaId,
-        formData.familiarType,
-        formData.centroOwnerId
-      ));
+  const canSubmit = computeCanSubmit(
+    formData.password,
+    passwordsMatch,
+    !!editingUser,
+    roleIdNum,
+    formData.parentOwnerId,
+    formData.areaId,
+    formData.familiarType,
+    formData.centroOwnerId
+  );
 
   const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
 
@@ -828,23 +882,27 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           </div>
         </div>
 
-        {/* 🔱 Fase 5: Rol 3 — Perfil Centro Especializado */}
-        {roleIdNum === 3 && !editingUser && (
+        {/* 🔱 Fase 6: Rol 1/3/4 — Perfil de Propietario con Dirección Multicampo */}
+        {[1, 3, 4].includes(roleIdNum) && !editingUser && (
           <div
-            data-testid="centro-profile-section"
+            data-testid="owner-profile-section"
             className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#8b5cf6]"
           >
             <div className="card-sovereign-header">
               <Building2 size={22} className="text-[var(--card-accent)]" />
               <h3 className="card-sovereign-title text-archon-xl opacity-100">
-                Perfil Centro Especializado
+                {getProfileTitle(roleIdNum)}
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-8">
-              <ArchonField label="RFC" icon={Shield} required>
+              <ArchonField
+                label={roleIdNum === 4 ? 'RFC (Opcional)' : 'RFC'}
+                icon={Shield}
+                required={roleIdNum !== 4}
+              >
                 <input
                   type="text"
-                  placeholder="RFC del Centro"
+                  placeholder={roleIdNum === 4 ? 'RFC (opcional)' : 'RFC del propietario'}
                   className="archon-input"
                   data-testid="centro-rfc-input"
                   value={formData.rfc}
@@ -853,10 +911,14 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   }
                 />
               </ArchonField>
-              <ArchonField label="Razón Social" icon={Briefcase} required>
+              <ArchonField
+                label={roleIdNum === 4 ? 'Nombre Legal' : 'Razón Social'}
+                icon={Briefcase}
+                required
+              >
                 <input
                   type="text"
-                  placeholder="Nombre legal del centro"
+                  placeholder={roleIdNum === 4 ? 'Nombre del propietario' : 'Nombre legal'}
                   className="archon-input"
                   data-testid="centro-razon-social-input"
                   value={formData.razonSocial}
@@ -866,23 +928,11 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                 />
               </ArchonField>
             </div>
-            <ArchonField label="Dirección" icon={MapPin}>
-              <input
-                type="text"
-                placeholder="Dirección del centro"
-                className="archon-input"
-                data-testid="centro-direccion-input"
-                value={formData.direccion}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setFormData({ ...formData, direccion: e.target.value })
-                }
-              />
-            </ArchonField>
             <div className="grid grid-cols-2 gap-8">
               <ArchonField label="Teléfono" icon={Contact}>
                 <input
                   type="tel"
-                  placeholder="Teléfono del centro"
+                  placeholder="Teléfono"
                   className="archon-input"
                   data-testid="centro-telefono-input"
                   value={formData.telefono}
@@ -891,19 +941,22 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   }
                 />
               </ArchonField>
-              <ArchonField label="Especialidades (Opcional)" icon={Briefcase}>
-                <input
-                  type="text"
-                  placeholder="Ej: Frenos, Eléctrico, Transmisión"
-                  className="archon-input"
-                  data-testid="centro-especialidades-input"
-                  value={formData.especialidades}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                    setFormData({ ...formData, especialidades: e.target.value })
-                  }
-                />
-              </ArchonField>
+              {roleIdNum === 3 && (
+                <ArchonField label="Especialidades (Opcional)" icon={Briefcase}>
+                  <input
+                    type="text"
+                    placeholder="Ej: Frenos, Eléctrico, Transmisión"
+                    className="archon-input"
+                    data-testid="centro-especialidades-input"
+                    value={formData.especialidades}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                      setFormData({ ...formData, especialidades: e.target.value })
+                    }
+                  />
+                </ArchonField>
+              )}
             </div>
+            <ArchonAddressField value={addressValue} onChange={setAddressValue} />
           </div>
         )}
 
