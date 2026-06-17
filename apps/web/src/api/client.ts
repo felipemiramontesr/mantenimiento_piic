@@ -80,7 +80,11 @@ api.interceptors.response.use(
         config: error.config?.url,
       });
     }
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+    if (
+      error.response?.status === 401 &&
+      !error.config?.url?.includes('/auth/login') &&
+      !error.config?.url?.includes('/auth/refresh')
+    ) {
       if (!isTest) {
         // 🕵️ Forensic Log: Catch the culprit before redirect
         /* istanbul ignore next */

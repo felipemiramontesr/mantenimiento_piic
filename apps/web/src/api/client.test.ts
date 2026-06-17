@@ -69,4 +69,28 @@ describe('Axios API Client (ARCHON CORE)', () => {
     expect(clearToken).not.toHaveBeenCalled();
     expect(redirectUserToLogin).not.toHaveBeenCalled();
   });
+
+  it('should not redirect on 401 from /auth/login', async () => {
+    vi.mocked(getToken).mockReturnValue('some-token');
+    const error = { response: { status: 401 }, config: { url: '/auth/login' } };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const responseInterceptorError = (api.interceptors.response as any).handlers[0].rejected;
+    await expect(responseInterceptorError(error)).rejects.toEqual(error);
+
+    expect(clearToken).not.toHaveBeenCalled();
+    expect(redirectUserToLogin).not.toHaveBeenCalled();
+  });
+
+  it('should not redirect on 401 from /auth/refresh', async () => {
+    vi.mocked(getToken).mockReturnValue('some-token');
+    const error = { response: { status: 401 }, config: { url: '/auth/refresh' } };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const responseInterceptorError = (api.interceptors.response as any).handlers[0].rejected;
+    await expect(responseInterceptorError(error)).rejects.toEqual(error);
+
+    expect(clearToken).not.toHaveBeenCalled();
+    expect(redirectUserToLogin).not.toHaveBeenCalled();
+  });
 });
