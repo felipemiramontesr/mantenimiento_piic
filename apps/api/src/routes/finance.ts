@@ -1,10 +1,18 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import crypto from 'crypto';
 import db from '../services/db';
 import { UNIT_STATUS } from '../constants/statuses';
 import requirePermission from '../middleware/requirePermission';
+import FleetService from '../services/fleetService';
+
+const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
+  const { id, permissions } = request.user as { id: number; permissions?: string[] };
+  if (!permissions || permissions.includes('*') || !permissions.includes('fleet:scoped'))
+    return null;
+  return FleetService.getUserOwnerIds(id);
+};
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -118,56 +126,98 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         });
       }
 
-      const [kpiRows] = await db.execute<RowDataPacket[]>(
-        `SELECT
-          COALESCE(SUM(amount), 0)                                                    AS totalEgresos,
-          COALESCE(SUM(CASE WHEN category = 'MAINTENANCE' THEN amount ELSE 0 END), 0) AS totalMaintenance,
-          COALESCE(SUM(CASE WHEN category = 'FUEL'        THEN amount ELSE 0 END), 0) AS totalFuel,
-          COALESCE(SUM(CASE WHEN category = 'INSURANCE'   THEN amount ELSE 0 END), 0) AS totalInsurance,
-          COALESCE(SUM(CASE WHEN category = 'LEASE'       THEN amount ELSE 0 END), 0) AS totalLeaseRegistered,
-          COALESCE(SUM(CASE WHEN category = 'TIRE'        THEN amount ELSE 0 END), 0) AS totalTire,
-          COALESCE(SUM(CASE WHEN category = 'FINE'        THEN amount ELSE 0 END), 0) AS totalFine,
-          COALESCE(SUM(CASE WHEN category = 'REPAIR'      THEN amount ELSE 0 END), 0) AS totalRepair,
-          COALESCE(SUM(CASE WHEN category = 'OTHER'       THEN amount ELSE 0 END), 0) AS totalOther
-         FROM financial_transactions
-         WHERE period >= ? AND period <= ?`,
-        [fromMonth, toMonth]
-      );
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.send({
+          success: true,
+          data: {
+            from: activeFrom,
+            to: activeTo,
+            kpis: {
+              totalEgresos: 0,
+              totalLease: 0,
+              totalMaintenance: 0,
+              totalFuel: 0,
+              totalInsurance: 0,
+              totalTire: 0,
+              totalFine: 0,
+              totalRepair: 0,
+              totalOther: 0,
+              unitCount: 0,
+              avgCostPerUnit: 0,
+            },
+            byCategory: [],
+            byMonth: [],
+            topUnits: [],
+          },
+        });
+      }
 
-      const [unitRows] = await db.execute<RowDataPacket[]>(
-        `SELECT COUNT(*) AS unitCount
-         FROM fleet_units
-         WHERE status != ?`,
-        [UNIT_STATUS.DISCONTINUED]
-      );
-
-      const [categoryRows] = await db.execute<RowDataPacket[]>(
-        `SELECT category, SUM(amount) AS amount
-         FROM financial_transactions
-         WHERE period >= ? AND period <= ?
-         GROUP BY category
-         ORDER BY amount DESC`,
-        [fromMonth, toMonth]
-      );
-
-      const [monthRows] = await db.execute<RowDataPacket[]>(
-        `SELECT period, COALESCE(SUM(amount), 0) AS amount
-         FROM financial_transactions
-         WHERE period >= ? AND period <= ?
-         GROUP BY period
-         ORDER BY period ASC`,
-        [fromMonth, toMonth]
-      );
-
-      const [topRows] = await db.execute<RowDataPacket[]>(
-        `SELECT ft.unit_id AS unitId, SUM(ft.amount) AS amount
+      let kpiQuery = `SELECT
+          COALESCE(SUM(ft.amount), 0)                                                    AS totalEgresos,
+          COALESCE(SUM(CASE WHEN ft.category = 'MAINTENANCE' THEN ft.amount ELSE 0 END), 0) AS totalMaintenance,
+          COALESCE(SUM(CASE WHEN ft.category = 'FUEL'        THEN ft.amount ELSE 0 END), 0) AS totalFuel,
+          COALESCE(SUM(CASE WHEN ft.category = 'INSURANCE'   THEN ft.amount ELSE 0 END), 0) AS totalInsurance,
+          COALESCE(SUM(CASE WHEN ft.category = 'LEASE'       THEN ft.amount ELSE 0 END), 0) AS totalLeaseRegistered,
+          COALESCE(SUM(CASE WHEN ft.category = 'TIRE'        THEN ft.amount ELSE 0 END), 0) AS totalTire,
+          COALESCE(SUM(CASE WHEN ft.category = 'FINE'        THEN ft.amount ELSE 0 END), 0) AS totalFine,
+          COALESCE(SUM(CASE WHEN ft.category = 'REPAIR'      THEN ft.amount ELSE 0 END), 0) AS totalRepair,
+          COALESCE(SUM(CASE WHEN ft.category = 'OTHER'       THEN ft.amount ELSE 0 END), 0) AS totalOther
          FROM financial_transactions ft
-         WHERE ft.period >= ? AND ft.period <= ?
-         GROUP BY ft.unit_id
-         ORDER BY amount DESC
-         LIMIT 5`,
-        [fromMonth, toMonth]
-      );
+         JOIN fleet_units fu ON ft.unit_id = fu.id
+         WHERE ft.period >= ? AND ft.period <= ?`;
+      const kpiParams: (string | number)[] = [fromMonth, toMonth];
+      if (ownerScope !== null) {
+        kpiQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        kpiParams.push(...ownerScope);
+      }
+      const [kpiRows] = await db.execute<RowDataPacket[]>(kpiQuery, kpiParams);
+
+      let unitQuery = `SELECT COUNT(*) AS unitCount
+         FROM fleet_units
+         WHERE status != ?`;
+      const unitParams: (string | number)[] = [UNIT_STATUS.DISCONTINUED];
+      if (ownerScope !== null) {
+        unitQuery += ` AND ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        unitParams.push(...ownerScope);
+      }
+      const [unitRows] = await db.execute<RowDataPacket[]>(unitQuery, unitParams);
+
+      let categoryQuery = `SELECT ft.category, SUM(ft.amount) AS amount
+         FROM financial_transactions ft
+         JOIN fleet_units fu ON ft.unit_id = fu.id
+         WHERE ft.period >= ? AND ft.period <= ?`;
+      const categoryParams: (string | number)[] = [fromMonth, toMonth];
+      if (ownerScope !== null) {
+        categoryQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        categoryParams.push(...ownerScope);
+      }
+      categoryQuery += ` GROUP BY ft.category ORDER BY amount DESC`;
+      const [categoryRows] = await db.execute<RowDataPacket[]>(categoryQuery, categoryParams);
+
+      let monthQuery = `SELECT ft.period, COALESCE(SUM(ft.amount), 0) AS amount
+         FROM financial_transactions ft
+         JOIN fleet_units fu ON ft.unit_id = fu.id
+         WHERE ft.period >= ? AND ft.period <= ?`;
+      const monthParams: (string | number)[] = [fromMonth, toMonth];
+      if (ownerScope !== null) {
+        monthQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        monthParams.push(...ownerScope);
+      }
+      monthQuery += ` GROUP BY ft.period ORDER BY ft.period ASC`;
+      const [monthRows] = await db.execute<RowDataPacket[]>(monthQuery, monthParams);
+
+      let topQuery = `SELECT ft.unit_id AS unitId, SUM(ft.amount) AS amount
+         FROM financial_transactions ft
+         JOIN fleet_units fu ON ft.unit_id = fu.id
+         WHERE ft.period >= ? AND ft.period <= ?`;
+      const topParams: (string | number)[] = [fromMonth, toMonth];
+      if (ownerScope !== null) {
+        topQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        topParams.push(...ownerScope);
+      }
+      topQuery += ` GROUP BY ft.unit_id ORDER BY amount DESC LIMIT 5`;
+      const [topRows] = await db.execute<RowDataPacket[]>(topQuery, topParams);
 
       const kpi = kpiRows[0];
       const unitData = unitRows[0];
@@ -242,6 +292,18 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
 
       const parsedLimit = Math.min(parseInt(limit, 10) || 50, 200);
 
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.send({
+          success: true,
+          data: [],
+          meta: {
+            nextCursor: null,
+            total: 0,
+          },
+        });
+      }
+
       let query = `
         SELECT ft.id, ft.uuid, ft.unit_id, fu.id AS unit_name,
                ft.category, ft.amount, ft.period, ft.source,
@@ -253,6 +315,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         WHERE ft.period >= ? AND ft.period <= ?
       `;
       const params: (string | number)[] = [fromMonth, toMonth];
+
+      if (ownerScope !== null) {
+        query += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        params.push(...ownerScope);
+      }
 
       if (category) {
         query += ' AND ft.category = ?';
@@ -284,9 +351,15 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         rows.pop();
       }
 
-      let countQuery =
-        'SELECT COUNT(*) AS total FROM financial_transactions ft WHERE ft.period >= ? AND ft.period <= ?';
+      let countQuery = `SELECT COUNT(*) AS total
+         FROM financial_transactions ft
+         JOIN fleet_units fu ON fu.id = ft.unit_id
+         WHERE ft.period >= ? AND ft.period <= ?`;
       const countParams: (string | number)[] = [fromMonth, toMonth];
+      if (ownerScope !== null) {
+        countQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        countParams.push(...ownerScope);
+      }
       if (category) {
         countQuery += ' AND ft.category = ?';
         countParams.push(category);
@@ -338,14 +411,24 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       const createdBy = (request.user as { id: number }).id;
 
       try {
+        const ownerScope = await resolveOwnerScope(request);
         const [unitCheck] = await db.execute<RowDataPacket[]>(
-          'SELECT id FROM fleet_units WHERE id = ?',
+          'SELECT id, ownerId FROM fleet_units WHERE id = ?',
           [unitId]
         );
         if (unitCheck.length === 0) {
           return reply
             .code(404)
             .send({ success: false, code: 'NOT_FOUND', message: 'Unidad no encontrada' });
+        }
+        if (ownerScope !== null && !ownerScope.includes(unitCheck[0].ownerId)) {
+          return reply
+            .code(403)
+            .send({
+              success: false,
+              code: 'FORBIDDEN',
+              message: 'Unidad fuera de los propietarios permitidos',
+            });
         }
 
         await db.execute<ResultSetHeader>(
@@ -391,6 +474,18 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       const fromMonth = activeFrom.substring(0, 7);
       const toMonth = activeTo.substring(0, 7);
 
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        reply.header('Content-Type', 'text/csv; charset=utf-8');
+        reply.header(
+          'Content-Disposition',
+          `attachment; filename="egresos_${activeFrom}_${activeTo}.csv"`
+        );
+        return reply.send(
+          'UUID,Unidad,Categoría,Monto,Período,Proveedor,Referencia,Notas,Registrado por,Fecha'
+        );
+      }
+
       let query = `
         SELECT ft.uuid, fu.id AS unit_name, ft.category, ft.amount, ft.period,
                ft.vendor, ft.invoice_ref, ft.notes,
@@ -402,6 +497,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         WHERE ft.period >= ? AND ft.period <= ?
       `;
       const params: (string | number)[] = [fromMonth, toMonth];
+
+      if (ownerScope !== null) {
+        query += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        params.push(...ownerScope);
+      }
 
       if (category) {
         query += ' AND ft.category = ?';

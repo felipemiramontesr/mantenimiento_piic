@@ -9,6 +9,27 @@ import EncryptionService from '../services/encryption';
 import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
+import FleetService from '../services/fleetService';
+
+const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
+  const { id, permissions } = request.user as { id: number; permissions?: string[] };
+  if (!permissions || permissions.includes('*') || !permissions.includes('fleet:scoped'))
+    return null;
+  return FleetService.getUserOwnerIds(id);
+};
+
+const isUserInOwnerScope = async (
+  connection: PoolConnection,
+  targetUserId: string,
+  ownerScope: number[]
+): Promise<boolean> => {
+  const [memberships] = await connection.execute<RowDataPacket[]>(
+    'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
+    [targetUserId]
+  );
+  const targetOwnerIds = memberships.map((m) => m.owner_id as number);
+  return targetOwnerIds.some((oid) => ownerScope.includes(oid));
+};
 
 type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE';
 
@@ -467,9 +488,28 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     await request.jwtVerify();
     const { role } = request.query as { role?: string };
     try {
-      let q =
-        'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE 1=1';
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.send({ success: true, data: [] });
+      }
+
+      let q = `
+        SELECT DISTINCT u.*, r.name as role_name, cat.label as department_name
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        LEFT JOIN common_catalogs cat ON u.department_id = cat.id
+      `;
       const p: (string | number)[] = [];
+
+      if (ownerScope !== null) {
+        q += ` JOIN user_owner_membership uom ON u.id = uom.user_id WHERE uom.owner_id IN (${ownerScope
+          .map(() => '?')
+          .join(', ')})`;
+        p.push(...ownerScope);
+      } else {
+        q += ' WHERE 1=1';
+      }
+
       if (role) {
         q += ' AND u.role_id = ?';
         p.push(Number(role));
@@ -528,6 +568,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         return reply.code(404).send({ error: 'U3' });
       }
       const snapshotBefore = rows[0];
+
+      // Scoping Guard
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && !(await isUserInOwnerScope(connection, id, ownerScope))) {
+        connection.release();
+        return reply.code(403).send({ error: 'FORBIDDEN', message: 'User outside owner scope' });
+      }
 
       // 2. Build Updates
       const fields: string[] = [];
@@ -643,6 +690,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       const snapshotBefore = rows[0];
 
+      // Scoping Guard
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && !(await isUserInOwnerScope(connection, id, ownerScope))) {
+        connection.release();
+        return reply.code(403).send({ error: 'FORBIDDEN', message: 'User outside owner scope' });
+      }
+
       // 2. Perform Delete
       await connection.execute('DELETE FROM users WHERE id = ?', [id]);
 
@@ -687,6 +741,20 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.get('/users/:id/owners', ownersGuard, async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null) {
+        const [memberships] = await db.execute<RowDataPacket[]>(
+          'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
+          [id]
+        );
+        const targetOwnerIds = memberships.map((m) => m.owner_id as number);
+        const hasOverlap = targetOwnerIds.some((oid) => ownerScope.includes(oid));
+        if (!hasOverlap) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'User outside owner scope' });
+        }
+      }
       const [rows] = await db.execute<RowDataPacket[]>(
         `SELECT uom.owner_id AS ownerId, o.label
          FROM user_owner_membership uom
@@ -732,6 +800,33 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           return reply
             .code(404)
             .send({ success: false, code: 'NOT_FOUND', message: 'Usuario no encontrado' });
+        }
+
+        const ownerScope = await resolveOwnerScope(request);
+        if (ownerScope !== null) {
+          const [beforeRows] = await connection.execute<RowDataPacket[]>(
+            'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
+            [id]
+          );
+          const targetOwnerIds = beforeRows.map((r) => r.owner_id as number);
+          const hasOverlap = targetOwnerIds.some((oid) => ownerScope.includes(oid));
+          if (targetOwnerIds.length > 0 && !hasOverlap) {
+            await connection.rollback();
+            return reply
+              .code(403)
+              .send({ success: false, code: 'FORBIDDEN', message: 'User outside owner scope' });
+          }
+          const allInScope = ownerIds.every((oid) => ownerScope.includes(oid));
+          if (!allInScope) {
+            await connection.rollback();
+            return reply
+              .code(403)
+              .send({
+                success: false,
+                code: 'FORBIDDEN',
+                message: 'Cannot assign owner outside of scope',
+              });
+          }
         }
 
         if (ownerIds.length > 0) {
@@ -1042,6 +1137,20 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         return reply.code(404).send({ success: false, message: 'Usuario no encontrado' });
 
       const user = userRows[0];
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null) {
+        const [memberships] = await db.execute<RowDataPacket[]>(
+          'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
+          [user.id]
+        );
+        const targetOwnerIds = memberships.map((m) => m.owner_id as number);
+        const hasOverlap = targetOwnerIds.some((oid) => ownerScope.includes(oid));
+        if (!hasOverlap) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'User outside owner scope' });
+        }
+      }
       const [permRows, routeRows] = await Promise.all([
         db.execute<RowDataPacket[]>(
           `SELECT p.slug, p.description

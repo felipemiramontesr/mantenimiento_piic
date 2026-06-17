@@ -391,9 +391,12 @@ export default class RouteService {
   /**
    * Fetches all incidents across the fleet.
    */
-  static async getAllIncidents(): Promise<RowDataPacket[]> {
-    const [rows] = await db.execute<RowDataPacket[]>(
-      `SELECT
+  static async getAllIncidents(ownerIds?: number[]): Promise<RowDataPacket[]> {
+    const scopeFilter =
+      ownerIds && ownerIds.length > 0
+        ? `AND fu.ownerId IN (${ownerIds.map(() => '?').join(', ')})`
+        : '';
+    const query = `SELECT
         i.*,
         fm.unit_id,
         u.full_name as driver_name
@@ -401,7 +404,13 @@ export default class RouteService {
       JOIN fleet_movements fm ON i.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
       JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
       JOIN users u ON fre.driver_id = u.id
-      ORDER BY i.reported_at DESC`
+      JOIN fleet_units fu ON fm.unit_id = fu.id
+      WHERE 1=1 ${scopeFilter}
+      ORDER BY i.reported_at DESC`;
+
+    const [rows] = await db.execute<RowDataPacket[]>(
+      query,
+      ownerIds && ownerIds.length > 0 ? ownerIds : undefined
     );
     return rows;
   }

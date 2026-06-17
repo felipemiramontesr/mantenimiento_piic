@@ -1,13 +1,45 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import RouteService from '../services/routeService';
+import FleetService from '../services/fleetService';
 import requirePermission from '../middleware/requirePermission';
 import NotificationService, {
   ArchonNotificationType,
   ArchonNotificationPriority,
 } from '../services/notification.service';
+
+const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
+  const { id, permissions } = request.user as { id: number; permissions?: string[] };
+  if (!permissions || permissions.includes('*') || !permissions.includes('fleet:scoped'))
+    return null;
+  return FleetService.getUserOwnerIds(id);
+};
+
+const checkRouteScope = async (uuid: string, ownerScope: number[] | null): Promise<boolean> => {
+  if (ownerScope === null) return true;
+  const [routes] = await db.execute<RowDataPacket[]>(
+    'SELECT fu.ownerId FROM fleet_movements fm JOIN fleet_units fu ON fm.unit_id = fu.id WHERE fm.uuid = ? AND fm.movement_type = "ROUTE"',
+    [uuid]
+  );
+  if (routes.length === 0) return false;
+  return ownerScope.includes(routes[0].ownerId);
+};
+
+const checkIncidentScope = async (uuid: string, ownerScope: number[] | null): Promise<boolean> => {
+  if (ownerScope === null) return true;
+  const [incidents] = await db.execute<RowDataPacket[]>(
+    `SELECT fu.ownerId
+     FROM route_incidents ri
+     JOIN fleet_movements fm ON ri.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
+     JOIN fleet_units fu ON fm.unit_id = fu.id
+     WHERE ri.uuid = ?`,
+    [uuid]
+  );
+  if (incidents.length === 0) return false;
+  return ownerScope.includes(incidents[0].ownerId);
+};
 
 /**
  * 🔱 Archon Fleet Routes — CTI Architecture (V2)
@@ -68,6 +100,18 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       try {
         const data = startRouteSchema.parse(request.body);
+        const ownerScope = await resolveOwnerScope(request);
+        if (ownerScope !== null) {
+          const [units] = await db.execute<RowDataPacket[]>(
+            'SELECT ownerId FROM fleet_units WHERE id = ?',
+            [data.unitId]
+          );
+          if (units.length === 0 || !ownerScope.includes(units[0].ownerId)) {
+            return reply
+              .code(403)
+              .send({ success: false, code: 'FORBIDDEN', message: 'Unit outside scoped owners' });
+          }
+        }
         const routeUuid = await RouteService.startRoute(
           data.unitId,
           data.driverId,
@@ -101,6 +145,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
+        const ownerScope = await resolveOwnerScope(request);
+        if (!(await checkRouteScope(uuid, ownerScope))) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+        }
         const data = finishRouteSchema.parse(request.body);
 
         await RouteService.finishRoute(uuid, {
@@ -133,6 +183,18 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/routes/unit/:unitId/active', async (request, reply) => {
     try {
       const { unitId } = request.params as { unitId: string };
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null) {
+        const [units] = await db.execute<RowDataPacket[]>(
+          'SELECT ownerId FROM fleet_units WHERE id = ?',
+          [unitId]
+        );
+        if (units.length === 0 || !ownerScope.includes(units[0].ownerId)) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'Unit outside scoped owners' });
+        }
+      }
       const activeRoute = await RouteService.getActiveRoute(unitId);
 
       return reply.send({
@@ -148,10 +210,10 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    * LIST ALL ROUTES
    * GET /v1/routes
    */
-  fastify.get('/routes', async (_request, reply) => {
+  fastify.get('/routes', async (request, reply) => {
     try {
-      const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT
+      const ownerScope = await resolveOwnerScope(request);
+      let query = `SELECT
           fm.id, fm.uuid, fm.unit_id,
           fre.driver_id AS operator_id,
           fre.origin_id,
@@ -175,9 +237,20 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           ) AS incident_count
         FROM fleet_movements fm
         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-        WHERE fm.movement_type = 'ROUTE'
-        ORDER BY fm.created_at DESC`
-      );
+        JOIN fleet_units fu ON fm.unit_id = fu.id
+        WHERE fm.movement_type = 'ROUTE'`;
+
+      const params: (string | number)[] = [];
+      if (ownerScope !== null) {
+        if (ownerScope.length === 0) {
+          return reply.send({ success: true, data: [] });
+        }
+        query += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        params.push(...ownerScope);
+      }
+      query += ` ORDER BY fm.created_at DESC`;
+
+      const [rows] = await db.execute<RowDataPacket[]>(query, params);
       return reply.send({
         success: true,
         data: rows,
@@ -191,8 +264,9 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    * LIST ALL UNIT ACTIVITY LOGS (FORENSIC JOURNAL)
    * GET /v1/unit-logs
    */
-  fastify.get('/unit-logs', async (_request, reply) => {
+  fastify.get('/unit-logs', async (request, reply) => {
     try {
+      const ownerScope = await resolveOwnerScope(request);
       const query = `
         SELECT
           l.*,
@@ -336,9 +410,18 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         LEFT JOIN fleet_movements rm ON l.reference_id = rm.uuid AND rm.movement_type = 'ROUTE'
         LEFT JOIN fleet_route_extensions rext ON rext.movement_id = rm.id
         LEFT JOIN common_catalogs c_origin ON rext.origin_id = c_origin.id AND c_origin.category = 'ROUTE_ORIGIN'
-        ORDER BY l.created_at DESC
       `;
-      const [rows] = await db.execute<RowDataPacket[]>(query);
+      const params: (string | number)[] = [];
+      let scopeClause = '';
+      if (ownerScope !== null) {
+        if (ownerScope.length === 0) {
+          return reply.send({ success: true, data: [] });
+        }
+        scopeClause = `WHERE f.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
+        params.push(...ownerScope);
+      }
+      const finalQuery = `${query} ${scopeClause} ORDER BY l.created_at DESC`;
+      const [rows] = await db.execute<RowDataPacket[]>(finalQuery, params);
       return reply.send({
         success: true,
         data: rows,
@@ -359,6 +442,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
+        const ownerScope = await resolveOwnerScope(request);
+        if (!(await checkRouteScope(uuid, ownerScope))) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+        }
         const data = reportIncidentSchema.parse(request.body);
 
         await RouteService.reportIncident(
@@ -402,6 +491,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/routes/:uuid/incidents', async (request, reply) => {
     try {
       const { uuid } = request.params as { uuid: string };
+      const ownerScope = await resolveOwnerScope(request);
+      if (!(await checkRouteScope(uuid, ownerScope))) {
+        return reply
+          .code(403)
+          .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+      }
       const incidents = await RouteService.getIncidents(uuid);
       return reply.send({ success: true, data: incidents });
     } catch (error) {
@@ -413,9 +508,13 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    * LIST ALL INCIDENTS
    * GET /v1/incidents
    */
-  fastify.get('/incidents', async (_request, reply) => {
+  fastify.get('/incidents', async (request, reply) => {
     try {
-      const incidents = await RouteService.getAllIncidents();
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.send({ success: true, data: [] });
+      }
+      const incidents = await RouteService.getAllIncidents(ownerScope ?? undefined);
       return reply.send({ success: true, data: incidents });
     } catch (error) {
       return reply.code(400).send({ success: false, message: 'Error fetching global incidents' });
@@ -432,6 +531,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
+        const ownerScope = await resolveOwnerScope(request);
+        if (!(await checkRouteScope(uuid, ownerScope))) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+        }
         const schema = z.object({
           data: z.record(z.any()),
           reason: z.string().min(5),
@@ -459,6 +564,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
+        const ownerScope = await resolveOwnerScope(request);
+        if (!(await checkRouteScope(uuid, ownerScope))) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+        }
         const schema = z.object({
           reason: z.string().min(5),
         });
@@ -479,6 +590,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/routes/:uuid/node', async (request, reply) => {
     try {
       const { uuid } = request.params as { uuid: string };
+      const ownerScope = await resolveOwnerScope(request);
+      if (!(await checkRouteScope(uuid, ownerScope))) {
+        return reply
+          .code(403)
+          .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+      }
       const [routeRows] = await db.execute<RowDataPacket[]>(
         `SELECT fm.id, fm.uuid, fm.unit_id, fm.status,
                 fm.start_reading, fm.end_reading, fm.start_at, fm.end_at,
@@ -523,6 +640,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/incidents/:uuid/node', async (request, reply) => {
     try {
       const { uuid } = request.params as { uuid: string };
+      const ownerScope = await resolveOwnerScope(request);
+      if (!(await checkIncidentScope(uuid, ownerScope))) {
+        return reply
+          .code(403)
+          .send({ success: false, code: 'FORBIDDEN', message: 'Incident outside scoped owners' });
+      }
       const [rows] = await db.execute<RowDataPacket[]>(
         `SELECT ri.id, ri.uuid, ri.route_uuid, ri.category, ri.description,
                 ri.severity, ri.evidence_image, ri.status, ri.reported_at,

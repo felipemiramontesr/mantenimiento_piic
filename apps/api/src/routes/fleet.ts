@@ -306,7 +306,11 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
   fastify.get('/fleet/:id/node', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
-      const unit = await FleetService.getUnitById(id, fastify.log);
+      const ownerScope = await resolveOwnerScope(request);
+      if (ownerScope !== null && ownerScope.length === 0) {
+        return reply.code(404).send({ error: 'Unidad no encontrada' });
+      }
+      const unit = await FleetService.getUnitById(id, fastify.log, ownerScope ?? undefined);
       if (!unit) return reply.code(404).send({ error: 'Unidad no encontrada' });
 
       const yearStart = `${new Date().getFullYear()}-01`;
