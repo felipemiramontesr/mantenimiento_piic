@@ -98,6 +98,84 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
 
   // ── GET /v1/owners/:ownerId/profile ────────────────────────────────────────
 
+  // ── GET /v1/owners/me/profile ──────────────────────────────────────────────
+
+  describe('GET /v1/owners/me/profile', () => {
+    it('returns 401 without session', async () => {
+      const res = await app.inject({ method: 'GET', url: '/v1/owners/me/profile' });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('returns 404 when caller has no owner membership', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+      });
+      expect(res.statusCode).toBe(404);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_NOT_FOUND');
+    });
+
+    it('returns own profile resolved from JWT user id', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
+        .mockResolvedValueOnce([[PROFILE_ROW], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).data.rfc).toBe('TEST123456ABC');
+    });
+  });
+
+  // ── PATCH /v1/owners/me/profile ────────────────────────────────────────────
+
+  describe('PATCH /v1/owners/me/profile', () => {
+    it('returns 401 without session', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        payload: { telefono: '3311111111' },
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('returns 404 when caller has no owner membership', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { telefono: '3311111111' },
+      });
+      expect(res.statusCode).toBe(404);
+    });
+
+    it('updates own profile and returns 200', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined])
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { telefono: '3399999999' },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).success).toBe(true);
+    });
+  });
+
+  // ── GET /v1/owners/:ownerId/profile ────────────────────────────────────────
+
   describe('GET /v1/owners/:ownerId/profile', () => {
     it('returns 401 without session — Scenario GET-1', async () => {
       const res = await app.inject({

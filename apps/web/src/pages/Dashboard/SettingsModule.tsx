@@ -1,10 +1,13 @@
 import React, { useEffect } from 'react';
 import { Settings, User } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import { useAuth } from '../../context/AuthContext';
 import ArchonProfilePanel from '../../components/Identity/ArchonProfilePanel';
+import OwnerProfilePanel from '../../components/Identity/OwnerProfilePanel';
 
 const SettingsModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
+  const { ownerType } = useAuth();
 
   useEffect((): void => {
     setSectionData(
@@ -34,6 +37,11 @@ const SettingsModule: React.FC = (): React.ReactElement => {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
             <ArchonProfilePanel />
           </div>
+          {ownerType !== null && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 mt-6">
+              <OwnerProfilePanel />
+            </div>
+          )}
         </div>
       </section>
     </div>
