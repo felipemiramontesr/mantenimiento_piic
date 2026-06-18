@@ -29,4 +29,5 @@ export interface UserIndustrial {
   created_at?: string;
   updated_at?: string;
   ownerType?: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null;
+  suite?: 'ERP' | 'VIM' | null;
 }

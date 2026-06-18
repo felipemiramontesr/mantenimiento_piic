@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   AlertTriangle,
   Bell,
+  Globe,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -119,7 +120,7 @@ const NavItem: React.FC<NavItemProps> = ({
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission, isOmnipotent, isExternalClientOnly } = usePermissions();
+  const { hasPermission, isOmnipotent, isExternalClientOnly, isSuiteVIM } = usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
   const { count: alertsCount } = useAlertsCount();
@@ -295,6 +296,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 label="Seguridad"
                 path="/dashboard/logs"
                 active={location.pathname === '/dashboard/logs'}
+                isCollapsed={isCollapsed}
+              />
+            )}
+            {(isOmnipotent() || isSuiteVIM()) && (
+              <NavItem
+                icon={<Globe size={20} />}
+                label="Onboarding"
+                path="/dashboard/onboarding"
+                active={location.pathname === '/dashboard/onboarding'}
                 isCollapsed={isCollapsed}
               />
             )}

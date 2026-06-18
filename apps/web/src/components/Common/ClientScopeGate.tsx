@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
 
 const ClientScopeGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isExternalClientOnly } = usePermissions();
+  const { isSuiteVIM } = usePermissions();
   const location = useLocation();
 
   const isAllowedForClient =
@@ -11,7 +11,7 @@ const ClientScopeGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     location.pathname.startsWith('/dashboard/alerts') ||
     location.pathname.startsWith('/dashboard/maintenance');
 
-  if (isExternalClientOnly() && !isAllowedForClient) {
+  if (isSuiteVIM() && !isAllowedForClient) {
     return <Navigate to="/dashboard/fleet" replace />;
   }
 

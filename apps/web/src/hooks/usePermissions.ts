@@ -23,6 +23,7 @@ export default function usePermissions(): {
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmnipotent: () => boolean;
   isExternalClientOnly: () => boolean;
+  isSuiteVIM: () => boolean;
 } {
   const { currentUser, effectiveUser } = useAuth();
 
@@ -52,5 +53,7 @@ export default function usePermissions(): {
     return permissions.every((p) => EXTERNAL_CLIENT_PERMISSIONS.includes(p));
   };
 
-  return { hasPermission, hasAnyPermission, isOmnipotent, isExternalClientOnly };
+  const isSuiteVIM = (): boolean => effectiveUser?.suite === 'VIM';
+
+  return { hasPermission, hasAnyPermission, isOmnipotent, isExternalClientOnly, isSuiteVIM };
 }

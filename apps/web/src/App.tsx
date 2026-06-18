@@ -11,6 +11,7 @@ import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
 import AlertsModule from './pages/Dashboard/AlertsModule';
 import AdminModule from './pages/Dashboard/AdminModule';
+import OnboardingModule from './pages/Dashboard/OnboardingModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import FleetUnitNode from './pages/Dashboard/FleetUnitNode';
@@ -80,6 +81,7 @@ const App: React.FC = () => (
                   <Route path="settings" element={<SettingsModule />} />
                   <Route path="alerts" element={<AlertsModule />} />
                   <Route path="admin" element={<AdminModule />} />
+                  <Route path="onboarding" element={<OnboardingModule />} />
                   <Route path="incidents" element={<IncidentsModule />} />
                   <Route path="incidents/:uuid" element={<IncidentNode />} />
                   <Route path="users" element={<UsersModule />} />

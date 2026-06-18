@@ -42,6 +42,7 @@ const defaultPermissions = {
   hasAnyPermission: (): boolean => true,
   isOmnipotent: (): boolean => true,
   isExternalClientOnly: (): boolean => false,
+  isSuiteVIM: (): boolean => false,
 };
 
 const defaultAuth = {
@@ -81,6 +82,7 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Incidencias')).toBeDefined();
     expect(screen.getByText('Seguridad')).toBeDefined();
     expect(screen.getByText('Personal')).toBeDefined();
+    expect(screen.getByText('Onboarding')).toBeDefined();
     expect(screen.getByText('Panel de Control')).toBeDefined();
   });
 
@@ -91,6 +93,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasAnyPermission: (ps: string[]): boolean => ps.some((p) => clientPerms.includes(p)),
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => true,
+      isSuiteVIM: (): boolean => false,
     });
 
     render(
@@ -119,6 +122,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasAnyPermission: (ps: string[]): boolean => ps.some((p) => financePerms.includes(p)),
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => false,
+      isSuiteVIM: (): boolean => false,
     });
 
     render(
@@ -275,6 +279,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasAnyPermission: (): boolean => true,
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => false,
+      isSuiteVIM: (): boolean => false,
     });
 
     render(
@@ -293,6 +298,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => false,
+      isSuiteVIM: (): boolean => false,
     });
 
     render(
@@ -413,19 +419,39 @@ describe('Sidebar Component (Archon Core)', () => {
     const roleMatrix = [
       {
         label: 'Omnipotente (rol 0 — Master Archon)',
-        perms: { isOmnipotent: true, isExternalClientOnly: false, hasPermission: true },
+        perms: {
+          isOmnipotent: true,
+          isExternalClientOnly: false,
+          isSuiteVIM: false,
+          hasPermission: true,
+        },
       },
       {
         label: 'Operador General (rol 1 — sin permisos admin)',
-        perms: { isOmnipotent: false, isExternalClientOnly: false, hasPermission: true },
+        perms: {
+          isOmnipotent: false,
+          isExternalClientOnly: false,
+          isSuiteVIM: false,
+          hasPermission: true,
+        },
       },
       {
         label: 'Cliente Externo (rol 9 — fleet:scoped only)',
-        perms: { isOmnipotent: false, isExternalClientOnly: true, hasPermission: false },
+        perms: {
+          isOmnipotent: false,
+          isExternalClientOnly: true,
+          isSuiteVIM: false,
+          hasPermission: false,
+        },
       },
       {
         label: 'Sin ningún permiso (rol huérfano)',
-        perms: { isOmnipotent: false, isExternalClientOnly: false, hasPermission: false },
+        perms: {
+          isOmnipotent: false,
+          isExternalClientOnly: false,
+          isSuiteVIM: false,
+          hasPermission: false,
+        },
       },
     ];
 
@@ -436,6 +462,7 @@ describe('Sidebar Component (Archon Core)', () => {
           hasAnyPermission: (): boolean => perms.hasPermission,
           isOmnipotent: (): boolean => perms.isOmnipotent,
           isExternalClientOnly: (): boolean => perms.isExternalClientOnly,
+          isSuiteVIM: (): boolean => perms.isSuiteVIM,
         });
 
         render(

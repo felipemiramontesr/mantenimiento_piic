@@ -19,12 +19,15 @@ const mockAuth = (
     currentUser,
     effectiveUser,
     isImpersonating: effectiveUser !== currentUser,
+    isLoading: false,
     login: vi.fn(),
     logout: vi.fn(),
     updateCurrentUser: vi.fn(),
     isAuthenticated: currentUser !== null,
     startImpersonation: vi.fn(),
     stopImpersonation: vi.fn(),
+    ownerType: currentUser?.ownerType ?? null,
+    suite: currentUser?.suite ?? null,
   });
 };
 
@@ -233,6 +236,58 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     const { result } = renderHook(() => usePermissions());
     expect(result.current.hasPermission('fleet:read')).toBe(true);
     expect(result.current.hasPermission('admin:all')).toBe(false);
+  });
+
+  describe('isSuiteVIM (Multiverso Archon — VIM universe gate)', () => {
+    it('is true when effectiveUser.suite is VIM', () => {
+      mockAuth({
+        id: '3',
+        username: 'centro.vim',
+        roleId: 3,
+        suite: 'VIM',
+        permissions: ['fleet:scoped'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isSuiteVIM()).toBe(true);
+    });
+
+    it('is false when effectiveUser.suite is ERP', () => {
+      mockAuth({
+        id: '1',
+        username: 'flotilla.erp',
+        roleId: 1,
+        suite: 'ERP',
+        permissions: ['fleet:view', 'fleet:scoped'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isSuiteVIM()).toBe(false);
+    });
+
+    it('is false when suite is null (Archon)', () => {
+      mockAuth({ id: '0', username: 'archon', roleId: 0, suite: null, permissions: ['*'] });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isSuiteVIM()).toBe(false);
+    });
+
+    it('is false when no effectiveUser', () => {
+      mockAuth(null);
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isSuiteVIM()).toBe(false);
+    });
+
+    it('reads effectiveUser not currentUser during impersonation', () => {
+      const archon = { id: '0', username: 'archon', roleId: 0, suite: null, permissions: ['*'] };
+      const vimUser = {
+        id: '3',
+        username: 'centro',
+        roleId: 3,
+        suite: 'VIM',
+        permissions: ['fleet:scoped'],
+      };
+      mockAuth(archon, vimUser);
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isSuiteVIM()).toBe(true);
+    });
   });
 
   it('isOmnipotent uses currentUser not effectiveUser — stays true while impersonating limited role', () => {

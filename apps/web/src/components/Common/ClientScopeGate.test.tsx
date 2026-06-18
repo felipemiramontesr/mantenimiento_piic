@@ -22,6 +22,7 @@ const mockClient = (isClient: boolean): void => {
     hasAnyPermission: (): boolean => true,
     isOmnipotent: (): boolean => false,
     isExternalClientOnly: (): boolean => isClient,
+    isSuiteVIM: (): boolean => isClient,
   });
 };
 
