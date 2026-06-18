@@ -18,6 +18,7 @@ import {
   Users,
   MapPin,
 } from 'lucide-react';
+import SpecialtiesSelect from '../Common/SpecialtiesSelect';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
@@ -156,7 +157,7 @@ function buildOwnerProfilePayload(
   rfc: string,
   razonSocial: string,
   telefono: string,
-  especialidades: string,
+  especialidades: string[],
   addressVal: AddressValue
 ): Record<string, unknown> {
   if (![1, 3, 4].includes(roleId)) return {};
@@ -164,7 +165,7 @@ function buildOwnerProfilePayload(
   if (rfc) profile.rfc = rfc;
   if (razonSocial) profile.razon_social = razonSocial;
   if (telefono) profile.telefono = telefono;
-  if (roleId === 3 && especialidades) profile.especialidades = especialidades;
+  if (roleId === 3 && especialidades.length > 0) profile.especialidades = especialidades;
   const result: Record<string, unknown> = { profile };
   if (addressVal.neighborhoodId) {
     const address: Record<string, unknown> = {
@@ -269,7 +270,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     rfc: '',
     razonSocial: '',
     telefono: '',
-    especialidades: '',
+    especialidades: [] as string[],
     centroOwnerId: '',
   });
 
@@ -291,7 +292,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         rfc: '',
         razonSocial: '',
         telefono: '',
-        especialidades: '',
+        especialidades: [] as string[],
         centroOwnerId: '',
       });
       setAddressValue(EMPTY_ADDRESS);
@@ -943,15 +944,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               </ArchonField>
               {roleIdNum === 3 && (
                 <ArchonField label="Especialidades (Opcional)" icon={Briefcase}>
-                  <input
-                    type="text"
-                    placeholder="Ej: Frenos, Eléctrico, Transmisión"
-                    className="archon-input"
-                    data-testid="centro-especialidades-input"
+                  <SpecialtiesSelect
                     value={formData.especialidades}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                      setFormData({ ...formData, especialidades: e.target.value })
-                    }
+                    onChange={(codes): void => setFormData({ ...formData, especialidades: codes })}
                   />
                 </ArchonField>
               )}

@@ -4,6 +4,23 @@ import { screen, fireEvent, waitFor, cleanup, within, act, render } from '../../
 import api from '../../api/client';
 import UserRegistrationForm from './UserRegistrationForm';
 
+// 🔱 Mock SpecialtiesSelect — avoid catalog API call in URF tests
+vi.mock('../Common/SpecialtiesSelect', () => ({
+  default: ({
+    value,
+    onChange,
+  }: {
+    value: string[];
+    onChange: (codes: string[]) => void;
+  }): React.JSX.Element => (
+    <div
+      data-testid="owner-especialidades-input"
+      data-codes={JSON.stringify(value)}
+      onClick={(): void => onChange([...value, 'MOTOR'])}
+    />
+  ),
+}));
+
 // 🔱 Mock API Client
 vi.mock('../../api/client', () => ({
   default: {
@@ -744,7 +761,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     render(<UserRegistrationForm />);
     await waitFor(() => {
       expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
-      expect(screen.getByTestId('centro-especialidades-input')).toBeInTheDocument();
+      expect(screen.getByTestId('owner-especialidades-input')).toBeInTheDocument();
     });
   });
 
