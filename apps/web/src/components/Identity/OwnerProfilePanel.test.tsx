@@ -7,15 +7,17 @@ import OwnerProfilePanel from './OwnerProfilePanel';
 /**
  * Archon Test: OwnerProfilePanel
  * Feature Contract: Archon_Master_Fase7_OwnerProfile_ViewEdit — Fase 7-B
+ * Feature Contract: Archon_VIM_CentroSpecialties v2 — Fase 3 Web
  * Scenario P1: loading state shown on mount
  * Scenario P2: profile loaded from /owners/me/profile on mount
  * Scenario P3: RFC label = "RFC (Opcional)" for Rol 4 (PRIVATE)
  * Scenario P4: Razón Social label = "Nombre Legal" for Rol 4
- * Scenario P5a: Especialidades shown for Rol 3 (CENTER)
+ * Scenario P5a: SpecialtiesSelect shown for Rol 3 (CENTER)
  * Scenario P5b: Especialidades hidden for Rol 1 (FLOTILLA)
  * Scenario P6: address hydrated when neighborhoodId exists
  * Scenario P7: PATCH /owners/me/profile called on save + success shown
  * Scenario P8: error message shown on failed save
+ * Scenario P9: SpecialtiesSelect sends array codes on save
  */
 
 const mockUseAuth = vi.hoisted(() => vi.fn());
@@ -26,6 +28,22 @@ vi.mock('../../context/AuthContext', async (importOriginal) => {
 
 vi.mock('../../api/client', () => ({
   default: { get: vi.fn(), patch: vi.fn() },
+}));
+
+vi.mock('../Common/SpecialtiesSelect', () => ({
+  default: ({
+    value,
+    onChange,
+  }: {
+    value: string[];
+    onChange: (codes: string[]) => void;
+  }): React.JSX.Element => (
+    <div
+      data-testid="owner-especialidades-input"
+      data-codes={JSON.stringify(value)}
+      onClick={(): void => onChange([...value, 'MOTOR'])}
+    />
+  ),
 }));
 
 vi.mock('../Common/ArchonAddressField', () => ({
@@ -132,14 +150,14 @@ describe('OwnerProfilePanel', () => {
     expect(getByDataLabel('Nombre Legal')).toBeInTheDocument();
   });
 
-  it('shows especialidades field for Rol 3 — Scenario P5a', async (): Promise<void> => {
+  it('shows SpecialtiesSelect for Rol 3 CENTER — Scenario P5a', async (): Promise<void> => {
     setupAuth(3, 'CENTER');
     (api.get as Mock).mockResolvedValueOnce({
       data: {
         success: true,
         data: {
           ...PROFILE_DATA,
-          especialidades: 'Motores',
+          especialidades: ['MOTOR'],
           neighborhoodId: null,
           ownerType: 'CENTER',
         },
@@ -226,6 +244,38 @@ describe('OwnerProfilePanel', () => {
 
     await waitFor((): void => {
       expect(screen.getByTestId('owner-profile-error')).toBeInTheDocument();
+    });
+  });
+
+  it('sends especialidades array on save for Rol 3 — Scenario P9', async (): Promise<void> => {
+    setupAuth(3, 'CENTER');
+    (api.get as Mock).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          ...PROFILE_DATA,
+          especialidades: ['FRENOS'],
+          neighborhoodId: null,
+          ownerType: 'CENTER',
+        },
+      },
+    });
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('owner-especialidades-input')).toBeInTheDocument();
+    });
+
+    // Mock click on SpecialtiesSelect adds 'MOTOR' to the array
+    fireEvent.click(screen.getByTestId('owner-especialidades-input'));
+    fireEvent.click(screen.getByTestId('owner-profile-save'));
+
+    await waitFor((): void => {
+      expect(api.patch).toHaveBeenCalledWith(
+        '/owners/me/profile',
+        expect.objectContaining({ especialidades: ['FRENOS', 'MOTOR'] })
+      );
     });
   });
 });

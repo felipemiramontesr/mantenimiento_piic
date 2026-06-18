@@ -4,12 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import ArchonField from '../ArchonField';
 import ArchonAddressField, { AddressValue, EMPTY_ADDRESS } from '../Common/ArchonAddressField';
+import SpecialtiesSelect from '../Common/SpecialtiesSelect';
 
 interface ProfileApiData {
   rfc: string | null;
   razonSocial: string | null;
   telefono: string | null;
-  especialidades: string | null;
+  especialidades: string[] | null;
   calle: string | null;
   numeroExt: string | null;
   numeroInt: string | null;
@@ -21,14 +22,14 @@ interface ProfileForm {
   rfc: string;
   razonSocial: string;
   telefono: string;
-  especialidades: string;
+  especialidades: string[];
 }
 
 const EMPTY_FORM: ProfileForm = {
   rfc: '',
   razonSocial: '',
   telefono: '',
-  especialidades: '',
+  especialidades: [],
 };
 
 function getProfileTitle(ownerType: string | null): string {
@@ -82,7 +83,7 @@ const OwnerProfilePanel: React.FC = (): React.JSX.Element => {
           rfc: d.rfc || '',
           razonSocial: d.razonSocial || '',
           telefono: d.telefono || '',
-          especialidades: d.especialidades || '',
+          especialidades: Array.isArray(d.especialidades) ? d.especialidades : [],
         });
         const addr = await hydrateAddress(d);
         if (!cancelled) setAddressValue(addr);
@@ -108,7 +109,8 @@ const OwnerProfilePanel: React.FC = (): React.JSX.Element => {
         razonSocial: form.razonSocial || null,
         telefono: form.telefono || null,
       };
-      if (roleId === 3) payload.especialidades = form.especialidades || null;
+      if (roleId === 3)
+        payload.especialidades = form.especialidades.length > 0 ? form.especialidades : null;
       if (addressValue.neighborhoodId) {
         payload.neighborhoodId = parseInt(addressValue.neighborhoodId, 10);
         if (addressValue.calle) payload.calle = addressValue.calle;
@@ -178,14 +180,10 @@ const OwnerProfilePanel: React.FC = (): React.JSX.Element => {
       </ArchonField>
 
       {roleId === 3 && (
-        <ArchonField label="Especialidades" icon={Star}>
-          <input
-            type="text"
-            className="archon-input"
-            data-testid="owner-especialidades-input"
-            placeholder="Ej. Motores, Suspensión"
+        <ArchonField label="Especialidades (Opcional)" icon={Star}>
+          <SpecialtiesSelect
             value={form.especialidades}
-            onChange={(e): void => setForm((f) => ({ ...f, especialidades: e.target.value }))}
+            onChange={(codes): void => setForm((f) => ({ ...f, especialidades: codes }))}
           />
         </ArchonField>
       )}
