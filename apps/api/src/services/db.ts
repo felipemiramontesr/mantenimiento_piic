@@ -30,6 +30,7 @@ const db = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -37,6 +38,7 @@ const db = mysql.createPool({
 
 db.on('connection', (connection) => {
   connection.query(`SET time_zone = '${MEXICO_TZ_OFFSET}'`);
+  connection.query(`SET NAMES utf8mb4`);
 });
 
 export default db;

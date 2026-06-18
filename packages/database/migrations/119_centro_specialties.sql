@@ -1,6 +1,7 @@
 -- Migration 119: Centro Especialidades — columna JSON + catálogo
 -- FC: Archon_VIM_CentroSpecialties v2 · Firmado: 2026-06-18
 -- IDs 9001–9019 reservados permanentemente para category='SPECIALTY' — no reutilizar
+SET NAMES utf8mb4;
 
 -- Paso 1: Sanitización previa
 -- Limpia valores no-JSON para que el ALTER no falle

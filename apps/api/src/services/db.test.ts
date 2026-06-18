@@ -25,6 +25,10 @@ describe('Database Service (ARCHON CORE)', () => {
     expect(mysql.createPool).toHaveBeenCalled();
   });
 
+  it('declares charset utf8mb4 in pool config — Invariant §9.7', () => {
+    expect(mysql.createPool).toHaveBeenCalledWith(expect.objectContaining({ charset: 'utf8mb4' }));
+  });
+
   it('should utilize localhost as a fallback if DB_HOST is missing', () => {
     delete process.env.DB_HOST;
     expect(resolveDbHost()).toBe('localhost');
@@ -52,5 +56,14 @@ describe('Database Service (ARCHON CORE)', () => {
     handler(fakeConnection);
 
     expect(fakeConnection.query).toHaveBeenCalledWith("SET time_zone = '-06:00'");
+  });
+
+  it('sets utf8mb4 charset on every new connection — Invariant §9.7', () => {
+    const connectionCall = (poolOnMock as Mock).mock.calls.find((call) => call[0] === 'connection');
+    const handler = connectionCall![1] as (conn: { query: Mock }) => void;
+    const fakeConnection = { query: vi.fn() };
+    handler(fakeConnection);
+
+    expect(fakeConnection.query).toHaveBeenCalledWith('SET NAMES utf8mb4');
   });
 });
