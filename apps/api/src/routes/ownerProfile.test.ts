@@ -3,8 +3,9 @@ import buildApp from '../index';
 import db from '../services/db';
 
 /**
- * Archon Integration Test: Owner Profile — View & Edit
+ * Archon Integration Test: Owner Profile — View & Edit + Specialties
  * Feature Contract: Archon_Master_Fase7_OwnerProfile_ViewEdit
+ * Feature Contract: Archon_VIM_CentroSpecialties v2
  * Scenario GET-1: 401 sin sesión
  * Scenario GET-2: 403 owner ajeno sin admin
  * Scenario GET-3: 404 perfil inexistente
@@ -16,6 +17,11 @@ import db from '../services/db';
  * Scenario PATCH-4: 400 MISSING_RFC — FLOTILLA intenta borrar rfc
  * Scenario PATCH-5: 400 NO_FIELDS_TO_UPDATE — body vacío
  * Scenario PATCH-6: 200 actualización exitosa — SQL UPDATE ejecutado
+ * Scenario SP-1: GET /catalogs/specialties 401 sin sesión
+ * Scenario SP-2: GET /catalogs/specialties 200 lista correcta
+ * Scenario SP-3: PATCH /owners/me/profile con especialidades válidas — 200
+ * Scenario SP-4: PATCH /owners/me/profile con códigos inválidos — 400 INVALID_SPECIALTY_CODES
+ * Scenario SP-5: PATCH /owners/:id/profile con especialidades válidas — 200
  */
 
 vi.mock('../services/db', () => ({
@@ -330,6 +336,96 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
 
       const sqls = (db.execute as Mock).mock.calls.map((c) => c[0] as string);
       expect(sqls.some((s) => s.includes('UPDATE owner_profiles SET'))).toBe(true);
+    });
+  });
+
+  // ── GET /v1/catalogs/specialties ───────────────────────────────────────────
+
+  describe('GET /v1/catalogs/specialties', () => {
+    it('returns 401 without session — Scenario SP-1', async () => {
+      const res = await app.inject({ method: 'GET', url: '/v1/catalogs/specialties' });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('returns specialty catalog list — Scenario SP-2', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          { code: 'FRENOS', label: 'Frenos' },
+          { code: 'MOTOR', label: 'Motor' },
+        ],
+        undefined,
+      ]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/specialties',
+        headers: auth(ownerToken),
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.success).toBe(true);
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data[0]).toHaveProperty('code');
+      expect(body.data[0]).toHaveProperty('label');
+    });
+  });
+
+  // ── PATCH especialidades ───────────────────────────────────────────────────
+
+  describe('PATCH especialidades', () => {
+    it('updates own profile with valid specialty codes — Scenario SP-3', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ cnt: 2 }], undefined]) // validateSpecialtyCodes
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]) // profileRow
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { especialidades: ['MOTOR', 'FRENOS'] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).success).toBe(true);
+      const sqls = (db.execute as Mock).mock.calls.map((c) => c[0] as string);
+      expect(sqls.some((s) => s.includes('especialidades = ?'))).toBe(true);
+    });
+
+    it('rejects invalid specialty codes with 400 — Scenario SP-4', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ cnt: 0 }], undefined]); // validateSpecialtyCodes → mismatch
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { especialidades: ['INVALID_CODE'] },
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('INVALID_SPECIALTY_CODES');
+    });
+
+    it('updates ownerId profile with valid specialty codes — Scenario SP-5', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ cnt: 1 }], undefined]) // validateSpecialtyCodes
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]) // profileRow
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(ownerToken),
+        payload: { especialidades: ['PINTURA'] },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).success).toBe(true);
     });
   });
 });

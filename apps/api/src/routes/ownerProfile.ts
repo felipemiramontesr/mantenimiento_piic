@@ -15,11 +15,34 @@ function hasAdminAccess(permissions: string[]): boolean {
   return permissions.includes('*') || permissions.includes('user:admin');
 }
 
+async function validateSpecialtyCodes(codes: string[]): Promise<boolean> {
+  if (codes.length === 0) return true;
+  const placeholders = codes.map(() => '?').join(', ');
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT COUNT(*) AS cnt FROM common_catalogs WHERE category = 'SPECIALTY' AND code IN (${placeholders})`,
+    codes
+  );
+  return Number((rows[0] as RowDataPacket).cnt) === codes.length;
+}
+
+function parseEspecialidades(raw: unknown): string[] | null {
+  if (raw === null || raw === undefined) return null;
+  if (Array.isArray(raw)) return raw as string[];
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw) as string[];
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 const patchSchema = z.object({
   rfc: z.string().max(20).nullable().optional(),
   razonSocial: z.string().max(200).nullable().optional(),
   telefono: z.string().max(20).nullable().optional(),
-  especialidades: z.string().max(500).nullable().optional(),
+  especialidades: z.array(z.string().max(20)).max(19).nullable().optional(),
   calle: z.string().max(200).nullable().optional(),
   numeroExt: z.string().max(20).nullable().optional(),
   numeroInt: z.string().max(20).nullable().optional(),
@@ -32,17 +55,17 @@ function buildUpdateFields(data: PatchData): {
   fields: string[];
   values: (string | number | null)[];
 } {
-  const map: Array<[keyof PatchData, string]> = [
+  const map: Array<[keyof Omit<PatchData, 'especialidades'>, string]> = [
     ['rfc', 'rfc'],
     ['razonSocial', 'razon_social'],
     ['telefono', 'telefono'],
-    ['especialidades', 'especialidades'],
     ['calle', 'calle'],
     ['numeroExt', 'numero_exterior'],
     ['numeroInt', 'numero_interior'],
     ['neighborhoodId', 'neighborhood_id'],
   ];
-  return map.reduce<{ fields: string[]; values: (string | number | null)[] }>(
+
+  const result = map.reduce<{ fields: string[]; values: (string | number | null)[] }>(
     (acc, [key, col]) => {
       if (data[key] !== undefined) {
         acc.fields.push(`${col} = ?`);
@@ -52,6 +75,13 @@ function buildUpdateFields(data: PatchData): {
     },
     { fields: [], values: [] }
   );
+
+  if (data.especialidades !== undefined) {
+    result.fields.push('especialidades = ?');
+    result.values.push(data.especialidades === null ? null : JSON.stringify(data.especialidades));
+  }
+
+  return result;
 }
 
 const PROFILE_SELECT_SQL = `
@@ -81,7 +111,29 @@ const PROFILE_SELECT_SQL = `
   WHERE op.owner_id = ?
   LIMIT 1`;
 
+function hydrateProfile(row: RowDataPacket): RowDataPacket {
+  return { ...row, especialidades: parseEspecialidades(row.especialidades) };
+}
+
 export default async function ownerProfileRoutes(fastify: FastifyInstance): Promise<void> {
+  // GET /v1/catalogs/specialties — public catalog (jwtGuard only, no permission gate)
+  fastify.get('/catalogs/specialties', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+    }
+    try {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        "SELECT code, label FROM common_catalogs WHERE category = 'SPECIALTY' ORDER BY label ASC"
+      );
+      return reply.send({ success: true, data: rows });
+    } catch (e) {
+      fastify.log.error(e);
+      return reply.code(500).send({ success: false, code: 'SPECIALTIES_FETCH_FAIL' });
+    }
+  });
+
   // GET /v1/owners/me/profile — self-service: resolves ownerId from JWT
   fastify.get('/owners/me/profile', async (request, reply) => {
     try {
@@ -99,7 +151,7 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       if (rows.length === 0) {
         return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
       }
-      return reply.send({ success: true, data: rows[0] });
+      return reply.send({ success: true, data: hydrateProfile(rows[0]) });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ success: false, code: 'PROFILE_FETCH_FAIL' });
@@ -123,6 +175,13 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
     const ownerIds = await getCallerOwnerIds(caller.id);
     if (ownerIds.length === 0) {
       return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
+    }
+    if (
+      parsed.data.especialidades !== undefined &&
+      parsed.data.especialidades !== null &&
+      !(await validateSpecialtyCodes(parsed.data.especialidades))
+    ) {
+      return reply.code(400).send({ success: false, code: 'INVALID_SPECIALTY_CODES' });
     }
     const ownerId = ownerIds[0];
     try {
@@ -181,7 +240,7 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       if (rows.length === 0) {
         return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
       }
-      return reply.send({ success: true, data: rows[0] });
+      return reply.send({ success: true, data: hydrateProfile(rows[0]) });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ success: false, code: 'PROFILE_FETCH_FAIL' });
@@ -211,6 +270,14 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       if (!ownerIds.includes(Number(ownerId))) {
         return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
       }
+    }
+
+    if (
+      parsed.data.especialidades !== undefined &&
+      parsed.data.especialidades !== null &&
+      !(await validateSpecialtyCodes(parsed.data.especialidades))
+    ) {
+      return reply.code(400).send({ success: false, code: 'INVALID_SPECIALTY_CODES' });
     }
 
     try {
