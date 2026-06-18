@@ -71,7 +71,10 @@ api.interceptors.response.use(
     const isTest =
       typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || !!process.env.VITEST);
 
-    if (!isTest) {
+    const isExpected401 =
+      error.response?.status === 401 && error.config?.url?.includes('/auth/refresh');
+
+    if (!isTest && !isExpected401) {
       /* istanbul ignore next */
       console.error('🌐 [Archon API Client] Networking Error:', {
         message: error.message,
