@@ -5,11 +5,11 @@ import SpecialtiesSelect from './SpecialtiesSelect';
 
 /**
  * Archon Test: SpecialtiesSelect
- * Feature Contract: Archon_VIM_CentroSpecialties v2 — Fase 3 Web
+ * Feature Contract: Archon_VIM_SpecialtiesUX v2 — Fase 2 Web
  * Scenario SS-1: renders chip-select container (testid present)
- * Scenario SS-2: loads catalog and renders dropdown
+ * Scenario SS-2: loads catalog and renders dropdown trigger
  * Scenario SS-3: selected chips render from value prop
- * Scenario SS-4: selecting an option calls onChange with new code appended
+ * Scenario SS-4: clicking an option calls onChange with new code appended
  * Scenario SS-5: clicking × on chip calls onChange with code removed
  * Scenario SS-6: handles API error gracefully (no crash)
  */
@@ -39,13 +39,13 @@ describe('SpecialtiesSelect', () => {
     expect(screen.getByTestId('owner-especialidades-input')).toBeInTheDocument();
   });
 
-  it('renders dropdown after catalog loads — Scenario SS-2', async () => {
+  it('renders dropdown trigger after catalog loads — Scenario SS-2', async () => {
     (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
     render(<SpecialtiesSelect value={[]} onChange={vi.fn()} />);
 
-    await waitFor(() => expect(screen.getByTestId('specialties-dropdown')).toBeInTheDocument());
-    expect(screen.getByText('Motor')).toBeInTheDocument();
-    expect(screen.getByText('Frenos')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId('specialties-dropdown-trigger')).toBeInTheDocument()
+    );
   });
 
   it('renders chips for selected values — Scenario SS-3', async () => {
@@ -57,13 +57,18 @@ describe('SpecialtiesSelect', () => {
     expect(screen.getByText('Frenos')).toBeInTheDocument();
   });
 
-  it('calls onChange with new code when dropdown option selected — Scenario SS-4', async () => {
+  it('calls onChange with new code when option clicked — Scenario SS-4', async () => {
     (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
     const onChange = vi.fn();
     render(<SpecialtiesSelect value={['MOTOR']} onChange={onChange} />);
 
-    await waitFor(() => expect(screen.getByTestId('specialties-dropdown')).toBeInTheDocument());
-    fireEvent.change(screen.getByTestId('specialties-dropdown'), { target: { value: 'FRENOS' } });
+    await waitFor(() =>
+      expect(screen.getByTestId('specialties-dropdown-trigger')).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByTestId('specialties-dropdown-trigger'));
+
+    await waitFor(() => expect(screen.getByTestId('specialty-option-FRENOS')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('specialty-option-FRENOS'));
 
     expect(onChange).toHaveBeenCalledWith(['MOTOR', 'FRENOS']);
   });
