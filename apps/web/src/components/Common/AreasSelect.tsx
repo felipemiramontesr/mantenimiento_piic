@@ -1,32 +1,11 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import api from '../../api/client';
 
-const AREA_CATALOG = [
-  'Administración',
-  'Dirección General',
-  'Finanzas',
-  'Contabilidad',
-  'Auditoría',
-  'Jurídico / Legal',
-  'Recursos Humanos',
-  'Nómina',
-  'Operaciones',
-  'Mantenimiento',
-  'Flota',
-  'Logística',
-  'Distribución',
-  'Transporte',
-  'Almacén',
-  'Compras',
-  'Calidad',
-  'Producción',
-  'Ventas',
-  'Servicio al Cliente',
-  'Marketing',
-  'Sistemas / TI',
-] as const;
-
-const OTRO = 'Otro';
+interface AreaOption {
+  code: string;
+  label: string;
+}
 
 interface AreasSelectProps {
   value: string[];
@@ -34,12 +13,32 @@ interface AreasSelectProps {
 }
 
 const AreasSelect: React.FC<AreasSelectProps> = ({ value, onChange }): React.JSX.Element => {
+  const [catalog, setCatalog] = useState<AreaOption[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [otroInput, setOtroInput] = useState('');
   const [showOtro, setShowOtro] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<{ success: boolean; data: AreaOption[] }>('/catalogs/areas')
+      .then((res) => {
+        if (!cancelled) setCatalog(res.data?.data ?? []);
+      })
+      .catch(() => {
+        // catalog unavailable — dropdown stays empty, Otro still works
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return (): void => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent): void => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -51,15 +50,15 @@ const AreasSelect: React.FC<AreasSelectProps> = ({ value, onChange }): React.JSX
     };
   }, []);
 
-  const available = AREA_CATALOG.filter((a) => !value.includes(a));
+  const available = catalog.filter((item) => !value.includes(item.label));
 
-  const handleSelect = (area: string): void => {
-    if (area === OTRO) {
-      setShowOtro(true);
-      setOpen(false);
-      return;
-    }
-    if (!value.includes(area)) onChange([...value, area]);
+  const handleSelect = (label: string): void => {
+    if (!value.includes(label)) onChange([...value, label]);
+    setOpen(false);
+  };
+
+  const handleSelectOtro = (): void => {
+    setShowOtro(true);
     setOpen(false);
   };
 
@@ -75,8 +74,6 @@ const AreasSelect: React.FC<AreasSelectProps> = ({ value, onChange }): React.JSX
   const handleRemove = (area: string): void => {
     onChange(value.filter((a) => a !== area));
   };
-
-  const showTrigger = available.length > 0 || !showOtro;
 
   return (
     <div ref={containerRef} data-testid="areas-select" className="space-y-2">
@@ -102,7 +99,7 @@ const AreasSelect: React.FC<AreasSelectProps> = ({ value, onChange }): React.JSX
         </div>
       )}
 
-      {showTrigger && available.length > 0 && (
+      {!loading && available.length > 0 && (
         <div className="relative">
           <button
             type="button"
@@ -121,21 +118,21 @@ const AreasSelect: React.FC<AreasSelectProps> = ({ value, onChange }): React.JSX
               data-testid="areas-dropdown"
               className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-[#0f2a44]/10 rounded-[4px] shadow-[0_4px_16px_rgba(15,42,68,0.12)] overflow-y-auto max-h-60"
             >
-              {available.map((area) => (
+              {available.map((item) => (
                 <button
-                  key={area}
+                  key={item.code}
                   type="button"
-                  data-testid={`area-option-${area}`}
-                  onClick={(): void => handleSelect(area)}
+                  data-testid={`area-option-${item.code}`}
+                  onClick={(): void => handleSelect(item.label)}
                   className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-[#0f2a44] hover:bg-[#0f2a44]/[0.06] transition-colors duration-150"
                 >
-                  {area}
+                  {item.label}
                 </button>
               ))}
               <button
                 type="button"
                 data-testid="area-option-otro"
-                onClick={(): void => handleSelect(OTRO)}
+                onClick={handleSelectOtro}
                 className="w-full text-left px-4 py-2.5 text-[13px] font-bold text-[#0f2a44]/60 hover:bg-[#0f2a44]/[0.06] transition-colors duration-150 border-t border-[#0f2a44]/10"
               >
                 Otro...
