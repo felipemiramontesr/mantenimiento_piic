@@ -19,6 +19,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import SpecialtiesSelect from '../Common/SpecialtiesSelect';
+import AreasSelect from '../Common/AreasSelect';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
@@ -248,7 +249,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   // 🔱 Fase 5: Rol 4 CENTER catalog, Rol 1 area chips
   const [centers, setCenters] = useState<CenterOption[]>([]);
   const [areaChips, setAreaChips] = useState<string[]>([]);
-  const [areaInputValue, setAreaInputValue] = useState('');
 
   // 🔱 Fase 6: Multi-campo address for Rol 1/3/4
   const [addressValue, setAddressValue] = useState<AddressValue>(EMPTY_ADDRESS);
@@ -955,7 +955,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           </div>
         )}
 
-        {/* 🔱 Fase 5: Rol 1 — Áreas Iniciales (chips) */}
+        {/* 🔱 Fase 5: Rol 1 — Áreas Iniciales */}
         {roleIdNum === 1 && !editingUser && (
           <div
             data-testid="flotilla-areas-section"
@@ -965,62 +965,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               <Building2 size={20} className="text-[var(--card-accent)]" />
               <h3 className="card-sovereign-title text-archon-xl opacity-100">Áreas Iniciales</h3>
             </div>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                placeholder="Nombre del área (Enter para agregar)"
-                className="flex-1 h-10 bg-[#0f2a44]/5 border-b-2 border-[#0f2a44]/10 focus:border-[#f2b705] px-4 rounded-[4px] text-sm font-medium text-[#0f2a44] outline-none transition-all"
-                data-testid="area-chip-input"
-                value={areaInputValue}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                  setAreaInputValue(e.target.value)
-                }
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>): void => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const trimmed = areaInputValue.trim();
-                    if (trimmed && !areaChips.includes(trimmed)) {
-                      setAreaChips((prev) => [...prev, trimmed]);
-                      setAreaInputValue('');
-                    }
-                  }
-                }}
-              />
-              <button
-                type="button"
-                data-testid="area-chip-add-btn"
-                onClick={(): void => {
-                  const trimmed = areaInputValue.trim();
-                  if (trimmed && !areaChips.includes(trimmed)) {
-                    setAreaChips((prev) => [...prev, trimmed]);
-                    setAreaInputValue('');
-                  }
-                }}
-                className="px-4 py-2 bg-[#0f2a44] text-white rounded-md text-sm font-semibold hover:bg-[#0f2a44]/90 transition-colors"
-              >
-                Agregar
-              </button>
-            </div>
-            {areaChips.length > 0 && (
-              <div className="flex flex-wrap gap-2" data-testid="area-chips-list">
-                {areaChips.map((chip) => (
-                  <span
-                    key={chip}
-                    className="flex items-center gap-1 px-3 py-1 bg-[#0f2a44] text-white rounded-full text-sm font-semibold"
-                  >
-                    {chip}
-                    <button
-                      type="button"
-                      onClick={(): void => setAreaChips((prev) => prev.filter((c) => c !== chip))}
-                      className="ml-1 hover:text-red-300 transition-colors"
-                      data-testid={`area-chip-remove-${chip}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+            <AreasSelect value={areaChips} onChange={setAreaChips} />
             <p className="text-archon-base uppercase tracking-widest opacity-40 text-sm">
               Estas áreas se crearán al registrar. Pueden gestionarse después en el panel de áreas.
             </p>

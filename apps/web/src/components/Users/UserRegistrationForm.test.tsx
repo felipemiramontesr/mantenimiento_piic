@@ -21,6 +21,23 @@ vi.mock('../Common/SpecialtiesSelect', () => ({
   ),
 }));
 
+// 🔱 Mock AreasSelect — avoid complex dropdown interaction in URF tests
+vi.mock('../Common/AreasSelect', () => ({
+  default: ({
+    value,
+    onChange,
+  }: {
+    value: string[];
+    onChange: (areas: string[]) => void;
+  }): React.JSX.Element => (
+    <div
+      data-testid="areas-select"
+      data-areas={JSON.stringify(value)}
+      onClick={(): void => onChange([...value, 'Operaciones'])}
+    />
+  ),
+}));
+
 // 🔱 Mock API Client
 vi.mock('../../api/client', () => ({
   default: {
@@ -654,14 +671,13 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     });
   });
 
-  it('shows areas chips input for Rol 1 (Flotilla)', async () => {
+  it('shows AreasSelect for Rol 1 (Flotilla)', async () => {
     currentMockState.roles = [{ id: 1, label: 'Flotilla Operador' }];
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
     render(<UserRegistrationForm />);
     await waitFor(() => {
       expect(screen.getByTestId('flotilla-areas-section')).toBeInTheDocument();
-      expect(screen.getByTestId('area-chip-input')).toBeInTheDocument();
-      expect(screen.getByTestId('area-chip-add-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('areas-select')).toBeInTheDocument();
     });
   });
 
