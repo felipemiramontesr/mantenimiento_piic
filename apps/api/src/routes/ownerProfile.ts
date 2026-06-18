@@ -134,6 +134,24 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
     }
   });
 
+  // GET /v1/catalogs/areas — fleet area catalog (jwtGuard only, no permission gate)
+  fastify.get('/catalogs/areas', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+    }
+    try {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        "SELECT code, label FROM common_catalogs WHERE category = 'FLEET_AREA' ORDER BY id ASC"
+      );
+      return reply.send({ success: true, data: rows });
+    } catch (e) {
+      fastify.log.error(e);
+      return reply.code(500).send({ success: false, code: 'AREAS_FETCH_FAIL' });
+    }
+  });
+
   // GET /v1/owners/me/profile — self-service: resolves ownerId from JWT
   fastify.get('/owners/me/profile', async (request, reply) => {
     try {

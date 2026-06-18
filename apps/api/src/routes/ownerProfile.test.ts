@@ -17,6 +17,9 @@ import db from '../services/db';
  * Scenario PATCH-4: 400 MISSING_RFC — FLOTILLA intenta borrar rfc
  * Scenario PATCH-5: 400 NO_FIELDS_TO_UPDATE — body vacío
  * Scenario PATCH-6: 200 actualización exitosa — SQL UPDATE ejecutado
+ * Scenario AR-API-1: GET /catalogs/areas 401 sin sesión
+ * Scenario AR-API-2: GET /catalogs/areas 200 lista correcta ordenada por id
+ * Scenario AR-API-3: GET /catalogs/areas 500 en error de DB
  * Scenario SP-1: GET /catalogs/specialties 401 sin sesión
  * Scenario SP-2: GET /catalogs/specialties 200 lista correcta
  * Scenario SP-3: PATCH /owners/me/profile con especialidades válidas — 200
@@ -336,6 +339,51 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
 
       const sqls = (db.execute as Mock).mock.calls.map((c) => c[0] as string);
       expect(sqls.some((s) => s.includes('UPDATE owner_profiles SET'))).toBe(true);
+    });
+  });
+
+  // ── GET /v1/catalogs/areas ────────────────────────────────────────────────
+
+  describe('GET /v1/catalogs/areas', () => {
+    it('returns 401 without session — Scenario AR-API-1', async () => {
+      const res = await app.inject({ method: 'GET', url: '/v1/catalogs/areas' });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('returns fleet area catalog list ordered by id — Scenario AR-API-2', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          { code: 'ADMINISTRACION', label: 'Administración' },
+          { code: 'FINANZAS', label: 'Finanzas' },
+        ],
+        undefined,
+      ]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/areas',
+        headers: auth(ownerToken),
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.success).toBe(true);
+      expect(Array.isArray(body.data)).toBe(true);
+      expect(body.data[0]).toHaveProperty('code');
+      expect(body.data[0]).toHaveProperty('label');
+    });
+
+    it('returns 500 on DB error — Scenario AR-API-3', async () => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB crash'));
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/areas',
+        headers: auth(ownerToken),
+      });
+
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('AREAS_FETCH_FAIL');
     });
   });
 
