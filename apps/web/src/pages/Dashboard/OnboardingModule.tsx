@@ -3,6 +3,12 @@ import { Globe, UserPlus } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import api from '../../api/client';
+import ArchonAddressField, {
+  AddressValue,
+  EMPTY_ADDRESS,
+} from '../../components/Common/ArchonAddressField';
+import AreasSelect from '../../components/Common/AreasSelect';
+import SpecialtiesSelect from '../../components/Common/SpecialtiesSelect';
 
 type UniverseTab = 'ERP' | 'VIM';
 type ClientTab = 'PRIVATE' | 'FAMILIAR';
@@ -13,6 +19,8 @@ interface FormState {
   password: string;
   fullName: string;
   rfc: string;
+  razonSocial: string;
+  telefono: string;
   targetOwnerId: string;
 }
 
@@ -22,6 +30,8 @@ const EMPTY_FORM: FormState = {
   password: '',
   fullName: '',
   rfc: '',
+  razonSocial: '',
+  telefono: '',
   targetOwnerId: '',
 };
 
@@ -94,6 +104,9 @@ function StatusBanner({
 const UniverseForm: React.FC = (): React.ReactElement => {
   const [tab, setTab] = useState<UniverseTab>('ERP');
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [addressValue, setAddressValue] = useState<AddressValue>(EMPTY_ADDRESS);
+  const [especialidades, setEspecialidades] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -102,22 +115,47 @@ const UniverseForm: React.FC = (): React.ReactElement => {
     (value: string): void =>
       setForm((f) => ({ ...f, [field]: value }));
 
+  const resetFields = (): void => {
+    setForm(EMPTY_FORM);
+    setAddressValue(EMPTY_ADDRESS);
+    setEspecialidades([]);
+    setAreas([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setStatus(null);
     try {
       const roleId = tab === 'ERP' ? 1 : 3;
+
+      const profile: Record<string, unknown> = { rfc: form.rfc };
+      if (form.razonSocial) profile.razon_social = form.razonSocial;
+      if (form.telefono) profile.telefono = form.telefono;
+      if (tab === 'VIM' && especialidades.length > 0)
+        profile.especialidades = especialidades.join(',');
+
+      const address = addressValue.neighborhoodId
+        ? {
+            neighborhoodId: parseInt(addressValue.neighborhoodId, 10),
+            calle: addressValue.calle,
+            numeroExt: addressValue.numeroExt,
+            numeroInt: addressValue.numeroInt || undefined,
+          }
+        : undefined;
+
       await api.post('/onboarding/universe', {
         username: form.username,
         email: form.email,
         password: form.password,
         fullName: form.fullName || undefined,
         roleId,
-        profile: { rfc: form.rfc },
+        profile,
+        ...(address ? { address } : {}),
+        ...(tab === 'ERP' && areas.length > 0 ? { areas } : {}),
       });
       setStatus({ ok: true, message: `Universo ${tab} creado exitosamente.` });
-      setForm(EMPTY_FORM);
+      resetFields();
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string; code?: string } } })?.response?.data
@@ -131,14 +169,14 @@ const UniverseForm: React.FC = (): React.ReactElement => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" data-testid="universe-form">
+    <form onSubmit={handleSubmit} className="space-y-6" data-testid="universe-form">
       <div className="flex gap-2 bg-slate-100 p-1 rounded-[4px]">
         <button
           type="button"
           className={tab === 'ERP' ? tabActive : tabInactive}
           onClick={(): void => {
             setTab('ERP');
-            setForm(EMPTY_FORM);
+            resetFields();
             setStatus(null);
           }}
           data-testid="tab-erp"
@@ -150,7 +188,7 @@ const UniverseForm: React.FC = (): React.ReactElement => {
           className={tab === 'VIM' ? tabActive : tabInactive}
           onClick={(): void => {
             setTab('VIM');
-            setForm(EMPTY_FORM);
+            resetFields();
             setStatus(null);
           }}
           data-testid="tab-vim"
@@ -165,6 +203,7 @@ const UniverseForm: React.FC = (): React.ReactElement => {
           : 'Crea un Centro Especializado — raíz de un universo VIM de atención al cliente.'}
       </p>
 
+      {/* Credenciales */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FieldGroup
           label="Usuario"
@@ -198,6 +237,10 @@ const UniverseForm: React.FC = (): React.ReactElement => {
           onChange={set('fullName')}
           hint="Opcional"
         />
+      </div>
+
+      {/* Perfil empresarial */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FieldGroup
           label="RFC"
           id="uni-rfc"
@@ -206,7 +249,45 @@ const UniverseForm: React.FC = (): React.ReactElement => {
           hint="RFC de la empresa"
           required
         />
+        <FieldGroup
+          label="Razón Social"
+          id="uni-razon-social"
+          value={form.razonSocial}
+          onChange={set('razonSocial')}
+          hint="Nombre legal de la empresa"
+          required
+        />
+        <FieldGroup
+          label="Teléfono"
+          id="uni-telefono"
+          type="tel"
+          value={form.telefono}
+          onChange={set('telefono')}
+          hint="Teléfono de contacto"
+        />
       </div>
+
+      {/* Especialidades — solo VIM */}
+      {tab === 'VIM' && (
+        <div data-testid="uni-especialidades-section">
+          <label className={labelCls}>Especialidades</label>
+          <SpecialtiesSelect value={especialidades} onChange={setEspecialidades} />
+        </div>
+      )}
+
+      {/* Dirección */}
+      <ArchonAddressField value={addressValue} onChange={setAddressValue} />
+
+      {/* Áreas iniciales — solo ERP */}
+      {tab === 'ERP' && (
+        <div data-testid="uni-areas-section">
+          <label className={labelCls}>Áreas Iniciales</label>
+          <AreasSelect value={areas} onChange={setAreas} />
+          <p className="text-xs text-pinnacle-navy/40 mt-1 uppercase tracking-widest">
+            Estas áreas se crearán al registrar. Pueden gestionarse después.
+          </p>
+        </div>
+      )}
 
       <StatusBanner status={status} />
 

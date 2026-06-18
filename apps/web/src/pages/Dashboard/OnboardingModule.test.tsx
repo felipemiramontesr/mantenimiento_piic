@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import OnboardingModule from './OnboardingModule';
@@ -9,6 +10,78 @@ vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
 
 vi.mock('../../api/client', () => ({
   default: { post: vi.fn() },
+}));
+
+vi.mock('../../components/Common/ArchonAddressField', () => ({
+  default: ({
+    onChange,
+  }: {
+    onChange: (v: {
+      neighborhoodId: string;
+      calle: string;
+      numeroExt: string;
+      numeroInt: string;
+      stateId: string;
+      municipalityId: string;
+      postalCode: string;
+    }) => void;
+  }): React.ReactElement => (
+    <div
+      data-testid="archon-address-field"
+      onClick={(): void =>
+        onChange({
+          stateId: '1',
+          municipalityId: '10',
+          neighborhoodId: '100',
+          calle: 'Av. Test',
+          numeroExt: '42',
+          numeroInt: '',
+          postalCode: '12345',
+        })
+      }
+    />
+  ),
+  EMPTY_ADDRESS: {
+    stateId: '',
+    municipalityId: '',
+    neighborhoodId: '',
+    calle: '',
+    numeroExt: '',
+    numeroInt: '',
+    postalCode: '',
+  },
+}));
+
+vi.mock('../../components/Common/AreasSelect', () => ({
+  default: ({
+    value,
+    onChange,
+  }: {
+    value: string[];
+    onChange: (a: string[]) => void;
+  }): React.ReactElement => (
+    <div
+      data-testid="areas-select"
+      data-areas={JSON.stringify(value)}
+      onClick={(): void => onChange([...value, 'Administración'])}
+    />
+  ),
+}));
+
+vi.mock('../../components/Common/SpecialtiesSelect', () => ({
+  default: ({
+    value,
+    onChange,
+  }: {
+    value: string[];
+    onChange: (s: string[]) => void;
+  }): React.ReactElement => (
+    <div
+      data-testid="specialties-select"
+      data-specialties={JSON.stringify(value)}
+      onClick={(): void => onChange([...value, 'MOTOR'])}
+    />
+  ),
 }));
 
 const mockPerms = (opts: { omnipotent?: boolean; vimCentro?: boolean } = {}): void => {
@@ -244,6 +317,133 @@ describe('OnboardingModule', () => {
     );
     await waitFor(() =>
       expect(screen.getByTestId('onboarding-status')).toHaveTextContent(/Familiar agregado/i)
+    );
+  });
+
+  // ─── Universe form — new profile fields ────────────────────────────────────
+
+  it('universe form renders Razón Social and Teléfono fields', async () => {
+    mockPerms({ omnipotent: true });
+    render(<OnboardingModule />);
+    await screen.findByTestId('universe-form');
+    expect(screen.getByLabelText(/Razón Social/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Teléfono/i)).toBeInTheDocument();
+  });
+
+  it('universe form renders ArchonAddressField', async () => {
+    mockPerms({ omnipotent: true });
+    render(<OnboardingModule />);
+    await screen.findByTestId('universe-form');
+    expect(screen.getByTestId('archon-address-field')).toBeInTheDocument();
+  });
+
+  it('universe form renders AreasSelect on ERP tab', async () => {
+    mockPerms({ omnipotent: true });
+    render(<OnboardingModule />);
+    await screen.findByTestId('uni-areas-section');
+    expect(screen.getByTestId('areas-select')).toBeInTheDocument();
+    expect(screen.queryByTestId('specialties-select')).not.toBeInTheDocument();
+  });
+
+  it('universe form renders SpecialtiesSelect on VIM tab and not AreasSelect', async () => {
+    mockPerms({ omnipotent: true });
+    render(<OnboardingModule />);
+    await screen.findByTestId('tab-vim');
+    fireEvent.click(screen.getByTestId('tab-vim'));
+    await screen.findByTestId('uni-especialidades-section');
+    expect(screen.getByTestId('specialties-select')).toBeInTheDocument();
+    expect(screen.queryByTestId('areas-select')).not.toBeInTheDocument();
+  });
+
+  it('submits razon_social and telefono in profile for ERP universe', async () => {
+    mockPerms({ omnipotent: true });
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
+      if (url === '/auth/refresh') throw new Error('no session');
+      return { data: { success: true } };
+    });
+
+    render(<OnboardingModule />);
+    await screen.findByTestId('universe-form');
+
+    fillField(/^Usuario/i, 'flotilla.full');
+    fillField(/^Correo/i, 'f@empresa.mx');
+    fillField(/^Contraseña/i, 'Archon@1234!');
+    fillField(/^RFC/i, 'RFC001');
+    fillField(/Razón Social/i, 'Empresa SA de CV');
+    fillField(/Teléfono/i, '5512345678');
+
+    fireEvent.click(screen.getByTestId('btn-create-universe'));
+
+    await waitFor(() =>
+      expect(vi.mocked(api.post)).toHaveBeenCalledWith(
+        '/onboarding/universe',
+        expect.objectContaining({
+          profile: expect.objectContaining({
+            razon_social: 'Empresa SA de CV',
+            telefono: '5512345678',
+          }),
+        })
+      )
+    );
+  });
+
+  it('submits areas array in payload when areas selected on ERP tab', async () => {
+    mockPerms({ omnipotent: true });
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
+      if (url === '/auth/refresh') throw new Error('no session');
+      return { data: { success: true } };
+    });
+
+    render(<OnboardingModule />);
+    await screen.findByTestId('uni-areas-section');
+
+    fillField(/^Usuario/i, 'flotilla.areas');
+    fillField(/^Correo/i, 'fa@empresa.mx');
+    fillField(/^Contraseña/i, 'Archon@1234!');
+    fillField(/^RFC/i, 'RFC002');
+    fillField(/Razón Social/i, 'Corp SA');
+
+    fireEvent.click(screen.getByTestId('areas-select'));
+
+    fireEvent.click(screen.getByTestId('btn-create-universe'));
+
+    await waitFor(() =>
+      expect(vi.mocked(api.post)).toHaveBeenCalledWith(
+        '/onboarding/universe',
+        expect.objectContaining({ areas: ['Administración'] })
+      )
+    );
+  });
+
+  it('submits especialidades in profile when specialties selected on VIM tab', async () => {
+    mockPerms({ omnipotent: true });
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
+      if (url === '/auth/refresh') throw new Error('no session');
+      return { data: { success: true } };
+    });
+
+    render(<OnboardingModule />);
+    await screen.findByTestId('tab-vim');
+    fireEvent.click(screen.getByTestId('tab-vim'));
+    await screen.findByTestId('uni-especialidades-section');
+
+    fillField(/^Usuario/i, 'centro.specs');
+    fillField(/^Correo/i, 'cs@vim.mx');
+    fillField(/^Contraseña/i, 'Archon@1234!');
+    fillField(/^RFC/i, 'RFC003');
+    fillField(/Razón Social/i, 'VIM Centro');
+
+    fireEvent.click(screen.getByTestId('specialties-select'));
+
+    fireEvent.click(screen.getByTestId('btn-create-universe'));
+
+    await waitFor(() =>
+      expect(vi.mocked(api.post)).toHaveBeenCalledWith(
+        '/onboarding/universe',
+        expect.objectContaining({
+          profile: expect.objectContaining({ especialidades: 'MOTOR' }),
+        })
+      )
     );
   });
 

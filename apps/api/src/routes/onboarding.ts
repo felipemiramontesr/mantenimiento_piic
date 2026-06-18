@@ -67,6 +67,7 @@ async function createOwnerWithUser(
     parentOwnerId?: number;
     profile?: z.infer<typeof profileSchema>;
     address?: z.infer<typeof addressSchema>;
+    areas?: string[];
   }
 ): Promise<{ userId: number; ownerId: number }> {
   const {
@@ -79,6 +80,7 @@ async function createOwnerWithUser(
     parentOwnerId,
     profile,
     address,
+    areas,
   } = params;
   const hash = await argon2Hash(password);
   const enc = EncryptionService.encrypt(email);
@@ -130,6 +132,17 @@ async function createOwnerWithUser(
     );
   }
 
+  if (roleId === 1 && areas && areas.length > 0) {
+    await Promise.all(
+      areas.map((areaName) =>
+        connection.execute<ResultSetHeader>('INSERT INTO areas (owner_id, name) VALUES (?, ?)', [
+          ownerId,
+          areaName,
+        ])
+      )
+    );
+  }
+
   return { userId, ownerId };
 }
 
@@ -151,6 +164,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
       fullName: z.string().optional(),
       profile: profileSchema,
       address: addressSchema,
+      areas: z.array(z.string()).optional(),
     });
 
     const body = schema.safeParse(request.body);
@@ -159,7 +173,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
         .code(400)
         .send({ success: false, code: 'VALIDATION_ERROR', message: body.error.issues[0]?.message });
     }
-    const { username, email, password, roleId, fullName, profile, address } = body.data;
+    const { username, email, password, roleId, fullName, profile, address, areas } = body.data;
 
     if (!profile?.rfc) {
       return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
@@ -189,6 +203,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
           fullName,
           profile,
           address,
+          areas,
         });
         await connection.commit();
         return reply.code(201).send({ success: true, userId, ownerId, suite: suiteOf(ownerType) });
@@ -207,13 +222,11 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
     const { id: callerId, roleId: callerRoleId } = request.user as { id: number; roleId: number };
 
     if (callerRoleId !== 3) {
-      return reply
-        .code(403)
-        .send({
-          success: false,
-          code: 'FORBIDDEN',
-          message: 'Only Centro Especializado can onboard clients',
-        });
+      return reply.code(403).send({
+        success: false,
+        code: 'FORBIDDEN',
+        message: 'Only Centro Especializado can onboard clients',
+      });
     }
 
     const schema = z.object({
@@ -249,13 +262,11 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
 
     if (roleId === 5) {
       if (!targetOwnerId) {
-        return reply
-          .code(400)
-          .send({
-            success: false,
-            code: 'VALIDATION_ERROR',
-            message: 'targetOwnerId required for Familiar',
-          });
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: 'targetOwnerId required for Familiar',
+        });
       }
       // Anti-IDOR: verify targetOwnerId is a direct child of callerOwnerId
       const [childRows] = await db.execute<RowDataPacket[]>(
@@ -263,13 +274,11 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
         [targetOwnerId, callerOwnerId]
       );
       if (childRows.length === 0) {
-        return reply
-          .code(403)
-          .send({
-            success: false,
-            code: 'FORBIDDEN',
-            message: 'Target owner outside your universe',
-          });
+        return reply.code(403).send({
+          success: false,
+          code: 'FORBIDDEN',
+          message: 'Target owner outside your universe',
+        });
       }
     }
 
@@ -335,13 +344,11 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
     const { id: callerId, roleId: callerRoleId } = request.user as { id: number; roleId: number };
 
     if (callerRoleId !== 1) {
-      return reply
-        .code(403)
-        .send({
-          success: false,
-          code: 'FORBIDDEN',
-          message: 'Only Propietario de Flotilla can onboard members',
-        });
+      return reply.code(403).send({
+        success: false,
+        code: 'FORBIDDEN',
+        message: 'Only Propietario de Flotilla can onboard members',
+      });
     }
 
     const schema = z.object({

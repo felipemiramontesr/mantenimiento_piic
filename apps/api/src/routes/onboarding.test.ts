@@ -238,6 +238,28 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(JSON.parse(res.body).suite).toBe('VIM');
     });
 
+    it('UNI-9: inserts areas rows for roleId=1 when areas array provided', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check
+      const conn = makeConn();
+      // extra calls for 2 area INSERTs
+      conn.execute.mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+      conn.execute.mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+      vi.mocked(db).getConnection.mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/universe',
+        headers: auth(archonToken),
+        payload: { ...VALID_UNIVERSE_BODY, areas: ['Administración', 'Finanzas'] },
+      });
+
+      expect(res.statusCode).toBe(201);
+      const areaCalls = conn.execute.mock.calls.filter(
+        (c) => typeof c[0] === 'string' && c[0].includes('INSERT INTO areas')
+      );
+      expect(areaCalls).toHaveLength(2);
+    });
+
     it('UNI-8: rolls back on transaction error', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
       const conn = makeConn();
