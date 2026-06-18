@@ -272,7 +272,7 @@ describe('User Fleet-Owner Links (A3)', () => {
 
       const ownersInsert = calls.find((c) => (c[0] as string).includes('INSERT INTO owners'));
       expect(ownersInsert).toBeDefined();
-      expect(ownersInsert?.[1]).toEqual([1051, 'FLOTILLA', 'Juan Pérez']);
+      expect(ownersInsert?.[1]).toEqual([1051, 'FLOTILLA', 'ERP', 'Juan Pérez']);
 
       const membershipInsert = calls.find((c) =>
         (c[0] as string).includes('user_owner_membership')

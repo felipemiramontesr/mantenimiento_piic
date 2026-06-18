@@ -55,9 +55,10 @@ async function resolveOwnerRow(
     "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
     [ownerId, `OWN_U${userId}`, ownerLabel]
   );
+  const suite: 'ERP' | 'VIM' = ownerType === 'FLOTILLA' ? 'ERP' : 'VIM';
   await connection.execute<ResultSetHeader>(
-    'INSERT INTO owners (id, owner_type, label) VALUES (?, ?, ?)',
-    [ownerId, ownerType, ownerLabel]
+    'INSERT INTO owners (id, owner_type, suite, label) VALUES (?, ?, ?, ?)',
+    [ownerId, ownerType, suite, ownerLabel]
   );
   return ownerId;
 }
@@ -144,6 +145,16 @@ function mapUserResponse(user: RowDataPacket): {
     employeeNumber: user.employee_number || user.employeeNumber || null,
     is_active: user.is_active !== undefined ? Boolean(user.is_active) : true,
   };
+}
+
+async function resolveSuite(userId: number, roleId: number): Promise<'ERP' | 'VIM' | null> {
+  if (roleId === 0) return null;
+  const [suiteRows] = await db.execute<RowDataPacket[]>(
+    'SELECT o.suite FROM owners o JOIN user_owner_membership uom ON o.id = uom.owner_id WHERE uom.user_id = ? LIMIT 1',
+    [userId]
+  );
+  if (suiteRows.length > 0) return suiteRows[0].suite as 'ERP' | 'VIM';
+  return null;
 }
 
 async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
@@ -255,6 +266,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         if (mapped.roleId === 1) ownerType = 'FLOTILLA';
         else if (mapped.roleId === 3) ownerType = 'CENTER';
         else if (mapped.roleId === 4) ownerType = 'PRIVATE';
+
+        const suite = await resolveSuite(mapped.id, mapped.roleId);
+
         const token = fastify.jwt.sign({
           id: user.id,
           username: user.username,
@@ -263,6 +277,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           permissions,
           type: 'access',
           owner_type: ownerType,
+          suite,
         });
         const refreshToken = fastify.jwt.sign(
           { id: user.id, type: 'refresh' },
@@ -279,7 +294,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         };
         return reply
           .setCookie('refresh_token', refreshToken, refreshCookieOpts)
-          .send({ success: true, token, user: { ...mapped, permissions, ownerType } });
+          .send({ success: true, token, user: { ...mapped, permissions, ownerType, suite } });
       } catch (e) {
         fastify.log.error(e);
         return reply.code(500).send({ error: 'LOGIN_FAIL' });
@@ -325,6 +340,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       if (mapped.roleId === 1) ownerType = 'FLOTILLA';
       else if (mapped.roleId === 3) ownerType = 'CENTER';
       else if (mapped.roleId === 4) ownerType = 'PRIVATE';
+
+      const suite = await resolveSuite(mapped.id, mapped.roleId);
+
       const accessToken = fastify.jwt.sign({
         id: user.id,
         username: user.username,
@@ -333,11 +351,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         permissions,
         type: 'access',
         owner_type: ownerType,
+        suite,
       });
       return reply.send({
         success: true,
         token: accessToken,
-        user: { ...mapped, permissions, ownerType },
+        user: { ...mapped, permissions, ownerType, suite },
       });
     } catch {
       return reply.code(401).send({ error: 'REFRESH_FAIL' });
@@ -819,13 +838,11 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           const allInScope = ownerIds.every((oid) => ownerScope.includes(oid));
           if (!allInScope) {
             await connection.rollback();
-            return reply
-              .code(403)
-              .send({
-                success: false,
-                code: 'FORBIDDEN',
-                message: 'Cannot assign owner outside of scope',
-              });
+            return reply.code(403).send({
+              success: false,
+              code: 'FORBIDDEN',
+              message: 'Cannot assign owner outside of scope',
+            });
           }
         }
 
