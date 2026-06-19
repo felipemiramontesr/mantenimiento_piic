@@ -56,7 +56,7 @@ const LABEL_CLS =
   'text-archon-base font-black uppercase tracking-[0.15em] text-[#0f2a44]/50 flex items-center gap-2 mb-1';
 
 const tabBase =
-  'flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-[4px] transition-all duration-150 cursor-pointer';
+  'flex-1 h-11 flex items-center justify-center text-xs font-black uppercase tracking-widest rounded-[4px] transition-all duration-150 cursor-pointer';
 const tabActive = `${tabBase} bg-pinnacle-navy text-pinnacle-yellow`;
 const tabInactive = `${tabBase} text-pinnacle-navy/50 hover:bg-pinnacle-navy/5`;
 
@@ -395,7 +395,7 @@ const UniverseForm: React.FC = (): React.ReactElement => {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2 rounded-[4px] bg-pinnacle-navy text-pinnacle-yellow text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        className="w-full h-11 flex items-center justify-center rounded-[4px] bg-pinnacle-navy text-pinnacle-yellow text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         data-testid="btn-create-universe"
       >
         {loading ? 'Creando...' : `Crear Universo ${tab}`}
@@ -546,7 +546,7 @@ const ClientForm: React.FC = (): React.ReactElement => {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2 rounded-[4px] bg-pinnacle-navy text-pinnacle-yellow text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        className="w-full h-11 flex items-center justify-center rounded-[4px] bg-pinnacle-navy text-pinnacle-yellow text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         data-testid="btn-create-client"
       >
         {loading ? 'Registrando...' : clientBtnLabel}
