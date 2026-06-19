@@ -447,6 +447,38 @@ describe('OnboardingModule', () => {
     );
   });
 
+  // ─── Password toggle ───────────────────────────────────────────────────────
+
+  it('password toggle shows/hides password on ERP universe form', async () => {
+    mockPerms({ omnipotent: true });
+    render(<OnboardingModule />);
+    await screen.findByTestId('universe-form');
+
+    const input = screen.getByLabelText(/^Contraseña/i) as HTMLInputElement;
+    expect(input.type).toBe('password');
+
+    fireEvent.click(screen.getByTestId('uni-password-toggle'));
+    expect(input.type).toBe('text');
+
+    fireEvent.click(screen.getByTestId('uni-password-toggle'));
+    expect(input.type).toBe('password');
+  });
+
+  it('password toggle shows/hides password on client form', async () => {
+    mockPerms({ vimCentro: true });
+    render(<OnboardingModule />);
+    await screen.findByTestId('client-form');
+
+    const input = screen.getByLabelText(/^Contraseña/i) as HTMLInputElement;
+    expect(input.type).toBe('password');
+
+    fireEvent.click(screen.getByTestId('cli-password-toggle'));
+    expect(input.type).toBe('text');
+
+    fireEvent.click(screen.getByTestId('cli-password-toggle'));
+    expect(input.type).toBe('password');
+  });
+
   it('shows error message from API on client creation failure', async () => {
     mockPerms({ vimCentro: true });
     vi.mocked(api.post).mockImplementation(async (url: string) => {
