@@ -25,6 +25,7 @@ import ArchonAddressField, {
 } from '../../components/Common/ArchonAddressField';
 import AreasSelect from '../../components/Common/AreasSelect';
 import SpecialtiesSelect from '../../components/Common/SpecialtiesSelect';
+import UniversesDirectory from './UniversesDirectory';
 
 type UniverseTab = 'ERP' | 'VIM';
 type ClientTab = 'PRIVATE' | 'FAMILIAR';
@@ -556,9 +557,12 @@ const ClientForm: React.FC = (): React.ReactElement => {
 
 // ─── Module root ──────────────────────────────────────────────────────────────
 
+type OnboardingView = 'FORM' | 'DIRECTORY';
+
 const OnboardingModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const { isOmnipotent, isSuiteVIM } = usePermissions();
+  const [view, setView] = useState<OnboardingView>('FORM');
 
   const omnipotent = isOmnipotent();
   const vimCentro = isSuiteVIM();
@@ -575,11 +579,9 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
         PayloadIcon: UserPlus,
         actionTitle: 'Onboarding',
         description: 'Registrar universos y clientes',
-        buttonText: 'Onboarding de Universos',
+        buttonText: 'Onboarding de Universos →',
         isActive: false,
-        onClick: (): void => {
-          /* noop */
-        },
+        onClick: (): void => setView('DIRECTORY'),
       }
     );
   }, [setSectionData]);
@@ -588,7 +590,11 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
     <div className="animate-in fade-in duration-700">
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container space-y-6">
-          {omnipotent && (
+          {omnipotent && view === 'DIRECTORY' && (
+            <UniversesDirectory onBack={(): void => setView('FORM')} />
+          )}
+
+          {view === 'FORM' && omnipotent && (
             <div className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
                 <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
@@ -607,7 +613,7 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
             </div>
           )}
 
-          {vimCentro && (
+          {view === 'FORM' && vimCentro && (
             <div className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
                 <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
@@ -626,7 +632,7 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
             </div>
           )}
 
-          {!omnipotent && !vimCentro && (
+          {view === 'FORM' && !omnipotent && !vimCentro && (
             <div className="card-archon-sovereign text-center py-12 text-pinnacle-navy/40 text-sm font-medium">
               Sin acceso a funciones de onboarding para este perfil.
             </div>

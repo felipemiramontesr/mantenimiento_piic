@@ -9,7 +9,7 @@ import api from '../../api/client';
 vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
 
 vi.mock('../../api/client', () => ({
-  default: { post: vi.fn() },
+  default: { post: vi.fn(), get: vi.fn() },
 }));
 
 vi.mock('../../components/Common/ArchonAddressField', () => ({
@@ -106,6 +106,7 @@ describe('OnboardingModule', () => {
       if (url === '/auth/refresh') throw new Error('no session');
       throw new Error(`unmocked: ${url}`);
     });
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
   });
 
   // ─── Rendering guards ───────────────────────────────────────────────────────
@@ -498,5 +499,37 @@ describe('OnboardingModule', () => {
     await waitFor(() =>
       expect(screen.getByTestId('onboarding-status')).toHaveTextContent(/OWNER_NOT_FOUND/i)
     );
+  });
+
+  it('sovereign header button opens universes directory (Archon)', async () => {
+    mockPerms({ omnipotent: true });
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<OnboardingModule />);
+    await screen.findByTestId('universe-form');
+
+    fireEvent.click(screen.getByTestId('sovereign-layout-header-action'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('universes-directory')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('universe-form')).not.toBeInTheDocument();
+  });
+
+  it('back button in directory returns to form view (Archon)', async () => {
+    mockPerms({ omnipotent: true });
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
+    render(<OnboardingModule />);
+    await screen.findByTestId('universe-form');
+
+    fireEvent.click(screen.getByTestId('sovereign-layout-header-action'));
+    await waitFor(() => {
+      expect(screen.getByTestId('universes-directory')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('universes-directory-back'));
+    await waitFor(() => {
+      expect(screen.getByTestId('universe-form')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('universes-directory')).not.toBeInTheDocument();
   });
 });
