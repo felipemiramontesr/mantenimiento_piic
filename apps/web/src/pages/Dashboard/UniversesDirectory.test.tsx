@@ -50,21 +50,19 @@ const MOCK_ROWS = [
 ];
 
 describe('UniversesDirectory', () => {
-  const onBack = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('UD-1: renders loading skeleton initially', () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {}));
-    render(<UniversesDirectory onBack={onBack} />);
+    render(<UniversesDirectory />);
     expect(screen.getByTestId('universes-directory-loading')).toBeInTheDocument();
   });
 
   it('UD-2: renders table rows on success', async () => {
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: MOCK_ROWS } });
-    render(<UniversesDirectory onBack={onBack} />);
+    render(<UniversesDirectory />);
 
     await waitFor(() => {
       expect(screen.getByTestId('universes-table')).toBeInTheDocument();
@@ -87,7 +85,7 @@ describe('UniversesDirectory', () => {
 
   it('UD-3: renders empty state when list is empty', async () => {
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: [] } });
-    render(<UniversesDirectory onBack={onBack} />);
+    render(<UniversesDirectory />);
 
     await waitFor(() => {
       expect(screen.getByTestId('universes-directory-empty')).toBeInTheDocument();
@@ -96,22 +94,21 @@ describe('UniversesDirectory', () => {
 
   it('UD-4: renders error state on API failure', async () => {
     vi.mocked(api.get).mockRejectedValueOnce(new Error('network error'));
-    render(<UniversesDirectory onBack={onBack} />);
+    render(<UniversesDirectory />);
 
     await waitFor(() => {
       expect(screen.getByTestId('universes-directory-error')).toBeInTheDocument();
     });
   });
 
-  it('UD-5: calls onBack when back button is clicked', async () => {
+  it('UD-5: has no back button — navigation handled by sovereign header', async () => {
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: [] } });
-    render(<UniversesDirectory onBack={onBack} />);
+    render(<UniversesDirectory />);
 
     await waitFor(() => {
       expect(screen.getByTestId('universes-directory-empty')).toBeInTheDocument();
     });
 
-    screen.getByTestId('universes-directory-back').click();
-    expect(onBack).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('universes-directory-back')).not.toBeInTheDocument();
   });
 });

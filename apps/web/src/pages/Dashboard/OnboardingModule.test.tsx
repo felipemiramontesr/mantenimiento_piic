@@ -515,7 +515,7 @@ describe('OnboardingModule', () => {
     expect(screen.queryByTestId('universe-form')).not.toBeInTheDocument();
   });
 
-  it('back button in directory returns to form view (Archon)', async () => {
+  it('sovereign header button toggles back to form view (Archon)', async () => {
     mockPerms({ omnipotent: true });
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
     render(<OnboardingModule />);
@@ -526,7 +526,8 @@ describe('OnboardingModule', () => {
       expect(screen.getByTestId('universes-directory')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByTestId('universes-directory-back'));
+    // second click on same sovereign button returns to form
+    fireEvent.click(screen.getByTestId('sovereign-layout-header-action'));
     await waitFor(() => {
       expect(screen.getByTestId('universe-form')).toBeInTheDocument();
     });

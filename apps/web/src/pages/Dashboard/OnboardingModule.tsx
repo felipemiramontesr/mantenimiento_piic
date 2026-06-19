@@ -581,7 +581,7 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
         description: 'Registrar universos y clientes',
         buttonText: 'Onboarding de Universos →',
         isActive: false,
-        onClick: (): void => setView('DIRECTORY'),
+        onClick: (): void => setView((v) => (v === 'FORM' ? 'DIRECTORY' : 'FORM')),
       }
     );
   }, [setSectionData]);
@@ -590,9 +590,7 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
     <div className="animate-in fade-in duration-700">
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container space-y-6">
-          {omnipotent && view === 'DIRECTORY' && (
-            <UniversesDirectory onBack={(): void => setView('FORM')} />
-          )}
+          {omnipotent && view === 'DIRECTORY' && <UniversesDirectory />}
 
           {view === 'FORM' && omnipotent && (
             <div className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">

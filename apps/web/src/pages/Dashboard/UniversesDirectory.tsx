@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { List, ChevronLeft } from 'lucide-react';
+import { List } from 'lucide-react';
 import api from '../../api/client';
 
 interface UniverseRow {
@@ -28,11 +28,7 @@ const SuiteBadge: React.FC<{ suite: 'ERP' | 'VIM' }> = ({ suite }) => (
   </span>
 );
 
-interface UniversesDirectoryProps {
-  onBack: () => void;
-}
-
-const UniversesDirectory: React.FC<UniversesDirectoryProps> = ({ onBack }): React.ReactElement => {
+const UniversesDirectory: React.FC = (): React.ReactElement => {
   const [rows, setRows] = useState<UniverseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -62,29 +58,18 @@ const UniversesDirectory: React.FC<UniversesDirectoryProps> = ({ onBack }): Reac
       className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700"
       data-testid="universes-directory"
     >
-      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
-            <List size={16} className="text-pinnacle-navy" />
-          </div>
-          <div>
-            <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
-              Universos Registrados
-            </h2>
-            <p className="text-archon-base text-pinnacle-navy/50 font-medium">
-              Archon — Directorio de universos activos
-            </p>
-          </div>
+      <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
+        <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
+          <List size={16} className="text-pinnacle-navy" />
         </div>
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-pinnacle-navy/50 hover:text-pinnacle-navy transition-colors cursor-pointer"
-          data-testid="universes-directory-back"
-        >
-          <ChevronLeft size={14} />
-          Volver
-        </button>
+        <div>
+          <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
+            Universos Registrados
+          </h2>
+          <p className="text-archon-base text-pinnacle-navy/50 font-medium">
+            Archon — Directorio de universos activos
+          </p>
+        </div>
       </div>
 
       {loading && (
