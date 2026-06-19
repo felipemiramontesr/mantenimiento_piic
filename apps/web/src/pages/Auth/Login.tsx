@@ -163,21 +163,22 @@ const LoginPage: React.FC = () => {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-archon-primary w-full !md:w-full"
-                >
-                  {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
-                </button>
-
-                <div className="text-left mt-1">
-                  <a
-                    href="#"
-                    className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
+                <div className="flex flex-col">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-archon-primary w-full !md:w-full"
                   >
-                    ¿Olvidaste tu contraseña?
-                  </a>
+                    {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
+                  </button>
+                  <div className="text-left mt-1">
+                    <a
+                      href="#"
+                      className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </a>
+                  </div>
                 </div>
               </form>
             </div>
