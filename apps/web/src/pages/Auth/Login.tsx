@@ -189,9 +189,6 @@ const LoginPage: React.FC = () => {
               <span className="text-pinnacle-navy/40 font-bold text-archon-sm uppercase tracking-widest">
                 © Todos los derechos reservados por ArchonCore by Dreamtek.
               </span>
-              <span className="text-pinnacle-navy/20 font-black text-archon-xs uppercase tracking-widest">
-                Archon Fleet System | V.78.100.50
-              </span>
             </div>
           </footer>
         </div>
