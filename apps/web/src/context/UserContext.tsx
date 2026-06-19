@@ -99,7 +99,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const rolesOptions = useMemo(
     () => ({
       key: 'system_roles',
-      endpoint: '/auth/roles',
+      endpoint: '/auth/roles?scope=personal',
     }),
     []
   );

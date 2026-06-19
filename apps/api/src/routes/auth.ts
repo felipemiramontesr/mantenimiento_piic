@@ -1056,10 +1056,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.get('/roles', async (request, reply) => {
     await request.jwtVerify();
     try {
-      const res = await db.execute(
-        "SELECT id, name as label FROM roles ORDER BY (name = 'Master (Archon)') DESC, name ASC",
-        []
-      );
+      const { scope } = request.query as { scope?: string };
+      const isPersonal = scope === 'personal';
+      const sql = isPersonal
+        ? "SELECT id, name as label FROM roles WHERE id NOT IN (1, 3) AND name != 'Master (Archon)' ORDER BY name ASC"
+        : "SELECT id, name as label FROM roles ORDER BY (name = 'Master (Archon)') DESC, name ASC";
+      const res = await db.execute(sql, []);
       let rows: RowDataPacket[] = [];
       if (res) {
         const [results] = res;

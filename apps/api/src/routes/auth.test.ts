@@ -318,3 +318,58 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
     expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
   });
 });
+
+// ── GET /v1/auth/roles — scope=personal hardening ─────────────────────────
+
+describe('GET /v1/auth/roles', () => {
+  const app = buildApp();
+  let token: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    token = jwt.sign({ id: 1, username: 'archon', roleId: 0, permissions: ['*'] });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('RS-1: without scope returns all roles (no WHERE filter)', async () => {
+    const allRoles = [
+      { id: 1, label: 'Propietario de Flotilla' },
+      { id: 3, label: 'Centro Especializado' },
+      { id: 2, label: 'Operador de Área' },
+    ];
+    (db.execute as Mock).mockResolvedValueOnce([allRoles, undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/roles',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body) as { id: number }[];
+    expect(body).toHaveLength(3);
+    expect((db.execute as Mock).mock.calls[0][0]).not.toContain('NOT IN');
+  });
+
+  it('RS-2: scope=personal uses SQL that excludes ids 1, 3, and Master (Archon)', async () => {
+    const personalRoles = [
+      { id: 2, label: 'Operador de Área' },
+      { id: 4, label: 'Propietario Privado' },
+      { id: 5, label: 'Familiar' },
+    ];
+    (db.execute as Mock).mockResolvedValueOnce([personalRoles, undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/roles?scope=personal',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body) as { id: number }[];
+    expect(body).toHaveLength(3);
+    const sql = (db.execute as Mock).mock.calls[0][0] as string;
+    expect(sql).toContain('id NOT IN (1, 3)');
+    expect(sql).toContain("name != 'Master (Archon)'");
+  });
+});
