@@ -18,8 +18,6 @@ import {
   Users,
   MapPin,
 } from 'lucide-react';
-import SpecialtiesSelect from '../Common/SpecialtiesSelect';
-import AreasSelect from '../Common/AreasSelect';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
 import ArchonSelect from '../ArchonSelect';
@@ -40,19 +38,6 @@ interface SuccessViewProps {
   onClose: () => void;
 }
 
-/** Archon Master role bands whose users link to FLEET_OWNER catalog rows (Rol 4 uses CENTER selector). */
-const OWNER_SCOPED_ROLE_IDS = [1, 3];
-
-interface OwnerOption {
-  id: number;
-  label: string;
-}
-
-interface OwnerLink {
-  ownerId: number;
-  label: string;
-}
-
 interface ParentOwnerOption {
   id: number;
   label: string;
@@ -70,10 +55,6 @@ interface CenterOption {
 
 // ── Role classification helpers (outside component for cognitive-complexity budget) ──
 
-function isOwnerRole(roleId: number): boolean {
-  return OWNER_SCOPED_ROLE_IDS.includes(roleId);
-}
-
 function isAreaSubUser(roleId: number): boolean {
   return roleId === 2;
 }
@@ -87,7 +68,7 @@ function isPrivadoRole(roleId: number): boolean {
 }
 
 function isInternalStaff(roleId: number): boolean {
-  return !isOwnerRole(roleId) && !isAreaSubUser(roleId) && !isFamiliarSubUser(roleId);
+  return !isAreaSubUser(roleId) && !isFamiliarSubUser(roleId);
 }
 
 function getRoleFieldsValid(
@@ -147,26 +128,18 @@ function computeCanSubmit(
   return passwordValid && roleValid;
 }
 
-function getProfileTitle(roleId: number): string {
-  if (roleId === 3) return 'Perfil Centro Especializado';
-  if (roleId === 1) return 'Perfil Empresarial';
-  return 'Perfil Personal';
-}
-
 function buildOwnerProfilePayload(
   roleId: number,
   rfc: string,
   razonSocial: string,
   telefono: string,
-  especialidades: string[],
   addressVal: AddressValue
 ): Record<string, unknown> {
-  if (![1, 3, 4].includes(roleId)) return {};
+  if (roleId !== 4) return {};
   const profile: Record<string, unknown> = {};
   if (rfc) profile.rfc = rfc;
   if (razonSocial) profile.razon_social = razonSocial;
   if (telefono) profile.telefono = telefono;
-  if (roleId === 3 && especialidades.length > 0) profile.especialidades = especialidades;
   const result: Record<string, unknown> = { profile };
   if (addressVal.neighborhoodId) {
     const address: Record<string, unknown> = {
@@ -238,17 +211,12 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
 
-  // 🔱 Owner-Scoped Fleet Access (F1-A)
-  const [ownerCatalog, setOwnerCatalog] = useState<OwnerOption[]>([]);
-  const [selectedOwnerIds, setSelectedOwnerIds] = useState<number[]>([]);
-
   // 🔱 Sub-user parent catalog
   const [parentOwners, setParentOwners] = useState<ParentOwnerOption[]>([]);
   const [areas, setAreas] = useState<AreaOption[]>([]);
 
-  // 🔱 Fase 5: Rol 4 CENTER catalog, Rol 1 area chips
+  // 🔱 Fase 5: Rol 4 CENTER catalog
   const [centers, setCenters] = useState<CenterOption[]>([]);
-  const [areaChips, setAreaChips] = useState<string[]>([]);
 
   // 🔱 Fase 6: Multi-campo address for Rol 1/3/4
   const [addressValue, setAddressValue] = useState<AddressValue>(EMPTY_ADDRESS);
@@ -266,11 +234,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     parentOwnerId: '',
     areaId: '',
     familiarType: '',
-    // Fase 6 profile fields (Rol 1/3/4):
+    // Fase 6 profile fields (Rol 4):
     rfc: '',
     razonSocial: '',
     telefono: '',
-    especialidades: [] as string[],
     centroOwnerId: '',
   });
 
@@ -292,7 +259,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         rfc: '',
         razonSocial: '',
         telefono: '',
-        especialidades: [] as string[],
         centroOwnerId: '',
       });
       setAddressValue(EMPTY_ADDRESS);
@@ -300,31 +266,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   }, [editingUser, roles]);
 
   const roleIdNum = parseInt(formData.roleId, 10) || 0;
-  const isOwnerScopedRole = isOwnerRole(roleIdNum);
   const isPrivadoOwner = isPrivadoRole(roleIdNum);
-
-  useEffect(() => {
-    if (!isOwnerScopedRole) return;
-    const loadOwnersData = async (): Promise<void> => {
-      try {
-        const catalogRes = await api.get<{ success: boolean; data: OwnerOption[] }>(
-          '/catalogs/FLEET_OWNER'
-        );
-        const rawCatalog = catalogRes.data?.data || [];
-        setOwnerCatalog(Array.isArray(rawCatalog) ? rawCatalog : []);
-        if (editingUser) {
-          const linksRes = await api.get<{ success: boolean; data: OwnerLink[] }>(
-            `/auth/users/${editingUser.id}/owners`
-          );
-          const links = linksRes.data?.data || [];
-          setSelectedOwnerIds(links.map((l: OwnerLink): number => l.ownerId));
-        }
-      } catch {
-        setOwnerCatalog([]);
-      }
-    };
-    loadOwnersData();
-  }, [isOwnerScopedRole, editingUser]);
 
   useEffect(() => {
     if (!isPrivadoOwner) return;
@@ -369,19 +311,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     loadAreas();
   }, [roleIdNum, formData.parentOwnerId]);
 
-  const toggleOwner = (ownerId: number): void => {
-    setSelectedOwnerIds((prev: number[]): number[] =>
-      prev.includes(ownerId) ? prev.filter((id) => id !== ownerId) : [...prev, ownerId]
-    );
-  };
-
-  const persistOwnerLinks = async (userId: number | string, reason: string): Promise<void> => {
-    await api.put(`/auth/users/${userId}/owners`, {
-      ownerIds: selectedOwnerIds,
-      reason,
-    });
-  };
-
   const generateTempPassword = (length = 12): string => {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
     let retVal = '';
@@ -414,9 +343,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         await api.post(`/users/${editingUser.id}/upload-profile`, formDataUpload, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-      }
-      if (isOwnerScopedRole) {
-        await persistOwnerLinks(editingUser.id, reason);
       }
       setSuccessData({ isEdit: true });
     } else {
@@ -474,10 +400,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         formData.rfc,
         formData.razonSocial,
         formData.telefono,
-        formData.especialidades,
         addressValue
       ),
-      ...(roleIdNum === 1 && areaChips.length > 0 && { areas: areaChips }),
       ...(roleIdNum === 4 &&
         formData.centroOwnerId && {
           centroOwnerId: parseInt(formData.centroOwnerId, 10),
@@ -492,9 +416,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         await api.post(`/users/${userId}/upload-profile`, formDataUpload, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-      }
-      if (isOwnerScopedRole && selectedOwnerIds.length > 0 && userId) {
-        await persistOwnerLinks(userId, 'Alta de usuario con propietarios asignados');
       }
       setSuccessData({ tempPass });
       await fetchUsers();
@@ -563,7 +484,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     formData.centroOwnerId
   );
 
-  const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
+  const sortedRoles = [...roles].filter((r) => ![1, 3].includes(r.id)).sort((a, b) => a.id - b.id);
 
   if (successData) {
     return (
@@ -711,40 +632,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               />
             </ArchonField>
 
-            {isOwnerScopedRole && (
-              <div
-                data-testid="owners-assignment"
-                className="pt-6 border-t border-pinnacle-navy/5 animate-in fade-in slide-in-from-top-2 duration-300"
-              >
-                <ArchonField label="Propietarios Asignados" icon={Building2}>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {ownerCatalog.map((owner: OwnerOption) => {
-                      const isSelected = selectedOwnerIds.includes(owner.id);
-                      return (
-                        <button
-                          key={owner.id}
-                          type="button"
-                          data-testid={`owner-chip-${owner.id}`}
-                          aria-pressed={isSelected}
-                          onClick={(): void => toggleOwner(owner.id)}
-                          className={`px-4 py-2 rounded-[4px] text-archon-md font-bold uppercase tracking-wider border-none outline-none transition-all duration-300 ${
-                            isSelected
-                              ? 'bg-pinnacle-navy text-white shadow-sm'
-                              : 'bg-pinnacle-navy/5 text-pinnacle-navy/60 hover:bg-pinnacle-navy/10'
-                          }`}
-                        >
-                          {owner.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </ArchonField>
-                <p className="text-archon-base uppercase tracking-widest opacity-40 mt-3">
-                  El usuario solo verá unidades de los propietarios seleccionados
-                </p>
-              </div>
-            )}
-
             {isAreaSubUser(roleIdNum) && (
               <div
                 data-testid="area-subuser-fields"
@@ -883,27 +770,21 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
           </div>
         </div>
 
-        {/* 🔱 Fase 6: Rol 1/3/4 — Perfil de Propietario con Dirección Multicampo */}
-        {[1, 3, 4].includes(roleIdNum) && !editingUser && (
+        {/* 🔱 Rol 4 — Perfil de Propietario Privado */}
+        {roleIdNum === 4 && !editingUser && (
           <div
             data-testid="owner-profile-section"
             className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#8b5cf6]"
           >
             <div className="card-sovereign-header">
               <Building2 size={22} className="text-[var(--card-accent)]" />
-              <h3 className="card-sovereign-title text-archon-xl opacity-100">
-                {getProfileTitle(roleIdNum)}
-              </h3>
+              <h3 className="card-sovereign-title text-archon-xl opacity-100">Perfil Personal</h3>
             </div>
             <div className="grid grid-cols-2 gap-8">
-              <ArchonField
-                label={roleIdNum === 4 ? 'RFC (Opcional)' : 'RFC'}
-                icon={Shield}
-                required={roleIdNum !== 4}
-              >
+              <ArchonField label="RFC (Opcional)" icon={Shield}>
                 <input
                   type="text"
-                  placeholder={roleIdNum === 4 ? 'RFC (opcional)' : 'RFC del propietario'}
+                  placeholder="RFC (opcional)"
                   className="archon-input"
                   data-testid="centro-rfc-input"
                   value={formData.rfc}
@@ -912,14 +793,10 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   }
                 />
               </ArchonField>
-              <ArchonField
-                label={roleIdNum === 4 ? 'Nombre Legal' : 'Razón Social'}
-                icon={Briefcase}
-                required
-              >
+              <ArchonField label="Nombre Legal" icon={Briefcase} required>
                 <input
                   type="text"
-                  placeholder={roleIdNum === 4 ? 'Nombre del propietario' : 'Nombre legal'}
+                  placeholder="Nombre del propietario"
                   className="archon-input"
                   data-testid="centro-razon-social-input"
                   value={formData.razonSocial}
@@ -942,33 +819,8 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
                   }
                 />
               </ArchonField>
-              {roleIdNum === 3 && (
-                <ArchonField label="Especialidades (Opcional)" icon={Briefcase}>
-                  <SpecialtiesSelect
-                    value={formData.especialidades}
-                    onChange={(codes): void => setFormData({ ...formData, especialidades: codes })}
-                  />
-                </ArchonField>
-              )}
             </div>
             <ArchonAddressField value={addressValue} onChange={setAddressValue} />
-          </div>
-        )}
-
-        {/* 🔱 Fase 5: Rol 1 — Áreas Iniciales */}
-        {roleIdNum === 1 && !editingUser && (
-          <div
-            data-testid="flotilla-areas-section"
-            className="card-archon-sovereign bg-white p-8 space-y-4 [--card-accent:#0f2a44]"
-          >
-            <div className="card-sovereign-header">
-              <Building2 size={20} className="text-[var(--card-accent)]" />
-              <h3 className="card-sovereign-title text-archon-xl opacity-100">Áreas Iniciales</h3>
-            </div>
-            <AreasSelect value={areaChips} onChange={setAreaChips} />
-            <p className="text-archon-base uppercase tracking-widest opacity-40 text-sm">
-              Estas áreas se crearán al registrar. Pueden gestionarse después en el panel de áreas.
-            </p>
           </div>
         )}
 

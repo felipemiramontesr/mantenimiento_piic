@@ -4,40 +4,6 @@ import { screen, fireEvent, waitFor, cleanup, within, act, render } from '../../
 import api from '../../api/client';
 import UserRegistrationForm from './UserRegistrationForm';
 
-// 🔱 Mock SpecialtiesSelect — avoid catalog API call in URF tests
-vi.mock('../Common/SpecialtiesSelect', () => ({
-  default: ({
-    value,
-    onChange,
-  }: {
-    value: string[];
-    onChange: (codes: string[]) => void;
-  }): React.JSX.Element => (
-    <div
-      data-testid="owner-especialidades-input"
-      data-codes={JSON.stringify(value)}
-      onClick={(): void => onChange([...value, 'MOTOR'])}
-    />
-  ),
-}));
-
-// 🔱 Mock AreasSelect — avoid complex dropdown interaction in URF tests
-vi.mock('../Common/AreasSelect', () => ({
-  default: ({
-    value,
-    onChange,
-  }: {
-    value: string[];
-    onChange: (areas: string[]) => void;
-  }): React.JSX.Element => (
-    <div
-      data-testid="areas-select"
-      data-areas={JSON.stringify(value)}
-      onClick={(): void => onChange([...value, 'Operaciones'])}
-    />
-  ),
-}));
-
 // 🔱 Mock API Client
 vi.mock('../../api/client', () => ({
   default: {
@@ -597,18 +563,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
 
   // ── Oleada 7: Role-conditional fields ──────────────────────────────────────
 
-  it('shows owner chips section for owner-scoped role (Flotilla = id 1)', async () => {
-    currentMockState.roles = [{ id: 1, label: 'Prop. Flotilla Operador' }];
-    vi.mocked(api.get).mockResolvedValue({
-      data: { success: true, data: [{ id: 10, label: 'Empresa A' }] },
-    });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('owners-assignment')).toBeInTheDocument();
-      expect(screen.getByTestId('owner-chip-10')).toBeInTheDocument();
-    });
-  });
-
   it('shows Área sub-user fields when role is id=2', async () => {
     currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
     vi.mocked(api.get).mockResolvedValue({
@@ -659,27 +613,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
   });
 
   // ── Oleada 8: Fase 5 — role-scoped new fields ──────────────────────────────
-
-  it('shows profile section for Rol 3 (Centro Especializado)', async () => {
-    currentMockState.roles = [{ id: 3, label: 'Centro Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
-      expect(screen.getByTestId('centro-rfc-input')).toBeInTheDocument();
-      expect(screen.getByTestId('centro-razon-social-input')).toBeInTheDocument();
-    });
-  });
-
-  it('shows AreasSelect for Rol 1 (Flotilla)', async () => {
-    currentMockState.roles = [{ id: 1, label: 'Flotilla Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('flotilla-areas-section')).toBeInTheDocument();
-      expect(screen.getByTestId('areas-select')).toBeInTheDocument();
-    });
-  });
 
   it('shows CENTER selector for Rol 4 (Propietario Privado)', async () => {
     currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
@@ -738,20 +671,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(api.post).not.toHaveBeenCalledWith('/auth/register', expect.anything());
   });
 
-  // ── Scenario 11 — Fase 6-C: owner-profile-section for Rol 1 ─────────────
-
-  it('shows owner-profile-section for Rol 1 (Flotilla) with Perfil Empresarial title — Scenario 11', async () => {
-    currentMockState.roles = [{ id: 1, label: 'Flotilla Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
-      expect(screen.getByText('Perfil Empresarial')).toBeInTheDocument();
-      expect(screen.getByTestId('centro-rfc-input')).toBeInTheDocument();
-      expect(screen.getByTestId('centro-razon-social-input')).toBeInTheDocument();
-    });
-    expect(screen.queryByTestId('centro-especialidades-input')).not.toBeInTheDocument();
-  });
+  // ── Scenario 11 — Fase 6-C: owner-profile-section for Rol 4 ─────────────
 
   it('shows owner-profile-section for Rol 4 (Privado) with Perfil Personal title — Scenario 11', async () => {
     currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
@@ -771,31 +691,18 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(screen.queryByTestId('centro-especialidades-input')).not.toBeInTheDocument();
   });
 
-  it('shows especialidades only for Rol 3 inside owner-profile-section — Scenario 11', async () => {
-    currentMockState.roles = [{ id: 3, label: 'Centro Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
-      expect(screen.getByTestId('owner-especialidades-input')).toBeInTheDocument();
-    });
-  });
-
   // ── Scenario 12 — Fase 6-C: ArchonAddressField rendered inside profile section ─────
 
-  it('renders ArchonAddressField inside owner-profile-section for Rol 3 — Scenario 12', async () => {
-    currentMockState.roles = [{ id: 3, label: 'Centro Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
-      expect(screen.getByTestId('archon-address-field')).toBeInTheDocument();
+  it('renders ArchonAddressField inside owner-profile-section for Rol 4 — Scenario 12', async () => {
+    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url.includes('/catalogs/centers')) {
+        return Promise.resolve({
+          data: { success: true, data: [{ id: 10, label: 'Centro Uno' }] },
+        });
+      }
+      return Promise.resolve({ data: { success: true, data: [] } });
     });
-  });
-
-  it('renders ArchonAddressField inside owner-profile-section for Rol 1 — Scenario 12', async () => {
-    currentMockState.roles = [{ id: 1, label: 'Flotilla Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
     render(<UserRegistrationForm />);
     await waitFor(() => {
       expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
