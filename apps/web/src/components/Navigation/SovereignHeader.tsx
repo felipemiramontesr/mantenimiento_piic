@@ -109,6 +109,7 @@ const SovereignHeader: React.FC = () => {
             isActive={layoutData.headerAction.isActive}
             onClick={layoutData.headerAction.onClick}
             testId={layoutData.headerAction.testId}
+            reverseArrow={layoutData.headerAction.reverseArrow}
           />
         </div>
       );

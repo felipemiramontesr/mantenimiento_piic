@@ -38,6 +38,7 @@ interface LayoutData {
     isActive: boolean;
     onClick: () => void;
     testId?: string;
+    reverseArrow?: boolean;
   } | null;
   headerSlot?: React.ReactNode;
 }

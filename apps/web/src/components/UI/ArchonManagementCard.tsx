@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { ArrowRight, LucideIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, LucideIcon } from 'lucide-react';
 
 /**
  * 🔱 Archon UI Component: ArchonManagementCard
@@ -22,6 +22,7 @@ export interface ArchonManagementCardProps {
   onClick: (e: React.MouseEvent) => void;
   testId?: string;
   layout?: 'vertical' | 'horizontal';
+  reverseArrow?: boolean;
 }
 
 const getVariantClasses = (variant: ArchonCardVariant): string => {
@@ -52,6 +53,7 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
   onClick,
   testId,
   layout = 'vertical',
+  reverseArrow = false,
 }) => {
   const variantStyles = getVariantClasses(variant);
   const isYellow = variant === 'yellow';
@@ -89,8 +91,23 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
                 ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
               `}
             >
-              <span className="mr-2">{buttonText}</span>
-              <ArrowRight size={10} className="transition-transform group-hover:translate-x-1" />
+              {reverseArrow ? (
+                <>
+                  <ArrowLeft
+                    size={10}
+                    className="transition-transform group-hover:-translate-x-1"
+                  />
+                  <span className="ml-2">{buttonText}</span>
+                </>
+              ) : (
+                <>
+                  <span className="mr-2">{buttonText}</span>
+                  <ArrowRight
+                    size={10}
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </>
+              )}
             </button>
           </div>
         </>
@@ -127,8 +144,17 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
               ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
             `}
           >
-            <span className="mr-2">{buttonText}</span>
-            <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
+            {reverseArrow ? (
+              <>
+                <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
+                <span className="ml-2">{buttonText}</span>
+              </>
+            ) : (
+              <>
+                <span className="mr-2">{buttonText}</span>
+                <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
+              </>
+            )}
           </button>
         </>
       )}

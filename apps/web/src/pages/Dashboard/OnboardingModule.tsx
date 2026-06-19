@@ -581,6 +581,7 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
         description: 'Registrar universos y clientes',
         buttonText: view === 'FORM' ? 'Universos Registrados' : 'Crear Universo',
         isActive: view === 'DIRECTORY',
+        reverseArrow: view === 'DIRECTORY',
         onClick: (): void => setView((v) => (v === 'FORM' ? 'DIRECTORY' : 'FORM')),
       }
     );
