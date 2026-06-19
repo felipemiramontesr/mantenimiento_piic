@@ -10,7 +10,35 @@ export interface AuditLogEntry {
   snapshot_after?: Record<string, unknown>;
   reason: string;
   user_id: number;
+  owner_id?: number;
 }
+
+// Fields that must never appear in audit snapshots (PII / security-sensitive)
+const SANITIZED_FIELDS = new Set([
+  'password',
+  'password_hash',
+  'token',
+  'refresh_token',
+  'secret',
+  // AES-encrypted fleet fields (§security_rules — never expose raw)
+  'placas',
+  'numero_serie',
+  'numeroSerie',
+  'circulation_card_number',
+  'circulationCardNumber',
+]);
+
+export const sanitizeSnapshot = (
+  snapshot: Record<string, unknown> | undefined
+): Record<string, unknown> | undefined => {
+  if (!snapshot) return undefined;
+  return Object.fromEntries(
+    Object.entries(snapshot).map(([key, value]) => [
+      key,
+      SANITIZED_FIELDS.has(key) ? '[REDACTED]' : value,
+    ])
+  );
+};
 
 /**
  * 🔱 ARCHON AUDIT SERVICE
@@ -19,20 +47,24 @@ export interface AuditLogEntry {
 export const recordAuditLog = async (entry: AuditLogEntry): Promise<void> => {
   try {
     const query = `
-      INSERT INTO administrative_audit_logs 
-      (uuid, entity_type, entity_id, action, snapshot_before, snapshot_after, reason, user_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO administrative_audit_logs
+      (uuid, entity_type, entity_id, action, snapshot_before, snapshot_after, reason, user_id, owner_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
+
+    const before = sanitizeSnapshot(entry.snapshot_before);
+    const after = sanitizeSnapshot(entry.snapshot_after);
 
     await db.query(query, [
       randomUUID(),
       entry.entity_type,
       entry.entity_id,
       entry.action,
-      entry.snapshot_before ? JSON.stringify(entry.snapshot_before) : null,
-      entry.snapshot_after ? JSON.stringify(entry.snapshot_after) : null,
+      before ? JSON.stringify(before) : null,
+      after ? JSON.stringify(after) : null,
       entry.reason,
       entry.user_id,
+      entry.owner_id ?? null,
     ]);
   } catch (err) {
     // eslint-disable-next-line no-console
