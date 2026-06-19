@@ -332,7 +332,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               <div
                 className={`
                 transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
-                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
+                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
               `}
               >
                 <span>Panel de Control</span>
@@ -354,7 +354,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <div
               className={`
                 transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
-                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[140px] opacity-100 ml-2'}
+                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
               `}
             >
               <span>Cerrar Sesión</span>
