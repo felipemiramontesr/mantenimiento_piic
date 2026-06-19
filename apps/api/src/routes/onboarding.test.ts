@@ -476,3 +476,88 @@ describe('Onboarding Routes — Multiverso Archon', () => {
     });
   });
 });
+
+// ── GET /v1/onboarding/universes — UniversesDirectory ─────────────────────
+
+describe('GET /v1/onboarding/universes', () => {
+  const app = buildApp();
+  let archonToken: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    archonToken = jwt.sign({ id: 1, username: 'archon', roleId: 0, permissions: ['*'] });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('UN-DIR-1: returns 401 without session', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/onboarding/universes' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('UN-DIR-2: returns 200 with universe list', async () => {
+    const mockRows = [
+      {
+        owner_id: 1,
+        owner_type: 'FLOTILLA',
+        suite: 'ERP',
+        label: 'PIIC SA de CV',
+        user_id: 10,
+        username: 'piic.flotilla',
+        full_name: 'PIIC Flotilla',
+        is_active: 1,
+        rfc: 'PIIC123456ABC',
+        razon_social: 'PIIC SA de CV',
+        telefono: '5551234567',
+        especialidades: null,
+      },
+      {
+        owner_id: 2,
+        owner_type: 'CENTER',
+        suite: 'VIM',
+        label: 'Taller Centro',
+        user_id: 20,
+        username: 'taller.centro',
+        full_name: 'Taller Centro',
+        is_active: 1,
+        rfc: 'TAL987654XYZ',
+        razon_social: 'Taller Centro SC',
+        telefono: null,
+        especialidades: 'Motor,Frenos',
+      },
+    ];
+    (db.execute as Mock).mockResolvedValueOnce([mockRows, undefined]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/onboarding/universes',
+      headers: { authorization: `Bearer ${archonToken}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.data).toHaveLength(2);
+    expect(body.data[0].owner_type).toBe('FLOTILLA');
+    expect(body.data[1].suite).toBe('VIM');
+    const sql = (db.execute as Mock).mock.calls[0][0] as string;
+    expect(sql).toContain("owner_type IN ('FLOTILLA', 'CENTER')");
+    expect(sql).toContain('parent_owner_id IS NULL');
+  });
+
+  it('UN-DIR-3: returns 500 on DB error', async () => {
+    (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/onboarding/universes',
+      headers: { authorization: `Bearer ${archonToken}` },
+    });
+
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).code).toBe('UNIVERSES_FETCH_FAIL');
+  });
+});

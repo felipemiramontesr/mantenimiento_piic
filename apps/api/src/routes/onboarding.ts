@@ -337,6 +337,41 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
     });
   });
 
+  // ─── GET /onboarding/universes — Archon only ─────────────────────────────
+  // Returns all top-level universe roots (FLOTILLA + CENTER) with their root
+  // user and profile data. Only callable by Archon (permission '*').
+  fastify.get('/onboarding/universes', jwtGuard('*'), async (_request, reply) => {
+    try {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        `SELECT
+           o.id          AS owner_id,
+           o.owner_type,
+           o.suite,
+           o.label,
+           u.id          AS user_id,
+           u.username,
+           u.full_name,
+           u.is_active,
+           op.rfc,
+           op.razon_social,
+           op.telefono,
+           op.especialidades
+         FROM owners o
+         JOIN user_owner_membership m ON m.owner_id = o.id
+         JOIN users u ON u.id = m.user_id
+         LEFT JOIN owner_profiles op ON op.owner_id = o.id
+         WHERE o.owner_type IN ('FLOTILLA', 'CENTER')
+           AND o.parent_owner_id IS NULL
+         ORDER BY o.id DESC`,
+        []
+      );
+      return reply.send({ success: true, data: rows });
+    } catch (e) {
+      fastify.log.error(e);
+      return reply.code(500).send({ success: false, code: 'UNIVERSES_FETCH_FAIL' });
+    }
+  });
+
   // ─── POST /onboarding/member — Propietario de Flotilla ────────────────────
   // Creates an Área member (roleId=2) under the caller's ERP universe owner.
   // Anti-IDOR: owner is always the caller's own owner — no input to hijack.
