@@ -579,12 +579,12 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
         PayloadIcon: UserPlus,
         actionTitle: 'Onboarding',
         description: 'Registrar universos y clientes',
-        buttonText: 'Onboarding de Universos →',
-        isActive: false,
+        buttonText: view === 'FORM' ? 'Universos Registrados →' : '← Crear Universo',
+        isActive: view === 'DIRECTORY',
         onClick: (): void => setView((v) => (v === 'FORM' ? 'DIRECTORY' : 'FORM')),
       }
     );
-  }, [setSectionData]);
+  }, [setSectionData, view]);
 
   return (
     <div className="animate-in fade-in duration-700">
