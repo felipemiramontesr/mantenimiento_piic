@@ -362,16 +362,6 @@ const UniverseForm: React.FC = (): React.ReactElement => {
             icon={Phone}
           />
         </div>
-
-        {tab === 'VIM' && (
-          <div data-testid="uni-especialidades-section">
-            <label className={LABEL_CLS}>
-              <Wrench size={12} className="text-[#f2b705]" />
-              Especialidades
-            </label>
-            <SpecialtiesSelect value={especialidades} onChange={setEspecialidades} />
-          </div>
-        )}
       </div>
 
       {/* Dirección */}
@@ -379,6 +369,14 @@ const UniverseForm: React.FC = (): React.ReactElement => {
         <SectionHeader icon={MapPin}>Dirección</SectionHeader>
         <ArchonAddressField value={addressValue} onChange={setAddressValue} />
       </div>
+
+      {/* Especialidades — solo VIM, al final */}
+      {tab === 'VIM' && (
+        <div className="space-y-3" data-testid="uni-especialidades-section">
+          <SectionHeader icon={Wrench}>Especialidades</SectionHeader>
+          <SpecialtiesSelect value={especialidades} onChange={setEspecialidades} />
+        </div>
+      )}
 
       {/* Áreas Iniciales — solo ERP, al final */}
       {tab === 'ERP' && (
