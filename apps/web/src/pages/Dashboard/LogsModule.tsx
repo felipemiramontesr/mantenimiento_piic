@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, AlertTriangle, Flame } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import AuditLogView from './AuditLogView';
 
 export type LogsPanel = 'FORENSIC' | 'INCIDENTS';
 
 /**
- * 🚀 ARCHON LOGS MODULE (v.7.2.0)
+ * 🚀 ARCHON LOGS MODULE (v.7.3.0)
  * Architecture: Sovereign Instrumental Node
  * Principles: SOLID, DRY, DIP
  * Refinement: Single Mutating Header Card (Mirror FleetModule DNA)
@@ -46,7 +47,7 @@ const LogsModule: React.FC = (): React.ReactElement => {
         <div className="archon-axial-container">
           <div ref={panelRef}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              {/* Futuro panel de contenido irá aquí dependiendo del activePanel */}
+              {activePanel === 'FORENSIC' && <AuditLogView />}
             </div>
           </div>
         </div>
