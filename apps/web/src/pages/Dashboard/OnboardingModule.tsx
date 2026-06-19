@@ -1,5 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { Globe, UserPlus } from 'lucide-react';
+import {
+  Globe,
+  UserPlus,
+  User,
+  Mail,
+  Key,
+  Contact,
+  Hash,
+  Briefcase,
+  Phone,
+  Eye,
+  EyeOff,
+  MapPin,
+  Wrench,
+  LayoutGrid,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import api from '../../api/client';
@@ -35,13 +51,32 @@ const EMPTY_FORM: FormState = {
   targetOwnerId: '',
 };
 
-const inputCls =
-  'w-full rounded-[4px] border border-slate-300 bg-white px-3 py-2 text-sm text-pinnacle-navy placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pinnacle-navy/30';
-const labelCls = 'block text-xs font-bold uppercase tracking-widest text-pinnacle-navy/60 mb-1';
+const LABEL_CLS =
+  'text-archon-base font-black uppercase tracking-[0.15em] text-[#0f2a44]/50 flex items-center gap-2 mb-1';
+
 const tabBase =
   'flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-[4px] transition-all duration-150 cursor-pointer';
 const tabActive = `${tabBase} bg-pinnacle-navy text-pinnacle-yellow`;
 const tabInactive = `${tabBase} text-pinnacle-navy/50 hover:bg-pinnacle-navy/5`;
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SectionHeader({
+  icon: Icon,
+  children,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+      <Icon size={12} className="text-pinnacle-yellow" />
+      <span className="text-archon-sm font-black uppercase tracking-widest text-pinnacle-navy/40">
+        {children}
+      </span>
+    </div>
+  );
+}
 
 function FieldGroup({
   label,
@@ -51,6 +86,7 @@ function FieldGroup({
   onChange,
   hint,
   required,
+  icon: Icon,
 }: {
   label: string;
   id: string;
@@ -59,12 +95,14 @@ function FieldGroup({
   onChange: (v: string) => void;
   hint?: string;
   required?: boolean;
+  icon?: LucideIcon;
 }): React.ReactElement {
   return (
-    <div>
-      <label htmlFor={id} className={labelCls}>
+    <div className="flex flex-col gap-1.5 w-full">
+      <label htmlFor={id} className={LABEL_CLS}>
+        {Icon && <Icon size={12} className="text-[#f2b705]" />}
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required && <span className="ml-1 opacity-40">*</span>}
       </label>
       <input
         id={id}
@@ -72,9 +110,55 @@ function FieldGroup({
         value={value}
         onChange={(e): void => onChange(e.target.value)}
         placeholder={hint}
-        className={inputCls}
+        className="archon-input"
         autoComplete="off"
       />
+    </div>
+  );
+}
+
+function PasswordField({
+  label,
+  id,
+  value,
+  onChange,
+  required,
+}: {
+  label: string;
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+}): React.ReactElement {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      <label htmlFor={id} className={LABEL_CLS}>
+        <Key size={12} className="text-[#f2b705]" />
+        {label}
+        {required && <span className="ml-1 opacity-40">*</span>}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={(e): void => onChange(e.target.value)}
+          className="archon-input"
+          style={{ paddingRight: '2.5rem' }}
+          autoComplete="new-password"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={(): void => setShow((s) => !s)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-pinnacle-navy/40 hover:text-pinnacle-navy transition-colors"
+          data-testid={`${id}-toggle`}
+          aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        >
+          {show ? <EyeOff size={14} /> : <Eye size={14} />}
+        </button>
+      </div>
     </div>
   );
 }
@@ -204,90 +288,110 @@ const UniverseForm: React.FC = (): React.ReactElement => {
       </p>
 
       {/* Credenciales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FieldGroup
-          label="Usuario"
-          id="uni-username"
-          value={form.username}
-          onChange={set('username')}
-          hint="nombre.usuario"
-          required
-        />
-        <FieldGroup
-          label="Correo"
-          id="uni-email"
-          type="email"
-          value={form.email}
-          onChange={set('email')}
-          hint="correo@empresa.mx"
-          required
-        />
-        <FieldGroup
-          label="Contraseña"
-          id="uni-password"
-          type="password"
-          value={form.password}
-          onChange={set('password')}
-          required
-        />
-        <FieldGroup
-          label="Nombre completo"
-          id="uni-fullname"
-          value={form.fullName}
-          onChange={set('fullName')}
-          hint="Opcional"
-        />
-      </div>
-
-      {/* Perfil empresarial */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FieldGroup
-          label="RFC"
-          id="uni-rfc"
-          value={form.rfc}
-          onChange={set('rfc')}
-          hint="RFC de la empresa"
-          required
-        />
-        <FieldGroup
-          label="Razón Social"
-          id="uni-razon-social"
-          value={form.razonSocial}
-          onChange={set('razonSocial')}
-          hint="Nombre legal de la empresa"
-          required
-        />
-        <FieldGroup
-          label="Teléfono"
-          id="uni-telefono"
-          type="tel"
-          value={form.telefono}
-          onChange={set('telefono')}
-          hint="Teléfono de contacto"
-        />
-      </div>
-
-      {/* Especialidades — solo VIM */}
-      {tab === 'VIM' && (
-        <div data-testid="uni-especialidades-section">
-          <label className={labelCls}>Especialidades</label>
-          <SpecialtiesSelect value={especialidades} onChange={setEspecialidades} />
+      <div className="space-y-4">
+        <SectionHeader icon={User}>Credenciales de Acceso</SectionHeader>
+        <div className="archon-grid-2-sovereign">
+          <FieldGroup
+            label="Usuario"
+            id="uni-username"
+            value={form.username}
+            onChange={set('username')}
+            hint="nombre.usuario"
+            required
+            icon={User}
+          />
+          <FieldGroup
+            label="Correo"
+            id="uni-email"
+            type="email"
+            value={form.email}
+            onChange={set('email')}
+            hint="correo@empresa.mx"
+            required
+            icon={Mail}
+          />
+          <PasswordField
+            label="Contraseña"
+            id="uni-password"
+            value={form.password}
+            onChange={set('password')}
+            required
+          />
+          <FieldGroup
+            label="Nombre Completo"
+            id="uni-fullname"
+            value={form.fullName}
+            onChange={set('fullName')}
+            hint="Opcional"
+            icon={Contact}
+          />
         </div>
-      )}
+      </div>
+
+      {/* Perfil */}
+      <div className="space-y-4">
+        <SectionHeader icon={Briefcase}>
+          {tab === 'ERP' ? 'Perfil Empresarial' : 'Datos del Centro'}
+        </SectionHeader>
+        <div className="archon-grid-2-sovereign">
+          <FieldGroup
+            label="RFC"
+            id="uni-rfc"
+            value={form.rfc}
+            onChange={set('rfc')}
+            hint="RFC de la empresa"
+            required
+            icon={Hash}
+          />
+          <FieldGroup
+            label="Razón Social"
+            id="uni-razon-social"
+            value={form.razonSocial}
+            onChange={set('razonSocial')}
+            hint="Nombre legal de la empresa"
+            required
+            icon={Briefcase}
+          />
+          <FieldGroup
+            label="Teléfono"
+            id="uni-telefono"
+            type="tel"
+            value={form.telefono}
+            onChange={set('telefono')}
+            hint="Teléfono de contacto"
+            icon={Phone}
+          />
+        </div>
+
+        {tab === 'VIM' && (
+          <div data-testid="uni-especialidades-section">
+            <label className={LABEL_CLS}>
+              <Wrench size={12} className="text-[#f2b705]" />
+              Especialidades
+            </label>
+            <SpecialtiesSelect value={especialidades} onChange={setEspecialidades} />
+          </div>
+        )}
+
+        {tab === 'ERP' && (
+          <div data-testid="uni-areas-section">
+            <label className={LABEL_CLS}>
+              <LayoutGrid size={12} className="text-[#f2b705]" />
+              Áreas Iniciales
+            </label>
+            <AreasSelect value={areas} onChange={setAreas} />
+            <p className="text-xs text-pinnacle-navy/40 mt-1 uppercase tracking-widest">
+              Estas áreas se crearán al registrar. Pueden gestionarse después.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Dirección */}
-      <ArchonAddressField value={addressValue} onChange={setAddressValue} />
-
-      {/* Áreas iniciales — solo ERP */}
-      {tab === 'ERP' && (
-        <div data-testid="uni-areas-section">
-          <label className={labelCls}>Áreas Iniciales</label>
-          <AreasSelect value={areas} onChange={setAreas} />
-          <p className="text-xs text-pinnacle-navy/40 mt-1 uppercase tracking-widest">
-            Estas áreas se crearán al registrar. Pueden gestionarse después.
-          </p>
-        </div>
-      )}
+      <div className="space-y-4">
+        <SectionHeader icon={MapPin}>Dirección</SectionHeader>
+        <ArchonAddressField value={addressValue} onChange={setAddressValue} />
+      </div>
 
       <StatusBanner status={status} />
 
@@ -387,50 +491,57 @@ const ClientForm: React.FC = (): React.ReactElement => {
           : 'Agrega un Familiar a un Propietario Privado existente en tu universo.'}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FieldGroup
-          label="Usuario"
-          id="cli-username"
-          value={form.username}
-          onChange={set('username')}
-          hint="nombre.usuario"
-          required
-        />
-        <FieldGroup
-          label="Correo"
-          id="cli-email"
-          type="email"
-          value={form.email}
-          onChange={set('email')}
-          hint="correo@cliente.mx"
-          required
-        />
-        <FieldGroup
-          label="Contraseña"
-          id="cli-password"
-          type="password"
-          value={form.password}
-          onChange={set('password')}
-          required
-        />
-        <FieldGroup
-          label="Nombre completo"
-          id="cli-fullname"
-          value={form.fullName}
-          onChange={set('fullName')}
-          hint="Opcional"
-        />
-        {tab === 'FAMILIAR' && (
+      {/* Credenciales */}
+      <div className="space-y-4">
+        <SectionHeader icon={User}>Credenciales de Acceso</SectionHeader>
+        <div className="archon-grid-2-sovereign">
           <FieldGroup
-            label="ID del Propietario Privado"
-            id="cli-target"
-            type="number"
-            value={form.targetOwnerId}
-            onChange={set('targetOwnerId')}
-            hint="ID numérico del owner"
+            label="Usuario"
+            id="cli-username"
+            value={form.username}
+            onChange={set('username')}
+            hint="nombre.usuario"
+            required
+            icon={User}
+          />
+          <FieldGroup
+            label="Correo"
+            id="cli-email"
+            type="email"
+            value={form.email}
+            onChange={set('email')}
+            hint="correo@cliente.mx"
+            required
+            icon={Mail}
+          />
+          <PasswordField
+            label="Contraseña"
+            id="cli-password"
+            value={form.password}
+            onChange={set('password')}
             required
           />
-        )}
+          <FieldGroup
+            label="Nombre Completo"
+            id="cli-fullname"
+            value={form.fullName}
+            onChange={set('fullName')}
+            hint="Opcional"
+            icon={Contact}
+          />
+          {tab === 'FAMILIAR' && (
+            <FieldGroup
+              label="ID del Propietario Privado"
+              id="cli-target"
+              type="number"
+              value={form.targetOwnerId}
+              onChange={set('targetOwnerId')}
+              hint="ID numérico del owner"
+              required
+              icon={Hash}
+            />
+          )}
+        </div>
       </div>
 
       <StatusBanner status={status} />
