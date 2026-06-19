@@ -261,9 +261,14 @@ const AuditLogView: React.FC = (): React.ReactElement => {
       {rows.length === 0 ? (
         <div
           data-testid="audit-log-empty"
-          className="rounded-[4px] px-4 py-10 text-center border border-slate-200 text-pinnacle-navy/40 text-sm font-bold uppercase tracking-widest"
+          className="rounded-[4px] px-6 py-12 text-center bg-slate-50 border border-slate-200"
         >
-          Sin registros de auditoría para los filtros seleccionados.
+          <p className="text-sm font-black uppercase tracking-widest text-pinnacle-navy/60 mb-1">
+            Sin registros de auditoría
+          </p>
+          <p className="text-xs text-pinnacle-navy/40">
+            No se encontraron eventos para los filtros seleccionados.
+          </p>
         </div>
       ) : (
         <>
