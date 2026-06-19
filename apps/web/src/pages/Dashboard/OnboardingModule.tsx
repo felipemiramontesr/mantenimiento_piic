@@ -372,19 +372,6 @@ const UniverseForm: React.FC = (): React.ReactElement => {
             <SpecialtiesSelect value={especialidades} onChange={setEspecialidades} />
           </div>
         )}
-
-        {tab === 'ERP' && (
-          <div data-testid="uni-areas-section">
-            <label className={LABEL_CLS}>
-              <LayoutGrid size={12} className="text-[#f2b705]" />
-              Áreas Iniciales
-            </label>
-            <AreasSelect value={areas} onChange={setAreas} />
-            <p className="text-xs text-pinnacle-navy/40 mt-1 uppercase tracking-widest">
-              Estas áreas se crearán al registrar. Pueden gestionarse después.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Dirección */}
@@ -392,6 +379,17 @@ const UniverseForm: React.FC = (): React.ReactElement => {
         <SectionHeader icon={MapPin}>Dirección</SectionHeader>
         <ArchonAddressField value={addressValue} onChange={setAddressValue} />
       </div>
+
+      {/* Áreas Iniciales — solo ERP, al final */}
+      {tab === 'ERP' && (
+        <div className="space-y-3" data-testid="uni-areas-section">
+          <SectionHeader icon={LayoutGrid}>Áreas Iniciales</SectionHeader>
+          <AreasSelect value={areas} onChange={setAreas} />
+          <p className="text-xs text-pinnacle-navy/40 uppercase tracking-widest">
+            Estas áreas se crearán al registrar. Pueden gestionarse después.
+          </p>
+        </div>
+      )}
 
       <StatusBanner status={status} />
 
