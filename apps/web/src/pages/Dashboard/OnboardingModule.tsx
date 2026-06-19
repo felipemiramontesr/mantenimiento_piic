@@ -579,7 +579,7 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
         PayloadIcon: UserPlus,
         actionTitle: 'Onboarding',
         description: 'Registrar universos y clientes',
-        buttonText: view === 'FORM' ? 'Universos Registrados →' : '← Crear Universo',
+        buttonText: view === 'FORM' ? 'Universos Registrados' : 'Crear Universo',
         isActive: view === 'DIRECTORY',
         onClick: (): void => setView((v) => (v === 'FORM' ? 'DIRECTORY' : 'FORM')),
       }
