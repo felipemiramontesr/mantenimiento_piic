@@ -168,3 +168,46 @@ describe('VIM_PIIC_Supercumulos_Seed — AES Encryption (SC4 §2.2)', () => {
     expect(enc1).not.toBe(enc2);
   });
 });
+
+describe('VIM_PIIC_Supercumulos_Seed — Identidad de Usuario (SC1 Invariante Cosmológico)', () => {
+  it('cada Supercúmulo tiene username definido y no vacío', () => {
+    SUPERCUMULOS.forEach((sc) => {
+      expect(sc.username.trim().length).toBeGreaterThan(0);
+    });
+  });
+
+  it('usernames son únicos entre los 3 Supercúmulos', () => {
+    const names = SUPERCUMULOS.map((sc) => sc.username);
+    expect(new Set(names).size).toBe(3);
+  });
+
+  it('emails tienen formato válido (contienen @ y dominio)', () => {
+    SUPERCUMULOS.forEach((sc) => {
+      expect(sc.email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+    });
+  });
+
+  it('emails son únicos entre los 3 Supercúmulos', () => {
+    const emails = SUPERCUMULOS.map((sc) => sc.email);
+    expect(new Set(emails).size).toBe(3);
+  });
+
+  it('email se cifra con AES-256-GCM antes de almacenar (§2.2 PII)', () => {
+    SUPERCUMULOS.forEach((sc) => {
+      const enc = EncryptionService.encrypt(sc.email);
+      expect(enc).not.toBe(sc.email);
+      expect(enc.split(':')).toHaveLength(3);
+      expect(EncryptionService.decrypt(enc)).toBe(sc.email);
+    });
+  });
+
+  it('passwords cumplen política: mayúscula · minúscula · dígito · carácter especial', () => {
+    SUPERCUMULOS.forEach((sc) => {
+      expect(sc.password).toMatch(/[A-Z]/);
+      expect(sc.password).toMatch(/[a-z]/);
+      expect(sc.password).toMatch(/\d/);
+      expect(sc.password).toMatch(/[^A-Za-z0-9]/);
+      expect(sc.password.length).toBeGreaterThanOrEqual(10);
+    });
+  });
+});

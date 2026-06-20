@@ -1,15 +1,18 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import { hash as argon2Hash } from '@node-rs/argon2';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 dotenv.config({ path: path.join(__dirname, '../../../../.env') });
 
 // ─── VIM_PIIC_Supercumulos_Seed ──────────────────────────────────────────────
-// FC: VIM_PIIC_Supercumulos_Seed · V.78.101.306
-// 3 Supercúmulos PRIVATE en Universo PIIC (VIM) — datos 100% realistas
-// §2.2: AES en placas · numeroSerie · circulationCardNumber + blind index
+// FC: VIM_PIIC_Supercumulos_UsersFix · V.78.101.307
+// Invariante cosmológico: todo Supercúmulo nace con owner + usuario en la
+// misma transacción. Owner sin usuario = estado inválido en Archon.
+// §2.2: AES en placas · numeroSerie · circulationCardNumber · email + blind index
 
 const PIIC_CENTER_OWNER_ID = 9042;
+const ROLE_ID_PRIVADO = 4;
 
 export const UNIT_IDS = [
   'PIIC-101',
@@ -47,6 +50,9 @@ export interface SupCumDef {
   numExt: string;
   neighborhoodId: number;
   units: UnitDef[];
+  username: string;
+  email: string;
+  password: string;
 }
 
 export const SUPERCUMULOS: SupCumDef[] = [
@@ -59,6 +65,9 @@ export const SUPERCUMULOS: SupCumDef[] = [
     calle: 'Blvd. Luis Encinas Johnson',
     numExt: '246',
     neighborhoodId: 260301, // Hermosillo Centro
+    username: 'cvalenzuela',
+    email: 'carlos.valenzuela@piic.com.mx',
+    password: 'Valenzuela.Priv1!',
     units: [
       {
         id: 'PIIC-101',
@@ -88,6 +97,9 @@ export const SUPERCUMULOS: SupCumDef[] = [
     calle: 'Calle Rosales',
     numExt: '105',
     neighborhoodId: 260302, // 5 de Mayo
+    username: 'rzazueta',
+    email: 'roberto.zazueta@piic.com.mx',
+    password: 'Zazueta.Priv1!',
     units: [
       {
         id: 'PIIC-201',
@@ -134,6 +146,9 @@ export const SUPERCUMULOS: SupCumDef[] = [
     calle: 'Blvd. García Morales',
     numExt: '1200',
     neighborhoodId: 260303, // Country Club
+    username: 'tnoroeste',
+    email: 'admin@transportes-noroeste.com.mx',
+    password: 'Noroeste.Trans1!',
     units: [
       {
         id: 'PIIC-301',
@@ -192,7 +207,7 @@ export const SUPERCUMULOS: SupCumDef[] = [
 
 async function runSeed(): Promise<void> {
   console.log('══════════════════════════════════════════════════════════');
-  console.log('VIM_PIIC_Supercumulos_Seed | 3 Supercúmulos PRIVATE · 6 Fleet Units');
+  console.log('VIM_PIIC_Supercumulos_Seed | 3 Supercúmulos PRIVATE · 6 Fleet Units · 3 Usuarios');
   console.log('══════════════════════════════════════════════════════════');
 
   const db = (await import('../services/db')).default;
@@ -206,6 +221,25 @@ async function runSeed(): Promise<void> {
     console.log('[CLEANUP] Limpiando registros previos del seed...');
     const idPH = UNIT_IDS.map(() => '?').join(',');
 
+    // Limpiar usuarios por username conocido
+    const usernames = SUPERCUMULOS.map((s) => s.username);
+    const usernamePH = usernames.map(() => '?').join(',');
+    const [existingUsers] = await conn.execute<RowDataPacket[]>(
+      `SELECT id FROM users WHERE username IN (${usernamePH})`,
+      usernames
+    );
+    const existingUserIds = (existingUsers as RowDataPacket[]).map((r) => r.id as number);
+    if (existingUserIds.length > 0) {
+      const uidPH = existingUserIds.map(() => '?').join(',');
+      await conn.execute(
+        `DELETE FROM user_owner_membership WHERE user_id IN (${uidPH})`,
+        existingUserIds
+      );
+      await conn.execute(`DELETE FROM user_roles WHERE user_id IN (${uidPH})`, existingUserIds);
+      await conn.execute(`DELETE FROM users WHERE id IN (${uidPH})`, existingUserIds);
+    }
+
+    // Limpiar fleet_units y owners por unit IDs conocidos
     const [existingUnits] = await conn.execute<RowDataPacket[]>(
       `SELECT DISTINCT ownerId FROM fleet_units WHERE id IN (${idPH})`,
       [...UNIT_IDS]
@@ -255,7 +289,7 @@ async function runSeed(): Promise<void> {
         )
       )
     );
-    console.log(`[SEED] owners creados → ids=${ownerIds.join(',')}`);
+    console.log(`[SEED] owners → ids=${ownerIds.join(',')}`);
 
     // ── Paso 2: owner_profiles (paralelo) ────────────────────────────────────
     await Promise.all(
@@ -276,7 +310,7 @@ async function runSeed(): Promise<void> {
         )
       )
     );
-    console.log(`[SEED] owner_profiles → rfcs=${SUPERCUMULOS.map((s) => s.rfc).join(' · ')}`);
+    console.log(`[SEED] owner_profiles → ${SUPERCUMULOS.map((s) => s.rfc).join(' · ')}`);
 
     // ── Paso 3: owner_service_links → PIIC CENTER (paralelo) ─────────────────
     await Promise.all(
@@ -336,6 +370,53 @@ async function runSeed(): Promise<void> {
     await Promise.all(unitInserts);
     console.log(`[SEED] fleet_units → ${UNIT_IDS.join(' · ')}`);
 
+    // ── Paso 5: users — hash password + AES email §2.2 (paralelo) ────────────
+    const [passwordHashes, encEmails] = await Promise.all([
+      Promise.all(SUPERCUMULOS.map((sc) => argon2Hash(sc.password))),
+      Promise.resolve(SUPERCUMULOS.map((sc) => EncryptionService.encrypt(sc.email))),
+    ]);
+
+    const userResults = await Promise.all(
+      SUPERCUMULOS.map((sc, idx) =>
+        conn.execute<ResultSetHeader>(
+          'INSERT INTO users (username, email, password_hash, role_id, full_name) VALUES (?, ?, ?, ?, ?)',
+          [sc.username, encEmails[idx], passwordHashes[idx], ROLE_ID_PRIVADO, sc.razonSocial]
+        )
+      )
+    );
+    const insertedUserIds = userResults.map(([res]) => (res as ResultSetHeader).insertId);
+    console.log(`[SEED] users → ids=${insertedUserIds.join(',')} (role_id=${ROLE_ID_PRIVADO})`);
+
+    // ── Paso 6: user_roles (paralelo) ────────────────────────────────────────
+    await Promise.all(
+      insertedUserIds.map((uid) =>
+        conn.execute<ResultSetHeader>(
+          'INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)',
+          [uid, ROLE_ID_PRIVADO]
+        )
+      )
+    );
+    console.log(
+      `[SEED] user_roles → ${insertedUserIds
+        .map((uid) => `${uid}→role_id=${ROLE_ID_PRIVADO}`)
+        .join(' · ')}`
+    );
+
+    // ── Paso 7: user_owner_membership (paralelo) ──────────────────────────────
+    await Promise.all(
+      insertedUserIds.map((uid, idx) =>
+        conn.execute<ResultSetHeader>(
+          'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
+          [uid, ownerIds[idx]]
+        )
+      )
+    );
+    console.log(
+      `[SEED] user_owner_membership → ${insertedUserIds
+        .map((uid, idx) => `${uid}↔${ownerIds[idx]}`)
+        .join(' · ')}`
+    );
+
     await conn.commit();
     console.log('\n[SEED] Transacción committed ✅');
 
@@ -347,11 +428,18 @@ async function runSeed(): Promise<void> {
     );
     const ownerCnt = Number((ownerRows as RowDataPacket[])[0].cnt);
 
-    const [profileRows] = await conn.execute<RowDataPacket[]>(
-      `SELECT COUNT(*) AS cnt FROM owner_profiles op
-       JOIN owners o ON o.id = op.owner_id WHERE o.owner_type='PRIVATE'`
+    const [userRows] = await conn.execute<RowDataPacket[]>(
+      `SELECT COUNT(*) AS cnt FROM users WHERE username IN (${usernamePH}) AND role_id = ?`,
+      [...usernames, ROLE_ID_PRIVADO]
     );
-    const profileCnt = Number((profileRows as RowDataPacket[])[0].cnt);
+    const userCnt = Number((userRows as RowDataPacket[])[0].cnt);
+
+    const [memberRows] = await conn.execute<RowDataPacket[]>(
+      `SELECT COUNT(*) AS cnt FROM user_owner_membership uom
+       JOIN owners o ON o.id = uom.owner_id
+       WHERE o.owner_type='PRIVATE' AND o.suite='VIM'`
+    );
+    const memberCnt = Number((memberRows as RowDataPacket[])[0].cnt);
 
     const [linkRows] = await conn.execute<RowDataPacket[]>(
       'SELECT COUNT(*) AS cnt FROM owner_service_links WHERE centro_owner_id = ?',
@@ -360,8 +448,7 @@ async function runSeed(): Promise<void> {
     const linkCnt = Number((linkRows as RowDataPacket[])[0].cnt);
 
     const [unitRows] = await conn.execute<RowDataPacket[]>(
-      `SELECT id, ownerId, placas, placasHash, numeroSerieHash
-       FROM fleet_units WHERE id IN (${idPH})`,
+      `SELECT id, placas, placasHash, numeroSerieHash FROM fleet_units WHERE id IN (${idPH})`,
       [...UNIT_IDS]
     );
     const unitCnt = (unitRows as RowDataPacket[]).length;
@@ -387,22 +474,33 @@ async function runSeed(): Promise<void> {
 
     console.log(`[SC1] PRIVATE owners → ${ownerCnt} → ${ownerCnt >= 3 ? '✅' : '❌'}`);
     console.log(
-      `[SC2] Profiles=${profileCnt} · Links=${linkCnt} → ${
-        profileCnt >= 3 && linkCnt >= 3 ? '✅' : '❌'
+      `[SC2] Users role_id=4 → ${userCnt} · Memberships → ${memberCnt} → ${
+        userCnt >= 3 && memberCnt >= 3 ? '✅' : '❌'
       }`
     );
-    console.log(`[SC3] Distribución [${dist.join(',')}] → ${distOk ? '✅' : '❌'}`);
-    console.log(`[SC4] AES+BlindIndex → ${allAES ? '✅' : '❌'}`);
+    console.log(`[SC3] Links PIIC → ${linkCnt} → ${linkCnt >= 3 ? '✅' : '❌'}`);
+    console.log(`[SC4] Distribución [${dist.join(',')}] → ${distOk ? '✅' : '❌'}`);
+    console.log(`[SC5] AES+BlindIndex → ${allAES ? '✅' : '❌'}`);
     console.log(`[TOTAL] 6 fleet_units → ${unitCnt} → ${unitCnt === 6 ? '✅' : '❌'}`);
 
-    if (ownerCnt < 3 || profileCnt < 3 || linkCnt < 3 || !distOk || !allAES || unitCnt !== 6) {
+    if (
+      ownerCnt < 3 ||
+      userCnt < 3 ||
+      memberCnt < 3 ||
+      linkCnt < 3 ||
+      !distOk ||
+      !allAES ||
+      unitCnt !== 6
+    ) {
       throw new Error('Verificación post-seed fallida — revisar consola.');
     }
 
     console.log('\n✅ VIM_PIIC_Supercumulos_Seed COMPLETADO');
-    console.log('   SC-A: Carlos Valenzuela       → PIIC-101');
-    console.log('   SC-B: Roberto Zazueta         → PIIC-201, PIIC-202');
-    console.log('   SC-C: Transportes Noroeste    → PIIC-301, PIIC-302, PIIC-303');
+    console.log('   SC-A: Carlos Valenzuela    · username=cvalenzuela  · PIIC-101');
+    console.log('   SC-B: Roberto Zazueta      · username=rzazueta     · PIIC-201, PIIC-202');
+    console.log(
+      '   SC-C: Transportes Noroeste · username=tnoroeste    · PIIC-301, PIIC-302, PIIC-303'
+    );
     console.log('   ⚠️  PROD: ejecutar en u701509674_Mant_piic vía CI/CD o phpMyAdmin');
     console.log('══════════════════════════════════════════════════════════\n');
 
