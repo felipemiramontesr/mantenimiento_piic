@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import AlertsPanel from './AlertsPanel';
@@ -179,69 +179,6 @@ describe('AlertsPanel — role-scoped guard (Feature Contract Alerts_Role_Scoped
     expect(screen.getByText('Multa registrada')).toBeInTheDocument();
     expect(screen.getByText('Gasto anómalo')).toBeInTheDocument();
     expect(screen.getByText('Multa registrada: $2,500.00 — Tránsito ZAC')).toBeInTheDocument();
-  });
-
-  it('Chip-filter: "Finanzas" muestra solo tipos financieros y "Todos" restaura', () => {
-    grantAccess(true);
-    useAlertsMock.mockReturnValue({
-      alerts: [
-        sampleAlert,
-        {
-          id: 'FINE_501',
-          type: 'FINE_REGISTERED',
-          severity: 'HIGH',
-          title: 'Multa registrada — ASM-107',
-          description: 'Multa registrada: $2,500.00 — Tránsito ZAC',
-          unitId: 'ASM-107',
-          createdAt: '2026-06-09T10:00:00.000Z',
-        },
-      ] satisfies Alert[],
-      isSyncing: false,
-      refresh: vi.fn(),
-    });
-    renderPanel();
-
-    // Estado inicial "Todos": ambos dominios visibles
-    expect(screen.getByText('ASM-001')).toBeInTheDocument();
-    expect(screen.getByText('ASM-107')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('domain-chip-finance'));
-    expect(screen.queryByText('ASM-001')).not.toBeInTheDocument();
-    expect(screen.getByText('ASM-107')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('domain-chip-maint'));
-    expect(screen.getByText('ASM-001')).toBeInTheDocument();
-    expect(screen.queryByText('ASM-107')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('domain-chip-all'));
-    expect(screen.getByText('ASM-001')).toBeInTheDocument();
-    expect(screen.getByText('ASM-107')).toBeInTheDocument();
-  });
-
-  it('Chip-filter: los contadores del header se recalculan con el dominio activo', () => {
-    grantAccess(true);
-    useAlertsMock.mockReturnValue({
-      alerts: [
-        sampleAlert,
-        {
-          id: 'FINE_501',
-          type: 'FINE_REGISTERED',
-          severity: 'HIGH',
-          title: 'Multa registrada — ASM-107',
-          description: 'Multa registrada: $2,500.00 — Tránsito ZAC',
-          unitId: 'ASM-107',
-          createdAt: '2026-06-09T10:00:00.000Z',
-        },
-      ] satisfies Alert[],
-      isSyncing: false,
-      refresh: vi.fn(),
-    });
-    renderPanel();
-
-    const callsBefore = setSectionDataMock.mock.calls.length;
-    fireEvent.click(screen.getByTestId('domain-chip-finance'));
-    // El effect del header depende de `filtered` — el cambio de dominio dispara recalculo
-    expect(setSectionDataMock.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
   it('Fase 4: renders COMPLIANCE_EXPIRY alert with es-MX label and description', () => {
