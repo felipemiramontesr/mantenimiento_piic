@@ -442,7 +442,7 @@ describe('OnboardingModule', () => {
       expect(vi.mocked(api.post)).toHaveBeenCalledWith(
         '/onboarding/universe',
         expect.objectContaining({
-          profile: expect.objectContaining({ especialidades: 'MOTOR' }),
+          profile: expect.objectContaining({ especialidades: ['MOTOR'] }),
         })
       )
     );
