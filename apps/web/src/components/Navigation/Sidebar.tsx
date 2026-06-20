@@ -120,7 +120,7 @@ const NavItem: React.FC<NavItemProps> = ({
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission, isOmnipotent, isExternalClientOnly, isSuiteVIM } = usePermissions();
+  const { hasPermission, isOmnipotent, isExternalClientOnly } = usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
   const { count: alertsCount } = useAlertsCount();
@@ -299,7 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 isCollapsed={isCollapsed}
               />
             )}
-            {(isOmnipotent() || isSuiteVIM()) && (
+            {isOmnipotent() && (
               <NavItem
                 icon={<Globe size={20} />}
                 label="Onboarding"
