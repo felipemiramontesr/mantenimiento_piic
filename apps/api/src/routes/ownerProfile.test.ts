@@ -51,7 +51,6 @@ const PROFILE_ROW = {
   rfc: 'TEST123456ABC',
   razonSocial: 'Flotillas SA',
   telefono: '3312345678',
-  especialidades: null,
   calle: 'Av. Reforma',
   numeroExt: '42',
   numeroInt: null,
@@ -105,6 +104,20 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
 
   const auth = (token: string): Record<string, string> => ({ Authorization: `Bearer ${token}` });
 
+  const makePatchConn = (): {
+    beginTransaction: Mock;
+    execute: Mock;
+    commit: Mock;
+    rollback: Mock;
+    release: Mock;
+  } => ({
+    beginTransaction: vi.fn().mockResolvedValue(undefined),
+    execute: vi.fn().mockResolvedValue([{ affectedRows: 1 }, undefined]),
+    commit: vi.fn().mockResolvedValue(undefined),
+    rollback: vi.fn().mockResolvedValue(undefined),
+    release: vi.fn(),
+  });
+
   // ── GET /v1/owners/:ownerId/profile ────────────────────────────────────────
 
   // ── GET /v1/owners/me/profile ──────────────────────────────────────────────
@@ -130,7 +143,8 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
     it('returns own profile resolved from JWT user id', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
-        .mockResolvedValueOnce([[PROFILE_ROW], undefined]);
+        .mockResolvedValueOnce([[PROFILE_ROW], undefined])
+        .mockResolvedValueOnce([[], undefined]); // fetchEspecialidades → null
 
       const res = await app.inject({
         method: 'GET',
@@ -169,8 +183,10 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
     it('updates own profile and returns 200', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
-        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined])
-        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]);
+
+      const conn = makePatchConn();
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
 
       const res = await app.inject({
         method: 'PATCH',
@@ -222,7 +238,8 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
     it('returns profile with address data for owner — Scenario GET-4', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
-        .mockResolvedValueOnce([[PROFILE_ROW], undefined]);
+        .mockResolvedValueOnce([[PROFILE_ROW], undefined])
+        .mockResolvedValueOnce([[], undefined]); // fetchEspecialidades → null
 
       const res = await app.inject({
         method: 'GET',
@@ -324,8 +341,10 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
     it('updates profile and returns 200 — Scenario PATCH-6', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined])
-        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined])
-        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]);
+
+      const conn = makePatchConn();
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
 
       const res = await app.inject({
         method: 'PATCH',
@@ -337,7 +356,7 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body).success).toBe(true);
 
-      const sqls = (db.execute as Mock).mock.calls.map((c) => c[0] as string);
+      const sqls = (conn.execute as Mock).mock.calls.map((c) => c[0] as string);
       expect(sqls.some((s) => s.includes('UPDATE owner_profiles SET'))).toBe(true);
     });
   });
@@ -426,8 +445,10 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
         .mockResolvedValueOnce([[{ cnt: 2 }], undefined]) // validateSpecialtyCodes
-        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]) // profileRow
-        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]); // profileRow
+
+      const conn = makePatchConn();
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
 
       const res = await app.inject({
         method: 'PATCH',
@@ -438,8 +459,8 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
 
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body).success).toBe(true);
-      const sqls = (db.execute as Mock).mock.calls.map((c) => c[0] as string);
-      expect(sqls.some((s) => s.includes('especialidades = ?'))).toBe(true);
+      const sqls = (conn.execute as Mock).mock.calls.map((c) => c[0] as string);
+      expect(sqls.some((s) => s.includes('owner_specialties'))).toBe(true);
     });
 
     it('rejects invalid specialty codes with 400 — Scenario SP-4', async () => {
@@ -462,8 +483,10 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
         .mockResolvedValueOnce([[{ cnt: 1 }], undefined]) // validateSpecialtyCodes
-        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]) // profileRow
-        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]); // profileRow
+
+      const conn = makePatchConn();
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
 
       const res = await app.inject({
         method: 'PATCH',
@@ -474,6 +497,8 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
 
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body).success).toBe(true);
+      const sqls = (conn.execute as Mock).mock.calls.map((c) => c[0] as string);
+      expect(sqls.some((s) => s.includes('owner_specialties'))).toBe(true);
     });
   });
 });

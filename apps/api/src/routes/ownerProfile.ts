@@ -25,19 +25,6 @@ async function validateSpecialtyCodes(codes: string[]): Promise<boolean> {
   return Number((rows[0] as RowDataPacket).cnt) === codes.length;
 }
 
-function parseEspecialidades(raw: unknown): string[] | null {
-  if (raw === null || raw === undefined) return null;
-  if (Array.isArray(raw)) return raw as string[];
-  if (typeof raw === 'string') {
-    try {
-      return JSON.parse(raw) as string[];
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
-
 const patchSchema = z.object({
   rfc: z.string().max(20).nullable().optional(),
   razonSocial: z.string().max(200).nullable().optional(),
@@ -65,7 +52,7 @@ function buildUpdateFields(data: PatchData): {
     ['neighborhoodId', 'neighborhood_id'],
   ];
 
-  const result = map.reduce<{ fields: string[]; values: (string | number | null)[] }>(
+  return map.reduce<{ fields: string[]; values: (string | number | null)[] }>(
     (acc, [key, col]) => {
       if (data[key] !== undefined) {
         acc.fields.push(`${col} = ?`);
@@ -75,13 +62,6 @@ function buildUpdateFields(data: PatchData): {
     },
     { fields: [], values: [] }
   );
-
-  if (data.especialidades !== undefined) {
-    result.fields.push('especialidades = ?');
-    result.values.push(data.especialidades === null ? null : JSON.stringify(data.especialidades));
-  }
-
-  return result;
 }
 
 const PROFILE_SELECT_SQL = `
@@ -91,7 +71,6 @@ const PROFILE_SELECT_SQL = `
     op.rfc,
     op.razon_social   AS razonSocial,
     op.telefono,
-    op.especialidades,
     op.calle,
     op.numero_exterior AS numeroExt,
     op.numero_interior AS numeroInt,
@@ -111,8 +90,39 @@ const PROFILE_SELECT_SQL = `
   WHERE op.owner_id = ?
   LIMIT 1`;
 
-function hydrateProfile(row: RowDataPacket): RowDataPacket {
-  return { ...row, especialidades: parseEspecialidades(row.especialidades) };
+async function fetchEspecialidades(ownerId: number | string): Promise<string[] | null> {
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT cc.code FROM owner_specialties os
+     JOIN common_catalogs cc ON cc.id = os.catalog_id
+     WHERE os.owner_id = ? ORDER BY cc.id`,
+    [ownerId]
+  );
+  return rows.length > 0 ? rows.map((r) => r.code as string) : null;
+}
+
+function hydrateProfile(row: RowDataPacket, especialidades: string[] | null): RowDataPacket {
+  return { ...row, especialidades };
+}
+
+async function applySpecialtiesUpdate(
+  conn: Awaited<ReturnType<typeof db.getConnection>>,
+  ownerId: number | string,
+  codes: string[] | null
+): Promise<void> {
+  await conn.execute<ResultSetHeader>('DELETE FROM owner_specialties WHERE owner_id = ?', [
+    ownerId,
+  ]);
+  if (codes && codes.length > 0) {
+    await Promise.all(
+      codes.map((code) =>
+        conn.execute<ResultSetHeader>(
+          `INSERT INTO owner_specialties (owner_id, catalog_id)
+           SELECT ?, id FROM common_catalogs WHERE category = 'SPECIALTY' AND code = ? LIMIT 1`,
+          [ownerId, code]
+        )
+      )
+    );
+  }
 }
 
 export default async function ownerProfileRoutes(fastify: FastifyInstance): Promise<void> {
@@ -169,7 +179,8 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       if (rows.length === 0) {
         return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
       }
-      return reply.send({ success: true, data: hydrateProfile(rows[0]) });
+      const especialidades = await fetchEspecialidades(ownerIds[0]);
+      return reply.send({ success: true, data: hydrateProfile(rows[0], especialidades) });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ success: false, code: 'PROFILE_FETCH_FAIL' });
@@ -202,6 +213,11 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       return reply.code(400).send({ success: false, code: 'INVALID_SPECIALTY_CODES' });
     }
     const ownerId = ownerIds[0];
+    const { fields, values } = buildUpdateFields(parsed.data);
+    const hasSpecialtiesUpdate = parsed.data.especialidades !== undefined;
+    if (fields.length === 0 && !hasSpecialtiesUpdate) {
+      return reply.code(400).send({ success: false, code: 'NO_FIELDS_TO_UPDATE' });
+    }
     try {
       const [profileRows] = await db.execute<RowDataPacket[]>(
         'SELECT op.id, o.owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id WHERE op.owner_id = ? LIMIT 1',
@@ -219,16 +235,27 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       ) {
         return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
       }
-      const { fields, values } = buildUpdateFields(parsed.data);
-      if (fields.length === 0) {
-        return reply.code(400).send({ success: false, code: 'NO_FIELDS_TO_UPDATE' });
+      const conn = await db.getConnection();
+      try {
+        await conn.beginTransaction();
+        if (fields.length > 0) {
+          values.push(String(ownerId));
+          await conn.execute<ResultSetHeader>(
+            `UPDATE owner_profiles SET ${fields.join(', ')} WHERE owner_id = ?`,
+            values
+          );
+        }
+        if (hasSpecialtiesUpdate) {
+          await applySpecialtiesUpdate(conn, ownerId, parsed.data.especialidades ?? null);
+        }
+        await conn.commit();
+        return reply.send({ success: true });
+      } catch (e) {
+        await conn.rollback();
+        throw e;
+      } finally {
+        conn.release();
       }
-      values.push(String(ownerId));
-      await db.execute<ResultSetHeader>(
-        `UPDATE owner_profiles SET ${fields.join(', ')} WHERE owner_id = ?`,
-        values
-      );
-      return reply.send({ success: true });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ success: false, code: 'PROFILE_UPDATE_FAIL' });
@@ -258,7 +285,8 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       if (rows.length === 0) {
         return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
       }
-      return reply.send({ success: true, data: hydrateProfile(rows[0]) });
+      const especialidades = await fetchEspecialidades(ownerId);
+      return reply.send({ success: true, data: hydrateProfile(rows[0], especialidades) });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ success: false, code: 'PROFILE_FETCH_FAIL' });
@@ -298,6 +326,12 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
       return reply.code(400).send({ success: false, code: 'INVALID_SPECIALTY_CODES' });
     }
 
+    const { fields, values } = buildUpdateFields(parsed.data);
+    const hasSpecialtiesUpdate = parsed.data.especialidades !== undefined;
+    if (fields.length === 0 && !hasSpecialtiesUpdate) {
+      return reply.code(400).send({ success: false, code: 'NO_FIELDS_TO_UPDATE' });
+    }
+
     try {
       const [profileRows] = await db.execute<RowDataPacket[]>(
         'SELECT op.id, o.owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id WHERE op.owner_id = ? LIMIT 1',
@@ -319,19 +353,27 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
         return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
       }
 
-      const { fields, values } = buildUpdateFields(parsed.data);
-
-      if (fields.length === 0) {
-        return reply.code(400).send({ success: false, code: 'NO_FIELDS_TO_UPDATE' });
+      const conn = await db.getConnection();
+      try {
+        await conn.beginTransaction();
+        if (fields.length > 0) {
+          values.push(ownerId);
+          await conn.execute<ResultSetHeader>(
+            `UPDATE owner_profiles SET ${fields.join(', ')} WHERE owner_id = ?`,
+            values
+          );
+        }
+        if (hasSpecialtiesUpdate) {
+          await applySpecialtiesUpdate(conn, ownerId, parsed.data.especialidades ?? null);
+        }
+        await conn.commit();
+        return reply.send({ success: true });
+      } catch (e) {
+        await conn.rollback();
+        throw e;
+      } finally {
+        conn.release();
       }
-
-      values.push(ownerId);
-      await db.execute<ResultSetHeader>(
-        `UPDATE owner_profiles SET ${fields.join(', ')} WHERE owner_id = ?`,
-        values
-      );
-
-      return reply.send({ success: true });
     } catch (e) {
       fastify.log.error(e);
       return reply.code(500).send({ success: false, code: 'PROFILE_UPDATE_FAIL' });

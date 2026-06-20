@@ -42,7 +42,7 @@ const profileSchema = z
     rfc: z.string().min(1).max(20).optional(),
     razon_social: z.string().optional(),
     telefono: z.string().optional(),
-    especialidades: z.string().optional(),
+    especialidades: z.array(z.string().max(20)).max(19).optional(),
   })
   .optional();
 
@@ -117,19 +117,29 @@ async function createOwnerWithUser(
 
   if (profile) {
     await connection.execute<ResultSetHeader>(
-      'INSERT INTO owner_profiles (owner_id, rfc, razon_social, telefono, especialidades, calle, numero_exterior, numero_interior, neighborhood_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO owner_profiles (owner_id, rfc, razon_social, telefono, calle, numero_exterior, numero_interior, neighborhood_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         ownerId,
         profile.rfc || null,
         profile.razon_social || null,
         profile.telefono || null,
-        roleId === 3 ? profile.especialidades || null : null,
         address?.calle || null,
         address?.numeroExt || null,
         address?.numeroInt || null,
         address?.neighborhoodId || null,
       ]
     );
+    if (roleId === 3 && profile.especialidades && profile.especialidades.length > 0) {
+      await Promise.all(
+        profile.especialidades.map((code) =>
+          connection.execute<ResultSetHeader>(
+            `INSERT IGNORE INTO owner_specialties (owner_id, catalog_id)
+             SELECT ?, id FROM common_catalogs WHERE category = 'SPECIALTY' AND code = ? LIMIT 1`,
+            [ownerId, code]
+          )
+        )
+      );
+    }
   }
 
   if (roleId === 1 && areas && areas.length > 0) {
@@ -355,7 +365,10 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
            op.rfc,
            op.razon_social,
            op.telefono,
-           op.especialidades
+           (SELECT JSON_ARRAYAGG(cc.code)
+            FROM owner_specialties os
+            JOIN common_catalogs cc ON cc.id = os.catalog_id
+            WHERE os.owner_id = o.id) AS especialidades
          FROM owners o
          JOIN user_owner_membership m ON m.owner_id = o.id
          JOIN users u ON u.id = m.user_id

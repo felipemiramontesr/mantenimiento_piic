@@ -220,6 +220,7 @@ describe('Onboarding Routes — Multiverso Archon', () => {
     it('UNI-7: returns 201 and creates VIM universe (roleId=3)', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
       const conn = makeConn();
+      conn.execute.mockResolvedValueOnce([{ affectedRows: 0 }, undefined]); // INSERT owner_specialties
       vi.mocked(db).getConnection.mockResolvedValueOnce(conn);
 
       const res = await app.inject({
@@ -230,7 +231,7 @@ describe('Onboarding Routes — Multiverso Archon', () => {
           ...VALID_UNIVERSE_BODY,
           username: 'centro.vim',
           roleId: 3,
-          profile: { rfc: 'CENT123456ABC', especialidades: 'Cardio' },
+          profile: { rfc: 'CENT123456ABC', especialidades: ['MOTOR'] },
         },
       });
 
@@ -526,7 +527,7 @@ describe('GET /v1/onboarding/universes', () => {
         rfc: 'TAL987654XYZ',
         razon_social: 'Taller Centro SC',
         telefono: null,
-        especialidades: 'Motor,Frenos',
+        especialidades: '["MOTOR","FRENOS"]',
       },
     ];
     (db.execute as Mock).mockResolvedValueOnce([mockRows, undefined]);

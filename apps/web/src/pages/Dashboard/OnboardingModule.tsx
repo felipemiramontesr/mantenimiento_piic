@@ -217,8 +217,7 @@ const UniverseForm: React.FC = (): React.ReactElement => {
       const profile: Record<string, unknown> = { rfc: form.rfc };
       if (form.razonSocial) profile.razon_social = form.razonSocial;
       if (form.telefono) profile.telefono = form.telefono;
-      if (tab === 'VIM' && especialidades.length > 0)
-        profile.especialidades = especialidades.join(',');
+      if (tab === 'VIM' && especialidades.length > 0) profile.especialidades = especialidades;
 
       const address = addressValue.neighborhoodId
         ? {
