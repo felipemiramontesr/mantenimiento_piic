@@ -340,4 +340,49 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       );
     });
   });
+
+  describe('getUserOwnerIds — §14 Cosmic Cascade', () => {
+    it('SC1: CENTER owner sees its direct owner + linked PRIVATE + Cúmulos', async () => {
+      vi.mocked(db.execute).mockResolvedValueOnce([
+        [{ id: 9042 }, { id: 9043 }, { id: 9044 }, { id: 9045 }],
+      ] as any);
+      const result = await FleetService.getUserOwnerIds(1);
+      expect(result).toEqual([9042, 9043, 9044, 9045]);
+      expect(db.execute).toHaveBeenCalledWith(
+        expect.stringContaining('owner_service_links'),
+        [1, 1, 1]
+      );
+    });
+
+    it('SC2: PRIVATE owner with no linked children returns only its own id', async () => {
+      vi.mocked(db.execute).mockResolvedValueOnce([[{ id: 9043 }]] as any);
+      const result = await FleetService.getUserOwnerIds(22);
+      expect(result).toEqual([9043]);
+    });
+
+    it('SC3: CENTER with no linked owners returns only its own id (no cross-universe leak)', async () => {
+      vi.mocked(db.execute).mockResolvedValueOnce([[{ id: 5001 }]] as any);
+      const result = await FleetService.getUserOwnerIds(99);
+      expect(result).toEqual([5001]);
+    });
+
+    it('SC4: user with no membership returns empty array (deny-by-default)', async () => {
+      vi.mocked(db.execute).mockResolvedValueOnce([[]] as any);
+      const result = await FleetService.getUserOwnerIds(999);
+      expect(result).toEqual([]);
+    });
+
+    it('SC5: query passes userId for all 3 cascade levels', async () => {
+      vi.mocked(db.execute).mockResolvedValueOnce([[{ id: 1 }]] as any);
+      await FleetService.getUserOwnerIds(42);
+      expect(db.execute).toHaveBeenCalledWith(expect.any(String), [42, 42, 42]);
+    });
+
+    it('SC6: query includes parent_owner_id join for Cúmulo level', async () => {
+      vi.mocked(db.execute).mockResolvedValueOnce([[]] as any);
+      await FleetService.getUserOwnerIds(1);
+      const [query] = vi.mocked(db.execute).mock.calls[0] as unknown as [string, unknown[]];
+      expect(query).toContain('parent_owner_id');
+    });
+  });
 });

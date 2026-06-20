@@ -114,7 +114,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
   describe('GET /v1/fleet — scoped list (S1)', () => {
     it('returns only units of the linked owners and filters the SQL by ownerId', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_AS }], undefined]) // owners lookup
+        .mockResolvedValueOnce([[{ id: OWNER_AS }], undefined]) // owners lookup (§14 cascade — alias id)
         .mockResolvedValueOnce([[scopedUnit], undefined]) // scoped fleet query
         .mockResolvedValueOnce([[], undefined]) // KPI MTTR
         .mockResolvedValueOnce([[], undefined]) // KPI MTBF
@@ -132,9 +132,9 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
       expect(body.data[0].id).toBe('ASM-001');
 
       const { calls } = (db.execute as Mock).mock;
-      // 1st query resolves the user's owners
+      // 1st query resolves the user's owners via §14 cascade (3x userId for 3 UNION levels)
       expect(calls[0][0]).toContain('user_owner_membership');
-      expect(calls[0][1]).toEqual([CLIENT_USER_ID]);
+      expect(calls[0][1]).toEqual([CLIENT_USER_ID, CLIENT_USER_ID, CLIENT_USER_ID]);
       // 2nd query is the fleet list filtered by those owners
       expect(calls[1][0]).toContain('f.ownerId IN');
       expect(calls[1][1]).toEqual([OWNER_AS]);
@@ -163,7 +163,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
   describe('GET /v1/fleet/:id — anti-IDOR guard (S2)', () => {
     it('returns 404 when the unit belongs to another owner', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_AS }], undefined]) // owners lookup
+        .mockResolvedValueOnce([[{ id: OWNER_AS }], undefined]) // owners lookup (§14 cascade)
         .mockResolvedValueOnce([[], undefined]); // unit query scoped → no row
 
       const response = await app.inject({
@@ -194,7 +194,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
 
     it('returns 200 when the unit belongs to a linked owner', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_AS }], undefined]) // owners lookup
+        .mockResolvedValueOnce([[{ id: OWNER_AS }], undefined]) // owners lookup
         .mockResolvedValueOnce([[scopedUnit], undefined]) // unit query scoped → row
         .mockResolvedValueOnce([[], undefined]) // KPI MTTR
         .mockResolvedValueOnce([[], undefined]) // KPI MTBF
@@ -236,7 +236,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
 
     it('allows PATCH on owned unit with fleet:write:scoped (anti-IDOR pass)', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_AS }], undefined]) // owners lookup
+        .mockResolvedValueOnce([[{ id: OWNER_AS }], undefined]) // owners lookup
         .mockResolvedValueOnce([[scopedUnit], undefined]) // getUnitById scoped → found
         .mockResolvedValueOnce([[], undefined]); // KPIs for getUnitById (MTTR)
 
@@ -266,7 +266,7 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
 
     it('returns 404 when scoped writer targets a foreign unit (anti-IDOR block)', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ owner_id: OWNER_AS }], undefined]) // owners lookup
+        .mockResolvedValueOnce([[{ id: OWNER_AS }], undefined]) // owners lookup
         .mockResolvedValueOnce([[], undefined]); // getUnitById scoped → not found
 
       const response = await app.inject({

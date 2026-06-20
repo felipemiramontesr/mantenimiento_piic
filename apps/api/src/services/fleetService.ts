@@ -69,15 +69,30 @@ const FLEET_UNIT_ALLOWED_COLUMNS = new Set<string>([
  */
 export default class FleetService {
   /**
-   * Resolves the owner ids linked to a user through user_owner_membership.
+   * Resolves the full cosmological owner scope for a user (§14 cascade):
+   *   Nivel 0 — direct owner via user_owner_membership
+   *   Nivel 1 — Supercúmulos (PRIVATE linked to CENTER via owner_service_links)
+   *   Nivel 2 — Cúmulos (children of PRIVATE via owners.parent_owner_id)
+   * Isolation is guaranteed per universe: a CENTER only sees its own linked owners.
    * Empty array = deny-by-default.
    */
   static async getUserOwnerIds(userId: number): Promise<number[]> {
     const [rows] = await db.execute<RowDataPacket[]>(
-      'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
-      [userId]
+      `SELECT uom.owner_id AS id FROM user_owner_membership uom WHERE uom.user_id = ?
+       UNION
+       SELECT osl.privado_owner_id AS id
+         FROM user_owner_membership uom
+         JOIN owner_service_links osl ON osl.centro_owner_id = uom.owner_id
+        WHERE uom.user_id = ?
+       UNION
+       SELECT o.id
+         FROM user_owner_membership uom
+         JOIN owner_service_links osl ON osl.centro_owner_id = uom.owner_id
+         JOIN owners o ON o.parent_owner_id = osl.privado_owner_id
+        WHERE uom.user_id = ?`,
+      [userId, userId, userId]
     );
-    return rows.map((r) => r.owner_id as number);
+    return rows.map((r) => r.id as number);
   }
 
   /**
