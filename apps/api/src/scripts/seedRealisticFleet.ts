@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-syntax, no-await-in-loop */
 import dotenv from 'dotenv';
 import path from 'path';
 import { hash as argon2Hash } from '@node-rs/argon2';
