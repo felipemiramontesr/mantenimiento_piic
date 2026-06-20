@@ -8,6 +8,7 @@ import EncryptionService from '../services/encryption';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 import FleetService from '../services/fleetService';
+import { resolveUniqueHandle } from '../utils/ownerHandle';
 
 type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE';
 
@@ -102,9 +103,10 @@ async function createOwnerWithUser(
     "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
     [ownerId, `OWN_U${userId}`, ownerLabel]
   );
+  const handle = await resolveUniqueHandle(connection, suite, profile?.rfc, username);
   await connection.execute<ResultSetHeader>(
-    'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id) VALUES (?, ?, ?, ?, ?)',
-    [ownerId, ownerType, suite, ownerLabel, parentOwnerId ?? null]
+    'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, ?, ?)',
+    [ownerId, ownerType, suite, ownerLabel, parentOwnerId ?? null, handle]
   );
   await connection.execute<ResultSetHeader>(
     'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',

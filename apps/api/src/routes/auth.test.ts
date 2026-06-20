@@ -99,6 +99,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
       .mockResolvedValueOnce([[], undefined]) // owner label check → not exists
       .mockResolvedValueOnce([[{ nextId: 400 }], undefined]) // MAX(id)+1
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (CENTER)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
       .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owner_profiles
@@ -143,6 +144,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
       .mockResolvedValueOnce([[], undefined]) // owner label check → not exists
       .mockResolvedValueOnce([[{ nextId: 500 }], undefined]) // MAX(id)+1
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (FLOTILLA)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT areas[0]
@@ -178,8 +180,9 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
       .mockResolvedValueOnce([{ insertId: 61 }, undefined])
       .mockResolvedValueOnce([[], undefined])
       .mockResolvedValueOnce([[{ nextId: 501 }], undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners
       .mockResolvedValue([{ affectedRows: 1 }, undefined]);
 
     const res = await app.inject({
@@ -232,6 +235,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
       .mockResolvedValueOnce([[], undefined]) // owner label check → not exists
       .mockResolvedValueOnce([[{ nextId: 600 }], undefined]) // MAX(id)+1
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (FLOTILLA)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
       .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owner_profiles
@@ -269,6 +273,7 @@ describe('POST /v1/auth/register — Fase 3 (owner_profiles + areas)', () => {
       .mockResolvedValueOnce([[], undefined]) // owner label check
       .mockResolvedValueOnce([[{ nextId: 700 }], undefined]) // MAX(id)+1
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (PRIVATE)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
       .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owner_profiles

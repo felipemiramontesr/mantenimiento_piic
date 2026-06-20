@@ -252,6 +252,7 @@ describe('User Fleet-Owner Links (A3)', () => {
         .mockResolvedValueOnce([[], undefined]) // owners lookup by label → none
         .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1 from common_catalogs
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+        .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners
         .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT user_owner_membership
 
@@ -272,7 +273,7 @@ describe('User Fleet-Owner Links (A3)', () => {
 
       const ownersInsert = calls.find((c) => (c[0] as string).includes('INSERT INTO owners'));
       expect(ownersInsert).toBeDefined();
-      expect(ownersInsert?.[1]).toEqual([1051, 'FLOTILLA', 'ERP', 'Juan Pérez']);
+      expect(ownersInsert?.[1]).toEqual([1051, 'FLOTILLA', 'ERP', 'Juan Pérez', 'ERP-RFCTES']);
 
       const membershipInsert = calls.find((c) =>
         (c[0] as string).includes('user_owner_membership')

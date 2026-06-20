@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { hash as argon2Hash } from '@node-rs/argon2';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { deriveOwnerHandle } from '../utils/ownerHandle';
 
 dotenv.config({ path: path.join(__dirname, '../../../../.env') });
 
@@ -284,8 +285,8 @@ async function runSeed(): Promise<void> {
     await Promise.all(
       SUPERCUMULOS.map((sc, idx) =>
         conn.execute<ResultSetHeader>(
-          'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id) VALUES (?, ?, ?, ?, NULL)',
-          [ownerIds[idx], 'PRIVATE', 'VIM', sc.label]
+          'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, NULL, ?)',
+          [ownerIds[idx], 'PRIVATE', 'VIM', sc.label, deriveOwnerHandle('VIM', sc.rfc, sc.username)]
         )
       )
     );

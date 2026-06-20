@@ -10,6 +10,7 @@ import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 import FleetService from '../services/fleetService';
+import { resolveUniqueHandle } from '../utils/ownerHandle';
 
 const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
   const { id, permissions } = request.user as { id: number; permissions?: string[] };
@@ -38,7 +39,9 @@ async function resolveOwnerRow(
   connection: PoolConnection,
   userId: number,
   ownerLabel: string,
-  ownerType: OwnerType
+  ownerType: OwnerType,
+  rfc?: string | null,
+  username?: string
 ): Promise<number> {
   const [existing] = await connection.execute<RowDataPacket[]>(
     'SELECT id FROM owners WHERE label = ? LIMIT 1',
@@ -56,9 +59,10 @@ async function resolveOwnerRow(
     [ownerId, `OWN_U${userId}`, ownerLabel]
   );
   const suite: 'ERP' | 'VIM' = ownerType === 'FLOTILLA' ? 'ERP' : 'VIM';
+  const handle = await resolveUniqueHandle(connection, suite, rfc, username ?? ownerLabel);
   await connection.execute<ResultSetHeader>(
-    'INSERT INTO owners (id, owner_type, suite, label) VALUES (?, ?, ?, ?)',
-    [ownerId, ownerType, suite, ownerLabel]
+    'INSERT INTO owners (id, owner_type, suite, label, handle) VALUES (?, ?, ?, ?, ?)',
+    [ownerId, ownerType, suite, ownerLabel, handle]
   );
   return ownerId;
 }
@@ -470,7 +474,14 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           else ownerType = 'CENTER';
           const ownerLabel = fullName || username;
 
-          const ownerId = await resolveOwnerRow(connection, userId, ownerLabel, ownerType);
+          const ownerId = await resolveOwnerRow(
+            connection,
+            userId,
+            ownerLabel,
+            ownerType,
+            profile?.rfc,
+            username
+          );
 
           await connection.execute<ResultSetHeader>(
             'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
@@ -775,7 +786,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         }
       }
       const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT uom.owner_id AS ownerId, o.label
+        `SELECT uom.owner_id AS ownerId, o.label, o.handle, o.suite, o.owner_type AS ownerType
          FROM user_owner_membership uom
          JOIN owners o ON o.id = uom.owner_id
          WHERE uom.user_id = ?`,
@@ -954,13 +965,14 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     }
 
     const [ownerRows] = await db.execute<RowDataPacket[]>(
-      'SELECT id, owner_type FROM owners WHERE id = ?',
+      'SELECT id, owner_type, suite FROM owners WHERE id = ?',
       [parentOwnerId]
     );
     if (ownerRows.length === 0) {
       return reply.code(400).send({ error: 'OWNER_NOT_FOUND' });
     }
     const ownerType = ownerRows[0].owner_type as string;
+    const parentSuite = (ownerRows[0].suite as string) ?? 'VIM';
 
     if (roleId === 2 && ownerType !== 'FLOTILLA') {
       return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
@@ -1015,9 +1027,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
               "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
               [newPrivateOwnerId, `OWN_U${newPrivateOwnerId}`, fullName || username]
             );
+            const privateHandle = await resolveUniqueHandle(
+              connection,
+              parentSuite,
+              null,
+              username
+            );
             await connection.execute<ResultSetHeader>(
-              'INSERT INTO owners (id, owner_type, label, parent_owner_id) VALUES (?, ?, ?, ?)',
-              [newPrivateOwnerId, 'PRIVATE', fullName || username, parentOwnerId]
+              'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, ?, ?)',
+              [
+                newPrivateOwnerId,
+                'PRIVATE',
+                parentSuite,
+                fullName || username,
+                parentOwnerId,
+                privateHandle,
+              ]
             );
             membershipOwnerId = newPrivateOwnerId;
           }

@@ -220,12 +220,16 @@ describe('POST /v1/auth/sub-users', () => {
 
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ owner_id: CENTER_OWNER_ID }], undefined]) // callerOwnerIds
-      .mockResolvedValueOnce([[{ id: CENTER_OWNER_ID, owner_type: 'CENTER' }], undefined]) // owner type
+      .mockResolvedValueOnce([
+        [{ id: CENTER_OWNER_ID, owner_type: 'CENTER', suite: 'VIM' }],
+        undefined,
+      ]) // owner type
       .mockResolvedValueOnce([[], undefined]); // username unique
 
     mockConnection.execute
       .mockResolvedValueOnce([[{ nextId: 300 }], undefined]) // MAX(id)+1 FOR UPDATE
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners (PRIVATE)
       .mockResolvedValueOnce([{ insertId: 77 }, undefined]) // INSERT users
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_roles

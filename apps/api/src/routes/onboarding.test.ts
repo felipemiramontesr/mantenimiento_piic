@@ -96,6 +96,7 @@ const makeConn = () => ({
     .mockResolvedValueOnce([{ insertId: 100 }, undefined]) // INSERT users
     .mockResolvedValueOnce([[{ nextId: 200 }], undefined]) // SELECT MAX(id) common_catalogs
     .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+    .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
     .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners
     .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_owner_membership
     .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_roles

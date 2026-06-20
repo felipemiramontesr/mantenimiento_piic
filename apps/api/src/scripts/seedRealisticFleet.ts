@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { hash as argon2Hash } from '@node-rs/argon2';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { deriveOwnerHandle } from '../utils/ownerHandle';
 
 dotenv.config({ path: path.join(__dirname, '../../../../.env') });
 
@@ -103,8 +104,8 @@ async function runFase1C(): Promise<void> {
 
     // ── Paso 4: owners ───────────────────────────────────────────────────────
     await conn.execute<ResultSetHeader>(
-      'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id) VALUES (?, ?, ?, ?, ?)',
-      [ownerId, 'CENTER', 'VIM', 'PIIC', null]
+      'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, ?, ?)',
+      [ownerId, 'CENTER', 'VIM', 'PIIC', null, deriveOwnerHandle('VIM', 'FOBA980115MHN', 'Abacaf')]
     );
 
     // ── Paso 5: user_owner_membership ────────────────────────────────────────

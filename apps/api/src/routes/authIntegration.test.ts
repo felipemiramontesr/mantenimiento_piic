@@ -130,7 +130,9 @@ describe('authIntegration.test', () => {
       .mockResolvedValueOnce([{ insertId: 70 }, undefined]) // INSERT users (inside transaction)
       .mockResolvedValueOnce([[], undefined]) // owner label lookup → none
       .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1
-      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // catalog + owners + membership
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
+      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check → no collision
+      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owners + membership
 
     (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check only
     const r1 = await app.inject({
