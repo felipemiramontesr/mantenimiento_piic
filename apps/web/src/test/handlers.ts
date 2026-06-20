@@ -117,6 +117,13 @@ const handlers = [
   ),
 
   // 🛡️ Identity Handlers
+  http.post('*/auth/refresh', () =>
+    HttpResponse.json({
+      success: true,
+      token: 'mock-refreshed-token',
+    })
+  ),
+
   http.get('*/auth/users', () =>
     HttpResponse.json({
       success: true,
