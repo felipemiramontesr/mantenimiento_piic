@@ -9,6 +9,8 @@ declare module 'fastify' {
       roleId: number;
       roleName: string;
       permissions: string[];
+      suite?: 'VIM' | 'ERP';
+      owner_type?: string;
     };
   }
 }

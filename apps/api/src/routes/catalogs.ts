@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
+import { isCategoryAllowedForSuite } from '../constants/suiteCatalogs';
 
 /**
  * 🔱 ARCHON SOVEREIGN CATALOGS (v.18.0.0)
@@ -27,6 +28,15 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
     ) => {
       const { category } = request.params;
       const { parentId } = request.query;
+
+      const userSuite = (request.user as { suite?: 'VIM' | 'ERP' }).suite;
+      if (userSuite && !isCategoryAllowedForSuite(userSuite, category)) {
+        return reply.code(403).send({
+          success: false,
+          code: 'FORBIDDEN',
+          message: `Category '${category}' is not available for suite ${userSuite}`,
+        });
+      }
 
       try {
         let query =

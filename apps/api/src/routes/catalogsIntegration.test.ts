@@ -126,6 +126,116 @@ describe('Catalogs Integration Endpoints', () => {
     });
   });
 
+  // ── Suite Isolation — FC-2 Subfase 2C (EAL6+ multi-tenant) ─────────────
+
+  describe('Suite Isolation — FC-2 Subfase 2C', () => {
+    let vimToken: string;
+    let erpToken: string;
+
+    beforeAll(() => {
+      vimToken = app.jwt.sign({
+        id: 2,
+        username: 'vim_user',
+        roleId: 4,
+        roleName: 'Owner',
+        permissions: ['fleet:view'],
+        suite: 'VIM',
+      });
+      erpToken = app.jwt.sign({
+        id: 3,
+        username: 'erp_user',
+        roleId: 2,
+        roleName: 'Fleet',
+        permissions: ['fleet:view'],
+        suite: 'ERP',
+      });
+    });
+
+    // SC2C-1: VIM accede a categoría exclusiva VIM
+    it('SC2C-1: VIM user can access SPECIALTY (VIM-exclusive) — 200', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/SPECIALTY',
+        headers: { authorization: `Bearer ${vimToken}` },
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    // SC2C-2: ERP bloqueado de categoría exclusiva VIM
+    it('SC2C-2: ERP user is blocked from SPECIALTY — 403 FORBIDDEN', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/SPECIALTY',
+        headers: { authorization: `Bearer ${erpToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.code).toBe('FORBIDDEN');
+    });
+
+    // SC2C-3: ERP accede a categoría exclusiva ERP
+    it('SC2C-3: ERP user can access FLEET_AREA (ERP-exclusive) — 200', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/FLEET_AREA',
+        headers: { authorization: `Bearer ${erpToken}` },
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    // SC2C-4: VIM bloqueado de categoría exclusiva ERP
+    it('SC2C-4: VIM user is blocked from FLEET_AREA — 403 FORBIDDEN', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/FLEET_AREA',
+        headers: { authorization: `Bearer ${vimToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.code).toBe('FORBIDDEN');
+    });
+
+    // SC2C-5: categoría compartida accesible por ambas suites
+    it('SC2C-5: ASSET_TYPE accessible by both VIM and ERP suites', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+      const res1 = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/ASSET_TYPE',
+        headers: { authorization: `Bearer ${vimToken}` },
+      });
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+      const res2 = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/ASSET_TYPE',
+        headers: { authorization: `Bearer ${erpToken}` },
+      });
+      expect(res1.statusCode).toBe(200);
+      expect(res2.statusCode).toBe(200);
+    });
+
+    // SC2C-6: admin sin suite no es restringido (bypass)
+    it('SC2C-6: admin without suite can access SPECIALTY and FLEET_AREA', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+      const res1 = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/SPECIALTY',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+      const res2 = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/FLEET_AREA',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(res1.statusCode).toBe(200);
+      expect(res2.statusCode).toBe(200);
+    });
+  });
+
   // ── Scenario 7 — GET /v1/catalogs/centers ────────────────────────────────
 
   describe('GET /v1/catalogs/centers — Scenario 7', () => {
