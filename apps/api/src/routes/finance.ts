@@ -16,7 +16,7 @@ const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | nu
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-const FINANCE_CATEGORY_ENUM = [
+export const FINANCE_CATEGORY_ENUM = [
   'LEASE',
   'INSURANCE',
   'MAINTENANCE',
@@ -24,6 +24,8 @@ const FINANCE_CATEGORY_ENUM = [
   'TIRE',
   'FINE',
   'REPAIR',
+  'TENENCIA',
+  'VERIFICACION',
   'OTHER',
 ] as const;
 
@@ -422,13 +424,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
             .send({ success: false, code: 'NOT_FOUND', message: 'Unidad no encontrada' });
         }
         if (ownerScope !== null && !ownerScope.includes(unitCheck[0].ownerId)) {
-          return reply
-            .code(403)
-            .send({
-              success: false,
-              code: 'FORBIDDEN',
-              message: 'Unidad fuera de los propietarios permitidos',
-            });
+          return reply.code(403).send({
+            success: false,
+            code: 'FORBIDDEN',
+            message: 'Unidad fuera de los propietarios permitidos',
+          });
         }
 
         await db.execute<ResultSetHeader>(

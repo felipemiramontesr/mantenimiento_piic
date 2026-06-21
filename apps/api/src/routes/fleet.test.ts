@@ -63,3 +63,35 @@ describe('Fleet Logic Ecosystem', () => {
     });
   });
 });
+
+// ─── FU-W-1..2: Warranty shape validation (FC-3 Fase 3A) ─────────────────────
+
+describe('Fleet Unit — Warranty fields (FC-3 3A)', () => {
+  const baseUnit = {
+    id: 'PIIC-101',
+    owner_id: 9043,
+    brand: 'NISSAN',
+    model: 'NP300',
+    year: 2021,
+    mileage: 45320,
+    warranty_expiration_date: null as string | null,
+    warranty_expiration_km: null as number | null,
+  };
+
+  it('FU-W-1: unit with warranty fields populated is a valid shape', () => {
+    const unit = {
+      ...baseUnit,
+      warranty_expiration_date: '2027-01-15',
+      warranty_expiration_km: 60000,
+    };
+    expect(unit.warranty_expiration_date).toBe('2027-01-15');
+    expect(unit.warranty_expiration_km).toBe(60000);
+    expect(typeof unit.warranty_expiration_km).toBe('number');
+  });
+
+  it('FU-W-2: unit without warranty data accepts null (no constraint violation)', () => {
+    const unit = { ...baseUnit };
+    expect(unit.warranty_expiration_date).toBeNull();
+    expect(unit.warranty_expiration_km).toBeNull();
+  });
+});

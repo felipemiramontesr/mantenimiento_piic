@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { describe, it, expect } from 'vitest';
-import { computePeriod, buildCsvRow } from './finance';
+import { computePeriod, buildCsvRow, FINANCE_CATEGORY_ENUM } from './finance';
 
 // ─── computePeriod ────────────────────────────────────────────────────────────
 
@@ -94,5 +94,33 @@ describe('buildCsvRow', () => {
     const tx = { ...baseTx, amount: 0 };
     const row = buildCsvRow(tx);
     expect(row).toContain('0');
+  });
+});
+
+// ─── FT-VIM-1..2: VIM Category ENUM (FC-3 Fase 3A) ──────────────────────────
+
+describe('FINANCE_CATEGORY_ENUM — VIM categories', () => {
+  it('FT-VIM-1: includes TENENCIA for Mexican vehicle tax expenses', () => {
+    expect(FINANCE_CATEGORY_ENUM).toContain('TENENCIA');
+  });
+
+  it('FT-VIM-2: includes VERIFICACION for Mexican vehicle inspection expenses', () => {
+    expect(FINANCE_CATEGORY_ENUM).toContain('VERIFICACION');
+  });
+
+  it('FT-VIM-3: preserves all pre-existing ERP categories', () => {
+    const erpCategories = [
+      'LEASE',
+      'INSURANCE',
+      'MAINTENANCE',
+      'FUEL',
+      'TIRE',
+      'FINE',
+      'REPAIR',
+      'OTHER',
+    ];
+    erpCategories.forEach((cat) => {
+      expect(FINANCE_CATEGORY_ENUM).toContain(cat);
+    });
   });
 });
