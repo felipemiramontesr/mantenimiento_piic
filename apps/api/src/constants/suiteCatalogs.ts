@@ -70,3 +70,14 @@ export const SUITE_CATALOG_CATEGORIES: Record<Suite, ReadonlySet<string>> = {
 export function isCategoryAllowedForSuite(suite: Suite, category: string): boolean {
   return SUITE_CATALOG_CATEGORIES[suite].has(category);
 }
+
+// Categories that belong exclusively to one suite and must be blocked for the other.
+// Categories absent from both suites (e.g. ENVIRONMENTAL_HOLOGRAM) are NOT blocked.
+export const SUITE_EXCLUSIVE: Record<Suite, ReadonlySet<string>> = {
+  VIM: new Set<string>(['SPECIALTY']),
+  ERP: new Set<string>(['FLEET_AREA']),
+};
+
+export function isCategoryExclusiveToSuite(suite: Suite, category: string): boolean {
+  return SUITE_EXCLUSIVE[suite].has(category);
+}

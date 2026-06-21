@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isCategoryAllowedForSuite, SUITE_CATALOG_CATEGORIES } from './suiteCatalogs';
+import {
+  isCategoryAllowedForSuite,
+  isCategoryExclusiveToSuite,
+  SUITE_CATALOG_CATEGORIES,
+  SUITE_EXCLUSIVE,
+} from './suiteCatalogs';
 
 describe('suiteCatalogs — FC-2 Subfase 2B (BDD)', () => {
   // SCM-1: SPECIALTY es exclusivo de VIM
@@ -52,6 +57,32 @@ describe('suiteCatalogs — FC-2 Subfase 2B (BDD)', () => {
   it('SCM-7: USER_ROLE no es una categoría de catálogo de UI', () => {
     expect(isCategoryAllowedForSuite('VIM', 'USER_ROLE')).toBe(false);
     expect(isCategoryAllowedForSuite('ERP', 'USER_ROLE')).toBe(false);
+  });
+
+  // SCM-8: SUITE_EXCLUSIVE contiene solo las categorías verdaderamente exclusivas
+  it('SCM-8: SUITE_EXCLUSIVE.VIM contiene únicamente SPECIALTY', () => {
+    expect(SUITE_EXCLUSIVE.VIM.has('SPECIALTY')).toBe(true);
+    expect(SUITE_EXCLUSIVE.VIM.has('FLEET_AREA')).toBe(false);
+    expect(SUITE_EXCLUSIVE.VIM.size).toBe(1);
+  });
+
+  it('SCM-9: SUITE_EXCLUSIVE.ERP contiene únicamente FLEET_AREA', () => {
+    expect(SUITE_EXCLUSIVE.ERP.has('FLEET_AREA')).toBe(true);
+    expect(SUITE_EXCLUSIVE.ERP.has('SPECIALTY')).toBe(false);
+    expect(SUITE_EXCLUSIVE.ERP.size).toBe(1);
+  });
+
+  it('SCM-10: isCategoryExclusiveToSuite identifica exclusivos correctamente', () => {
+    expect(isCategoryExclusiveToSuite('VIM', 'SPECIALTY')).toBe(true);
+    expect(isCategoryExclusiveToSuite('ERP', 'FLEET_AREA')).toBe(true);
+    expect(isCategoryExclusiveToSuite('VIM', 'FLEET_AREA')).toBe(false);
+    expect(isCategoryExclusiveToSuite('ERP', 'SPECIALTY')).toBe(false);
+    expect(isCategoryExclusiveToSuite('VIM', 'ASSET_TYPE')).toBe(false);
+  });
+
+  it('SCM-11: categorías no mapeadas (ENVIRONMENTAL_HOLOGRAM) no son exclusivas de ningún suite', () => {
+    expect(isCategoryExclusiveToSuite('VIM', 'ENVIRONMENTAL_HOLOGRAM')).toBe(false);
+    expect(isCategoryExclusiveToSuite('ERP', 'ENVIRONMENTAL_HOLOGRAM')).toBe(false);
   });
 
   // Gherkin BDD scenarios from FC-2
