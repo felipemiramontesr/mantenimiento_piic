@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../../../test/testUtils';
 import api from '../../../api/client';
+import { useCheckpoints } from '../../../hooks/useCheckpoints';
 import RouteNode from './RouteNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
+vi.mock('../../../hooks/useCheckpoints', () => ({
+  useCheckpoints: vi.fn(() => ({ data: [], loading: false, error: null })),
+}));
 const mockParams = vi.hoisted(() => ({ uuid: 'route-uuid-001' as string | undefined }));
 
 vi.mock('react-router-dom', async (): Promise<unknown> => {
@@ -288,6 +292,68 @@ describe('RouteNode', () => {
     render(<RouteNode />);
     expect(screen.getByText('Cargando…')).toBeInTheDocument();
     expect(vi.mocked(api.get)).not.toHaveBeenCalled();
+  });
+
+  // ── FC-4 Fase 4C: Checkpoint visualization (CHK-VIEW-1..3) ──────────────────
+  describe('Checkpoint Visualization (FC-4 Fase 4C)', () => {
+    const CHECKPOINTS_FIXTURE = [
+      {
+        id: 1,
+        movement_id: 10,
+        sequence: 1,
+        name: 'Punto Norte',
+        neighborhood_id: null,
+        eta: null,
+        arrived_at: '2026-06-01T10:00:00.000Z',
+        status: 'VISITED' as const,
+        created_at: '2026-06-01T07:00:00.000Z',
+      },
+      {
+        id: 2,
+        movement_id: 10,
+        sequence: 2,
+        name: 'Mina Sur',
+        neighborhood_id: 42,
+        eta: '2026-06-01T12:00:00.000Z',
+        arrived_at: null,
+        status: 'PENDING' as const,
+        created_at: '2026-06-01T07:00:00.000Z',
+      },
+    ];
+
+    it('CHK-VIEW-1: renders checkpoints section with progress counter when checkpoints exist', async () => {
+      vi.mocked(useCheckpoints).mockReturnValue({
+        data: CHECKPOINTS_FIXTURE,
+        loading: false,
+        error: null,
+      });
+      render(<RouteNode />);
+      await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+      expect(screen.getByText('Waypoints (1/2)')).toBeInTheDocument();
+      expect(screen.getByText('Punto Norte')).toBeInTheDocument();
+      expect(screen.getByText('Mina Sur')).toBeInTheDocument();
+    });
+
+    it('CHK-VIEW-2: hides checkpoints section when array is empty', async () => {
+      vi.mocked(useCheckpoints).mockReturnValue({ data: [], loading: false, error: null });
+      render(<RouteNode />);
+      await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+      expect(screen.queryByText(/Waypoints/)).toBeNull();
+    });
+
+    it('CHK-VIEW-3: VISITED badge is emerald, PENDING badge is slate', async () => {
+      vi.mocked(useCheckpoints).mockReturnValue({
+        data: CHECKPOINTS_FIXTURE,
+        loading: false,
+        error: null,
+      });
+      render(<RouteNode />);
+      await waitFor(() => expect(screen.getByText('Waypoints (1/2)')).toBeInTheDocument());
+      const visitedBadge = screen.getByText('Visitado');
+      const pendingBadge = screen.getByText('Pendiente');
+      expect(visitedBadge.className).toContain('emerald');
+      expect(pendingBadge.className).toContain('slate');
+    });
   });
 
   it('renders unknown incident severity and category as raw values in incident list', async () => {

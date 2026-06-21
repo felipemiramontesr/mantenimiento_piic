@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Map, Truck, Fuel, AlertTriangle, ExternalLink, ChevronLeft } from 'lucide-react';
+import { Map, Truck, Fuel, AlertTriangle, ExternalLink, ChevronLeft, Flag } from 'lucide-react';
 import api from '../../../api/client';
 import { useSovereignLayout } from '../../../context/SovereignLayoutContext';
 import AT from '../../../styles/archonTypography';
+import { useCheckpoints } from '../../../hooks/useCheckpoints';
 import {
   InfoRow,
   SectionCard,
@@ -66,6 +67,18 @@ interface NodeData {
   incidents: IncidentRecord[];
 }
 
+const CHECKPOINT_STATUS_BADGE: Record<string, string> = {
+  VISITED: 'bg-emerald-100 text-emerald-700',
+  PENDING: 'bg-slate-100 text-slate-500',
+  SKIPPED: 'bg-amber-100 text-amber-700',
+};
+
+const CHECKPOINT_STATUS_LABEL: Record<string, string> = {
+  VISITED: 'Visitado',
+  PENDING: 'Pendiente',
+  SKIPPED: 'Omitido',
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const RouteNode: React.FC = (): React.JSX.Element => {
@@ -75,6 +88,7 @@ const RouteNode: React.FC = (): React.JSX.Element => {
   const [node, setNode] = useState<NodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { data: checkpoints } = useCheckpoints(uuid ?? null);
 
   useEffect(() => {
     setSectionData(uuid ?? 'Ruta', 'Detalle de despacho · Telemetría · Incidentes', null, {
@@ -232,6 +246,42 @@ const RouteNode: React.FC = (): React.JSX.Element => {
                     Ver nodo <ExternalLink size={10} className="inline" />
                   </Link>
                 </div>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* Checkpoints / Waypoints */}
+      {checkpoints.length > 0 && (
+        <SectionCard
+          title={`Waypoints (${checkpoints.filter((c) => c.status === 'VISITED').length}/${
+            checkpoints.length
+          })`}
+          icon={<Flag size={16} className="text-[#f2b705]" />}
+        >
+          <div className="flex flex-col divide-y divide-slate-100">
+            {checkpoints.map((chk) => (
+              <div key={chk.id} className="flex items-center gap-4 py-3">
+                <span className="shrink-0 w-6 text-center text-archon-sm font-black text-[#0f2a44]/40">
+                  {chk.sequence}
+                </span>
+                <span className="flex-1 text-archon-base font-bold text-[#0f2a44]">{chk.name}</span>
+                {chk.arrived_at && (
+                  <span className={`${AT.cellMeta} shrink-0`}>
+                    {formatDateTime(chk.arrived_at)}
+                  </span>
+                )}
+                {!chk.arrived_at && chk.eta && (
+                  <span className={`${AT.cellMeta} shrink-0`}>ETA {formatDateTime(chk.eta)}</span>
+                )}
+                <span
+                  className={`shrink-0 text-archon-xs font-black uppercase px-2 py-0.5 rounded-[3px] ${
+                    CHECKPOINT_STATUS_BADGE[chk.status] ?? 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {CHECKPOINT_STATUS_LABEL[chk.status] ?? chk.status}
+                </span>
               </div>
             ))}
           </div>
