@@ -378,6 +378,74 @@ export default class RouteService {
   }
 
   /**
+   * Adds a checkpoint to an existing route (ACTIVE or OPEN).
+   * Enforces unique sequence per movement via DB UNIQUE KEY.
+   */
+  static async addCheckpoint(
+    routeUuid: string,
+    params: { sequence: number; name: string; neighborhoodId?: number; eta?: string }
+  ): Promise<number> {
+    const [routes] = await db.execute<RowDataPacket[]>(
+      `SELECT fm.id, fm.status FROM fleet_movements fm
+       WHERE fm.uuid = ? AND fm.movement_type = 'ROUTE'`,
+      [routeUuid]
+    );
+    if (routes.length === 0) throw new Error('Route not found');
+    const movementId = routes[0].id as number;
+
+    const [result] = await db.execute<ResultSetHeader>(
+      `INSERT INTO fleet_route_checkpoints (movement_id, sequence, name, neighborhood_id, eta)
+       VALUES (?, ?, ?, ?, ?)`,
+      [movementId, params.sequence, params.name, params.neighborhoodId ?? null, params.eta ?? null]
+    );
+    return (result as ResultSetHeader).insertId;
+  }
+
+  /**
+   * Returns all checkpoints for a route, ordered by sequence ASC.
+   */
+  static async getCheckpoints(routeUuid: string): Promise<RowDataPacket[]> {
+    const [routes] = await db.execute<RowDataPacket[]>(
+      `SELECT fm.id FROM fleet_movements fm
+       WHERE fm.uuid = ? AND fm.movement_type = 'ROUTE'`,
+      [routeUuid]
+    );
+    if (routes.length === 0) throw new Error('Route not found');
+    const movementId = routes[0].id as number;
+
+    const [rows] = await db.execute<RowDataPacket[]>(
+      `SELECT id, movement_id, sequence, name, neighborhood_id, eta, arrived_at, status, created_at
+       FROM fleet_route_checkpoints
+       WHERE movement_id = ?
+       ORDER BY sequence ASC`,
+      [movementId]
+    );
+    return rows;
+  }
+
+  /**
+   * Marks a checkpoint as VISITED with arrived_at = NOW().
+   */
+  static async arriveAtCheckpoint(routeUuid: string, checkpointId: number): Promise<void> {
+    const [routes] = await db.execute<RowDataPacket[]>(
+      `SELECT fm.id FROM fleet_movements fm
+       WHERE fm.uuid = ? AND fm.movement_type = 'ROUTE'`,
+      [routeUuid]
+    );
+    if (routes.length === 0) throw new Error('Route not found');
+    const movementId = routes[0].id as number;
+
+    const [result] = await db.execute<ResultSetHeader>(
+      `UPDATE fleet_route_checkpoints
+       SET status = 'VISITED', arrived_at = NOW()
+       WHERE id = ? AND movement_id = ? AND status = 'PENDING'`,
+      [checkpointId, movementId]
+    );
+    if ((result as ResultSetHeader).affectedRows === 0)
+      throw new Error('Checkpoint not found or already visited');
+  }
+
+  /**
    * Fetches incidents for a specific route UUID.
    */
   static async getIncidents(routeUuid: string): Promise<RowDataPacket[]> {

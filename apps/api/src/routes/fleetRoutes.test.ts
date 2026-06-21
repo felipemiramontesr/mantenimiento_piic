@@ -20,6 +20,9 @@ vi.mock('../services/routeService', () => ({
     reportIncident: vi.fn(),
     getIncidents: vi.fn(),
     getAllIncidents: vi.fn(),
+    addCheckpoint: vi.fn(),
+    getCheckpoints: vi.fn(),
+    arriveAtCheckpoint: vi.fn(),
   },
 }));
 
@@ -347,6 +350,101 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
 
       expect(response.statusCode).toBe(201);
+    });
+  });
+
+  // ── FC-4 Fase 4B: Checkpoint Endpoints (SC1–SC5) ──────────────────────────
+  describe('Checkpoint Endpoints (FC-4 RouteCheckpoints_Waypoints)', () => {
+    const CHK_UUID = 'ROUTE-CHK-UUID';
+
+    it('SC1 — POST /v1/routes/:uuid/checkpoints creates checkpoint and returns 201', async (): Promise<void> => {
+      (RouteService.addCheckpoint as Mock).mockResolvedValue(42);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        payload: { sequence: 1, name: 'Mina Norte' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(201);
+      expect(JSON.parse(response.body)).toMatchObject({ success: true, data: { id: 42 } });
+    });
+
+    it('SC2 — POST /v1/routes/:uuid/checkpoints returns 409 on duplicate sequence', async (): Promise<void> => {
+      (RouteService.addCheckpoint as Mock).mockRejectedValue(
+        new Error("Duplicate entry '1' for key 'uq_checkpoint_sequence'")
+      );
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        payload: { sequence: 1, name: 'Duplicado' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect(JSON.parse(response.body).code).toBe('CONFLICT');
+    });
+
+    it('SC3 — PATCH /v1/routes/:uuid/checkpoints/:id/arrive marks checkpoint VISITED', async (): Promise<void> => {
+      (RouteService.arriveAtCheckpoint as Mock).mockResolvedValue(undefined);
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/v1/routes/${CHK_UUID}/checkpoints/42/arrive`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('SC4 — GET /v1/routes/:uuid/checkpoints returns array ordered by sequence', async (): Promise<void> => {
+      const mockCheckpoints = [
+        { id: 1, sequence: 1, name: 'Punto A', status: 'VISITED' },
+        { id: 2, sequence: 2, name: 'Punto B', status: 'PENDING' },
+        { id: 3, sequence: 3, name: 'Punto C', status: 'PENDING' },
+      ];
+      (RouteService.getCheckpoints as Mock).mockResolvedValue(mockCheckpoints);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data).toHaveLength(3);
+      expect(body.data[0].sequence).toBe(1);
+    });
+
+    it('SC5 — POST /v1/routes/:uuid/checkpoints returns 404 when route not found', async (): Promise<void> => {
+      (RouteService.addCheckpoint as Mock).mockRejectedValue(new Error('Route not found'));
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/routes/NO-EXIST/checkpoints',
+        payload: { sequence: 1, name: 'Fantasma' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body).code).toBe('NOT_FOUND');
+    });
+
+    it('SC5 — GET /v1/routes/:uuid/checkpoints returns 404 when route not found', async (): Promise<void> => {
+      (RouteService.getCheckpoints as Mock).mockRejectedValue(new Error('Route not found'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/routes/NO-EXIST/checkpoints',
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body).code).toBe('NOT_FOUND');
     });
   });
 });

@@ -433,6 +433,107 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   /**
+   * ADD CHECKPOINT
+   * POST /v1/routes/:uuid/checkpoints
+   */
+  fastify.post(
+    '/routes/:uuid/checkpoints',
+    { preHandler: [requirePermission('route:write')] },
+    async (request, reply) => {
+      try {
+        const { uuid } = request.params as { uuid: string };
+        const ownerScope = await resolveOwnerScope(request);
+        if (!(await checkRouteScope(uuid, ownerScope))) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+        }
+        const schema = z.object({
+          sequence: z.number().int().min(1).max(255),
+          name: z.string().min(1).max(150),
+          neighborhoodId: z.number().int().positive().optional(),
+          eta: z.string().datetime().optional(),
+        });
+        const data = schema.parse(request.body);
+        const id = await RouteService.addCheckpoint(uuid, {
+          sequence: data.sequence,
+          name: data.name,
+          neighborhoodId: data.neighborhoodId,
+          eta: data.eta,
+        });
+        return reply.code(201).send({ success: true, data: { id } });
+      } catch (error) {
+        const msg = (error as Error).message;
+        if (msg === 'Route not found')
+          return reply.code(404).send({ success: false, code: 'NOT_FOUND', message: msg });
+        if (msg.includes('Duplicate entry'))
+          return reply
+            .code(409)
+            .send({
+              success: false,
+              code: 'CONFLICT',
+              message: 'Sequence already exists for this route',
+            });
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: msg });
+      }
+    }
+  );
+
+  /**
+   * LIST CHECKPOINTS FOR A ROUTE
+   * GET /v1/routes/:uuid/checkpoints
+   */
+  fastify.get('/routes/:uuid/checkpoints', async (request, reply) => {
+    try {
+      const { uuid } = request.params as { uuid: string };
+      const ownerScope = await resolveOwnerScope(request);
+      if (!(await checkRouteScope(uuid, ownerScope))) {
+        return reply
+          .code(403)
+          .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+      }
+      const checkpoints = await RouteService.getCheckpoints(uuid);
+      return reply.send({ success: true, data: checkpoints });
+    } catch (error) {
+      const msg = (error as Error).message;
+      if (msg === 'Route not found')
+        return reply.code(404).send({ success: false, code: 'NOT_FOUND', message: msg });
+      return reply.code(400).send({ success: false, message: msg });
+    }
+  });
+
+  /**
+   * ARRIVE AT CHECKPOINT
+   * PATCH /v1/routes/:uuid/checkpoints/:id/arrive
+   */
+  fastify.patch(
+    '/routes/:uuid/checkpoints/:id/arrive',
+    { preHandler: [requirePermission('route:write')] },
+    async (request, reply) => {
+      try {
+        const { uuid, id } = request.params as { uuid: string; id: string };
+        const ownerScope = await resolveOwnerScope(request);
+        if (!(await checkRouteScope(uuid, ownerScope))) {
+          return reply
+            .code(403)
+            .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
+        }
+        await RouteService.arriveAtCheckpoint(uuid, Number(id));
+        return reply.send({ success: true, message: 'Checkpoint marked as visited' });
+      } catch (error) {
+        const msg = (error as Error).message;
+        if (msg === 'Route not found')
+          return reply.code(404).send({ success: false, code: 'NOT_FOUND', message: msg });
+        if (msg.includes('not found or already visited'))
+          return reply.code(404).send({ success: false, code: 'NOT_FOUND', message: msg });
+        fastify.log.error(error);
+        return reply.code(400).send({ success: false, message: msg });
+      }
+    }
+  );
+
+  /**
    * REPORT INCIDENT
    * POST /v1/routes/:uuid/incidents
    */
