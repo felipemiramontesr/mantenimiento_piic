@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import api from '../../api/client';
+import { useFleetIntelligence } from '../../hooks/useFleetIntelligence';
 import FleetUnitNode from './FleetUnitNode';
 
 vi.mock('../../api/client', () => ({ default: { get: vi.fn() } }));
+vi.mock('../../hooks/useFleetIntelligence', () => ({
+  useFleetIntelligence: vi.fn(() => ({ data: null, loading: false, error: null })),
+}));
 const mockParams = vi.hoisted(() => ({ unitId: 'ASM-001' as string | undefined }));
 
 vi.mock('react-router-dom', async (): Promise<unknown> => {
@@ -423,6 +427,58 @@ describe('FleetUnitNode', () => {
     await waitFor(() => expect(screen.getByText('Baja')).toBeInTheDocument());
     // 'Salud' label confirms kpi rendered; '—' confirms healthStatus ?? '—'
     expect(screen.getByText('Salud')).toBeInTheDocument();
+  });
+
+  it('KPI-VIEW-1: renders Inteligencia de Flota panel with all 5 KPIs', async () => {
+    vi.mocked(useFleetIntelligence).mockReturnValueOnce({
+      data: {
+        oee: 78.5,
+        tco_per_km: 4.2,
+        km_per_liter: 11.5,
+        pm_compliance: 92.3,
+        backlog_aging_days: 3.5,
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Inteligencia de Flota')).toBeInTheDocument());
+    expect(screen.getByText('OEE')).toBeInTheDocument();
+    expect(screen.getByText('TCO/km')).toBeInTheDocument();
+    expect(screen.getByText('Km/L')).toBeInTheDocument();
+    expect(screen.getByText('Cumpl. PM')).toBeInTheDocument();
+    expect(screen.getByText('Edad Backlog')).toBeInTheDocument();
+    expect(screen.getByText('78.5%')).toBeInTheDocument();
+    expect(screen.getByText(/11[.,]5 km\/L/)).toBeInTheDocument();
+  });
+
+  it('KPI-VIEW-2: renders dashes when KPI data is null', async () => {
+    vi.mocked(useFleetIntelligence).mockReturnValueOnce({
+      data: {
+        oee: null,
+        tco_per_km: null,
+        km_per_liter: null,
+        pm_compliance: null,
+        backlog_aging_days: null,
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Inteligencia de Flota')).toBeInTheDocument());
+    // All 5 KPIs show '—' when null
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('KPI-VIEW-3: renders loading message while intelligence is fetching', async () => {
+    vi.mocked(useFleetIntelligence).mockReturnValueOnce({
+      data: null,
+      loading: true,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Inteligencia de Flota')).toBeInTheDocument());
+    expect(screen.getByText('Calculando KPIs…')).toBeInTheDocument();
   });
 
   it('renders overdue kmRemaining in red when nextServiceReading < odometer', async () => {

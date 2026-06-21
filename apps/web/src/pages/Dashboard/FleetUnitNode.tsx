@@ -12,9 +12,11 @@ import {
   Hash,
   ChevronLeft,
   Truck,
+  TrendingUp,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import { useFleetIntelligence } from '../../hooks/useFleetIntelligence';
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
 import { FleetUnit } from '../../types/fleet';
@@ -227,6 +229,64 @@ function MaintenanceSection({
   );
 }
 
+// ─── Intelligence KPI Panel ───────────────────────────────────────────────────
+
+function IntelligenceKpiSection({ unitId }: { unitId: string }): React.JSX.Element {
+  const { data, loading } = useFleetIntelligence(unitId);
+
+  const kpis = [
+    {
+      label: 'OEE',
+      value: data?.oee != null ? formatPct(data.oee, 1) : '—',
+      sub: 'Efectividad del equipo',
+    },
+    {
+      label: 'TCO/km',
+      value: data?.tco_per_km != null ? formatMXN(data.tco_per_km) : '—',
+      sub: 'Costo total por km',
+    },
+    {
+      label: 'Km/L',
+      value: data?.km_per_liter != null ? formatNum(data.km_per_liter, 'km/L', 1) : '—',
+      sub: 'Eficiencia de combustible',
+    },
+    {
+      label: 'Cumpl. PM',
+      value: data?.pm_compliance != null ? formatPct(data.pm_compliance, 1) : '—',
+      sub: 'Adherencia a mantenimiento preventivo',
+    },
+    {
+      label: 'Edad Backlog',
+      value: data?.backlog_aging_days != null ? formatNum(data.backlog_aging_days, 'días', 1) : '—',
+      sub: 'Antigüedad promedio del backlog',
+    },
+  ];
+
+  return (
+    <SectionCard
+      title="Inteligencia de Flota"
+      icon={<TrendingUp size={16} className="text-[#f2b705]" />}
+    >
+      {loading ? (
+        <p className={`${AT.sectionDescription} text-center py-2`}>Calculando KPIs…</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {kpis.map(({ label, value, sub }) => (
+            <div
+              key={label}
+              className="flex flex-col items-center gap-1 bg-[#0f2a44]/3 rounded-[4px] px-4 py-3 text-center"
+            >
+              <span className={AT.sectionDescription}>{label}</span>
+              <span className="text-archon-lg font-black text-[#0f2a44]">{value}</span>
+              <span className={AT.cellDetail}>{sub}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 // ─── Maintenance Table ────────────────────────────────────────────────────────
 
 const MAINT_HEADERS: ArchonTableHeader[] = [
@@ -371,6 +431,8 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
       </div>
 
       <MaintenanceSection unit={unit} kmSinceService={kmSinceService} kmRemaining={kmRemaining} />
+
+      <IntelligenceKpiSection unitId={unit.id} />
 
       <SectionCard
         title="Historial de Mantenimiento"
