@@ -15,6 +15,9 @@ dotenv.config({ path: path.join(__dirname, '../../../../.env') });
 const PIIC_CENTER_OWNER_ID = 9042;
 const ROLE_ID_PRIVADO = 4;
 
+export const VIM_MAINT_INTERVAL_KM = 10_000;
+export const VIM_MAINT_INTERVAL_DAYS = 180;
+
 export const UNIT_IDS = [
   'PIIC-101',
   'PIIC-201',
@@ -274,6 +277,11 @@ async function runSeed(): Promise<void> {
     );
     console.log('[CLEANUP] Completado ✅');
 
+    // Fecha de último servicio: hoy - 90 días (pronóstico realista)
+    const lastServiceDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+
     // owners.id sin AUTO_INCREMENT — asignación explícita MAX(id)+N
     const [maxRow] = await conn.execute<RowDataPacket[]>(
       'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM owners FOR UPDATE'
@@ -342,8 +350,11 @@ async function runSeed(): Promise<void> {
               tireBrandId, terrainTypeId, tireSpec, operationalUseId,
               placas, numeroSerie, circulationCardNumber,
               placasHash, numeroSerieHash,
-              odometer, currentReading, status, is_active)
-           VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Disponible', 1)`,
+              odometer, currentReading,
+              maintIntervalKm, maintIntervalDays,
+              lastServiceReading, lastServiceDate,
+              status, is_active)
+           VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Disponible', 1)`,
           [
             unit.id,
             ownerIds[idx],
@@ -364,6 +375,10 @@ async function runSeed(): Promise<void> {
             hashSerie,
             unit.odometer,
             unit.odometer,
+            VIM_MAINT_INTERVAL_KM,
+            VIM_MAINT_INTERVAL_DAYS,
+            unit.odometer - VIM_MAINT_INTERVAL_KM,
+            lastServiceDate,
           ]
         );
       })

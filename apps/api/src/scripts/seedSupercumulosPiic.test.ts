@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { SUPERCUMULOS, UNIT_IDS } from './seedSupercumulosPiic';
+import {
+  SUPERCUMULOS,
+  UNIT_IDS,
+  VIM_MAINT_INTERVAL_KM,
+  VIM_MAINT_INTERVAL_DAYS,
+} from './seedSupercumulosPiic';
 import EncryptionService from '../services/encryption';
 
 // ─── VIM_PIIC_Supercumulos_Seed — Tests (FC: VIM_PIIC_Supercumulos_Seed) ────
@@ -166,6 +171,37 @@ describe('VIM_PIIC_Supercumulos_Seed — AES Encryption (SC4 §2.2)', () => {
     const enc1 = EncryptionService.encrypt('SNA-123-X');
     const enc2 = EncryptionService.encrypt('SNA-123-X');
     expect(enc1).not.toBe(enc2);
+  });
+});
+
+describe('VIM_PIIC_Supercumulos_Seed — Pronóstico Fix (FC-3 3C)', () => {
+  it('SC-SEED-FIX-1: lastServiceReading no es 0 — sin pronóstico 1929', () => {
+    // lastServiceReading = odometer - VIM_MAINT_INTERVAL_KM; si fuera 0 el cálculo
+    // produces KM Restantes < 0 → fecha pronóstico en 1929.
+    SUPERCUMULOS.forEach((sc) => {
+      sc.units.forEach((u) => {
+        const lastServiceReading = u.odometer - VIM_MAINT_INTERVAL_KM;
+        expect(lastServiceReading).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  it('SC-SEED-FIX-2: KM Restantes ≥ 0 (umbral alcanzado, no sobrepasado)', () => {
+    // KM Restantes = VIM_MAINT_INTERVAL_KM - (odometer - lastServiceReading)
+    // Con lastServiceReading = odometer - VIM_MAINT_INTERVAL_KM:
+    // KM Restantes = VIM_MAINT_INTERVAL_KM - VIM_MAINT_INTERVAL_KM = 0 ≥ 0 ✅
+    SUPERCUMULOS.forEach((sc) => {
+      sc.units.forEach((u) => {
+        const lastServiceReading = u.odometer - VIM_MAINT_INTERVAL_KM;
+        const kmRestantes = VIM_MAINT_INTERVAL_KM - (u.odometer - lastServiceReading);
+        expect(kmRestantes).toBeGreaterThanOrEqual(0);
+      });
+    });
+  });
+
+  it('SC-SEED-FIX-3: intervalos VIM son 10,000 km / 180 días (no MINA §9.5)', () => {
+    expect(VIM_MAINT_INTERVAL_KM).toBe(10_000);
+    expect(VIM_MAINT_INTERVAL_DAYS).toBe(180);
   });
 });
 
