@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS fleet_unit_recalls (
   PRIMARY KEY (fleet_unit_id, recall_id),
   CONSTRAINT fk_fur_unit   FOREIGN KEY (fleet_unit_id) REFERENCES fleet_units(id)     ON DELETE CASCADE,
   CONSTRAINT fk_fur_recall FOREIGN KEY (recall_id)     REFERENCES catalog_recalls(id)  ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
   COMMENT='Estado N:M de cada recall por unidad individual (un recall puede afectar múltiples unidades, una unidad puede tener múltiples recalls)';
 
 -- ─── 3. view_fleet_units_tco ─────────────────────────────────────────────────
