@@ -28,6 +28,7 @@ import fleetRecallsRoutes from './routes/fleetRecalls';
 import fleetIntelligenceRoutes from './routes/fleetIntelligence';
 import economicLifeRoutes from './routes/economicLife';
 import anomalyDetectionRoutes from './routes/anomalyDetection';
+import operatorScorecardRoutes from './routes/operatorScorecard';
 import notificationsRoutes from './routes/notifications';
 import areasRoutes from './routes/areas';
 import serviceCentersRoutes from './routes/serviceCenters';
@@ -151,6 +152,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(fleetIntelligenceRoutes, { prefix: '/v1' });
   fastify.register(economicLifeRoutes, { prefix: '/v1' });
   fastify.register(anomalyDetectionRoutes, { prefix: '/v1' });
+  fastify.register(operatorScorecardRoutes, { prefix: '/v1' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(
