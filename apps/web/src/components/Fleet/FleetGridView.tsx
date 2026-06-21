@@ -32,6 +32,7 @@ import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
+import { useTco } from '../../hooks/useTco';
 import AT from '../../styles/archonTypography';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
@@ -96,14 +97,20 @@ const IdentityCluster = ({
   );
 };
 
-const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
+const LogisticsCluster = ({
+  unit,
+  isVIM,
+}: {
+  unit: FleetUnit;
+  isVIM: boolean;
+}): React.JSX.Element => {
   const cuenta = unit.accountingAccount || '---';
   const usageUnit = unit.usageUnitName || 'KM';
   return (
     <div className="flex flex-col items-center space-y-3">
       <div className="flex flex-col items-center">
         <span className="text-archon-base font-black text-navy-400 uppercase tracking-wider">
-          LEASING
+          {isVIM ? 'ADQUISICIÓN' : 'LEASING'}
         </span>
         <span className="text-archon-xl font-black text-navy-900">
           $
@@ -130,20 +137,28 @@ const LogisticsCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           {unit.timeFreqLabel || `${unit.maintIntervalDays || 180} DÍAS`}
         </span>
       </div>
-      <div className="bg-sky-50 px-2 py-1 rounded border border-sky-100 shadow-sm">
-        <span className="text-archon-base font-black text-sky-700">
-          {Number(unit.dailyUsageAvg || 0).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}{' '}
-          {usageUnit}/D
-        </span>
-      </div>
+      {!isVIM && (
+        <div className="bg-sky-50 px-2 py-1 rounded border border-sky-100 shadow-sm">
+          <span className="text-archon-base font-black text-sky-700">
+            {Number(unit.dailyUsageAvg || 0).toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}{' '}
+            {usageUnit}/D
+          </span>
+        </div>
+      )}
     </div>
   );
 };
 
-const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
+const OdometerCluster = ({
+  unit,
+  isVIM,
+}: {
+  unit: FleetUnit;
+  isVIM: boolean;
+}): React.JSX.Element => {
   const usageUnit = unit.usageUnitName || 'KM';
   const carga = unit.capacidadCarga || 0;
   const tanque = unit.fuelTankCapacity || 0;
@@ -185,34 +200,36 @@ const OdometerCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
           )}
         </span>
       </div>
-      <div className="flex items-center gap-4 pt-2 border-t border-slate-100 w-full justify-center">
-        <div className="flex flex-col items-center">
-          <span className="text-archon-xs font-black text-slate-400 uppercase">Carga</span>
-          <span className="text-archon-base font-black text-navy-800">
-            {Number(carga || 0).toLocaleString('en-US')} KG
-          </span>
+      {!isVIM && (
+        <div className="flex items-center gap-4 pt-2 border-t border-slate-100 w-full justify-center">
+          <div className="flex flex-col items-center">
+            <span className="text-archon-xs font-black text-slate-400 uppercase">Carga</span>
+            <span className="text-archon-base font-black text-navy-800">
+              {Number(carga || 0).toLocaleString('en-US')} KG
+            </span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-archon-xs font-black text-slate-400 uppercase">Tanque</span>
+            <span className="text-archon-base font-black text-navy-800">
+              {(() => {
+                const percent =
+                  unit.lastFuelLevel !== undefined && unit.lastFuelLevel !== null
+                    ? Number(unit.lastFuelLevel)
+                    : 100;
+                const cap = Number(tanque || 0);
+                const currentLiters = (percent / 100) * cap;
+                return `${currentLiters.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })} / ${cap.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })} L`;
+              })()}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col items-center">
-          <span className="text-archon-xs font-black text-slate-400 uppercase">Tanque</span>
-          <span className="text-archon-base font-black text-navy-800">
-            {(() => {
-              const percent =
-                unit.lastFuelLevel !== undefined && unit.lastFuelLevel !== null
-                  ? Number(unit.lastFuelLevel)
-                  : 100;
-              const cap = Number(tanque || 0);
-              const currentLiters = (percent / 100) * cap;
-              return `${currentLiters.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} / ${cap.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} L`;
-            })()}
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -265,7 +282,7 @@ const HologramBadge = ({
   );
 };
 
-const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
+const SpecCluster = ({ unit, isVIM }: { unit: FleetUnit; isVIM: boolean }): React.JSX.Element => {
   const fuelType = unit.fuelType || 'S/D';
   const motor = unit.motor || 'S/D';
   const poliza = unit.insurancePolicyNumber || '---';
@@ -329,6 +346,23 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
             {mechDate ? formatDate(mechDate) : '---'}
           </span>
         </div>
+        {isVIM && (
+          <div className="flex items-center justify-between text-archon-sm font-black uppercase mt-1">
+            <span className="text-violet-600">GARANTÍA</span>
+            <div className="flex flex-col items-end">
+              <span className="text-navy-800 text-archon-base">
+                {unit.warranty_expiration_date
+                  ? formatDate(new Date(unit.warranty_expiration_date))
+                  : '---'}
+              </span>
+              {unit.warranty_expiration_km && (
+                <span className="text-archon-xs font-mono text-slate-400">
+                  {Number(unit.warranty_expiration_km).toLocaleString('en-US')} KM
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -425,6 +459,74 @@ const getUnitForecast = (unit: FleetUnit): MaintenanceForecast | null =>
   );
 
 // ============================================================================
+// COMPONENT: TcoKpiCluster — VIM-only TCO summary (FC-3 Fase 3E)
+// ============================================================================
+const TcoKpiCluster = ({
+  unitId,
+  odometer,
+}: {
+  unitId: string;
+  odometer: number;
+}): React.JSX.Element => {
+  const { data, loading } = useTco(unitId);
+  if (loading) {
+    return (
+      <div className="text-archon-xs text-slate-400 mt-2 italic" data-testid="tco-kpi-loading">
+        Cargando TCO...
+      </div>
+    );
+  }
+  if (!data || data.tco_total === 0) {
+    return (
+      <div className="text-archon-xs text-slate-300 mt-2 italic" data-testid="tco-kpi-empty">
+        Sin gastos registrados
+      </div>
+    );
+  }
+  const costPerKm = odometer > 0 ? data.tco_total / odometer : null;
+  return (
+    <div
+      className="mt-2 pt-2 border-t border-slate-100 flex flex-col items-center gap-1 w-full"
+      data-testid="tco-kpi-section"
+    >
+      <span className="text-archon-xs font-black text-navy-400 uppercase tracking-widest">
+        KPIs PROPIETARIO
+      </span>
+      <div className="flex flex-col items-center">
+        <span className="text-archon-xs text-slate-400 uppercase">TCO Total</span>
+        <span className="text-archon-base font-black text-navy-900">
+          $
+          {data.tco_total.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      </div>
+      {costPerKm !== null && (
+        <div className="flex flex-col items-center">
+          <span className="text-archon-xs text-slate-400 uppercase">Costo/KM</span>
+          <span className="text-archon-base font-black text-slate-700">
+            $
+            {costPerKm.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        </div>
+      )}
+      {data.last_record_at && (
+        <div className="flex flex-col items-center">
+          <span className="text-archon-xs text-slate-400 uppercase">Último Gasto</span>
+          <span className="text-archon-base font-black text-slate-700">
+            {formatDate(new Date(data.last_record_at))}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
 // COMPONENT: FleetUnitRow (SOLID: SRP + Performance Optimization)
 // ============================================================================
 const FleetUnitRow = React.memo(
@@ -441,8 +543,9 @@ const FleetUnitRow = React.memo(
   }): React.JSX.Element => {
     const forecast = getUnitForecast(unit);
     const isOverdue = !!forecast?.isOverdue;
-    const { hasPermission } = usePermissions();
+    const { hasPermission, isSuiteVIM } = usePermissions();
     const canEdit = hasPermission('fleet:write') || hasPermission('fleet:write:scoped');
+    const isVIM = isSuiteVIM();
 
     const usageUnit = unit.usageUnitName || 'KM';
 
@@ -514,15 +617,16 @@ const FleetUnitRow = React.memo(
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <LogisticsCluster unit={unit} />
+          <LogisticsCluster unit={unit} isVIM={isVIM} />
         </td>
 
         <td className="py-4 px-2 min-w-[140px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <OdometerCluster unit={unit} />
+          <OdometerCluster unit={unit} isVIM={isVIM} />
         </td>
 
         <td className="py-4 px-2 min-w-[180px] text-center border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <SpecCluster unit={unit} />
+          <SpecCluster unit={unit} isVIM={isVIM} />
+          {isVIM && <TcoKpiCluster unitId={unit.id} odometer={unit.odometer} />}
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">

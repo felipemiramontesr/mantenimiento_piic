@@ -130,6 +130,9 @@ export interface FleetUnit {
   nextServiceKmTarget?: number | null;
   lastFuelLevel?: number;
   initialFuelLevel?: number;
+  // 🔱 FC-3 VIM PerfectUniverse — Warranty (migration 126)
+  warranty_expiration_date?: string | null;
+  warranty_expiration_km?: number | null;
 }
 
 export interface CreateFleetUnit {
