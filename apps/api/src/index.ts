@@ -25,6 +25,7 @@ import alertsRoutes from './routes/alerts';
 import workOrderRoutes from './routes/workOrders';
 import fleetTcoRoutes from './routes/fleetTco';
 import fleetRecallsRoutes from './routes/fleetRecalls';
+import fleetIntelligenceRoutes from './routes/fleetIntelligence';
 import notificationsRoutes from './routes/notifications';
 import areasRoutes from './routes/areas';
 import serviceCentersRoutes from './routes/serviceCenters';
@@ -145,6 +146,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(securityRoutes, { prefix: '/v1' });
   fastify.register(fleetTcoRoutes, { prefix: '/v1' });
   fastify.register(fleetRecallsRoutes, { prefix: '/v1' });
+  fastify.register(fleetIntelligenceRoutes, { prefix: '/v1' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(
