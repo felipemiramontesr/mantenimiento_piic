@@ -13,10 +13,18 @@ import {
   ChevronLeft,
   Truck,
   TrendingUp,
+  BarChart2,
+  Zap,
+  User,
+  Leaf,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { useFleetIntelligence } from '../../hooks/useFleetIntelligence';
+import { useEconomicLife } from '../../hooks/useEconomicLife';
+import { useAnomalyDetection } from '../../hooks/useAnomalyDetection';
+import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
+import { useCo2 } from '../../hooks/useCo2';
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
 import { FleetUnit } from '../../types/fleet';
@@ -287,6 +295,197 @@ function IntelligenceKpiSection({ unitId }: { unitId: string }): React.JSX.Eleme
   );
 }
 
+// ─── Economic Life Section ───────────────────────────────────────────────────
+
+const RECOMMENDATION_BADGE: Record<string, string> = {
+  KEEP: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+  EVALUATE: 'bg-amber-100 text-amber-700 border border-amber-200',
+  REPLACE: 'bg-red-100 text-red-700 border border-red-200',
+};
+
+const RECOMMENDATION_LABEL: Record<string, string> = {
+  KEEP: 'Conservar',
+  EVALUATE: 'Evaluar',
+  REPLACE: 'Reemplazar',
+};
+
+function EconomicLifeSection({ unitId }: { unitId: string }): React.JSX.Element {
+  const { data, loading } = useEconomicLife(unitId);
+  return (
+    <SectionCard title="Vida Económica" icon={<BarChart2 size={16} className="text-[#f2b705]" />}>
+      {loading ? (
+        <p className={`${AT.sectionDescription} text-center py-2`}>Calculando…</p>
+      ) : (
+        <>
+          <InfoRow
+            label="Recomendación"
+            value={
+              data?.recommendation ? (
+                <span
+                  className={`text-archon-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px] ${
+                    RECOMMENDATION_BADGE[data.recommendation] ?? ''
+                  }`}
+                >
+                  {RECOMMENDATION_LABEL[data.recommendation] ?? data.recommendation}
+                </span>
+              ) : null
+            }
+          />
+          <InfoRow label="Valor residual estimado" value={formatMXN(data?.residual_value_mxn)} />
+          <InfoRow label="TCO acumulado" value={formatMXN(data?.accumulated_tco)} />
+          <InfoRow
+            label="Score de reemplazo"
+            value={
+              data?.replacement_score != null ? formatPct(data.replacement_score * 100, 0) : null
+            }
+          />
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Anomaly Detection Section ───────────────────────────────────────────────
+
+function AnomalySection({ unitId }: { unitId: string }): React.JSX.Element {
+  const { data, loading } = useAnomalyDetection(unitId);
+  return (
+    <SectionCard title="Detección de Anomalías" icon={<Zap size={16} className="text-[#f2b705]" />}>
+      {loading ? (
+        <p className={`${AT.sectionDescription} text-center py-2`}>Calculando…</p>
+      ) : (
+        <>
+          <InfoRow
+            label="Estado"
+            value={
+              data?.is_anomaly != null ? (
+                <span
+                  className={`text-archon-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px] ${
+                    data.is_anomaly
+                      ? 'bg-red-100 text-red-700 border border-red-200'
+                      : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                  }`}
+                >
+                  {data.is_anomaly ? 'Anomalía' : 'Normal'}
+                </span>
+              ) : null
+            }
+          />
+          <InfoRow label="Algoritmo" value={data?.algorithm} />
+          <InfoRow
+            label="Desviación"
+            value={data?.deviation_pct != null ? formatPct(data.deviation_pct, 1) : null}
+          />
+          <InfoRow
+            label="Eficiencia de la unidad"
+            value={
+              data?.unit_km_per_liter != null ? formatNum(data.unit_km_per_liter, 'km/L', 2) : null
+            }
+          />
+          <InfoRow
+            label="Línea base de flota"
+            value={
+              data?.baseline_km_per_liter != null
+                ? formatNum(data.baseline_km_per_liter, 'km/L', 2)
+                : null
+            }
+          />
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Operator Scorecard Section ──────────────────────────────────────────────
+
+function OperatorScorecardSection({ unitId }: { unitId: string }): React.JSX.Element {
+  const { data, loading } = useOperatorScorecard(unitId);
+  return (
+    <SectionCard
+      title="Scorecard del Operador"
+      icon={<User size={16} className="text-[#f2b705]" />}
+    >
+      {loading ? (
+        <p className={`${AT.sectionDescription} text-center py-2`}>Calculando…</p>
+      ) : (
+        <>
+          <InfoRow
+            label="ID del conductor principal"
+            value={data?.driver_id != null ? String(data.driver_id) : null}
+          />
+          <InfoRow
+            label="Rutas registradas"
+            value={data?.route_count != null ? formatNum(data.route_count, 'rutas') : null}
+          />
+          <InfoRow
+            label="Score compuesto"
+            value={data?.composite_score != null ? formatPct(data.composite_score, 1) : null}
+          />
+          <InfoRow
+            label="Eficiencia de combustible"
+            value={
+              data?.fuel_efficiency_score != null ? formatPct(data.fuel_efficiency_score, 1) : null
+            }
+          />
+          <InfoRow
+            label="Tasa de incidentes"
+            value={
+              data?.incident_rate_score != null ? formatPct(data.incident_rate_score, 1) : null
+            }
+          />
+          <InfoRow
+            label="Adherencia a checkpoints"
+            value={
+              data?.checkpoint_adherence_score != null
+                ? formatPct(data.checkpoint_adherence_score, 1)
+                : null
+            }
+          />
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── CO₂ Section ─────────────────────────────────────────────────────────────
+
+function Co2Section({ unitId }: { unitId: string }): React.JSX.Element {
+  const { data, loading } = useCo2(unitId);
+  const period =
+    data?.period_from && data.period_to ? `${data.period_from} — ${data.period_to}` : null;
+  return (
+    <SectionCard
+      title="Huella de CO₂ (Scope 1 ESG)"
+      icon={<Leaf size={16} className="text-[#f2b705]" />}
+    >
+      {loading ? (
+        <p className={`${AT.sectionDescription} text-center py-2`}>Calculando…</p>
+      ) : (
+        <>
+          <InfoRow
+            label="CO₂ total acumulado"
+            value={data?.total_co2_kg != null ? formatNum(data.total_co2_kg, 'kg CO₂', 1) : null}
+          />
+          <InfoRow
+            label="Litros totales cargados"
+            value={data?.total_liters != null ? formatNum(data.total_liters, 'L', 1) : null}
+          />
+          <InfoRow
+            label="Factor de emisión"
+            value={
+              data?.co2_factor_kg_per_liter != null
+                ? formatNum(data.co2_factor_kg_per_liter, 'kg/L', 3)
+                : null
+            }
+          />
+          <InfoRow label="Combustible" value={data?.fuel_code} />
+          <InfoRow label="Período analizado" value={period} />
+        </>
+      )}
+    </SectionCard>
+  );
+}
+
 // ─── Maintenance Table ────────────────────────────────────────────────────────
 
 const MAINT_HEADERS: ArchonTableHeader[] = [
@@ -433,6 +632,13 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
       <MaintenanceSection unit={unit} kmSinceService={kmSinceService} kmRemaining={kmRemaining} />
 
       <IntelligenceKpiSection unitId={unit.id} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <EconomicLifeSection unitId={unit.id} />
+        <AnomalySection unitId={unit.id} />
+        <OperatorScorecardSection unitId={unit.id} />
+        <Co2Section unitId={unit.id} />
+      </div>
 
       <SectionCard
         title="Historial de Mantenimiento"

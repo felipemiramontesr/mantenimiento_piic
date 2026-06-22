@@ -2,11 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import api from '../../api/client';
 import { useFleetIntelligence } from '../../hooks/useFleetIntelligence';
+import { useEconomicLife } from '../../hooks/useEconomicLife';
+import { useAnomalyDetection } from '../../hooks/useAnomalyDetection';
+import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
+import { useCo2 } from '../../hooks/useCo2';
 import FleetUnitNode from './FleetUnitNode';
 
 vi.mock('../../api/client', () => ({ default: { get: vi.fn() } }));
 vi.mock('../../hooks/useFleetIntelligence', () => ({
   useFleetIntelligence: vi.fn(() => ({ data: null, loading: false, error: null })),
+}));
+vi.mock('../../hooks/useEconomicLife', () => ({
+  useEconomicLife: vi.fn(() => ({ data: null, loading: false, error: null })),
+}));
+vi.mock('../../hooks/useAnomalyDetection', () => ({
+  useAnomalyDetection: vi.fn(() => ({ data: null, loading: false, error: null })),
+}));
+vi.mock('../../hooks/useOperatorScorecard', () => ({
+  useOperatorScorecard: vi.fn(() => ({ data: null, loading: false, error: null })),
+}));
+vi.mock('../../hooks/useCo2', () => ({
+  useCo2: vi.fn(() => ({ data: null, loading: false, error: null })),
 }));
 const mockParams = vi.hoisted(() => ({ unitId: 'ASM-001' as string | undefined }));
 
@@ -502,5 +518,116 @@ describe('FleetUnitNode', () => {
     expect(screen.getByText(/vencido/i)).toBeInTheDocument();
     // maintIntervalDays falsy → '—' rendered
     expect(screen.getByText('Intervalo (días)')).toBeInTheDocument();
+  });
+
+  // ─── FC-6 Sections (EL, AD, OS, CO2) ─────────────────────────────────────
+
+  it('EL-NODE-1: renders Conservar badge when recommendation is KEEP', async () => {
+    vi.mocked(useEconomicLife).mockReturnValueOnce({
+      data: {
+        recommendation: 'KEEP',
+        residual_value_mxn: 120000,
+        accumulated_tco: 85000,
+        replacement_score: 0.2,
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Vida Económica')).toBeInTheDocument());
+    expect(screen.getByText('Conservar')).toBeInTheDocument();
+  });
+
+  it('EL-NODE-2: renders all dashes when economic life data is null', async () => {
+    vi.mocked(useEconomicLife).mockReturnValueOnce({ data: null, loading: false, error: null });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Vida Económica')).toBeInTheDocument());
+    expect(screen.getByText('Recomendación')).toBeInTheDocument();
+  });
+
+  it('AD-NODE-1: renders Anomalía badge when is_anomaly is true', async () => {
+    vi.mocked(useAnomalyDetection).mockReturnValueOnce({
+      data: {
+        fleet_size: 12,
+        algorithm: 'z-score',
+        unit_km_per_liter: 7.2,
+        baseline_km_per_liter: 11.5,
+        deviation_pct: -37.4,
+        z_score: -2.8,
+        is_anomaly: true,
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Detección de Anomalías')).toBeInTheDocument());
+    expect(screen.getByText('Anomalía')).toBeInTheDocument();
+  });
+
+  it('AD-NODE-2: renders section title without crash when anomaly data is null', async () => {
+    vi.mocked(useAnomalyDetection).mockReturnValueOnce({ data: null, loading: false, error: null });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Detección de Anomalías')).toBeInTheDocument());
+    expect(screen.getByText('Algoritmo')).toBeInTheDocument();
+  });
+
+  it('OS-NODE-1: renders composite score and route count when data is present', async () => {
+    vi.mocked(useOperatorScorecard).mockReturnValueOnce({
+      data: {
+        driver_id: 42,
+        route_count: 18,
+        fuel_efficiency_score: 85,
+        incident_rate_score: 92,
+        checkpoint_adherence_score: 78,
+        composite_score: 85,
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Scorecard del Operador')).toBeInTheDocument());
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText(/18 rutas/)).toBeInTheDocument();
+  });
+
+  it('OS-NODE-2: renders section title without crash when scorecard data is null', async () => {
+    vi.mocked(useOperatorScorecard).mockReturnValueOnce({
+      data: null,
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Scorecard del Operador')).toBeInTheDocument());
+    expect(screen.getByText('Score compuesto')).toBeInTheDocument();
+  });
+
+  it('CO2-NODE-1: renders total CO2 and period when data is present', async () => {
+    vi.mocked(useCo2).mockReturnValueOnce({
+      data: {
+        fuel_code: 'DIESEL',
+        co2_factor_kg_per_liter: 2.628,
+        total_liters: 3200,
+        total_co2_kg: 8409.6,
+        period_from: '2026-01-01',
+        period_to: '2026-06-22',
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() =>
+      expect(screen.getByText('Huella de CO₂ (Scope 1 ESG)')).toBeInTheDocument()
+    );
+    expect(screen.getByText(/8[.,]409[.,]?6? kg CO₂/)).toBeInTheDocument();
+    expect(screen.getByText('2026-01-01 — 2026-06-22')).toBeInTheDocument();
+  });
+
+  it('CO2-NODE-2: renders section title without crash when CO2 data is null', async () => {
+    vi.mocked(useCo2).mockReturnValueOnce({ data: null, loading: false, error: null });
+    render(<FleetUnitNode />);
+    await waitFor(() =>
+      expect(screen.getByText('Huella de CO₂ (Scope 1 ESG)')).toBeInTheDocument()
+    );
+    expect(screen.getByText('Período analizado')).toBeInTheDocument();
   });
 });
