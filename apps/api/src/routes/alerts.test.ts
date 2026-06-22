@@ -10,7 +10,72 @@ import {
   buildLeaseMissingDescription,
   buildFineDescription,
   buildAnomalyDescription,
+  meetsMaintenanceKmCriteria,
 } from './alerts';
+
+// ─── meetsMaintenanceKmCriteria (ALERT-COALESCE) ─────────────────────────────
+
+describe('meetsMaintenanceKmCriteria — COALESCE defensive condition', () => {
+  it('ALERT-COALESCE-1: triggers alert when forecast is null but interval data allows threshold calculation', () => {
+    // lastServiceReading=45000 + maintIntervalKm=5000 → threshold=50000
+    // odometer=49600 ≥ 50000*0.9=45000 → should alert
+    expect(
+      meetsMaintenanceKmCriteria({
+        odometer: 49600,
+        nextServiceForecast: null,
+        lastServiceReading: 45000,
+        maintIntervalKm: 5000,
+      })
+    ).toBe(true);
+  });
+
+  it('ALERT-COALESCE-2: no alert when both forecast and interval data are null', () => {
+    expect(
+      meetsMaintenanceKmCriteria({
+        odometer: 99999,
+        nextServiceForecast: null,
+        lastServiceReading: null,
+        maintIntervalKm: null,
+      })
+    ).toBe(false);
+  });
+
+  it('triggers alert when forecast is set directly (ignores lastServiceReading)', () => {
+    expect(
+      meetsMaintenanceKmCriteria({
+        odometer: 9100,
+        nextServiceForecast: 10000,
+        lastServiceReading: null,
+        maintIntervalKm: null,
+      })
+    ).toBe(true);
+  });
+
+  it('no alert when odometer is below 90% threshold (not yet approaching)', () => {
+    // threshold = lastServiceReading(40000) + maintIntervalKm(5000) = 45000 → 90% = 40500
+    // odometer=40000 < 40500
+    expect(
+      meetsMaintenanceKmCriteria({
+        odometer: 40000,
+        nextServiceForecast: null,
+        lastServiceReading: 40000,
+        maintIntervalKm: 5000,
+      })
+    ).toBe(false);
+  });
+
+  it('forecast takes precedence over interval when both are present', () => {
+    // forecast=50000, interval would give 45000+5000=50000 — same here, forecast wins
+    expect(
+      meetsMaintenanceKmCriteria({
+        odometer: 46000,
+        nextServiceForecast: 50000,
+        lastServiceReading: 45000,
+        maintIntervalKm: 5000,
+      })
+    ).toBe(true);
+  });
+});
 
 // ─── computeOverdueSeverity ───────────────────────────────────────────────────
 

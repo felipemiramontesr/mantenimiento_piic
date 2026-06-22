@@ -104,6 +104,20 @@ export function buildAnomalyDescription(current: number, avg: number, ratio: num
   )}× su promedio semestral (${formatMoneyMx(avg)})`;
 }
 
+export function meetsMaintenanceKmCriteria(unit: {
+  odometer: number;
+  nextServiceForecast: number | null;
+  lastServiceReading: number | null;
+  maintIntervalKm: number | null;
+}): boolean {
+  const { odometer, nextServiceForecast, lastServiceReading, maintIntervalKm } = unit;
+  const hasForecast = nextServiceForecast !== null;
+  const hasIntervalData = lastServiceReading !== null && maintIntervalKm !== null;
+  if (!hasForecast && !hasIntervalData) return false;
+  const threshold = hasForecast ? nextServiceForecast! : lastServiceReading! + maintIntervalKm!;
+  return odometer >= threshold * 0.9;
+}
+
 /** Documentos de cumplimiento monitoreados — campo días calculado en SQL → etiqueta es-MX con género */
 const COMPLIANCE_DOCUMENTS: Array<{
   daysField: string;
@@ -244,8 +258,9 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
              FROM fleet_units
              WHERE status != 'Descontinuada'
                AND (
-                 (nextServiceReading_forecast IS NOT NULL
-                  AND odometer >= nextServiceReading_forecast * 0.9)
+                 ((nextServiceReading_forecast IS NOT NULL
+                   OR (lastServiceReading IS NOT NULL AND maintIntervalKm IS NOT NULL))
+                  AND odometer >= COALESCE(nextServiceReading_forecast, lastServiceReading + maintIntervalKm) * 0.9)
                  OR (lastServiceDate IS NOT NULL
                      AND maintIntervalDays IS NOT NULL
                      AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
@@ -362,13 +377,15 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
             ? []
             : await db
                 .execute<RowDataPacket[]>(
-                  `SELECT id, status, odometer, nextServiceReading_forecast,
+                  `SELECT id, status, odometer,
+                          COALESCE(nextServiceReading_forecast, lastServiceReading + maintIntervalKm) AS nextServiceReading_forecast,
                           lastServiceDate, maintIntervalDays
                    FROM fleet_units
                    WHERE status != 'Descontinuada'
                      AND (
-                       (nextServiceReading_forecast IS NOT NULL
-                        AND odometer >= nextServiceReading_forecast * 0.9)
+                       ((nextServiceReading_forecast IS NOT NULL
+                         OR (lastServiceReading IS NOT NULL AND maintIntervalKm IS NOT NULL))
+                        AND odometer >= COALESCE(nextServiceReading_forecast, lastServiceReading + maintIntervalKm) * 0.9)
                        OR (lastServiceDate IS NOT NULL
                            AND maintIntervalDays IS NOT NULL
                            AND DATE_ADD(lastServiceDate, INTERVAL maintIntervalDays DAY)
