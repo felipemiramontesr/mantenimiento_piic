@@ -6,6 +6,7 @@ import { useEconomicLife } from '../../hooks/useEconomicLife';
 import { useAnomalyDetection } from '../../hooks/useAnomalyDetection';
 import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
 import { useCo2 } from '../../hooks/useCo2';
+import { useFleetRecalls } from '../../hooks/useFleetRecalls';
 import FleetUnitNode from './FleetUnitNode';
 
 vi.mock('../../api/client', () => ({ default: { get: vi.fn() } }));
@@ -23,6 +24,16 @@ vi.mock('../../hooks/useOperatorScorecard', () => ({
 }));
 vi.mock('../../hooks/useCo2', () => ({
   useCo2: vi.fn(() => ({ data: null, loading: false, error: null })),
+}));
+vi.mock('../../hooks/useFleetRecalls', () => ({
+  useFleetRecalls: vi.fn(() => ({
+    recalls: [],
+    loading: false,
+    error: null,
+    refresh: vi.fn(),
+    linkRecall: vi.fn(),
+    updateStatus: vi.fn(),
+  })),
 }));
 const mockParams = vi.hoisted(() => ({ unitId: 'ASM-001' as string | undefined }));
 
@@ -629,5 +640,52 @@ describe('FleetUnitNode', () => {
       expect(screen.getByText('Huella de CO₂ (Scope 1 ESG)')).toBeInTheDocument()
     );
     expect(screen.getByText('Período analizado')).toBeInTheDocument();
+  });
+
+  // ─── Recalls Section ──────────────────────────────────────────────────────
+
+  it('RECALL-NODE-1: renders table with recall campaign_code and status badge', async () => {
+    vi.mocked(useFleetRecalls).mockReturnValueOnce({
+      recalls: [
+        {
+          recall_id: 1,
+          campaign_code: 'NHTSA-2024-001',
+          description: 'Falla en airbag delantero',
+          make: 'Nissan',
+          model: 'Frontier',
+          year: 2022,
+          published_date: '2024-03-15',
+          status: 'PENDING',
+          resolved_at: null,
+          work_order_id: null,
+        },
+      ],
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+      linkRecall: vi.fn(),
+      updateStatus: vi.fn(),
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
+    expect(screen.getByText('NHTSA-2024-001')).toBeInTheDocument();
+    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+  });
+
+  it('RECALL-NODE-2: Vincular button opens modal with dialog role', async () => {
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
+    const btn = screen.getByTitle('Vincular recall del catálogo');
+    fireEvent.click(btn);
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Vincular recall' })).toBeInTheDocument()
+    );
+    expect(screen.getByText('Vincular Recall al Catálogo')).toBeInTheDocument();
+  });
+
+  it('RECALL-NODE-3: shows empty message when recalls list is empty', async () => {
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
+    expect(screen.getByText('Sin recalls registrados para esta unidad')).toBeInTheDocument();
   });
 });

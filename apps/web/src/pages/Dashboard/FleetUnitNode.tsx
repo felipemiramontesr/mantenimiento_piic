@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Wrench,
@@ -17,6 +17,10 @@ import {
   Zap,
   User,
   Leaf,
+  Bell,
+  Plus,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -25,6 +29,7 @@ import { useEconomicLife } from '../../hooks/useEconomicLife';
 import { useAnomalyDetection } from '../../hooks/useAnomalyDetection';
 import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
 import { useCo2 } from '../../hooks/useCo2';
+import { useFleetRecalls, RecallStatus } from '../../hooks/useFleetRecalls';
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
 import { FleetUnit } from '../../types/fleet';
@@ -486,6 +491,194 @@ function Co2Section({ unitId }: { unitId: string }): React.JSX.Element {
   );
 }
 
+// ─── Fleet Recalls Section ───────────────────────────────────────────────────
+
+const RECALL_STATUS_BADGE: Record<string, string> = {
+  PENDING: 'bg-amber-100 text-amber-700 border border-amber-200',
+  COMPLETED: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+  NOT_APPLICABLE: 'bg-slate-100 text-slate-500 border border-slate-200',
+};
+
+const RECALL_STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Pendiente',
+  COMPLETED: 'Completado',
+  NOT_APPLICABLE: 'No aplica',
+};
+
+const RECALL_HEADERS: ArchonTableHeader[] = [
+  { key: 'code', label: 'Campaña', align: 'center', width: '14%' },
+  { key: 'desc', label: 'Descripción', align: 'center', width: '34%' },
+  { key: 'date', label: 'Publicación', align: 'center', width: '14%' },
+  { key: 'status', label: 'Estado', align: 'center', width: '16%' },
+  { key: 'actions', label: 'ACCIONES', align: 'center', width: '22%' },
+];
+
+type RecallLinkModalProps = {
+  isOpen: boolean;
+  onClose(): void;
+  onConfirm(recallId: number): Promise<void>;
+};
+
+function RecallLinkModal({
+  isOpen,
+  onClose,
+  onConfirm,
+}: RecallLinkModalProps): React.JSX.Element | null {
+  const [recallId, setRecallId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (): Promise<void> => {
+    const id = parseInt(recallId, 10);
+    if (!id || id <= 0) return;
+    setSubmitting(true);
+    try {
+      await onConfirm(id);
+      setRecallId('');
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Vincular recall"
+    >
+      <div className="bg-[#0A0F1E] border border-white/10 rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="p-8 flex flex-col gap-6">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <Bell size={18} className="text-amber-400" />
+            Vincular Recall al Catálogo
+          </h3>
+          <p className="text-gray-400 text-sm">
+            Ingresa el ID del recall del catálogo oficial para vincularlo a esta unidad.
+          </p>
+          <input
+            type="number"
+            min={1}
+            placeholder="ID del recall (ej. 42)"
+            value={recallId}
+            onChange={(e): void => setRecallId(e.target.value)}
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-[4px] text-white focus:outline-none focus:border-amber-400/50"
+            aria-label="ID del recall"
+          />
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={onClose}
+              disabled={submitting}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors rounded-[4px] text-archon-sm font-black uppercase tracking-widest"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || !recallId || parseInt(recallId, 10) <= 0}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-sm font-black uppercase tracking-widest"
+            >
+              Vincular
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecallsSection({ unitId }: { unitId: string }): React.JSX.Element {
+  const { recalls, loading, refresh, linkRecall, updateStatus } = useFleetRecalls(unitId);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleComplete = useCallback(
+    (recallId: number): void => {
+      updateStatus(recallId, 'COMPLETED' as RecallStatus).catch(refresh);
+    },
+    [updateStatus, refresh]
+  );
+  const handleNotApplicable = useCallback(
+    (recallId: number): void => {
+      updateStatus(recallId, 'NOT_APPLICABLE' as RecallStatus).catch(refresh);
+    },
+    [updateStatus, refresh]
+  );
+
+  return (
+    <>
+      <RecallLinkModal
+        isOpen={modalOpen}
+        onClose={(): void => setModalOpen(false)}
+        onConfirm={linkRecall}
+      />
+      <SectionCard title="Recalls" icon={<Bell size={16} className="text-[#f2b705]" />}>
+        <div className="flex justify-end mb-3">
+          <button
+            title="Vincular recall del catálogo"
+            onClick={(): void => setModalOpen(true)}
+            className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+        <ArchonDataTable
+          data={recalls}
+          headers={RECALL_HEADERS}
+          variant="embedded"
+          emptyMessage="Sin recalls registrados para esta unidad"
+          loading={loading}
+          renderRow={(r): React.ReactElement => (
+            <tr key={r.recall_id} className="hover:bg-slate-50/70 transition-colors">
+              <td className="px-3 py-3 text-center">
+                <span className={AT.cellMono}>{r.campaign_code}</span>
+              </td>
+              <td className="px-3 py-3 text-center">
+                <span className={AT.cellValue}>{r.description}</span>
+              </td>
+              <td className="px-3 py-3 text-center">
+                <span className={AT.cellMono}>{formatDate(r.published_date)}</span>
+              </td>
+              <td className="px-3 py-3 text-center">
+                <span
+                  className={`text-archon-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-[3px] ${
+                    RECALL_STATUS_BADGE[r.status] ?? 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {RECALL_STATUS_LABEL[r.status] ?? r.status}
+                </span>
+              </td>
+              <td className="px-3 py-3 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  {r.status !== 'COMPLETED' && (
+                    <button
+                      title="Marcar como completado"
+                      onClick={(): void => handleComplete(r.recall_id)}
+                      className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
+                    >
+                      <CheckCircle size={18} />
+                    </button>
+                  )}
+                  {r.status === 'PENDING' && (
+                    <button
+                      title="Marcar como no aplica"
+                      onClick={(): void => handleNotApplicable(r.recall_id)}
+                      className="flex items-center justify-center w-10 h-10 text-slate-500 bg-slate-50 hover:bg-slate-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
+                    >
+                      <XCircle size={18} />
+                    </button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          )}
+        />
+      </SectionCard>
+    </>
+  );
+}
+
 // ─── Maintenance Table ────────────────────────────────────────────────────────
 
 const MAINT_HEADERS: ArchonTableHeader[] = [
@@ -639,6 +832,8 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
         <OperatorScorecardSection unitId={unit.id} />
         <Co2Section unitId={unit.id} />
       </div>
+
+      <RecallsSection unitId={unit.id} />
 
       <SectionCard
         title="Historial de Mantenimiento"
