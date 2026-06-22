@@ -54,8 +54,13 @@ const createFleetSchema = z.object({
   colorId: z.number().int().optional().nullable(),
   description: z.string().optional().nullable(),
   // 🔱 Archon Intelligence
-  maintIntervalDays: z.number().int().min(0).default(90),
-  maintIntervalKm: z.number().min(0).default(5000),
+  maintIntervalDays: z
+    .number({ required_error: 'maintIntervalDays is required' })
+    .int()
+    .min(1, { message: 'maintIntervalDays must be greater than 0' }),
+  maintIntervalKm: z
+    .number({ required_error: 'maintIntervalKm is required' })
+    .min(1, { message: 'maintIntervalKm must be greater than 0' }),
   lastServiceDate: z.string().optional().nullable(),
   lastServiceReading: z.number().optional().default(0),
   dailyUsageAvg: z.number().min(0).optional().nullable(),

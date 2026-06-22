@@ -129,6 +129,29 @@ describe('Fleet Integration Endpoints', () => {
       });
       expect(response.statusCode).toBe(400);
     });
+
+    // FLEETVAL-1: FC-HardcodeIntervals FaseB — POST sin maintIntervalKm
+    it('FLEETVAL-1: POST sin maintIntervalKm responde 400', async (): Promise<void> => {
+      const { maintIntervalKm: _km, ...unitWithoutKm } = validUnit;
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: unitWithoutKm,
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    // FLEETVAL-2: FC-HardcodeIntervals FaseB — POST con maintIntervalDays=0
+    it('FLEETVAL-2: POST con maintIntervalDays=0 responde 400', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/fleet',
+        headers: authHeader(),
+        payload: { ...validUnit, maintIntervalDays: 0 },
+      });
+      expect(response.statusCode).toBe(400);
+    });
   });
 
   describe('GET /v1/fleet', () => {
@@ -342,6 +365,32 @@ describe('Fleet Integration Endpoints', () => {
       });
       expect(response.statusCode).toBe(500);
     });
+
+    // FLEETVAL-3: FC-HardcodeIntervals FaseB — PATCH con maintIntervalKm=0
+    it('FLEETVAL-3: PATCH con maintIntervalKm=0 responde 400', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: { data: { maintIntervalKm: 0 }, reason: 'Bad interval test' },
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    // FLEETVAL-4: FC-HardcodeIntervals FaseB — PATCH sin maintIntervalDays es válido (partial)
+    it('FLEETVAL-4: PATCH sin maintIntervalDays es válido (partial update)', async (): Promise<void> => {
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]); // Snapshot After
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: { data: { odometer: 55000 }, reason: 'Odometer update no interval' },
+      });
+      expect(response.statusCode).toBe(200);
+    });
   });
 
   describe('DELETE /v1/fleet/:id', () => {
@@ -453,6 +502,8 @@ describe('Fleet Integration Endpoints', () => {
           circulationCardNumber: 'CARD-100',
           numeroSerie: 'SERIE-100',
           images: ['data:image/png;base64,123'],
+          maintIntervalDays: 90,
+          maintIntervalKm: 5000,
         },
       });
 
@@ -476,6 +527,8 @@ describe('Fleet Integration Endpoints', () => {
           fuelTankCapacity: 50,
           operationalUseId: 1,
           departmentId: 1,
+          maintIntervalDays: 90,
+          maintIntervalKm: 5000,
         },
       });
       expect(rSql.statusCode).toBe(500);
@@ -495,6 +548,8 @@ describe('Fleet Integration Endpoints', () => {
           fuelTankCapacity: 50,
           operationalUseId: 1,
           departmentId: 1,
+          maintIntervalDays: 90,
+          maintIntervalKm: 5000,
         },
       });
       expect(rStr.statusCode).toBe(500);
@@ -514,6 +569,8 @@ describe('Fleet Integration Endpoints', () => {
           fuelTankCapacity: 50,
           operationalUseId: 1,
           departmentId: 1,
+          maintIntervalDays: 90,
+          maintIntervalKm: 5000,
         },
       });
       expect(rEmpty.statusCode).toBe(500);
