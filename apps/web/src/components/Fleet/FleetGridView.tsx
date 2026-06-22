@@ -47,16 +47,18 @@ interface FleetGridViewProps {
 const IdentityCluster = ({
   unit,
   tarjeta,
+  isVIM,
 }: {
   unit: FleetUnit;
   tarjeta: string | number;
+  isVIM: boolean;
 }): React.JSX.Element => {
   const restriction = checkHoyNoCircula(unit.environmentalHologram || null, unit.placas || null);
 
   return (
     <div className="flex flex-col items-center gap-2.5">
       <span className="text-archon-base font-black text-navy-400 uppercase tracking-[0.2em]">
-        {unit.owner || 'ARIAN SILVER DE MÉXICO'}
+        {unit.owner || '—'}
       </span>
       <div className="flex flex-col items-center gap-1.5">
         <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
@@ -88,11 +90,13 @@ const IdentityCluster = ({
         </span>
       )}
       <span className="flex items-center gap-1.5 text-archon-base font-black text-emerald-600 bg-emerald-50/50 px-2.5 py-1 rounded-[4px] uppercase tracking-widest border border-emerald-100/50">
-        <ShieldCheck size={12} /> {unit.complianceStatus || 'OPERATIVO'}
+        <ShieldCheck size={12} /> {unit.complianceStatus || '—'}
       </span>
-      <span className="flex items-center gap-1.5 text-archon-base font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-[4px] border border-sky-100 uppercase tracking-widest shadow-sm">
-        <MapPin size={11} className="text-sky-500" /> {unit.sede || 'MINA'}
-      </span>
+      {!isVIM && (
+        <span className="flex items-center gap-1.5 text-archon-base font-black text-navy-800 bg-sky-50 px-2.5 py-1 rounded-[4px] border border-sky-100 uppercase tracking-widest shadow-sm">
+          <MapPin size={11} className="text-sky-500" /> {unit.sede || '—'}
+        </span>
+      )}
     </div>
   );
 };
@@ -127,14 +131,16 @@ const LogisticsCluster = ({
         <span className={`flex items-center gap-1.5 ${AT.cellValue} uppercase tracking-tighter`}>
           <RefreshCcw size={11} className="text-sky-500" />
           {unit.usageFreqLabel ||
-            `${Number(unit.maintIntervalKm || 10000).toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })} ${usageUnit}`}
+            (unit.maintIntervalKm
+              ? `${Number(unit.maintIntervalKm).toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })} ${usageUnit}`
+              : '—')}
         </span>
         <span className="flex items-center gap-1.5 text-archon-base font-bold text-slate-400 uppercase tracking-tighter">
           <CalendarDays size={11} className="text-slate-300" />
-          {unit.timeFreqLabel || `${unit.maintIntervalDays || 180} DÍAS`}
+          {unit.timeFreqLabel || (unit.maintIntervalDays ? `${unit.maintIntervalDays} DÍAS` : '—')}
         </span>
       </div>
       {!isVIM && (
@@ -183,7 +189,7 @@ const OdometerCluster = ({
           {usageUnit}
         </span>
         <span className="text-archon-sm font-black text-slate-400 uppercase tracking-widest mt-0.5">
-          {formatDateTime(new Date(unit.lastServiceDate || Date.now()))}
+          {unit.lastServiceDate ? formatDateTime(new Date(unit.lastServiceDate)) : '---'}
         </span>
       </div>
       <div className="flex flex-col items-center bg-amber-50 px-3 py-1 rounded border border-amber-100">
@@ -613,7 +619,11 @@ const FleetUnitRow = React.memo(
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">
-          <IdentityCluster unit={unit} tarjeta={unit.circulationCardNumber || '---'} />
+          <IdentityCluster
+            unit={unit}
+            tarjeta={unit.circulationCardNumber || '---'}
+            isVIM={isVIM}
+          />
         </td>
 
         <td className="text-center px-3 border-t border-solid border-slate-200 border-x-0 border-b-0">

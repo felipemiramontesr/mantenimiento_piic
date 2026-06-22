@@ -287,3 +287,73 @@ describe('FleetGridView VIM Display (FC-3 Fase 3E)', () => {
     expect(screen.getByText('ADQUISICIÓN')).toBeInTheDocument();
   });
 });
+
+// NULLINTERVALS-1..2: FC-HardcodeIntervals Fase A — null interval fallback sanitization
+describe('FleetGridView Null Interval Fallbacks (FC-HardcodeIntervals Fase A)', () => {
+  const nullIntervalsUnit = {
+    id: 'TEST-NULL',
+    placas: 'NULL-001',
+    marca: 'Ford',
+    modelo: 'Ranger',
+    year: 2023,
+    color: 'Negro',
+    departamento: 'Test',
+    sede: null,
+    owner: null,
+    complianceStatus: null,
+    status: 'Disponible',
+    assetType: 'Vehículo',
+    fuelType: 'Diesel',
+    traccion: '4x4',
+    transmision: 'Manual',
+    numeroSerie: 'NULLTEST001',
+    circulationCardNumber: null,
+    accountingAccount: null,
+    insurancePolicyNumber: null,
+    motor: null,
+    tireBrand: null,
+    tireSpec: null,
+    monthlyLeasePayment: 0,
+    odometer: 3500,
+    lastServiceReading: 0,
+    nextServiceReading: null,
+    capacidadCarga: 0,
+    fuelTankCapacity: 0,
+    maintIntervalKm: null,
+    maintIntervalDays: null,
+    usageFreqLabel: null,
+    timeFreqLabel: null,
+    dailyUsageAvg: 0,
+  } as unknown as FleetUnit;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(false),
+      hasAnyPermission: vi.fn().mockReturnValue(false),
+      isOmnipotent: vi.fn().mockReturnValue(false),
+      isExternalClientOnly: vi.fn().mockReturnValue(false),
+      isSuiteVIM: vi.fn().mockReturnValue(false),
+    });
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+  });
+
+  it('NULLINTERVALS-1: maintIntervalKm=null y usageFreqLabel=null muestra "—" sin fallback ERP', () => {
+    render(<FleetGridView units={[nullIntervalsUnit]} onEdit={vi.fn()} />);
+    expect(screen.queryByText(/10,000\.00 KM/)).not.toBeInTheDocument();
+  });
+
+  it('NULLINTERVALS-2: maintIntervalDays=null y timeFreqLabel=null muestra "—" sin fallback ERP', () => {
+    render(<FleetGridView units={[nullIntervalsUnit]} onEdit={vi.fn()} />);
+    expect(screen.queryByText('180 DÍAS')).not.toBeInTheDocument();
+  });
+});
