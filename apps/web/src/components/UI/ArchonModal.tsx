@@ -7,6 +7,7 @@ export interface ArchonModalProps {
   children: React.ReactNode;
   maxWidth?: string;
   ariaLabel?: string;
+  containerClassName?: string;
 }
 
 const ArchonModal: React.FC<ArchonModalProps> = ({
@@ -15,6 +16,7 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
   children,
   maxWidth = 'max-w-2xl',
   ariaLabel,
+  containerClassName,
 }) => {
   if (!isOpen) return null;
 
@@ -30,7 +32,7 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
       aria-label={ariaLabel}
       onClick={handleBackdropClick}
     >
-      <div className={`archon-modal-container ${maxWidth}`}>{children}</div>
+      <div className={containerClassName ?? `archon-modal-container ${maxWidth}`}>{children}</div>
     </div>,
     document.body
   );

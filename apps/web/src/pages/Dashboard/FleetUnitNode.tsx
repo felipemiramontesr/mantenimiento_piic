@@ -35,6 +35,7 @@ import { useNhtsaRecalls, NhtsaRecall } from '../../hooks/useNhtsaRecalls';
 import { useAssetTypeFields } from '../../hooks/useAssetTypeFields';
 
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
+import ArchonModal from '../../components/UI/ArchonModal';
 import AT from '../../styles/archonTypography';
 import { FleetUnit } from '../../types/fleet';
 import {
@@ -560,52 +561,43 @@ function RecallLinkModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Vincular recall"
-    >
-      <div className="bg-[#0A0F1E] border border-white/10 rounded-xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-8 flex flex-col gap-6">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <Bell size={18} className="text-amber-400" />
-            Vincular Recall al Catálogo
-          </h3>
-          <p className="text-gray-400 text-sm">
-            Ingresa el ID del recall del catálogo oficial para vincularlo a esta unidad.
-          </p>
-          <input
-            type="number"
-            min={1}
-            placeholder="ID del recall (ej. 42)"
-            value={recallId}
-            onChange={(e): void => setRecallId(e.target.value)}
-            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-[4px] text-white focus:outline-none focus:border-amber-400/50"
-            aria-label="ID del recall"
-          />
-          <div className="flex gap-3 justify-end">
-            <button
-              onClick={onClose}
-              disabled={submitting}
-              className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors rounded-[4px] text-archon-sm font-black uppercase tracking-widest"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !recallId || parseInt(recallId, 10) <= 0}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-sm font-black uppercase tracking-widest"
-            >
-              Vincular
-            </button>
-          </div>
+    <ArchonModal isOpen={isOpen} onClose={onClose} maxWidth="max-w-md" ariaLabel="Vincular recall">
+      <div className="p-8 flex flex-col gap-6">
+        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+          <Bell size={18} className="text-amber-400" />
+          Vincular Recall al Catálogo
+        </h3>
+        <p className="text-gray-400 text-sm">
+          Ingresa el ID del recall del catálogo oficial para vincularlo a esta unidad.
+        </p>
+        <input
+          type="number"
+          min={1}
+          placeholder="ID del recall (ej. 42)"
+          value={recallId}
+          onChange={(e): void => setRecallId(e.target.value)}
+          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-[4px] text-white focus:outline-none focus:border-amber-400/50"
+          aria-label="ID del recall"
+        />
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors rounded-[4px] text-archon-sm font-black uppercase tracking-widest"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || !recallId || parseInt(recallId, 10) <= 0}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-sm font-black uppercase tracking-widest"
+          >
+            Vincular
+          </button>
         </div>
       </div>
-    </div>
+    </ArchonModal>
   );
 }
 
@@ -656,8 +648,6 @@ function NhtsaResultsModal({
       .finally(() => setVimLoading(false));
   }, [isOpen, activeTab, make, model, year]);
 
-  if (!isOpen) return null;
-
   const handleImport = async (recall: NhtsaRecall): Promise<void> => {
     setImportingCode(recall.campaignNumber);
     try {
@@ -677,143 +667,139 @@ function NhtsaResultsModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Buscar recalls en NHTSA"
+    <ArchonModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-2xl"
+      ariaLabel="Buscar recalls en NHTSA"
     >
-      <div className="bg-[#0A0F1E] border border-white/10 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Globe size={18} className="text-sky-400" />
-              Recalls NHTSA — {make} {model} {year}
-            </h3>
-            <button
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <XCircle size={20} />
-            </button>
-          </div>
-
-          <div className="flex gap-1 border-b border-white/10">
-            {(['nhtsa', 'vim'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={(): void => setActiveTab(tab)}
-                className={`px-4 py-2 text-archon-sm font-black uppercase tracking-widest transition-colors rounded-t-[4px] ${
-                  activeTab === tab
-                    ? 'text-sky-400 border-b-2 border-sky-400'
-                    : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                {tab === 'nhtsa' ? 'NHTSA Oficial' : 'Patrones VIM'}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === 'nhtsa' && (
-            <div>
-              {loading && (
-                <p className="text-gray-400 text-sm text-center py-4">Consultando NHTSA…</p>
-              )}
-              {error && <p className="text-red-400 text-sm text-center py-4">{error}</p>}
-              {!loading && !error && results.length === 0 && (
-                <p className="text-gray-400 text-sm text-center py-4">
-                  No se encontraron recalls para este modelo/año.
-                </p>
-              )}
-              {!loading && results.length > 0 && (
-                <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
-                  {results.map((r) => (
-                    <div
-                      key={r.campaignNumber}
-                      className="flex items-start justify-between gap-3 p-3 bg-white/5 rounded-[4px]"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-archon-xs font-black text-sky-300 uppercase tracking-widest">
-                          {r.campaignNumber}
-                        </p>
-                        <p className="text-sm text-white mt-0.5 line-clamp-2">{r.subject}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{r.component}</p>
-                      </div>
-                      <button
-                        title={`Importar recall ${r.campaignNumber}`}
-                        onClick={(): void => {
-                          handleImport(r);
-                        }}
-                        disabled={importingCode === r.campaignNumber}
-                        className="flex-shrink-0 flex items-center justify-center px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-xs font-black uppercase tracking-widest"
-                      >
-                        {importingCode === r.campaignNumber ? '…' : 'Importar'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'vim' && (
-            <div>
-              {vimLoading && (
-                <p className="text-gray-400 text-sm text-center py-4">Analizando patrones VIM…</p>
-              )}
-              {vimError && <p className="text-red-400 text-sm text-center py-4">{vimError}</p>}
-              {!vimLoading && !vimError && vimResults.length === 0 && (
-                <p className="text-gray-500 text-sm text-center py-4">
-                  Sin patrones de falla detectados para este modelo/año.
-                </p>
-              )}
-              {!vimLoading && vimResults.length > 0 && (
-                <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
-                  {vimResults.map((p, i) => (
-                    <div
-                      key={`${p.failure_category}-${i}`}
-                      className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-[4px]"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-archon-xs font-black text-amber-300 uppercase tracking-widest">
-                          {p.failure_category}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {p.affected_units} unidades ·{' '}
-                          {p.avg_km_at_failure != null
-                            ? `${p.avg_km_at_failure.toLocaleString()} km prom.`
-                            : 'km N/D'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {p.nhtsa_covered && (
-                          <span
-                            title="Cubierto por recall NHTSA"
-                            className="text-xs text-sky-400 font-black uppercase tracking-widest border border-sky-400/40 rounded-[2px] px-1.5 py-0.5"
-                          >
-                            NHTSA
-                          </span>
-                        )}
-                        <span
-                          className={`text-xs font-black uppercase tracking-widest rounded-[2px] px-2 py-0.5 ${
-                            VIM_SIGNAL_STYLES[p.signal_level]
-                          }`}
-                        >
-                          {p.signal_level === 'DATOS_INSUFICIENTES'
-                            ? 'DATOS INSUF.'
-                            : p.signal_level}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+      <div className="p-6 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <Globe size={18} className="text-sky-400" />
+            Recalls NHTSA — {make} {model} {year}
+          </h3>
+          <button
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <XCircle size={20} />
+          </button>
         </div>
+
+        <div className="flex gap-1 border-b border-white/10">
+          {(['nhtsa', 'vim'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={(): void => setActiveTab(tab)}
+              className={`px-4 py-2 text-archon-sm font-black uppercase tracking-widest transition-colors rounded-t-[4px] ${
+                activeTab === tab
+                  ? 'text-sky-400 border-b-2 border-sky-400'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {tab === 'nhtsa' ? 'NHTSA Oficial' : 'Patrones VIM'}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'nhtsa' && (
+          <div>
+            {loading && (
+              <p className="text-gray-400 text-sm text-center py-4">Consultando NHTSA…</p>
+            )}
+            {error && <p className="text-red-400 text-sm text-center py-4">{error}</p>}
+            {!loading && !error && results.length === 0 && (
+              <p className="text-gray-400 text-sm text-center py-4">
+                No se encontraron recalls para este modelo/año.
+              </p>
+            )}
+            {!loading && results.length > 0 && (
+              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                {results.map((r) => (
+                  <div
+                    key={r.campaignNumber}
+                    className="flex items-start justify-between gap-3 p-3 bg-white/5 rounded-[4px]"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-archon-xs font-black text-sky-300 uppercase tracking-widest">
+                        {r.campaignNumber}
+                      </p>
+                      <p className="text-sm text-white mt-0.5 line-clamp-2">{r.subject}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{r.component}</p>
+                    </div>
+                    <button
+                      title={`Importar recall ${r.campaignNumber}`}
+                      onClick={(): void => {
+                        handleImport(r);
+                      }}
+                      disabled={importingCode === r.campaignNumber}
+                      className="flex-shrink-0 flex items-center justify-center px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-xs font-black uppercase tracking-widest"
+                    >
+                      {importingCode === r.campaignNumber ? '…' : 'Importar'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'vim' && (
+          <div>
+            {vimLoading && (
+              <p className="text-gray-400 text-sm text-center py-4">Analizando patrones VIM…</p>
+            )}
+            {vimError && <p className="text-red-400 text-sm text-center py-4">{vimError}</p>}
+            {!vimLoading && !vimError && vimResults.length === 0 && (
+              <p className="text-gray-500 text-sm text-center py-4">
+                Sin patrones de falla detectados para este modelo/año.
+              </p>
+            )}
+            {!vimLoading && vimResults.length > 0 && (
+              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                {vimResults.map((p, i) => (
+                  <div
+                    key={`${p.failure_category}-${i}`}
+                    className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-[4px]"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-archon-xs font-black text-amber-300 uppercase tracking-widest">
+                        {p.failure_category}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {p.affected_units} unidades ·{' '}
+                        {p.avg_km_at_failure != null
+                          ? `${p.avg_km_at_failure.toLocaleString()} km prom.`
+                          : 'km N/D'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {p.nhtsa_covered && (
+                        <span
+                          title="Cubierto por recall NHTSA"
+                          className="text-xs text-sky-400 font-black uppercase tracking-widest border border-sky-400/40 rounded-[2px] px-1.5 py-0.5"
+                        >
+                          NHTSA
+                        </span>
+                      )}
+                      <span
+                        className={`text-xs font-black uppercase tracking-widest rounded-[2px] px-2 py-0.5 ${
+                          VIM_SIGNAL_STYLES[p.signal_level]
+                        }`}
+                      >
+                        {p.signal_level === 'DATOS_INSUFICIENTES' ? 'DATOS INSUF.' : p.signal_level}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </ArchonModal>
   );
 }
 

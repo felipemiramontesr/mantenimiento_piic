@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ArchonModal from '../UI/ArchonModal';
 
 interface AuditJustificationModalProps {
   isOpen: boolean;
@@ -9,10 +10,6 @@ interface AuditJustificationModalProps {
   loading?: boolean;
 }
 
-/**
- * 🔱 ARCHON AUDIT JUSTIFICATION MODAL
- * Standardizes the mandatory "Impact Justification" for all destructive actions.
- */
 const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
   isOpen,
   onClose,
@@ -27,17 +24,16 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
     if (isOpen) setReason('');
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const isDelete = actionType === 'DELETE';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      role="dialog"
-      aria-modal="true"
+    <ArchonModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-3xl"
+      ariaLabel={isDelete ? 'Confirmar eliminación' : 'Justificar cambio'}
     >
-      <div className="bg-[#0A0F1E] border border-white/10 rounded-xl w-full max-w-3xl min-h-[500px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col justify-between">
+      <div className="min-h-[500px] flex flex-col justify-between">
         <div className="p-8 flex flex-col justify-between flex-1">
           <div>
             <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
@@ -96,7 +92,7 @@ const AuditJustificationModal: React.FC<AuditJustificationModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </ArchonModal>
   );
 };
 

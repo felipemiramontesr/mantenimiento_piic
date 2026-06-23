@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { Check, X, ZoomIn, ZoomOut } from 'lucide-react';
+import ArchonModal from './UI/ArchonModal';
 
 interface CropOffset {
   x: number;
@@ -157,12 +157,14 @@ const ArchonCropModal: React.FC<ArchonCropModalProps> = ({ imageSrc, onConfirm, 
     onConfirm(canvas.toDataURL('image/jpeg', 0.92));
   };
 
-  return createPortal(
-    <div
-      data-testid="archon-crop-modal"
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70"
+  return (
+    <ArchonModal
+      isOpen={true}
+      onClose={onCancel}
+      ariaLabel="Encuadrar foto"
+      containerClassName="bg-white rounded-[4px] p-6 flex flex-col gap-4 shadow-2xl w-auto"
     >
-      <div className="bg-white rounded-[4px] p-6 flex flex-col gap-4 shadow-2xl">
+      <div data-testid="archon-crop-modal" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <span className="text-[13px] font-black text-[#0f2a44] uppercase tracking-widest">
             Encuadrar foto
@@ -247,8 +249,7 @@ const ArchonCropModal: React.FC<ArchonCropModalProps> = ({ imageSrc, onConfirm, 
           </button>
         </div>
       </div>
-    </div>,
-    document.body
+    </ArchonModal>
   );
 };
 
