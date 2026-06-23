@@ -21,6 +21,7 @@ import {
   Plus,
   CheckCircle,
   XCircle,
+  Globe,
 } from 'lucide-react';
 import api from '../../api/client';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
@@ -30,6 +31,7 @@ import { useAnomalyDetection } from '../../hooks/useAnomalyDetection';
 import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
 import { useCo2 } from '../../hooks/useCo2';
 import { useFleetRecalls, RecallStatus } from '../../hooks/useFleetRecalls';
+import { useNhtsaRecalls, NhtsaRecall } from '../../hooks/useNhtsaRecalls';
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
 import { FleetUnit } from '../../types/fleet';
@@ -589,9 +591,160 @@ function RecallLinkModal({
   );
 }
 
-function RecallsSection({ unitId }: { unitId: string }): React.JSX.Element {
+type NhtsaResultsModalProps = {
+  isOpen: boolean;
+  make: string;
+  model: string;
+  year: number;
+  onClose(): void;
+  onImported(): void;
+  linkRecall(recallId: number): Promise<void>;
+};
+
+function NhtsaResultsModal({
+  isOpen,
+  make,
+  model,
+  year,
+  onClose,
+  onImported,
+  linkRecall,
+}: NhtsaResultsModalProps): React.JSX.Element | null {
+  const { results, loading, error, search, importRecall } = useNhtsaRecalls();
+  const [activeTab, setActiveTab] = useState<'nhtsa' | 'vim'>('nhtsa');
+  const [importingCode, setImportingCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      search(make, model, year);
+    }
+  }, [isOpen, search, make, model, year]);
+
+  if (!isOpen) return null;
+
+  const handleImport = async (recall: NhtsaRecall): Promise<void> => {
+    setImportingCode(recall.campaignNumber);
+    try {
+      const imported = await importRecall({
+        campaignNumber: recall.campaignNumber,
+        make,
+        model,
+        year,
+        description: recall.summary,
+      });
+      await linkRecall(imported.recall_id);
+      onImported();
+      onClose();
+    } finally {
+      setImportingCode(null);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Buscar recalls en NHTSA"
+    >
+      <div className="bg-[#0A0F1E] border border-white/10 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <Globe size={18} className="text-sky-400" />
+              Recalls NHTSA — {make} {model} {year}
+            </h3>
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <XCircle size={20} />
+            </button>
+          </div>
+
+          <div className="flex gap-1 border-b border-white/10">
+            {(['nhtsa', 'vim'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={(): void => setActiveTab(tab)}
+                className={`px-4 py-2 text-archon-sm font-black uppercase tracking-widest transition-colors rounded-t-[4px] ${
+                  activeTab === tab
+                    ? 'text-sky-400 border-b-2 border-sky-400'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {tab === 'nhtsa' ? 'NHTSA Oficial' : 'Patrones VIM'}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'nhtsa' && (
+            <div>
+              {loading && (
+                <p className="text-gray-400 text-sm text-center py-4">Consultando NHTSA…</p>
+              )}
+              {error && <p className="text-red-400 text-sm text-center py-4">{error}</p>}
+              {!loading && !error && results.length === 0 && (
+                <p className="text-gray-400 text-sm text-center py-4">
+                  No se encontraron recalls para este modelo/año.
+                </p>
+              )}
+              {!loading && results.length > 0 && (
+                <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                  {results.map((r) => (
+                    <div
+                      key={r.campaignNumber}
+                      className="flex items-start justify-between gap-3 p-3 bg-white/5 rounded-[4px]"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-archon-xs font-black text-sky-300 uppercase tracking-widest">
+                          {r.campaignNumber}
+                        </p>
+                        <p className="text-sm text-white mt-0.5 line-clamp-2">{r.subject}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{r.component}</p>
+                      </div>
+                      <button
+                        title={`Importar recall ${r.campaignNumber}`}
+                        onClick={(): void => {
+                          handleImport(r);
+                        }}
+                        disabled={importingCode === r.campaignNumber}
+                        className="flex-shrink-0 flex items-center justify-center px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-xs font-black uppercase tracking-widest"
+                      >
+                        {importingCode === r.campaignNumber ? '…' : 'Importar'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'vim' && (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-gray-500 text-sm text-center">
+                Patrones VIM disponibles en FaseF — VIM Intelligence Engine
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type RecallsSectionProps = {
+  unitId: string;
+  make: string;
+  model: string;
+  year: number;
+};
+
+function RecallsSection({ unitId, make, model, year }: RecallsSectionProps): React.JSX.Element {
   const { recalls, loading, refresh, linkRecall, updateStatus } = useFleetRecalls(unitId);
   const [modalOpen, setModalOpen] = useState(false);
+  const [nhtsaModalOpen, setNhtsaModalOpen] = useState(false);
 
   const handleComplete = useCallback(
     (recallId: number): void => {
@@ -613,8 +766,24 @@ function RecallsSection({ unitId }: { unitId: string }): React.JSX.Element {
         onClose={(): void => setModalOpen(false)}
         onConfirm={linkRecall}
       />
+      <NhtsaResultsModal
+        isOpen={nhtsaModalOpen}
+        make={make}
+        model={model}
+        year={year}
+        onClose={(): void => setNhtsaModalOpen(false)}
+        onImported={refresh}
+        linkRecall={linkRecall}
+      />
       <SectionCard title="Recalls" icon={<Bell size={16} className="text-[#f2b705]" />}>
-        <div className="flex justify-end mb-3">
+        <div className="flex justify-end mb-3 gap-2">
+          <button
+            title="Buscar recalls en NHTSA"
+            onClick={(): void => setNhtsaModalOpen(true)}
+            className="flex items-center justify-center w-10 h-10 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
+          >
+            <Globe size={18} />
+          </button>
           <button
             title="Vincular recall del catálogo"
             onClick={(): void => setModalOpen(true)}
@@ -833,7 +1002,12 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
         <Co2Section unitId={unit.id} />
       </div>
 
-      <RecallsSection unitId={unit.id} />
+      <RecallsSection
+        unitId={unit.id}
+        make={unit.marca ?? ''}
+        model={unit.modelo ?? ''}
+        year={unit.year}
+      />
 
       <SectionCard
         title="Historial de Mantenimiento"

@@ -7,6 +7,7 @@ import { useAnomalyDetection } from '../../hooks/useAnomalyDetection';
 import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
 import { useCo2 } from '../../hooks/useCo2';
 import { useFleetRecalls } from '../../hooks/useFleetRecalls';
+import { useNhtsaRecalls } from '../../hooks/useNhtsaRecalls';
 import FleetUnitNode from './FleetUnitNode';
 
 vi.mock('../../api/client', () => ({ default: { get: vi.fn() } }));
@@ -31,8 +32,18 @@ vi.mock('../../hooks/useFleetRecalls', () => ({
     loading: false,
     error: null,
     refresh: vi.fn(),
-    linkRecall: vi.fn(),
+    linkRecall: vi.fn().mockResolvedValue(undefined),
     updateStatus: vi.fn(),
+  })),
+}));
+
+vi.mock('../../hooks/useNhtsaRecalls', () => ({
+  useNhtsaRecalls: vi.fn(() => ({
+    results: [],
+    loading: false,
+    error: null,
+    search: vi.fn(),
+    importRecall: vi.fn().mockResolvedValue({ recall_id: 42 }),
   })),
 }));
 const mockParams = vi.hoisted(() => ({ unitId: 'ASM-001' as string | undefined }));
@@ -687,5 +698,105 @@ describe('FleetUnitNode', () => {
     render(<FleetUnitNode />);
     await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
     expect(screen.getByText('Sin recalls registrados para esta unidad')).toBeInTheDocument();
+  });
+
+  it('NHTSA-E-1: botón "Buscar recalls en NHTSA" está visible en RecallsSection', async () => {
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
+    expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument();
+  });
+
+  it('NHTSA-E-2: modal Tab 1 muestra 2 filas cuando NHTSA devuelve 2 recalls', async () => {
+    vi.mocked(useNhtsaRecalls).mockReturnValue({
+      results: [
+        {
+          campaignNumber: '19V648',
+          subject: 'POWER TRAIN',
+          summary: 'Defect in transmission.',
+          remedy: 'Replace.',
+          consequence: 'Rollaway.',
+          component: 'POWER TRAIN:TRANSMISSION',
+          manufacturer: 'CHEVROLET',
+          nhtsaActionNumber: '19V-648',
+        },
+        {
+          campaignNumber: '21V201',
+          subject: 'AIR BAGS',
+          summary: 'Inflator may rupture.',
+          remedy: 'Replace inflator.',
+          consequence: 'Injury.',
+          component: 'AIR BAGS',
+          manufacturer: 'CHEVROLET',
+          nhtsaActionNumber: '21V-201',
+        },
+      ],
+      loading: false,
+      error: null,
+      search: vi.fn(),
+      importRecall: vi.fn().mockResolvedValue({ recall_id: 42 }),
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+    expect(screen.getByText('19V648')).toBeInTheDocument();
+    expect(screen.getByText('21V201')).toBeInTheDocument();
+  });
+
+  it('NHTSA-E-3: flujo completo — Importar llama POST, vincula recall y refresca sección', async () => {
+    const mockRefresh = vi.fn();
+    const mockLinkRecall = vi.fn().mockResolvedValue(undefined);
+    const mockImportRecall = vi.fn().mockResolvedValue({ recall_id: 7 });
+
+    vi.mocked(useFleetRecalls).mockReturnValue({
+      recalls: [],
+      loading: false,
+      error: null,
+      refresh: mockRefresh,
+      linkRecall: mockLinkRecall,
+      updateStatus: vi.fn(),
+    });
+    vi.mocked(useNhtsaRecalls).mockReturnValue({
+      results: [
+        {
+          campaignNumber: '19V648',
+          subject: 'POWER TRAIN',
+          summary: 'Defect in transmission.',
+          remedy: 'Replace.',
+          consequence: 'Rollaway.',
+          component: 'POWER TRAIN:TRANSMISSION',
+          manufacturer: 'CHEVROLET',
+          nhtsaActionNumber: '19V-648',
+        },
+      ],
+      loading: false,
+      error: null,
+      search: vi.fn(),
+      importRecall: mockImportRecall,
+    });
+
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByTitle('Importar recall 19V648'));
+
+    await waitFor(() =>
+      expect(mockImportRecall).toHaveBeenCalledWith(
+        expect.objectContaining({ campaignNumber: '19V648' })
+      )
+    );
+    await waitFor(() => expect(mockLinkRecall).toHaveBeenCalledWith(7));
+    await waitFor(() => expect(mockRefresh).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Buscar recalls en NHTSA' })
+      ).not.toBeInTheDocument()
+    );
   });
 });
