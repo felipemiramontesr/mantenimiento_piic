@@ -5,6 +5,7 @@ import SovereignHeader from '../../components/Navigation/SovereignHeader';
 import SovereignSubheader from '../../components/Navigation/SovereignSubheader';
 import SovereignFooter from '../../components/Navigation/SovereignFooter';
 import ArchonNetworkBanner from '../../components/Navigation/ArchonNetworkBanner';
+import PanicButton from '../../components/Security/PanicButton';
 import { FleetProvider } from '../../context/FleetContext';
 import { SovereignLayoutProvider } from '../../context/SovereignLayoutContext';
 import usePushNotifications from '../../hooks/usePushNotifications';
@@ -44,7 +45,8 @@ const DashboardLayout: React.FC = () => {
           </main>
         </div>
 
-        {/* 🔱 Forensic Telemetry Overlay */}
+        {/* 🆘 Panic SOS Button — floating, always visible */}
+        <PanicButton />
       </FleetProvider>
     </SovereignLayoutProvider>
   );

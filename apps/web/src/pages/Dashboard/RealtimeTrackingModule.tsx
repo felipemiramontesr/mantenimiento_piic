@@ -61,7 +61,7 @@ const RealtimeTrackingModule: React.FC = () => {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <MapPin size={18} className="text-[#f2b705]" />
-          <h1 className={AT.pageTitle}>Rastreo en Tiempo Real</h1>
+          <h1 className={AT.sectionTitle}>Rastreo en Tiempo Real</h1>
         </div>
         <div className="flex items-center gap-3 text-archon-xs text-[#0f2a44]/50">
           {isLoading && (
