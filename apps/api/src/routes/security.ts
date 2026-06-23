@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { RowDataPacket } from 'mysql2';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { randomUUID } from 'crypto';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
 
@@ -115,4 +116,62 @@ export default async function securityRoutes(fastify: FastifyInstance): Promise<
       return reply.code(500).send({ success: false, code: 'AUDIT_FETCH_FAIL' });
     }
   });
+
+  /**
+   * POST /v1/security/panic
+   * Triggers a SOS PANIC_ALERT notification to all users in the caller's universe.
+   * EAL6+: scoped to caller's owner_id(s) via user_owner_membership.
+   * Inserts one notifications_outbox row per target user_id.
+   */
+  fastify.post<{ Body: { latitude?: number; longitude?: number; unitId?: string } }>(
+    '/security/panic',
+    async (request, reply) => {
+      try {
+        await request.jwtVerify();
+      } catch {
+        return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+      }
+
+      const caller = request.user as { id: number; permissions: string[] };
+      const { latitude, longitude, unitId } = request.body ?? {};
+      const panicUuid = randomUUID();
+
+      // Resolve universe members: all user_ids sharing at least one owner_id with caller
+      const [membershipRows] = await db.execute<RowDataPacket[]>(
+        `SELECT DISTINCT uom2.user_id
+         FROM user_owner_membership uom1
+         JOIN user_owner_membership uom2 ON uom2.owner_id = uom1.owner_id
+         WHERE uom1.user_id = ? AND uom2.user_id != ?`,
+        [caller.id, caller.id]
+      );
+
+      const targetUserIds = (membershipRows as { user_id: number }[]).map((r) => r.user_id);
+
+      // Always include caller themselves (SOS self-alert)
+      const allTargets = [caller.id, ...targetUserIds];
+
+      // Build PANIC notification body including optional GPS context
+      const panicNote = [
+        unitId ? `Unit: ${unitId}` : null,
+        latitude != null && longitude != null ? `GPS: ${latitude},${longitude}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | ');
+
+      const sourceUuid = panicNote ? `${panicUuid}|${panicNote}` : panicUuid;
+
+      // Insert one outbox record per target
+      await Promise.all(
+        allTargets.map((userId) =>
+          db.execute<ResultSetHeader>(
+            `INSERT INTO notifications_outbox (permission_slug, notification_type, source_uuid, user_id)
+             VALUES (?, ?, ?, ?)`,
+            ['*', 'PANIC_ALERT', sourceUuid.slice(0, 36), userId]
+          )
+        )
+      );
+
+      return reply.send({ success: true, panicUuid, notifiedCount: allTargets.length });
+    }
+  );
 }

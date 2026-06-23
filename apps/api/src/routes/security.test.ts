@@ -173,3 +173,104 @@ describe('GET /v1/security/audit-log', () => {
     expect(body.code).toBe('AUDIT_FETCH_FAIL');
   });
 });
+
+describe('POST /v1/security/panic — FC-4 Panic_Button FaseA', () => {
+  const app = buildApp();
+  let userToken: string;
+  let isolatedToken: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    userToken = jwt.sign({ id: 10, username: 'driver.a', roleId: 3, permissions: ['fleet:view'] });
+    isolatedToken = jwt.sign({
+      id: 99,
+      username: 'solo.user',
+      roleId: 3,
+      permissions: ['fleet:view'],
+    });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-P-1: 401 without JWT', async () => {
+    const res = await app.inject({ method: 'POST', url: '/v1/security/panic' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-P-2: notifies caller only when no universe members exist', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[], undefined]) // membership query → no peers
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // INSERT for caller
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/security/panic',
+      headers: { authorization: `Bearer ${isolatedToken}` },
+      payload: {},
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.notifiedCount).toBe(1);
+    expect(body.panicUuid).toBeDefined();
+  });
+
+  it('AT-P-3: notifies caller + universe members (N inserts)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ user_id: 11 }, { user_id: 12 }], undefined]) // 2 peers
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT caller
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT peer 11
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // INSERT peer 12
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/security/panic',
+      headers: { authorization: `Bearer ${userToken}` },
+      payload: { latitude: 25.686, longitude: -100.316 },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.notifiedCount).toBe(3); // caller + 2 peers
+    // INSERT calls: 1 membership query + 3 INSERTs
+    expect(vi.mocked(db.execute).mock.calls).toHaveLength(4);
+  });
+
+  it('AT-P-4: INSERT uses PANIC_ALERT notification_type', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[], undefined]) // no peers
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // INSERT
+
+    await app.inject({
+      method: 'POST',
+      url: '/v1/security/panic',
+      headers: { authorization: `Bearer ${isolatedToken}` },
+      payload: {},
+    });
+
+    const insertCall = vi.mocked(db.execute).mock.calls[1];
+    expect(insertCall[1]).toContain('PANIC_ALERT');
+  });
+
+  it('AT-P-5: scoped to panic initiator universe (membership JOIN query)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ user_id: 20 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+
+    await app.inject({
+      method: 'POST',
+      url: '/v1/security/panic',
+      headers: { authorization: `Bearer ${userToken}` },
+      payload: { unitId: 'PIIC-101' },
+    });
+
+    const membershipCall = vi.mocked(db.execute).mock.calls[0];
+    expect((membershipCall[0] as string).toLowerCase()).toContain('user_owner_membership');
+    expect(membershipCall[1]).toContain(10); // caller id
+  });
+});
