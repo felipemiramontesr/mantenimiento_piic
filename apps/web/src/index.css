@@ -140,6 +140,19 @@
     @apply h-11 px-6 rounded-[4px] bg-[#0284c7] text-white font-display font-black text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_12px_rgba(2,132,199,0.15)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale;
   }
 
+  /* ── Archon Interactive Inputs ─────────────────────────────────────────── */
+  .archon-checkbox {
+    @apply w-4 h-4 rounded cursor-pointer accent-[#0f2a44] transition-all duration-200 border border-white/20 bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#0f2a44]/30;
+  }
+
+  .archon-radio {
+    @apply w-4 h-4 cursor-pointer accent-[#0f2a44] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0f2a44]/30;
+  }
+
+  .archon-select {
+    @apply w-full h-11 bg-white/5 border border-white/10 rounded-lg px-3 text-white text-sm focus:outline-none focus:border-[#0f2a44]/60 transition-colors cursor-pointer;
+  }
+
   /* ── Archon Modal System ────────────────────────────────────────────────── */
   .archon-modal-backdrop {
     @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4;
