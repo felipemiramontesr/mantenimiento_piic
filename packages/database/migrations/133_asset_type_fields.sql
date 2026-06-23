@@ -45,6 +45,12 @@ INSERT IGNORE INTO asset_type_fields (asset_type_id, field_name, visible) VALUES
 -- ─── Ensure all fleet_units have a valid assetTypeId ─────────────────────────
 UPDATE fleet_units SET assetTypeId = 1 WHERE assetTypeId IS NULL OR assetTypeId = 0;
 
+-- ─── Align column type before adding FK ──────────────────────────────────────
+-- fleet_units.assetTypeId was INT (signed); catalog_asset_types.id is INT UNSIGNED.
+-- MySQL Error 150 occurs if types don't match exactly — convert first.
+ALTER TABLE fleet_units
+  MODIFY COLUMN assetTypeId INT UNSIGNED;
+
 -- ─── Add FK from fleet_units.assetTypeId → catalog_asset_types.id ────────────
 -- Safe to run once. If FK already exists, this statement will fail — skip it.
 ALTER TABLE fleet_units
