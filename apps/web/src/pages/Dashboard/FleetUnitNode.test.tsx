@@ -799,4 +799,37 @@ describe('FleetUnitNode', () => {
       ).not.toBeInTheDocument()
     );
   });
+
+  it('VIM-F-5: Tab "Patrones VIM" activa y muestra ≥1 fila de patrón', async () => {
+    const VIM_ROW = {
+      failure_category: 'MAINTENANCE',
+      occurrence_count: 4,
+      affected_units: 2,
+      avg_km_at_failure: 68000,
+      confidence_score: 0.6667,
+      nhtsa_covered: false,
+      signal_level: 'SEÑAL' as const,
+    };
+
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (String(url).includes('vim-patterns')) {
+        return Promise.resolve({ data: { success: true, count: 1, data: [VIM_ROW] } });
+      }
+      return Promise.resolve({ data: { success: true, data: NODE_FIXTURE } });
+    });
+
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+
+    const vimTab = screen.getByText('Patrones VIM');
+    fireEvent.click(vimTab);
+
+    await waitFor(() => expect(screen.getByText('MAINTENANCE')).toBeInTheDocument());
+    expect(screen.getByText(/2 unidades/)).toBeInTheDocument();
+    expect(screen.getByText('SEÑAL')).toBeInTheDocument();
+  });
 });
