@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Bell,
   Globe,
+  MapPin,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -251,6 +252,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 label="Unidades"
                 path="/dashboard/fleet"
                 active={location.pathname === '/dashboard/fleet'}
+                isCollapsed={isCollapsed}
+              />
+            )}
+            {hasPermission('fleet:view') && (
+              <NavItem
+                icon={<MapPin size={20} />}
+                label="Rastreo GPS"
+                path="/dashboard/tracking"
+                active={location.pathname === '/dashboard/tracking'}
                 isCollapsed={isCollapsed}
               />
             )}

@@ -19,6 +19,7 @@ import MaintenanceNode from './pages/Dashboard/nodes/MaintenanceNode';
 import RouteNode from './pages/Dashboard/nodes/RouteNode';
 import IncidentNode from './pages/Dashboard/nodes/IncidentNode';
 import UserNode from './pages/Dashboard/nodes/UserNode';
+import RealtimeTrackingModule from './pages/Dashboard/RealtimeTrackingModule';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ClientScopeGate from './components/Common/ClientScopeGate';
@@ -86,6 +87,7 @@ const App: React.FC = () => (
                   <Route path="incidents/:uuid" element={<IncidentNode />} />
                   <Route path="users" element={<UsersModule />} />
                   <Route path="users/:uuid" element={<UserNode />} />
+                  <Route path="tracking" element={<RealtimeTrackingModule />} />
                 </Route>
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
