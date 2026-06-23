@@ -16,13 +16,17 @@ interface EconomicLifeInternal extends EconomicLifeResult {
   ownerId: number;
 }
 
-export function computeResidualValue(vehicleYear: number, currentYear: number): number {
+export function computeResidualValue(
+  vehicleYear: number,
+  currentYear: number,
+  baseValue: number = BASE_VEHICLE_VALUE_MXN
+): number {
   const ageYears = Math.max(0, currentYear - vehicleYear);
   const depreciationFraction = Math.min(
     MAX_DEPRECIATION_FRACTION,
     DEPRECIATION_RATE_PER_YEAR * ageYears
   );
-  return Math.round(BASE_VEHICLE_VALUE_MXN * (1 - depreciationFraction));
+  return Math.round(baseValue * (1 - depreciationFraction));
 }
 
 export function computeReplacementScore(accumulatedTco: number, residualValueMxn: number): number {
@@ -42,13 +46,17 @@ export default class EconomicLifeService {
     currentYear = new Date().getFullYear()
   ): Promise<EconomicLifeInternal | null> {
     const [unitRows] = await db.execute<RowDataPacket[]>(
-      `SELECT ownerId, year FROM fleet_units WHERE id = ?`,
+      `SELECT ownerId, year, acquisitionCost FROM fleet_units WHERE id = ?`,
       [unitId]
     );
     if (unitRows.length === 0) return null;
 
     const ownerId = Number(unitRows[0].ownerId);
     const vehicleYear = Number(unitRows[0].year);
+    const baseValue =
+      unitRows[0].acquisitionCost != null
+        ? Number(unitRows[0].acquisitionCost)
+        : BASE_VEHICLE_VALUE_MXN;
 
     const [tcoRows] = await db.execute<RowDataPacket[]>(
       `SELECT tco_total FROM view_fleet_units_tco WHERE fleet_unit_id = ?`,
@@ -56,7 +64,7 @@ export default class EconomicLifeService {
     );
     const accumulatedTco = tcoRows[0]?.tco_total != null ? Number(tcoRows[0].tco_total) : 0;
 
-    const residualValueMxn = computeResidualValue(vehicleYear, currentYear);
+    const residualValueMxn = computeResidualValue(vehicleYear, currentYear, baseValue);
     const replacementScore = computeReplacementScore(accumulatedTco, residualValueMxn);
     const recommendation = computeRecommendation(replacementScore);
 

@@ -324,6 +324,96 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
     });
   });
 
+  describe('getUnitById — AT-DH-A: Query Parity FC-7 FaseA', () => {
+    const logger = {
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+      trace: vi.fn(),
+    };
+
+    it('AT-DH-A-1: SQL contains assetTypeCode [VIM catalog enrichment]', async () => {
+      (db.execute as any).mockResolvedValue([[]]); // unit not found — still validates query
+      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
+      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
+      expect(sql).toContain('assetTypeCode');
+    });
+
+    it('AT-DH-A-2: usageUnitName KM flows through result for standard vehicle', async () => {
+      const row = [
+        { id: 'VEH-KM', assetTypeId: 1, usageUnitName: 'KM', lastServiceReading: 0, odometer: 0 },
+      ];
+      (db.execute as any).mockResolvedValueOnce([row]).mockResolvedValue([[]]);
+      const result = await FleetService.getUnitById('VEH-KM', logger as any);
+      expect((result as any).usageUnitName).toBe('KM');
+    });
+
+    it('AT-DH-A-3: usageUnitName HRS flows through result for maquinaria', async () => {
+      const row = [
+        {
+          id: 'MAQ-HRS',
+          assetTypeId: 9045,
+          usageUnitName: 'HRS',
+          lastServiceReading: 0,
+          odometer: 0,
+        },
+      ];
+      (db.execute as any).mockResolvedValueOnce([row]).mockResolvedValue([[]]);
+      const result = await FleetService.getUnitById('MAQ-HRS', logger as any);
+      expect((result as any).usageUnitName).toBe('HRS');
+    });
+
+    it('AT-DH-A-4: SQL contains owner JOIN [ERP organizational]', async () => {
+      (db.execute as any).mockResolvedValue([[]]);
+      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
+      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
+      expect(sql).toContain('owner');
+    });
+
+    it('AT-DH-A-5: SQL contains sede JOIN [ERP organizational]', async () => {
+      (db.execute as any).mockResolvedValue([[]]);
+      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
+      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
+      expect(sql).toContain('sede');
+    });
+
+    it('AT-DH-A-6: SQL contains centroMantenimiento JOIN [ERP organizational]', async () => {
+      (db.execute as any).mockResolvedValue([[]]);
+      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
+      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
+      expect(sql).toContain('centroMantenimiento');
+    });
+
+    it('AT-DH-A-7: SQL contains insuranceCompany JOIN [ERP organizational]', async () => {
+      (db.execute as any).mockResolvedValue([[]]);
+      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
+      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
+      expect(sql).toContain('insuranceCompany');
+    });
+
+    it('AT-DH-A-8: NULL FK fields do not crash — LEFT JOINs survive', async () => {
+      const row = [
+        {
+          id: 'NULL-FK',
+          assetTypeId: null,
+          ownerId: null,
+          locationId: null,
+          tipoTerreno: null,
+          owner: null,
+          sede: null,
+          insuranceCompany: null,
+          lastServiceReading: 0,
+          odometer: 0,
+        },
+      ];
+      (db.execute as any).mockResolvedValueOnce([row]).mockResolvedValue([[]]);
+      const result = await FleetService.getUnitById('NULL-FK', logger as any);
+      expect(result).not.toBeNull();
+      expect((result as any).id).toBe('NULL-FK');
+    });
+  });
+
   describe('deleteUnit', () => {
     it('should remove unit from registry', async () => {
       const mockConn = await db.getConnection();
