@@ -1006,11 +1006,12 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
       .finally(() => setLoading(false));
   }, [unitId]);
 
+  const { fields: assetFields } = useAssetTypeFields(node?.unit?.assetTypeId);
+
   if (loading) return <NodeLoadingState />;
   if (!node) return <NodeErrorState error={error} backTo="/dashboard/fleet" backLabel="Flota" />;
 
   const { unit, maintenance, financial, incidents } = node;
-  const { fields: assetFields } = useAssetTypeFields(unit.assetTypeId);
   const kmSinceService =
     unit.odometer && unit.lastServiceReading ? unit.odometer - unit.lastServiceReading : null;
   const kmRemaining =

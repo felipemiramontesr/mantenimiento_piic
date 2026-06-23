@@ -841,7 +841,7 @@ describe('FleetUnitNode', () => {
   });
 
   it('AT-C-2: EQUIPMENT oculta Placas, Tarjeta de circulación, Póliza y Verificación', async () => {
-    vi.mocked(useAssetTypeFields).mockReturnValueOnce({
+    vi.mocked(useAssetTypeFields).mockReturnValue({
       fields: {
         ...DEFAULT_FIELD_VISIBILITY,
         placa: false,
