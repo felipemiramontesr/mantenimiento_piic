@@ -3,6 +3,7 @@ import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
 import { isCategoryExclusiveToSuite } from '../constants/suiteCatalogs';
+import { getAssetTypes, getFieldVisibility } from '../services/assetTypeFieldsService';
 
 /**
  * 🔱 ARCHON SOVEREIGN CATALOGS (v.18.0.0)
@@ -19,7 +20,26 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
   });
   fastify.addHook('preHandler', requirePermission('fleet:view'));
 
-  // 1. Fetch options by Category (e.g. ASSET_TYPE, FREQ_TIME)
+  // 1. Asset types with field visibility config — FC-AssetType_ConditionalFields FaseB
+  fastify.get('/asset-types', async (_request, reply) => {
+    try {
+      const types = await getAssetTypes();
+      const data = await Promise.all(
+        types.map(async (type) => {
+          const fields = await getFieldVisibility(type.id);
+          return { ...type, fields };
+        })
+      );
+      return reply.code(200).send({ success: true, count: data.length, data });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Failed to fetch asset types' });
+    }
+  });
+
+  // 2. Fetch options by Category (e.g. ASSET_TYPE, FREQ_TIME)
   fastify.get(
     '/:category',
     async (

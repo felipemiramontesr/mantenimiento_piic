@@ -236,6 +236,104 @@ describe('Catalogs Integration Endpoints', () => {
     });
   });
 
+  // ── GET /v1/catalogs/asset-types — FC-AssetType_ConditionalFields FaseB ──
+
+  describe('GET /v1/catalogs/asset-types', () => {
+    const FOUR_TYPES = [
+      { id: 1, code: 'VEHICLE', label: 'Vehículo', icon_name: 'truck' },
+      { id: 2, code: 'MOTORCYCLE', label: 'Motocicleta', icon_name: 'motorcycle' },
+      { id: 3, code: 'EQUIPMENT', label: 'Equipo', icon_name: 'cog' },
+      { id: 4, code: 'TRAILER', label: 'Remolque', icon_name: 'trailer' },
+    ];
+
+    function mockAssetTypesChain(): void {
+      // call 1: getAssetTypes()
+      (db.execute as Mock).mockResolvedValueOnce([FOUR_TYPES]);
+      // call 2: getFieldVisibility(1) VEHICLE — no hidden rows
+      (db.execute as Mock).mockResolvedValueOnce([[]]);
+      // call 3: getFieldVisibility(2) MOTORCYCLE
+      (db.execute as Mock).mockResolvedValueOnce([
+        [{ field_name: 'circulationCardNumber', visible: 0 }],
+      ]);
+      // call 4: getFieldVisibility(3) EQUIPMENT
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          { field_name: 'placa', visible: 0 },
+          { field_name: 'circulationCardNumber', visible: 0 },
+          { field_name: 'insurancePolicyNumber', visible: 0 },
+          { field_name: 'insuranceExpiryDate', visible: 0 },
+          { field_name: 'vencimientoVerificacion', visible: 0 },
+        ],
+      ]);
+      // call 5: getFieldVisibility(4) TRAILER
+      (db.execute as Mock).mockResolvedValueOnce([
+        [
+          { field_name: 'placa', visible: 0 },
+          { field_name: 'circulationCardNumber', visible: 0 },
+          { field_name: 'vencimientoVerificacion', visible: 0 },
+        ],
+      ]);
+    }
+
+    // AT-B-1 — Happy path
+    it('AT-B-1: returns 4 types with field_config, VEHICLE first, EQUIPMENT hides placa', async (): Promise<void> => {
+      mockAssetTypesChain();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/asset-types',
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.count).toBe(4);
+      expect(body.data[0].code).toBe('VEHICLE');
+      expect(body.data[0].fields.placa).toBe(true);
+      expect(body.data[2].code).toBe('EQUIPMENT');
+      expect(body.data[2].fields.placa).toBe(false);
+    });
+
+    // AT-B-2 — Sin auth
+    it('AT-B-2: returns 401 without token', async (): Promise<void> => {
+      const response = await app.inject({ method: 'GET', url: '/v1/catalogs/asset-types' });
+      expect(response.statusCode).toBe(401);
+    });
+
+    // AT-B-3 — EQUIPMENT oculta todos los campos vehiculares
+    it('AT-B-3: EQUIPMENT hides circulationCardNumber, insurancePolicyNumber, vencimientoVerificacion', async (): Promise<void> => {
+      mockAssetTypesChain();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/asset-types',
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      const { data } = JSON.parse(response.body);
+      const equipment = data.find((t: { code: string }) => t.code === 'EQUIPMENT');
+      expect(equipment.fields.circulationCardNumber).toBe(false);
+      expect(equipment.fields.insurancePolicyNumber).toBe(false);
+      expect(equipment.fields.vencimientoVerificacion).toBe(false);
+      expect(equipment.fields.numeroSerie).toBe(true);
+    });
+
+    // AT-B-4 — Error DB → 500
+    it('AT-B-4: returns 500 on DB error', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/asset-types',
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body).code).toBe('INTERNAL_ERROR');
+    });
+  });
+
   // ── Scenario 7 — GET /v1/catalogs/centers ────────────────────────────────
 
   describe('GET /v1/catalogs/centers — Scenario 7', () => {
