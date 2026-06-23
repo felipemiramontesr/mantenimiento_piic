@@ -4,10 +4,35 @@ import { FleetGridView } from './FleetGridView';
 import { FleetUnit } from '../../types/fleet';
 import * as layoutContext from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
+import { useAssetTypeFields } from '../../hooks/useAssetTypeFields';
 
 vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
 vi.mock('../../hooks/useTco', () => ({
   useTco: vi.fn(() => ({ data: null, loading: false, error: null })),
+}));
+
+vi.mock('../../hooks/useAssetTypeFields', () => ({
+  useAssetTypeFields: vi.fn(() => ({
+    fields: {
+      placa: true,
+      circulationCardNumber: true,
+      numeroSerie: true,
+      insurancePolicyNumber: true,
+      insuranceExpiryDate: true,
+      vencimientoVerificacion: true,
+      warrantyExpiry: true,
+    },
+    loading: false,
+  })),
+  DEFAULT_FIELD_VISIBILITY: {
+    placa: true,
+    circulationCardNumber: true,
+    numeroSerie: true,
+    insurancePolicyNumber: true,
+    insuranceExpiryDate: true,
+    vencimientoVerificacion: true,
+    warrantyExpiry: true,
+  },
 }));
 
 /**
@@ -36,6 +61,7 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
         complianceStatus: 'OPERATIVO',
         status: 'Disponible',
         assetType: 'Vehículo',
+        assetTypeId: 1,
         fuelType: 'Gasolina',
         traccion: '4x2',
         transmision: 'Manual',
@@ -171,6 +197,44 @@ describe('FleetGridView Component (Universal Search & Grid Rendering)', () => {
 
     render(<FleetGridView {...mockProps} />);
     expect(screen.getByText('XYZ-987')).toBeInTheDocument();
+  });
+
+  it('AT-D-1: VEHICLE (assetTypeId=1) muestra placas y T. CIRCULACIÓN en la grid', () => {
+    vi.mocked(useAssetTypeFields).mockReturnValue({
+      fields: {
+        placa: true,
+        circulationCardNumber: true,
+        numeroSerie: true,
+        insurancePolicyNumber: true,
+        insuranceExpiryDate: true,
+        vencimientoVerificacion: true,
+        warrantyExpiry: true,
+      },
+      loading: false,
+    });
+    render(<FleetGridView {...mockProps} />);
+    expect(screen.getByText('XYZ-987')).toBeInTheDocument();
+    expect(screen.getByText('T. CIRCULACIÓN:')).toBeInTheDocument();
+    expect(screen.getByText('TC-999')).toBeInTheDocument();
+  });
+
+  it('AT-D-2: EQUIPMENT (placa=false, circulationCardNumber=false) oculta placas y T. CIRCULACIÓN en la grid', () => {
+    vi.mocked(useAssetTypeFields).mockReturnValue({
+      fields: {
+        placa: false,
+        circulationCardNumber: false,
+        numeroSerie: true,
+        insurancePolicyNumber: false,
+        insuranceExpiryDate: false,
+        vencimientoVerificacion: false,
+        warrantyExpiry: true,
+      },
+      loading: false,
+    });
+    render(<FleetGridView {...mockProps} />);
+    expect(screen.queryByText('XYZ-987')).not.toBeInTheDocument();
+    expect(screen.queryByText('T. CIRCULACIÓN:')).not.toBeInTheDocument();
+    expect(screen.queryByText('TC-999')).not.toBeInTheDocument();
   });
 });
 

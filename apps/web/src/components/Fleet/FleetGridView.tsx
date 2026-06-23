@@ -33,6 +33,7 @@ import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import { useTco } from '../../hooks/useTco';
+import { useAssetTypeFields } from '../../hooks/useAssetTypeFields';
 import AT from '../../styles/archonTypography';
 
 // 🔱 Archon Encyclopedia Engine: v.45.7.0
@@ -48,10 +49,14 @@ const IdentityCluster = ({
   unit,
   tarjeta,
   isVIM,
+  showPlaca,
+  showTarjeta,
 }: {
   unit: FleetUnit;
   tarjeta: string | number;
   isVIM: boolean;
+  showPlaca: boolean;
+  showTarjeta: boolean;
 }): React.JSX.Element => {
   const restriction = checkHoyNoCircula(unit.environmentalHologram || null, unit.placas || null);
 
@@ -61,30 +66,34 @@ const IdentityCluster = ({
         {unit.owner || '—'}
       </span>
       <div className="flex flex-col items-center gap-1.5">
-        <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
-          <Tag size={11} className="text-slate-400" />
-          <span className="text-archon-label font-black text-navy-800 uppercase tracking-tight">
-            {unit.placas}
-          </span>
-          {restriction.isRestricted && (
-            <div
-              title={restriction.reason}
-              className="ml-1 bg-rose-500 text-white p-0.5 rounded-[4px] animate-pulse cursor-help"
-            >
-              <ShieldAlert size={10} />
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="text-archon-xs font-black text-navy-900/30 uppercase tracking-tighter leading-none">
-            T. CIRCULACIÓN:
-          </span>
-          <span className="text-archon-base font-mono text-slate-400 font-bold">
-            {tarjeta || '---'}
-          </span>
-        </div>
+        {showPlaca && (
+          <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded border border-slate-100">
+            <Tag size={11} className="text-slate-400" />
+            <span className="text-archon-label font-black text-navy-800 uppercase tracking-tight">
+              {unit.placas}
+            </span>
+            {restriction.isRestricted && (
+              <div
+                title={restriction.reason}
+                className="ml-1 bg-rose-500 text-white p-0.5 rounded-[4px] animate-pulse cursor-help"
+              >
+                <ShieldAlert size={10} />
+              </div>
+            )}
+          </div>
+        )}
+        {showTarjeta && (
+          <div className="flex flex-col items-center">
+            <span className="text-archon-xs font-black text-navy-900/30 uppercase tracking-tighter leading-none">
+              T. CIRCULACIÓN:
+            </span>
+            <span className="text-archon-base font-mono text-slate-400 font-bold">
+              {tarjeta || '---'}
+            </span>
+          </div>
+        )}
       </div>
-      {restriction.isRestricted && (
+      {showPlaca && restriction.isRestricted && (
         <span className="text-archon-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 uppercase tracking-tighter">
           {restriction.reason}
         </span>
@@ -552,6 +561,7 @@ const FleetUnitRow = React.memo(
     const { hasPermission, isSuiteVIM } = usePermissions();
     const canEdit = hasPermission('fleet:write') || hasPermission('fleet:write:scoped');
     const isVIM = isSuiteVIM();
+    const { fields: assetFields } = useAssetTypeFields(unit.assetTypeId);
 
     const usageUnit = unit.usageUnitName || 'KM';
 
@@ -623,6 +633,8 @@ const FleetUnitRow = React.memo(
             unit={unit}
             tarjeta={unit.circulationCardNumber || '---'}
             isVIM={isVIM}
+            showPlaca={assetFields.placa}
+            showTarjeta={assetFields.circulationCardNumber}
           />
         </td>
 
