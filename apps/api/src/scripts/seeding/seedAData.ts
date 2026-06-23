@@ -71,9 +71,10 @@ export const PIIC101_SCHEDULE = makeSchedule(60, 300, 35, 101, {
   overrides: [{ index: 58, km: 200, liters: 250 }], // EC-1: fuel theft signal (0.8 km/L)
 });
 
-export const PIIC201_SCHEDULE = makeSchedule(57, 250, 30, 201, {
+export const PIIC201_SCHEDULE = makeSchedule(60, 250, 30, 201, {
   blackout: { fromDay: 196, toDay: 270 }, // EC-3: Jan 15 – Mar 1 gap
   driverRotation: [201, 202, 203, 204], // EC-1: 4 different drivers
+  stopAtDay: 384, // cap en 2026-06-22 — sin rutas con fecha futura
 });
 
 export const PIIC202_SCHEDULE = makeSchedule(60, 280, 32, 202, {
