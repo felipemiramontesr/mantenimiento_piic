@@ -28,19 +28,19 @@ SELECT
 FROM (
   -- ── Source 1: Financial transactions (MAINTENANCE + REPAIR) ──────────────
   SELECT
-    fu.brandId                                   AS brand_id,
-    fu.modelId                                   AS model_id,
-    cb.label                                     AS make,
-    cm.label                                     AS model,
+    fu.brandId                                                        AS brand_id,
+    fu.modelId                                                        AS model_id,
+    CONVERT(cb.label USING utf8mb4) COLLATE utf8mb4_unicode_ci       AS make,
+    CONVERT(cm.label USING utf8mb4) COLLATE utf8mb4_unicode_ci       AS model,
     fu.year,
-    o.suite,
-    ft.category                                  AS failure_category,
-    COUNT(ft.id)                                 AS occurrence_count,
-    COUNT(DISTINCT fu.id)                        AS affected_units,
-    ROUND(AVG(fu.odometer), 0)                   AS avg_km_at_failure,
-    ROUND(STDDEV(fu.odometer), 0)                AS km_std_dev,
-    ROUND(AVG(ft.amount), 2)                     AS avg_cost_mxn,
-    MIN(ft.period)                               AS first_seen_at
+    CONVERT(o.suite USING utf8mb4) COLLATE utf8mb4_unicode_ci        AS suite,
+    CONVERT(ft.category USING utf8mb4) COLLATE utf8mb4_unicode_ci    AS failure_category,
+    COUNT(ft.id)                                                      AS occurrence_count,
+    COUNT(DISTINCT fu.id)                                             AS affected_units,
+    ROUND(AVG(fu.odometer), 0)                                        AS avg_km_at_failure,
+    ROUND(STDDEV(fu.odometer), 0)                                     AS km_std_dev,
+    ROUND(AVG(ft.amount), 2)                                          AS avg_cost_mxn,
+    MIN(ft.period)                                                    AS first_seen_at
   FROM financial_transactions ft
   JOIN fleet_units fu ON ft.unit_id = fu.id
   JOIN owners o ON fu.ownerId = o.id
@@ -53,19 +53,19 @@ FROM (
 
   -- ── Source 2: Route incidents (by incident category) ────────────────────
   SELECT
-    fu.brandId                                   AS brand_id,
-    fu.modelId                                   AS model_id,
-    cb.label                                     AS make,
-    cm.label                                     AS model,
+    fu.brandId,
+    fu.modelId,
+    CONVERT(cb.label USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+    CONVERT(cm.label USING utf8mb4) COLLATE utf8mb4_unicode_ci,
     fu.year,
-    o.suite,
-    ri.category                                  AS failure_category,
-    COUNT(ri.id)                                 AS occurrence_count,
-    COUNT(DISTINCT fu.id)                        AS affected_units,
-    ROUND(AVG(fm.start_reading), 0)              AS avg_km_at_failure,
-    ROUND(STDDEV(fm.start_reading), 0)           AS km_std_dev,
-    NULL                                         AS avg_cost_mxn,
-    DATE(MIN(fm.start_at))                       AS first_seen_at
+    CONVERT(o.suite USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+    CONVERT(ri.category USING utf8mb4) COLLATE utf8mb4_unicode_ci,
+    COUNT(ri.id),
+    COUNT(DISTINCT fu.id),
+    ROUND(AVG(fm.start_reading), 0),
+    ROUND(STDDEV(fm.start_reading), 0),
+    NULL,
+    DATE(MIN(fm.start_at))
   FROM route_incidents ri
   JOIN fleet_movements fm
     ON ri.route_uuid COLLATE utf8mb4_unicode_ci = fm.uuid
