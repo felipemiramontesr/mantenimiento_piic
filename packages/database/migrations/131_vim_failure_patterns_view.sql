@@ -40,7 +40,7 @@ FROM (
     ROUND(AVG(fu.odometer), 0)                   AS avg_km_at_failure,
     ROUND(STDDEV(fu.odometer), 0)                AS km_std_dev,
     ROUND(AVG(ft.amount), 2)                     AS avg_cost_mxn,
-    MIN(ft.transaction_date)                     AS first_seen_at
+    MIN(ft.period)                               AS first_seen_at
   FROM financial_transactions ft
   JOIN fleet_units fu ON ft.unit_id = fu.id
   JOIN owners o ON fu.ownerId = o.id

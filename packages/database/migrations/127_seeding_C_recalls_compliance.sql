@@ -53,7 +53,7 @@ SELECT 'PIIC-303', id, 'PENDING', NULL FROM catalog_recalls WHERE campaign_code 
 UPDATE fleet_units SET
   insuranceExpiryDate     = '2027-12-31',
   vencimientoVerificacion = '2027-06-30',
-  insurance_policy_number = 'QUA-2024-SIL-0482'
+  insurancePolicyNumber   = 'QUA-2024-SIL-0482'
 WHERE id = 'PIIC-202';
 
 -- ─── Verificación ─────────────────────────────────────────────
