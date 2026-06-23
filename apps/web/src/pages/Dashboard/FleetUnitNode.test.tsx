@@ -8,6 +8,7 @@ import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
 import { useCo2 } from '../../hooks/useCo2';
 import { useFleetRecalls } from '../../hooks/useFleetRecalls';
 import { useNhtsaRecalls } from '../../hooks/useNhtsaRecalls';
+import { useAssetTypeFields, DEFAULT_FIELD_VISIBILITY } from '../../hooks/useAssetTypeFields';
 import FleetUnitNode from './FleetUnitNode';
 
 vi.mock('../../api/client', () => ({ default: { get: vi.fn() } }));
@@ -46,6 +47,30 @@ vi.mock('../../hooks/useNhtsaRecalls', () => ({
     importRecall: vi.fn().mockResolvedValue({ recall_id: 42 }),
   })),
 }));
+
+vi.mock('../../hooks/useAssetTypeFields', () => ({
+  DEFAULT_FIELD_VISIBILITY: {
+    placa: true,
+    circulationCardNumber: true,
+    numeroSerie: true,
+    insurancePolicyNumber: true,
+    insuranceExpiryDate: true,
+    vencimientoVerificacion: true,
+    warrantyExpiry: true,
+  },
+  useAssetTypeFields: vi.fn(() => ({
+    fields: {
+      placa: true,
+      circulationCardNumber: true,
+      numeroSerie: true,
+      insurancePolicyNumber: true,
+      insuranceExpiryDate: true,
+      vencimientoVerificacion: true,
+      warrantyExpiry: true,
+    },
+    loading: false,
+  })),
+}));
 const mockParams = vi.hoisted(() => ({ unitId: 'ASM-001' as string | undefined }));
 
 vi.mock('react-router-dom', async (): Promise<unknown> => {
@@ -55,6 +80,7 @@ vi.mock('react-router-dom', async (): Promise<unknown> => {
 
 const UNIT_FIXTURE = {
   id: 'ASM-001',
+  assetTypeId: 1,
   status: 'Disponible',
   marca: 'Nissan',
   modelo: 'Frontier',
@@ -798,6 +824,52 @@ describe('FleetUnitNode', () => {
         screen.queryByRole('dialog', { name: 'Buscar recalls en NHTSA' })
       ).not.toBeInTheDocument()
     );
+  });
+
+  // ─── FC-AssetType_ConditionalFields FaseC ────────────────────────────────
+
+  it('AT-C-1: VEHICLE (assetTypeId=1) muestra Placas y Tarjeta de circulación', async () => {
+    vi.mocked(useAssetTypeFields).mockReturnValueOnce({
+      fields: { ...DEFAULT_FIELD_VISIBILITY },
+      loading: false,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Identidad & Registro')).toBeInTheDocument());
+    expect(screen.getByText('Placas')).toBeInTheDocument();
+    expect(screen.getByText('ABC-123')).toBeInTheDocument();
+    expect(screen.getByText('Tarjeta de circulación')).toBeInTheDocument();
+  });
+
+  it('AT-C-2: EQUIPMENT oculta Placas, Tarjeta de circulación, Póliza y Verificación', async () => {
+    vi.mocked(useAssetTypeFields).mockReturnValueOnce({
+      fields: {
+        ...DEFAULT_FIELD_VISIBILITY,
+        placa: false,
+        circulationCardNumber: false,
+        insurancePolicyNumber: false,
+        insuranceExpiryDate: false,
+        vencimientoVerificacion: false,
+      },
+      loading: false,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Número de serie')).toBeInTheDocument());
+    expect(screen.queryByText('Placas')).toBeNull();
+    expect(screen.queryByText('Tarjeta de circulación')).toBeNull();
+    expect(screen.queryByText('Póliza de seguro')).toBeNull();
+    expect(screen.queryByText('Verificación')).toBeNull();
+    expect(screen.getByText('Número de serie')).toBeInTheDocument();
+  });
+
+  it('AT-C-3: fallback loading=true preserva visibilidad DEFAULT (todos los campos visibles)', async () => {
+    vi.mocked(useAssetTypeFields).mockReturnValueOnce({
+      fields: { ...DEFAULT_FIELD_VISIBILITY },
+      loading: true,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Placas')).toBeInTheDocument());
+    expect(screen.getByText('Tarjeta de circulación')).toBeInTheDocument();
+    expect(screen.getByText('Vencimiento seguro')).toBeInTheDocument();
   });
 
   it('VIM-F-5: Tab "Patrones VIM" activa y muestra ≥1 fila de patrón', async () => {

@@ -32,6 +32,7 @@ import { useOperatorScorecard } from '../../hooks/useOperatorScorecard';
 import { useCo2 } from '../../hooks/useCo2';
 import { useFleetRecalls, RecallStatus } from '../../hooks/useFleetRecalls';
 import { useNhtsaRecalls, NhtsaRecall } from '../../hooks/useNhtsaRecalls';
+import { useAssetTypeFields } from '../../hooks/useAssetTypeFields';
 
 import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 import AT from '../../styles/archonTypography';
@@ -1023,6 +1024,7 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
   if (!node) return <NodeErrorState error={error} backTo="/dashboard/fleet" backLabel="Flota" />;
 
   const { unit, maintenance, financial, incidents } = node;
+  const { fields: assetFields } = useAssetTypeFields(unit.assetTypeId);
   const kmSinceService =
     unit.odometer && unit.lastServiceReading ? unit.odometer - unit.lastServiceReading : null;
   const kmRemaining =
@@ -1039,9 +1041,11 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
           title="Identidad & Registro"
           icon={<Hash size={16} className="text-[#f2b705]" />}
         >
-          <InfoRow label="Placas" value={unit.placas} />
+          {assetFields.placa && <InfoRow label="Placas" value={unit.placas} />}
           <InfoRow label="Número de serie" value={unit.numeroSerie} />
-          <InfoRow label="Tarjeta de circulación" value={unit.circulationCardNumber} />
+          {assetFields.circulationCardNumber && (
+            <InfoRow label="Tarjeta de circulación" value={unit.circulationCardNumber} />
+          )}
           <InfoRow label="Uso operacional" value={unit.uso} />
           <InfoRow label="Cuenta contable" value={unit.accountingAccount} />
           <InfoRow label="Propietario" value={unit.owner} />
@@ -1131,13 +1135,19 @@ const FleetUnitNode: React.FC = (): React.JSX.Element => {
           title="Cumplimiento & Legal"
           icon={<Shield size={16} className="text-[#f2b705]" />}
         >
-          <InfoRow label="Vencimiento seguro" value={formatDate(unit.insuranceExpiryDate)} />
-          <InfoRow label="Póliza de seguro" value={unit.insurancePolicyNumber} />
+          {assetFields.insuranceExpiryDate && (
+            <InfoRow label="Vencimiento seguro" value={formatDate(unit.insuranceExpiryDate)} />
+          )}
+          {assetFields.insurancePolicyNumber && (
+            <InfoRow label="Póliza de seguro" value={unit.insurancePolicyNumber} />
+          )}
           <InfoRow
             label="Costo del seguro"
             value={unit.insuranceCost ? formatMXN(unit.insuranceCost) : null}
           />
-          <InfoRow label="Verificación" value={formatDate(unit.vencimientoVerificacion)} />
+          {assetFields.vencimientoVerificacion && (
+            <InfoRow label="Verificación" value={formatDate(unit.vencimientoVerificacion)} />
+          )}
           <InfoRow label="Holográma ambiental" value={unit.environmentalHologram} />
           <InfoRow label="Cumplimiento legal" value={formatDate(unit.legalComplianceDate)} />
           <InfoRow label="Verif. mecánica" value={formatDate(unit.lastMechanicalVerification)} />
