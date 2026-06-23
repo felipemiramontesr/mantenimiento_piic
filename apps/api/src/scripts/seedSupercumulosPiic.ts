@@ -530,4 +530,6 @@ async function runSeed(): Promise<void> {
   }
 }
 
-runSeed();
+if (!process.env.VITEST) {
+  runSeed();
+}
