@@ -115,6 +115,44 @@ describe('assetTypeFieldsService — FC-AssetType_ConditionalFields FaseA', () =
     });
   });
 
+  // ── AT-B-1 — PIIC-304 uses assetTypeId=3 → EQUIPMENT field visibility ─────────
+  describe('AT-B-1 — PIIC-304 is EQUIPMENT after migration 135', () => {
+    it('fleet_units assetTypeId=3 returns EQUIPMENT visibility (placa=false)', async () => {
+      (db.execute as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        [
+          { field_name: 'placa', visible: 0 },
+          { field_name: 'circulationCardNumber', visible: 0 },
+          { field_name: 'insurancePolicyNumber', visible: 0 },
+          { field_name: 'insuranceExpiryDate', visible: 0 },
+          { field_name: 'vencimientoVerificacion', visible: 0 },
+        ],
+      ]);
+
+      const vis = await getFieldVisibility(3);
+
+      expect(vis.placa).toBe(false);
+      expect(vis.circulationCardNumber).toBe(false);
+      expect(vis.numeroSerie).toBe(true);
+      expect(vis.warrantyExpiry).toBe(true);
+    });
+  });
+
+  // ── AT-B-2 — PIIC-305 uses assetTypeId=3 → same EQUIPMENT visibility ─────────
+  describe('AT-B-2 — PIIC-305 is EQUIPMENT after migration 135', () => {
+    it('assetTypeId=3 call for PIIC-305 passes [3] as SQL param', async () => {
+      (db.execute as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        [{ field_name: 'placa', visible: 0 }],
+      ]);
+
+      await getFieldVisibility(3);
+
+      expect(vi.mocked(db.execute)).toHaveBeenCalledWith(
+        expect.stringContaining('asset_type_id = ?'),
+        [3]
+      );
+    });
+  });
+
   // ── AT-A-6 — DB query uses assetTypeId param correctly ──────────────────────
   describe('AT-A-6 — query param validation', () => {
     it('passes assetTypeId=3 as SQL param', async () => {
