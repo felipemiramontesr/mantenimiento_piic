@@ -52,7 +52,8 @@ ALTER TABLE fleet_units
   MODIFY COLUMN assetTypeId INT UNSIGNED;
 
 -- ─── Add FK from fleet_units.assetTypeId → catalog_asset_types.id ────────────
--- Safe to run once. If FK already exists, this statement will fail — skip it.
+-- DROP IF EXISTS first for full idempotency (MySQL 8.0+).
+ALTER TABLE fleet_units DROP FOREIGN KEY IF EXISTS fk_fleet_units_asset_type;
 ALTER TABLE fleet_units
   ADD CONSTRAINT fk_fleet_units_asset_type
     FOREIGN KEY (assetTypeId) REFERENCES catalog_asset_types(id);
