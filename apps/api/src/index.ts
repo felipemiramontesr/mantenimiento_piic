@@ -38,6 +38,7 @@ import serviceCentersRoutes from './routes/serviceCenters';
 import ownerProfileRoutes from './routes/ownerProfile';
 import onboardingRoutes from './routes/onboarding';
 import securityRoutes from './routes/security';
+import realtimeTelemetryRoutes from './routes/realtimeTelemetry';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -150,6 +151,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(ownerProfileRoutes, { prefix: '/v1' });
   fastify.register(onboardingRoutes, { prefix: '/v1' });
   fastify.register(securityRoutes, { prefix: '/v1' });
+  fastify.register(realtimeTelemetryRoutes, { prefix: '/v1' });
   fastify.register(fleetTcoRoutes, { prefix: '/v1' });
   fastify.register(fleetRecallsRoutes, { prefix: '/v1' });
   fastify.register(fleetIntelligenceRoutes, { prefix: '/v1' });
