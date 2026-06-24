@@ -1,44 +1,44 @@
 name: 🔐 Seed PIIC-304 Encrypted Fields (One-time · FC-7 FaseB)
 
-# Runs the seed SCRIPT ON THE HOSTINGER SERVER via SSH.
-# The GitHub Actions runner cannot reach Hostinger's MySQL (firewall),
-# but the server itself can — so we SSH in and execute there.
+# Uses appleboy/ssh-action to reliably execute on the Hostinger server.
+# Heredoc-over-SSH in GitHub Actions runners has a known bug where the
+# heredoc executes locally instead of on the remote — this action fixes that.
+# DB secrets are passed explicitly because Hostinger env vars are only
+# injected into the Node.js app process, not into SSH sessions.
 
 on:
   workflow_dispatch:
 
 jobs:
   seed-encrypted:
-    name: 🔐 SSH → Run seed140EncryptedPiic304 on server
+    name: 🔐 SSH → Run seed on Hostinger server
     runs-on: ubuntu-latest
     steps:
-      - name: 🔑 Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/archon_deploy
-          chmod 600 ~/.ssh/archon_deploy
-          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-
-      - name: 🔐 Seed encrypted fields on server
-        run: |
-          ssh -p ${{ secrets.SSH_PORT }} \
-              -i ~/.ssh/archon_deploy \
-              -o StrictHostKeyChecking=yes \
-              -o ConnectTimeout=30 \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-              "bash -s" << 'ENDSSH'
-            # Locate the script in the deployed app
+      - name: 🔐 Seed PIIC-304 encrypted fields on Hostinger
+        uses: appleboy/ssh-action@v1
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_ENCRYPTION_KEY: ${{ secrets.DB_ENCRYPTION_KEY }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          envs: DB_HOST,DB_USER,DB_PASSWORD,DB_NAME,DB_ENCRYPTION_KEY
+          script: |
             SCRIPT=$(find /home -name "seed140EncryptedPiic304.ts" 2>/dev/null | head -1)
             if [ -z "$SCRIPT" ]; then
-              echo "[ERROR] seed140EncryptedPiic304.ts not found on server."
-              echo "Paths searched:"
-              find /home -maxdepth 6 -name "package.json" 2>/dev/null | head -10
+              echo "[ERROR] seed140EncryptedPiic304.ts not found on server"
+              echo "Buscando package.json para identificar el path del app:"
+              find /home -maxdepth 8 -name "package.json" 2>/dev/null | head -10
               exit 1
             fi
             APP_DIR=$(dirname "$SCRIPT")
-            echo "[INFO] Found script at: $SCRIPT"
-            echo "[INFO] Running from:    $APP_DIR"
+            echo "[INFO] Script encontrado: $SCRIPT"
+            echo "[INFO] Ejecutando desde: $APP_DIR"
             cd "$APP_DIR"
-            # Env vars are already set by Hostinger's Environment Variables panel
             node node_modules/tsx/dist/cli.mjs "$SCRIPT"
-          ENDSSH
