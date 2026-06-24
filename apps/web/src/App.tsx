@@ -22,6 +22,7 @@ import UserNode from './pages/Dashboard/nodes/UserNode';
 import RealtimeTrackingModule from './pages/Dashboard/RealtimeTrackingModule';
 import ContactsDirectory from './pages/Dashboard/ContactsDirectory';
 import ContractsPanel from './pages/Dashboard/ContractsPanel';
+import PipelineBoard from './pages/Dashboard/PipelineBoard';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ClientScopeGate from './components/Common/ClientScopeGate';
@@ -92,6 +93,7 @@ const App: React.FC = () => (
                   <Route path="tracking" element={<RealtimeTrackingModule />} />
                   <Route path="contacts" element={<ContactsDirectory />} />
                   <Route path="contracts" element={<ContractsPanel />} />
+                  <Route path="pipeline" element={<PipelineBoard />} />
                 </Route>
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
