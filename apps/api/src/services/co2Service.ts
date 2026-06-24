@@ -54,7 +54,10 @@ export default class Co2Service {
     const co2Factor = resolveCo2Factor(fuelCode);
 
     const baseQuery = `
-      SELECT COALESCE(SUM(fuel_liters_loaded), 0) AS total_liters
+      SELECT
+        COALESCE(SUM(fuel_liters_loaded), 0) AS total_liters,
+        MIN(start_at) AS period_from_derived,
+        MAX(start_at) AS period_to_derived
       FROM fleet_movements
       WHERE unit_id = ?
         AND movement_type = 'ROUTE'
@@ -62,6 +65,8 @@ export default class Co2Service {
         AND fuel_liters_loaded > 0`;
 
     let totalLiters: number;
+    let derivedFrom: string | null = null;
+    let derivedTo: string | null = null;
     const periodFrom = params.from ?? null;
     const periodTo = params.to ?? null;
 
@@ -71,21 +76,29 @@ export default class Co2Service {
         [unitId, periodFrom, periodTo]
       );
       totalLiters = Number(rows[0]?.total_liters ?? 0);
+      derivedFrom = rows[0]?.period_from_derived ?? null;
+      derivedTo = rows[0]?.period_to_derived ?? null;
     } else if (periodFrom) {
       const [rows] = await db.execute<RowDataPacket[]>(`${baseQuery} AND start_at >= ?`, [
         unitId,
         periodFrom,
       ]);
       totalLiters = Number(rows[0]?.total_liters ?? 0);
+      derivedFrom = rows[0]?.period_from_derived ?? null;
+      derivedTo = rows[0]?.period_to_derived ?? null;
     } else if (periodTo) {
       const [rows] = await db.execute<RowDataPacket[]>(`${baseQuery} AND start_at < ?`, [
         unitId,
         periodTo,
       ]);
       totalLiters = Number(rows[0]?.total_liters ?? 0);
+      derivedFrom = rows[0]?.period_from_derived ?? null;
+      derivedTo = rows[0]?.period_to_derived ?? null;
     } else {
       const [rows] = await db.execute<RowDataPacket[]>(baseQuery, [unitId]);
       totalLiters = Number(rows[0]?.total_liters ?? 0);
+      derivedFrom = rows[0]?.period_from_derived ?? null;
+      derivedTo = rows[0]?.period_to_derived ?? null;
     }
 
     return {
@@ -94,8 +107,8 @@ export default class Co2Service {
       co2_factor_kg_per_liter: co2Factor,
       total_liters: Math.round(totalLiters * 100) / 100,
       total_co2_kg: computeCo2Kg(totalLiters, co2Factor),
-      period_from: periodFrom,
-      period_to: periodTo,
+      period_from: periodFrom ?? derivedFrom,
+      period_to: periodTo ?? derivedTo,
     };
   }
 }

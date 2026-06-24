@@ -1,5 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { computeCo2Kg, resolveCo2Factor, CO2_FACTORS, DEFAULT_CO2_FACTOR } from './co2Service';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import Co2Service, {
+  computeCo2Kg,
+  resolveCo2Factor,
+  CO2_FACTORS,
+  DEFAULT_CO2_FACTOR,
+} from './co2Service';
+import db from './db';
+
+vi.mock('./db', () => ({ default: { execute: vi.fn() } }));
 
 describe('computeCo2Kg', () => {
   it('CO2-PURE-1: 100L de diesel → 268 kg CO2', () => {
@@ -42,5 +51,79 @@ describe('resolveCo2Factor', () => {
 
   it('CO2-PURE-10: null (sin tipo de combustible) → DEFAULT_CO2_FACTOR', () => {
     expect(resolveCo2Factor(null)).toBe(DEFAULT_CO2_FACTOR);
+  });
+});
+
+describe('Co2Service.compute — AT-DH-C: period_from/period_to derivado (FC-7 FaseC)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('AT-DH-C-1: sin params → period_from derivado de MIN(start_at)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([
+        [
+          {
+            total_liters: 300,
+            period_from_derived: '2026-01-10 08:00:00',
+            period_to_derived: '2026-06-23 16:00:00',
+          },
+        ],
+      ]);
+    const result = await Co2Service.compute('PIIC-304');
+    expect(result).not.toBeNull();
+    expect(result!.period_from).toBe('2026-01-10 08:00:00');
+  });
+
+  it('AT-DH-C-2: sin params → period_to derivado de MAX(start_at)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([
+        [
+          {
+            total_liters: 300,
+            period_from_derived: '2026-01-10 08:00:00',
+            period_to_derived: '2026-06-23 16:00:00',
+          },
+        ],
+      ]);
+    const result = await Co2Service.compute('PIIC-304');
+    expect(result!.period_to).toBe('2026-06-23 16:00:00');
+  });
+
+  it('AT-DH-C-3: con params explícitos → usa params, no los derivados', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([
+        [
+          {
+            total_liters: 150,
+            period_from_derived: '2026-03-01 00:00:00',
+            period_to_derived: '2026-03-31 23:59:59',
+          },
+        ],
+      ]);
+    const result = await Co2Service.compute('PIIC-304', {
+      from: '2026-03-01',
+      to: '2026-04-01',
+    });
+    expect(result!.period_from).toBe('2026-03-01');
+    expect(result!.period_to).toBe('2026-04-01');
+  });
+
+  it('AT-DH-C-4: sin movimientos → period_from y period_to son null', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([
+        [
+          {
+            total_liters: 0,
+            period_from_derived: null,
+            period_to_derived: null,
+          },
+        ],
+      ]);
+    const result = await Co2Service.compute('PIIC-304');
+    expect(result!.period_from).toBeNull();
+    expect(result!.period_to).toBeNull();
   });
 });
