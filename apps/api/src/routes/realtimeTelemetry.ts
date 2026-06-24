@@ -33,6 +33,21 @@ async function getCallerOwnerIds(userId: number): Promise<number[]> {
 
 export default async function realtimeTelemetryRoutes(fastify: FastifyInstance): Promise<void> {
   /**
+   * GET /v1/telemetry/heartbeat
+   * FC-10 VIM_SubUniverse_FamiliarScope FaseB
+   * EAL6+: JWT required — keepalive endpoint to prevent Nginx idle timeout.
+   * Returns { status: "ok", ts: epoch_ms }.
+   */
+  fastify.get('/telemetry/heartbeat', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    return reply.send({ status: 'ok', ts: Date.now() });
+  });
+
+  /**
    * GET /v1/telemetry/family-units
    * FC-10 VIM_SubUniverse_FamiliarScope FaseA
    * EAL6+: role_id=5 (Familiar) only — scoped to caller's owner via user_owner_membership.

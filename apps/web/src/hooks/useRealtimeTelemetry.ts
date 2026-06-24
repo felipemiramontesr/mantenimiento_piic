@@ -17,14 +17,15 @@ interface UseTelemetryResult {
   lastRefresh: Date | null;
 }
 
-const POLL_INTERVAL_MS = 10_000;
+const HEARTBEAT_INTERVAL_MS = 30_000;
 
 export function useRealtimeTelemetry(): UseTelemetryResult {
   const [units, setUnits] = useState<TelemetryUnit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchUnits = useCallback(async () => {
     try {
@@ -39,16 +40,29 @@ export function useRealtimeTelemetry(): UseTelemetryResult {
     }
   }, []);
 
+  const sendHeartbeat = useCallback(async () => {
+    try {
+      await api.get('/telemetry/heartbeat');
+    } catch {
+      // keepalive — silently ignore failures
+    }
+  }, []);
+
   useEffect(() => {
+    const pollIntervalMs = Number(import.meta.env.VITE_TELEMETRY_INTERVAL_MS) || 10_000;
+
     fetchUnits().catch(() => undefined);
-    intervalRef.current = setInterval(() => {
-      fetchUnits().catch(() => undefined);
-    }, POLL_INTERVAL_MS);
+    pollRef.current = setInterval(() => fetchUnits().catch(() => undefined), pollIntervalMs);
+    heartbeatRef.current = setInterval(
+      () => sendHeartbeat().catch(() => undefined),
+      HEARTBEAT_INTERVAL_MS
+    );
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
-  }, [fetchUnits]);
+  }, [fetchUnits, sendHeartbeat]);
 
   return { units, isLoading, error, lastRefresh };
 }

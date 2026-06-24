@@ -391,3 +391,70 @@ describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family
     expect(JSON.parse(res.body).error).toBe('FAMILIAR_SCOPE_REQUIRED');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FC-10 VIM_SubUniverse_FamiliarScope FaseB — GET /v1/telemetry/heartbeat
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * AT-FC10-B-API-1: GET /telemetry/heartbeat → 401 sin JWT
+ * AT-FC10-B-API-2: GET /telemetry/heartbeat → 200 { status: "ok", ts } con JWT válido
+ * AT-FC10-B-API-3: response.ts es epoch_ms (número entero positivo)
+ * AT-FC10-B-API-4: GET /telemetry/heartbeat → 200 con cualquier role (no role-scoped)
+ */
+describe('FC-10 VIM_SubUniverse_FamiliarScope FaseB — GET /v1/telemetry/heartbeat', () => {
+  const app = buildApp();
+  let anyUserToken: string;
+  let role4Token: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    anyUserToken = jwt.sign({ id: 30, permissions: [] });
+    role4Token = jwt.sign({ id: 31, permissions: ['fleet:view', 'fleet:scoped'] });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC10-B-API-1: 401 sin JWT', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/telemetry/heartbeat' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-FC10-B-API-2: 200 { status: "ok", ts } con JWT válido', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/heartbeat',
+      headers: { authorization: `Bearer ${anyUserToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.status).toBe('ok');
+    expect(body).toHaveProperty('ts');
+  });
+
+  it('AT-FC10-B-API-3: response.ts es epoch_ms — número entero positivo', async () => {
+    const before = Date.now();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/heartbeat',
+      headers: { authorization: `Bearer ${anyUserToken}` },
+    });
+    const after = Date.now();
+    const body = JSON.parse(res.body);
+    expect(typeof body.ts).toBe('number');
+    expect(body.ts).toBeGreaterThanOrEqual(before);
+    expect(body.ts).toBeLessThanOrEqual(after);
+  });
+
+  it('AT-FC10-B-API-4: 200 disponible para cualquier role autenticado (no role-scoped)', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/heartbeat',
+      headers: { authorization: `Bearer ${role4Token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).status).toBe('ok');
+  });
+});

@@ -7,6 +7,7 @@ declare const __ARCHON_VERSION__: string;
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string;
+  readonly VITE_TELEMETRY_INTERVAL_MS?: string;
 }
 
 interface ImportMeta {
