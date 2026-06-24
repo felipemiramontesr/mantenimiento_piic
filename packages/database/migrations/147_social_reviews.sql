@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS social_reviews (
   taller_owner_id  INT NOT NULL,
   rating           TINYINT(1) NOT NULL COMMENT 'Rating 1-5',
   body_text        TEXT NOT NULL,
-  work_order_id    INT NULL,
+  work_order_id    INT UNSIGNED NULL,
   link_id          INT NULL,
   verified         TINYINT(1) NOT NULL DEFAULT 0,
   created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -43,6 +43,7 @@ const defaultPermissions = {
   isOmnipotent: (): boolean => true,
   isExternalClientOnly: (): boolean => false,
   isSuiteVIM: (): boolean => false,
+  isFamiliar: (): boolean => false,
 };
 
 const defaultAuth = {
@@ -94,6 +95,7 @@ describe('Sidebar Component (Archon Core)', () => {
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => true,
       isSuiteVIM: (): boolean => false,
+      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -123,6 +125,7 @@ describe('Sidebar Component (Archon Core)', () => {
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => false,
       isSuiteVIM: (): boolean => false,
+      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -280,6 +283,7 @@ describe('Sidebar Component (Archon Core)', () => {
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => false,
       isSuiteVIM: (): boolean => false,
+      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -299,6 +303,7 @@ describe('Sidebar Component (Archon Core)', () => {
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => false,
       isSuiteVIM: (): boolean => false,
+      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -463,6 +468,7 @@ describe('Sidebar Component (Archon Core)', () => {
           isOmnipotent: (): boolean => perms.isOmnipotent,
           isExternalClientOnly: (): boolean => perms.isExternalClientOnly,
           isSuiteVIM: (): boolean => perms.isSuiteVIM,
+          isFamiliar: (): boolean => false,
         });
 
         render(

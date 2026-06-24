@@ -212,3 +212,182 @@ describe('FC-3 Realtime_Telemetry FaseB — POST /v1/telemetry/ping + GET /v1/te
     expect((db.execute as Mock).mock.calls).toHaveLength(1);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family-units
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * AT-FC10-A-1: GET /telemetry/family-units → 401 sin JWT
+ * AT-FC10-A-2: GET /telemetry/family-units → 403 FAMILIAR_SCOPE_REQUIRED (role_id=4)
+ * AT-FC10-A-3: GET /telemetry/family-units → 403 FAMILIAR_SCOPE_REQUIRED (role_id=3)
+ * AT-FC10-A-4: GET /telemetry/family-units → 200 units vacío sin membresía
+ * AT-FC10-A-5: GET /telemetry/family-units → 200 units con telemetría (Gherkin Scenario 1)
+ * AT-FC10-A-6: GET /telemetry/family-units → 200 units sin telemetría retornan null coords
+ * AT-FC10-A-7: GET /telemetry/family-units → 200 estructura tiene campo units array
+ * AT-FC10-A-8: GET /telemetry/family-units → 403 si rol no es 5 (Gherkin Scenario 2)
+ */
+describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family-units', () => {
+  const app = buildApp();
+  let familiarToken: string;
+  let privateOwnerToken: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    familiarToken = jwt.sign({ id: 20, permissions: [] });
+    privateOwnerToken = jwt.sign({ id: 21, permissions: ['fleet:view', 'fleet:scoped'] });
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC10-A-1: 401 sin JWT', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/telemetry/family-units' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-FC10-A-2: 403 FAMILIAR_SCOPE_REQUIRED si role_id=4 (Propietario Privado)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[{ role_id: 4 }], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/family-units',
+      headers: { authorization: `Bearer ${privateOwnerToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('FAMILIAR_SCOPE_REQUIRED');
+  });
+
+  it('AT-FC10-A-3: 403 FAMILIAR_SCOPE_REQUIRED si role_id=3 (Centro Especializado)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[{ role_id: 3 }], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/family-units',
+      headers: { authorization: `Bearer ${privateOwnerToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('FAMILIAR_SCOPE_REQUIRED');
+  });
+
+  it('AT-FC10-A-4: 200 units vacío cuando sin membresía de owner', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ role_id: 5 }], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/family-units',
+      headers: { authorization: `Bearer ${familiarToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).units).toEqual([]);
+  });
+
+  it('AT-FC10-A-5: 200 units con telemetría — Gherkin Scenario 1', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ role_id: 5 }], undefined])
+      .mockResolvedValueOnce([[{ owner_id: 10 }], undefined])
+      .mockResolvedValueOnce([
+        [
+          {
+            unitId: 'FAM-001',
+            label: 'Sedán Familiar',
+            driverUsername: 'carlos',
+            latitude: 25.67,
+            longitude: -100.31,
+            speed: 0,
+            heading: 0,
+            lastPing: '2026-06-24T10:00:00Z',
+          },
+          {
+            unitId: 'FAM-002',
+            label: 'SUV Familiar',
+            driverUsername: null,
+            latitude: null,
+            longitude: null,
+            speed: null,
+            heading: null,
+            lastPing: null,
+          },
+        ],
+        undefined,
+      ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/family-units',
+      headers: { authorization: `Bearer ${familiarToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.units).toHaveLength(2);
+    expect(body.units[0].latitude).toBe(25.67);
+  });
+
+  it('AT-FC10-A-6: 200 units sin telemetría retornan null en coordenadas', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ role_id: 5 }], undefined])
+      .mockResolvedValueOnce([[{ owner_id: 10 }], undefined])
+      .mockResolvedValueOnce([
+        [
+          {
+            unitId: 'FAM-003',
+            label: 'Sin GPS',
+            driverUsername: null,
+            latitude: null,
+            longitude: null,
+            speed: null,
+            heading: null,
+            lastPing: null,
+          },
+        ],
+        undefined,
+      ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/family-units',
+      headers: { authorization: `Bearer ${familiarToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).units[0].latitude).toBeNull();
+  });
+
+  it('AT-FC10-A-7: 200 respuesta tiene estructura { units: [...] }', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ role_id: 5 }], undefined])
+      .mockResolvedValueOnce([[{ owner_id: 10 }], undefined])
+      .mockResolvedValueOnce([
+        [
+          {
+            unitId: 'FAM-001',
+            label: 'X',
+            driverUsername: null,
+            latitude: 1,
+            longitude: 1,
+            speed: 0,
+            heading: 0,
+            lastPing: null,
+          },
+        ],
+        undefined,
+      ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/family-units',
+      headers: { authorization: `Bearer ${familiarToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty('units');
+    expect(Array.isArray(body.units)).toBe(true);
+  });
+
+  it('AT-FC10-A-8: 403 FAMILIAR_SCOPE_REQUIRED si usuario no encontrado en users — Gherkin Scenario 2', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/telemetry/family-units',
+      headers: { authorization: `Bearer ${familiarToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('FAMILIAR_SCOPE_REQUIRED');
+  });
+});

@@ -33,6 +33,63 @@ async function getCallerOwnerIds(userId: number): Promise<number[]> {
 
 export default async function realtimeTelemetryRoutes(fastify: FastifyInstance): Promise<void> {
   /**
+   * GET /v1/telemetry/family-units
+   * FC-10 VIM_SubUniverse_FamiliarScope FaseA
+   * EAL6+: role_id=5 (Familiar) only — scoped to caller's owner via user_owner_membership.
+   * Returns fleet units of the owner with latest telemetry per unit (ROW_NUMBER subquery).
+   */
+  fastify.get('/telemetry/family-units', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const caller = request.user as { id: number; permissions: string[] };
+
+    const [roleRows] = await db.execute<RowDataPacket[]>('SELECT role_id FROM users WHERE id = ?', [
+      caller.id,
+    ]);
+    if (!roleRows.length || (roleRows[0].role_id as number) !== 5) {
+      return reply.code(403).send({ error: 'FAMILIAR_SCOPE_REQUIRED' });
+    }
+
+    const [memberRows] = await db.execute<RowDataPacket[]>(
+      'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
+      [caller.id]
+    );
+    const ownerIds = (memberRows as { owner_id: number }[]).map((r) => r.owner_id);
+    if (ownerIds.length === 0) {
+      return reply.send({ units: [] });
+    }
+
+    const placeholders = ownerIds.map(() => '?').join(',');
+    const [units] = await db.execute<RowDataPacket[]>(
+      `SELECT
+         fu.id           AS unitId,
+         fu.label,
+         u.username      AS driverUsername,
+         rt.latitude,
+         rt.longitude,
+         rt.speed,
+         rt.heading,
+         rt.updated_at   AS lastPing
+       FROM fleet_units fu
+       LEFT JOIN (
+         SELECT unit_id, user_id, latitude, longitude, speed, heading, updated_at,
+                ROW_NUMBER() OVER (PARTITION BY unit_id ORDER BY updated_at DESC) AS rn
+         FROM realtime_telemetry
+       ) rt ON rt.unit_id = fu.id AND rt.rn = 1
+       LEFT JOIN users u ON u.id = rt.user_id
+       WHERE fu.owner_id IN (${placeholders})
+       ORDER BY fu.label ASC`,
+      ownerIds
+    );
+
+    return reply.send({ units });
+  });
+
+  /**
    * POST /v1/telemetry/ping
    * Upsert current GPS position for a fleet unit.
    * EAL6+: caller must own the unit (via user_owner_membership) or have admin access.
