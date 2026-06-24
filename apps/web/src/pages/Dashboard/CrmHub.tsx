@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Contact, FileText, Layers, MessageSquare, Mail } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import usePermissions from '../../hooks/usePermissions';
 
 interface CrmCard {
   title: string;
@@ -10,6 +11,7 @@ interface CrmCard {
   path: string;
   accent: string;
   testId: string;
+  omnipotentOnly: boolean;
 }
 
 const CRM_CARDS: CrmCard[] = [
@@ -20,6 +22,7 @@ const CRM_CARDS: CrmCard[] = [
     path: '/dashboard/contacts',
     accent: '#0f2a44',
     testId: 'crm-card-directorio',
+    omnipotentOnly: false,
   },
   {
     title: 'Contratos',
@@ -28,6 +31,7 @@ const CRM_CARDS: CrmCard[] = [
     path: '/dashboard/contracts',
     accent: '#0ea5e9',
     testId: 'crm-card-contratos',
+    omnipotentOnly: false,
   },
   {
     title: 'Pipeline',
@@ -36,6 +40,7 @@ const CRM_CARDS: CrmCard[] = [
     path: '/dashboard/pipeline',
     accent: '#8b5cf6',
     testId: 'crm-card-pipeline',
+    omnipotentOnly: false,
   },
   {
     title: 'Interacciones',
@@ -44,6 +49,7 @@ const CRM_CARDS: CrmCard[] = [
     path: '/dashboard/interactions',
     accent: '#10b981',
     testId: 'crm-card-interacciones',
+    omnipotentOnly: false,
   },
   {
     title: 'Campañas',
@@ -52,16 +58,28 @@ const CRM_CARDS: CrmCard[] = [
     path: '/dashboard/campaigns',
     accent: '#f2b705',
     testId: 'crm-card-campanas',
+    omnipotentOnly: true,
   },
 ];
 
 const CrmHub: React.FC = () => {
   const navigate = useNavigate();
   const { setSectionData } = useSovereignLayout();
+  const { hasPermission, isOmnipotent } = usePermissions();
+
+  const visibleCards = CRM_CARDS.filter((card) =>
+    card.omnipotentOnly ? isOmnipotent() : hasPermission('fleet:view')
+  );
 
   useEffect(() => {
     setSectionData('CRM', 'Gestión de Relaciones con Clientes', null);
   }, [setSectionData]);
+
+  useEffect(() => {
+    if (visibleCards.length === 0) {
+      navigate('/dashboard');
+    }
+  }, [navigate, visibleCards.length]);
 
   return (
     <div className="animate-in fade-in duration-700" data-testid="crm-hub">
@@ -69,7 +87,7 @@ const CrmHub: React.FC = () => {
         <div className="archon-axial-container">
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
             <div className="archon-grid-sovereign">
-              {CRM_CARDS.map((card) => (
+              {visibleCards.map((card) => (
                 <div
                   key={card.testId}
                   className="card-archon-sovereign"
