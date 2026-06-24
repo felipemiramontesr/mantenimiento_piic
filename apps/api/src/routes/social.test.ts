@@ -26,6 +26,17 @@ import db from '../services/db';
  * AT-SOC9-B-8: POST /social/posts/:id/comments → 201 created
  * AT-SOC9-A-7: DELETE /social/posts/:id → 403 si no es el autor ni admin
  * AT-SOC9-A-8: DELETE /social/posts/:id → 204 si es el autor
+ *
+ * FC-9 SocialNetwork_Multiverso FaseC — reviews verificadas
+ *
+ * AT-SOC9-C-1: POST /social/reviews → 401 sin JWT
+ * AT-SOC9-C-2: POST /social/reviews → 400 MISSING_REQUIRED_FIELDS
+ * AT-SOC9-C-3: POST /social/reviews → 403 NO_VERIFIED_LINK (Gherkin Scenario 3)
+ * AT-SOC9-C-4: POST /social/reviews → 201 verified=1 via work_order CLOSED
+ * AT-SOC9-C-5: POST /social/reviews → 201 verified=1 via owner_service_link
+ * AT-SOC9-C-6: GET /social/reviews → 401 sin JWT
+ * AT-SOC9-C-7: GET /social/reviews?tallerId=X → 200 lista + avg_rating
+ * AT-SOC9-C-8: POST /social/reviews → 409 REVIEW_ALREADY_EXISTS (duplicate reviewer+taller)
  */
 
 vi.mock('../services/db', () => ({
@@ -262,5 +273,145 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     });
     expect(res.statusCode).toBe(201);
     expect(JSON.parse(res.payload).id).toBe(12);
+  });
+
+  // ── FaseC: Reviews verificadas ─────────────────────────────────────────────
+
+  it('AT-SOC9-C-1: POST /social/reviews → 401 sin JWT', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        tallerOwnerId: 3,
+        rating: 5,
+        bodyText: 'Excelente.',
+        workOrderId: 1,
+      }),
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-SOC9-C-2: POST /social/reviews → 400 MISSING_REQUIRED_FIELDS', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ tallerOwnerId: 3 }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
+
+  it('AT-SOC9-C-3: POST /social/reviews → 403 NO_VERIFIED_LINK (Gherkin Scenario 3)', async () => {
+    // workOrderId not CLOSED, no linkId → guard rejects
+    (db.execute as any).mockResolvedValueOnce([[]]); // work_order query returns empty
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        tallerOwnerId: 3,
+        rating: 5,
+        bodyText: 'Sin link.',
+        workOrderId: 99,
+      }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).error).toBe('NO_VERIFIED_LINK');
+  });
+
+  it('AT-SOC9-C-4: POST /social/reviews → 201 verified=1 via work_order CLOSED', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1 }]]) // work_order CLOSED found
+      .mockResolvedValueOnce([{ insertId: 33 }]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        tallerOwnerId: 3,
+        rating: 5,
+        bodyText: 'Trabajo impecable.',
+        workOrderId: 1,
+      }),
+    });
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.payload);
+    expect(body.id).toBe(33);
+    expect(body.verified).toBe(1);
+  });
+
+  it('AT-SOC9-C-5: POST /social/reviews → 201 verified=1 via owner_service_link', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 7 }]]) // link found
+      .mockResolvedValueOnce([{ insertId: 34 }]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        tallerOwnerId: 3,
+        rating: 4,
+        bodyText: 'Muy profesional.',
+        linkId: 7,
+      }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.payload).verified).toBe(1);
+  });
+
+  it('AT-SOC9-C-6: GET /social/reviews → 401 sin JWT', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/social/reviews' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-SOC9-C-7: GET /social/reviews?tallerId=3 → 200 lista + avg_rating', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 1,
+            reviewer_id: 2,
+            taller_owner_id: 3,
+            rating: 5,
+            body_text: 'Top.',
+            work_order_id: null,
+            link_id: 7,
+            verified: 1,
+            created_at: '2026-06-20T10:00:00Z',
+          },
+        ],
+      ])
+      .mockResolvedValueOnce([[{ avg_rating: 5.0 }]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/reviews?tallerId=3',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.reviews).toHaveLength(1);
+    expect(body.reviews[0].verified).toBe(true);
+    expect(body.avgRating).toBe(5);
+  });
+
+  it('AT-SOC9-C-8: POST /social/reviews → 409 REVIEW_ALREADY_EXISTS', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1 }]]) // work_order CLOSED
+      .mockRejectedValueOnce({ code: 'ER_DUP_ENTRY' });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        tallerOwnerId: 3,
+        rating: 5,
+        bodyText: 'Duplicado.',
+        workOrderId: 1,
+      }),
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.payload).error).toBe('REVIEW_ALREADY_EXISTS');
   });
 });

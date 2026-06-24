@@ -66,6 +66,18 @@ interface CommentBody {
   parentCommentId?: number;
 }
 
+interface ReviewBody {
+  tallerOwnerId?: number;
+  rating?: number;
+  bodyText?: string;
+  workOrderId?: number;
+  linkId?: number;
+}
+
+interface ReviewQuery {
+  tallerId?: string;
+}
+
 export default async function socialRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{ Querystring: PostQuery }>('/social/posts', async (request, reply) => {
     try {
@@ -309,4 +321,124 @@ export default async function socialRoutes(fastify: FastifyInstance): Promise<vo
       }
     }
   );
+
+  // ── Reviews ────────────────────────────────────────────────────────────────
+
+  fastify.post<{ Body: ReviewBody }>('/social/reviews', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Session required' });
+    }
+
+    const caller = request.user as { id: number; permissions: string[] };
+    const { tallerOwnerId, rating, bodyText, workOrderId, linkId } = request.body ?? {};
+
+    if (!tallerOwnerId || !rating || !bodyText) {
+      return reply.code(400).send({ error: 'MISSING_REQUIRED_FIELDS' });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return reply.code(400).send({ error: 'INVALID_RATING' });
+    }
+
+    try {
+      let verified = 0;
+
+      if (workOrderId) {
+        const [woRows] = await db.execute<RowDataPacket[]>(
+          "SELECT id FROM upa_work_orders WHERE id = ? AND status = 'CLOSED'",
+          [workOrderId]
+        );
+        if (woRows.length > 0) verified = 1;
+      }
+
+      if (!verified && linkId) {
+        const [linkRows] = await db.execute<RowDataPacket[]>(
+          'SELECT id FROM owner_service_links WHERE id = ?',
+          [linkId]
+        );
+        if (linkRows.length > 0) verified = 1;
+      }
+
+      if (!verified) {
+        return reply.code(403).send({ error: 'NO_VERIFIED_LINK' });
+      }
+
+      const [result] = await db.execute<ResultSetHeader>(
+        `INSERT INTO social_reviews
+           (reviewer_id, taller_owner_id, rating, body_text, work_order_id, link_id, verified)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [caller.id, tallerOwnerId, rating, bodyText, workOrderId ?? null, linkId ?? null, verified]
+      );
+
+      return reply.code(201).send({ id: result.insertId, verified });
+    } catch (err: unknown) {
+      const mysqlErr = err as { code?: string };
+      if (mysqlErr.code === 'ER_DUP_ENTRY') {
+        return reply.code(409).send({ error: 'REVIEW_ALREADY_EXISTS' });
+      }
+      return reply.code(500).send({ error: 'REVIEW_CREATE_FAIL' });
+    }
+  });
+
+  fastify.get<{ Querystring: ReviewQuery }>('/social/reviews', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Session required' });
+    }
+
+    const { tallerId } = request.query;
+
+    try {
+      const conditions: string[] = [];
+      const params: (string | number)[] = [];
+
+      if (tallerId) {
+        conditions.push('r.taller_owner_id = ?');
+        params.push(Number(tallerId));
+      }
+
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      const [rows] = await db.execute<RowDataPacket[]>(
+        `SELECT r.id, r.reviewer_id, r.taller_owner_id, r.rating,
+                r.body_text, r.work_order_id, r.link_id, r.verified, r.created_at
+         FROM social_reviews r ${where} ORDER BY r.created_at DESC`,
+        params
+      );
+
+      const avgRow = tallerId
+        ? await db.execute<RowDataPacket[]>(
+            'SELECT AVG(rating) AS avg_rating FROM social_reviews WHERE taller_owner_id = ?',
+            [Number(tallerId)]
+          )
+        : null;
+
+      const avgRating = avgRow
+        ? Number(
+            ((avgRow as [RowDataPacket[], unknown])[0][0] as { avg_rating: number | null })
+              .avg_rating ?? 0
+          )
+        : null;
+
+      return reply.send({
+        reviews: rows.map((r) => ({
+          id: r.id,
+          reviewerId: r.reviewer_id,
+          tallerOwnerId: r.taller_owner_id,
+          rating: r.rating,
+          bodyText: r.body_text,
+          workOrderId: r.work_order_id ?? null,
+          linkId: r.link_id ?? null,
+          verified: r.verified === 1,
+          createdAt: r.created_at,
+        })),
+        avgRating,
+      });
+    } catch {
+      return reply.code(500).send({ error: 'REVIEWS_FETCH_FAIL' });
+    }
+  });
 }
