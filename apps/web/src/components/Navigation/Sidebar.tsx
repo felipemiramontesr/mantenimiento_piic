@@ -16,6 +16,7 @@ import {
   Globe,
   MapPin,
   Contact,
+  Rss,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -271,6 +272,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 label="Directorio CRM"
                 path="/dashboard/contacts"
                 active={location.pathname === '/dashboard/contacts'}
+                isCollapsed={isCollapsed}
+              />
+            )}
+            {!isExternalClientOnly() && (
+              <NavItem
+                icon={<Rss size={20} />}
+                label="Red Social"
+                path="/dashboard/social"
+                active={location.pathname === '/dashboard/social'}
                 isCollapsed={isCollapsed}
               />
             )}

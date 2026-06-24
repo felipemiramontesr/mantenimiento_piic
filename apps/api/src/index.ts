@@ -45,6 +45,7 @@ import crmPipelineRoutes from './routes/crmPipeline';
 import crmInteractionsRoutes from './routes/crmInteractions';
 import portalRoutes from './routes/portal';
 import crmCampaignsRoutes from './routes/crmCampaigns';
+import socialRoutes from './routes/social';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -173,6 +174,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(co2Routes, { prefix: '/v1' });
   fastify.register(recallsNhtsaRoutes, { prefix: '/v1' });
   fastify.register(recallsVimRoutes, { prefix: '/v1' });
+  fastify.register(socialRoutes, { prefix: '/v1' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(
