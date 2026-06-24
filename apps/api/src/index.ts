@@ -43,6 +43,7 @@ import crmContactsRoutes from './routes/crmContacts';
 import crmContractsRoutes from './routes/crmContracts';
 import crmPipelineRoutes from './routes/crmPipeline';
 import crmInteractionsRoutes from './routes/crmInteractions';
+import portalRoutes from './routes/portal';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -160,6 +161,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(crmContractsRoutes, { prefix: '/v1' });
   fastify.register(crmPipelineRoutes, { prefix: '/v1' });
   fastify.register(crmInteractionsRoutes, { prefix: '/v1' });
+  fastify.register(portalRoutes, { prefix: '/v1' });
   fastify.register(fleetTcoRoutes, { prefix: '/v1' });
   fastify.register(fleetRecallsRoutes, { prefix: '/v1' });
   fastify.register(fleetIntelligenceRoutes, { prefix: '/v1' });
