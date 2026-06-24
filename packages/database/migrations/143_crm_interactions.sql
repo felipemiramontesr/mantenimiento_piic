@@ -8,7 +8,7 @@ SET NAMES utf8mb4;
 CREATE TABLE IF NOT EXISTS crm_interactions (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   owner_id   INT  NOT NULL,
-  contact_id INT  NULL,
+  contact_id INT UNSIGNED NULL,
   type       ENUM('CALL','EMAIL','NOTE','MEETING') NOT NULL DEFAULT 'NOTE',
   summary    TEXT NOT NULL,
   created_by INT  NOT NULL,
