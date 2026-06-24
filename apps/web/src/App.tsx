@@ -25,6 +25,7 @@ import ContractsPanel from './pages/Dashboard/ContractsPanel';
 import PipelineBoard from './pages/Dashboard/PipelineBoard';
 import InteractionsLog from './pages/Dashboard/InteractionsLog';
 import PortalView from './pages/Dashboard/PortalView';
+import CampaignsPanel from './pages/Dashboard/CampaignsPanel';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ClientScopeGate from './components/Common/ClientScopeGate';
@@ -98,6 +99,7 @@ const App: React.FC = () => (
                   <Route path="pipeline" element={<PipelineBoard />} />
                   <Route path="interactions" element={<InteractionsLog />} />
                   <Route path="portal" element={<PortalView />} />
+                  <Route path="campaigns" element={<CampaignsPanel />} />
                 </Route>
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
