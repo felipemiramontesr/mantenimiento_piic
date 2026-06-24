@@ -1,0 +1,32 @@
+name: 🔐 Seed PIIC-304 Encrypted Fields (One-time · FC-7 FaseB)
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  seed-encrypted:
+    name: 🔐 Run seed140EncryptedPiic304
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: 🔐 Seed PIIC-304 encrypted fields (numeroSerie + circulationCardNumber)
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_ENCRYPTION_KEY: ${{ secrets.DB_ENCRYPTION_KEY }}
+        run: node node_modules/tsx/dist/cli.mjs scripts/seed140EncryptedPiic304.ts
