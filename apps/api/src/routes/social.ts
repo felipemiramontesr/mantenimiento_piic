@@ -78,6 +78,12 @@ interface ReviewQuery {
   tallerId?: string;
 }
 
+interface DirectoryQuery {
+  q?: string;
+  specialties?: string;
+  minRating?: string;
+}
+
 export default async function socialRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{ Querystring: PostQuery }>('/social/posts', async (request, reply) => {
     try {
@@ -439,6 +445,81 @@ export default async function socialRoutes(fastify: FastifyInstance): Promise<vo
       });
     } catch {
       return reply.code(500).send({ error: 'REVIEWS_FETCH_FAIL' });
+    }
+  });
+
+  // ── Directory ──────────────────────────────────────────────────────────────
+
+  fastify.get<{ Querystring: DirectoryQuery }>('/social/directory', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Session required' });
+    }
+
+    const { q, specialties, minRating } = request.query;
+
+    try {
+      const whereParts: string[] = [];
+      const havingParts: string[] = [];
+      const params: (string | number)[] = [];
+      const havingParams: number[] = [];
+
+      if (q) {
+        whereParts.push('(o.label LIKE ? OR op.razon_social LIKE ?)');
+        params.push(`%${q}%`, `%${q}%`);
+      }
+      if (specialties) {
+        whereParts.push('op.especialidades LIKE ?');
+        params.push(`%${specialties}%`);
+      }
+      if (minRating) {
+        havingParts.push('avg_rating >= ?');
+        havingParams.push(Number(minRating));
+      }
+
+      const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
+      const havingClause = havingParts.length > 0 ? `HAVING ${havingParts.join(' AND ')}` : '';
+
+      const [rows] = await db.execute<RowDataPacket[]>(
+        `SELECT
+           o.id,
+           o.label,
+           op.razon_social,
+           op.especialidades,
+           op.telefono,
+           op.direccion,
+           ROUND(COALESCE(AVG(sr.rating), 0), 2) AS avg_rating,
+           COUNT(DISTINCT sr.id) AS review_count
+         FROM owners o
+         INNER JOIN (
+           SELECT DISTINCT uom.owner_id
+           FROM user_owner_membership uom
+           JOIN users u ON u.id = uom.user_id AND u.role_id = 3
+         ) AS centro_owners ON centro_owners.owner_id = o.id
+         LEFT JOIN owner_profiles op ON op.owner_id = o.id
+         LEFT JOIN social_reviews sr ON sr.taller_owner_id = o.id
+         ${whereClause}
+         GROUP BY o.id, o.label, op.razon_social, op.especialidades, op.telefono, op.direccion
+         ${havingClause}
+         ORDER BY avg_rating DESC`,
+        [...params, ...havingParams]
+      );
+
+      return reply.send({
+        talleres: rows.map((r) => ({
+          id: r.id,
+          label: r.label,
+          razonSocial: r.razon_social ?? null,
+          especialidades: r.especialidades ?? null,
+          telefono: r.telefono ?? null,
+          direccion: r.direccion ?? null,
+          avgRating: Number(r.avg_rating),
+          reviewCount: Number(r.review_count),
+        })),
+      });
+    } catch {
+      return reply.code(500).send({ error: 'DIRECTORY_FETCH_FAIL' });
     }
   });
 }

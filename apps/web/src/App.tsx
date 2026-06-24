@@ -27,6 +27,7 @@ import InteractionsLog from './pages/Dashboard/InteractionsLog';
 import PortalView from './pages/Dashboard/PortalView';
 import CampaignsPanel from './pages/Dashboard/CampaignsPanel';
 import ProfileView from './pages/Profile/ProfileView';
+import TalleresDirectory from './pages/Social/TalleresDirectory';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ClientScopeGate from './components/Common/ClientScopeGate';
@@ -102,6 +103,7 @@ const App: React.FC = () => (
                   <Route path="portal" element={<PortalView />} />
                   <Route path="campaigns" element={<CampaignsPanel />} />
                   <Route path="social" element={<ProfileView />} />
+                  <Route path="talleres" element={<TalleresDirectory />} />
                 </Route>
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

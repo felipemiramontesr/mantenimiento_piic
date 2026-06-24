@@ -37,6 +37,14 @@ import db from '../services/db';
  * AT-SOC9-C-6: GET /social/reviews → 401 sin JWT
  * AT-SOC9-C-7: GET /social/reviews?tallerId=X → 200 lista + avg_rating
  * AT-SOC9-C-8: POST /social/reviews → 409 REVIEW_ALREADY_EXISTS (duplicate reviewer+taller)
+ *
+ * FC-9 SocialNetwork_Multiverso FaseD — directorio de talleres
+ *
+ * AT-SOC9-D-1: GET /social/directory → 401 sin JWT
+ * AT-SOC9-D-2: GET /social/directory → 200 lista de talleres role_id=3
+ * AT-SOC9-D-3: GET /social/directory?q=arco → 200 filtrado por nombre
+ * AT-SOC9-D-4: GET /social/directory?minRating=4 → 200 filtrado por rating
+ * AT-SOC9-D-5: GET /social/directory → orden avg_rating DESC (Gherkin Scenario 4)
  */
 
 vi.mock('../services/db', () => ({
@@ -413,5 +421,103 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     });
     expect(res.statusCode).toBe(409);
     expect(JSON.parse(res.payload).error).toBe('REVIEW_ALREADY_EXISTS');
+  });
+
+  // ── FaseD: Directorio de Talleres ──────────────────────────────────────────
+
+  const MOCK_TALLERES = [
+    {
+      id: 3,
+      label: 'Arco Servicios',
+      razon_social: 'Arco SA',
+      especialidades: 'Frenos,Motor',
+      telefono: '555-0001',
+      direccion: 'Av. Principal 1',
+      avg_rating: '4.8',
+      review_count: '10',
+    },
+    {
+      id: 7,
+      label: 'Taller Norte',
+      razon_social: null,
+      especialidades: null,
+      telefono: null,
+      direccion: null,
+      avg_rating: '3.2',
+      review_count: '5',
+    },
+  ];
+
+  it('AT-SOC9-D-1: GET /social/directory → 401 sin JWT', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/social/directory' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-SOC9-D-2: GET /social/directory → 200 lista de talleres', async () => {
+    (db.execute as any).mockResolvedValueOnce([MOCK_TALLERES]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/directory',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.talleres).toHaveLength(2);
+    expect(body.talleres[0].id).toBe(3);
+    expect(body.talleres[0].avgRating).toBe(4.8);
+  });
+
+  it('AT-SOC9-D-3: GET /social/directory?q=arco → 200 filtrado por nombre', async () => {
+    (db.execute as any).mockResolvedValueOnce([[MOCK_TALLERES[0]]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/directory?q=arco',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.talleres).toHaveLength(1);
+    expect(body.talleres[0].label).toBe('Arco Servicios');
+  });
+
+  it('AT-SOC9-D-4: GET /social/directory?minRating=4 → 200 filtrado', async () => {
+    (db.execute as any).mockResolvedValueOnce([[MOCK_TALLERES[0]]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/directory?minRating=4',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.talleres).toHaveLength(1);
+    expect(body.talleres[0].avgRating).toBeGreaterThanOrEqual(4);
+  });
+
+  it('AT-SOC9-D-5: GET /social/directory → orden avg_rating DESC (Gherkin Scenario 4)', async () => {
+    const talleres = [
+      { ...MOCK_TALLERES[0], avg_rating: '4.8', review_count: '3' },
+      {
+        id: 9,
+        label: 'Taller Sur',
+        razon_social: null,
+        especialidades: null,
+        telefono: null,
+        direccion: null,
+        avg_rating: '4.1',
+        review_count: '2',
+      },
+      { ...MOCK_TALLERES[1], avg_rating: '3.2', review_count: '1' },
+    ];
+    (db.execute as any).mockResolvedValueOnce([talleres]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/directory',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.talleres[0].avgRating).toBe(4.8);
+    expect(body.talleres[1].avgRating).toBe(4.1);
+    expect(body.talleres[2].avgRating).toBe(3.2);
   });
 });
