@@ -15,9 +15,10 @@ import {
   Bell,
   Globe,
   MapPin,
-  Contact,
   Rss,
   Building2,
+  Briefcase,
+  Monitor,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -124,7 +125,8 @@ const NavItem: React.FC<NavItemProps> = ({
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission, isOmnipotent, isExternalClientOnly, isFamiliar } = usePermissions();
+  const { hasPermission, hasAnyPermission, isOmnipotent, isExternalClientOnly, isFamiliar } =
+    usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
   const { count: alertsCount } = useAlertsCount();
@@ -290,12 +292,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                     isCollapsed={isCollapsed}
                   />
                 )}
-                {hasPermission('fleet:view') && (
+                {hasAnyPermission(['fleet:view', 'maint:view']) && !isExternalClientOnly() && (
                   <NavItem
-                    icon={<Contact size={20} />}
-                    label="Directorio CRM"
-                    path="/dashboard/contacts"
-                    active={location.pathname === '/dashboard/contacts'}
+                    icon={<Briefcase size={20} />}
+                    label="CRM"
+                    path="/dashboard/crm"
+                    active={[
+                      '/dashboard/crm',
+                      '/dashboard/contacts',
+                      '/dashboard/contracts',
+                      '/dashboard/pipeline',
+                      '/dashboard/interactions',
+                      '/dashboard/campaigns',
+                    ].includes(location.pathname)}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                {isExternalClientOnly() && (
+                  <NavItem
+                    icon={<Monitor size={20} />}
+                    label="Portal"
+                    path="/dashboard/portal"
+                    active={location.pathname === '/dashboard/portal'}
                     isCollapsed={isCollapsed}
                   />
                 )}

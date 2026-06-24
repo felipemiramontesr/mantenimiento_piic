@@ -79,6 +79,7 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText(/Soberano/i)).toBeDefined();
     expect(screen.getByText('Comando')).toBeDefined();
     expect(screen.getByText('Unidades')).toBeDefined();
+    expect(screen.getByText('CRM')).toBeDefined();
     expect(screen.getByText('Rutas')).toBeDefined();
     expect(screen.getByText('Incidencias')).toBeDefined();
     expect(screen.getByText('Seguridad')).toBeDefined();
@@ -105,6 +106,8 @@ describe('Sidebar Component (Archon Core)', () => {
     );
 
     expect(screen.getByText('Unidades')).toBeDefined();
+    expect(screen.getByText('Portal')).toBeDefined();
+    expect(screen.queryByText('CRM')).toBeNull();
     expect(screen.queryByText('Comando')).toBeNull();
     expect(screen.queryByText('Rutas')).toBeNull();
     expect(screen.queryByText('Alertas')).toBeNull();
@@ -488,6 +491,82 @@ describe('Sidebar Component (Archon Core)', () => {
         </BrowserRouter>
       );
       expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
+    });
+  });
+
+  describe('FC-11 CRM_Hub_Navigation FaseA — NavItem CRM y Portal', () => {
+    it('AT-FC11-A-SB-1: NavItem "CRM" visible para usuario con fleet:view y !isFamiliar()', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByText('CRM')).toBeInTheDocument();
+      expect(screen.queryByText('Directorio CRM')).toBeNull();
+    });
+
+    it('AT-FC11-A-SB-2: click en "CRM" navega a /dashboard/crm', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.click(screen.getByText('CRM'));
+      expect(navigateMock).toHaveBeenCalledWith('/dashboard/crm');
+    });
+
+    it('AT-FC11-A-SB-3: usuario con maint:view (sin fleet:view) ve "CRM"', () => {
+      const tallerPerms = ['maint:view', 'maint:write'];
+      usePermissionsMock.mockReturnValue({
+        hasPermission: (p: string): boolean => tallerPerms.includes(p),
+        hasAnyPermission: (ps: string[]): boolean => ps.some((p) => tallerPerms.includes(p)),
+        isOmnipotent: (): boolean => false,
+        isExternalClientOnly: (): boolean => false,
+        isSuiteVIM: (): boolean => false,
+        isFamiliar: (): boolean => false,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByText('CRM')).toBeInTheDocument();
+    });
+
+    it('AT-FC11-A-SB-4: familiar no ve NavItem "CRM"', () => {
+      usePermissionsMock.mockReturnValue({
+        hasPermission: (): boolean => true,
+        hasAnyPermission: (): boolean => true,
+        isOmnipotent: (): boolean => false,
+        isExternalClientOnly: (): boolean => false,
+        isSuiteVIM: (): boolean => false,
+        isFamiliar: (): boolean => true,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.queryByText('CRM')).toBeNull();
+    });
+
+    it('AT-FC11-A-SB-5: ExternalClientOnly ve Portal y no CRM', () => {
+      const clientPerms = ['fleet:view', 'fleet:scoped'];
+      usePermissionsMock.mockReturnValue({
+        hasPermission: (p: string): boolean => clientPerms.includes(p),
+        hasAnyPermission: (ps: string[]): boolean => ps.some((p) => clientPerms.includes(p)),
+        isOmnipotent: (): boolean => false,
+        isExternalClientOnly: (): boolean => true,
+        isSuiteVIM: (): boolean => false,
+        isFamiliar: (): boolean => false,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByText('Portal')).toBeInTheDocument();
+      expect(screen.queryByText('CRM')).toBeNull();
     });
   });
 

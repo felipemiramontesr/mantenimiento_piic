@@ -28,6 +28,7 @@ import PortalView from './pages/Dashboard/PortalView';
 import CampaignsPanel from './pages/Dashboard/CampaignsPanel';
 import ProfileView from './pages/Profile/ProfileView';
 import TalleresDirectory from './pages/Social/TalleresDirectory';
+import CrmHub from './pages/Dashboard/CrmHub';
 import FamilyView from './pages/Family/FamilyView';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -105,6 +106,7 @@ const App: React.FC = () => (
                   <Route path="campaigns" element={<CampaignsPanel />} />
                   <Route path="social" element={<ProfileView />} />
                   <Route path="talleres" element={<TalleresDirectory />} />
+                  <Route path="crm" element={<CrmHub />} />
                   <Route path="familia" element={<FamilyView />} />
                 </Route>
               </Route>
