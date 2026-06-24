@@ -11,6 +11,17 @@ export interface SocialPost {
   updatedAt: string;
 }
 
+export interface SocialComment {
+  id: number;
+  postId: number;
+  authorId: number;
+  parentCommentId: number | null;
+  contentText: string;
+  createdAt: string;
+}
+
+export type ReactionType = 'IMPECABLE' | 'VELOZ' | 'TRANSPARENTE' | 'UTIL';
+
 interface UseSocialPostsReturn {
   posts: SocialPost[];
   isLoading: boolean;
@@ -18,6 +29,10 @@ interface UseSocialPostsReturn {
   refresh: (authorId?: number) => Promise<void>;
   createPost: (contentText: string, imageUrls?: string[]) => Promise<void>;
   deletePost: (id: number) => Promise<void>;
+  addReaction: (postId: number, type: ReactionType) => Promise<void>;
+  removeReaction: (postId: number, type: ReactionType) => Promise<void>;
+  fetchComments: (postId: number) => Promise<SocialComment[]>;
+  addComment: (postId: number, contentText: string, parentCommentId?: number) => Promise<void>;
 }
 
 export function useSocialPosts(): UseSocialPostsReturn {
@@ -52,5 +67,36 @@ export function useSocialPosts(): UseSocialPostsReturn {
     setPosts((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  return { posts, isLoading, error, refresh, createPost, deletePost };
+  const addReaction = useCallback(async (postId: number, type: ReactionType): Promise<void> => {
+    await api.post(`/social/posts/${postId}/reactions`, { type });
+  }, []);
+
+  const removeReaction = useCallback(async (postId: number, type: ReactionType): Promise<void> => {
+    await api.delete(`/social/posts/${postId}/reactions/${type}`);
+  }, []);
+
+  const fetchComments = useCallback(async (postId: number): Promise<SocialComment[]> => {
+    const res = await api.get<{ comments: SocialComment[] }>(`/social/posts/${postId}/comments`);
+    return res.data.comments;
+  }, []);
+
+  const addComment = useCallback(
+    async (postId: number, contentText: string, parentCommentId?: number): Promise<void> => {
+      await api.post(`/social/posts/${postId}/comments`, { contentText, parentCommentId });
+    },
+    []
+  );
+
+  return {
+    posts,
+    isLoading,
+    error,
+    refresh,
+    createPost,
+    deletePost,
+    addReaction,
+    removeReaction,
+    fetchComments,
+    addComment,
+  };
 }

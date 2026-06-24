@@ -54,6 +54,18 @@ interface PostQuery {
   limit?: string;
 }
 
+type ReactionType = 'IMPECABLE' | 'VELOZ' | 'TRANSPARENTE' | 'UTIL';
+const VALID_REACTIONS: readonly ReactionType[] = ['IMPECABLE', 'VELOZ', 'TRANSPARENTE', 'UTIL'];
+
+interface ReactionBody {
+  type?: string;
+}
+
+interface CommentBody {
+  contentText?: string;
+  parentCommentId?: number;
+}
+
 export default async function socialRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{ Querystring: PostQuery }>('/social/posts', async (request, reply) => {
     try {
@@ -154,4 +166,147 @@ export default async function socialRoutes(fastify: FastifyInstance): Promise<vo
       return reply.code(500).send({ error: 'POST_DELETE_FAIL' });
     }
   });
+
+  // ── Reactions ──────────────────────────────────────────────────────────────
+
+  fastify.post<{ Params: { id: string }; Body: ReactionBody }>(
+    '/social/posts/:id/reactions',
+    async (request, reply) => {
+      try {
+        await request.jwtVerify();
+      } catch {
+        return reply.code(401).send({ error: 'Session required' });
+      }
+
+      const caller = request.user as { id: number; permissions: string[] };
+      const postId = Number(request.params.id);
+      const { type } = request.body ?? {};
+
+      if (!type || !VALID_REACTIONS.includes(type as ReactionType)) {
+        return reply.code(400).send({ error: 'INVALID_REACTION_TYPE' });
+      }
+
+      try {
+        const [posts] = await db.execute<RowDataPacket[]>(
+          'SELECT id FROM social_posts WHERE id = ?',
+          [postId]
+        );
+        if (posts.length === 0) return reply.code(404).send({ error: 'POST_NOT_FOUND' });
+
+        const [result] = await db.execute<ResultSetHeader>(
+          'INSERT IGNORE INTO social_reactions (post_id, user_id, type) VALUES (?, ?, ?)',
+          [postId, caller.id, type]
+        );
+
+        if (result.affectedRows === 0) {
+          return reply.code(409).send({ error: 'REACTION_ALREADY_EXISTS' });
+        }
+        return reply.code(201).send({ id: result.insertId });
+      } catch {
+        return reply.code(500).send({ error: 'REACTION_CREATE_FAIL' });
+      }
+    }
+  );
+
+  fastify.delete<{ Params: { id: string; type: string } }>(
+    '/social/posts/:id/reactions/:type',
+    async (request, reply) => {
+      try {
+        await request.jwtVerify();
+      } catch {
+        return reply.code(401).send({ error: 'Session required' });
+      }
+
+      const caller = request.user as { id: number; permissions: string[] };
+      const postId = Number(request.params.id);
+      const { type } = request.params;
+
+      if (!VALID_REACTIONS.includes(type as ReactionType)) {
+        return reply.code(400).send({ error: 'INVALID_REACTION_TYPE' });
+      }
+
+      try {
+        await db.execute(
+          'DELETE FROM social_reactions WHERE post_id = ? AND user_id = ? AND type = ?',
+          [postId, caller.id, type]
+        );
+        return reply.code(204).send();
+      } catch {
+        return reply.code(500).send({ error: 'REACTION_DELETE_FAIL' });
+      }
+    }
+  );
+
+  // ── Comments ───────────────────────────────────────────────────────────────
+
+  fastify.get<{ Params: { id: string } }>('/social/posts/:id/comments', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ error: 'Session required' });
+    }
+
+    const postId = Number(request.params.id);
+
+    try {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        `SELECT id, post_id, author_id, parent_comment_id, content_text, created_at
+           FROM social_comments WHERE post_id = ? ORDER BY created_at ASC`,
+        [postId]
+      );
+      return reply.send({
+        comments: rows.map((r) => ({
+          id: r.id,
+          postId: r.post_id,
+          authorId: r.author_id,
+          parentCommentId: r.parent_comment_id ?? null,
+          contentText: r.content_text,
+          createdAt: r.created_at,
+        })),
+      });
+    } catch {
+      return reply.code(500).send({ error: 'COMMENTS_FETCH_FAIL' });
+    }
+  });
+
+  fastify.post<{ Params: { id: string }; Body: CommentBody }>(
+    '/social/posts/:id/comments',
+    async (request, reply) => {
+      try {
+        await request.jwtVerify();
+      } catch {
+        return reply.code(401).send({ error: 'Session required' });
+      }
+
+      const caller = request.user as { id: number; permissions: string[] };
+      const postId = Number(request.params.id);
+      const { contentText, parentCommentId } = request.body ?? {};
+
+      if (!contentText) {
+        return reply.code(400).send({ error: 'MISSING_REQUIRED_FIELDS' });
+      }
+
+      if (containsPII(contentText)) {
+        return reply.code(400).send({ error: 'PII_DETECTED_IN_COMMENT' });
+      }
+
+      try {
+        const [posts] = await db.execute<RowDataPacket[]>(
+          'SELECT id FROM social_posts WHERE id = ?',
+          [postId]
+        );
+        if (posts.length === 0) return reply.code(404).send({ error: 'POST_NOT_FOUND' });
+
+        const [result] = await db.execute<ResultSetHeader>(
+          `INSERT INTO social_comments (post_id, author_id, parent_comment_id, content_text)
+           VALUES (?, ?, ?, ?)`,
+          [postId, caller.id, parentCommentId ?? null, contentText]
+        );
+
+        return reply.code(201).send({ id: result.insertId });
+      } catch {
+        return reply.code(500).send({ error: 'COMMENT_CREATE_FAIL' });
+      }
+    }
+  );
 }

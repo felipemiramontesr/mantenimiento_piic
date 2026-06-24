@@ -1,21 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import {
-  MessageSquare,
-  PlusCircle,
-  Trash2,
-  RefreshCw,
-  AlertCircle,
-  Users,
-  Edit,
-} from 'lucide-react';
+import { MessageSquare, PlusCircle, RefreshCw, AlertCircle, Users, Edit } from 'lucide-react';
 import { useSocialPosts } from '../../hooks/useSocialPosts';
 import ProfileEditSlideOver from './ProfileEditSlideOver';
+import PostCard from '../../components/Social/PostCard';
 import { useAuth } from '../../context/AuthContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AT from '../../styles/archonTypography';
 
 const ProfileView: React.FC = () => {
-  const { posts, isLoading, error, refresh, createPost, deletePost } = useSocialPosts();
+  const {
+    posts,
+    isLoading,
+    error,
+    refresh,
+    createPost,
+    deletePost,
+    addReaction,
+    fetchComments,
+    addComment,
+  } = useSocialPosts();
   const { currentUser } = useAuth();
   const { setSectionData } = useSovereignLayout();
   const [editOpen, setEditOpen] = useState(false);
@@ -152,36 +155,19 @@ const ProfileView: React.FC = () => {
             </div>
           )}
           {posts.map((post) => (
-            <div
+            <PostCard
               key={post.id}
-              data-testid={`post-card-${post.id}`}
-              className="flex flex-col gap-2 p-4 bg-white border border-[#0f2a44]/10 rounded-xl hover:shadow-sm transition-shadow"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-archon-md text-[#0f2a44] leading-relaxed flex-1">
-                  {post.contentText}
-                </p>
-                {Number(currentUser?.id) === post.authorId && (
-                  <button
-                    data-testid={`post-delete-${post.id}`}
-                    onClick={(): void => {
-                      deletePost(post.id).catch(() => undefined);
-                    }}
-                    className="text-slate-300 hover:text-red-400 transition-colors shrink-0"
-                    title="Eliminar publicación"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-              <span className="text-archon-xs text-slate-400 font-bold uppercase tracking-widest">
-                {new Date(post.createdAt).toLocaleDateString('es-MX', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
-            </div>
+              post={post}
+              isOwner={Number(currentUser?.id) === post.authorId}
+              onDelete={(id): void => {
+                deletePost(id).catch(() => undefined);
+              }}
+              onReact={(postId, type): void => {
+                addReaction(postId, type).catch(() => undefined);
+              }}
+              fetchComments={fetchComments}
+              addComment={addComment}
+            />
           ))}
         </div>
       )}
