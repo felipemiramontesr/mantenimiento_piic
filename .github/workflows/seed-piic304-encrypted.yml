@@ -1,32 +1,44 @@
 name: 🔐 Seed PIIC-304 Encrypted Fields (One-time · FC-7 FaseB)
 
+# Runs the seed SCRIPT ON THE HOSTINGER SERVER via SSH.
+# The GitHub Actions runner cannot reach Hostinger's MySQL (firewall),
+# but the server itself can — so we SSH in and execute there.
+
 on:
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   seed-encrypted:
-    name: 🔐 Run seed140EncryptedPiic304
+    name: 🔐 SSH → Run seed140EncryptedPiic304 on server
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: 🔑 Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/archon_deploy
+          chmod 600 ~/.ssh/archon_deploy
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
-
-      - name: 🔐 Seed PIIC-304 encrypted fields (numeroSerie + circulationCardNumber)
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_ENCRYPTION_KEY: ${{ secrets.DB_ENCRYPTION_KEY }}
-        run: node node_modules/tsx/dist/cli.mjs scripts/seed140EncryptedPiic304.ts
+      - name: 🔐 Seed encrypted fields on server
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} \
+              -i ~/.ssh/archon_deploy \
+              -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=30 \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "bash -s" << 'ENDSSH'
+            # Locate the script in the deployed app
+            SCRIPT=$(find /home -name "seed140EncryptedPiic304.ts" 2>/dev/null | head -1)
+            if [ -z "$SCRIPT" ]; then
+              echo "[ERROR] seed140EncryptedPiic304.ts not found on server."
+              echo "Paths searched:"
+              find /home -maxdepth 6 -name "package.json" 2>/dev/null | head -10
+              exit 1
+            fi
+            APP_DIR=$(dirname "$SCRIPT")
+            echo "[INFO] Found script at: $SCRIPT"
+            echo "[INFO] Running from:    $APP_DIR"
+            cd "$APP_DIR"
+            # Env vars are already set by Hostinger's Environment Variables panel
+            node node_modules/tsx/dist/cli.mjs "$SCRIPT"
+          ENDSSH
