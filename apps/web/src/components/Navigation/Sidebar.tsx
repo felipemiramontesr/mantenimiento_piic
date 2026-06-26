@@ -185,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <header
           className={`
           shrink-0 flex items-center border-b border-white/5 overflow-hidden transition-all duration-300
-          ${isCollapsed ? 'justify-center py-3' : 'justify-start px-4 py-3 gap-3'}
+          ${isCollapsed ? 'justify-center py-1.5' : 'justify-start px-4 py-1.5 gap-3'}
         `}
         >
           <button

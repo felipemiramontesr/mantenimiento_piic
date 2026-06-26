@@ -647,7 +647,7 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(navItem?.className).not.toContain('py-4');
     });
 
-    it('AT-FC13-B-SB-2: header contiene py-3 (espacio vertical simétrico)', () => {
+    it('AT-FC13-B-SB-2: header contiene padding vertical (espacio vertical simétrico)', () => {
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -655,10 +655,10 @@ describe('Sidebar Component (Archon Core)', () => {
       );
       const headerEl = container.querySelector('aside header');
       expect(headerEl).not.toBeNull();
-      expect(headerEl?.className).toContain('py-3');
+      expect(headerEl?.className).toContain('py-1.5');
     });
 
-    it('AT-FC13-B-SB-3: footer contiene py-3 y px-3 (espejo del header)', () => {
+    it('AT-FC13-B-SB-3: footer contiene py-3 y px-3 (espejo del header, footer no cambia en FC-14)', () => {
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -668,6 +668,32 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(footerEl).not.toBeNull();
       expect(footerEl?.className).toContain('py-3');
       expect(footerEl?.className).toContain('px-3');
+    });
+  });
+
+  describe('FC-14 Sidebar_Header_Scroll_Polish FaseA — Header padding reduction', () => {
+    it('AT-FC14-A-SB-1: header expanded contiene py-1.5 y NO py-3', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const headerEl = container.querySelector('aside header');
+      expect(headerEl).not.toBeNull();
+      expect(headerEl?.className).toContain('py-1.5');
+      expect(headerEl?.className).not.toContain('py-3');
+    });
+
+    it('AT-FC14-A-SB-2: header collapsed contiene py-1.5 y NO py-3', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const headerEl = container.querySelector('aside header');
+      expect(headerEl).not.toBeNull();
+      expect(headerEl?.className).toContain('py-1.5');
+      expect(headerEl?.className).not.toContain('py-3');
     });
   });
 });
