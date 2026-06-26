@@ -71,7 +71,7 @@ const NavItem: React.FC<NavItemProps> = ({
       tabIndex={0}
       className={`
         nav-item-pro cursor-pointer group flex items-center transition-all duration-200 rounded-[4px] my-1
-        ${isCollapsed ? 'justify-center py-4' : 'justify-start py-4 px-4 gap-3'}
+        ${isCollapsed ? 'justify-center py-3' : 'justify-start py-3 px-4 gap-3'}
         ${
           active
             ? 'border-l-[3px] border-pinnacle-yellow bg-pinnacle-yellow/5'
@@ -185,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <header
           className={`
           shrink-0 flex items-center border-b border-white/5 overflow-hidden transition-all duration-300
-          ${isCollapsed ? 'justify-center p-0' : 'justify-start px-4 gap-3'}
+          ${isCollapsed ? 'justify-center py-3' : 'justify-start px-4 py-3 gap-3'}
         `}
         >
           <button
@@ -395,7 +395,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </main>
 
         {/* ⚙️ FOOTER (15%) */}
-        <footer className="shrink-0 flex flex-col items-center justify-center px-4 gap-2 border-t border-white/5">
+        <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5">
           {isOmnipotent() && (
             <button
               onClick={goToAdmin}

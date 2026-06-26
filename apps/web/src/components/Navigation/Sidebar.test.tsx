@@ -633,4 +633,41 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(mainEl?.className).not.toContain('h-[80%]');
     });
   });
+
+  describe('FC-13 Sidebar_Layout_Sovereign FaseB — Ritmo visual simétrico', () => {
+    it('AT-FC13-B-SB-1: NavItem usa py-3 (no py-4)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const navItem = container.querySelector('[data-testid="nav-item-comando"]');
+      expect(navItem).not.toBeNull();
+      expect(navItem?.className).toContain('py-3');
+      expect(navItem?.className).not.toContain('py-4');
+    });
+
+    it('AT-FC13-B-SB-2: header contiene py-3 (espacio vertical simétrico)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const headerEl = container.querySelector('aside header');
+      expect(headerEl).not.toBeNull();
+      expect(headerEl?.className).toContain('py-3');
+    });
+
+    it('AT-FC13-B-SB-3: footer contiene py-3 y px-3 (espejo del header)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const footerEl = container.querySelector('aside footer');
+      expect(footerEl).not.toBeNull();
+      expect(footerEl?.className).toContain('py-3');
+      expect(footerEl?.className).toContain('px-3');
+    });
+  });
 });
