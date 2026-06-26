@@ -696,4 +696,17 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(headerEl?.className).not.toContain('py-3');
     });
   });
+
+  describe('FC-14 Sidebar_Header_Scroll_Polish FaseB — Scroll fade mask', () => {
+    it('AT-FC14-B-SB-1: aside main tiene clase sidebar-scroll-fade', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const mainEl = container.querySelector('aside main');
+      expect(mainEl).not.toBeNull();
+      expect(mainEl?.className).toContain('sidebar-scroll-fade');
+    });
+  });
 });
