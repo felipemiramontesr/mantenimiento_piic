@@ -599,4 +599,38 @@ describe('Sidebar Component (Archon Core)', () => {
     );
     expect(screen.getByTestId('alerts-badge').textContent).toBe('99+');
   });
+
+  describe('FC-13 Sidebar_Layout_Sovereign FaseA — Fix estructural 105% overflow', () => {
+    it('AT-FC13-A-SB-1: nav-item-logout visible independientemente de la cantidad de nav items', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
+      expect(screen.getByText('Cerrar Sesión')).toBeInTheDocument();
+    });
+
+    it('AT-FC13-A-SB-2: Panel de Control visible para usuario omnipotente', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByTestId('nav-item-admin')).toBeInTheDocument();
+      expect(screen.getByText('Panel de Control')).toBeInTheDocument();
+    });
+
+    it('AT-FC13-A-SB-3: sección nav tiene clase flex-1 (no h-[80%])', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const mainEl = container.querySelector('aside main');
+      expect(mainEl).not.toBeNull();
+      expect(mainEl?.className).toContain('flex-1');
+      expect(mainEl?.className).not.toContain('h-[80%]');
+    });
+  });
 });

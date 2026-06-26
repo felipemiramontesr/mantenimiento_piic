@@ -184,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         {/* 🔱 HEADER (10%) */}
         <header
           className={`
-          h-[10%] flex items-center border-b border-white/5 overflow-hidden transition-all duration-300
+          shrink-0 flex items-center border-b border-white/5 overflow-hidden transition-all duration-300
           ${isCollapsed ? 'justify-center p-0' : 'justify-start px-4 gap-3'}
         `}
         >
@@ -221,7 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </header>
 
         {/* 🗺️ BODY (80%) */}
-        <main className="h-[80%] py-6 px-3 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar">
           <nav className="flex flex-col">
             {/* ─── Familiar Subuniverso — Sidebar reducido exclusivo ─── */}
             {isFamiliar() ? (
@@ -395,7 +395,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </main>
 
         {/* ⚙️ FOOTER (15%) */}
-        <footer className="h-[15%] flex flex-col items-center justify-center px-4 gap-2 border-t border-white/5">
+        <footer className="shrink-0 flex flex-col items-center justify-center px-4 gap-2 border-t border-white/5">
           {isOmnipotent() && (
             <button
               onClick={goToAdmin}
