@@ -709,4 +709,29 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(mainEl?.className).toContain('sidebar-scroll-fade');
     });
   });
+
+  describe('FC-15 Sidebar_Scroll_Fade_Bidirectional — Fade bidireccional', () => {
+    it('AT-FC15-SB-1: aside main retiene clase sidebar-scroll-fade (regresión)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const mainEl = container.querySelector('aside main');
+      expect(mainEl).not.toBeNull();
+      expect(mainEl?.className).toContain('sidebar-scroll-fade');
+    });
+
+    it('AT-FC15-SB-2: aside main tiene pt-10 y NO py-6 (primer NavItem fuera de zona fade)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const mainEl = container.querySelector('aside main');
+      expect(mainEl).not.toBeNull();
+      expect(mainEl?.className).toContain('pt-10');
+      expect(mainEl?.className).not.toContain('py-6');
+    });
+  });
 });
