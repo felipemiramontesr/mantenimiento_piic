@@ -647,7 +647,7 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(navItem?.className).not.toContain('py-4');
     });
 
-    it('AT-FC13-B-SB-2: header contiene padding vertical (espacio vertical simétrico)', () => {
+    it('AT-FC13-B-SB-2: header contiene padding vertical (espacio vertical asimétrico — FC-16)', () => {
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -655,7 +655,7 @@ describe('Sidebar Component (Archon Core)', () => {
       );
       const headerEl = container.querySelector('aside header');
       expect(headerEl).not.toBeNull();
-      expect(headerEl?.className).toContain('py-1.5');
+      expect(headerEl?.className).toContain('pt-3');
     });
 
     it('AT-FC13-B-SB-3: footer contiene py-3 y px-3 (espejo del header, footer no cambia en FC-14)', () => {
@@ -672,7 +672,7 @@ describe('Sidebar Component (Archon Core)', () => {
   });
 
   describe('FC-14 Sidebar_Header_Scroll_Polish FaseA — Header padding reduction', () => {
-    it('AT-FC14-A-SB-1: header expanded contiene py-1.5 y NO py-3', () => {
+    it('AT-FC14-A-SB-1: header expanded contiene pt-3 y pb-1.5 y NO py-1.5 (FC-16)', () => {
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -680,11 +680,12 @@ describe('Sidebar Component (Archon Core)', () => {
       );
       const headerEl = container.querySelector('aside header');
       expect(headerEl).not.toBeNull();
-      expect(headerEl?.className).toContain('py-1.5');
-      expect(headerEl?.className).not.toContain('py-3');
+      expect(headerEl?.className).toContain('pt-3');
+      expect(headerEl?.className).toContain('pb-1.5');
+      expect(headerEl?.className).not.toContain('py-1.5');
     });
 
-    it('AT-FC14-A-SB-2: header collapsed contiene py-1.5 y NO py-3', () => {
+    it('AT-FC14-A-SB-2: header collapsed contiene pt-3 y pb-1.5 y NO py-1.5 (FC-16)', () => {
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed={true} onToggle={vi.fn()} />
@@ -692,8 +693,9 @@ describe('Sidebar Component (Archon Core)', () => {
       );
       const headerEl = container.querySelector('aside header');
       expect(headerEl).not.toBeNull();
-      expect(headerEl?.className).toContain('py-1.5');
-      expect(headerEl?.className).not.toContain('py-3');
+      expect(headerEl?.className).toContain('pt-3');
+      expect(headerEl?.className).toContain('pb-1.5');
+      expect(headerEl?.className).not.toContain('py-1.5');
     });
   });
 
@@ -722,7 +724,7 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(mainEl?.className).toContain('sidebar-scroll-fade');
     });
 
-    it('AT-FC15-SB-2: aside main tiene pt-10 y NO py-6 (primer NavItem fuera de zona fade)', () => {
+    it('AT-FC15-SB-2: aside main tiene py-6 y NO pt-10 (FC-16 revierte pt-10 de AG)', () => {
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
@@ -730,8 +732,34 @@ describe('Sidebar Component (Archon Core)', () => {
       );
       const mainEl = container.querySelector('aside main');
       expect(mainEl).not.toBeNull();
-      expect(mainEl?.className).toContain('pt-10');
-      expect(mainEl?.className).not.toContain('py-6');
+      expect(mainEl?.className).toContain('py-6');
+      expect(mainEl?.className).not.toContain('pt-10');
+    });
+  });
+
+  describe('FC-16 Sidebar_Header_Spacing_Fix — Header top spacing + fade top reducido', () => {
+    it('AT-FC16-SB-1: header expanded contiene pt-3 y NO py-1.5', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const headerEl = container.querySelector('aside header');
+      expect(headerEl).not.toBeNull();
+      expect(headerEl?.className).toContain('pt-3');
+      expect(headerEl?.className).not.toContain('py-1.5');
+    });
+
+    it('AT-FC16-SB-2: header collapsed contiene pt-3 y NO py-1.5', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const headerEl = container.querySelector('aside header');
+      expect(headerEl).not.toBeNull();
+      expect(headerEl?.className).toContain('pt-3');
+      expect(headerEl?.className).not.toContain('py-1.5');
     });
   });
 });

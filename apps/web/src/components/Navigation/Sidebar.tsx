@@ -185,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <header
           className={`
           shrink-0 flex items-center border-b border-white/5 overflow-hidden transition-all duration-300
-          ${isCollapsed ? 'justify-center py-1.5' : 'justify-start px-4 py-1.5 gap-3'}
+          ${isCollapsed ? 'justify-center pt-3 pb-1.5' : 'justify-start px-4 pt-3 pb-1.5 gap-3'}
         `}
         >
           <button
@@ -221,7 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </header>
 
         {/* 🗺️ BODY (80%) */}
-        <main className="flex-1 min-h-0 pt-10 pb-6 px-3 overflow-y-auto custom-scrollbar sidebar-scroll-fade">
+        <main className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar sidebar-scroll-fade">
           <nav className="flex flex-col">
             {/* ─── Familiar Subuniverso — Sidebar reducido exclusivo ─── */}
             {isFamiliar() ? (
