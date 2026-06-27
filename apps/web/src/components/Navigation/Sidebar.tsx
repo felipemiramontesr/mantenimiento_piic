@@ -221,7 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </header>
 
         {/* 🗺️ BODY (80%) */}
-        <main className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar sidebar-scroll-fade">
+        <main className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar">
           <nav className="flex flex-col">
             {/* ─── Familiar Subuniverso — Sidebar reducido exclusivo ─── */}
             {isFamiliar() ? (

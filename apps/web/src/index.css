@@ -95,23 +95,6 @@
     @apply flex flex-col gap-12 w-full max-w-full;
   }
 
-  .sidebar-scroll-fade {
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      transparent 0px,
-      black 20px,
-      black calc(100% - 56px),
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0px,
-      black 20px,
-      black calc(100% - 56px),
-      transparent 100%
-    );
-  }
-
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;

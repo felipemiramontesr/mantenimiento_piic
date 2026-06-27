@@ -699,44 +699,6 @@ describe('Sidebar Component (Archon Core)', () => {
     });
   });
 
-  describe('FC-14 Sidebar_Header_Scroll_Polish FaseB — Scroll fade mask', () => {
-    it('AT-FC14-B-SB-1: aside main tiene clase sidebar-scroll-fade', () => {
-      const { container } = render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      const mainEl = container.querySelector('aside main');
-      expect(mainEl).not.toBeNull();
-      expect(mainEl?.className).toContain('sidebar-scroll-fade');
-    });
-  });
-
-  describe('FC-15 Sidebar_Scroll_Fade_Bidirectional — Fade bidireccional', () => {
-    it('AT-FC15-SB-1: aside main retiene clase sidebar-scroll-fade (regresión)', () => {
-      const { container } = render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      const mainEl = container.querySelector('aside main');
-      expect(mainEl).not.toBeNull();
-      expect(mainEl?.className).toContain('sidebar-scroll-fade');
-    });
-
-    it('AT-FC15-SB-2: aside main tiene py-6 y NO pt-10 (FC-16 revierte pt-10 de AG)', () => {
-      const { container } = render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      const mainEl = container.querySelector('aside main');
-      expect(mainEl).not.toBeNull();
-      expect(mainEl?.className).toContain('py-6');
-      expect(mainEl?.className).not.toContain('pt-10');
-    });
-  });
-
   describe('FC-16 Sidebar_Header_Spacing_Fix — Header top spacing + fade top reducido', () => {
     it('AT-FC16-SB-1: header expanded contiene pt-3 y NO py-1.5', () => {
       const { container } = render(
