@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
@@ -722,6 +722,134 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(headerEl).not.toBeNull();
       expect(headerEl?.className).toContain('pt-3');
       expect(headerEl?.className).not.toContain('py-1.5');
+    });
+  });
+
+  describe('FC-17 Sidebar_NavItem_ScrollFade_IO — Intersection Observer fade individual', () => {
+    type IOCb = (entries: IntersectionObserverEntry[], obs: IntersectionObserver) => void;
+    interface ArchonIOGlobals {
+      archonMockIOCallbacks: Map<Element, IOCb>;
+      ArchonMockIO: { callCount: number; reset(): void };
+    }
+    const archonGlobal = globalThis as unknown as ArchonIOGlobals;
+
+    it('AT-FC17-B-SB-1: IntersectionObserver está registrado y se invoca al montar el Sidebar', () => {
+      archonGlobal.ArchonMockIO.reset();
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(window.IntersectionObserver).toBeDefined();
+      expect(archonGlobal.ArchonMockIO.callCount).toBeGreaterThan(0);
+    });
+
+    it('AT-FC17-B-SB-2: NavItem reduce su opacity cuando IO reporta intersectionRatio bajo', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const alertasItem = container.querySelector(
+        '[data-testid="nav-item-alertas"]'
+      ) as HTMLElement;
+      expect(alertasItem).not.toBeNull();
+      const cb = archonGlobal.archonMockIOCallbacks.get(alertasItem);
+      expect(cb).toBeDefined();
+      act(() => {
+        cb!(
+          [
+            {
+              target: alertasItem,
+              isIntersecting: false,
+              intersectionRatio: 0.3,
+              boundingClientRect: {} as DOMRectReadOnly,
+              intersectionRect: {} as DOMRectReadOnly,
+              rootBounds: null,
+              time: 0,
+            } as IntersectionObserverEntry,
+          ],
+          {} as IntersectionObserver
+        );
+      });
+      expect(alertasItem.style.opacity).toBe('0.3');
+    });
+
+    it('AT-FC17-B-SB-3: NavItem recupera opacity completa cuando IO reporta intersectionRatio=1', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const alertasItem = container.querySelector(
+        '[data-testid="nav-item-alertas"]'
+      ) as HTMLElement;
+      const cb = archonGlobal.archonMockIOCallbacks.get(alertasItem)!;
+      act(() => {
+        cb(
+          [
+            {
+              target: alertasItem,
+              isIntersecting: false,
+              intersectionRatio: 0.2,
+              boundingClientRect: {} as DOMRectReadOnly,
+              intersectionRect: {} as DOMRectReadOnly,
+              rootBounds: null,
+              time: 0,
+            } as IntersectionObserverEntry,
+          ],
+          {} as IntersectionObserver
+        );
+      });
+      act(() => {
+        cb(
+          [
+            {
+              target: alertasItem,
+              isIntersecting: true,
+              intersectionRatio: 1,
+              boundingClientRect: {} as DOMRectReadOnly,
+              intersectionRect: {} as DOMRectReadOnly,
+              rootBounds: null,
+              time: 0,
+            } as IntersectionObserverEntry,
+          ],
+          {} as IntersectionObserver
+        );
+      });
+      expect(alertasItem.style.opacity).toBe('1');
+    });
+
+    it('AT-FC17-B-SB-4: NavItem activo es inmune al fade (opacity=1 aunque IO reporte ratio bajo)', () => {
+      mockLocation.pathname = '/dashboard/alerts';
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      mockLocation.pathname = '/dashboard/fleet';
+      const alertasItem = container.querySelector(
+        '[data-testid="nav-item-alertas"]'
+      ) as HTMLElement;
+      expect(alertasItem).not.toBeNull();
+      const cb = archonGlobal.archonMockIOCallbacks.get(alertasItem)!;
+      act(() => {
+        cb(
+          [
+            {
+              target: alertasItem,
+              isIntersecting: false,
+              intersectionRatio: 0.1,
+              boundingClientRect: {} as DOMRectReadOnly,
+              intersectionRect: {} as DOMRectReadOnly,
+              rootBounds: null,
+              time: 0,
+            } as IntersectionObserverEntry,
+          ],
+          {} as IntersectionObserver
+        );
+      });
+      expect(alertasItem.style.opacity).toBe('1');
     });
   });
 });

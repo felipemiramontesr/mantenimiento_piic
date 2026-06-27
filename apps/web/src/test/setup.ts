@@ -65,3 +65,72 @@ vi.mock('framer-motion', () => ({
   ),
   AnimatePresence: ({ children }: any): any => children,
 }));
+
+// IntersectionObserver Mock (FC-17 Sidebar NavItem Scroll Fade)
+type IOCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void;
+const mockIOCallbacks = new Map<Element, IOCallback>();
+
+class MockIntersectionObserver
+  implements Omit<IntersectionObserver, 'root' | 'rootMargin' | 'thresholds'>
+{
+  static callCount = 0;
+
+  static reset(): void {
+    MockIntersectionObserver.callCount = 0;
+  }
+
+  readonly root: Element | Document | null = null;
+
+  readonly rootMargin: string = '';
+
+  readonly thresholds: ReadonlyArray<number> = [];
+
+  private ioCallback: IOCallback;
+
+  constructor(callback: IOCallback) {
+    MockIntersectionObserver.callCount += 1;
+    this.ioCallback = callback;
+  }
+
+  observe(el: Element): void {
+    mockIOCallbacks.set(el, this.ioCallback);
+    this.ioCallback(
+      [
+        {
+          target: el,
+          isIntersecting: true,
+          intersectionRatio: 1,
+          boundingClientRect: {} as DOMRectReadOnly,
+          intersectionRect: {} as DOMRectReadOnly,
+          rootBounds: null,
+          time: 0,
+        } as IntersectionObserverEntry,
+      ],
+      this as unknown as IntersectionObserver
+    );
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  unobserve(el: Element): void {
+    mockIOCallbacks.delete(el);
+  }
+
+  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-empty-function
+  disconnect(): void {}
+
+  // eslint-disable-next-line class-methods-use-this
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
+vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+(
+  globalThis as unknown as { archonMockIOCallbacks: Map<Element, IOCallback> }
+).archonMockIOCallbacks = mockIOCallbacks;
+(globalThis as unknown as { ArchonMockIO: typeof MockIntersectionObserver }).ArchonMockIO =
+  MockIntersectionObserver;
+afterEach((): void => {
+  mockIOCallbacks.clear();
+  MockIntersectionObserver.reset();
+});

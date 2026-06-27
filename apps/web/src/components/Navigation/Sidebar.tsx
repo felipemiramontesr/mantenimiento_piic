@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useRef, useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   Truck,
@@ -48,6 +48,8 @@ interface NavItemProps {
   badgeCount?: number;
 }
 
+const ScrollContainerCtx = React.createContext<React.RefObject<HTMLElement> | undefined>(undefined);
+
 const NavItem: React.FC<NavItemProps> = ({
   icon,
   label,
@@ -61,8 +63,39 @@ const NavItem: React.FC<NavItemProps> = ({
   const showBadge = badgeCount != null && badgeCount > 0;
   const badgeLabel = badgeCount != null && badgeCount > 99 ? '99+' : String(badgeCount ?? 0);
 
+  const scrollCtx = React.useContext(ScrollContainerCtx);
+  const itemRef = useRef<HTMLDivElement>(null);
+  const [opacity, setOpacity] = useState(1);
+  const activeRef = useRef(active);
+  useEffect((): void => {
+    activeRef.current = active;
+    if (active) setOpacity(1);
+  }, [active]);
+  useEffect(() => {
+    const el = itemRef.current;
+    const container = scrollCtx?.current ?? null;
+    if (el && container) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          setOpacity(activeRef.current ? 1 : entry.intersectionRatio);
+        },
+        {
+          root: container,
+          threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        }
+      );
+      observer.observe(el);
+      return (): void => {
+        observer.disconnect();
+      };
+    }
+    return undefined;
+  }, [scrollCtx]);
+
   return (
     <div
+      ref={itemRef}
+      style={{ opacity }}
       onClick={(): void => {
         navigate(path);
         setIsMobileMenuOpen(false); // Cierra menú al navegar en móvil
@@ -125,6 +158,7 @@ const NavItem: React.FC<NavItemProps> = ({
 export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const scrollRef = useRef<HTMLElement>(null);
   const { hasPermission, hasAnyPermission, isOmnipotent, isExternalClientOnly, isFamiliar } =
     usePermissions();
   const { currentUser, logout } = useAuth();
@@ -221,177 +255,182 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </header>
 
         {/* 🗺️ BODY (80%) */}
-        <main className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar">
-          <nav className="flex flex-col">
-            {/* ─── Familiar Subuniverso — Sidebar reducido exclusivo ─── */}
-            {isFamiliar() ? (
-              <>
-                <NavItem
-                  icon={<Users size={20} />}
-                  label="Mi Familia"
-                  path="/dashboard/familia"
-                  active={location.pathname === '/dashboard/familia'}
-                  isCollapsed={isCollapsed}
-                />
-                {hasPermission('maint:view') && (
-                  <NavItem
-                    icon={<Bell size={20} />}
-                    label="Alertas"
-                    path="/dashboard/alerts"
-                    active={location.pathname === '/dashboard/alerts'}
-                    isCollapsed={isCollapsed}
-                    badgeCount={alertsCount}
-                  />
-                )}
-              </>
-            ) : (
-              <>
-                {hasPermission('maint:view') && (
-                  <NavItem
-                    icon={<Bell size={20} />}
-                    label="Alertas"
-                    path="/dashboard/alerts"
-                    active={location.pathname === '/dashboard/alerts'}
-                    isCollapsed={isCollapsed}
-                    badgeCount={alertsCount}
-                  />
-                )}
-                {!isExternalClientOnly() && (
-                  <NavItem
-                    icon={<LayoutDashboard size={20} />}
-                    label="Comando"
-                    path="/dashboard"
-                    active={location.pathname === '/dashboard'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasPermission('financial:view') && (
-                  <NavItem
-                    icon={<Wallet size={20} />}
-                    label="Finanzas"
-                    path="/dashboard/financial"
-                    active={location.pathname === '/dashboard/financial'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasPermission('fleet:view') && (
-                  <NavItem
-                    icon={<Truck size={20} />}
-                    label="Unidades"
-                    path="/dashboard/fleet"
-                    active={location.pathname === '/dashboard/fleet'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasPermission('fleet:view') && (
-                  <NavItem
-                    icon={<MapPin size={20} />}
-                    label="Rastreo GPS"
-                    path="/dashboard/tracking"
-                    active={location.pathname === '/dashboard/tracking'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasAnyPermission(['fleet:view', 'maint:view']) && !isExternalClientOnly() && (
-                  <NavItem
-                    icon={<Briefcase size={20} />}
-                    label="CRM"
-                    path="/dashboard/crm"
-                    active={[
-                      '/dashboard/crm',
-                      '/dashboard/contacts',
-                      '/dashboard/contracts',
-                      '/dashboard/pipeline',
-                      '/dashboard/interactions',
-                      '/dashboard/campaigns',
-                    ].includes(location.pathname)}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {isExternalClientOnly() && (
-                  <NavItem
-                    icon={<Monitor size={20} />}
-                    label="Portal"
-                    path="/dashboard/portal"
-                    active={location.pathname === '/dashboard/portal'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {!isExternalClientOnly() && (
-                  <NavItem
-                    icon={<Rss size={20} />}
-                    label="Red Social"
-                    path="/dashboard/social"
-                    active={location.pathname === '/dashboard/social'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {!isExternalClientOnly() && (
-                  <NavItem
-                    icon={<Building2 size={20} />}
-                    label="Talleres"
-                    path="/dashboard/talleres"
-                    active={location.pathname === '/dashboard/talleres'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasPermission('route:view') && (
-                  <NavItem
-                    icon={<Navigation size={20} />}
-                    label="Rutas"
-                    path="/dashboard/routes"
-                    active={location.pathname === '/dashboard/routes'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasPermission('route:view') && (
-                  <NavItem
-                    icon={<AlertTriangle size={20} />}
-                    label="Incidencias"
-                    path="/dashboard/incidents"
-                    active={location.pathname.startsWith('/dashboard/incidents')}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasPermission('maint:view') && (
-                  <NavItem
-                    icon={<Wrench size={20} />}
-                    label="Mantenimiento"
-                    path="/dashboard/maintenance"
-                    active={location.pathname === '/dashboard/maintenance'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {hasPermission('user:admin') && (
+        <main
+          ref={scrollRef as React.RefObject<HTMLElement>}
+          className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar"
+        >
+          <ScrollContainerCtx.Provider value={scrollRef as React.RefObject<HTMLElement>}>
+            <nav className="flex flex-col">
+              {/* ─── Familiar Subuniverso — Sidebar reducido exclusivo ─── */}
+              {isFamiliar() ? (
+                <>
                   <NavItem
                     icon={<Users size={20} />}
-                    label="Personal"
-                    path="/dashboard/users"
-                    active={location.pathname === '/dashboard/users'}
+                    label="Mi Familia"
+                    path="/dashboard/familia"
+                    active={location.pathname === '/dashboard/familia'}
                     isCollapsed={isCollapsed}
                   />
-                )}
-                {hasPermission('user:admin') && (
-                  <NavItem
-                    icon={<ShieldAlert size={20} />}
-                    label="Seguridad"
-                    path="/dashboard/logs"
-                    active={location.pathname === '/dashboard/logs'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-                {isOmnipotent() && (
-                  <NavItem
-                    icon={<Globe size={20} />}
-                    label="Onboarding"
-                    path="/dashboard/onboarding"
-                    active={location.pathname === '/dashboard/onboarding'}
-                    isCollapsed={isCollapsed}
-                  />
-                )}
-              </>
-            )}
-          </nav>
+                  {hasPermission('maint:view') && (
+                    <NavItem
+                      icon={<Bell size={20} />}
+                      label="Alertas"
+                      path="/dashboard/alerts"
+                      active={location.pathname === '/dashboard/alerts'}
+                      isCollapsed={isCollapsed}
+                      badgeCount={alertsCount}
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  {hasPermission('maint:view') && (
+                    <NavItem
+                      icon={<Bell size={20} />}
+                      label="Alertas"
+                      path="/dashboard/alerts"
+                      active={location.pathname === '/dashboard/alerts'}
+                      isCollapsed={isCollapsed}
+                      badgeCount={alertsCount}
+                    />
+                  )}
+                  {!isExternalClientOnly() && (
+                    <NavItem
+                      icon={<LayoutDashboard size={20} />}
+                      label="Comando"
+                      path="/dashboard"
+                      active={location.pathname === '/dashboard'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('financial:view') && (
+                    <NavItem
+                      icon={<Wallet size={20} />}
+                      label="Finanzas"
+                      path="/dashboard/financial"
+                      active={location.pathname === '/dashboard/financial'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('fleet:view') && (
+                    <NavItem
+                      icon={<Truck size={20} />}
+                      label="Unidades"
+                      path="/dashboard/fleet"
+                      active={location.pathname === '/dashboard/fleet'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('fleet:view') && (
+                    <NavItem
+                      icon={<MapPin size={20} />}
+                      label="Rastreo GPS"
+                      path="/dashboard/tracking"
+                      active={location.pathname === '/dashboard/tracking'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasAnyPermission(['fleet:view', 'maint:view']) && !isExternalClientOnly() && (
+                    <NavItem
+                      icon={<Briefcase size={20} />}
+                      label="CRM"
+                      path="/dashboard/crm"
+                      active={[
+                        '/dashboard/crm',
+                        '/dashboard/contacts',
+                        '/dashboard/contracts',
+                        '/dashboard/pipeline',
+                        '/dashboard/interactions',
+                        '/dashboard/campaigns',
+                      ].includes(location.pathname)}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {isExternalClientOnly() && (
+                    <NavItem
+                      icon={<Monitor size={20} />}
+                      label="Portal"
+                      path="/dashboard/portal"
+                      active={location.pathname === '/dashboard/portal'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {!isExternalClientOnly() && (
+                    <NavItem
+                      icon={<Rss size={20} />}
+                      label="Red Social"
+                      path="/dashboard/social"
+                      active={location.pathname === '/dashboard/social'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {!isExternalClientOnly() && (
+                    <NavItem
+                      icon={<Building2 size={20} />}
+                      label="Talleres"
+                      path="/dashboard/talleres"
+                      active={location.pathname === '/dashboard/talleres'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('route:view') && (
+                    <NavItem
+                      icon={<Navigation size={20} />}
+                      label="Rutas"
+                      path="/dashboard/routes"
+                      active={location.pathname === '/dashboard/routes'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('route:view') && (
+                    <NavItem
+                      icon={<AlertTriangle size={20} />}
+                      label="Incidencias"
+                      path="/dashboard/incidents"
+                      active={location.pathname.startsWith('/dashboard/incidents')}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('maint:view') && (
+                    <NavItem
+                      icon={<Wrench size={20} />}
+                      label="Mantenimiento"
+                      path="/dashboard/maintenance"
+                      active={location.pathname === '/dashboard/maintenance'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('user:admin') && (
+                    <NavItem
+                      icon={<Users size={20} />}
+                      label="Personal"
+                      path="/dashboard/users"
+                      active={location.pathname === '/dashboard/users'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {hasPermission('user:admin') && (
+                    <NavItem
+                      icon={<ShieldAlert size={20} />}
+                      label="Seguridad"
+                      path="/dashboard/logs"
+                      active={location.pathname === '/dashboard/logs'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                  {isOmnipotent() && (
+                    <NavItem
+                      icon={<Globe size={20} />}
+                      label="Onboarding"
+                      path="/dashboard/onboarding"
+                      active={location.pathname === '/dashboard/onboarding'}
+                      isCollapsed={isCollapsed}
+                    />
+                  )}
+                </>
+              )}
+            </nav>
+          </ScrollContainerCtx.Provider>
         </main>
 
         {/* ⚙️ FOOTER (15%) */}
