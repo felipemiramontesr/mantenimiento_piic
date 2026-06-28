@@ -31,7 +31,7 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/work-orders/preview/:vehicleId
   fastify.get(
     '/work-orders/preview/:vehicleId',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('workorder:view:any')] },
     async (request, reply) => {
       const { vehicleId } = request.params as { vehicleId: string };
 
@@ -56,7 +56,7 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/work-orders/:id
   fastify.get(
     '/work-orders/:id',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('workorder:view:any')] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const workOrderId = parseInt(id, 10);
@@ -92,7 +92,7 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /v1/work-orders/init
   fastify.post(
     '/work-orders/init',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('workorder:create')] },
     async (request, reply) => {
       const parsed = initSchema.safeParse(request.body);
       if (!parsed.success) {
@@ -127,7 +127,7 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
   // PATCH /v1/work-orders/:id/tasks/:taskId
   fastify.patch(
     '/work-orders/:id/tasks/:taskId',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('workorder:task:manage')] },
     async (request, reply) => {
       const { id, taskId } = request.params as { id: string; taskId: string };
       const workOrderId = parseInt(id, 10);
@@ -167,7 +167,7 @@ export async function workOrderRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /v1/work-orders/:id/close
   fastify.post(
     '/work-orders/:id/close',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('workorder:close')] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const workOrderId = parseInt(id, 10);

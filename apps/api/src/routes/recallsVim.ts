@@ -39,7 +39,7 @@ export default async function recallsVimRoutes(fastify: FastifyInstance): Promis
 
   fastify.get(
     '/recalls/vim-patterns',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:recall:view')] },
     async (request: FastifyRequest, reply) => {
       const parsed = vimQuerySchema.safeParse(request.query);
       if (!parsed.success) {

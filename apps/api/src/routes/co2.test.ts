@@ -90,7 +90,7 @@ describe('GET /v1/fleet-units/:unitId/co2 (FC-6 Fase 6D)', () => {
   beforeAll(async () => {
     await app.ready();
     adminToken = app.jwt.sign({ id: 1, permissions: ['*'] });
-    scopedToken = app.jwt.sign({ id: 2, permissions: ['fleet:view', 'fleet:scoped'] });
+    scopedToken = app.jwt.sign({ id: 2, permissions: ['intelligence:co2:view', 'fleet:scoped'] });
   });
 
   beforeEach(() => {

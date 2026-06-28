@@ -102,7 +102,10 @@ describe('GET /v1/fleet-units/:unitId/anomalies (FC-6 Fase 6B)', () => {
   beforeAll(async () => {
     await app.ready();
     adminToken = app.jwt.sign({ id: 1, permissions: ['*'] });
-    scopedToken = app.jwt.sign({ id: 2, permissions: ['fleet:view', 'fleet:scoped'] });
+    scopedToken = app.jwt.sign({
+      id: 2,
+      permissions: ['intelligence:anomaly:view', 'fleet:scoped'],
+    });
   });
 
   beforeEach(() => {

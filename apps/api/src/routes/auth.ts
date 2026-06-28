@@ -765,7 +765,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         reply.code(401).send({ error: 'Archon Protection: Session required' });
       }
     },
-    preHandler: [requirePermission('user:admin')],
+    preHandler: [requirePermission('admin:role:edit')],
   };
 
   fastify.get('/users/:id/owners', ownersGuard, async (request, reply) => {

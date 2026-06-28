@@ -21,7 +21,7 @@ export default async function fleetIntelligenceRoutes(fastify: FastifyInstance):
 
   fastify.get(
     '/fleet-units/:unitId/intelligence',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:anomaly:view')] },
     async (request, reply) => {
       const { unitId } = request.params as { unitId: string };
       try {

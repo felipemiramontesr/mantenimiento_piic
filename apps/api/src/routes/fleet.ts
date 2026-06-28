@@ -144,7 +144,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       reply.code(401).send({ error: 'Archon Protection: Session required' });
     }
   });
-  fastify.addHook('preHandler', requirePermission('fleet:view'));
+  fastify.addHook('preHandler', requirePermission('fleet:unit:view:any'));
 
   /**
    * GET /api/v1/fleet
@@ -191,7 +191,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
    */
   fastify.post(
     '/fleet',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('fleet:unit:create')] },
     async (request, reply) => {
       const parse = createFleetSchema.safeParse(request.body);
       if (!parse.success) {
@@ -279,7 +279,7 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
    */
   fastify.delete(
     '/fleet/:id',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('fleet:unit:delete:any')] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const schema = z.object({

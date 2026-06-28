@@ -21,7 +21,7 @@ export default async function co2Routes(fastify: FastifyInstance): Promise<void>
 
   fastify.get(
     '/fleet-units/:unitId/co2',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:co2:view')] },
     async (request, reply) => {
       const { unitId } = request.params as { unitId: string };
       const { from, to } = request.query as { from?: string; to?: string };

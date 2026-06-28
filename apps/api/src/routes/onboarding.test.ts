@@ -121,13 +121,23 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       id: 2,
       username: 'centro',
       roleId: 3,
-      permissions: ['user:admin', 'fleet:scoped'],
+      permissions: [
+        'user:admin',
+        'fleet:scoped',
+        'onboarding:client:create',
+        'onboarding:member:create',
+      ],
     });
     flotillaToken = jwt.sign({
       id: 3,
       username: 'flotilla',
       roleId: 1,
-      permissions: ['user:admin', 'fleet:write'],
+      permissions: [
+        'user:admin',
+        'fleet:write',
+        'onboarding:client:create',
+        'onboarding:member:create',
+      ],
     });
     areaToken = jwt.sign({ id: 4, username: 'area', roleId: 2, permissions: ['fleet:view'] });
   });

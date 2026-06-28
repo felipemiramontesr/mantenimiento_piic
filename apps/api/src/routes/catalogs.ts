@@ -18,7 +18,7 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
     }
   });
-  fastify.addHook('preHandler', requirePermission('fleet:view'));
+  fastify.addHook('preHandler', requirePermission('fleet:catalog:view'));
 
   // 1. Asset types with field visibility config — FC-AssetType_ConditionalFields FaseB
   fastify.get('/asset-types', async (_request, reply) => {

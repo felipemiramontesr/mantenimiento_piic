@@ -1106,7 +1106,13 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
       username: 'prop.flotilla',
       roleId: 1,
       roleName: 'Propietario de Flotilla',
-      permissions: ['fleet:scoped', 'fleet:view', 'maint:view', 'maint:write'],
+      permissions: [
+        'fleet:scoped',
+        'fleet:view',
+        'maint:view',
+        'maint:write',
+        'maint:record:create',
+      ],
     });
   });
 

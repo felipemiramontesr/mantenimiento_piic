@@ -53,6 +53,7 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
       permissions: [
         'route:view',
         'route:write',
+        'route:record:create',
         'financial:view',
         'financial:write',
         'user:admin',

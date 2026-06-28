@@ -230,124 +230,132 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
   // Creates a P.Privado (roleId=4, new child owner) or Familiar (roleId=5,
   // under an existing P.Privado owner) within the caller's VIM universe.
   // Anti-IDOR: parentOwnerId is derived from the caller's scope, not user input.
-  fastify.post('/onboarding/client', jwtGuard('user:admin'), async (request, reply) => {
-    const { id: callerId, roleId: callerRoleId } = request.user as { id: number; roleId: number };
+  fastify.post(
+    '/onboarding/client',
+    jwtGuard('onboarding:client:create'),
+    async (request, reply) => {
+      const { id: callerId, roleId: callerRoleId } = request.user as { id: number; roleId: number };
 
-    if (callerRoleId !== 3) {
-      return reply.code(403).send({
-        success: false,
-        code: 'FORBIDDEN',
-        message: 'Only Centro Especializado can onboard clients',
-      });
-    }
-
-    const schema = z.object({
-      username: z.string().min(3),
-      email: z.string().email(),
-      password: passwordSchema,
-      roleId: z
-        .number()
-        .int()
-        .refine((id) => [4, 5].includes(id), {
-          message: 'roleId must be 4 (Privado) or 5 (Familiar)',
-        }),
-      targetOwnerId: z.number().int().positive().optional(),
-      fullName: z.string().optional(),
-      profile: profileSchema,
-      address: addressSchema,
-    });
-
-    const body = schema.safeParse(request.body);
-    if (!body.success) {
-      return reply
-        .code(400)
-        .send({ success: false, code: 'VALIDATION_ERROR', message: body.error.issues[0]?.message });
-    }
-    const { username, email, password, roleId, targetOwnerId, fullName, profile, address } =
-      body.data;
-
-    const callerOwnerIds = await FleetService.getUserOwnerIds(callerId);
-    if (callerOwnerIds.length === 0) {
-      return reply.code(400).send({ success: false, code: 'OWNER_NOT_FOUND' });
-    }
-    const callerOwnerId = callerOwnerIds[0];
-
-    if (roleId === 5) {
-      if (!targetOwnerId) {
-        return reply.code(400).send({
-          success: false,
-          code: 'VALIDATION_ERROR',
-          message: 'targetOwnerId required for Familiar',
-        });
-      }
-      // Anti-IDOR: verify targetOwnerId is a direct child of callerOwnerId
-      const [childRows] = await db.execute<RowDataPacket[]>(
-        'SELECT id FROM owners WHERE id = ? AND parent_owner_id = ?',
-        [targetOwnerId, callerOwnerId]
-      );
-      if (childRows.length === 0) {
+      if (callerRoleId !== 3) {
         return reply.code(403).send({
           success: false,
           code: 'FORBIDDEN',
-          message: 'Target owner outside your universe',
+          message: 'Only Centro Especializado can onboard clients',
         });
       }
-    }
 
-    const [existing] = await db.execute<RowDataPacket[]>(
-      'SELECT id FROM users WHERE username = ?',
-      [username]
-    );
-    if (existing.length > 0) {
-      return reply
-        .code(409)
-        .send({ success: false, code: 'CONFLICT', message: 'Username already exists' });
-    }
+      const schema = z.object({
+        username: z.string().min(3),
+        email: z.string().email(),
+        password: passwordSchema,
+        roleId: z
+          .number()
+          .int()
+          .refine((id) => [4, 5].includes(id), {
+            message: 'roleId must be 4 (Privado) or 5 (Familiar)',
+          }),
+        targetOwnerId: z.number().int().positive().optional(),
+        fullName: z.string().optional(),
+        profile: profileSchema,
+        address: addressSchema,
+      });
 
-    return withConnection(async (connection) => {
-      await connection.beginTransaction();
-      try {
-        if (roleId === 4) {
-          const { userId, ownerId } = await createOwnerWithUser(connection, {
-            username,
-            email,
-            password,
-            roleId,
-            ownerType: 'PRIVATE',
-            fullName,
-            parentOwnerId: callerOwnerId,
-            profile,
-            address,
+      const body = schema.safeParse(request.body);
+      if (!body.success) {
+        return reply
+          .code(400)
+          .send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: body.error.issues[0]?.message,
           });
-          await connection.commit();
-          return reply.code(201).send({ success: true, userId, ownerId });
-        }
-        // Familiar: share existing P.Privado owner — no new owner row
-        // targetOwnerId is guaranteed defined: validated in the roleId===5 guard above
-        const confirmedOwnerId = targetOwnerId as number;
-        const hash = await argon2Hash(password);
-        const enc = EncryptionService.encrypt(email);
-        const [res] = await connection.execute<ResultSetHeader>(
-          'INSERT INTO users (username, email, password_hash, role_id, full_name) VALUES (?, ?, ?, ?, ?)',
-          [username, enc, hash, roleId, fullName || '']
-        );
-        const userId = res.insertId;
-        await connection.execute<ResultSetHeader>(
-          'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
-          [userId, confirmedOwnerId]
-        );
-        await connection.execute<ResultSetHeader>(
-          'INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)',
-          [userId, roleId]
-        );
-        await connection.commit();
-        return reply.code(201).send({ success: true, userId, ownerId: confirmedOwnerId });
-      } catch (error) {
-        await connection.rollback();
-        throw error;
       }
-    });
-  });
+      const { username, email, password, roleId, targetOwnerId, fullName, profile, address } =
+        body.data;
+
+      const callerOwnerIds = await FleetService.getUserOwnerIds(callerId);
+      if (callerOwnerIds.length === 0) {
+        return reply.code(400).send({ success: false, code: 'OWNER_NOT_FOUND' });
+      }
+      const callerOwnerId = callerOwnerIds[0];
+
+      if (roleId === 5) {
+        if (!targetOwnerId) {
+          return reply.code(400).send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: 'targetOwnerId required for Familiar',
+          });
+        }
+        // Anti-IDOR: verify targetOwnerId is a direct child of callerOwnerId
+        const [childRows] = await db.execute<RowDataPacket[]>(
+          'SELECT id FROM owners WHERE id = ? AND parent_owner_id = ?',
+          [targetOwnerId, callerOwnerId]
+        );
+        if (childRows.length === 0) {
+          return reply.code(403).send({
+            success: false,
+            code: 'FORBIDDEN',
+            message: 'Target owner outside your universe',
+          });
+        }
+      }
+
+      const [existing] = await db.execute<RowDataPacket[]>(
+        'SELECT id FROM users WHERE username = ?',
+        [username]
+      );
+      if (existing.length > 0) {
+        return reply
+          .code(409)
+          .send({ success: false, code: 'CONFLICT', message: 'Username already exists' });
+      }
+
+      return withConnection(async (connection) => {
+        await connection.beginTransaction();
+        try {
+          if (roleId === 4) {
+            const { userId, ownerId } = await createOwnerWithUser(connection, {
+              username,
+              email,
+              password,
+              roleId,
+              ownerType: 'PRIVATE',
+              fullName,
+              parentOwnerId: callerOwnerId,
+              profile,
+              address,
+            });
+            await connection.commit();
+            return reply.code(201).send({ success: true, userId, ownerId });
+          }
+          // Familiar: share existing P.Privado owner — no new owner row
+          // targetOwnerId is guaranteed defined: validated in the roleId===5 guard above
+          const confirmedOwnerId = targetOwnerId as number;
+          const hash = await argon2Hash(password);
+          const enc = EncryptionService.encrypt(email);
+          const [res] = await connection.execute<ResultSetHeader>(
+            'INSERT INTO users (username, email, password_hash, role_id, full_name) VALUES (?, ?, ?, ?, ?)',
+            [username, enc, hash, roleId, fullName || '']
+          );
+          const userId = res.insertId;
+          await connection.execute<ResultSetHeader>(
+            'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
+            [userId, confirmedOwnerId]
+          );
+          await connection.execute<ResultSetHeader>(
+            'INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)',
+            [userId, roleId]
+          );
+          await connection.commit();
+          return reply.code(201).send({ success: true, userId, ownerId: confirmedOwnerId });
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        }
+      });
+    }
+  );
 
   // ─── GET /onboarding/universes — Archon only ─────────────────────────────
   // Returns all top-level universe roots (FLOTILLA + CENTER) with their root
@@ -390,72 +398,80 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
   // ─── POST /onboarding/member — Propietario de Flotilla ────────────────────
   // Creates an Área member (roleId=2) under the caller's ERP universe owner.
   // Anti-IDOR: owner is always the caller's own owner — no input to hijack.
-  fastify.post('/onboarding/member', jwtGuard('user:admin'), async (request, reply) => {
-    const { id: callerId, roleId: callerRoleId } = request.user as { id: number; roleId: number };
+  fastify.post(
+    '/onboarding/member',
+    jwtGuard('onboarding:member:create'),
+    async (request, reply) => {
+      const { id: callerId, roleId: callerRoleId } = request.user as { id: number; roleId: number };
 
-    if (callerRoleId !== 1) {
-      return reply.code(403).send({
-        success: false,
-        code: 'FORBIDDEN',
-        message: 'Only Propietario de Flotilla can onboard members',
+      if (callerRoleId !== 1) {
+        return reply.code(403).send({
+          success: false,
+          code: 'FORBIDDEN',
+          message: 'Only Propietario de Flotilla can onboard members',
+        });
+      }
+
+      const schema = z.object({
+        username: z.string().min(3),
+        email: z.string().email(),
+        password: passwordSchema,
+        fullName: z.string().optional(),
+      });
+
+      const body = schema.safeParse(request.body);
+      if (!body.success) {
+        return reply
+          .code(400)
+          .send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: body.error.issues[0]?.message,
+          });
+      }
+      const { username, email, password, fullName } = body.data;
+
+      const callerOwnerIds = await FleetService.getUserOwnerIds(callerId);
+      if (callerOwnerIds.length === 0) {
+        return reply.code(400).send({ success: false, code: 'OWNER_NOT_FOUND' });
+      }
+      const callerOwnerId = callerOwnerIds[0];
+
+      const [existing] = await db.execute<RowDataPacket[]>(
+        'SELECT id FROM users WHERE username = ?',
+        [username]
+      );
+      if (existing.length > 0) {
+        return reply
+          .code(409)
+          .send({ success: false, code: 'CONFLICT', message: 'Username already exists' });
+      }
+
+      return withConnection(async (connection) => {
+        await connection.beginTransaction();
+        try {
+          const hash = await argon2Hash(password);
+          const enc = EncryptionService.encrypt(email);
+          const [res] = await connection.execute<ResultSetHeader>(
+            'INSERT INTO users (username, email, password_hash, role_id, full_name) VALUES (?, ?, ?, ?, ?)',
+            [username, enc, hash, 2, fullName || '']
+          );
+          const userId = res.insertId;
+          await connection.execute<ResultSetHeader>(
+            'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
+            [userId, callerOwnerId]
+          );
+          await connection.execute<ResultSetHeader>(
+            'INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)',
+            [userId, 2]
+          );
+          await connection.commit();
+          return reply.code(201).send({ success: true, userId, ownerId: callerOwnerId });
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        }
       });
     }
-
-    const schema = z.object({
-      username: z.string().min(3),
-      email: z.string().email(),
-      password: passwordSchema,
-      fullName: z.string().optional(),
-    });
-
-    const body = schema.safeParse(request.body);
-    if (!body.success) {
-      return reply
-        .code(400)
-        .send({ success: false, code: 'VALIDATION_ERROR', message: body.error.issues[0]?.message });
-    }
-    const { username, email, password, fullName } = body.data;
-
-    const callerOwnerIds = await FleetService.getUserOwnerIds(callerId);
-    if (callerOwnerIds.length === 0) {
-      return reply.code(400).send({ success: false, code: 'OWNER_NOT_FOUND' });
-    }
-    const callerOwnerId = callerOwnerIds[0];
-
-    const [existing] = await db.execute<RowDataPacket[]>(
-      'SELECT id FROM users WHERE username = ?',
-      [username]
-    );
-    if (existing.length > 0) {
-      return reply
-        .code(409)
-        .send({ success: false, code: 'CONFLICT', message: 'Username already exists' });
-    }
-
-    return withConnection(async (connection) => {
-      await connection.beginTransaction();
-      try {
-        const hash = await argon2Hash(password);
-        const enc = EncryptionService.encrypt(email);
-        const [res] = await connection.execute<ResultSetHeader>(
-          'INSERT INTO users (username, email, password_hash, role_id, full_name) VALUES (?, ?, ?, ?, ?)',
-          [username, enc, hash, 2, fullName || '']
-        );
-        const userId = res.insertId;
-        await connection.execute<ResultSetHeader>(
-          'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
-          [userId, callerOwnerId]
-        );
-        await connection.execute<ResultSetHeader>(
-          'INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)',
-          [userId, 2]
-        );
-        await connection.commit();
-        return reply.code(201).send({ success: true, userId, ownerId: callerOwnerId });
-      } catch (error) {
-        await connection.rollback();
-        throw error;
-      }
-    });
-  });
+  );
 }

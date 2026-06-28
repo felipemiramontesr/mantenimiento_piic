@@ -21,7 +21,7 @@ export default async function economicLifeRoutes(fastify: FastifyInstance): Prom
 
   fastify.get(
     '/fleet-units/:unitId/economic-life',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:economic-life:view')] },
     async (request, reply) => {
       const { unitId } = request.params as { unitId: string };
       try {

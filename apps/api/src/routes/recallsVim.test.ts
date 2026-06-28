@@ -97,8 +97,11 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   beforeAll(async () => {
     await app.ready();
     adminToken = app.jwt.sign({ id: 1, permissions: ['*'] });
-    viewToken = app.jwt.sign({ id: 2, permissions: ['fleet:view'] });
-    globalToken = app.jwt.sign({ id: 3, permissions: ['fleet:view', 'fleet:global'] });
+    viewToken = app.jwt.sign({ id: 2, permissions: ['intelligence:recall:view'] });
+    globalToken = app.jwt.sign({
+      id: 3,
+      permissions: ['intelligence:recall:view', 'fleet:global'],
+    });
   });
 
   beforeEach(() => {

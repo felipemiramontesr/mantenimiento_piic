@@ -97,7 +97,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Sesión requerida' });
     }
   });
-  fastify.addHook('preHandler', requirePermission('financial:view'));
+  fastify.addHook('preHandler', requirePermission('finance:dashboard:view:any'));
 
   // GET /v1/finance/dashboard
   fastify.get('/finance/dashboard', async (request, reply) => {
@@ -394,7 +394,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /v1/finance/transactions
   fastify.post(
     '/finance/transactions',
-    { preHandler: [requirePermission('financial:write')] },
+    { preHandler: [requirePermission('finance:transaction:create')] },
     async (request, reply) => {
       const parsed = createTransactionSchema.safeParse(request.body);
       if (!parsed.success) {

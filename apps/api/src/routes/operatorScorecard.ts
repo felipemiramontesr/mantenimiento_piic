@@ -21,7 +21,7 @@ export default async function operatorScorecardRoutes(fastify: FastifyInstance):
 
   fastify.get(
     '/fleet-units/:unitId/operator-score',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:scorecard:view')] },
     async (request, reply) => {
       const { unitId } = request.params as { unitId: string };
       try {

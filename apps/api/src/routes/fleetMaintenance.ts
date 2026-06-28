@@ -297,7 +297,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
     }
   });
-  fastify.addHook('preHandler', requirePermission('maint:view'));
+  fastify.addHook('preHandler', requirePermission('maint:record:view:any'));
 
   // GET /v1/maintenance — Cursor-paginated history (includes ACTIVE movements)
   fastify.get('/maintenance', async (request, reply) => {
@@ -750,7 +750,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
    */
   fastify.post(
     '/maintenance',
-    { preHandler: [requirePermission('maint:write')] },
+    { preHandler: [requirePermission('maint:record:create')] },
     async (request, reply) => {
       const connection = await db.getConnection();
       try {
@@ -927,7 +927,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
    */
   fastify.patch(
     '/maintenance/:uuid/complete',
-    { preHandler: [requirePermission('maint:write')] },
+    { preHandler: [requirePermission('maint:record:edit:any')] },
     async (request, reply) => {
       const connection = await db.getConnection();
       try {
@@ -1088,7 +1088,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
    */
   fastify.patch(
     '/maintenance/:uuid/accept',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('fleet:unit:edit:any')] },
     async (request, reply) => {
       const connection = await db.getConnection();
       try {
@@ -1214,7 +1214,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
    */
   fastify.patch(
     '/maintenance/:uuid/reject',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('fleet:unit:edit:any')] },
     async (request, reply) => {
       const connection = await db.getConnection();
       try {

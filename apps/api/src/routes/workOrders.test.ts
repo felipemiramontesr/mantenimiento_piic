@@ -59,8 +59,16 @@ describe('Work Order Routes', () => {
   beforeAll(async () => {
     await app.ready();
     const base = { id: 1, username: 'operator', roleId: 2, roleName: 'Operator' };
-    viewToken = app.jwt.sign({ ...base, permissions: ['fleet:view'] });
-    writeToken = app.jwt.sign({ ...base, permissions: ['fleet:view', 'fleet:write'] });
+    viewToken = app.jwt.sign({ ...base, permissions: ['workorder:view:any'] });
+    writeToken = app.jwt.sign({
+      ...base,
+      permissions: [
+        'workorder:view:any',
+        'workorder:create',
+        'workorder:task:manage',
+        'workorder:close',
+      ],
+    });
     noPermToken = app.jwt.sign({ ...base, permissions: [] });
   });
 

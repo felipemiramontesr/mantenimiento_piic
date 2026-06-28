@@ -88,7 +88,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       reply.code(401).send({ success: false, code: 'UNAUTHORIZED', message: 'Session required' });
     }
   });
-  fastify.addHook('preHandler', requirePermission('route:view'));
+  fastify.addHook('preHandler', requirePermission('route:record:view:any'));
 
   /**
    * START ROUTE
@@ -96,7 +96,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.post(
     '/routes/start',
-    { preHandler: [requirePermission('route:write')] },
+    { preHandler: [requirePermission('route:record:create')] },
     async (request, reply) => {
       try {
         const data = startRouteSchema.parse(request.body);
@@ -141,7 +141,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.patch(
     '/routes/:uuid/finish',
-    { preHandler: [requirePermission('route:write')] },
+    { preHandler: [requirePermission('route:record:edit:any')] },
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
@@ -438,7 +438,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.post(
     '/routes/:uuid/checkpoints',
-    { preHandler: [requirePermission('route:write')] },
+    { preHandler: [requirePermission('route:waypoint:manage')] },
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
@@ -467,13 +467,11 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         if (msg === 'Route not found')
           return reply.code(404).send({ success: false, code: 'NOT_FOUND', message: msg });
         if (msg.includes('Duplicate entry'))
-          return reply
-            .code(409)
-            .send({
-              success: false,
-              code: 'CONFLICT',
-              message: 'Sequence already exists for this route',
-            });
+          return reply.code(409).send({
+            success: false,
+            code: 'CONFLICT',
+            message: 'Sequence already exists for this route',
+          });
         fastify.log.error(error);
         return reply.code(400).send({ success: false, message: msg });
       }
@@ -509,7 +507,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.patch(
     '/routes/:uuid/checkpoints/:id/arrive',
-    { preHandler: [requirePermission('route:write')] },
+    { preHandler: [requirePermission('route:waypoint:manage')] },
     async (request, reply) => {
       try {
         const { uuid, id } = request.params as { uuid: string; id: string };
@@ -539,7 +537,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.post(
     '/routes/:uuid/incidents',
-    { preHandler: [requirePermission('route:write')] },
+    { preHandler: [requirePermission('route:record:edit:any')] },
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
@@ -628,7 +626,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.put(
     '/routes/:uuid',
-    { preHandler: [requirePermission('route:write')] },
+    { preHandler: [requirePermission('route:record:edit:any')] },
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };
@@ -661,7 +659,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.delete(
     '/routes/:uuid',
-    { preHandler: [requirePermission('route:write')] },
+    { preHandler: [requirePermission('route:record:delete:any')] },
     async (request, reply) => {
       try {
         const { uuid } = request.params as { uuid: string };

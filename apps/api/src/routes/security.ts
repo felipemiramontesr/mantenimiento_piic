@@ -38,7 +38,7 @@ export default async function securityRoutes(fastify: FastifyInstance): Promise<
    * Archon (permissions='*') sees all universes.
    * Other users see only entries belonging to their owner(s).
    */
-  fastify.get('/security/audit-log', jwtGuard('user:admin'), async (request, reply) => {
+  fastify.get('/security/audit-log', jwtGuard('security:audit:view'), async (request, reply) => {
     try {
       const query = request.query as {
         page?: string;

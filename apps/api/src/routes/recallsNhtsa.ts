@@ -65,7 +65,7 @@ export default async function recallsNhtsaRoutes(fastify: FastifyInstance): Prom
 
   fastify.get(
     '/recalls/nhtsa',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:recall:view')] },
     async (request, reply) => {
       const parsed = searchSchema.safeParse(request.query);
       if (!parsed.success) {
@@ -98,7 +98,7 @@ export default async function recallsNhtsaRoutes(fastify: FastifyInstance): Prom
 
   fastify.post(
     '/recalls/nhtsa/import',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('intelligence:recall:sync')] },
     async (request, reply) => {
       const parsed = importSchema.safeParse(request.body);
       if (!parsed.success) {

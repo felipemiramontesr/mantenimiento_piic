@@ -71,7 +71,7 @@ export default async function fleetRecallsRoutes(fastify: FastifyInstance): Prom
 
   fastify.get(
     '/fleet-units/:unitId/recalls',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:recall:view')] },
     async (request, reply) => {
       const { unitId } = request.params as { unitId: string };
       try {
@@ -102,7 +102,7 @@ export default async function fleetRecallsRoutes(fastify: FastifyInstance): Prom
 
   fastify.post(
     '/fleet-units/:unitId/recalls',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('intelligence:recall:manage')] },
     async (request, reply) => {
       const { unitId } = request.params as { unitId: string };
       const parse = addRecallSchema.safeParse(request.body);
@@ -136,7 +136,7 @@ export default async function fleetRecallsRoutes(fastify: FastifyInstance): Prom
 
   fastify.patch(
     '/fleet-units/:unitId/recalls/:recallId',
-    { preHandler: [requirePermission('fleet:write')] },
+    { preHandler: [requirePermission('intelligence:recall:manage')] },
     async (request, reply) => {
       const { unitId, recallId } = request.params as { unitId: string; recallId: string };
       const parse = updateRecallSchema.safeParse(request.body);

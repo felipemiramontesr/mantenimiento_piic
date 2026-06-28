@@ -138,7 +138,7 @@ describe('Catalogs Integration Endpoints', () => {
         username: 'vim_user',
         roleId: 4,
         roleName: 'Owner',
-        permissions: ['fleet:view'],
+        permissions: ['fleet:catalog:view'],
         suite: 'VIM',
       });
       erpToken = app.jwt.sign({
@@ -146,7 +146,7 @@ describe('Catalogs Integration Endpoints', () => {
         username: 'erp_user',
         roleId: 2,
         roleName: 'Fleet',
-        permissions: ['fleet:view'],
+        permissions: ['fleet:catalog:view'],
         suite: 'ERP',
       });
     });

@@ -92,7 +92,10 @@ describe('GET /v1/fleet-units/:unitId/operator-score (FC-6 Fase 6C)', () => {
   beforeAll(async () => {
     await app.ready();
     adminToken = app.jwt.sign({ id: 1, permissions: ['*'] });
-    scopedToken = app.jwt.sign({ id: 2, permissions: ['fleet:view', 'fleet:scoped'] });
+    scopedToken = app.jwt.sign({
+      id: 2,
+      permissions: ['intelligence:scorecard:view', 'fleet:scoped'],
+    });
   });
 
   beforeEach(() => {

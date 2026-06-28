@@ -89,7 +89,10 @@ describe('GET /v1/fleet-units/:unitId/economic-life (FC-6 Fase 6A)', () => {
   beforeAll(async () => {
     await app.ready();
     adminToken = app.jwt.sign({ id: 1, permissions: ['*'] });
-    scopedToken = app.jwt.sign({ id: 2, permissions: ['fleet:view', 'fleet:scoped'] });
+    scopedToken = app.jwt.sign({
+      id: 2,
+      permissions: ['intelligence:economic-life:view', 'fleet:scoped'],
+    });
   });
 
   beforeEach(() => {

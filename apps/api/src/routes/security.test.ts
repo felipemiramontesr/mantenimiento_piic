@@ -64,7 +64,7 @@ describe('GET /v1/security/audit-log', () => {
       id: 2,
       username: 'piic.root',
       roleId: 1,
-      permissions: ['user:admin'],
+      permissions: ['security:audit:view'],
     });
   });
 

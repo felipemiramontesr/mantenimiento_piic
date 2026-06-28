@@ -55,7 +55,7 @@ export default async function fleetTcoRoutes(fastify: FastifyInstance): Promise<
 
   fastify.get(
     '/fleet-units/:unitId/tco',
-    { preHandler: [requirePermission('fleet:view')] },
+    { preHandler: [requirePermission('intelligence:tco:view')] },
     async (request, reply) => {
       const { unitId } = request.params as { unitId: string };
       try {
