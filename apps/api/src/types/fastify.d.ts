@@ -1,5 +1,5 @@
 import '@fastify/jwt';
-import type { UniverseCtx } from '../plugins/universeContext';
+import type { UniverseCtx, ScopeFilter } from './scopes';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -14,5 +14,6 @@ declare module 'fastify' {
       owner_type?: string;
     };
     universeCtx: UniverseCtx | null;
+    scopeFilter: ScopeFilter | null;
   }
 }

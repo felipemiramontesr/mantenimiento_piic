@@ -15,13 +15,6 @@ import { FastifyInstance } from 'fastify';
  *   isOmnipotent = false → Regular user, scope enforced by FaseD-2 per route
  */
 
-export type UniverseCtx = {
-  universeId: number;
-  tenantId: number;
-  ownerId: number | null;
-  isOmnipotent: boolean;
-};
-
 export default async function universeContextPlugin(fastify: FastifyInstance): Promise<void> {
   fastify.decorateRequest('universeCtx', null);
 
