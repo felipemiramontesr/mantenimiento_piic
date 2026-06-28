@@ -176,6 +176,43 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(recallsVimRoutes, { prefix: '/v1' });
   fastify.register(socialRoutes, { prefix: '/v1' });
 
+  // Universe Namespace Routes — FC-18 FaseC-2 (Archon_Universe_Routing_Restructure)
+  // Registers all domain routes under /v1/mantenimiento/ — original /v1/ aliases remain active.
+  const universePrefix = '/v1/mantenimiento';
+  fastify.register(fleetRoutes, { prefix: universePrefix });
+  fastify.register(journeyRoutes, { prefix: universePrefix });
+  fastify.register(userRoutes, { prefix: universePrefix });
+  fastify.register(fleetMaintenanceRoutes, { prefix: universePrefix });
+  fastify.register(financeRoutes, { prefix: universePrefix });
+  fastify.register(adminRoutes, { prefix: universePrefix });
+  fastify.register(alertsRoutes, { prefix: universePrefix });
+  fastify.register(workOrderRoutes, { prefix: universePrefix });
+  fastify.register(notificationsRoutes, { prefix: universePrefix });
+  fastify.register(areasRoutes, { prefix: universePrefix });
+  fastify.register(serviceCentersRoutes, { prefix: universePrefix });
+  fastify.register(ownerProfileRoutes, { prefix: universePrefix });
+  fastify.register(onboardingRoutes, { prefix: universePrefix });
+  fastify.register(securityRoutes, { prefix: universePrefix });
+  fastify.register(realtimeTelemetryRoutes, { prefix: universePrefix });
+  fastify.register(crmContactsRoutes, { prefix: universePrefix });
+  fastify.register(crmContractsRoutes, { prefix: universePrefix });
+  fastify.register(crmPipelineRoutes, { prefix: universePrefix });
+  fastify.register(crmInteractionsRoutes, { prefix: universePrefix });
+  fastify.register(portalRoutes, { prefix: universePrefix });
+  fastify.register(crmCampaignsRoutes, { prefix: universePrefix });
+  fastify.register(fleetTcoRoutes, { prefix: universePrefix });
+  fastify.register(fleetRecallsRoutes, { prefix: universePrefix });
+  fastify.register(fleetIntelligenceRoutes, { prefix: universePrefix });
+  fastify.register(economicLifeRoutes, { prefix: universePrefix });
+  fastify.register(anomalyDetectionRoutes, { prefix: universePrefix });
+  fastify.register(operatorScorecardRoutes, { prefix: universePrefix });
+  fastify.register(co2Routes, { prefix: universePrefix });
+  fastify.register(recallsNhtsaRoutes, { prefix: universePrefix });
+  fastify.register(recallsVimRoutes, { prefix: universePrefix });
+  fastify.register(socialRoutes, { prefix: universePrefix });
+  fastify.register(catalogRoutes, { prefix: `${universePrefix}/catalogs` });
+  fastify.register(geolocationRoutes, { prefix: `${universePrefix}/geolocation` });
+
   // Diagnostic Root V2 (Secure)
   fastify.get(
     '/',
