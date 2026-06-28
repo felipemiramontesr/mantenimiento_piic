@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '../test/testUtils';
-import usePermissions from './usePermissions';
+import usePermissions, { LEGACY_ALIASES, REVERSE_ALIASES } from './usePermissions';
 import { useAuth } from '../context/AuthContext';
 
 vi.mock('../context/AuthContext', () => ({
@@ -192,6 +192,18 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     expect(result.current.isOmnipotent()).toBe(true);
   });
 
+  it('isOmnipotent returns true for admin:role:edit (granular slug, FC-18)', () => {
+    mockAuth({
+      id: '8',
+      username: 'admin.ti',
+      roleId: 8,
+      roleName: 'Administrador de TI',
+      permissions: ['admin:role:edit', 'admin:role:view'],
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isOmnipotent()).toBe(true);
+  });
+
   it('isOmnipotent returns true for system:manage_roles permission', () => {
     mockAuth({
       id: '2',
@@ -236,6 +248,109 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     const { result } = renderHook(() => usePermissions());
     expect(result.current.hasPermission('fleet:read')).toBe(true);
     expect(result.current.hasPermission('admin:all')).toBe(false);
+  });
+
+  describe('FC-18 FaseD-4 — REVERSE_ALIASES (AT-FC18-D4-RA)', () => {
+    it('AT-FC18-D4-RA-1 — hasPermission("fleet:unit:view:any") passes for user with legacy fleet:view JWT', () => {
+      mockAuth({
+        id: '1',
+        username: 'operador',
+        roleId: 1,
+        roleName: 'Operador General',
+        permissions: ['fleet:view'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.hasPermission('fleet:unit:view:any')).toBe(true);
+    });
+
+    it('AT-FC18-D4-RA-2 — hasPermission("maint:record:view:any") passes for user with legacy maint:view JWT', () => {
+      mockAuth({
+        id: '2',
+        username: 'supervisor',
+        roleId: 2,
+        roleName: 'Supervisor de Mantenimiento',
+        permissions: ['maint:view'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.hasPermission('maint:record:view:any')).toBe(true);
+    });
+
+    it('AT-FC18-D4-RA-3 — hasPermission("route:record:view:any") passes for user with legacy route:view JWT', () => {
+      mockAuth({
+        id: '5',
+        username: 'planif',
+        roleId: 5,
+        roleName: 'Planificador',
+        permissions: ['route:view'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.hasPermission('route:record:view:any')).toBe(true);
+    });
+
+    it('AT-FC18-D4-RA-4 — hasPermission("finance:dashboard:view:any") passes for user with legacy financial:view JWT', () => {
+      mockAuth({
+        id: '3',
+        username: 'director',
+        roleId: 3,
+        roleName: 'Director de Finanzas',
+        permissions: ['financial:view'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.hasPermission('finance:dashboard:view:any')).toBe(true);
+    });
+
+    it('AT-FC18-D4-RA-5 — hasPermission("intelligence:anomaly:view") is DENIED for legacy fleet:view (no alias path)', () => {
+      mockAuth({
+        id: '1',
+        username: 'operador',
+        roleId: 1,
+        roleName: 'Operador',
+        permissions: ['fleet:view'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.hasPermission('intelligence:anomaly:view')).toBe(false);
+    });
+
+    it('AT-FC18-D4-RA-6 — LEGACY_ALIASES and REVERSE_ALIASES are consistent (all entries round-trip)', () => {
+      Object.entries(LEGACY_ALIASES).forEach(([_legacy, granular]) => {
+        const reverseKey = REVERSE_ALIASES[granular];
+        // Every granular slug in LEGACY_ALIASES must have a REVERSE_ALIASES entry.
+        expect(reverseKey).toBeDefined();
+        // The reverse entry must be a valid legacy key in LEGACY_ALIASES.
+        expect(LEGACY_ALIASES[reverseKey]).toBe(granular);
+      });
+    });
+  });
+
+  describe('FC-18 FaseD-4 — isExternalClientOnly granular path (portal:dashboard:view)', () => {
+    it('returns true for role 9 user with portal:dashboard:view (new granular slug)', () => {
+      mockAuth({
+        id: '9',
+        username: 'cliente',
+        roleId: 9,
+        roleName: 'Cliente Externo',
+        permissions: [
+          'portal:dashboard:view',
+          'portal:fleet:view:own',
+          'portal:report:download',
+          'notifications:view:own',
+        ],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isExternalClientOnly()).toBe(true);
+    });
+
+    it('returns false for non-portal user with fleet:unit:view:any (granular fleet perm is not external)', () => {
+      mockAuth({
+        id: '1',
+        username: 'operador',
+        roleId: 1,
+        roleName: 'Operador General',
+        permissions: ['fleet:unit:view:any', 'maint:record:view:any'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isExternalClientOnly()).toBe(false);
+    });
   });
 
   describe('isSuiteVIM (Multiverso Archon — VIM universe gate)', () => {
@@ -288,6 +403,30 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
       const { result } = renderHook(() => usePermissions());
       expect(result.current.isSuiteVIM()).toBe(true);
     });
+  });
+
+  it('isFamiliar returns true for roleId 10 (Operador / Familiar — FC-18 post-migration-095)', () => {
+    mockAuth({
+      id: '10',
+      username: 'operador',
+      roleId: 10,
+      roleName: 'Operador / Familiar',
+      permissions: ['fleet:unit:view:own', 'route:record:view:own'],
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isFamiliar()).toBe(true);
+  });
+
+  it('isFamiliar returns false for roleId 5 (Planificador de Rutas — not Familiar post-migration-095)', () => {
+    mockAuth({
+      id: '5',
+      username: 'planificador',
+      roleId: 5,
+      roleName: 'Planificador de Rutas',
+      permissions: ['route:record:view:any', 'route:record:create'],
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isFamiliar()).toBe(false);
   });
 
   it('isOmnipotent uses currentUser not effectiveUser — stays true while impersonating limited role', () => {

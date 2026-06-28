@@ -88,8 +88,13 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Panel de Control')).toBeDefined();
   });
 
-  it('Owner-Scoped F1-A: Cliente Externo (fleet:view + fleet:scoped) solo ve Unidades', () => {
-    const clientPerms = ['fleet:view', 'fleet:scoped'];
+  it('Owner-Scoped F1-A: Cliente Externo (role 9 — portal perms) solo ve Portal, no Unidades', () => {
+    const clientPerms = [
+      'portal:dashboard:view',
+      'portal:fleet:view:own',
+      'portal:report:download',
+      'notifications:view:own',
+    ];
     usePermissionsMock.mockReturnValue({
       hasPermission: (p: string): boolean => clientPerms.includes(p),
       hasAnyPermission: (ps: string[]): boolean => ps.some((p) => clientPerms.includes(p)),
@@ -105,8 +110,8 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Unidades')).toBeDefined();
     expect(screen.getByText('Portal')).toBeDefined();
+    expect(screen.queryByText('Unidades')).toBeNull(); // role 9 accede a flota vía Portal, no módulo Unidades
     expect(screen.queryByText('CRM')).toBeNull();
     expect(screen.queryByText('Comando')).toBeNull();
     expect(screen.queryByText('Rutas')).toBeNull();
@@ -120,11 +125,11 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
   });
 
-  it('Matriz 095: el item Rutas requiere route:view, no fleet:view', () => {
-    const financePerms = ['financial:view', 'fleet:view'];
+  it('Matriz 095 FC-18: el item Rutas requiere route:record:view:any, no fleet:unit:view:any', () => {
+    const directorPerms = ['finance:dashboard:view:any', 'fleet:unit:view:any'];
     usePermissionsMock.mockReturnValue({
-      hasPermission: (p: string): boolean => financePerms.includes(p),
-      hasAnyPermission: (ps: string[]): boolean => ps.some((p) => financePerms.includes(p)),
+      hasPermission: (p: string): boolean => directorPerms.includes(p),
+      hasAnyPermission: (ps: string[]): boolean => ps.some((p) => directorPerms.includes(p)),
       isOmnipotent: (): boolean => false,
       isExternalClientOnly: (): boolean => false,
       isSuiteVIM: (): boolean => false,
@@ -137,7 +142,7 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    // Director de Finanzas: fleet:view sin route:view — no debe ver Rutas
+    // Director de Finanzas: finance:dashboard:view:any + fleet:unit:view:any sin route:record:view — no debe ver Rutas
     expect(screen.getByText('Unidades')).toBeDefined();
     expect(screen.getByText('Finanzas')).toBeDefined();
     expect(screen.queryByText('Rutas')).toBeNull();
@@ -515,8 +520,8 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(navigateMock).toHaveBeenCalledWith('/dashboard/crm');
     });
 
-    it('AT-FC11-A-SB-3: usuario con maint:view (sin fleet:view) ve "CRM"', () => {
-      const tallerPerms = ['maint:view', 'maint:write'];
+    it('AT-FC11-A-SB-3: usuario con maint:record:view:any (sin fleet) ve "CRM"', () => {
+      const tallerPerms = ['maint:record:view:any', 'maint:record:edit:any'];
       usePermissionsMock.mockReturnValue({
         hasPermission: (p: string): boolean => tallerPerms.includes(p),
         hasAnyPermission: (ps: string[]): boolean => ps.some((p) => tallerPerms.includes(p)),
@@ -567,6 +572,63 @@ describe('Sidebar Component (Archon Core)', () => {
       );
       expect(screen.getByText('Portal')).toBeInTheDocument();
       expect(screen.queryByText('CRM')).toBeNull();
+    });
+  });
+
+  describe('FC-18 FaseD-4 — Sidebar NavItems con slugs granulares (AT-FC18-D4-SB)', () => {
+    it('AT-FC18-D4-SB-1 — Alertas visible para usuario con alert:view:any', () => {
+      usePermissionsMock.mockReturnValue({
+        hasPermission: (p: string): boolean => p === 'alert:view:any',
+        hasAnyPermission: (ps: string[]): boolean => ps.includes('alert:view:any'),
+        isOmnipotent: (): boolean => false,
+        isExternalClientOnly: (): boolean => false,
+        isSuiteVIM: (): boolean => false,
+        isFamiliar: (): boolean => false,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByText('Alertas')).toBeInTheDocument();
+    });
+
+    it('AT-FC18-D4-SB-2 — Personal visible para users:collaborator:view; Seguridad para security:audit:view', () => {
+      usePermissionsMock.mockReturnValue({
+        hasPermission: (p: string): boolean =>
+          ['users:collaborator:view', 'security:audit:view'].includes(p),
+        hasAnyPermission: (ps: string[]): boolean =>
+          ps.some((p) => ['users:collaborator:view', 'security:audit:view'].includes(p)),
+        isOmnipotent: (): boolean => false,
+        isExternalClientOnly: (): boolean => false,
+        isSuiteVIM: (): boolean => false,
+        isFamiliar: (): boolean => false,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByText('Personal')).toBeInTheDocument();
+      expect(screen.getByText('Seguridad')).toBeInTheDocument();
+    });
+
+    it('AT-FC18-D4-SB-3 — Personal y Seguridad ocultos para usuario con legado user:admin sin granular slugs', () => {
+      usePermissionsMock.mockReturnValue({
+        hasPermission: (p: string): boolean => p === 'user:admin',
+        hasAnyPermission: (ps: string[]): boolean => ps.includes('user:admin'),
+        isOmnipotent: (): boolean => false,
+        isExternalClientOnly: (): boolean => false,
+        isSuiteVIM: (): boolean => false,
+        isFamiliar: (): boolean => false,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.queryByText('Personal')).toBeNull();
+      expect(screen.queryByText('Seguridad')).toBeNull();
     });
   });
 

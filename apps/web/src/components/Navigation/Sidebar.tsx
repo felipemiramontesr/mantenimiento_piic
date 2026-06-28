@@ -271,7 +271,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                     active={location.pathname === '/dashboard/familia'}
                     isCollapsed={isCollapsed}
                   />
-                  {hasPermission('maint:view') && (
+                  {hasAnyPermission(['alert:view:any', 'alert:view:own']) && (
                     <NavItem
                       icon={<Bell size={20} />}
                       label="Alertas"
@@ -284,7 +284,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                 </>
               ) : (
                 <>
-                  {hasPermission('maint:view') && (
+                  {hasAnyPermission(['alert:view:any', 'alert:view:own']) && (
                     <NavItem
                       icon={<Bell size={20} />}
                       label="Alertas"
@@ -303,7 +303,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('financial:view') && (
+                  {hasAnyPermission([
+                    'finance:dashboard:view:any',
+                    'finance:dashboard:view:own',
+                  ]) && (
                     <NavItem
                       icon={<Wallet size={20} />}
                       label="Finanzas"
@@ -312,7 +315,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('fleet:view') && (
+                  {hasAnyPermission(['fleet:unit:view:any', 'fleet:unit:view:own']) && (
                     <NavItem
                       icon={<Truck size={20} />}
                       label="Unidades"
@@ -321,7 +324,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('fleet:view') && (
+                  {hasAnyPermission([
+                    'geolocation:view:any',
+                    'geolocation:realtime:view',
+                    'fleet:unit:view:any',
+                    'fleet:unit:view:own',
+                  ]) && (
                     <NavItem
                       icon={<MapPin size={20} />}
                       label="Rastreo GPS"
@@ -330,22 +338,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasAnyPermission(['fleet:view', 'maint:view']) && !isExternalClientOnly() && (
-                    <NavItem
-                      icon={<Briefcase size={20} />}
-                      label="CRM"
-                      path="/dashboard/crm"
-                      active={[
-                        '/dashboard/crm',
-                        '/dashboard/contacts',
-                        '/dashboard/contracts',
-                        '/dashboard/pipeline',
-                        '/dashboard/interactions',
-                        '/dashboard/campaigns',
-                      ].includes(location.pathname)}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
+                  {hasAnyPermission([
+                    'fleet:unit:view:any',
+                    'fleet:unit:view:own',
+                    'maint:record:view:any',
+                    'maint:record:view:own',
+                    'crm:contact:view:any',
+                    'crm:contact:view:own',
+                    'crm:pipeline:view',
+                  ]) &&
+                    !isExternalClientOnly() && (
+                      <NavItem
+                        icon={<Briefcase size={20} />}
+                        label="CRM"
+                        path="/dashboard/crm"
+                        active={[
+                          '/dashboard/crm',
+                          '/dashboard/contacts',
+                          '/dashboard/contracts',
+                          '/dashboard/pipeline',
+                          '/dashboard/interactions',
+                          '/dashboard/campaigns',
+                        ].includes(location.pathname)}
+                        isCollapsed={isCollapsed}
+                      />
+                    )}
                   {isExternalClientOnly() && (
                     <NavItem
                       icon={<Monitor size={20} />}
@@ -373,7 +390,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('route:view') && (
+                  {hasAnyPermission(['route:record:view:any', 'route:record:view:own']) && (
                     <NavItem
                       icon={<Navigation size={20} />}
                       label="Rutas"
@@ -382,7 +399,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('route:view') && (
+                  {hasAnyPermission(['route:record:view:any', 'route:record:view:own']) && (
                     <NavItem
                       icon={<AlertTriangle size={20} />}
                       label="Incidencias"
@@ -391,7 +408,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('maint:view') && (
+                  {hasAnyPermission(['maint:record:view:any', 'maint:record:view:own']) && (
                     <NavItem
                       icon={<Wrench size={20} />}
                       label="Mantenimiento"
@@ -400,7 +417,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('user:admin') && (
+                  {hasPermission('users:collaborator:view') && (
                     <NavItem
                       icon={<Users size={20} />}
                       label="Personal"
@@ -409,7 +426,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                       isCollapsed={isCollapsed}
                     />
                   )}
-                  {hasPermission('user:admin') && (
+                  {hasPermission('security:audit:view') && (
                     <NavItem
                       icon={<ShieldAlert size={20} />}
                       label="Seguridad"
