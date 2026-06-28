@@ -46,6 +46,7 @@ import crmInteractionsRoutes from './routes/crmInteractions';
 import portalRoutes from './routes/portal';
 import crmCampaignsRoutes from './routes/crmCampaigns';
 import socialRoutes from './routes/social';
+import universeContextPlugin from './plugins/universeContext';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -138,6 +139,9 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
       await instance.register(devTelemetryPlugin);
     });
   }
+
+  // FC-18 FaseC-1 — UniverseContext: global tenancy middleware (registered at root, before routes)
+  fastify.register(universeContextPlugin);
 
   // Routes
   fastify.register(authRoutes, { prefix: '/v1/auth' });

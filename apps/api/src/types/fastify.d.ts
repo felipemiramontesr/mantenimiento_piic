@@ -1,4 +1,5 @@
 import '@fastify/jwt';
+import type { UniverseCtx } from '../plugins/universeContext';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -12,5 +13,6 @@ declare module 'fastify' {
       suite?: 'VIM' | 'ERP';
       owner_type?: string;
     };
+    universeCtx: UniverseCtx | null;
   }
 }
