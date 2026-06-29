@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npm run protocol:verify
-npx lint-staged
+bun run protocol:verify
+bunx lint-staged

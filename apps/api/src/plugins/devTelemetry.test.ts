@@ -51,6 +51,8 @@ Versión activa  : V.78.101.204_AG_Session_Initialization
       url: '/test-error',
     });
 
+    await app.close();
+
     expect(response.statusCode).toBe(500);
     expect(response.json()).toEqual({
       success: false,
@@ -83,6 +85,8 @@ Versión activa  : V.78.101.204_AG_Session_Initialization
       method: 'GET',
       url: '/test-error',
     });
+
+    await app.close();
 
     // Fastify default error response since plugin should return early and not override
     expect(response.statusCode).toBe(500);
