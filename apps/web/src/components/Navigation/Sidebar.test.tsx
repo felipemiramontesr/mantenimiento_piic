@@ -728,15 +728,14 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(screen.getByTestId('alerts-badge').textContent).toBe('7');
     });
 
-    it('AT-FC20-B-SB-1: aside tiene overflow-x-hidden para clip de seguridad durante transicion', () => {
-      const { container: sidebarContainer } = render(
+    it('AT-FC20-B-SB-1: NavItem label tiene overflow-hidden para clip de texto durante transicion', () => {
+      render(
         <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
         </BrowserRouter>
       );
-      const aside = sidebarContainer.querySelector('aside');
-      expect(aside).not.toBeNull();
-      expect(aside?.className).toContain('overflow-x-hidden');
+      const comandoLabel = screen.getByText('Comando');
+      expect(comandoLabel.className).toContain('overflow-hidden');
     });
 
     it('AT-FC20-B-SB-2: aside NO tiene transition-all (solo transition-[width,transform])', () => {

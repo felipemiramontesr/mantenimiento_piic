@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
       <aside
         className={`
-          fixed md:relative z-[60] md:z-50 flex flex-col h-screen bg-pinnacle-navy shadow-[4px_0_20px_rgba(0,0,0,0.2)] shrink-0 overflow-x-hidden transition-[width,transform] duration-300 ease-in-out
+          fixed md:relative z-[60] md:z-50 flex flex-col h-screen bg-pinnacle-navy shadow-[4px_0_20px_rgba(0,0,0,0.2)] shrink-0 transition-[width,transform] duration-300 ease-in-out
           ${
             isMobileMenuOpen
               ? 'translate-x-0 w-[250px]'
