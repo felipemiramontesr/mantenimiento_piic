@@ -947,9 +947,14 @@ describe('Sidebar Component (Archon Core)', () => {
 
   describe('FC-17 Sidebar_NavItem_ScrollFade_IO — Intersection Observer fade individual', () => {
     type IOCb = (entries: IntersectionObserverEntry[], obs: IntersectionObserver) => void;
+    interface IOOpts {
+      rootMargin?: string;
+      threshold?: number | number[];
+      root?: Element | Document | null;
+    }
     interface ArchonIOGlobals {
       archonMockIOCallbacks: Map<Element, IOCb>;
-      ArchonMockIO: { callCount: number; reset(): void };
+      ArchonMockIO: { callCount: number; lastOptions?: IOOpts; reset(): void };
     }
     const archonGlobal = globalThis as unknown as ArchonIOGlobals;
 
@@ -1028,6 +1033,76 @@ describe('Sidebar Component (Archon Core)', () => {
               target: alertasItem,
               isIntersecting: true,
               intersectionRatio: 1,
+              boundingClientRect: {} as DOMRectReadOnly,
+              intersectionRect: {} as DOMRectReadOnly,
+              rootBounds: null,
+              time: 0,
+            } as IntersectionObserverEntry,
+          ],
+          {} as IntersectionObserver
+        );
+      });
+      expect(alertasItem.style.opacity).toBe('1');
+    });
+
+    it('AT-FC21-SB-1: IntersectionObserver instanciado con rootMargin simetrico -40px arriba y abajo', () => {
+      archonGlobal.ArchonMockIO.reset();
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(archonGlobal.ArchonMockIO.lastOptions?.rootMargin).toBe('-40px 0px -40px 0px');
+    });
+
+    it('AT-FC21-SB-2: item inactivo fadea proporcionalmente al intersectionRatio reportado por IO', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const alertasItem = container.querySelector(
+        '[data-testid="nav-item-alertas"]'
+      ) as HTMLElement;
+      const cb = archonGlobal.archonMockIOCallbacks.get(alertasItem)!;
+      act(() => {
+        cb(
+          [
+            {
+              target: alertasItem,
+              isIntersecting: false,
+              intersectionRatio: 0.5,
+              boundingClientRect: {} as DOMRectReadOnly,
+              intersectionRect: {} as DOMRectReadOnly,
+              rootBounds: null,
+              time: 0,
+            } as IntersectionObserverEntry,
+          ],
+          {} as IntersectionObserver
+        );
+      });
+      expect(alertasItem.style.opacity).toBe('0.5');
+    });
+
+    it('AT-FC21-SB-3: item activo es inmune al fade incluso con rootMargin activo (ratio bajo)', () => {
+      mockLocation.pathname = '/dashboard/alerts';
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      mockLocation.pathname = '/dashboard/fleet';
+      const alertasItem = container.querySelector(
+        '[data-testid="nav-item-alertas"]'
+      ) as HTMLElement;
+      const cb = archonGlobal.archonMockIOCallbacks.get(alertasItem)!;
+      act(() => {
+        cb(
+          [
+            {
+              target: alertasItem,
+              isIntersecting: false,
+              intersectionRatio: 0.0,
               boundingClientRect: {} as DOMRectReadOnly,
               intersectionRect: {} as DOMRectReadOnly,
               rootBounds: null,

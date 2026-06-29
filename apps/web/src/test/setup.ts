@@ -68,6 +68,11 @@ vi.mock('framer-motion', () => ({
 
 // IntersectionObserver Mock (FC-17 Sidebar NavItem Scroll Fade)
 type IOCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void;
+interface IOOptions {
+  root?: Element | Document | null;
+  rootMargin?: string;
+  threshold?: number | number[];
+}
 const mockIOCallbacks = new Map<Element, IOCallback>();
 
 class MockIntersectionObserver
@@ -75,8 +80,11 @@ class MockIntersectionObserver
 {
   static callCount = 0;
 
+  static lastOptions: IOOptions | undefined;
+
   static reset(): void {
     MockIntersectionObserver.callCount = 0;
+    MockIntersectionObserver.lastOptions = undefined;
   }
 
   readonly root: Element | Document | null = null;
@@ -87,8 +95,9 @@ class MockIntersectionObserver
 
   private ioCallback: IOCallback;
 
-  constructor(callback: IOCallback) {
+  constructor(callback: IOCallback, options?: IOOptions) {
     MockIntersectionObserver.callCount += 1;
+    MockIntersectionObserver.lastOptions = options;
     this.ioCallback = callback;
   }
 
