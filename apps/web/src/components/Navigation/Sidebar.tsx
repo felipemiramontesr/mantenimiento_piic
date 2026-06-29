@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
       <aside
         className={`
-          fixed md:relative z-[60] md:z-50 flex flex-col h-screen bg-pinnacle-navy shadow-[4px_0_20px_rgba(0,0,0,0.2)] shrink-0 transition-all duration-300 ease-in-out
+          fixed md:relative z-[60] md:z-50 flex flex-col h-screen bg-pinnacle-navy shadow-[4px_0_20px_rgba(0,0,0,0.2)] shrink-0 overflow-x-hidden transition-[width,transform] duration-300 ease-in-out
           ${
             isMobileMenuOpen
               ? 'translate-x-0 w-[250px]'
@@ -220,7 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         {/* 🔱 HEADER (10%) */}
         <header
           className={`
-          shrink-0 flex items-center border-b border-white/5 overflow-hidden transition-all duration-300
+          shrink-0 flex items-center border-b border-white/5 overflow-hidden transition-[padding,gap] duration-300
           ${isCollapsed ? 'justify-center pt-3 pb-1.5' : 'justify-start px-4 pt-3 pb-1.5 gap-3'}
         `}
         >
@@ -246,8 +246,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           </button>
           <div
             className={`
-          transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
-          ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100'}
+          transition-[opacity,transform] duration-200 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+          ${
+            isCollapsed
+              ? 'opacity-0 -translate-x-2 pointer-events-none w-0'
+              : 'opacity-100 translate-x-0'
+          }
         `}
           >
             <span className="font-black text-sm tracking-tighter text-white uppercase truncate">
@@ -472,8 +476,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               <Users size={14} className="shrink-0" />
               <div
                 className={`
-                transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
-                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
+                transition-[opacity,transform] duration-200 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+                ${
+                  isCollapsed
+                    ? 'opacity-0 -translate-x-1 pointer-events-none w-0'
+                    : 'opacity-100 translate-x-0 ml-2'
+                }
               `}
               >
                 <span>Panel de Control</span>
@@ -494,8 +502,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <LogOut size={14} className="shrink-0" />
             <div
               className={`
-                transition-all duration-300 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
-                ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
+                transition-[opacity,transform] duration-200 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
+                ${
+                  isCollapsed
+                    ? 'opacity-0 -translate-x-1 pointer-events-none w-0'
+                    : 'opacity-100 translate-x-0 ml-2'
+                }
               `}
             >
               <span>Cerrar Sesión</span>

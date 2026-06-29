@@ -728,6 +728,79 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(screen.getByTestId('alerts-badge').textContent).toBe('7');
     });
 
+    it('AT-FC20-B-SB-1: aside tiene overflow-x-hidden para clip de seguridad durante transicion', () => {
+      const { container: sidebarContainer } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const aside = sidebarContainer.querySelector('aside');
+      expect(aside).not.toBeNull();
+      expect(aside?.className).toContain('overflow-x-hidden');
+    });
+
+    it('AT-FC20-B-SB-2: aside NO tiene transition-all (solo transition-[width,transform])', () => {
+      const { container: sidebarContainer2 } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const aside = sidebarContainer2.querySelector('aside');
+      expect(aside?.className).not.toContain('transition-all');
+    });
+
+    it('AT-FC20-B-SB-3: username div siempre en DOM — opacity-0 translate-x cuando collapsed', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const usernameSpan = screen.getByText('Soberano');
+      expect(usernameSpan).toBeInTheDocument();
+      const div = usernameSpan.parentElement;
+      expect(div?.className).toContain('opacity-0');
+      expect(div?.className).toContain('-translate-x-2');
+      expect(div?.className).toContain('pointer-events-none');
+    });
+
+    it('AT-FC20-B-SB-4: username div visible cuando expanded — opacity-100 translate-x-0', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const usernameSpan = screen.getByText('Soberano');
+      const div = usernameSpan.parentElement;
+      expect(div?.className).toContain('opacity-100');
+      expect(div?.className).toContain('translate-x-0');
+      expect(div?.className).not.toContain('opacity-0');
+    });
+
+    it('AT-FC20-B-SB-5: texto Cerrar Sesion siempre en DOM — opacity-0 cuando collapsed', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const span = screen.getByText('Cerrar Sesión');
+      expect(span).toBeInTheDocument();
+      const div = span.parentElement;
+      expect(div?.className).toContain('opacity-0');
+      expect(div?.className).toContain('pointer-events-none');
+    });
+
+    it('AT-FC20-B-SB-6: texto Cerrar Sesion visible cuando expanded — opacity-100', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const span = screen.getByText('Cerrar Sesión');
+      const div = span.parentElement;
+      expect(div?.className).toContain('opacity-100');
+      expect(div?.className).not.toContain('opacity-0');
+    });
+
     it('AT-FC20-A-SB-6: NavItem activo conserva border-l-[3px] y bg en ambos estados', () => {
       mockLocation.pathname = '/dashboard/fleet';
       const { container: c1 } = render(

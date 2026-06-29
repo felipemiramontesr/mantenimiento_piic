@@ -24,7 +24,7 @@ const DashboardLayout: React.FC = () => {
     <SovereignLayoutProvider>
       <FleetProvider>
         <div
-          className={`flex flex-col md:grid h-screen w-screen overflow-hidden bg-[#0f2a44] transition-all duration-300 ease-in-out ${
+          className={`flex flex-col md:grid h-screen w-screen overflow-hidden bg-[#0f2a44] transition-[grid-template-columns] duration-300 ease-in-out ${
             isCollapsed ? 'md:grid-cols-[80px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'
           }`}
         >
