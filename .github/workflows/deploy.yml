@@ -25,6 +25,10 @@ jobs:
         shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -68,6 +72,10 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     steps:
       - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -107,6 +115,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -214,6 +226,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
