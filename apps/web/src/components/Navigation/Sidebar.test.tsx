@@ -1045,14 +1045,14 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(alertasItem.style.opacity).toBe('1');
     });
 
-    it('AT-FC21-SB-1: IntersectionObserver instanciado con rootMargin simetrico -40px arriba y abajo', () => {
+    it('AT-FC21-SB-1: IntersectionObserver instanciado sin rootMargin (mask-image maneja el fade visual)', () => {
       archonGlobal.ArchonMockIO.reset();
       render(
         <BrowserRouter>
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
         </BrowserRouter>
       );
-      expect(archonGlobal.ArchonMockIO.lastOptions?.rootMargin).toBe('-40px 0px -40px 0px');
+      expect(archonGlobal.ArchonMockIO.lastOptions?.rootMargin).toBeUndefined();
     });
 
     it('AT-FC21-SB-2: item inactivo fadea proporcionalmente al intersectionRatio reportado por IO', () => {
@@ -1084,7 +1084,7 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(alertasItem.style.opacity).toBe('0.5');
     });
 
-    it('AT-FC21-SB-3: item activo es inmune al fade incluso con rootMargin activo (ratio bajo)', () => {
+    it('AT-FC21-SB-3: item activo es inmune al fade incluso con ratio bajo reportado por IO', () => {
       mockLocation.pathname = '/dashboard/alerts';
       const { container } = render(
         <BrowserRouter>
@@ -1113,6 +1113,28 @@ describe('Sidebar Component (Archon Core)', () => {
         );
       });
       expect(alertasItem.style.opacity).toBe('1');
+    });
+
+    it('AT-FC22-SB-1: scroll container tiene data-mask-gradient="40" — fade simetrico 40px aplicado', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const scrollMain = container.querySelector('aside main') as HTMLElement;
+      expect(scrollMain).not.toBeNull();
+      expect(scrollMain.getAttribute('data-mask-gradient')).toBe('40');
+    });
+
+    it('AT-FC22-SB-2: NavItem tiene transition opacity en style para fade suave', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const navItem = container.querySelector('[data-testid="nav-item-comando"]') as HTMLElement;
+      expect(navItem).not.toBeNull();
+      expect(navItem.style.transition).toContain('opacity');
     });
 
     it('AT-FC17-B-SB-4: NavItem activo es inmune al fade (opacity=1 aunque IO reporte ratio bajo)', () => {

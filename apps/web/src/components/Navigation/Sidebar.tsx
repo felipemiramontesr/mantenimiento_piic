@@ -81,7 +81,6 @@ const NavItem: React.FC<NavItemProps> = ({
         },
         {
           root: container,
-          rootMargin: '-40px 0px -40px 0px',
           threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
         }
       );
@@ -96,7 +95,7 @@ const NavItem: React.FC<NavItemProps> = ({
   return (
     <div
       ref={itemRef}
-      style={{ opacity }}
+      style={{ opacity, transition: 'opacity 300ms ease-in-out' }}
       onClick={(): void => {
         navigate(path);
         setIsMobileMenuOpen(false); // Cierra menú al navegar en móvil
@@ -264,7 +263,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         {/* 🗺️ BODY (80%) */}
         <main
           ref={scrollRef as React.RefObject<HTMLElement>}
+          data-mask-gradient="40"
           className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar"
+          style={{
+            maskImage:
+              'linear-gradient(to bottom, transparent 0px, black 40px, black calc(100% - 40px), transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(to bottom, transparent 0px, black 40px, black calc(100% - 40px), transparent 100%)',
+          }}
         >
           <ScrollContainerCtx.Provider value={scrollRef as React.RefObject<HTMLElement>}>
             <nav className="flex flex-col">
