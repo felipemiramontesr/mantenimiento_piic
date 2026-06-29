@@ -214,6 +214,7 @@ jobs:
           echo "| **Playwright** | E2E Testing | Simulación forense de navegación y paridad |" >> $GITHUB_STEP_SUMMARY
           echo "| **ESLint / Unicorn** | Static Analysis | Cumplimiento de estándares de código |" >> $GITHUB_STEP_SUMMARY
           echo "| **SonarJS / OWASP** | Security Audit | Análisis de vulnerabilidades y complejidad |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Bun** | Package Manager / Task Runner | Instalación determinística (frozen-lockfile) y ejecución de scripts del monorepo |" >> $GITHUB_STEP_SUMMARY
           echo "| **Husky + Bun** | Git Hooks | Blindaje de integridad pre-commit |" >> $GITHUB_STEP_SUMMARY
           echo "| **rsync (SSH)** | Native Sync | Despliegue industrial mediante protocolo seguro SSH/rsync |" >> $GITHUB_STEP_SUMMARY
           echo "| **TruffleHog** | Secret Scanning | Detección de credenciales y secretos filtrados en el historial Git |" >> $GITHUB_STEP_SUMMARY
