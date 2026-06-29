@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Bun
+.bun-cache/
+
 # Environment Variables
 .env
 .env.*

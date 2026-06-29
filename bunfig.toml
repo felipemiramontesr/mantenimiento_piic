@@ -1,0 +1,3 @@
+[install]
+# OneDrive does not support hardlinks — copyfile is required on this machine.
+backend = "copyfile"
