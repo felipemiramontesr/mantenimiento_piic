@@ -212,15 +212,21 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(logoutMock).toHaveBeenCalledOnce();
   });
 
-  it('renders collapsed state — nav labels hidden, icons still present', () => {
-    render(
+  it('renders collapsed state — labels in DOM but invisible (opacity-0 w-0), icons still present', () => {
+    const { container } = render(
       <BrowserRouter>
         <Sidebar isCollapsed={true} onToggle={vi.fn()} />
       </BrowserRouter>
     );
-    expect(screen.queryByText('Comando')).toBeNull();
-    expect(screen.queryByText('Incidencias')).toBeNull();
-    expect(screen.queryByText('Personal')).toBeNull();
+    // FC-20 FaseA: labels always mounted — they exist in DOM but are invisible
+    const comandoLabel = screen.getByText('Comando');
+    expect(comandoLabel).toBeInTheDocument();
+    expect(comandoLabel.className).toContain('opacity-0');
+    expect(comandoLabel.className).toContain('w-0');
+    expect(comandoLabel.className).toContain('pointer-events-none');
+    expect(comandoLabel.getAttribute('aria-hidden')).toBe('true');
+    // Icons are still accessible (logout always visible)
+    expect(container.querySelector('aside')).not.toBeNull();
   });
 
   it('toggle button calls onToggle when collapsed', () => {
@@ -660,6 +666,86 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
     expect(screen.getByTestId('alerts-badge').textContent).toBe('99+');
+  });
+
+  describe('FC-20 Sidebar_Smooth_Transition FaseA — NavItem label always mounted', () => {
+    it('AT-FC20-A-SB-1: label siempre en DOM con isCollapsed=true — tiene opacity-0 w-0 pointer-events-none', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const label = screen.getByText('Unidades');
+      expect(label).toBeInTheDocument();
+      expect(label.className).toContain('opacity-0');
+      expect(label.className).toContain('w-0');
+      expect(label.className).toContain('pointer-events-none');
+      expect(label.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('AT-FC20-A-SB-2: label visible con isCollapsed=false — tiene opacity-100 y NO w-0', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const label = screen.getByText('Unidades');
+      expect(label).toBeInTheDocument();
+      expect(label.className).toContain('opacity-100');
+      expect(label.className).not.toContain('opacity-0');
+      expect(label.className).not.toContain('w-0');
+      expect(label.className).not.toContain('pointer-events-none');
+      expect(label.getAttribute('aria-hidden')).toBe('false');
+    });
+
+    it('AT-FC20-A-SB-3: whitespace-nowrap siempre presente en label (evita salto de línea durante encogimiento)', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const label = screen.getByText('Mantenimiento');
+      expect(label.className).toContain('whitespace-nowrap');
+    });
+
+    it('AT-FC20-A-SB-4: badge sigue renderizando correctamente en estado expanded', () => {
+      useAlertsCountMock.mockReturnValue({ count: 3, isLoading: false });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByTestId('alerts-badge').textContent).toBe('3');
+    });
+
+    it('AT-FC20-A-SB-5: badge sigue renderizando correctamente en estado collapsed', () => {
+      useAlertsCountMock.mockReturnValue({ count: 7, isLoading: false });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(screen.getByTestId('alerts-badge').textContent).toBe('7');
+    });
+
+    it('AT-FC20-A-SB-6: NavItem activo conserva border-l-[3px] y bg en ambos estados', () => {
+      mockLocation.pathname = '/dashboard/fleet';
+      const { container: c1 } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const expanded = c1.querySelector('[data-testid="nav-item-unidades"]');
+      expect(expanded?.className).toContain('border-pinnacle-yellow');
+
+      const { container: c2 } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={true} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const collapsed = c2.querySelector('[data-testid="nav-item-unidades"]');
+      expect(collapsed?.className).toContain('border-pinnacle-yellow');
+    });
   });
 
   describe('FC-13 Sidebar_Layout_Sovereign FaseA — Fix estructural 105% overflow', () => {

@@ -133,16 +133,18 @@ const NavItem: React.FC<NavItemProps> = ({
           </span>
         )}
       </div>
-      {!isCollapsed && (
-        <span
-          className={`
-            text-archon-lg font-medium tracking-tight transition-colors
-            ${active ? 'text-white' : 'text-white/70 group-hover:text-white'}
-          `}
-        >
-          {label}
-        </span>
-      )}
+      <span
+        aria-hidden={isCollapsed}
+        className={`
+          text-archon-lg font-medium tracking-tight whitespace-nowrap
+          overflow-hidden transition-[color,opacity] duration-200 ease-in-out
+          will-change-[opacity]
+          ${isCollapsed ? 'w-0 opacity-0 pointer-events-none select-none' : 'opacity-100'}
+          ${active ? 'text-white' : 'text-white/70 group-hover:text-white'}
+        `}
+      >
+        {label}
+      </span>
       {showBadge && !isCollapsed && (
         <span
           data-testid="alerts-badge"
