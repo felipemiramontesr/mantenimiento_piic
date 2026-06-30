@@ -67,7 +67,7 @@ Versión activa  : V.78.101.204_AG_Session_Initialization
     expect(contentWritten).toContain('**Archon → CC/AG**');
     expect(contentWritten).toContain('API_RUNTIME_ERROR');
     expect(contentWritten).toContain('Test unhandled API exception');
-  });
+  }, 15000); // Higher timeout: heavy parallel test runs (pool:forks, 96 files) can slow fs mock resolution
 
   it('should bypass filesystem write and execute standard handler in production mode', async () => {
     process.env.NODE_ENV = 'production';

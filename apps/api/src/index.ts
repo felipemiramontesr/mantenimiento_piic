@@ -47,6 +47,8 @@ import portalRoutes from './routes/portal';
 import crmCampaignsRoutes from './routes/crmCampaigns';
 import socialRoutes from './routes/social';
 import universeContextPlugin from './plugins/universeContext';
+import cosmonautRolesRoutes from './routes/cosmonauts/rolesRoutes';
+import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -216,6 +218,10 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(socialRoutes, { prefix: universePrefix });
   fastify.register(catalogRoutes, { prefix: `${universePrefix}/catalogs` });
   fastify.register(geolocationRoutes, { prefix: `${universePrefix}/geolocation` });
+
+  // FC24 FaseC — Cosmonaut routes (global; not duplicated under universePrefix)
+  fastify.register(cosmonautRolesRoutes, { prefix: '/v1' });
+  fastify.register(cosmonautAssignmentsRoutes, { prefix: '/v1' });
 
   // Diagnostic Root V2 (Secure)
   fastify.get(
