@@ -49,7 +49,7 @@ ALTER TABLE tenants
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS universe_superclusters (
   id               BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  tenant_id        INT UNSIGNED     NOT NULL,
+  tenant_id        INT              NOT NULL,
   supercluster_id  TINYINT UNSIGNED NOT NULL,
   state            ENUM('ACTIVE','SUSPENDED','REMOVED') NOT NULL DEFAULT 'ACTIVE',
   added_at         DATETIME         NOT NULL DEFAULT NOW(),

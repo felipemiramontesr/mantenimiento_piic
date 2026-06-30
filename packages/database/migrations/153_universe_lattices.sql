@@ -32,8 +32,8 @@
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS universe_lattices (
   id                BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  u1_tenant_id      INT UNSIGNED     NOT NULL,
-  u2_tenant_id      INT UNSIGNED     NULL DEFAULT NULL,
+  u1_tenant_id      INT              NOT NULL,
+  u2_tenant_id      INT              NULL DEFAULT NULL,
   lattice_type      ENUM('SERVICE_EXTERNAL','MARKETPLACE','SYSTEMIC') NOT NULL,
   schema_definition JSON             NOT NULL,
   state             ENUM('ACTIVE','SUSPENDED','CLOSED') NOT NULL DEFAULT 'ACTIVE',
