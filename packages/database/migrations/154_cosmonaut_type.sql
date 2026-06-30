@@ -51,9 +51,22 @@ SET t.mu_user_id = tum.user_id
 WHERE t.mu_user_id IS NULL;
 
 -- ─── PASO 6: FK constraint mu_user_id → users(id) ────────────────────────────
-ALTER TABLE tenants
-  ADD CONSTRAINT fk_tenants_mu_user
-    FOREIGN KEY (mu_user_id) REFERENCES users(id) ON DELETE RESTRICT;
+-- Guarded: ADD CONSTRAINT no soporta IF NOT EXISTS — se valida vía information_schema.
+SET @fk_exists = (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'tenants'
+    AND CONSTRAINT_NAME = 'fk_tenants_mu_user'
+);
+
+SET @sql = IF(@fk_exists = 0,
+  'ALTER TABLE tenants ADD CONSTRAINT fk_tenants_mu_user FOREIGN KEY (mu_user_id) REFERENCES users(id) ON DELETE RESTRICT',
+  'SELECT "fk_tenants_mu_user ya existe — sin cambios" AS notice'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
