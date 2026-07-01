@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import buildApp from '../index';
 import db from '../services/db';
+import FleetService from '../services/fleetService';
 
 /**
  * 🔱 Archon Integration Test: Nucleus Saturation (v.43.0.0)
@@ -23,6 +24,9 @@ vi.mock('../services/db', () => ({
   },
 }));
 vi.mock('@node-rs/argon2', () => ({ hash: vi.fn(), verify: vi.fn() }));
+vi.mock('../services/fleetService', () => ({
+  default: { getUserOwnerIds: vi.fn().mockResolvedValue([]) },
+}));
 vi.mock('../services/encryption', () => ({
   default: {
     encrypt: vi.fn((v) => `enc_${v}`),
@@ -801,5 +805,146 @@ describe('authIntegration.test', () => {
       ? setCookieHeader.join('; ')
       : String(setCookieHeader);
     expect(cookieStr).toContain('refresh_token');
+  });
+
+  // ─── ownerScope branches — scoped user paths ──────────────────────────────
+
+  it('AUTH-NODE-SCOPE-1: GET /users/:uuid/node — scoped token, user in scope → 200 (line 1197 closing })', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'scoped@piic.mx', permissions: ['user:admin', 'fleet:scoped'] });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([10, 20]);
+    const userRow = {
+      id: 15,
+      uuid: 'scope-uuid-1',
+      username: 'scoped_user',
+      full_name: 'Scoped User',
+      email: 'enc_su@a.mx',
+      role_id: 2,
+      employee_number: 'E015',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      role_name: 'Operator',
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow]])
+      .mockResolvedValueOnce([[{ owner_id: 10 }]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/scope-uuid-1/node',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).data.user.username).toBe('scoped_user');
+  });
+
+  it('AUTH-NODE-SCOPE-2: GET /users/:uuid/node — scoped token, user NOT in scope → 403 (lines 1192-1196)', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'scoped@piic.mx', permissions: ['user:admin', 'fleet:scoped'] });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([10, 20]);
+    const userRow = {
+      id: 15,
+      uuid: 'scope-uuid-2',
+      username: 'out_of_scope',
+      full_name: 'Out of Scope',
+      email: 'enc_oos@a.mx',
+      role_id: 2,
+      employee_number: 'E016',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      role_name: 'Operator',
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow]])
+      .mockResolvedValueOnce([[{ owner_id: 99 }]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/scope-uuid-2/node',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).code).toBe('FORBIDDEN');
+  });
+
+  it('AUTH-PUT-SCOPE-3: PUT /users/:id/owners — scoped, all owners in scope → 200 (line 858)', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({
+      id: 5,
+      email: 'scoped@piic.mx',
+      permissions: ['admin:role:edit', 'fleet:scoped'],
+    });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([1, 2]);
+    (db.getConnection as Mock).mockResolvedValueOnce(mockConnection);
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 20 }], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ id: 1 }], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/v1/auth/users/20/owners',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+      payload: { ownerIds: [1], reason: 'Scope test assignment' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).data.ownerIds).toEqual([1]);
+  });
+
+  it('AUTH-PUT-SCOPE-4: PUT /users/:id/owners — scoped, existing memberships outside scope → 403 (lines 843-848)', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({
+      id: 5,
+      email: 'scoped@piic.mx',
+      permissions: ['admin:role:edit', 'fleet:scoped'],
+    });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([1, 2]);
+    (db.getConnection as Mock).mockResolvedValueOnce(mockConnection);
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 20 }], undefined])
+      .mockResolvedValueOnce([[{ owner_id: 99 }], undefined]);
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/v1/auth/users/20/owners',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+      payload: { ownerIds: [1], reason: 'Outside scope test' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).message).toBe('User outside owner scope');
+  });
+
+  it('AUTH-PUT-SCOPE-5: PUT /users/:id/owners — scoped, new ownerIds outside scope → 403 (lines 851-857)', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({
+      id: 5,
+      email: 'scoped@piic.mx',
+      permissions: ['admin:role:edit', 'fleet:scoped'],
+    });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([1, 2]);
+    (db.getConnection as Mock).mockResolvedValueOnce(mockConnection);
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 20 }], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/v1/auth/users/20/owners',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+      payload: { ownerIds: [3], reason: 'Outside scope assignment' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).message).toBe('Cannot assign owner outside of scope');
   });
 });
