@@ -272,6 +272,29 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(areaCalls).toHaveLength(2);
     });
 
+    it('ONB-UNI-10: POST /onboarding/universe with address → address?.calle truthy (lines 128-131)', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check
+      const conn = makeConn();
+      vi.mocked(db).getConnection.mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/universe',
+        headers: auth(archonToken),
+        payload: {
+          ...VALID_UNIVERSE_BODY,
+          address: { calle: 'Av. Principal', numeroExt: '101', neighborhoodId: 1 },
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      const profileCall = conn.execute.mock.calls.find(
+        (c: unknown[]) =>
+          typeof c[0] === 'string' && (c[0] as string).includes('INSERT INTO owner_profiles')
+      );
+      expect((profileCall as unknown[] | undefined)?.[1]).toBeDefined();
+    });
+
     it('UNI-8: rolls back on transaction error', async () => {
       (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
       const conn = makeConn();
@@ -423,6 +446,40 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
     });
 
+    it('ONB-CLI-11: POST /onboarding/client roleId=5 sin fullName → fullName||"" (line 339)', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 50 }], undefined]) // child check → owner exists
+        .mockResolvedValueOnce([[], undefined]); // username check → no conflict
+      const conn = {
+        beginTransaction: vi.fn().mockResolvedValue(undefined),
+        execute: vi
+          .fn()
+          .mockResolvedValueOnce([{ insertId: 101 }, undefined]) // INSERT users
+          .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT membership
+          .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]), // INSERT user_roles
+        commit: vi.fn().mockResolvedValue(undefined),
+        rollback: vi.fn().mockResolvedValue(undefined),
+        release: vi.fn(),
+      };
+      vi.mocked(db).getConnection.mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/client',
+        headers: auth(centroToken),
+        payload: {
+          username: 'familiar.sin.nombre',
+          email: 'familiar@test.com',
+          password: VALID_PASSWORD,
+          roleId: 5,
+          targetOwnerId: 50,
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      expect(JSON.parse(res.body).userId).toBe(101);
+    });
+
     it('CLI-10: returns 500 when transaction INSERT fails → rollback (lines 353-355)', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ id: 50 }], undefined]) // child check passes
@@ -529,6 +586,36 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       });
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+    });
+
+    it('ONB-MEM-8: POST /onboarding/member sin fullName → fullName||"" (line 457)', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check
+      const conn = {
+        beginTransaction: vi.fn().mockResolvedValue(undefined),
+        execute: vi
+          .fn()
+          .mockResolvedValueOnce([{ insertId: 103 }, undefined]) // INSERT users
+          .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT membership
+          .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]), // INSERT user_roles
+        commit: vi.fn().mockResolvedValue(undefined),
+        rollback: vi.fn().mockResolvedValue(undefined),
+        release: vi.fn(),
+      };
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/member',
+        headers: auth(flotillaToken),
+        payload: {
+          username: 'area.sur.sin.nombre',
+          email: 'sur@test.com',
+          password: VALID_PASSWORD,
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      expect(JSON.parse(res.body).userId).toBe(103);
     });
 
     it('MEM-7: returns 500 when transaction INSERT fails → rollback (covers lines 471-473)', async () => {
