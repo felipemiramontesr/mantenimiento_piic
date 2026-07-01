@@ -202,6 +202,24 @@ describe('GET /v1/recalls/nhtsa (FC DataResilience FaseD)', () => {
     expect(item).toHaveProperty('consequence');
     expect(item).toHaveProperty('nhtsaActionNumber');
   });
+
+  it('NHTSA-D-7b: json.results undefined → usa ?? [] → data=[] (line 82)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ Count: 0, Message: 'OK' }), // no results key → undefined
+      })
+    );
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/recalls/nhtsa?make=HONDA&model=CIVIC&year=2020',
+      headers: { authorization: `Bearer ${viewToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toEqual([]);
+    expect(res.json().count).toBe(0);
+  });
 });
 
 describe('POST /v1/recalls/nhtsa/import (FC DataResilience FaseD)', () => {
@@ -289,5 +307,24 @@ describe('POST /v1/recalls/nhtsa/import (FC DataResilience FaseD)', () => {
     expect(body.success).toBe(true);
     expect(body.recall_id).toBe(7);
     expect(body.imported).toBe(false);
+  });
+
+  it('NHTSA-D-13: 201 sin description ni publishedDate → usa fallbacks ?? (lines 117-118)', async () => {
+    const { default: db } = await import('../services/db');
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[], undefined]) // SELECT → no existe
+      .mockResolvedValueOnce([{ insertId: 99 }, undefined]); // INSERT con fallbacks
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/recalls/nhtsa/import',
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { campaignNumber: '22V111', make: 'FORD', model: 'F-150', year: 2022 },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.success).toBe(true);
+    expect(body.recall_id).toBe(99);
+    expect(body.imported).toBe(true);
   });
 });

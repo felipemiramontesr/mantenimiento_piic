@@ -522,6 +522,46 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       expect(response.statusCode).toBe(404);
     });
 
+    it('SN-7: PUT /routes/:uuid → 403 FORBIDDEN scoped user fuera del owner (lines 635-638)', async (): Promise<void> => {
+      const editToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:edit:any'],
+      });
+      // resolveOwnerScope: [[{ id: 5 }]] → scope=[5]
+      // checkRouteScope: [[{ ownerId: 99 }]] → 99 not in [5] → false → 403
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // FleetService.getUserOwnerIds
+        .mockResolvedValueOnce([[{ ownerId: 99 }]]); // checkRouteScope: route owner=99 not in [5]
+      const response = await app.inject({
+        method: 'PUT',
+        url: `/v1/routes/${ROUTE_UUID}`,
+        headers: { authorization: `Bearer ${editToken}`, 'content-type': 'application/json' },
+        payload: JSON.stringify({ data: { status: 'COMPLETED' }, reason: 'Correccion de estado' }),
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('SN-8: DELETE /routes/:uuid → 403 FORBIDDEN scoped user fuera del owner (lines 668-671)', async (): Promise<void> => {
+      const deleteToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:delete:any'],
+      });
+      // resolveOwnerScope: [[{ id: 5 }]] → scope=[5]
+      // checkRouteScope: [[{ ownerId: 99 }]] → 99 not in [5] → false → 403
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // FleetService.getUserOwnerIds
+        .mockResolvedValueOnce([[{ ownerId: 99 }]]); // checkRouteScope: route owner=99 not in [5]
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/v1/routes/${ROUTE_UUID}`,
+        headers: { authorization: `Bearer ${deleteToken}`, 'content-type': 'application/json' },
+        payload: JSON.stringify({ reason: 'Eliminacion justificada' }),
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
     it('SN-6: GET /incidents/:uuid/node → 403 scoped user fuera del owner', async (): Promise<void> => {
       const scopedToken = app.jwt.sign({
         id: 2,
