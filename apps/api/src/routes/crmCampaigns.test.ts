@@ -250,4 +250,26 @@ describe('GET|POST /v1/crm/campaigns — FC-8 CRM_Advanced FaseE', () => {
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.payload).error).toBe('Session required');
   });
+
+  it('AT-CRM8-E-14: GET /crm/campaigns → 500 CAMPAIGNS_FETCH_FAIL cuando DB throws (lines 95-96)', async () => {
+    (db.execute as any).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/campaigns',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('CAMPAIGNS_FETCH_FAIL');
+  });
+
+  it('AT-CRM8-E-15: POST /crm/campaigns → 401 sin JWT (lines 103-104)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ ownerId: 5, name: 'Test', subject: 'Test', bodyText: 'Cuerpo' }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('Session required');
+  });
 });

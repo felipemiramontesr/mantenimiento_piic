@@ -162,4 +162,27 @@ describe('GET/POST /v1/crm/interactions — FC-8 CRM_Advanced FaseC', () => {
     const body = JSON.parse(res.payload);
     expect(body.interactions).toHaveLength(1);
   });
+
+  it('AT-CRM8-C-9: POST /crm/interactions → 401 sin JWT (lines 114-115)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/interactions',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ ownerId: 5, summary: 'Llamada de seguimiento' }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
+
+  it('AT-CRM8-C-10: POST /crm/interactions → 500 INTERACTIONS_CREATE_FAIL cuando INSERT falla (lines 144-145)', async () => {
+    (db.execute as any).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/interactions',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ ownerId: 5, summary: 'Llamada crítica de prueba' }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('INTERACTIONS_CREATE_FAIL');
+  });
 });

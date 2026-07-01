@@ -154,6 +154,34 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body).data.rfc).toBe('TEST123456ABC');
     });
+
+    it('returns 404 when ownerIds found but profile SELECT returns empty — Scenario OP-9', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[], undefined]); // profile SELECT → empty
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+      });
+      expect(res.statusCode).toBe(404);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_NOT_FOUND');
+    });
+
+    it('returns 500 PROFILE_FETCH_FAIL when DB throws on profile SELECT — Scenario OP-10', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockRejectedValueOnce(new Error('DB crash')); // profile SELECT throws
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_FETCH_FAIL');
+    });
   });
 
   // ── PATCH /v1/owners/me/profile ────────────────────────────────────────────
@@ -196,6 +224,60 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       });
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body).success).toBe(true);
+    });
+
+    it('returns 404 when profileRows empty inside try — Scenario OP-ME-404', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[], undefined]); // profileRows SELECT → empty → 404
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { telefono: '3311111111' },
+      });
+      expect(res.statusCode).toBe(404);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_NOT_FOUND');
+    });
+
+    it('returns 500 PROFILE_UPDATE_FAIL when conn.execute throws — Scenario OP-ME-500', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]); // profileRows
+
+      const conn = makePatchConn();
+      (conn.execute as Mock).mockRejectedValueOnce(new Error('DB crash'));
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { telefono: '3311111111' },
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_UPDATE_FAIL');
+    });
+
+    it('returns 200 with especialidades=null → covers applySpecialtiesUpdate codes=null branch — Scenario OP-ME-SPEC-NULL', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]); // profileRows
+
+      const conn = makePatchConn();
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { especialidades: null },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).success).toBe(true);
+      const sqls = (conn.execute as Mock).mock.calls.map((c) => c[0] as string);
+      expect(sqls.some((s) => s.includes('owner_specialties'))).toBe(true);
     });
   });
 
@@ -266,6 +348,20 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       });
       expect(res.statusCode).toBe(200);
       expect(JSON.parse(res.body).data.ownerType).toBe('FLOTILLA');
+    });
+
+    it('returns 500 PROFILE_FETCH_FAIL when DB throws on profile SELECT — Scenario OP-11', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockRejectedValueOnce(new Error('DB crash')); // profile SELECT throws
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(ownerToken),
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_FETCH_FAIL');
     });
   });
 
@@ -378,6 +474,38 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       expect(res.statusCode).toBe(500);
       expect(JSON.parse(res.body).code).toBe('PROFILE_UPDATE_FAIL');
     });
+
+    it('returns 400 INVALID_SPECIALTY_CODES for /:ownerId path — Scenario OP-13', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ cnt: 0 }], undefined]); // validateSpecialtyCodes → mismatch
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(ownerToken),
+        payload: { especialidades: ['INVALID'] },
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('INVALID_SPECIALTY_CODES');
+    });
+
+    it('returns 400 MISSING_RFC when CENTER type tries to clear rfc with empty string — Scenario OP-15', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]); // profileRows
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(ownerToken),
+        payload: { rfc: '' },
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
+    });
   });
 
   // ── GET /v1/catalogs/areas ────────────────────────────────────────────────
@@ -454,6 +582,19 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       expect(Array.isArray(body.data)).toBe(true);
       expect(body.data[0]).toHaveProperty('code');
       expect(body.data[0]).toHaveProperty('label');
+    });
+
+    it('returns 500 SPECIALTIES_FETCH_FAIL on DB error — Scenario SP-6', async () => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB crash'));
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/catalogs/specialties',
+        headers: auth(ownerToken),
+      });
+
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('SPECIALTIES_FETCH_FAIL');
     });
   });
 

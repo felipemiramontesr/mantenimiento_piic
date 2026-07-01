@@ -258,6 +258,59 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(res.statusCode).toBe(204);
   });
 
+  it('AT-SOC9-B-11: GET /social/posts/1/comments → 401 sin JWT (lines 261-265)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/social/posts/1/comments' });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
+
+  it('AT-SOC9-B-12: GET /social/posts/1/comments → 200 lista de comentarios (lines 260-288)', async () => {
+    (db.execute as any).mockResolvedValueOnce([
+      [
+        {
+          id: 1,
+          post_id: 1,
+          author_id: 5,
+          parent_comment_id: null,
+          content_text: 'Buen trabajo',
+          created_at: '2026-07-01T00:00:00Z',
+        },
+      ],
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/posts/1/comments',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(Array.isArray(body.comments)).toBe(true);
+    expect(body.comments[0].contentText).toBe('Buen trabajo');
+    expect(body.comments[0].parentCommentId).toBeNull();
+  });
+
+  it('AT-SOC9-B-13: GET /social/posts/1/comments → 500 COMMENTS_FETCH_FAIL cuando DB throws (lines 285-287)', async () => {
+    (db.execute as any).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/posts/1/comments',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('COMMENTS_FETCH_FAIL');
+  });
+
+  it('AT-SOC9-B-14: POST /social/posts/1/comments → 401 sin JWT (lines 293-297)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts/1/comments',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ contentText: 'Test' }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
+
   it('AT-SOC9-B-7: POST /social/posts/1/comments → 400 PII_DETECTED_IN_COMMENT', async () => {
     const res = await app.inject({
       method: 'POST',
