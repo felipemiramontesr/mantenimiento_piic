@@ -238,4 +238,54 @@ describe('GET/POST/PATCH/DELETE /v1/contacts — FC-5 CRM FaseB', () => {
     });
     expect(res.statusCode).toBe(403);
   });
+
+  it('AT-CRM-B-13: DELETE /contacts/:id 401 sin JWT', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/contacts/1',
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-CRM-B-14: DELETE /contacts/:id 500 error de DB', async () => {
+    // adminToken has '*' → hasAdminAccess=true → skip ownerIds → DELETE throws
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined]) // SELECT contact
+      .mockRejectedValueOnce(new Error('DB connection lost')); // DELETE throws
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTACT_DELETE_FAIL');
+  });
+
+  it('AT-CRM-B-15: PATCH /contacts/:id 403 cuando el owner del caller no coincide (line 256)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined]) // SELECT contact → owner=5
+      .mockResolvedValueOnce([[{ owner_id: 9 }], undefined]); // getCallerOwnerIds → [9]
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${wrongOwnerToken}`, 'content-type': 'application/json' },
+      payload: { fullName: 'Updated Name' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('Access denied');
+  });
+
+  it('AT-CRM-B-16: PATCH /contacts/:id 500 CONTACT_UPDATE_FAIL cuando UPDATE falla (line 273)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined]) // SELECT contact
+      .mockRejectedValueOnce(new Error('DB connection lost')); // UPDATE throws
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { fullName: 'Updated Name' },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTACT_UPDATE_FAIL');
+  });
 });

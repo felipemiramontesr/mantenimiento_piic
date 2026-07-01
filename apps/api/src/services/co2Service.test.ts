@@ -126,4 +126,73 @@ describe('Co2Service.compute — AT-DH-C: period_from/period_to derivado (FC-7 F
     expect(result!.period_from).toBeNull();
     expect(result!.period_to).toBeNull();
   });
+
+  it('AT-DH-C-5: solo from (sin to) → rama else if (periodFrom) cubierta', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([
+        [
+          {
+            total_liters: 150,
+            period_from_derived: '2026-01-01',
+            period_to_derived: '2026-06-30 23:59:59',
+          },
+        ],
+      ]);
+    const result = await Co2Service.compute('PIIC-304', { from: '2026-01-01' });
+    expect(result).not.toBeNull();
+    expect(result!.total_liters).toBe(150);
+    expect(result!.period_from).toBe('2026-01-01');
+  });
+
+  it('AT-DH-C-6: solo to (sin from) → rama else if (periodTo) cubierta', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([
+        [{ total_liters: 80, period_from_derived: '2025-01-01', period_to_derived: '2026-03-31' }],
+      ]);
+    const result = await Co2Service.compute('PIIC-304', { to: '2026-03-31' });
+    expect(result).not.toBeNull();
+    expect(result!.total_liters).toBe(80);
+  });
+
+  it('AT-DH-C-7: sin movimientos en rama from+to → ?? 0 y ?? null cubiertos (lines 78-80)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([[]]); // empty rows → rows[0] = undefined
+    const result = await Co2Service.compute('PIIC-304', { from: '2026-01-01', to: '2026-06-30' });
+    expect(result!.total_liters).toBe(0);
+    expect(result!.period_from).toBe('2026-01-01');
+    expect(result!.period_to).toBe('2026-06-30');
+  });
+
+  it('AT-DH-C-8: sin movimientos en rama periodFrom → ?? 0 y ?? null cubiertos (lines 86-88)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([[]]); // empty rows
+    const result = await Co2Service.compute('PIIC-304', { from: '2026-01-01' });
+    expect(result!.total_liters).toBe(0);
+    expect(result!.period_from).toBe('2026-01-01');
+    expect(result!.period_to).toBeNull();
+  });
+
+  it('AT-DH-C-9: sin movimientos en rama periodTo → ?? 0 y ?? null cubiertos (lines 94-96)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([[]]); // empty rows
+    const result = await Co2Service.compute('PIIC-304', { to: '2026-06-30' });
+    expect(result!.total_liters).toBe(0);
+    expect(result!.period_from).toBeNull();
+    expect(result!.period_to).toBe('2026-06-30');
+  });
+
+  it('AT-DH-C-10: sin movimientos en rama else (sin params) → ?? 0 cubierto (line 99)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: 'F_DIESEL' }]])
+      .mockResolvedValueOnce([[]]); // empty rows → rows[0] undefined → total_liters ?? 0 takes right side
+    const result = await Co2Service.compute('PIIC-304');
+    expect(result!.total_liters).toBe(0);
+    expect(result!.period_from).toBeNull();
+    expect(result!.period_to).toBeNull();
+  });
 });

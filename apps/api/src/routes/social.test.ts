@@ -423,6 +423,61 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(JSON.parse(res.payload).error).toBe('REVIEW_ALREADY_EXISTS');
   });
 
+  it('AT-SOC9-C-11: POST /social/reviews → 400 INVALID_RATING cuando rating fuera de rango (line 347-348)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ tallerOwnerId: 3, rating: 6, bodyText: 'Excelente.' }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('INVALID_RATING');
+  });
+
+  it('AT-SOC9-C-12: POST /social/reviews → 500 REVIEW_CREATE_FAIL cuando INSERT falla con error no-duplicado (line 387)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1 }]]) // work_order CLOSED → verified=1
+      .mockRejectedValueOnce(new Error('DB connection lost')); // INSERT throws non-dup error
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        tallerOwnerId: 3,
+        rating: 5,
+        bodyText: 'Error test.',
+        workOrderId: 1,
+      }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('REVIEW_CREATE_FAIL');
+  });
+
+  it('AT-SOC9-C-9: GET /social/reviews (sin tallerId) → avgRating=null', async () => {
+    // tallerId absent → avgRow=null → avgRating=null (cubre línea 430 de social.ts)
+    (db.execute as any).mockResolvedValueOnce([[]]); // rows vacíos, sin segunda query de avg
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.reviews).toHaveLength(0);
+    expect(body.avgRating).toBeNull();
+  });
+
+  it('AT-SOC9-C-10: GET /social/reviews → 500 REVIEWS_FETCH_FAIL por error de DB', async () => {
+    (db.execute as any).mockRejectedValueOnce(new Error('DB error'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('REVIEWS_FETCH_FAIL');
+  });
+
   // ── FaseD: Directorio de Talleres ──────────────────────────────────────────
 
   const MOCK_TALLERES = [
@@ -519,5 +574,29 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(body.talleres[0].avgRating).toBe(4.8);
     expect(body.talleres[1].avgRating).toBe(4.1);
     expect(body.talleres[2].avgRating).toBe(3.2);
+  });
+
+  it('AT-SOC9-D-6: GET /social/directory?specialties=Motor → 200 filtrado por especialidad', async () => {
+    (db.execute as any).mockResolvedValueOnce([[MOCK_TALLERES[0]]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/directory?specialties=Motor',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.talleres).toHaveLength(1);
+    expect(body.talleres[0].especialidades).toBe('Frenos,Motor');
+  });
+
+  it('AT-SOC9-D-7: error DB → 500 DIRECTORY_FETCH_FAIL', async () => {
+    (db.execute as any).mockRejectedValueOnce(new Error('DB error'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/directory',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('DIRECTORY_FETCH_FAIL');
   });
 });

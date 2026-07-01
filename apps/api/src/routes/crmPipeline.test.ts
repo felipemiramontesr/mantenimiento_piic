@@ -185,4 +185,51 @@ describe('GET/POST/PATCH/DELETE /v1/crm/pipeline — FC-8 CRM_Advanced FaseB', (
     });
     expect(res.statusCode).toBe(204);
   });
+
+  it('AT-CRM8-B-9: DELETE /crm/opportunities/:id → 403 usuario sin acceso al owner', async () => {
+    // wrongOwnerToken (id=9, fleet:view) — no admin → checks ownerIds
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]) // SELECT opportunity — owner=5
+      .mockResolvedValueOnce([[{ owner_id: 99 }]]); // getCallerOwnerIds(9) → [99], 5 not in [99]
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/opportunities/1',
+      headers: { authorization: `Bearer ${wrongOwnerToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('AT-CRM8-B-10: DELETE /crm/opportunities/:id → 500 error de DB', async () => {
+    // adminToken has '*' → hasAdminAccess=true → skip ownerIds → DELETE throws
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]) // SELECT opportunity
+      .mockRejectedValueOnce(new Error('DB connection lost')); // DELETE throws
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/opportunities/1',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('PIPELINE_DELETE_FAIL');
+  });
+
+  it('AT-CRM8-B-11: PATCH /crm/opportunities/:id/stage → 500 PIPELINE_MOVE_FAIL cuando DB falla (line 212)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]) // SELECT opportunity
+      .mockRejectedValueOnce(new Error('DB connection lost')); // SELECT stage throws
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/opportunities/1/stage',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ stageCode: 'PROSPECTING' }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('PIPELINE_MOVE_FAIL');
+  });
+
+  it('AT-CRM8-B-12: DELETE /crm/opportunities/:id → 401 sin JWT (line 221)', async () => {
+    const res = await app.inject({ method: 'DELETE', url: '/v1/crm/opportunities/1' });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
 });

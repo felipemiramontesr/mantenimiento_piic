@@ -175,4 +175,51 @@ describe('GET/POST/PATCH/DELETE /v1/crm/contracts — FC-8 CRM_Advanced FaseA', 
     });
     expect(res.statusCode).toBe(204);
   });
+
+  it('AT-CRM8-A-9: DELETE /crm/contracts/:id → 403 usuario sin acceso al owner', async () => {
+    // scopedToken (id=2, fleet:view) — no admin → checks ownerIds
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 99 }]]) // SELECT contract — owner=99
+      .mockResolvedValueOnce([[{ owner_id: 5 }]]); // getCallerOwnerIds(2) → [5], 99 not in [5]
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('AT-CRM8-A-10: DELETE /crm/contracts/:id → 500 error de DB', async () => {
+    // adminToken has '*' → hasAdminAccess=true → skip ownerIds → UPDATE throws
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]) // SELECT contract
+      .mockRejectedValueOnce(new Error('DB connection lost')); // UPDATE throws
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTRACTS_DELETE_FAIL');
+  });
+
+  it('AT-CRM8-A-11: PATCH /crm/contracts/:id → 500 CONTRACTS_UPDATE_FAIL cuando UPDATE falla (line 196)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]) // SELECT contract
+      .mockRejectedValueOnce(new Error('DB connection lost')); // UPDATE throws
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ status: 'ACTIVE' }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTRACTS_UPDATE_FAIL');
+  });
+
+  it('AT-CRM8-A-12: DELETE /crm/contracts/:id → 401 sin JWT (line 205)', async () => {
+    const res = await app.inject({ method: 'DELETE', url: '/v1/crm/contracts/1' });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
 });

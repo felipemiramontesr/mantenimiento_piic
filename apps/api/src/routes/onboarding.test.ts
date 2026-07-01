@@ -411,6 +411,39 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(body.userId).toBe(101);
       expect(body.ownerId).toBe(50);
     });
+
+    it('CLI-9: returns 400 VALIDATION_ERROR when body fails schema validation (lines 265-272)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/client',
+        headers: auth(centroToken),
+        payload: { username: 'ab', email: 'not-an-email', password: VALID_PASSWORD, roleId: 4 },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+    });
+
+    it('CLI-10: returns 500 when transaction INSERT fails → rollback (lines 353-355)', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 50 }], undefined]) // child check passes
+        .mockResolvedValueOnce([[], undefined]); // username check passes
+      const conn = {
+        beginTransaction: vi.fn().mockResolvedValue(undefined),
+        execute: vi.fn().mockRejectedValue(new Error('DB insert failed')),
+        commit: vi.fn().mockResolvedValue(undefined),
+        rollback: vi.fn().mockResolvedValue(undefined),
+        release: vi.fn(),
+      };
+      vi.mocked(db).getConnection.mockResolvedValueOnce(conn as any);
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/client',
+        headers: auth(centroToken),
+        payload: { ...VALID_CLIENT_BODY, roleId: 5, targetOwnerId: 50 },
+      });
+      expect(res.statusCode).toBe(500);
+      expect(conn.rollback).toHaveBeenCalled();
+    });
   });
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -485,6 +518,38 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(body.userId).toBe(102);
       expect(body.ownerId).toBe(10); // callerOwnerId from mock
       expect(conn.commit).toHaveBeenCalled();
+    });
+
+    it('MEM-6: returns 400 VALIDATION_ERROR when body fails schema validation', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/member',
+        headers: auth(flotillaToken),
+        payload: { username: 'ab', email: 'not-an-email', password: VALID_PASSWORD },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+    });
+
+    it('MEM-7: returns 500 when transaction INSERT fails → rollback (covers lines 471-473)', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check → no conflict
+      const conn = {
+        beginTransaction: vi.fn().mockResolvedValue(undefined),
+        execute: vi.fn().mockRejectedValueOnce(new Error('DB insert failed')),
+        commit: vi.fn(),
+        rollback: vi.fn().mockResolvedValue(undefined),
+        release: vi.fn(),
+      };
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/member',
+        headers: auth(flotillaToken),
+        payload: VALID_MEMBER_BODY,
+      });
+      expect(res.statusCode).toBe(500);
+      expect(conn.rollback).toHaveBeenCalled();
     });
   });
 });

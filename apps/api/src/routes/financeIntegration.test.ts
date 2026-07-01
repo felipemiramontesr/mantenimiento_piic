@@ -453,5 +453,26 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       });
       expect(res.statusCode).toBe(500);
     });
+
+    it('returns empty CSV header when scoped user has no owner memberships (covers lines 479-487)', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 5,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      // FleetService.getUserOwnerIds calls db.execute → empty result → ownerScope=[]
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/export',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toContain('text/csv');
+      expect(res.body).toBe(
+        'UUID,Unidad,Categoría,Monto,Período,Proveedor,Referencia,Notas,Registrado por,Fecha'
+      );
+    });
   });
 });

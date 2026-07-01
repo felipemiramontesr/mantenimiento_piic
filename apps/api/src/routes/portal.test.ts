@@ -166,4 +166,52 @@ describe('GET /v1/portal/* — FC-8 CRM_Advanced FaseD', () => {
     expect(unit.totalCostOfOwnership).toBeUndefined();
     expect(unit.cost).toBeUndefined();
   });
+
+  it('AT-CRM8-D-9: GET /portal/fleet-status → 500 PORTAL_FLEET_FAIL cuando DB falla', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ owner_id: 5 }]]) // getCallerOwnerIds → ownerIds=[5]
+      .mockRejectedValueOnce(new Error('DB connection lost')); // fleet query → catch
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/portal/fleet-status',
+      headers: { authorization: `Bearer ${portalToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('PORTAL_FLEET_FAIL');
+  });
+
+  it('AT-CRM8-D-10: GET /portal/work-orders → 500 PORTAL_ORDERS_FAIL cuando DB falla', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ owner_id: 5 }]]) // getCallerOwnerIds → ownerIds=[5]
+      .mockRejectedValueOnce(new Error('DB connection lost')); // work-orders query → catch
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/portal/work-orders',
+      headers: { authorization: `Bearer ${portalToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('PORTAL_ORDERS_FAIL');
+  });
+
+  it('AT-CRM8-D-11: GET /portal/fleet-status → 200 { units: [] } cuando ownerIds vacío (line 65)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[]]); // getCallerOwnerIds → ownerIds=[]
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/portal/fleet-status',
+      headers: { authorization: `Bearer ${portalToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).units).toEqual([]);
+  });
+
+  it('AT-CRM8-D-12: GET /portal/work-orders → 200 { workOrders: [] } cuando ownerIds vacío (line 103)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[]]); // getCallerOwnerIds → ownerIds=[]
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/portal/work-orders',
+      headers: { authorization: `Bearer ${portalToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).workOrders).toEqual([]);
+  });
 });
