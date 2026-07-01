@@ -173,4 +173,81 @@ describe('GET|POST /v1/crm/campaigns — FC-8 CRM_Advanced FaseE', () => {
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.payload).error).toBe('FORBIDDEN');
   });
+
+  it('AT-CRM8-E-9: POST /crm/campaigns → 500 CAMPAIGNS_CREATE_FAIL cuando INSERT falla', async () => {
+    (db.execute as any).mockRejectedValueOnce(new Error('DB insert failed'));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        ownerId: 5,
+        name: 'Campaña Error',
+        subject: 'Error test',
+        bodyText: 'Error de inserción de prueba.',
+        type: 'MAINTENANCE_REMINDER',
+      }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('CAMPAIGNS_CREATE_FAIL');
+  });
+
+  it('AT-CRM8-E-10: POST /crm/campaigns/:id/send → 500 CAMPAIGNS_SEND_FAIL cuando outbox INSERT falla', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5, type: 'MAINTENANCE_REMINDER' }]]) // find template
+      .mockRejectedValueOnce(new Error('DB outbox insert failed')); // outbox INSERT throws
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns/1/send',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('CAMPAIGNS_SEND_FAIL');
+  });
+
+  it('AT-CRM8-E-11: POST /crm/campaigns → 400 INVALID_CAMPAIGN_TYPE cuando type no válido (lines 113-115)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        ownerId: 5,
+        name: 'Test',
+        subject: 'Asunto',
+        bodyText: 'Texto de prueba de campaña.',
+        type: 'TIPO_INVALIDO',
+      }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('INVALID_CAMPAIGN_TYPE');
+  });
+
+  it('AT-CRM8-E-12: POST /crm/campaigns → 403 FORBIDDEN usuario sin acceso al owner (lines 123-127)', async () => {
+    // scopedToken (id=2, crm:view) → !hasAdminAccess → getCallerOwnerIds(2) → [5]
+    // ownerId=99, [5].includes(99)=false → 403 FORBIDDEN
+    (db.execute as any).mockResolvedValueOnce([[{ owner_id: 5 }]]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns',
+      headers: { authorization: `Bearer ${scopedToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        ownerId: 99,
+        name: 'Campaña Ajena',
+        subject: 'Asunto',
+        bodyText: 'Texto de prueba de campaña ajena.',
+        type: 'MAINTENANCE_REMINDER',
+      }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).error).toBe('FORBIDDEN');
+  });
+
+  it('AT-CRM8-E-13: POST /crm/campaigns/:id/send → 401 sin JWT (lines 145-146)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns/1/send',
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('Session required');
+  });
 });

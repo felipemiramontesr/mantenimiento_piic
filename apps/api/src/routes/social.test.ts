@@ -283,6 +283,31 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(JSON.parse(res.payload).id).toBe(12);
   });
 
+  it('AT-SOC9-B-9: POST /social/posts/1/comments → 400 MISSING_REQUIRED_FIELDS sin contentText (lines 303-305)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts/1/comments',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ parentCommentId: 5 }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
+
+  it('AT-SOC9-B-10: POST /social/posts/1/comments → 500 COMMENT_CREATE_FAIL cuando INSERT falla (lines 325-327)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1 }]]) // SELECT post → found
+      .mockRejectedValueOnce(new Error('DB connection lost')); // INSERT throws
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts/1/comments',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ contentText: 'Comentario de prueba de error.' }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('COMMENT_CREATE_FAIL');
+  });
+
   // ── FaseC: Reviews verificadas ─────────────────────────────────────────────
 
   it('AT-SOC9-C-1: POST /social/reviews → 401 sin JWT', async () => {
