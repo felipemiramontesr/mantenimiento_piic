@@ -251,6 +251,31 @@ describe('AT-FC24-C-ROLES: /v1/cosmonauts/roles', () => {
     expect(JSON.parse(res.body).code).toBe('PRIVILEGE_ESCALATION');
   });
 
+  it('AT-FC24-C-ROLES-15: GET /cosmonauts/roles sin tenantId → tid=null (lines 28-38)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // SELECT roles → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${omegaToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).data).toHaveLength(0);
+  });
+
+  it('AT-FC24-C-ROLES-17: DELETE /cosmonauts/roles/:roleId R_universe con caller sin MU/Ω → 403 (line 155)', async () => {
+    // role.is_system=0 → requireMuOrOmega path → muToken not MU in tenant → 403
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 42, is_system: 0, tenant_id: 5 }]]) // fetch role
+      .mockResolvedValueOnce([[]]); // requireMuOrOmega → [] → not MU → 403
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmonauts/roles/42',
+      headers: { authorization: `Bearer ${muToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
+  });
+
   it('AT-FC24-C-ROLES-11: fallo en INSERT → rollback y Fastify 500 (líneas 121-126)', async () => {
     // resolveEffectivePermissions → mock 1
     // SELECT permissions → mock 2

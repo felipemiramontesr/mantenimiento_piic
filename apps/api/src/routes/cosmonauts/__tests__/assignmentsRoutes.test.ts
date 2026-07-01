@@ -332,4 +332,64 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
   });
+
+  it('AT-FC24-C-ASSIGN-18: GET /me/permissions sin tenantId → tid=null (line 33)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // resolveEffectivePermissions → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmonauts/me/permissions',
+      headers: { authorization: `Bearer ${arcToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).data.permissions).toHaveLength(0);
+  });
+
+  it('AT-FC24-C-ASSIGN-19: GET /arcs con caller no MU/Ω → requireMuOrOmega → 403 (line 56)', async () => {
+    // arcToken (roleId=3, permissions=[]) → not Ω → db.execute returns [] (no membership) → 403
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmonauts/arcs?tenantId=5',
+      headers: { authorization: `Bearer ${arcToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
+  });
+
+  it('AT-FC24-C-ASSIGN-20: POST /arcs cosmonaut_type=ARC con caller no MU/Ω → 403 (line 108)', async () => {
+    // arcToken → else block (ARC creation) → requireMuOrOmega → db.execute → [] → 403
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/arcs',
+      headers: { authorization: `Bearer ${arcToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: 30, tenantId: 5, cosmonaut_type: 'ARC' }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
+  });
+
+  it('AT-FC24-C-ASSIGN-21: POST /:userId/roles con caller no MU/Ω → 403 (line 150)', async () => {
+    // arcToken → requireMuOrOmega(5) → db.execute → [] → 403
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/20/roles',
+      headers: { authorization: `Bearer ${arcToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ roleId: 1, tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
+  });
+
+  it('AT-FC24-C-ASSIGN-22: POST /arcs MU con token sin permissions → permissions??[] (line 97)', async () => {
+    // Token without permissions field → callerUser.permissions=undefined → undefined??[] → [] → not omega
+    const { jwt: jwt2 } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    const noPermsToken = jwt2.sign({ id: 10, roleId: 2 });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/arcs',
+      headers: { authorization: `Bearer ${noPermsToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: 30, tenantId: 5, cosmonaut_type: 'MU' }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).code).toBe('FORBIDDEN');
+  });
 });
