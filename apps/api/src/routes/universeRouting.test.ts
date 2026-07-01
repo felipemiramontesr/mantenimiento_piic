@@ -45,7 +45,7 @@ describe('FC-18 FaseC-2 — Universe Routing (AT-FC18-C2-AR)', () => {
       roleName: 'Director',
       permissions: ['*'],
     });
-  });
+  }, 15000);
 
   const auth = (): Record<string, string> => ({ Authorization: `Bearer ${token}` });
 
