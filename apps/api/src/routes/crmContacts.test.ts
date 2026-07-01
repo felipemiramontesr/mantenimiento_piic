@@ -378,4 +378,60 @@ describe('GET/POST/PATCH/DELETE /v1/contacts — FC-5 CRM FaseB', () => {
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).error).toBe('CONTACTS_FETCH_FAIL');
   });
+
+  it('AT-CRM-B-25: PATCH /contacts/:id 200 con roleLabel (buildPatchClauses line 75-78)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { roleLabel: 'Gerente Actualizado' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('AT-CRM-B-26: PATCH /contacts/:id 200 con notes (buildPatchClauses lines 79-82)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { notes: 'Nota actualizada de contacto' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('AT-CRM-B-27: PATCH /contacts/:id 200 con email truthy (buildPatchClauses lines 88-93 rama encrypt)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { email: 'nuevo@piic.mx' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('AT-CRM-B-28: PATCH /contacts/:id 200 con email null (buildPatchClauses lines 90-91 rama null)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { email: null },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
 });

@@ -677,4 +677,94 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.payload).error).toBe('DIRECTORY_FETCH_FAIL');
   });
+
+  it('AT-SOC9-A-9: POST /social/posts con imageUrls → line 143 rama JSON.stringify', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined]) // getCallerOwnerIds
+      .mockResolvedValueOnce([{ insertId: 10, affectedRows: 1 }, undefined]); // INSERT
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        contentText: 'Post con imágenes adjuntas.',
+        imageUrls: ['https://cdn.piic.mx/img1.jpg', 'https://cdn.piic.mx/img2.jpg'],
+      }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.payload).id).toBe(10);
+  });
+
+  it('AT-SOC9-A-10: POST /social/posts 500 POST_CREATE_FAIL cuando DB throws (line 153)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined]) // getCallerOwnerIds
+      .mockRejectedValueOnce(new Error('DB connection lost')); // INSERT throws
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ contentText: 'Post que falla en DB.' }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('POST_CREATE_FAIL');
+  });
+
+  it('AT-SOC9-A-11: DELETE /social/posts/:id 404 POST_NOT_FOUND (line 173)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]); // SELECT → no rows
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/social/posts/999',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.payload).error).toBe('POST_NOT_FOUND');
+  });
+
+  it('AT-SOC9-A-12: DELETE /social/posts/:id 500 POST_DELETE_FAIL cuando DB throws (line 183-184)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ id: 1, author_id: 2 }], undefined]) // SELECT post
+      .mockRejectedValueOnce(new Error('DB delete failed')); // DELETE throws
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/social/posts/1',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('POST_DELETE_FAIL');
+  });
+
+  it('AT-SOC9-B-20: POST /social/posts/:id/reactions 500 REACTION_CREATE_FAIL cuando DB throws (line 224)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]) // SELECT post
+      .mockRejectedValueOnce(new Error('DB insert failed')); // INSERT IGNORE throws
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts/1/reactions',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ type: 'VELOZ' }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('REACTION_CREATE_FAIL');
+  });
+
+  it('AT-SOC9-B-21: DELETE /social/posts/:id/reactions/:type 400 INVALID_REACTION_TYPE (lines 242-244)', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/social/posts/1/reactions/INVALIDO',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('INVALID_REACTION_TYPE');
+  });
+
+  it('AT-SOC9-B-22: DELETE /social/posts/:id/reactions/:type 500 REACTION_DELETE_FAIL cuando DB throws (lines 253-254)', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB delete failed'));
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/social/posts/1/reactions/VELOZ',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('REACTION_DELETE_FAIL');
+  });
 });

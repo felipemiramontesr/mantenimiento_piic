@@ -283,4 +283,32 @@ describe('GET/POST/PATCH/DELETE /v1/crm/pipeline — FC-8 CRM_Advanced FaseB', (
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).error).toBe('PIPELINE_CREATE_FAIL');
   });
+
+  it('AT-CRM8-B-17: GET /crm/pipeline scoped con ownerIds vacío → stages con oportunidades vacías (lines 93-96)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([MOCK_STAGES, undefined]) // SELECT stages
+      .mockResolvedValueOnce([[], undefined]); // getCallerOwnerIds → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/pipeline',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.stages).toHaveLength(MOCK_STAGES.length);
+    body.stages.forEach((s: { opportunities: unknown[] }) => {
+      expect(s.opportunities).toHaveLength(0);
+    });
+  });
+
+  it('AT-CRM8-B-18: GET /crm/pipeline 500 PIPELINE_FETCH_FAIL cuando DB throws (lines 122-123)', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB timeout'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/pipeline',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('PIPELINE_FETCH_FAIL');
+  });
 });

@@ -312,4 +312,35 @@ describe('GET/POST/PATCH/DELETE /v1/crm/contracts — FC-8 CRM_Advanced FaseA', 
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).error).toBe('NO_FIELDS');
   });
+
+  it('AT-CRM8-A-20: POST /crm/contracts 500 CONTRACTS_CREATE_FAIL cuando INSERT falla (line 134)', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB insert failed'));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/contracts',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: {
+        ownerId: 5,
+        title: 'Contrato Test',
+        startDate: '2026-01-01',
+        endDate: '2026-12-31',
+      },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTRACTS_CREATE_FAIL');
+  });
+
+  it('AT-CRM8-A-21: PATCH /crm/contracts/:id 403 FORBIDDEN usuario scoped sin acceso (lines 159-163)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 99 }], undefined]) // SELECT contract → owner_id=99
+      .mockResolvedValueOnce([[], undefined]); // getCallerOwnerIds → user 9 has no owners
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${wrongOwnerToken}`, 'content-type': 'application/json' },
+      payload: { title: 'Intento no autorizado' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('FORBIDDEN');
+  });
 });
