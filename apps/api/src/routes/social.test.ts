@@ -767,4 +767,19 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.payload).error).toBe('REACTION_DELETE_FAIL');
   });
+
+  it('AT-SOC9-A-13: DELETE /social/posts/:id 401 sin JWT (lines 161-162)', async () => {
+    const res = await app.inject({ method: 'DELETE', url: '/v1/social/posts/1' });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('Session required');
+  });
+
+  it('AT-SOC9-B-23: DELETE /social/posts/:id/reactions/:type 401 sin JWT (lines 234-236)', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/social/posts/1/reactions/VELOZ',
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('Session required');
+  });
 });

@@ -311,4 +311,39 @@ describe('GET/POST/PATCH/DELETE /v1/crm/pipeline — FC-8 CRM_Advanced FaseB', (
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).error).toBe('PIPELINE_FETCH_FAIL');
   });
+
+  it('AT-CRM8-B-19: PATCH /crm/opportunities/:id/stage 400 INVALID_STAGE cuando stage no existe (line 204)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }], undefined]) // SELECT opportunity
+      .mockResolvedValueOnce([[], undefined]); // SELECT stage → empty → INVALID_STAGE
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/opportunities/1/stage',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ stageCode: 'NONEXISTENT_STAGE' }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('INVALID_STAGE');
+  });
+
+  it('AT-CRM8-B-20: DELETE /crm/opportunities/:id 400 Invalid id NaN (line 226)', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/opportunities/abc',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('Invalid id');
+  });
+
+  it('AT-CRM8-B-21: DELETE /crm/opportunities/:id 404 Not Found cuando oportunidad no existe (line 233)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]); // SELECT → empty
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/opportunities/999',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).error).toBe('Not found');
+  });
 });

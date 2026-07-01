@@ -434,4 +434,18 @@ describe('GET/POST/PATCH/DELETE /v1/contacts — FC-5 CRM FaseB', () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
   });
+
+  it('AT-CRM-B-29: PATCH /contacts/:id 200 con company (buildPatchClauses lines 71-74)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { company: 'Nueva Empresa SA de CV' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
 });

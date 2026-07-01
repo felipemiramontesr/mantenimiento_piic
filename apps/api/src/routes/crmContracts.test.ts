@@ -343,4 +343,26 @@ describe('GET/POST/PATCH/DELETE /v1/crm/contracts — FC-8 CRM_Advanced FaseA', 
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.body).error).toBe('FORBIDDEN');
   });
+
+  it('AT-CRM8-A-22: GET /crm/contracts 500 CONTRACTS_FETCH_FAIL cuando DB throws (lines 88-90)', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/contracts',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTRACTS_FETCH_FAIL');
+  });
+
+  it('AT-CRM8-A-23: POST /crm/contracts 401 sin JWT (lines 96-98)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/contracts',
+      headers: { 'content-type': 'application/json' },
+      payload: { ownerId: 5, title: 'Test', startDate: '2026-01-01', endDate: '2026-12-31' },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
 });

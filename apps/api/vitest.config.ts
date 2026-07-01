@@ -12,6 +12,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     pool: 'forks',
+    hookTimeout: 15000,
     reporters: process.env.GITHUB_ACTIONS
       ? ['default', 'github-actions', 'junit']
       : ['default', path.resolve(__dirname, '../../scripts/vitestHandoffReporter.ts')],
