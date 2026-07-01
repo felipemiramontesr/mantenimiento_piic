@@ -447,4 +447,97 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       expect(JSON.parse(response.body).code).toBe('NOT_FOUND');
     });
   });
+
+  describe('Sovereign Node Endpoints (GET /routes/:uuid/node + GET /incidents/:uuid/node)', () => {
+    const ROUTE_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+    const INC_UUID = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
+
+    it('SN-1: GET /routes/:uuid/node → 200 con ruta e incidentes (admin bypass)', async (): Promise<void> => {
+      // resolveOwnerScope: token has '*' → null (0 DB calls)
+      // checkRouteScope(uuid, null) → true (0 DB calls)
+      // SELECT routeRows → 1 row; SELECT incidentRows → 0 rows
+      (db.execute as Mock)
+        .mockResolvedValueOnce([
+          [{ id: 1, uuid: ROUTE_UUID, unit_id: 'PIIC-101', status: 'COMPLETED' }],
+        ]) // routeRows
+        .mockResolvedValueOnce([[]]); // incidentRows
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${ROUTE_UUID}/node`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('SN-2: GET /routes/:uuid/node → 404 cuando ruta no existe', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[]]); // routeRows empty → 404
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${ROUTE_UUID}/node`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('SN-3: GET /routes/:uuid/node → 403 scoped user fuera del owner', async (): Promise<void> => {
+      // scoped token: permissions=['fleet:scoped','route:record:view:any']
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      // resolveOwnerScope → FleetService.getUserOwnerIds(2) → db.execute → [[{ id: 5 }]] → scope=[5]
+      // checkRouteScope → db.execute → [[{ ownerId: 99 }]] → 99 not in [5] → false → 403
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // FleetService.getUserOwnerIds
+        .mockResolvedValueOnce([[{ ownerId: 99 }]]); // checkRouteScope: route owner=99 not in [5]
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${ROUTE_UUID}/node`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    it('SN-4: GET /incidents/:uuid/node → 200 con incidente (admin bypass)', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([
+        [{ id: 1, uuid: INC_UUID, category: 'MECANICA', severity: 'LOW' }],
+      ]);
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/incidents/${INC_UUID}/node`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('SN-5: GET /incidents/:uuid/node → 404 cuando incidente no existe', async (): Promise<void> => {
+      (db.execute as Mock).mockResolvedValueOnce([[]]); // rows empty → 404
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/incidents/${INC_UUID}/node`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('SN-6: GET /incidents/:uuid/node → 403 scoped user fuera del owner', async (): Promise<void> => {
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      // resolveOwnerScope → [[{ id: 5 }]] → scope=[5]
+      // checkIncidentScope → [[{ ownerId: 99 }]] → 99 not in [5] → false → 403
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // FleetService.getUserOwnerIds
+        .mockResolvedValueOnce([[{ ownerId: 99 }]]); // checkIncidentScope: incident owner=99 not in [5]
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/incidents/${INC_UUID}/node`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+  });
 });

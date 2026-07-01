@@ -172,6 +172,54 @@ describe('GET /v1/security/audit-log', () => {
     expect(body.success).toBe(false);
     expect(body.code).toBe('AUDIT_FETCH_FAIL');
   });
+
+  it('SEC-7: usuario scoped sin owners → retorna lista vacía inmediatamente', async () => {
+    // ownerScope.length === 0 → early return (cubre líneas 64-65)
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]); // membership → vacío → scope=[]
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/security/audit-log',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.data).toHaveLength(0);
+    expect(body.meta.total).toBe(0);
+    // Solo 1 call: membership lookup. NO COUNT ni DATA queries.
+    expect(vi.mocked(db.execute).mock.calls).toHaveLength(1);
+  });
+
+  it('SEC-8: Filtro ?date_from incluido en la query', async () => {
+    // Cubre líneas 81-83 (date_from branch)
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ total: 0 }], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/security/audit-log?date_from=2026-01-01',
+      headers: { authorization: `Bearer ${archonToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const countCall = vi.mocked(db.execute).mock.calls[0];
+    expect(countCall[0]).toContain('a.created_at >= ?');
+    expect(countCall[1]).toContain('2026-01-01');
+  });
+
+  it('SEC-9: Filtro ?date_to incluido en la query', async () => {
+    // Cubre líneas 86-88 (date_to branch)
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ total: 0 }], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/security/audit-log?date_to=2026-06-30',
+      headers: { authorization: `Bearer ${archonToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const countCall = vi.mocked(db.execute).mock.calls[0];
+    expect(countCall[0]).toContain('a.created_at <= ?');
+    expect(countCall[1]).toContain('2026-06-30 23:59:59');
+  });
 });
 
 describe('POST /v1/security/panic — FC-4 Panic_Button FaseA', () => {

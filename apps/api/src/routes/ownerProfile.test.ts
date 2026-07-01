@@ -359,6 +359,25 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       const sqls = (conn.execute as Mock).mock.calls.map((c) => c[0] as string);
       expect(sqls.some((s) => s.includes('UPDATE owner_profiles SET'))).toBe(true);
     });
+
+    it('returns 500 PROFILE_UPDATE_FAIL cuando conn.execute falla en transacción — Scenario PATCH-7', async () => {
+      // adminToken → hasAdminAccess=true → skip getCallerOwnerIds
+      // SELECT profileRows → found; conn.execute UPDATE → throws → rollback → outer 500
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]);
+      const conn = makePatchConn();
+      (conn.execute as Mock).mockRejectedValueOnce(new Error('DB connection lost'));
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(adminToken),
+        payload: { telefono: '3311111111' },
+      });
+
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_UPDATE_FAIL');
+    });
   });
 
   // ── GET /v1/catalogs/areas ────────────────────────────────────────────────

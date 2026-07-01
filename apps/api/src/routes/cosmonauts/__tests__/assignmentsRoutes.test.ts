@@ -175,4 +175,84 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
     });
     expect(res.statusCode).toBe(400);
   });
+
+  // ─── POST /:userId/roles — happy-paths (líneas 165-188) ──────────────────
+
+  it('AT-FC24-C-ASSIGN-9: Ω asigna role a Arc existente → 201', async () => {
+    // requireMuOrOmega: Ω bypass (0 db calls)
+    // antiEscalationGuard: (1) resolveEffectivePermissions + (2) omegaCheck→IS Ω → return true
+    // memberRows: target IS Arc → 201 + INSERT
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[]]) // resolveEffectivePermissions (antiEscalation call 1)
+      .mockResolvedValueOnce([[{ role_id: 0 }]]) // omegaCheck → IS Ω → bypass (call 2)
+      .mockResolvedValueOnce([[{ cosmonaut_type: 'ARC' }]]) // memberRows: target es Arc
+      .mockResolvedValueOnce([{ insertId: 100 }]); // INSERT IGNORE success
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/20/roles',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ roleId: 1, tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.data.userId).toBe(20);
+  });
+
+  it('AT-FC24-C-ASSIGN-10: target no es miembro del Universe → 404 ARC_NOT_FOUND', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[]]) // resolveEffectivePermissions
+      .mockResolvedValueOnce([[{ role_id: 0 }]]) // omegaCheck → IS Ω
+      .mockResolvedValueOnce([[]]); // memberRows empty → ARC_NOT_FOUND
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/20/roles',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ roleId: 1, tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('ARC_NOT_FOUND');
+  });
+
+  // ─── DELETE /:userId/roles/:roleId — all paths (líneas 193-219) ──────────
+
+  it('AT-FC24-C-ASSIGN-DEL-1: sin JWT → 401', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmonauts/20/roles/1?tenantId=5',
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-FC24-C-ASSIGN-DEL-2: sin tenantId → 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmonauts/20/roles/1',
+      headers: { authorization: `Bearer ${omegaToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('AT-FC24-C-ASSIGN-DEL-3: Arc (no MU/Ω) → requireMuOrOmega falla → 403', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[{ cosmonaut_type: 'ARC' }]]); // requireMuOrOmega: ARC → 403
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmonauts/20/roles/1?tenantId=5',
+      headers: { authorization: `Bearer ${arcToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('AT-FC24-C-ASSIGN-DEL-4: Ω revoca role → 200 success', async () => {
+    // Ω bypass requireMuOrOmega → UPDATE
+    (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]); // UPDATE success
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmonauts/20/roles/1?tenantId=5',
+      headers: { authorization: `Bearer ${omegaToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
 });

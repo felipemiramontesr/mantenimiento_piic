@@ -1,5 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { computeOee, computeTcoPerKm } from './fleetIntelligenceService';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import FleetIntelligenceKpiService, {
+  computeOee,
+  computeTcoPerKm,
+} from './fleetIntelligenceService';
+
+import db from './db';
+
+vi.mock('./db', () => ({ default: { execute: vi.fn().mockResolvedValue([[], undefined]) } }));
 
 // ── FC-5 Fase 5B: Unit tests for pure KPI computation helpers ─────────────────
 
@@ -58,5 +65,76 @@ describe('computeTcoPerKm', () => {
 
   it('returns 0 when tcoTotal is 0', () => {
     expect(computeTcoPerKm(0, 1000)).toBe(0);
+  });
+});
+
+// ─── FleetIntelligenceKpiService.compute() — branch coverage (lines 39-109) ──
+
+describe('FleetIntelligenceKpiService.compute()', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const unitRow = {
+    ownerId: 1,
+    availabilityIndex: 90,
+    dailyUsageAvg: 120,
+    maintIntervalDays: 180,
+    maintIntervalKm: 10000,
+  };
+
+  it('FKPI-SVC-1: unit not found → returns null', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // empty unitRows
+    const result = await FleetIntelligenceKpiService.compute('PIIC-999');
+    expect(result).toBeNull();
+  });
+
+  it('FKPI-SVC-2: full data present → computes all KPIs', async () => {
+    // 1 unit query + 5 Promise.all queries
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[unitRow]]) // fleet_units
+      .mockResolvedValueOnce([[{ quality_factor: 0.9, total_km: 5000, daily_km_avg: 96 }]]) // oeeRows
+      .mockResolvedValueOnce([[{ tco_total: 20000 }]]) // tcoRows
+      .mockResolvedValueOnce([[{ km_per_liter: 12.5 }]]) // fuelRows
+      .mockResolvedValueOnce([[{ total: 10, compliant: 9 }]]) // pmRows
+      .mockResolvedValueOnce([[{ avg_age_days: 15.3 }]]); // backlogRows
+    const result = await FleetIntelligenceKpiService.compute('PIIC-101');
+    expect(result).not.toBeNull();
+    expect(result!.tco_per_km).toBe(4); // 20000 / 5000
+    expect(result!.km_per_liter).toBe(12.5);
+    expect(result!.pm_compliance).toBe(90); // 9/10 * 100
+    expect(result!.backlog_aging_days).toBe(15.3);
+    expect(result!.oee).not.toBeNull(); // computed from quality_factor, availabilityIndex, etc.
+  });
+
+  it('FKPI-SVC-3: all secondary rows empty → all KPIs null except ownerId', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[unitRow]]) // fleet_units
+      .mockResolvedValueOnce([[]]) // oeeRows empty → oee=null, tcoPerKm=null
+      .mockResolvedValueOnce([[]]) // tcoRows empty → tcoTotal=0
+      .mockResolvedValueOnce([[]]) // fuelRows empty → kmPerLiter=null
+      .mockResolvedValueOnce([[{ total: 0, compliant: 0 }]]) // pmRows → pmTotal=0 → null
+      .mockResolvedValueOnce([[{ avg_age_days: null }]]); // backlogRows → null
+    const result = await FleetIntelligenceKpiService.compute('PIIC-101');
+    expect(result).not.toBeNull();
+    expect(result!.oee).toBeNull();
+    expect(result!.tco_per_km).toBeNull();
+    expect(result!.km_per_liter).toBeNull();
+    expect(result!.pm_compliance).toBeNull();
+    expect(result!.backlog_aging_days).toBeNull();
+  });
+
+  it('FKPI-SVC-4: oeeRow present but quality_factor=null → oee=null; backlog_avg_age=0 → null', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[unitRow]])
+      .mockResolvedValueOnce([[{ quality_factor: null, total_km: 3000, daily_km_avg: null }]])
+      .mockResolvedValueOnce([[{ tco_total: 15000 }]])
+      .mockResolvedValueOnce([[{ km_per_liter: null }]])
+      .mockResolvedValueOnce([[{ total: 5, compliant: 4 }]])
+      .mockResolvedValueOnce([[{ avg_age_days: 0 }]]); // 0 || null = null
+    const result = await FleetIntelligenceKpiService.compute('PIIC-102');
+    expect(result!.oee).toBeNull(); // qualityFactor=null → computeOee returns null
+    expect(result!.tco_per_km).toBe(5); // 15000 / 3000
+    expect(result!.km_per_liter).toBeNull(); // km_per_liter null
+    expect(result!.pm_compliance).toBe(80); // 4/5 * 100
+    expect(result!.backlog_aging_days).toBeNull(); // 0 || null = null
   });
 });
