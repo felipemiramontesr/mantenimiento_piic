@@ -255,4 +255,81 @@ describe('AT-FC24-C-ASSIGN: Cosmonaut Assignments', () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
   });
+
+  // ─── Branches faltantes: 401 / 400 / 404 ─────────────────────────────────
+
+  it('AT-FC24-C-ASSIGN-11: GET /me/permissions sin JWT → 401 (line 29)', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmonauts/me/permissions?tenantId=5',
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).code).toBe('UNAUTHORIZED');
+  });
+
+  it('AT-FC24-C-ASSIGN-12: GET /arcs sin JWT → 401 (line 44)', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmonauts/arcs?tenantId=5',
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).code).toBe('UNAUTHORIZED');
+  });
+
+  it('AT-FC24-C-ASSIGN-13: POST /arcs sin JWT → 401 (line 83)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/arcs',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: 30, tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).code).toBe('UNAUTHORIZED');
+  });
+
+  it('AT-FC24-C-ASSIGN-14: POST /arcs body inválido → 400 VALIDATION_ERROR (lines 87-91)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/arcs',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: 'not-a-number', tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('AT-FC24-C-ASSIGN-15: POST /arcs target user not found → 404 USER_NOT_FOUND (lines 116-118)', async () => {
+    // Ω creating ARC: requireMuOrOmega bypass (no DB) → users check empty → 404
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // users check → empty → USER_NOT_FOUND
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/arcs',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: 999, tenantId: 5, cosmonaut_type: 'ARC' }),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('USER_NOT_FOUND');
+  });
+
+  it('AT-FC24-C-ASSIGN-16: POST /:userId/roles sin JWT → 401 (lines 137-138)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/20/roles',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ roleId: 1, tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).code).toBe('UNAUTHORIZED');
+  });
+
+  it('AT-FC24-C-ASSIGN-17: POST /:userId/roles body inválido → 400 VALIDATION_ERROR (lines 143-146)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/20/roles',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ roleId: 'bad', tenantId: 'also-bad' }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
 });

@@ -259,4 +259,28 @@ describe('GET/POST/PATCH/DELETE /v1/crm/pipeline — FC-8 CRM_Advanced FaseB', (
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.body).error).toBe('FORBIDDEN');
   });
+
+  it('AT-CRM8-B-15: POST /crm/pipeline → 401 sin JWT (lines 130-131)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/pipeline',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ ownerId: 5, title: 'Test' }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
+
+  it('AT-CRM8-B-16: POST /crm/pipeline → 500 PIPELINE_CREATE_FAIL cuando INSERT falla (lines 166-167)', async () => {
+    // adminToken has '*' → hasAdminAccess=true → skip ownerIds → INSERT throws
+    (db.execute as any).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/pipeline',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ ownerId: 5, title: 'Oportunidad Critica' }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('PIPELINE_CREATE_FAIL');
+  });
 });

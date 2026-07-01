@@ -250,4 +250,66 @@ describe('GET/POST/PATCH/DELETE /v1/crm/contracts — FC-8 CRM_Advanced FaseA', 
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).ok).toBe(true);
   });
+
+  it('AT-CRM8-A-15: PATCH /crm/contracts/:id → 200 con title (lines 170-172)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ title: 'Contrato Actualizado 2027' }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).ok).toBe(true);
+  });
+
+  it('AT-CRM8-A-16: PATCH /crm/contracts/:id → 200 con endDate (lines 178-180)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ endDate: '2027-12-31' }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).ok).toBe(true);
+  });
+
+  it('AT-CRM8-A-17: PATCH /crm/contracts/:id → 401 sin JWT (line 144)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ status: 'ACTIVE' }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
+
+  it('AT-CRM8-A-18: PATCH /crm/contracts/abc → 400 id NaN (line 149)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/abc',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ status: 'ACTIVE' }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('Invalid id');
+  });
+
+  it('AT-CRM8-A-19: PATCH /crm/contracts/:id → 400 NO_FIELDS cuerpo vacío (line 190)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({}),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('NO_FIELDS');
+  });
 });

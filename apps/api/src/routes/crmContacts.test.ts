@@ -352,4 +352,30 @@ describe('GET/POST/PATCH/DELETE /v1/contacts — FC-5 CRM FaseB', () => {
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.body).error).toBe('Session required');
   });
+
+  it('AT-CRM-B-23: PATCH /contacts/:id 200 con phone=null (rama null de phone, line 96)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined]) // SELECT contact owner
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined]) // getCallerOwnerIds
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${scopedToken}`, 'content-type': 'application/json' },
+      payload: { phone: null },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('AT-CRM-B-24: GET /contacts 500 CONTACTS_FETCH_FAIL cuando DB throws (lines 133-134)', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/contacts',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTACTS_FETCH_FAIL');
+  });
 });
