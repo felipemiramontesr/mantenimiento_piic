@@ -947,4 +947,46 @@ describe('authIntegration.test', () => {
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.payload).message).toBe('Cannot assign owner outside of scope');
   });
+
+  it('AUTH-GET-OWNERS-SCOPE-1: GET /users/:id/owners — scoped, user in scope → 200 (line 787 closing })', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({
+      id: 5,
+      email: 'scoped@piic.mx',
+      permissions: ['admin:role:edit', 'fleet:scoped'],
+    });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([1, 2]);
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ owner_id: 1 }]])
+      .mockResolvedValueOnce([
+        [{ ownerId: 1, label: 'Owner A', handle: 'oa', suite: null, ownerType: 'CENTRO' }],
+      ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/20/owners',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).success).toBe(true);
+  });
+
+  it('AUTH-GET-OWNERS-SCOPE-2: GET /users/:id/owners — scoped, user NOT in scope → 403 (lines 782-785)', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({
+      id: 5,
+      email: 'scoped@piic.mx',
+      permissions: ['admin:role:edit', 'fleet:scoped'],
+    });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([1, 2]);
+    (db.execute as Mock).mockResolvedValueOnce([[{ owner_id: 99 }]]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users/20/owners',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).message).toBe('User outside owner scope');
+  });
 });
