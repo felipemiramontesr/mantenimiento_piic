@@ -3,15 +3,11 @@ import Fastify from 'fastify';
 import * as fs from 'fs';
 import devTelemetryPlugin from './devTelemetry';
 
-vi.mock('fs', async (importOriginal) => {
-  const original = await importOriginal<typeof import('fs')>();
-  return {
-    ...original,
-    existsSync: vi.fn(),
-    readFileSync: vi.fn(),
-    writeFileSync: vi.fn(),
-  };
-});
+vi.mock('fs', () => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+}));
 
 describe('devTelemetryPlugin Integration Tests', () => {
   const originalEnv = process.env.NODE_ENV;

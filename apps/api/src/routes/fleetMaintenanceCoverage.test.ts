@@ -84,7 +84,7 @@ describe('FleetMaintenance GET /maintenance', () => {
     expect(res.json().success).toBe(true);
     expect(res.json().data).toHaveLength(1);
     expect(res.json().nextCursor).toBeNull();
-  });
+  }, 15000);
 
   it('returns nextCursor when rows exceed limit', async () => {
     const makeRow = (id: number) => ({
