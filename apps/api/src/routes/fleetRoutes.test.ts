@@ -579,5 +579,41 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
       expect(response.statusCode).toBe(403);
     });
+
+    it('SN-9: GET /routes/:uuid/incidents → 403 scoped user fuera del owner (lines 595-598)', async (): Promise<void> => {
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      // resolveOwnerScope: [[{ id: 5 }]] → scope=[5]
+      // checkRouteScope: [[{ ownerId: 99 }]] → 99 not in [5] → false → 403
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // FleetService.getUserOwnerIds
+        .mockResolvedValueOnce([[{ ownerId: 99 }]]); // checkRouteScope: route owner=99 not in [5]
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${ROUTE_UUID}/incidents`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('SN-10: GET /incidents → 200 empty when scoped user has no owners (lines 614-615)', async (): Promise<void> => {
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      // resolveOwnerScope: [[]] → getUserOwnerIds returns [] → ownerScope=[]
+      // ownerScope !== null && ownerScope.length === 0 → return { data: [] }
+      (db.execute as Mock).mockResolvedValueOnce([[]]); // FleetService.getUserOwnerIds → empty
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/incidents',
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).data).toEqual([]);
+    });
   });
 });

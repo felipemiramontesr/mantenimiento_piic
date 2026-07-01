@@ -448,4 +448,49 @@ describe('GET/POST/PATCH/DELETE /v1/contacts — FC-5 CRM FaseB', () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).success).toBe(true);
   });
+
+  it('AT-CRM-B-30: PATCH /contacts/:id 404 contact not found (line 249)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/999',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { fullName: 'Ghost User' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).error).toBe('Not found');
+  });
+
+  it('AT-CRM-B-31: PATCH /contacts/:id 400 no fields to update (line 262)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ owner_id: 5 }], undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: {},
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('No fields to update');
+  });
+
+  it('AT-CRM-B-32: DELETE /contacts/:id 400 id NaN (line 290)', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/contacts/abc',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('Invalid id');
+  });
+
+  it('AT-CRM-B-33: DELETE /contacts/:id 404 contact not found (lines 292-298)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/contacts/999',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).error).toBe('Not found');
+  });
 });
