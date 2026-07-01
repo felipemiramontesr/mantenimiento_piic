@@ -288,4 +288,27 @@ describe('GET/POST/PATCH/DELETE /v1/contacts — FC-5 CRM FaseB', () => {
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).error).toBe('CONTACT_UPDATE_FAIL');
   });
+
+  it('AT-CRM-B-17: POST /contacts 500 CONTACT_CREATE_FAIL cuando INSERT falla (lines 220-222)', async () => {
+    // adminToken has * → hasAdminAccess=true → skips getCallerOwnerIds → INSERT throws
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/contacts',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { ownerId: 5, fullName: 'Test User', email: 'test@piic.mx' },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('CONTACT_CREATE_FAIL');
+  });
+
+  it('AT-CRM-B-18: PATCH /contacts/:id 401 sin JWT (lines 234-235)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      payload: { fullName: 'Updated Name' },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
 });

@@ -232,4 +232,31 @@ describe('GET/POST/PATCH/DELETE /v1/crm/pipeline — FC-8 CRM_Advanced FaseB', (
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.body).error).toBe('Session required');
   });
+
+  it('AT-CRM8-B-13: PATCH /crm/opportunities/:id/stage → 401 sin JWT (lines 176-177)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/opportunities/1/stage',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ stageCode: 'PROSPECTING' }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).error).toBe('Session required');
+  });
+
+  it('AT-CRM8-B-14: PATCH /crm/opportunities/:id/stage → 403 FORBIDDEN usuario sin acceso al owner (lines 194-198)', async () => {
+    // wrongOwnerToken (id=9, fleet:view) → hasAdminAccess=false → getCallerOwnerIds(9) → [99]
+    // opportunity owner_id=5, [99].includes(5)=false → 403 FORBIDDEN
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]) // SELECT opportunity
+      .mockResolvedValueOnce([[{ owner_id: 99 }]]); // getCallerOwnerIds(9) → [99]
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/opportunities/1/stage',
+      headers: { authorization: `Bearer ${wrongOwnerToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ stageCode: 'PROSPECTING' }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('FORBIDDEN');
+  });
 });

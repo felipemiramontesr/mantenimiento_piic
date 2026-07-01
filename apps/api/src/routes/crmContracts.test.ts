@@ -222,4 +222,32 @@ describe('GET/POST/PATCH/DELETE /v1/crm/contracts — FC-8 CRM_Advanced FaseA', 
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.body).error).toBe('Session required');
   });
+
+  it('AT-CRM8-A-13: PATCH /crm/contracts/:id → 200 con slaHours (lines 182-184)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ slaHours: 48 }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).ok).toBe(true);
+  });
+
+  it('AT-CRM8-A-14: PATCH /crm/contracts/:id → 200 con notes (lines 185-188)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ notes: 'Contrato renovado para 2027' }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).ok).toBe(true);
+  });
 });
