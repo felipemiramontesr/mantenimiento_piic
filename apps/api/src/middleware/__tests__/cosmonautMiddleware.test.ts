@@ -206,4 +206,24 @@ describe('AT-FC24-C-4: antiEscalationGuard (I8)', () => {
     const result = await antiEscalationGuard(5, 10, 3);
     expect(result).toBe(false);
   });
+
+  it('AT-FC24-C-4-4: lattice cross_permissions allows escalated slug (lines 118-126)', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[{ slug: 'perm:a' }]]) // grantor perms
+      .mockResolvedValueOnce([[]]) // omega check → NOT Ω
+      .mockResolvedValueOnce([[{ slug: 'perm:b' }]]) // role has perm:b — escalated
+      .mockResolvedValueOnce([[{ schema_definition: '{"cross_permissions":["perm:b"]}' }]]); // lattice allows perm:b
+    const result = await antiEscalationGuard(5, 7, 3);
+    expect(result).toBe(true);
+  });
+
+  it('AT-FC24-C-4-5: lattice with invalid JSON triggers catch → returns false (lines 122-123)', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[{ slug: 'perm:a' }]]) // grantor perms
+      .mockResolvedValueOnce([[]]) // omega check → NOT Ω
+      .mockResolvedValueOnce([[{ slug: 'perm:b' }]]) // role has perm:b — escalated
+      .mockResolvedValueOnce([[{ schema_definition: 'NOT_VALID_JSON' }]]); // invalid JSON → catch
+    const result = await antiEscalationGuard(5, 7, 3);
+    expect(result).toBe(false);
+  });
 });

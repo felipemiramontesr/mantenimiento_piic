@@ -365,4 +365,50 @@ describe('GET/POST/PATCH/DELETE /v1/crm/contracts — FC-8 CRM_Advanced FaseA', 
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.body).error).toBe('Session required');
   });
+
+  it('AT-CRM8-A-24: PATCH /crm/contracts/:id → 400 NO_FIELDS body null (line 167 ?? branch)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('NO_FIELDS');
+  });
+
+  it('AT-CRM8-A-25: PATCH /crm/contracts/:id → 200 con notes: null (line 187 ?? null branch)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ id: 1, owner_id: 5 }]])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ notes: null }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).ok).toBe(true);
+  });
+
+  it('AT-CRM8-A-26: DELETE /crm/contracts/abc → 400 Invalid id (line 210 NaN check)', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/contracts/abc',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('Invalid id');
+  });
+
+  it('AT-CRM8-A-27: DELETE /crm/contracts/999 → 404 Not found (line 217 rows empty)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[]]);
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/crm/contracts/999',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).error).toBe('Not found');
+  });
 });
