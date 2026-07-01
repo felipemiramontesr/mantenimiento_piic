@@ -69,6 +69,63 @@ Versión activa  : V.78.101.204_AG_Session_Initialization
     expect(contentWritten).toContain('Test unhandled API exception');
   }, 15000); // Higher timeout: heavy parallel test runs (pool:forks, 96 files) can slow fs mock resolution
 
+  it('DT-3: existing Archon block + old inner title → compacts block and rewrites title (lines 57-62, 85-89)', async () => {
+    process.env.NODE_ENV = 'development';
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    // Content with: (1) old inner title HANDOFF CC → AG\n═══... and (2) existing Archon block at end
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      `# HANDOFF Archon → CC/AG\nHANDOFF CC → AG\n═══════════════════════════════════════════════════════════════\nÚltimo mensaje  : **CC → AG** · 2026-06-30 10:00:00\n## CANAL DE MENSAJES CC ↔ AG\n\n---\nArchon → CC/AG · 2026-06-30 10:00:00\n[DIAGNÓSTICO PREVIO] Previous error body here\n`
+    );
+
+    const app = Fastify({ logger: false });
+    await app.register(devTelemetryPlugin);
+    app.get('/test-error', async () => {
+      const err = new Error('Second runtime exception');
+      (err as Error & { statusCode?: number }).statusCode = 500;
+      throw err;
+    });
+
+    const response = await app.inject({ method: 'GET', url: '/test-error' });
+    await app.close();
+
+    expect(response.statusCode).toBe(500);
+    expect(fs.writeFileSync).toHaveBeenCalled();
+    const [, contentWritten] = vi.mocked(fs.writeFileSync).mock.calls[0] as [string, string];
+    // Archon block compactor ran (existing body preserved + new entry appended)
+    expect(contentWritten).toContain('Previous error body here');
+    expect(contentWritten).toContain('Second runtime exception');
+    // Old inner title was replaced
+    expect(contentWritten).toContain(
+      'HANDOFF Archon → CC/AG\n═══════════════════════════════════════════════════════════════'
+    );
+  }, 15000);
+
+  it('DT-4: writeFileSync throws → catch silencia el error y responde 500 normal (line 96)', async () => {
+    process.env.NODE_ENV = 'development';
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      `# HANDOFF Archon → CC/AG\nÚltimo mensaje  : **CC → AG** · 2026-06-30 10:00:00\n## CANAL`
+    );
+    vi.mocked(fs.writeFileSync).mockImplementation(() => {
+      throw new Error('ENOENT: no such file or directory');
+    });
+
+    const app = Fastify({ logger: false });
+    await app.register(devTelemetryPlugin);
+    app.get('/test-error', async () => {
+      const err = new Error('FS write will fail');
+      (err as Error & { statusCode?: number }).statusCode = 500;
+      throw err;
+    });
+
+    const response = await app.inject({ method: 'GET', url: '/test-error' });
+    await app.close();
+
+    // Error handler catches writeFileSync throw silently and still returns 500
+    expect(response.statusCode).toBe(500);
+    expect(response.json().success).toBe(false);
+  }, 15000);
+
   it('should bypass filesystem write and execute standard handler in production mode', async () => {
     process.env.NODE_ENV = 'production';
 

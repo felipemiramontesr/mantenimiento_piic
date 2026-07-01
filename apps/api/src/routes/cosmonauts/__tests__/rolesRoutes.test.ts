@@ -144,4 +144,142 @@ describe('AT-FC24-C-ROLES: /v1/cosmonauts/roles', () => {
     });
     expect(res.statusCode).toBe(404);
   });
+
+  // ─── Casos adicionales para cubrir líneas 133-134 y 153-155 ──────────────
+
+  it('AT-FC24-C-ROLES-8: DELETE sin JWT → 401', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmonauts/roles/1',
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('AT-FC24-C-ROLES-9: MU elimina R_universe (no sistema) propio → 200', async () => {
+    // role.is_system=0 → requireMuOrOmega path (líneas 153-155)
+    // muToken: roleId=2, permissions=[] → requireMuOrOmega: check membership
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 42, is_system: 0, tenant_id: 5 }]]) // fetch role — R_universe
+      .mockResolvedValueOnce([[{ cosmonaut_type: 'MU' }]]) // requireMuOrOmega: MU ✅
+      .mockResolvedValueOnce([[]]); // DELETE
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmonauts/roles/42',
+      headers: { authorization: `Bearer ${muToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  // ─── POST /cosmonauts/roles — transacción con permissions (líneas 99-126) ──
+
+  it('AT-FC24-C-ROLES-10: Ω crea role con permissions → 201 (cubre transaction lines 99-126)', async () => {
+    // requireMuOrOmega: Ω bypass (0 DB calls)
+    // resolveEffectivePermissions → db.execute mock 1
+    // isOmega=true (roleId=0) → anti-escalation skipped
+    // SELECT id FROM permissions → db.execute mock 2
+    // conn: beginTx → execute INSERT → query INSERT perms → commit
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ slug: 'maint:record:view:any' }]]) // resolveEffectivePermissions
+      .mockResolvedValueOnce([[{ id: 1, slug: 'maint:record:view:any' }]]); // SELECT id FROM permissions
+    const conn = {
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: vi.fn().mockResolvedValue([{ insertId: 99 }]),
+      query: vi.fn().mockResolvedValue([[]]),
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    };
+    (db.getConnection as Mock).mockReset().mockResolvedValueOnce(conn);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: 'CustomRole',
+        tenantId: 5,
+        permissions: ['maint:record:view:any'],
+      }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.body).data.id).toBe(99);
+    expect(conn.commit).toHaveBeenCalledTimes(1);
+    expect(conn.release).toHaveBeenCalledTimes(1);
+  });
+
+  it('AT-FC24-C-ROLES-12: POST /cosmonauts/roles sin JWT → 401 (lines 47-49)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Test', tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).code).toBe('UNAUTHORIZED');
+  });
+
+  it('AT-FC24-C-ROLES-13: POST /cosmonauts/roles body inválido → 400 VALIDATION_ERROR (lines 52-56)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ name: '', tenantId: 'not-a-number' }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('AT-FC24-C-ROLES-14: MU asigna perm que no posee → 403 PRIVILEGE_ESCALATION (lines 70-79)', async () => {
+    // requireMuOrOmega: MU passes
+    // resolveEffectivePermissions: MU only holds 'some:safe:perm'
+    // body requests 'secret:admin:perm' which MU does NOT hold → missing=[...] → 403
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ cosmonaut_type: 'MU' }]]) // requireMuOrOmega check
+      .mockResolvedValueOnce([[{ slug: 'some:safe:perm' }]]); // resolveEffectivePermissions
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${muToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: 'EscalatedRole',
+        tenantId: 5,
+        permissions: ['secret:admin:perm'],
+      }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).code).toBe('PRIVILEGE_ESCALATION');
+  });
+
+  it('AT-FC24-C-ROLES-11: fallo en INSERT → rollback y Fastify 500 (líneas 121-126)', async () => {
+    // resolveEffectivePermissions → mock 1
+    // SELECT permissions → mock 2
+    // conn.execute → throws → rollback → release → Fastify 500
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ slug: 'maint:record:view:any' }]])
+      .mockResolvedValueOnce([[{ id: 1, slug: 'maint:record:view:any' }]]);
+    const conn = {
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: vi.fn().mockRejectedValue(new Error('DB insert failed')),
+      query: vi.fn().mockResolvedValue([[]]),
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    };
+    (db.getConnection as Mock).mockReset().mockResolvedValueOnce(conn);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: 'BadRole',
+        tenantId: 5,
+        permissions: ['maint:record:view:any'],
+      }),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(conn.rollback).toHaveBeenCalledTimes(1);
+    expect(conn.release).toHaveBeenCalledTimes(1);
+  });
 });
