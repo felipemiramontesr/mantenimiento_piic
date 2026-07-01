@@ -63,7 +63,7 @@ Versión activa  : V.78.101.204_AG_Session_Initialization
     expect(contentWritten).toContain('**Archon → CC/AG**');
     expect(contentWritten).toContain('API_RUNTIME_ERROR');
     expect(contentWritten).toContain('Test unhandled API exception');
-  }, 15000); // Higher timeout: heavy parallel test runs (pool:forks, 96 files) can slow fs mock resolution
+  }, 30000); // Higher timeout: heavy parallel test runs (pool:forks, 97 files) can slow fs mock resolution
 
   it('DT-3: existing Archon block + old inner title → compacts block and rewrites title (lines 57-62, 85-89)', async () => {
     process.env.NODE_ENV = 'development';
