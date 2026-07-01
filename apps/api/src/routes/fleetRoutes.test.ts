@@ -525,7 +525,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
     it('SN-7: PUT /routes/:uuid → 403 FORBIDDEN scoped user fuera del owner (lines 635-638)', async (): Promise<void> => {
       const editToken = app.jwt.sign({
         id: 2,
-        permissions: ['fleet:scoped', 'route:record:edit:any'],
+        permissions: ['fleet:scoped', 'route:record:view:any', 'route:record:edit:any'],
       });
       // resolveOwnerScope: [[{ id: 5 }]] → scope=[5]
       // checkRouteScope: [[{ ownerId: 99 }]] → 99 not in [5] → false → 403
@@ -545,7 +545,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
     it('SN-8: DELETE /routes/:uuid → 403 FORBIDDEN scoped user fuera del owner (lines 668-671)', async (): Promise<void> => {
       const deleteToken = app.jwt.sign({
         id: 2,
-        permissions: ['fleet:scoped', 'route:record:delete:any'],
+        permissions: ['fleet:scoped', 'route:record:view:any', 'route:record:delete:any'],
       });
       // resolveOwnerScope: [[{ id: 5 }]] → scope=[5]
       // checkRouteScope: [[{ ownerId: 99 }]] → 99 not in [5] → false → 403

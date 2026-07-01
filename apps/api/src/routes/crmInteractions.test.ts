@@ -185,4 +185,15 @@ describe('GET/POST /v1/crm/interactions — FC-8 CRM_Advanced FaseC', () => {
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).error).toBe('INTERACTIONS_CREATE_FAIL');
   });
+
+  it('AT-CRM8-C-11: GET /crm/interactions → 500 INTERACTIONS_FETCH_FAIL cuando DB throws (lines 105-107)', async () => {
+    vi.mocked(db.execute).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/interactions',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('INTERACTIONS_FETCH_FAIL');
+  });
 });

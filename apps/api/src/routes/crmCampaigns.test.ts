@@ -272,4 +272,43 @@ describe('GET|POST /v1/crm/campaigns — FC-8 CRM_Advanced FaseE', () => {
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.payload).error).toBe('Session required');
   });
+
+  it('AT-CRM8-E-16: GET /crm/campaigns scoped con ownerIds vacío → 200 campaigns:[] (line 86)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[], undefined]); // getCallerOwnerIds → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/campaigns',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).campaigns).toHaveLength(0);
+  });
+
+  it('AT-CRM8-E-17: POST /crm/campaigns 201 sin type → type ?? MAINTENANCE_REMINDER (line 133)', async () => {
+    (db.execute as any).mockResolvedValueOnce([{ insertId: 77 }]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        ownerId: 5,
+        name: 'Campaña sin tipo',
+        subject: 'Recordatorio de mantenimiento',
+        bodyText: 'Estimado cliente, le recordamos que su vehículo requiere revisión.',
+      }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.payload).id).toBe(77);
+  });
+
+  it('AT-CRM8-E-18: POST /crm/campaigns/:id/send 404 CAMPAIGN_NOT_FOUND (line 157)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[], undefined]); // SELECT → empty
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns/999/send',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.payload).error).toBe('CAMPAIGN_NOT_FOUND');
+  });
 });
