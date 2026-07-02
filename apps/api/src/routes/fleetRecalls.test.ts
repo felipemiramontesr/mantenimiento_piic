@@ -3,6 +3,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, type Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
+import FleetService from '../services/fleetService';
 import { buildRecallItem } from './fleetRecalls';
 import type { RecallItem } from './fleetRecalls';
 
@@ -85,11 +86,18 @@ describe('buildRecallItem (FR-1..3)', () => {
 describe('FR-ROUTE: POST + PATCH /v1/fleet-units/:unitId/recalls', () => {
   const app = buildApp();
   let adminToken: string;
+  let scopedManageToken: string;
 
   beforeAll(async () => {
     await app.ready();
     const { jwt } = app as any;
     adminToken = jwt.sign({ id: 1, username: 'archon', roleId: 0, permissions: ['*'] });
+    scopedManageToken = jwt.sign({
+      id: 3,
+      username: 'scoped.manage',
+      roleId: 1,
+      permissions: ['fleet:scoped', 'intelligence:recall:manage'],
+    });
   });
 
   beforeEach(() => {
@@ -208,6 +216,47 @@ describe('FR-ROUTE: POST + PATCH /v1/fleet-units/:unitId/recalls', () => {
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).error).toBe('Internal error updating recall');
   });
+
+  it('FR-POST-6: POST scoped+manage user out of scope → 403 (line 116 !hasAccess branch)', async () => {
+    // scopedManageToken: fleet:scoped → getUserOwnerIds→[10]; db SELECT fleet_units→ownerId:99→out of scope
+    (FleetService.getUserOwnerIds as Mock).mockResolvedValueOnce([10]);
+    (db.execute as Mock).mockResolvedValueOnce([[{ ownerId: 99 }], undefined]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/fleet-units/PIIC-101/recalls',
+      headers: { authorization: `Bearer ${scopedManageToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ recallId: 5 }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('Access denied');
+  });
+
+  it('FR-PATCH-5: PATCH status=NOT_APPLICABLE → resolvedAt=null (line 147 falsy ternary branch)', async () => {
+    // adminToken → scope=null → access=true; status≠COMPLETED → resolvedAt=null
+    (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/fleet-units/PIIC-101/recalls/5',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'NOT_APPLICABLE' }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('FR-PATCH-6: PATCH scoped+manage user out of scope → 403 (line 151 !hasAccess branch)', async () => {
+    // scopedManageToken: fleet:scoped → getUserOwnerIds→[10]; db SELECT fleet_units→ownerId:99→out of scope
+    (FleetService.getUserOwnerIds as Mock).mockResolvedValueOnce([10]);
+    (db.execute as Mock).mockResolvedValueOnce([[{ ownerId: 99 }], undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/fleet-units/PIIC-101/recalls/5',
+      headers: { authorization: `Bearer ${scopedManageToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 'COMPLETED' }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('Access denied');
+  });
 });
 
 // ─── GET /v1/fleet-units/:unitId/recalls — branch coverage (lines 64-100) ───
@@ -284,5 +333,47 @@ describe('FR-GET: GET /v1/fleet-units/:unitId/recalls', () => {
     });
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.payload).error).toBe('Internal error retrieving recalls');
+  });
+
+  it('FR-GET-5: verifyUnitAccess scope non-empty → unit not in DB → false → 403 (line 22)', async () => {
+    // scopedToken has fleet:scoped → getUserOwnerIds → [10] (non-empty scope)
+    // db.execute → SELECT ownerId FROM fleet_units → [] (unit not found) → rows.length===0 → false
+    (FleetService.getUserOwnerIds as Mock).mockResolvedValueOnce([10]);
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // verifyUnitAccess DB → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/PIIC-101/recalls',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).error).toBe('Access denied');
+  });
+
+  it('FR-GET-6: verifyUnitAccess scope non-empty → ownerId in scope → true → 200 (line 23 truthy)', async () => {
+    // scopedToken → getUserOwnerIds → [10]; db SELECT fleet_units → [{ownerId:10}] → includes(10)=true
+    (FleetService.getUserOwnerIds as Mock).mockResolvedValueOnce([10]);
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ ownerId: 10 }], undefined]) // verifyUnitAccess → in scope
+      .mockResolvedValueOnce([[], undefined]); // recalls query → empty list
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/PIIC-101/recalls',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).data).toEqual([]);
+  });
+
+  it('FR-GET-7: verifyUnitAccess scope non-empty → ownerId out of scope → false → 403 (line 23 falsy)', async () => {
+    // scopedToken → getUserOwnerIds → [10]; db SELECT fleet_units → [{ownerId:99}] → includes(99)=false
+    (FleetService.getUserOwnerIds as Mock).mockResolvedValueOnce([10]);
+    (db.execute as Mock).mockResolvedValueOnce([[{ ownerId: 99 }], undefined]); // out of scope
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/PIIC-101/recalls',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).error).toBe('Access denied');
   });
 });
