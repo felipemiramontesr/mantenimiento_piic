@@ -59,7 +59,7 @@ Versión activa  : V.78.101.204_AG_Session_Initialization
     // Check that the filesystem mock was triggered to write to the handoff
     expect(fs.writeFileSync).toHaveBeenCalled();
     const [fileWritten, contentWritten] = vi.mocked(fs.writeFileSync).mock.calls[0];
-    expect(fileWritten).toContain('HANDOFF_CC_TO_AG.md');
+    expect(fileWritten).toContain('002_NS_HandoffCcToAg.md');
     expect(contentWritten).toContain('**Archon → CC/AG**');
     expect(contentWritten).toContain('API_RUNTIME_ERROR');
     expect(contentWritten).toContain('Test unhandled API exception');

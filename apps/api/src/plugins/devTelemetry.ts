@@ -22,7 +22,10 @@ export default async function devTelemetryPlugin(fastify: FastifyInstance): Prom
     // 2. Report to handoff file H
     try {
       // Resolve path relative to this plugin's location (EAL6+ robust resolution)
-      const handoffPath = path.resolve(__dirname, '../../../../Protocolos/HANDOFF_CC_TO_AG.md');
+      const handoffPath = path.resolve(
+        __dirname,
+        '../../../../Protocolos/North_Star/002_NS_HandoffCcToAg.md'
+      );
 
       // Layer 2: Physical Filesystem Guard
       if (fs.existsSync(handoffPath)) {

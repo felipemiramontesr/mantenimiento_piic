@@ -1399,3 +1399,425 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
     expect(res.json().message).toContain('not found');
   });
 });
+
+// ─── Additional branch coverage (FM-BC) ──────────────────────────────────────
+
+describe('FleetMaintenance — additional branch coverage (FM-BC)', () => {
+  const { app, getToken, init } = makeApp();
+  beforeAll(init, 15000);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // FM-BC-1: B88[0] — template ?odometer provided → ternary TRUE (line 393)
+  it('FM-BC-1: GET template ?odometer=50000 → ternary TRUE branch (line 393)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [
+          {
+            brandId: 1,
+            fuelTypeId: 2,
+            maintIntervalKm: 10000,
+            maintIntervalDays: 0,
+            odometer: 45000,
+            lastServiceReading: 40000,
+            last_chassis_inspection_odometer: 0,
+            last_distribution_change_odometer: 0,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]) // main tasks
+      .mockResolvedValueOnce([[], undefined]); // fetchDeferredTasks lastOrder → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-FM-BC1?odometer=50000',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+  });
+
+  // FM-BC-2: B90[0] — template unit.odometer=null → ||0 right-side (line 393)
+  it('FM-BC-2: GET template unit.odometer=null → ||0 right-side (line 393)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [
+          {
+            brandId: 1,
+            fuelTypeId: 2,
+            maintIntervalKm: 10000,
+            maintIntervalDays: 0,
+            odometer: null,
+            lastServiceReading: 40000,
+            last_chassis_inspection_odometer: 0,
+            last_distribution_change_odometer: 0,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-FM-BC2',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().tasks).toHaveLength(0);
+  });
+
+  // FM-BC-3: B96[0] — mine unit lastServiceReading=null → ||0 right-side (line 436)
+  it('FM-BC-3: mine unit lastServiceReading=null → ||0 right-side in kmSinceLastMinor (line 436)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [
+          {
+            brandId: 1,
+            fuelTypeId: 2,
+            maintIntervalKm: 5000,
+            maintIntervalDays: 0,
+            odometer: 10000,
+            lastServiceReading: null,
+            last_chassis_inspection_odometer: 0,
+            last_distribution_change_odometer: 0,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]) // main tasks → agencyCodes empty
+      .mockResolvedValueOnce([[], undefined]) // minorRows
+      .mockResolvedValueOnce([[], undefined]); // fetchDeferredTasks lastOrder
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-FM-BC3',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  // FM-BC-4: B103[0] — mine fuelTypeId=10 + CABIN_FILTER_MINING in minorRows → splice (line 478)
+  it('FM-BC-4: mine unit fuelTypeId=10 with CABIN_FILTER_MINING → splice removes it (line 478)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [
+          {
+            brandId: 1,
+            fuelTypeId: 10,
+            maintIntervalKm: 5000,
+            maintIntervalDays: 0,
+            odometer: 10000,
+            lastServiceReading: 5000,
+            last_chassis_inspection_odometer: 0,
+            last_distribution_change_odometer: 0,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([
+        [
+          {
+            code: 'CABIN_FILTER_MINING',
+            label: 'Filtro cabina minero',
+            isCritical: 0,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-FM-BC4',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks as { code: string }[];
+    expect(tasks.find((t) => t.code === 'CABIN_FILTER_MINING')).toBeUndefined();
+  });
+
+  // FM-BC-5: B113[0]+B114[0] — OIL_CHANGE_MINING: agencyCodes.has() + ||right-side (lines 456, 459)
+  it('FM-BC-5: OIL_CHANGE_MINING → agencyCodes.has() evaluated (B113) + ||right-side (B114) (lines 456, 459)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [
+          {
+            brandId: 1,
+            fuelTypeId: 2,
+            maintIntervalKm: 5000,
+            maintIntervalDays: 0,
+            odometer: 10000,
+            lastServiceReading: 5000,
+            last_chassis_inspection_odometer: 0,
+            last_distribution_change_odometer: 0,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]) // main tasks empty → agencyCodes = {}
+      .mockResolvedValueOnce([
+        [
+          {
+            code: 'OIL_CHANGE_MINING',
+            label: 'Cambio aceite minero',
+            isCritical: 0,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-FM-BC5',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks as { code: string }[];
+    expect(tasks.find((t) => t.code === 'OIL_CHANGE_MINING')).toBeDefined();
+  });
+
+  // FM-BC-6: B31[0]+B32[0] — POST COMPLETED maintIntervalKm=0 + SELECT odometer=0 → ||right-sides (lines 154, 158)
+  it('FM-BC-6: POST COMPLETED maintIntervalKm=0 + odometer=0 → ||right-sides (lines 154, 158)', async () => {
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 'ASM-BC6',
+            odometer: 45000,
+            maintIntervalKm: 0,
+            status: 'Disponible',
+            lastFuelLevel: null,
+            ownerId: 1,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([{ insertId: 60, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ insertId: 61, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[{ odometer: 0 }], undefined]) // B31[0]: 0||0 → right-side
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-BC6',
+        serviceDate: '2026-06-15',
+        odometerAtService: 0,
+        cost: 0,
+        technician: 'Tech BC6',
+        is_in_progress: false,
+        details: [],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().movement_status).toBe('COMPLETED');
+  });
+
+  // FM-BC-7: B38[0] — PATCH complete CHASSIS_SHOCKS_HEAVY REPLACED → ||right-side (line 165)
+  it('FM-BC-7: PATCH complete CHASSIS_SHOCKS_HEAVY status=REPLACED → ||right-side (line 165)', async () => {
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 66,
+            unit_id: 'ASM-BC7',
+            status: 'ACTIVE',
+            service_date: '2026-06-10',
+            service_type: 'BASIC_10K',
+            service_mode: 'WORKSHOP',
+            technician: 'Tech BC7',
+            cost: 700,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements
+      .mockResolvedValueOnce([[{ maintIntervalKm: 10000 }], undefined]) // SELECT maintIntervalKm
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_maintenance_extensions
+      .mockResolvedValueOnce([{ insertId: 200, affectedRows: 1 }, undefined]) // INSERT detail
+      .mockResolvedValueOnce([[{ odometer: 45000 }], undefined]) // applyCompletion SELECT odometer
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // applyCompletion UPDATE fleet_units
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/fm-bc7-uuid/complete',
+      payload: {
+        odometerAtService: 45000,
+        cost: 700,
+        details: [{ taskCode: 'CHASSIS_SHOCKS_HEAVY', status: 'REPLACED', notes: null }],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  // FM-BC-8: B33[0] — POST COMPLETED fuelLevelEnd=80 → if(fuelLevelEnd!==undefined) TRUE (line 181)
+  it('FM-BC-8: POST COMPLETED fuelLevelEnd=80 → if TRUE branch includes lastFuelLevel (line 181)', async () => {
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 'ASM-BC8',
+            odometer: 45000,
+            maintIntervalKm: 10000,
+            status: 'Disponible',
+            lastFuelLevel: 60,
+            ownerId: 1,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([{ insertId: 70, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ insertId: 71, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[{ odometer: 45000 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE includes lastFuelLevel
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-BC8',
+        serviceDate: '2026-06-15',
+        odometerAtService: 45000,
+        cost: 500,
+        technician: 'Tech BC8',
+        is_in_progress: false,
+        fuelLevelEnd: 80,
+        details: [],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json().movement_status).toBe('COMPLETED');
+  });
+
+  // FM-BC-9: B159[0] — GET /node unit SELECT empty → ??null right-side (line 734)
+  it('FM-BC-9: GET /maintenance/:uuid/node unit SELECT empty → ??null right-side (line 734)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 20,
+            uuid: 'fm-bc9-uuid',
+            unit_id: 'ASM-GONE',
+            movement_status: 'ACTIVE',
+            service_type: 'BASIC_10K',
+            created_at: new Date(),
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined]) // Promise.all[0]: details
+      .mockResolvedValueOnce([[], undefined]); // Promise.all[1]: unit SELECT empty → ??null
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/fm-bc9-uuid/node',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data.unit).toBeNull();
+  });
+
+  // FM-BC-10: B196[0] — PATCH complete maintIntervalKm=null → ??AGENCY_DEFAULT (line 989)
+  it('FM-BC-10: PATCH complete maintIntervalKm=null → ??AGENCY_DEFAULT right-side (line 989)', async () => {
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 80,
+            unit_id: 'ASM-BC10',
+            status: 'ACTIVE',
+            service_date: '2026-06-10',
+            service_type: 'BASIC_10K',
+            service_mode: 'WORKSHOP',
+            technician: 'Tech BC10',
+            cost: 400,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[{ maintIntervalKm: null }], undefined]) // → ??AGENCY_DEFAULT (10000)
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[{ odometer: 45000 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/fm-bc10-uuid/complete',
+      payload: { odometerAtService: 45000, cost: 400, details: [] },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  // FM-BC-11: B121[0] — GET /forecast scoped ownerIds=[5] → ownerFilter set (line 507)
+  it('FM-BC-11: GET /maintenance/forecast scoped ownerIds=[5] → ownerFilter set (line 507)', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([5]);
+    const scopedToken = app.jwt.sign({
+      id: 5,
+      username: 'prop.scoped',
+      roleId: 4,
+      permissions: ['fleet:scoped', 'maint:record:view:any'],
+    });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastSvcDate = new Date(today);
+    lastSvcDate.setDate(lastSvcDate.getDate() - 100);
+    vi.mocked(db.execute).mockResolvedValueOnce([
+      [
+        {
+          unitId: 'ASM-SCOPED',
+          marca: 'Toyota',
+          modelo: 'Hilux',
+          departamento: 'Ops',
+          currentOdometer: '5000',
+          dailyUsageAvg: '50',
+          maintIntervalKm: '10000',
+          maintIntervalDays: 0,
+          lastServiceReading: '0',
+          lastServiceDate: lastSvcDate.toISOString().split('T')[0],
+        },
+      ],
+      undefined,
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/forecast',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toHaveLength(1);
+    expect(res.json().data[0].unitId).toBe('ASM-SCOPED');
+  });
+});

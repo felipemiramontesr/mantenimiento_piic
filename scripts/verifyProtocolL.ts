@@ -263,9 +263,9 @@ function verify(): void {
   console.log('--- VALIDACIÓN DE PROTOCOLO L ---');
 
   const rootDir = path.join(__dirname, '..');
-  const handoffPath = path.join(rootDir, 'Protocolos', 'HANDOFF_CC_TO_AG.md');
-  const masterPath = path.join(rootDir, 'Protocolos', 'PROTOCOLO_L.md');
-  const forensePath = path.join(rootDir, 'Protocolos', 'LOG_FORENSE.md');
+  const handoffPath = path.join(rootDir, 'Protocolos', 'North_Star', '002_NS_HandoffCcToAg.md');
+  const masterPath = path.join(rootDir, 'Protocolos', 'North_Star', '001_NS_ProtocoloL.md');
+  const forensePath = path.join(rootDir, 'Protocolos', 'North_Star', '003_NS_LogForense.md');
 
   // 1. Obtener archivos en staged (git diff --cached, excluyendo eliminados)
   const stagedFilesStr = runCommand('git diff --cached --name-only --diff-filter=d');
