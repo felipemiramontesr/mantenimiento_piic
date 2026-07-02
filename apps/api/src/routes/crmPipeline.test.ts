@@ -346,4 +346,47 @@ describe('GET/POST/PATCH/DELETE /v1/crm/pipeline — FC-8 CRM_Advanced FaseB', (
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).error).toBe('Not found');
   });
+
+  it('AT-CRM8-B-22: POST /crm/pipeline null body → 400 MISSING_REQUIRED_FIELDS (line 135 ?? branch)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/pipeline',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
+
+  it('AT-CRM8-B-23: PATCH /crm/opportunities/abc/stage → 400 Invalid id NaN (line 181)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/opportunities/abc/stage',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ stageCode: 'GANADO' }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('Invalid id');
+  });
+
+  it('AT-CRM8-B-24: PATCH /crm/opportunities/1/stage null body → 400 MISSING_STAGE_CODE (lines 183-184)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/opportunities/1/stage',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('MISSING_STAGE_CODE');
+  });
+
+  it('AT-CRM8-B-25: PATCH /crm/opportunities/999/stage → 404 Not found (line 191)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/opportunities/999/stage',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ stageCode: 'GANADO' }),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).error).toBe('Not found');
+  });
 });

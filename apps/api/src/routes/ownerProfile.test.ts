@@ -279,6 +279,21 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       const sqls = (conn.execute as Mock).mock.calls.map((c) => c[0] as string);
       expect(sqls.some((s) => s.includes('owner_specialties'))).toBe(true);
     });
+
+    it('returns 400 MISSING_RFC cuando /me/profile intenta limpiar rfc con FLOTILLA — Scenario OP-16', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { rfc: null },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
+    });
   });
 
   // ── GET /v1/owners/:ownerId/profile ────────────────────────────────────────
@@ -505,6 +520,17 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
 
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
+    });
+
+    it('returns 400 VALIDATION_ERROR con neighborhoodId negativo (lines 306-309) — Scenario OP-17', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(adminToken),
+        payload: { neighborhoodId: -5 },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
     });
   });
 

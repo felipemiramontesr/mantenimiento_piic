@@ -269,4 +269,20 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     expect(res.json().data).toHaveLength(0);
     expect(res.json().count).toBe(0);
   });
+
+  it('VIM-F-9: signal_level DATOS_INSUFICIENTES cuando confidence_score < 0.3 (lines 19-20)', async () => {
+    const { default: db } = await import('../services/db');
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
+      .mockResolvedValueOnce([[{ ...VIM_PATTERN_FIXTURE, confidence_score: '0.2000' }], undefined])
+      .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021&scope=suite',
+      headers: { authorization: `Bearer ${viewToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data[0].signal_level).toBe('DATOS_INSUFICIENTES');
+  });
 });

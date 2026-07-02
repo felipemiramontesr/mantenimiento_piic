@@ -782,4 +782,26 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.payload).error).toBe('Session required');
   });
+
+  it('AT-SOC9-A-14: GET /social/posts → 500 POSTS_FETCH_FAIL cuando DB throws (lines 116-118)', async () => {
+    (db.execute as any).mockRejectedValueOnce(new Error('DB connection lost'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/posts',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).error).toBe('POSTS_FETCH_FAIL');
+  });
+
+  it('AT-SOC9-A-15: POST /social/posts → 401 sin JWT (lines 125-126)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ contentText: 'Test post' }),
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('Session required');
+  });
 });
