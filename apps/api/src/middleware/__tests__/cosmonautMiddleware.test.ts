@@ -120,6 +120,16 @@ describe('AT-FC24-C-2: requireOmega', () => {
     expect((reply.responseBody as { code: string }).code).toBe('FORBIDDEN');
     expect(reply.sent).toBe(true);
   });
+
+  it('AT-FC24-C-2-4: blocks caller without permissions field → 403 (line 65 ?? [] branch)', async () => {
+    const reply = makeReply();
+    await requireOmega()(
+      makeRequest({ roleId: 3 }), // permissions undefined → ?? [] branch
+      reply as unknown as FastifyReply
+    );
+    expect(reply.statusCode).toBe(403);
+    expect(reply.sent).toBe(true);
+  });
 });
 
 // ─── requireMuOrOmega ────────────────────────────────────────────────────────
@@ -165,6 +175,17 @@ describe('AT-FC24-C-3: requireMuOrOmega', () => {
     const reply = makeReply();
     await requireMuOrOmega(10)(
       makeRequest({ id: 99, roleId: 3, permissions: [] }),
+      reply as unknown as FastifyReply
+    );
+    expect(reply.statusCode).toBe(403);
+    expect(reply.sent).toBe(true);
+  });
+
+  it('AT-FC24-C-3-5: caller without permissions field → DB check → ARC → 403 (line 44 ?? [] branch)', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[{ cosmonaut_type: 'ARC' }]]);
+    const reply = makeReply();
+    await requireMuOrOmega(10)(
+      makeRequest({ id: 5, roleId: 2 }), // permissions undefined → ?? [] branch
       reply as unknown as FastifyReply
     );
     expect(reply.statusCode).toBe(403);

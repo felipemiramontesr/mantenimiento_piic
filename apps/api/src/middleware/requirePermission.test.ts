@@ -146,4 +146,13 @@ describe('FC-18 FaseD-2 — requirePermission (AT-FC18-D2-RP)', () => {
     expect(mockSend).not.toHaveBeenCalled();
     expect(mockCode).not.toHaveBeenCalled();
   });
+
+  // AT-FC18-D2-RP-12: permission not in LEGACY_ALIASES values → REVERSE_ALIASES miss → ?? [] fires (line 57)
+  it('AT-FC18-D2-RP-12 — slug not in REVERSE_ALIASES triggers ?? [] fallback → 403 (line 57)', async () => {
+    // 'maint:service:create' is not a VALUE in LEGACY_ALIASES, so REVERSE_ALIASES.get() → undefined → ?? []
+    const guard = requirePermission('maint:service:create');
+    await guard(makeRequest(['some:other:perm']), reply as unknown as FastifyReply);
+    expect(reply.statusCode).toBe(403);
+    expect((reply.responseBody as { code: string }).code).toBe('FORBIDDEN');
+  });
 });

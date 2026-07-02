@@ -167,6 +167,26 @@ Versión activa  : V.78.101.204_AG_Session_Initialization
     expect(response.json().code).toBe('INTERNAL_ERROR');
   }, 15000);
 
+  it('DT-7: error without statusCode → falls back to 500 via || 500 (line 99)', async () => {
+    process.env.NODE_ENV = 'development';
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      `# HANDOFF Archon → CC/AG\nÚltimo mensaje  : **CC → AG** · 2026-07-01 01:00:00\n## CANAL`
+    );
+
+    const app = Fastify({ logger: false });
+    await app.register(devTelemetryPlugin);
+    app.get('/test-no-status', async () => {
+      throw new Error('Error without statusCode'); // statusCode = undefined → || 500 fires
+    });
+
+    const response = await app.inject({ method: 'GET', url: '/test-no-status' });
+    await app.close();
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json().code).toBe('INTERNAL_ERROR');
+  }, 15000);
+
   it('should bypass filesystem write and execute standard handler in production mode', async () => {
     process.env.NODE_ENV = 'production';
 
