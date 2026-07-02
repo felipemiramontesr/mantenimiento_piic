@@ -616,4 +616,262 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       expect(JSON.parse(response.body).data).toEqual([]);
     });
   });
+
+  describe('Branch Coverage — checkRouteScope / checkIncidentScope + scope paths', () => {
+    const CHK_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+    const INC_UUID = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
+
+    beforeEach(() => vi.clearAllMocks());
+
+    it('BC-1: GET /routes/:uuid/checkpoints → 403 route not in DB (line 26 checkRouteScope empty rows)', async (): Promise<void> => {
+      // ownerScope=[5] (non-empty); checkRouteScope: fleet_movements query → [] → routes.length===0 → false
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[]]); // checkRouteScope: fleet_movements JOIN → empty → false
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('BC-2: GET /incidents/:uuid/node → 403 incident not in DB (line 40 checkIncidentScope empty rows)', async (): Promise<void> => {
+      // ownerScope=[5]; checkIncidentScope: incidents query → [] → incidents.length===0 → false
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[]]); // checkIncidentScope: incidents JOIN → empty → false
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/incidents/${INC_UUID}/node`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('BC-3: GET /routes/unit/:unitId/active → 200 scoped user in-scope (line 187 ownerScope non-null body)', async (): Promise<void> => {
+      // ownerScope=[5]; SELECT fleet_units → [{ownerId:5}] → includes(5)=true → proceed → 200
+      // Note: plugin-level preHandler requires route:record:view:any
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[{ ownerId: 5 }]]); // SELECT fleet_units → unit ownerId=5 in scope
+      (RouteService.getActiveRoute as Mock).mockResolvedValue(null);
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/routes/unit/UNIT-001/active',
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    it('BC-3b: GET /routes/unit/:unitId/active → 403 unit found but ownerId NOT in scope (line 192 true branch)', async (): Promise<void> => {
+      // ownerScope=[5]; SELECT fleet_units → [{ownerId:99}] → !includes(99) → true → 403
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[{ ownerId: 99 }]]); // SELECT fleet_units → ownerId 99 NOT in [5]
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/routes/unit/UNIT-001/active',
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('BC-4: GET /unit-logs → 200 scoped non-empty scope builds WHERE clause (line 416 ownerScope non-null + non-empty)', async (): Promise<void> => {
+      // ownerScope=[5] → if (ownerScope!==null) body: scopeClause built → query runs → empty result
+      // Note: plugin-level preHandler requires route:record:view:any
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[]]); // main activity logs query with WHERE clause → empty
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/unit-logs',
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).data).toEqual([]);
+    });
+
+    it('BC-4b: GET /unit-logs → 200 scoped empty ownerIds early return (line 417 ownerScope.length===0 true)', async (): Promise<void> => {
+      // getUserOwnerIds → [] → ownerScope=[] → ownerScope.length===0 → return {data:[]} early
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      (db.execute as Mock).mockResolvedValueOnce([[]]); // getUserOwnerIds → [] (empty)
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/unit-logs',
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).data).toEqual([]);
+    });
+
+    it('BC-5: POST /routes/:uuid/checkpoints → 403 scoped user (line 446 checkRouteScope false)', async (): Promise<void> => {
+      // checkRouteScope always queries DB (no length-0 shortcircuit); fleet_movements → [] → false → 403
+      // Token must include route:record:view:any (plugin-level preHandler) + route:waypoint:manage (route-level)
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any', 'route:waypoint:manage'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[]]); // checkRouteScope: fleet_movements → empty → routes.length===0 → false
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        payload: { sequence: 1, name: 'PuntoA' },
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('BC-6: POST /routes/:uuid/checkpoints → 400 generic error in catch (line 474 Duplicate-entry false path)', async (): Promise<void> => {
+      // admin → access=true; addCheckpoint throws generic error → msg≠route-not-found, msg≠Duplicate → 400
+      (RouteService.addCheckpoint as Mock).mockRejectedValue(new Error('DB connection lost'));
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        payload: { sequence: 1, name: 'PuntoA' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).success).toBe(false);
+    });
+
+    it('BC-7: GET /routes/:uuid/checkpoints → 403 scoped user (line 489 checkRouteScope false)', async (): Promise<void> => {
+      // checkRouteScope queries DB even with empty scope; fleet_movements → [] → false → 403
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[]]); // checkRouteScope: fleet_movements → empty → false
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('BC-8: GET /routes/:uuid/checkpoints → 400 generic error in catch (line 499 msg≠route-not-found fallthrough)', async (): Promise<void> => {
+      // admin → access=true; getCheckpoints throws generic error → msg≠route-not-found → 400
+      (RouteService.getCheckpoints as Mock).mockRejectedValue(new Error('DB connection lost'));
+      const response = await app.inject({
+        method: 'GET',
+        url: `/v1/routes/${CHK_UUID}/checkpoints`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).success).toBe(false);
+    });
+
+    it('BC-9: PATCH /routes/:uuid/checkpoints/:id/arrive → 403 scoped user (line 515 checkRouteScope false)', async (): Promise<void> => {
+      // checkRouteScope queries DB; fleet_movements → [] → false → 403
+      // Token must include route:record:view:any (plugin-level preHandler) + route:waypoint:manage (route-level)
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any', 'route:waypoint:manage'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[]]); // checkRouteScope: fleet_movements → empty → false
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/v1/routes/${CHK_UUID}/checkpoints/1/arrive`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+
+    it('BC-10: PATCH /routes/:uuid/checkpoints/:id/arrive → 404 when route not found (line 522 catch block + line 524)', async (): Promise<void> => {
+      // admin → access=true; arriveAtCheckpoint throws Route not found → catch entered → 404
+      (RouteService.arriveAtCheckpoint as Mock).mockRejectedValue(new Error('Route not found'));
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/v1/routes/${CHK_UUID}/checkpoints/1/arrive`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body).code).toBe('NOT_FOUND');
+    });
+
+    it('BC-10b: PATCH /routes/:uuid/checkpoints/:id/arrive → 400 generic error (line 525 else-path / lines 528-529)', async (): Promise<void> => {
+      // admin → access=true; arriveAtCheckpoint throws generic error (not Route not found)
+      // → if(msg==='Route not found') false → if(msg.includes('not found or already visited')) false → 400
+      (RouteService.arriveAtCheckpoint as Mock).mockRejectedValue(new Error('DB connection lost'));
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/v1/routes/${CHK_UUID}/checkpoints/1/arrive`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body).success).toBe(false);
+    });
+
+    it('BC-10c: PATCH /routes/:uuid/checkpoints/:id/arrive → 404 checkpoint not found or already visited (line 526-527)', async (): Promise<void> => {
+      // admin → access=true; arriveAtCheckpoint throws 'checkpoint not found or already visited'
+      // → if(msg==='Route not found') false → if(msg.includes('not found or already visited')) true → 404
+      (RouteService.arriveAtCheckpoint as Mock).mockRejectedValue(
+        new Error('checkpoint not found or already visited')
+      );
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/v1/routes/${CHK_UUID}/checkpoints/1/arrive`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body).code).toBe('NOT_FOUND');
+    });
+
+    it('BC-11: POST /routes/:uuid/incidents → 403 scoped user (line 545 checkRouteScope false)', async (): Promise<void> => {
+      // checkRouteScope queries DB; fleet_movements → [] → false → 403
+      // Token must include route:record:view:any (plugin-level preHandler) + route:record:edit:any (route-level)
+      const scopedToken = app.jwt.sign({
+        id: 2,
+        permissions: ['fleet:scoped', 'route:record:view:any', 'route:record:edit:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[]]); // checkRouteScope: fleet_movements → empty → false
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/routes/${CHK_UUID}/incidents`,
+        payload: { category: 'MECANICA', description: 'Falla en motor', severity: 'LOW' },
+        headers: { authorization: `Bearer ${scopedToken}` },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body).code).toBe('FORBIDDEN');
+    });
+  });
 });
