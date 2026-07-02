@@ -989,4 +989,35 @@ describe('authIntegration.test', () => {
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.payload).message).toBe('User outside owner scope');
   });
+
+  it('AUTH-GET-USERS-SCOPE-1: GET /users — scoped user with empty owners → 200 data:[] (lines 522-524)', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'scoped@piic.mx', permissions: ['fleet:scoped'] });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).data).toEqual([]);
+  });
+
+  it('AUTH-LOGIN-DECRYPT-CATCH: POST /login — decrypt throws → catch false → L3 (lines 179-181)', async () => {
+    const { default: EncryptionService } = await import('../services/encryption');
+    vi.mocked(EncryptionService.decrypt).mockImplementationOnce(() => {
+      throw new Error('Crypto error');
+    });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[], undefined]) // WHERE username = ? → no user
+      .mockResolvedValueOnce([[{ id: 99, email: 'bad_cipher', username: 'someone' }], undefined]); // findUserByEmail SELECT
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'nonexistent@test.com', password: 'pass123' },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.payload).error).toBe('L3');
+  });
 });
