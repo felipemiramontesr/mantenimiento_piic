@@ -183,4 +183,15 @@ describe('GET /v1/fleet-units/:unitId/economic-life (FC-6 Fase 6A)', () => {
     expect(res.statusCode).toBe(403);
     expect(vi.mocked(EconomicLifeService.compute)).not.toHaveBeenCalled();
   });
+
+  it('EL-INT-8: EconomicLifeService.compute throws → 500 (B50-52 catch block)', async () => {
+    vi.mocked(EconomicLifeService.compute).mockRejectedValueOnce(new Error('DB error'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/ASM-001/economic-life',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toHaveProperty('error', 'Internal error computing economic life');
+  });
 });

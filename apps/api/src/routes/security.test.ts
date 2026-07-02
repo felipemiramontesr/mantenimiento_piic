@@ -220,6 +220,21 @@ describe('GET /v1/security/audit-log', () => {
     expect(countCall[0]).toContain('a.created_at <= ?');
     expect(countCall[1]).toContain('2026-06-30 23:59:59');
   });
+
+  it('SEC-10: COUNT retorna vacío → countRows[0]=undefined → total??0 right-side (B94[0])', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[], undefined]) // COUNT → empty → ??0 fires
+      .mockResolvedValueOnce([[], undefined]); // data → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/security/audit-log',
+      headers: { authorization: `Bearer ${archonToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.meta.total).toBe(0);
+    expect(body.data).toHaveLength(0);
+  });
 });
 
 describe('POST /v1/security/panic — FC-4 Panic_Button FaseA', () => {
@@ -320,5 +335,21 @@ describe('POST /v1/security/panic — FC-4 Panic_Button FaseA', () => {
     const membershipCall = vi.mocked(db.execute).mock.calls[0];
     expect((membershipCall[0] as string).toLowerCase()).toContain('user_owner_membership');
     expect(membershipCall[1]).toContain(10); // caller id
+  });
+
+  it('AT-P-7: sin body → request.body??{} right-side (B136[0]) → latitude/longitude/unitId=undefined', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[], undefined]) // membership → no peers
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // INSERT caller
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/security/panic',
+      headers: { authorization: `Bearer ${isolatedToken}` },
+      // no payload → request.body = null → null ?? {} uses right-side
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(body.notifiedCount).toBe(1);
   });
 });

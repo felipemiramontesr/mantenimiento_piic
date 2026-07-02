@@ -313,6 +313,29 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(conn.rollback).toHaveBeenCalled();
       expect(conn.commit).not.toHaveBeenCalled();
     });
+
+    it('ONB-UNI-11: sin fullName → fullName||"" (B92[0]) y fullName||username (B96[0]) cubiertos', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check → no conflict
+      const conn = makeConn();
+      vi.mocked(db).getConnection.mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/universe',
+        headers: auth(archonToken),
+        payload: {
+          username: 'piic.nofullname',
+          email: 'nofullname@test.com',
+          password: VALID_PASSWORD,
+          roleId: 1,
+          profile: { rfc: 'PIICNOFULL1', razon_social: 'PIIC Sin Nombre' },
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      expect(JSON.parse(res.body).userId).toBe(100);
+      expect(conn.commit).toHaveBeenCalled();
+    });
   });
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -500,6 +523,30 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       });
       expect(res.statusCode).toBe(500);
       expect(conn.rollback).toHaveBeenCalled();
+    });
+
+    it('ONB-CLI-14: roleId=4 con profile sin rfc → profile.rfc||null right-side (B125[0]) cubierto', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check → no conflict
+      const conn = makeConn();
+      vi.mocked(db).getConnection.mockResolvedValueOnce(conn);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/client',
+        headers: auth(centroToken),
+        payload: {
+          username: 'privado.norfc',
+          email: 'norfc@test.com',
+          password: VALID_PASSWORD,
+          roleId: 4,
+          fullName: 'Privado Sin RFC',
+          profile: { razon_social: 'Empresa Sin RFC' },
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      expect(JSON.parse(res.body).userId).toBe(100);
+      expect(conn.commit).toHaveBeenCalled();
     });
   });
 
