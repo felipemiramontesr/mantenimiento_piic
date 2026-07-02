@@ -158,8 +158,40 @@ describe('FC-18 FaseD-2 — requireFieldPermission (AT-FC18-D2-FP)', () => {
     expect(parsed.numeroSerie).toBe('***');
   });
 
-  // AT-FC18-D2-FP-12: Two independent hooks applied sequentially mask respective fields
-  it('AT-FC18-D2-FP-12 — two hooks applied in sequence mask their respective fields independently', async () => {
+  // AT-FC18-D2-FP-12: No request.user → returns payload unchanged (line 45)
+  it('AT-FC18-D2-FP-12 — request without user returns payload unchanged (line 45)', async () => {
+    const hook = requireFieldPermission('fleet:unit:field:vin:decrypt');
+    const payload = JSON.stringify({ numeroSerie: 'VIN-SECRET' });
+    const noUserRequest = {} as FastifyRequest; // no user field
+    const result = await hook(noUserRequest, NOOP_REPLY, payload);
+    expect(result).toBe(payload); // untouched
+  });
+
+  // AT-FC18-D2-FP-13: Array of primitives → maskFields returns primitive unchanged (lines 39-40)
+  it('AT-FC18-D2-FP-12 — array of string primitives: maskFields returns each primitive unchanged (lines 39-40)', async () => {
+    const payload = JSON.stringify(['item1', 'item2', 'item3']);
+    const result = await applyHook(
+      'fleet:unit:field:vin:decrypt',
+      ['fleet:unit:view:any'], // no decrypt perm → tries to mask, but no field in primitives
+      payload
+    );
+    const parsed = JSON.parse(result as string) as string[];
+    expect(parsed).toEqual(['item1', 'item2', 'item3']);
+  });
+
+  // AT-FC18-D2-FP-13: Invalid JSON → catch block returns original payload (lines 62-63)
+  it('AT-FC18-D2-FP-13 — invalid JSON payload: catch returns original string unchanged (lines 62-63)', async () => {
+    const invalidJson = '{not valid json}';
+    const result = await applyHook(
+      'fleet:unit:field:vin:decrypt',
+      ['fleet:unit:view:any'], // no decrypt perm → tries to JSON.parse → throws → catch
+      invalidJson
+    );
+    expect(result).toBe(invalidJson);
+  });
+
+  // AT-FC18-D2-FP-14: Two independent hooks applied sequentially mask respective fields
+  it('AT-FC18-D2-FP-14 — two hooks applied in sequence mask their respective fields independently', async () => {
     const noDecryptPerms = ['fleet:unit:view:any'];
     const payload = JSON.stringify({
       numeroSerie: 'VIN',

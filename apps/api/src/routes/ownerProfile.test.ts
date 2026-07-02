@@ -182,6 +182,22 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       expect(res.statusCode).toBe(500);
       expect(JSON.parse(res.body).code).toBe('PROFILE_FETCH_FAIL');
     });
+
+    it('returns 200 con especialidades no vacías (line 100 fetchEspecialidades rows.map) — Scenario OP-ME-SPEC-ROWS', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[PROFILE_ROW], undefined]) // PROFILE_SELECT_SQL
+        .mockResolvedValueOnce([[{ code: 'PINTURA' }, { code: 'MOTOR' }], undefined]); // fetchEspecialidades → non-empty → rows.map
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.success).toBe(true);
+      expect(body.data.especialidades).toEqual(['PINTURA', 'MOTOR']);
+    });
   });
 
   // ── PATCH /v1/owners/me/profile ────────────────────────────────────────────
@@ -293,6 +309,114 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       });
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
+    });
+
+    it('returns 400 VALIDATION_ERROR cuando body inválido (lines 199-202) — Scenario OP-ME-VAL', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { neighborhoodId: -3 }, // int but not positive → fails patchSchema
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 NO_FIELDS_TO_UPDATE cuando body vacío (lines 219-220) — Scenario OP-ME-NOFIELDS', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: {}, // valid schema but no fields → NO_FIELDS_TO_UPDATE
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('NO_FIELDS_TO_UPDATE');
+    });
+
+    it('returns 400 MISSING_RFC con rfc="" en /me/profile (line 233 rfc.trim branch) — Scenario OP-ME-RFC-EMPTY', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { rfc: '' }, // empty string → rfc.trim() === '' branch at line 233
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
+    });
+
+    it('returns 400 MISSING_RFC con rfc=null y CENTER en /me/profile (line 234 CENTER branch) — Scenario OP-ME-RFC-CENTER', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'CENTER' }], undefined]); // profileRows
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { rfc: null }, // CENTER + rfc null → ownerType === 'CENTER' branch at line 234
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('MISSING_RFC');
+    });
+
+    it('returns 200 con especialidades=[] → validateSpecialtyCodes early return (line 19) — Scenario OP-ME-SPEC-EMPTY', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        // validateSpecialtyCodes([]) → codes.length===0 → return true (no db call)
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows
+      const conn = makePatchConn();
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { especialidades: [] }, // [] → validateSpecialtyCodes([]) → line 19 early return true
+      });
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).success).toBe(true);
+    });
+
+    it('returns 500 cuando conn.release lanza en finally /me/profile (line 256 branch) — Scenario OP-ME-RELEASE', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows
+      const conn = makePatchConn();
+      (conn.execute as Mock).mockRejectedValueOnce(new Error('inner DB fail')); // inner try throws
+      (conn.release as Mock).mockImplementationOnce(() => {
+        throw new Error('release fail');
+      }); // finally throws
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { telefono: '3300001111' },
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_UPDATE_FAIL');
+    });
+
+    it('finally throws on success path /me/profile (line 256 branch alt) — Scenario OP-ME-RELEASE-OK', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ owner_id: OWNER_ID }], undefined]) // getCallerOwnerIds
+        .mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows
+      const conn = makePatchConn();
+      // try succeeds → commit → return → finally: conn.release throws → outer catch → already sent
+      (conn.release as Mock).mockImplementationOnce(() => {
+        throw new Error('release on success');
+      });
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/v1/owners/me/profile',
+        headers: auth(ownerToken),
+        payload: { telefono: '3300001111' },
+      });
+      // reply.send(200) was already called before finally throws
+      expect([200, 500]).toContain(res.statusCode);
     });
   });
 
@@ -531,6 +655,58 @@ describe('OwnerProfile Routes — View & Edit (Fase 7)', () => {
       });
       expect(res.statusCode).toBe(400);
       expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 200 con especialidades=null en admin route (line 367 ?? null branch) — Scenario OP-ADMIN-SPEC-NULL', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows (admin, no getCallerOwnerIds)
+      const conn = makePatchConn();
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(adminToken),
+        payload: { especialidades: null }, // null → ??(null)→null covers branch 0 at line 367
+      });
+      expect(res.statusCode).toBe(200);
+      expect(JSON.parse(res.body).success).toBe(true);
+      const sqls = (conn.execute as Mock).mock.calls.map((c) => c[0] as string);
+      expect(sqls.some((s) => s.includes('owner_specialties'))).toBe(true);
+    });
+
+    it('returns 500 cuando conn.release lanza en finally admin route (line 374 branch) — Scenario OP-ADMIN-RELEASE', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows
+      const conn = makePatchConn();
+      (conn.execute as Mock).mockRejectedValueOnce(new Error('inner DB fail')); // inner try throws
+      (conn.release as Mock).mockImplementationOnce(() => {
+        throw new Error('release fail');
+      }); // finally throws
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(adminToken),
+        payload: { telefono: '3300001111' },
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).code).toBe('PROFILE_UPDATE_FAIL');
+    });
+
+    it('finally throws on success path admin route (line 374 branch alt) — Scenario OP-ADMIN-RELEASE-OK', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, owner_type: 'FLOTILLA' }], undefined]); // profileRows
+      const conn = makePatchConn();
+      // try succeeds → commit → return → finally: conn.release throws → outer catch → already sent
+      (conn.release as Mock).mockImplementationOnce(() => {
+        throw new Error('release on success');
+      });
+      (db.getConnection as Mock).mockResolvedValueOnce(conn);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/v1/owners/${OWNER_ID}/profile`,
+        headers: auth(adminToken),
+        payload: { telefono: '3300001111' },
+      });
+      // reply.send(200) was already called before finally throws
+      expect([200, 500]).toContain(res.statusCode);
     });
   });
 

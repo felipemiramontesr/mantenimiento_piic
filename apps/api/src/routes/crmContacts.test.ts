@@ -493,4 +493,100 @@ describe('GET/POST/PATCH/DELETE /v1/contacts — FC-5 CRM FaseB', () => {
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).error).toBe('Not found');
   });
+
+  it('AT-CRM-B-34: POST /contacts 201 sin email/phone → encEmail/encPhone null (lines 200-201 ?? null branch)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([{ insertId: 99, affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/contacts',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { ownerId: 5, fullName: 'Sin Email' }, // no email, no phone → null branches
+    });
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.body).id).toBe(99);
+  });
+
+  it('AT-CRM-B-35: PATCH /contacts/abc → 400 Invalid id (line 239 NaN branch)', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/abc',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { fullName: 'Test' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('Invalid id');
+  });
+
+  it('AT-CRM-B-36: PATCH /contacts/1 sin body → 400 no fields (line 241 ?? {} branch)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ owner_id: 5 }], undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}` }, // no content-type → body = null → ?? {}
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('No fields to update');
+  });
+
+  it('AT-CRM-B-37: PATCH /contacts/1 isActive:true → 200 (line 85 truthy→1 branch)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { isActive: true }, // isActive truthy → 1 branch (0 covered by AT-CRM-B-10)
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('AT-CRM-B-38: PATCH /contacts/1 phone truthy → 200 (line 96 encrypt branch)', async () => {
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[{ owner_id: 5 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+      payload: { phone: '5599001122' }, // truthy → encrypt branch on line 96
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('AT-CRM-B-39: GET /contacts/:id con email/phone null en row → decryptContact null (lines 40-41)', async () => {
+    const nullRow = { ...MOCK_CONTACT_ROW, email: null, phone: null };
+    vi.mocked(db.execute).mockResolvedValueOnce([[nullRow], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/contacts/1',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.contact.email).toBeNull();
+    expect(body.contact.phone).toBeNull();
+  });
+
+  it('AT-CRM-B-40: GET /contacts scoped sin ownerIds → 200 contacts:[] (line 123)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]); // ownerIds = []
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/contacts',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).contacts).toEqual([]);
+  });
+
+  it('AT-CRM-B-41: POST /contacts sin body → 400 (line 186 ?? {} branch)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/contacts',
+      headers: { authorization: `Bearer ${adminToken}` }, // no content-type → body=null → ?? {}
+    });
+    expect(res.statusCode).toBe(400);
+  });
 });
