@@ -137,4 +137,28 @@ describe('FleetIntelligenceKpiService.compute()', () => {
     expect(result!.pm_compliance).toBe(80); // 4/5 * 100
     expect(result!.backlog_aging_days).toBeNull(); // 0 || null = null
   });
+
+  it('FKPI-SVC-5: unit con dailyUsageAvg/maintIntervalDays/maintIntervalKm null + km_per_liter=0 → cubre ?? y || null (B44/45/46/102)', async () => {
+    const nullUnitRow = {
+      ownerId: 1,
+      availabilityIndex: 90,
+      dailyUsageAvg: null, // ?? 0 right-side B44[0]
+      maintIntervalDays: null, // ?? 180 right-side B45[0]
+      maintIntervalKm: null, // ?? 10000 right-side B46[0]
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[nullUnitRow]])
+      .mockResolvedValueOnce([[{ quality_factor: 0.9, total_km: 2000, daily_km_avg: 80 }]])
+      .mockResolvedValueOnce([[{ tco_total: 10000 }]])
+      .mockResolvedValueOnce([[{ km_per_liter: 0 }]]) // 0 != null → true → Number(0)||null → B102[0]
+      .mockResolvedValueOnce([[{ total: 4, compliant: 4 }]])
+      .mockResolvedValueOnce([[{ avg_age_days: 5 }]]);
+    const result = await FleetIntelligenceKpiService.compute('PIIC-103');
+    expect(result).not.toBeNull();
+    expect(result!.oee).toBeNull(); // dailyUsageAvg=0 → computeOee returns null
+    expect(result!.km_per_liter).toBeNull(); // Number(0)||null = null
+    expect(result!.tco_per_km).toBe(5); // 10000/2000=5
+    expect(result!.pm_compliance).toBe(100); // 4/4*100=100
+    expect(result!.backlog_aging_days).toBe(5);
+  });
 });

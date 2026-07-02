@@ -140,4 +140,21 @@ describe('OperatorScorecardService.compute()', () => {
     expect(result!.checkpoint_adherence_score).toBeNull(); // 0 checkpoints
     expect(result!.composite_score).toBe(100); // único válido = 100
   });
+
+  it('OS-SVC-5: incidentRows vacío + checkpointRows vacío → 4 ternary false branches (B146/147/150/153)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ ownerId: 5 }]])
+      .mockResolvedValueOnce([[{ driver_id: 30, route_count: 5 }]])
+      .mockResolvedValueOnce([[{ driver_km_per_liter: '8.00' }]])
+      .mockResolvedValueOnce([[]]) // incidentRows vacío → incidentRows[0]=undefined → B146[0]+B147[0]
+      .mockResolvedValueOnce([[]]) // checkpointRows vacío → checkpointRows[0]=undefined → B150[0]+B153[0]
+      .mockResolvedValueOnce([[{ km_per_liter: '10.00' }]]);
+    const result = await OperatorScorecardService.compute('unit-5');
+    expect(result).not.toBeNull();
+    expect(result!.driver_id).toBe(30);
+    expect(result!.incident_rate_score).toBeNull(); // totalRoutes=0 → null
+    expect(result!.checkpoint_adherence_score).toBeNull(); // totalCheckpoints=0 → null
+    expect(result!.fuel_efficiency_score).toBe(80); // 8/10*100=80
+    expect(result!.composite_score).toBe(80); // único válido=80
+  });
 });
