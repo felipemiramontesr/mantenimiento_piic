@@ -804,4 +804,133 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.payload).error).toBe('Session required');
   });
+
+  // ── Branch Coverage — 9 missed branches ───────────────────────────────────
+
+  it('SOC-BC-1: GET /social/posts image_urls_json non-null → formatPost JSON.parse branch (line 41)', async () => {
+    // B6[0]: row.image_urls_json truthy → JSON.parse branch
+    (db.execute as any).mockResolvedValueOnce([
+      [
+        {
+          id: 5,
+          author_id: 2,
+          owner_id: 5,
+          content_text: 'Post con imágenes.',
+          image_urls_json: '["https://cdn.piic.mx/img1.jpg"]',
+          created_at: '2026-07-01T00:00:00Z',
+          updated_at: '2026-07-01T00:00:00Z',
+        },
+      ],
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/posts',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.posts[0].imageUrls).toEqual(['https://cdn.piic.mx/img1.jpg']);
+  });
+
+  it('SOC-BC-2: POST /social/posts null body → request.body??{} right-side → 400 (line 129)', async () => {
+    // B23[0]: request.body is null → ?? {} right-side evaluated
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
+
+  it('SOC-BC-3: POST /social/posts ownerIds empty → ownerIds[0]??1 fallback (line 141)', async () => {
+    // B28[0]: ownerIds=[] → ownerIds[0]=undefined → ?? 1 = 1
+    (db.execute as any)
+      .mockResolvedValueOnce([[]]) // getCallerOwnerIds → []
+      .mockResolvedValueOnce([{ insertId: 99, affectedRows: 1 }]); // INSERT
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ contentText: 'Post válido para el equipo del taller.' }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.payload).id).toBe(99);
+  });
+
+  it('SOC-BC-4: POST /social/posts/:id/reactions null body → request.body??{} right-side → 400 (line 201)', async () => {
+    // B47[0]: request.body is null → ?? {} right-side → type=undefined → INVALID_REACTION_TYPE
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts/1/reactions',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('INVALID_REACTION_TYPE');
+  });
+
+  it('SOC-BC-5: POST /social/posts/:id/comments null body → request.body??{} right-side → 400 (line 301)', async () => {
+    // B72[0]: request.body is null → ?? {} right-side → contentText=undefined → MISSING_REQUIRED_FIELDS
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts/1/comments',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
+
+  it('SOC-BC-6: POST /social/posts/:id/comments post not found → 404 POST_NOT_FOUND (line 316)', async () => {
+    // B77[0]: posts.length === 0 → true → 404
+    (db.execute as any).mockResolvedValueOnce([[]]); // SELECT social_posts → not found
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/posts/999/comments',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({ contentText: 'Comentario en post inexistente.' }),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.payload).error).toBe('POST_NOT_FOUND');
+  });
+
+  it('SOC-BC-7: POST /social/reviews null body → request.body??{} right-side → 400 (line 341)', async () => {
+    // B84[0]: request.body is null → ?? {} right-side → all fields undefined → MISSING_REQUIRED_FIELDS
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
+
+  it('SOC-BC-8: GET /social/reviews?tallerId=3 avg_rating=null → ??0 branch (line 428)', async () => {
+    // B114[0]: avgRow truthy + avg_rating=null → ?? 0 right-side → avgRating=0
+    (db.execute as any)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 2,
+            reviewer_id: 3,
+            taller_owner_id: 3,
+            rating: 4,
+            body_text: 'Buen servicio.',
+            work_order_id: 1,
+            link_id: null,
+            verified: 1,
+            created_at: '2026-07-01T00:00:00Z',
+          },
+        ],
+      ]) // reviews rows
+      .mockResolvedValueOnce([[{ avg_rating: null }]]); // AVG query returns null (no completed reviews)
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/reviews?tallerId=3',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.avgRating).toBe(0); // null ?? 0 = 0
+    expect(body.reviews[0].linkId).toBeNull(); // B118[0]: link_id=null → ??null right-side
+  });
 });
