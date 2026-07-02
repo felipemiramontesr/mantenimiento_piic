@@ -202,6 +202,30 @@ describe('ServiceCenters Routes — N:M Operational Links (Fase 4)', () => {
       expect(JSON.parse(res.body).error).toBe('LINK_EXISTS');
     });
 
+    it('returns 400 VALIDATION_ERROR when centroOwnerId is invalid (line 61 !parsed.success)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: `/v1/owners/${PRIVADO_ID}/service-centers`,
+        headers: auth(adminToken),
+        payload: { centroOwnerId: 'not-a-number' },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).error).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 500 SERVICE_CENTER_LINK_FAIL when db throws (line 101 catch block)', async () => {
+      // admin skips scope check; db throws on first execute in try block
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB down'));
+      const res = await app.inject({
+        method: 'POST',
+        url: `/v1/owners/${PRIVADO_ID}/service-centers`,
+        headers: auth(adminToken),
+        payload: { centroOwnerId: CENTRO_ID },
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).error).toBe('SERVICE_CENTER_LINK_FAIL');
+    });
+
     it('creates N:M link and returns 201 — Scenario 4', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ owner_id: PRIVADO_ID }], undefined])
@@ -257,6 +281,18 @@ describe('ServiceCenters Routes — N:M Operational Links (Fase 4)', () => {
       });
       expect(res.statusCode).toBe(404);
       expect(JSON.parse(res.body).error).toBe('LINK_NOT_FOUND');
+    });
+
+    it('returns 500 SERVICE_CENTER_UNLINK_FAIL when db throws (line 137 catch block)', async () => {
+      // admin skips scope check; db throws on first execute in try block
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB down'));
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/v1/owners/${PRIVADO_ID}/service-centers/${CENTRO_ID}`,
+        headers: auth(adminToken),
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body).error).toBe('SERVICE_CENTER_UNLINK_FAIL');
     });
 
     it('deletes link and returns 200 — Scenario 5', async () => {

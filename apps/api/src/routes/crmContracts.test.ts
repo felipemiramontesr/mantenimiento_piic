@@ -411,4 +411,40 @@ describe('GET/POST/PATCH/DELETE /v1/crm/contracts — FC-8 CRM_Advanced FaseA', 
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).error).toBe('Not found');
   });
+
+  it('AT-CRM8-A-28: GET /crm/contracts → 200 scoped user ownerIds empty → {contracts:[]} (line 79)', async () => {
+    // getCallerOwnerIds → [] → ownerIds.length===0 → early return {contracts:[]}
+    (db.execute as any).mockResolvedValueOnce([[]]); // getCallerOwnerIds → []
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/contracts',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).contracts).toEqual([]);
+  });
+
+  it('AT-CRM8-A-29: POST /crm/contracts no body → 400 MISSING_REQUIRED_FIELDS (line 102 ?? {} branch)', async () => {
+    // null body → null ?? {} → {} → !ownerId → 400
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/contracts',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
+
+  it('AT-CRM8-A-30: PATCH /crm/contracts/1 → 404 contract not found (line 156 rows.length===0)', async () => {
+    // SELECT returns empty → 404 Not found
+    (db.execute as any).mockResolvedValueOnce([[]]); // SELECT id, owner_id → empty
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/crm/contracts/1',
+      payload: { status: 'CANCELLED' },
+      headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).error).toBe('Not found');
+  });
 });

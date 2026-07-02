@@ -196,4 +196,27 @@ describe('GET/POST /v1/crm/interactions — FC-8 CRM_Advanced FaseC', () => {
     expect(res.statusCode).toBe(500);
     expect(JSON.parse(res.body).error).toBe('INTERACTIONS_FETCH_FAIL');
   });
+
+  it('AT-CRM8-C-12: GET /crm/interactions → 200 scoped user empty ownerIds → {interactions:[]} (line 88)', async () => {
+    // scoped user → getCallerOwnerIds → [] → ownerIds.length===0 → early return
+    (db.execute as any).mockResolvedValueOnce([[]]); // getCallerOwnerIds → []
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/crm/interactions',
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).interactions).toEqual([]);
+  });
+
+  it('AT-CRM8-C-13: POST /crm/interactions no body → 400 MISSING_REQUIRED_FIELDS (line 118 ?? {} branch)', async () => {
+    // null body → null ?? {} → {} → !ownerId → 400
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/interactions',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
 });
