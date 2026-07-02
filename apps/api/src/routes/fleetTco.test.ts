@@ -182,4 +182,15 @@ describe('FT-TCO-ROUTE: GET /v1/fleet-units/:unitId/tco', () => {
     });
     expect(res.statusCode).toBe(403);
   });
+
+  it('FT-TCO-ROUTE-6: db.query lanza error → 500 (B81-83 catch block)', async () => {
+    (db.query as Mock).mockRejectedValueOnce(new Error('DB connection timeout'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/PIIC-101/tco',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toHaveProperty('error', 'Internal error retrieving TCO');
+  });
 });

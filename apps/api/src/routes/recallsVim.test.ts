@@ -285,4 +285,22 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json().data[0].signal_level).toBe('DATOS_INSUFICIENTES');
   });
+
+  it('VIM-F-10: scope=suite usuario sin suite (resolveUserSuite rows vacíos → B27[1] ||short-circuit) → query sin filtro suite', async () => {
+    const { default: db } = await import('../services/db');
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[], undefined]) // resolveUserSuite: rows vacíos → rows.length===0 TRUE → return null
+      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined]) // query sin suite filter
+      .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021&scope=suite',
+      headers: { authorization: `Bearer ${viewToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.success).toBe(true);
+    expect(body.count).toBe(1);
+  });
 });

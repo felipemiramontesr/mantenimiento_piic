@@ -195,4 +195,24 @@ describe('Co2Service.compute — AT-DH-C: period_from/period_to derivado (FC-7 F
     expect(result!.period_from).toBeNull();
     expect(result!.period_to).toBeNull();
   });
+
+  it('AT-DH-C-11: unidad no encontrada → null (B50[1] — if unitRows.length===0 TRUE)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[]]); // unitRows empty → return null
+    const result = await Co2Service.compute('PIIC-999');
+    expect(result).toBeNull();
+  });
+
+  it('AT-DH-C-12: fuel_code null en BD → fuelCode=null ?? null right-side (B53[0]) + resolveCo2Factor(null)=DEFAULT', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, fuel_code: null }]]) // fuel_code null → ?? null right-side
+      .mockResolvedValueOnce([
+        [{ total_liters: 100, period_from_derived: null, period_to_derived: null }],
+      ]);
+    const result = await Co2Service.compute('PIIC-305');
+    expect(result).not.toBeNull();
+    expect(result!.fuel_code).toBeNull();
+    expect(result!.co2_factor_kg_per_liter).toBe(DEFAULT_CO2_FACTOR); // resolveCo2Factor(null)
+    expect(result!.total_liters).toBe(100);
+    expect(result!.total_co2_kg).toBe(231); // 100 * 2.31
+  });
 });

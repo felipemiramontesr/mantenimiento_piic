@@ -129,4 +129,16 @@ describe('EconomicLifeService.compute — AT-DH-A-10: acquisitionCost dinámico 
     const result = await EconomicLifeService.compute('GHOST');
     expect(result).toBeNull();
   });
+
+  it('AT-DH-A-10d: tcoRows vacío → accumulatedTco=0 (B65[0] — ternary false: tcoRows[0]=undefined)', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[{ ownerId: 1, year: 2022, acquisitionCost: null }]])
+      .mockResolvedValueOnce([[]]); // tcoRows empty → tcoRows[0]?.tco_total = undefined → != null = false → :0
+    const result = await EconomicLifeService.compute('PIIC-Y', 2026);
+    expect(result).not.toBeNull();
+    expect(result!.accumulated_tco).toBe(0);
+    expect(result!.residual_value_mxn).toBe(90_000); // 2022→2026=4 años → 20% floor × 450k
+    expect(result!.replacement_score).toBe(0);
+    expect(result!.recommendation).toBe('KEEP');
+  });
 });
