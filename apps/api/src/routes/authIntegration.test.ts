@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach, Mock } from 'vitest';
 import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import buildApp from '../index';
 import db from '../services/db';
@@ -1019,5 +1019,367 @@ describe('authIntegration.test', () => {
     });
     expect(res.statusCode).toBe(401);
     expect(JSON.parse(res.payload).error).toBe('L3');
+  });
+});
+
+// ─── AUTH Branch Coverage Supplement (AUTH-BC) ───────────────────────────────
+
+describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
+  const bcApp = buildApp();
+
+  beforeAll(async () => {
+    await bcApp.ready();
+  });
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
+    (argon2Verify as Mock).mockResolvedValue(true);
+    (argon2Hash as Mock).mockResolvedValue('hash_value');
+  });
+
+  afterAll(async () => {
+    await bcApp.close();
+  });
+
+  it('AUTH-BC-1: POST /register roleId=4 no profile → insertOwnerProfile early return (B16)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    (db.getConnection as Mock).mockResolvedValueOnce(mockConnection);
+    (mockConnection.execute as Mock)
+      .mockResolvedValueOnce([{ insertId: 80 }, undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ nextId: 900 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'privado.bc1',
+        email: 'bc1@test.mx',
+        password: 'Archon@1234!',
+        roleId: 4,
+        fullName: 'Sin Perfil',
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    const calls = (mockConnection.execute as Mock).mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes('owner_profiles'))).toBe(false);
+  });
+
+  it('AUTH-BC-2: POST /register roleId=3 profile no especialidades → null param in INSERT (B21)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    (db.getConnection as Mock).mockResolvedValueOnce(mockConnection);
+    (mockConnection.execute as Mock)
+      .mockResolvedValueOnce([{ insertId: 81 }, undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ nextId: 901 }], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/register',
+      payload: {
+        username: 'centro.bc2',
+        email: 'bc2@test.mx',
+        password: 'Archon@1234!',
+        roleId: 3,
+        fullName: 'Taller BC2',
+        profile: { rfc: 'ABC010101000', razon_social: 'Taller' },
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    const profileCall = (mockConnection.execute as Mock).mock.calls.find((c) =>
+      (c[0] as string).includes('owner_profiles')
+    );
+    expect(profileCall).toBeDefined();
+    expect(profileCall![1][4]).toBeNull();
+  });
+
+  it('AUTH-BC-3: POST /login resolveSuite non-empty → return suite (B47)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 2,
+            username: 'admin_test',
+            email: 'enc_a',
+            password_hash: 'h',
+            role_id: 1,
+            role_name: 'Admin',
+            profile_picture_url: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined])
+      .mockResolvedValueOnce([[{ suite: 'ERP' }], undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'admin_test', password: 'password123' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).user.suite).toBe('ERP');
+  });
+
+  it('AUTH-BC-4: POST /login user_roles non-empty → roleIds from table (B80)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 4,
+            username: 'admin_test',
+            email: 'enc_a',
+            password_hash: 'h',
+            role_id: 1,
+            role_name: 'Admin',
+            profile_picture_url: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[{ role_id: 1 }, { role_id: 2 }], undefined])
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'admin_test', password: 'password123' },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('AUTH-BC-5: POST /login roleId=3 → ownerType=CENTER (B87)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 5,
+            username: 'admin_test',
+            email: 'enc_a',
+            password_hash: 'h',
+            role_id: 3,
+            role_name: 'Centro',
+            profile_picture_url: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ slug: 'maint:view' }], undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'admin_test', password: 'password123' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).user.ownerType).toBe('CENTER');
+  });
+
+  it('AUTH-BC-6: POST /login roleId=4 → ownerType=PRIVATE (B88)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 6,
+            username: 'admin_test',
+            email: 'enc_a',
+            password_hash: 'h',
+            role_id: 4,
+            role_name: 'Privado',
+            profile_picture_url: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'admin_test', password: 'password123' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).user.ownerType).toBe('PRIVATE');
+  });
+
+  it('AUTH-BC-7: POST /refresh user_roles non-empty → roleIds from table (B102)', async () => {
+    const refreshToken = bcApp.jwt.sign({ id: 10, type: 'refresh' }, { expiresIn: '7d' });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 10,
+            uuid: 'uuid-10',
+            username: 'op',
+            full_name: 'Op',
+            email: 'enc_op@piic.mx',
+            role_id: 1,
+            employee_number: 'E010',
+            is_active: 1,
+            last_login: null,
+            created_at: '2026-01-01',
+            profile_picture_url: null,
+            department_id: null,
+            role_name: 'Op',
+            department_name: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[{ role_id: 1 }, { role_id: 2 }], undefined])
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+  });
+
+  it('AUTH-BC-8: POST /refresh roleId=3 → ownerType=CENTER (B105)', async () => {
+    const refreshToken = bcApp.jwt.sign({ id: 11, type: 'refresh' }, { expiresIn: '7d' });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 11,
+            uuid: 'uuid-11',
+            username: 'centro',
+            full_name: 'Centro',
+            email: 'enc_c@piic.mx',
+            role_id: 3,
+            employee_number: null,
+            is_active: 1,
+            last_login: null,
+            created_at: '2026-01-01',
+            profile_picture_url: null,
+            department_id: null,
+            role_name: 'Centro',
+            department_name: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ slug: 'maint:view' }], undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(200);
+    const decoded = bcApp.jwt.decode<{ owner_type: string }>(JSON.parse(res.body).token);
+    expect(decoded!.owner_type).toBe('CENTER');
+  });
+
+  it('AUTH-BC-9: POST /refresh roleId=4 → ownerType=PRIVATE (B108)', async () => {
+    const refreshToken = bcApp.jwt.sign({ id: 12, type: 'refresh' }, { expiresIn: '7d' });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 12,
+            uuid: 'uuid-12',
+            username: 'privado',
+            full_name: 'Privado',
+            email: 'enc_p@piic.mx',
+            role_id: 4,
+            employee_number: null,
+            is_active: 1,
+            last_login: null,
+            created_at: '2026-01-01',
+            profile_picture_url: null,
+            department_id: null,
+            role_name: 'Privado',
+            department_name: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    const res = await bcApp.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(200);
+    const decoded = bcApp.jwt.decode<{ owner_type: string }>(JSON.parse(res.body).token);
+    expect(decoded!.owner_type).toBe('PRIVATE');
+  });
+});
+
+// ─── AUTH-BC Production Mode (B63 + B90 + B113) ─────────────────────────────
+describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
+  let prodApp!: ReturnType<typeof buildApp>;
+  const origEnv = process.env.NODE_ENV;
+
+  beforeAll(async () => {
+    process.env.NODE_ENV = 'production';
+    prodApp = buildApp();
+    await prodApp.ready();
+  });
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
+    (argon2Verify as Mock).mockResolvedValue(true);
+    (argon2Hash as Mock).mockResolvedValue('hash_value');
+    process.env.NODE_ENV = 'production';
+  });
+
+  afterEach(() => {
+    process.env.NODE_ENV = origEnv;
+  });
+
+  afterAll(async () => {
+    process.env.NODE_ENV = origEnv;
+    await prodApp.close();
+  });
+
+  it('AUTH-BC-10: POST /login production → rate limit max=10 + cookie domain .piic.com.mx (B63+B90)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 7,
+            username: 'admin_test',
+            email: 'enc_a',
+            password_hash: 'h',
+            role_id: 1,
+            role_name: 'Admin',
+            profile_picture_url: null,
+          },
+        ],
+        undefined,
+      ])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    const res = await prodApp.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { username: 'admin_test', password: 'password123' },
+    });
+    expect(res.statusCode).toBe(200);
+    const setCookieRaw = res.headers['set-cookie'];
+    const setCookie = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
+    expect(setCookie).toContain('.piic.com.mx');
+  });
+
+  it('AUTH-BC-11: POST /logout production → clearCookie domain .piic.com.mx (B113)', async () => {
+    const res = await prodApp.inject({ method: 'POST', url: '/v1/auth/logout' });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).success).toBe(true);
+    const setCookieRaw = res.headers['set-cookie'];
+    const setCookie = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
+    expect(setCookie).toContain('.piic.com.mx');
   });
 });
