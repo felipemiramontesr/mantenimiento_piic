@@ -474,5 +474,105 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
         'UUID,Unidad,Categoría,Monto,Período,Proveedor,Referencia,Notas,Registrado por,Fecha'
       );
     });
+
+    it('Finance-BC-6: GET /finance/export scoped non-empty ownerIds → adds ownerScope filter (line 501)', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 5,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[], undefined]); // export query → empty rows
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/export',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['content-type']).toContain('text/csv');
+    });
+  });
+
+  describe('Finance Branch Coverage — scoped paths and edge cases', () => {
+    it('Finance-BC-1: GET /finance/dashboard scoped empty ownerIds → early return (line 132)', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 5,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // getUserOwnerIds → []
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/dashboard',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data.kpis.totalEgresos).toBe(0);
+    });
+
+    it('Finance-BC-2: GET /finance/transactions scoped empty ownerIds → early return (line 298)', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 5,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // getUserOwnerIds → []
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data).toEqual([]);
+      expect(res.json().meta.total).toBe(0);
+    });
+
+    it('Finance-BC-3: GET /finance/transactions scoped non-empty ownerIds → adds ownerScope filter (lines 321, 361)', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 5,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[], undefined]) // main transactions query
+        .mockResolvedValueOnce([[{ total: 0 }], undefined]); // count query
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data).toEqual([]);
+    });
+
+    it('Finance-BC-4: GET /finance/transactions limit=0 → parseInt(0)||50 fallback (line 295)', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[{ total: 0 }], undefined]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions?limit=0',
+        headers: authHeader(),
+      });
+      expect(res.statusCode).toBe(200);
+    });
+
+    it("Finance-BC-5: POST /finance/transactions no body → Zod error path[0]=undefined→??''(line 406)", async () => {
+      // null body → z.object({}).safeParse(null) → error at path [] → path[0]=undefined → ??'' → ''
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/finance/transactions',
+        headers: authHeader(),
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('VALIDATION_ERROR');
+      expect(res.json().field).toBe('');
+    });
   });
 });
