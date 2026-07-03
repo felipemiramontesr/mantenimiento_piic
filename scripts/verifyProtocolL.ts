@@ -3,6 +3,8 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { runConsistencyChecks } from './protocolLConsistency';
+
 // Colores para consola
 const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
@@ -29,7 +31,9 @@ function runCommand(cmd: string): string {
   }
 }
 
-// 1. Guard: No permitir archivos de Protocolos/ o CLAUDE.md en Git Staged
+// 1. Guard: No permitir archivos de Protocolos/ o CLAUDE.md en Git Staged.
+// FC 053 F7: CLAUDE.md permanece local (.gitignore línea 57); además su coherencia
+// de contenido con L se valida programáticamente en runConsistencyChecks.
 function verifyNoProtocolStaged(stagedFiles: string[]): void {
   const protocolStagedFiles = stagedFiles.filter((file) => {
     const lower = file.toLowerCase();
@@ -150,9 +154,10 @@ function verifyVersions(
 
 // 5. Validar mensaje y timestamp en Canal H de HANDOFF_CC_TO_AG.md
 function verifyCanalH(handoffContent: string, forenseContent: string, verF: string): void {
-  const canalHeaderIndex = handoffContent.lastIndexOf('## CANAL DE MENSAJES CC ↔ AG');
+  // FC 053 F7: header genérico — el roster del canal cambia (CC ↔ AG → GrayMan | Alfa | Bravo | Charlie)
+  const canalHeaderIndex = handoffContent.lastIndexOf('## CANAL DE MENSAJES');
   if (canalHeaderIndex === -1) {
-    logError('No se encontró la sección "## CANAL DE MENSAJES CC ↔ AG" en HANDOFF_CC_TO_AG.md');
+    logError('No se encontró la sección "## CANAL DE MENSAJES" en HANDOFF_CC_TO_AG.md');
     process.exit(1);
   }
 
@@ -259,6 +264,33 @@ function verifyNoPlaceholders(): void {
   });
 }
 
+// 7. FC 053 F7 — Auto-verificación de consistencia interna de L (siempre corre)
+function verifyLConsistency(rootDir: string, masterPath: string, handoffPath: string): void {
+  const claudePath = path.join(rootDir, 'CLAUDE.md');
+  const invariantsPath = path.join(
+    rootDir,
+    'Protocolos',
+    'North_Star',
+    '052_NS_MetaLInvariants.md'
+  );
+
+  const errors = runConsistencyChecks({
+    masterContent: fs.readFileSync(masterPath, 'utf8'),
+    claudeContent: fs.existsSync(claudePath) ? fs.readFileSync(claudePath, 'utf8') : '',
+    handoffContent: fs.readFileSync(handoffPath, 'utf8'),
+    invariantsContent: fs.existsSync(invariantsPath) ? fs.readFileSync(invariantsPath, 'utf8') : '',
+  });
+
+  if (errors.length > 0) {
+    errors.forEach((e) => logError(e));
+    logError(`Consistencia interna de L: ${errors.length} violación(es) detectada(s) (FC 053 F7).`);
+    process.exit(1);
+  }
+  logSuccess(
+    'Consistencia interna de L verificada (reglas, FC ACTIVO, versiones, CLAUDE.md, Canal H, ExclusionSet).'
+  );
+}
+
 function verify(): void {
   console.log('--- VALIDACIÓN DE PROTOCOLO L ---');
 
@@ -266,6 +298,10 @@ function verify(): void {
   const handoffPath = path.join(rootDir, 'Protocolos', 'North_Star', '002_NS_HandoffCcToAg.md');
   const masterPath = path.join(rootDir, 'Protocolos', 'North_Star', '001_NS_ProtocoloL.md');
   const forensePath = path.join(rootDir, 'Protocolos', 'North_Star', '003_NS_LogForense.md');
+
+  // FC 053 F7: la auto-verificación de L corre SIEMPRE, incluso sin archivos staged.
+  verifyFilesExist(masterPath, handoffPath, forensePath);
+  verifyLConsistency(rootDir, masterPath, handoffPath);
 
   // 1. Obtener archivos en staged (git diff --cached, excluyendo eliminados)
   const stagedFilesStr = runCommand('git diff --cached --name-only --diff-filter=d');
