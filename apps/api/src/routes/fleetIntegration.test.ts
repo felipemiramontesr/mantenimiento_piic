@@ -391,6 +391,25 @@ describe('Fleet Integration Endpoints', () => {
       });
       expect(response.statusCode).toBe(200);
     });
+
+    it('FLT-PATCH-SCHEMA-1: data con clave "id" → filtrada por preprocess (B116 TRUE)', async (): Promise<void> => {
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // Snapshot Before
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]); // Snapshot After
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: {
+          data: { id: 'SHOULD_BE_IGNORED', odometer: 60000 }, // id filtered by line 116
+          reason: 'Odometer correction with stale id key',
+        },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().success).toBe(true);
+    });
   });
 
   describe('DELETE /v1/fleet/:id', () => {
@@ -430,6 +449,17 @@ describe('Fleet Integration Endpoints', () => {
         payload: { reason: 'Test DB error' },
       });
       expect(response.statusCode).toBe(500);
+    });
+
+    it('FLT-DEL-VAL-1: DELETE sin reason válido → 400 "Reason required" (B290-291)', async (): Promise<void> => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/v1/fleet/ASM-001',
+        headers: authHeader(),
+        payload: { reason: 'abc' }, // min(5) → falla zod → !parse.success → B290
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toBe('Reason required for deletion');
     });
   });
 
