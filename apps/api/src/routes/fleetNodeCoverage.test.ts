@@ -11,6 +11,7 @@ vi.mock('../services/fleetService', () => ({
     createUnit: vi.fn().mockResolvedValue({ id: 'X', uuid: 'u-x' }),
     updateUnit: vi.fn().mockResolvedValue(true),
     deleteUnit: vi.fn().mockResolvedValue(true),
+    getUserOwnerIds: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -52,6 +53,7 @@ const UNIT = {
 describe('GET /fleet/:id/node — Sovereign Node', () => {
   const app = buildApp();
   let token: string;
+  let scopedToken: string;
 
   beforeAll(async () => {
     await app.ready();
@@ -61,6 +63,12 @@ describe('GET /fleet/:id/node — Sovereign Node', () => {
       roleId: 1,
       roleName: 'Director',
       permissions: ['*'],
+    });
+    scopedToken = app.jwt.sign({
+      id: 42,
+      username: 'fleet.driver',
+      roleId: 3,
+      permissions: ['fleet:unit:view:any', 'fleet:scoped'],
     });
   });
 
@@ -207,5 +215,18 @@ describe('GET /fleet/:id/node — Sovereign Node', () => {
 
     expect(res.statusCode).toBe(500);
     expect(res.json().error).toContain('Error al cargar nodo');
+  });
+
+  it('FN-5: usuario fleet:scoped con ownerIds vacío → 404 early return (B316-317)', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet/ASM-001/node',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(vi.mocked(FleetService.getUnitById)).not.toHaveBeenCalled();
   });
 });

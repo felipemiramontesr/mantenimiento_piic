@@ -352,6 +352,88 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       expect(result).toHaveLength(1);
       expect(result[0].unit_id).toBe('ASM-001');
     });
+
+    it('RT-SVC-ALL-2: getAllIncidents([1,2]) → SQL con filtro IN (?, ?) (B465 TRUE)', async () => {
+      const mockAll = [{ id: 2, unit_id: 'ASM-002' }];
+      (db.execute as any).mockResolvedValueOnce([mockAll]);
+
+      const result = await RouteService.getAllIncidents([1, 2]);
+      expect(result).toHaveLength(1);
+      const [query, params] = (db.execute as any).mock.calls[0];
+      expect(query).toContain('IN (?, ?)');
+      expect(params).toEqual([1, 2]);
+    });
+  });
+
+  describe('addCheckpoint', () => {
+    it('RT-SVC-ADD-1: routeUuid no encontrado → lanza "Route not found" (B393 TRUE)', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]); // routes empty
+
+      await expect(
+        RouteService.addCheckpoint('UUID-NONE', { sequence: 1, name: 'Stop A' })
+      ).rejects.toThrow('Route not found');
+    });
+
+    it('RT-SVC-ADD-2: ruta válida → inserta checkpoint y retorna insertId (camino feliz)', async () => {
+      (db.execute as any)
+        .mockResolvedValueOnce([[{ id: 5, status: 'ACTIVE' }]]) // routes found
+        .mockResolvedValueOnce([{ insertId: 99, affectedRows: 1 }]); // INSERT
+
+      const id = await RouteService.addCheckpoint('UUID-ACTIVE', {
+        sequence: 1,
+        name: 'Stop A',
+        neighborhoodId: 10,
+        eta: '08:00',
+      });
+      expect(id).toBe(99);
+    });
+  });
+
+  describe('getCheckpoints', () => {
+    it('RT-SVC-GET-1: routeUuid no encontrado → lanza "Route not found" (B413 TRUE)', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]); // routes empty
+
+      await expect(RouteService.getCheckpoints('UUID-NONE')).rejects.toThrow('Route not found');
+    });
+
+    it('RT-SVC-GET-2: ruta válida → retorna checkpoints ordenados (camino feliz)', async () => {
+      const mockCheckpoints = [{ id: 1, sequence: 1, name: 'Stop A' }];
+      (db.execute as any)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // routes found
+        .mockResolvedValueOnce([mockCheckpoints]); // SELECT checkpoints
+
+      const result = await RouteService.getCheckpoints('UUID-ACTIVE');
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Stop A');
+    });
+  });
+
+  describe('arriveAtCheckpoint', () => {
+    it('RT-SVC-ARR-1: routeUuid no encontrado → lanza "Route not found" (B435 TRUE)', async () => {
+      (db.execute as any).mockResolvedValueOnce([[]]); // routes empty
+
+      await expect(RouteService.arriveAtCheckpoint('UUID-NONE', 1)).rejects.toThrow(
+        'Route not found'
+      );
+    });
+
+    it('RT-SVC-ARR-2: checkpoint no encontrado (affectedRows=0) → lanza "Checkpoint not found" (B444 TRUE)', async () => {
+      (db.execute as any)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // routes found
+        .mockResolvedValueOnce([{ affectedRows: 0 }]); // UPDATE → no match
+
+      await expect(RouteService.arriveAtCheckpoint('UUID-ACTIVE', 999)).rejects.toThrow(
+        'Checkpoint not found or already visited'
+      );
+    });
+
+    it('RT-SVC-ARR-3: checkpoint válido → UPDATE exitoso y resuelve sin valor (camino feliz)', async () => {
+      (db.execute as any)
+        .mockResolvedValueOnce([[{ id: 5 }]]) // routes found
+        .mockResolvedValueOnce([{ affectedRows: 1 }]); // UPDATE → 1 row affected
+
+      await expect(RouteService.arriveAtCheckpoint('UUID-ACTIVE', 1)).resolves.toBeUndefined();
+    });
   });
 
   describe('updateRoute & deleteRoute (Forensic Audit)', () => {
