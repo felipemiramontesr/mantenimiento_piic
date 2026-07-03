@@ -57,9 +57,6 @@ const requirePermission =
     const legacySlugs = REVERSE_ALIASES.get(resolved) ?? [];
     if (legacySlugs.some((s) => permissions.includes(s))) return;
 
-    // 3. Route uses legacy slug, user JWT also has the legacy slug (unchanged token)
-    if (resolved !== permission && permissions.includes(permission)) return;
-
     reply.code(403).send({
       success: false,
       code: 'FORBIDDEN',

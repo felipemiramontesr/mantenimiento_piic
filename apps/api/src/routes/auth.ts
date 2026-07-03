@@ -41,7 +41,7 @@ async function resolveOwnerRow(
   ownerLabel: string,
   ownerType: OwnerType,
   rfc?: string | null,
-  username?: string
+  username: string
 ): Promise<number> {
   const [existing] = await connection.execute<RowDataPacket[]>(
     'SELECT id FROM owners WHERE label = ? LIMIT 1',
@@ -59,7 +59,7 @@ async function resolveOwnerRow(
     [ownerId, `OWN_U${userId}`, ownerLabel]
   );
   const suite: 'ERP' | 'VIM' = ownerType === 'FLOTILLA' ? 'ERP' : 'VIM';
-  const handle = await resolveUniqueHandle(connection, suite, rfc, username ?? ownerLabel);
+  const handle = await resolveUniqueHandle(connection, suite, rfc, username);
   await connection.execute<ResultSetHeader>(
     'INSERT INTO owners (id, owner_type, suite, label, handle) VALUES (?, ?, ?, ?, ?)',
     [ownerId, ownerType, suite, ownerLabel, handle]
