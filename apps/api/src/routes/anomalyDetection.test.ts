@@ -215,4 +215,15 @@ describe('GET /v1/fleet-units/:unitId/anomalies (FC-6 Fase 6B)', () => {
     expect(res.statusCode).toBe(403);
     expect(vi.mocked(AnomalyDetectionService.compute)).not.toHaveBeenCalled();
   });
+
+  it('AD-INT-9: 500 cuando AnomalyDetectionService.compute lanza excepción (B52 catch)', async () => {
+    vi.mocked(AnomalyDetectionService.compute).mockRejectedValueOnce(new Error('DB timeout'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/ASM-001/anomalies',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(res.json().error).toBe('Internal error computing anomaly detection');
+  });
 });

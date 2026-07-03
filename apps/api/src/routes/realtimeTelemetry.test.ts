@@ -130,6 +130,17 @@ describe('FC-3 Realtime_Telemetry FaseB — POST /v1/telemetry/ping + GET /v1/te
     expect((db.execute as Mock).mock.calls).toHaveLength(1);
   });
 
+  it('AT-RT-B-11: POST /telemetry/ping sin body → request.body??{} dispara right-side → 400 (B120)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/telemetry/ping',
+      headers: { authorization: `Bearer ${userToken}` },
+      // no payload → request.body is null → null??{} fires → unitId/lat/lng undefined → 400
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).error).toBe('unitId, latitude and longitude are required');
+  });
+
   // ─── GET /v1/telemetry/units ────────────────────────────────────────────────
 
   it('AT-RT-B-7: 401 when no JWT on GET /telemetry/units', async () => {

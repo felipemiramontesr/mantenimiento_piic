@@ -387,6 +387,18 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       });
       expect(id).toBe(99);
     });
+
+    it('RT-SVC-ADD-3: sin neighborhoodId ni eta → ??null right-sides disparan (B399)', async () => {
+      (db.execute as any)
+        .mockResolvedValueOnce([[{ id: 5, status: 'ACTIVE' }]]) // routes found
+        .mockResolvedValueOnce([{ insertId: 100, affectedRows: 1 }]); // INSERT
+
+      const id = await RouteService.addCheckpoint('UUID-ACTIVE', { sequence: 2, name: 'Stop B' });
+      expect(id).toBe(100);
+      const [, params] = (db.execute as any).mock.calls[1];
+      expect(params[3]).toBeNull(); // neighborhoodId ?? null
+      expect(params[4]).toBeNull(); // eta ?? null
+    });
   });
 
   describe('getCheckpoints', () => {

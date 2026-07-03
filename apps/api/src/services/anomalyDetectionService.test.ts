@@ -170,4 +170,16 @@ describe('AnomalyDetectionService.compute()', () => {
     expect(result!.z_score).toBeNull();
     expect(result!.is_anomaly).toBe(false);
   });
+
+  it('AD-SVC-7: baselineRows vacío → optional chain ?.km_per_liter short-circuit → unitKmPerLiter=null (B152 FALSE)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ ownerId: 5 }]]) // unitRows
+      .mockResolvedValueOnce([[{ fleet_size: 3 }]]) // countRows (<10 → moving_avg)
+      .mockResolvedValueOnce([[]]) // baselineRows EMPTY → baselineRows[0] undefined → ?. fires
+      .mockResolvedValueOnce([[{ recent_km_per_liter: null }]]); // recentRows
+    const result = await AnomalyDetectionService.compute('unit-7');
+    expect(result).not.toBeNull();
+    expect(result!.baseline_km_per_liter).toBeNull();
+    expect(result!.is_anomaly).toBe(false);
+  });
 });

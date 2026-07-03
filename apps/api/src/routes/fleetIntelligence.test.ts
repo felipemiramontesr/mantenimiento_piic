@@ -191,4 +191,15 @@ describe('GET /v1/fleet-units/:unitId/intelligence (FC-5 Fase 5B)', () => {
     expect(res.statusCode).toBe(403);
     expect(vi.mocked(FleetIntelligenceKpiService.compute)).not.toHaveBeenCalled();
   });
+
+  it('KPI-INT-8: 500 cuando FleetIntelligenceKpiService.compute lanza excepción (B50 catch)', async () => {
+    vi.mocked(FleetIntelligenceKpiService.compute).mockRejectedValueOnce(new Error('DB timeout'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/ASM-001/intelligence',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(res.json().error).toBe('Internal error computing intelligence KPIs');
+  });
 });

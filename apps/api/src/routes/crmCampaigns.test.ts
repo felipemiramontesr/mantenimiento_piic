@@ -311,4 +311,15 @@ describe('GET|POST /v1/crm/campaigns — FC-8 CRM_Advanced FaseE', () => {
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.payload).error).toBe('CAMPAIGN_NOT_FOUND');
   });
+
+  it('AT-CRM8-E-19: POST /crm/campaigns sin body → request.body??{} dispara right-side → 400 (B107)', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/crm/campaigns',
+      headers: { authorization: `Bearer ${adminToken}` },
+      // no payload → request.body is null → null??{} fires → all fields undefined → 400
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).error).toBe('MISSING_REQUIRED_FIELDS');
+  });
 });

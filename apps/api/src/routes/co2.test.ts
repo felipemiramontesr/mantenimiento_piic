@@ -205,4 +205,15 @@ describe('GET /v1/fleet-units/:unitId/co2 (FC-6 Fase 6D)', () => {
     expect(res.statusCode).toBe(403);
     expect(vi.mocked(Co2Service.compute)).not.toHaveBeenCalled();
   });
+
+  it('CO2-INT-9: 500 cuando Co2Service.compute lanza excepción (B52 catch)', async () => {
+    vi.mocked(Co2Service.compute).mockRejectedValueOnce(new Error('DB timeout'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/ASM-001/co2',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(res.json().error).toBe('Internal error computing CO2 emissions');
+  });
 });

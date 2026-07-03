@@ -215,4 +215,15 @@ describe('GET /v1/fleet-units/:unitId/operator-score (FC-6 Fase 6C)', () => {
     expect(res.json().data.composite_score).toBe(90);
     expect(res.json().data.checkpoint_adherence_score).toBeNull();
   });
+
+  it('OS-INT-9: 500 cuando OperatorScorecardService.compute lanza excepción (B51 catch)', async () => {
+    vi.mocked(OperatorScorecardService.compute).mockRejectedValueOnce(new Error('DB timeout'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/ASM-001/operator-score',
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(res.json().error).toBe('Internal error computing operator scorecard');
+  });
 });
