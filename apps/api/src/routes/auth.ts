@@ -40,8 +40,8 @@ async function resolveOwnerRow(
   userId: number,
   ownerLabel: string,
   ownerType: OwnerType,
-  rfc?: string | null,
-  username: string
+  username: string,
+  rfc?: string | null
 ): Promise<number> {
   const [existing] = await connection.execute<RowDataPacket[]>(
     'SELECT id FROM owners WHERE label = ? LIMIT 1',
@@ -479,8 +479,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
             userId,
             ownerLabel,
             ownerType,
-            profile?.rfc,
-            username
+            username,
+            profile?.rfc
           );
 
           await connection.execute<ResultSetHeader>(
