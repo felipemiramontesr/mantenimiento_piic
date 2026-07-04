@@ -413,7 +413,7 @@ export function checkVersionSync(masterContent: string, handoffContent: string):
   const estadoVer = handoffContent.match(/^\s+Versión\s*:\s*(V\.\d+\.\d+\.\d+)/m)?.[1];
 
   if (!headerVer) {
-    errors.push('Canal H: falta la línea "Versión activa : V.x.y.z_..." en la cabecera (I-20).');
+    errors.push('Canal H: falta la línea "Versión activa" (V.x.y.z_...) en la cabecera (I-20).');
   } else if (headerVer !== lVer) {
     errors.push(
       `Versión desincronizada: L declara ${lVer} pero la cabecera de H declara ${headerVer} (I-20 · FC 057).`
