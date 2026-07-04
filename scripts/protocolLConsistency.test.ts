@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   checkClaudeMdCoherence,
+  checkConsecutiveAuthors,
   checkCursorTable,
   checkExclusionSetRegistry,
   checkFcActivo,
@@ -242,6 +243,40 @@ describe('FC 054 Scenario 6 + 3/4 — GC por mínimo (Gherkin)', () => {
       msgs: `### A → B · 2026-07-03 11:00:00\nmsg`,
     });
     expect(checkMinCursorGC(h)).toEqual([]);
+  });
+});
+
+describe('FC 056 Scenarios 2/3/4 — Enforcement de R-H-COMPACT (T1: ViolatesCompact ≡ P ∧ ¬Q)', () => {
+  const canal = (msgs: string): string => `## CANAL DE MENSAJES X\n\n${msgs}\n`;
+
+  it('T1 fila ⊤⊥ — cola intra-sesión del mismo autor sin ACK: VIOLACIÓN (Scenario 2)', () => {
+    const h = canal(
+      `### Charlie → Alfa · 2026-07-03 10:00:00\n\n[FASE 1] avance\n\n---\n\n### Charlie → Alfa · 2026-07-03 10:05:00\n\n[FASE 2] avance`
+    );
+    const errors = checkConsecutiveAuthors(h);
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('cola de autor consecutivo');
+  });
+
+  it('T1 fila ⊤⊤ — cola propia con [ACK L] de nueva sesión: legal (Scenario 3, coherente con AppendAllowed)', () => {
+    const h = canal(
+      `### Charlie → Alfa · 2026-07-03 10:00:00\n\n[FC CERRADO] fin de sesión\n\n---\n\n### Charlie → Alfa · 2026-07-03 12:00:00\n\n[ACK L] Charlie al día · nueva sesión`
+    );
+    expect(checkConsecutiveAuthors(h)).toEqual([]);
+  });
+
+  it('T1 filas ⊥Q — autores alternados: legal (Scenario 4)', () => {
+    const h = canal(
+      `### Charlie → Alfa · 2026-07-03 10:00:00\n\nmsg\n\n---\n\n### Alfa → Charlie · 2026-07-03 10:05:00\n\nmsg\n\n---\n\n### Bravo → Charlie · 2026-07-03 10:10:00\n\nmsg`
+    );
+    expect(checkConsecutiveAuthors(h)).toEqual([]);
+  });
+
+  it('cola de 3+ mensajes reporta cada par consecutivo violatorio', () => {
+    const h = canal(
+      `### Charlie → Alfa · 2026-07-03 10:00:00\n\na\n\n---\n\n### Charlie → Alfa · 2026-07-03 10:05:00\n\nb\n\n---\n\n### Charlie → Alfa · 2026-07-03 10:10:00\n\nc`
+    );
+    expect(checkConsecutiveAuthors(h).length).toBe(2);
   });
 });
 

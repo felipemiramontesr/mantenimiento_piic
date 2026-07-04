@@ -349,6 +349,54 @@ export function checkMinCursorGC(handoffContent: string): string[] {
   return errors;
 }
 
+/**
+ * Check I — Compactación de autores consecutivos (FC 056 F2 · I-6 · R-H-COMPACT):
+ * ViolatesCompact(i) ≡ Author(mᵢ) = Author(mᵢ₊₁) ∧ ¬NewSessionACK(mᵢ₊₁).
+ * NewSessionACK(m) ≡ el cuerpo inicia con "[ACK L]" o "[ACK H]" (marcador Regla 12
+ * de la excepción formal AppendAllowed — FC 053 F1). Limitación declarada: el
+ * marcador es falsificable; este check es anti-deriva, no anti-adversario.
+ */
+export function checkConsecutiveAuthors(handoffContent: string): string[] {
+  const canalIndex = handoffContent.indexOf('## CANAL DE MENSAJES');
+  if (canalIndex === -1) {
+    return []; // checkHOrder ya reporta la ausencia del canal
+  }
+  const lines = handoffContent.substring(canalIndex).split(/\r?\n/);
+  const headerRegex = /^###\s+(\S+)\s*→.*·\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s*$/;
+
+  const messages: { author: string; firstBodyLine: string; ordinal: number }[] = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const match = lines[i].match(headerRegex);
+    if (match) {
+      let firstBodyLine = '';
+      for (let j = i + 1; j < lines.length; j += 1) {
+        if (lines[j].match(headerRegex)) {
+          break;
+        }
+        if (lines[j].trim() !== '') {
+          firstBodyLine = lines[j].trim();
+          break;
+        }
+      }
+      messages.push({ author: match[1], firstBodyLine, ordinal: messages.length + 1 });
+    }
+  }
+
+  const errors: string[] = [];
+  for (let i = 1; i < messages.length; i += 1) {
+    const prev = messages[i - 1];
+    const curr = messages[i];
+    const isNewSessionAck =
+      curr.firstBodyLine.startsWith('[ACK L]') || curr.firstBodyLine.startsWith('[ACK H]');
+    if (curr.author === prev.author && !isNewSessionAck) {
+      errors.push(
+        `Canal H: cola de autor consecutivo — mensajes #${prev.ordinal} y #${curr.ordinal} son de ${curr.author} sin ACK de nueva sesión; consolidar en 1 bloque (I-6 · R-H-COMPACT).`
+      );
+    }
+  }
+  return errors;
+}
+
 export interface ConsistencyInput {
   masterContent: string;
   claudeContent: string;
@@ -367,5 +415,6 @@ export function runConsistencyChecks(input: ConsistencyInput): string[] {
     ...checkExclusionSetRegistry(input.invariantsContent),
     ...checkCursorTable(input.handoffContent),
     ...checkMinCursorGC(input.handoffContent),
+    ...checkConsecutiveAuthors(input.handoffContent),
   ];
 }
