@@ -287,7 +287,7 @@ function verifyLConsistency(rootDir: string, masterPath: string, handoffPath: st
     process.exit(1);
   }
   logSuccess(
-    'Consistencia interna de L verificada (reglas, FC ACTIVO, versiones, CLAUDE.md, Canal H, ExclusionSet).'
+    'Consistencia interna de L verificada (reglas, FC ACTIVO, versiones, CLAUDE.md, Canal H, ExclusionSet, Cursores I-18, GC I-19).'
   );
 }
 

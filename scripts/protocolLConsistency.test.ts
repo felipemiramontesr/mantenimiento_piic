@@ -9,9 +9,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   checkClaudeMdCoherence,
+  checkCursorTable,
   checkExclusionSetRegistry,
   checkFcActivo,
   checkHOrder,
+  checkMinCursorGC,
   checkRuleRegistry,
   checkVersionFormat,
   runConsistencyChecks,
@@ -169,6 +171,77 @@ describe('Checks estructurales — FC ACTIVO y formato de versión', () => {
   it('rechaza L sin bloque FC ACTIVO', () => {
     const errors = checkFcActivo('# L vacío\n## ÍNDICE');
     expect(errors[0]).toContain('FEATURE CONTRACT ACTIVO');
+  });
+});
+
+function buildHandoffFixture(options?: {
+  cursores?: string;
+  estado?: string;
+  msgs?: string;
+}): string {
+  const cursores =
+    options?.cursores ??
+    'Cursores        : Alfa=2026-07-03 10:00:00 · Bravo=2026-07-03 10:00:00 · Charlie=2026-07-03 11:00:00';
+  const estado = options?.estado ?? 'ESTADO\n  FC activo : 054 — test\n  Próximo   : cierre';
+  const msgs =
+    options?.msgs ?? `### A → B · 2026-07-03 10:00:00\nmsg\n\n### B → A · 2026-07-03 11:00:00\nmsg`;
+  return `# HANDOFF\n\`\`\`\nÚltimo mensaje  : x\n${cursores}\n${estado}\n═══\n\`\`\`\n\n## CANAL DE MENSAJES X\n\n${msgs}\n`;
+}
+
+describe('FC 054 Scenario 5 — Cursor inválido detectado (Gherkin)', () => {
+  it('acepta cabecera con tabla Cursores válida y ESTADO ≤ 6 líneas (T2 fila ⊤⊤)', () => {
+    expect(checkCursorTable(buildHandoffFixture())).toEqual([]);
+  });
+
+  it('rechaza cursor posterior al último mensaje del canal (T2 fila ⊤⊥ — cursor en el futuro)', () => {
+    const h = buildHandoffFixture({
+      cursores:
+        'Cursores        : Alfa=2026-07-03 10:00:00 · Bravo=2026-07-03 10:00:00 · Charlie=2026-07-03 23:59:59',
+    });
+    const errors = checkCursorTable(h);
+    expect(errors.some((e) => e.includes('cursor(Charlie)') && e.includes('más allá'))).toBe(true);
+  });
+
+  it('rechaza tabla Cursores ausente o con formato corrupto (T2 fila ⊥Q)', () => {
+    const h = buildHandoffFixture({
+      cursores: 'Cursores : Alfa=ayer · Bravo=hoy · Charlie=mañana',
+    });
+    const errors = checkCursorTable(h);
+    expect(errors.some((e) => e.includes('falta la tabla'))).toBe(true);
+  });
+
+  it('rechaza bloque ESTADO ausente y bloque ESTADO > 6 líneas', () => {
+    const sinEstado = buildHandoffFixture({ estado: 'SIN-BLOQUE' });
+    expect(checkCursorTable(sinEstado).some((e) => e.includes('falta el bloque "ESTADO"'))).toBe(
+      true
+    );
+
+    const inflado = buildHandoffFixture({ estado: `ESTADO\n1\n2\n3\n4\n5\n6\n7` });
+    expect(checkCursorTable(inflado).some((e) => e.includes('máximo 6'))).toBe(true);
+  });
+});
+
+describe('FC 054 Scenario 6 + 3/4 — GC por mínimo (Gherkin)', () => {
+  it('detecta recolección pendiente: mensaje por debajo de min(cursores) que no es el último (T1 ⊤⊤⊤)', () => {
+    const h = buildHandoffFixture({
+      cursores:
+        'Cursores        : Alfa=2026-07-03 10:30:00 · Bravo=2026-07-03 10:30:00 · Charlie=2026-07-03 11:00:00',
+    });
+    const errors = checkMinCursorGC(h);
+    expect(errors.some((e) => e.includes('recolección pendiente') && e.includes('#1'))).toBe(true);
+  });
+
+  it('protege lo no leído: mensaje ≥ min(cursores) permanece aunque otros cursores estén adelante (T1 con ⊥)', () => {
+    expect(checkMinCursorGC(buildHandoffFixture())).toEqual([]);
+  });
+
+  it('conserva el último mensaje como ancla aunque esté por debajo del mínimo', () => {
+    const h = buildHandoffFixture({
+      cursores:
+        'Cursores        : Alfa=2026-07-03 23:00:00 · Bravo=2026-07-03 23:00:00 · Charlie=2026-07-03 23:00:00',
+      msgs: `### A → B · 2026-07-03 11:00:00\nmsg`,
+    });
+    expect(checkMinCursorGC(h)).toEqual([]);
   });
 });
 

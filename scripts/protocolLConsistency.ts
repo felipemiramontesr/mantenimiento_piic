@@ -256,6 +256,99 @@ export function checkExclusionSetRegistry(invariantsContent: string): string[] {
   return errors;
 }
 
+const TS_PATTERN = '\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}';
+const CURSOR_LINE_REGEX = new RegExp(
+  `^Cursores\\s*:\\s*Alfa=(${TS_PATTERN})\\s*·\\s*Bravo=(${TS_PATTERN})\\s*·\\s*Charlie=(${TS_PATTERN})\\s*$`,
+  'm'
+);
+
+function extractMessageTimestamps(handoffContent: string): string[] {
+  const canalIndex = handoffContent.indexOf('## CANAL DE MENSAJES');
+  if (canalIndex === -1) {
+    return [];
+  }
+  return Array.from(
+    handoffContent
+      .substring(canalIndex)
+      .matchAll(/^###\s+.+·\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*$/gm)
+  ).map((m) => m[1]);
+}
+
+/**
+ * Check G — Tabla Cursores y bloque ESTADO en cabecera de H (FC 054 F5 · I-18):
+ * CursorValid(r) ≡ formato válido ∧ cursor(r) ≤ t(último mensaje). Ω exento.
+ * Los timestamps YYYY-MM-DD HH:MM:SS comparan correctamente como strings.
+ */
+export function checkCursorTable(handoffContent: string): string[] {
+  const errors: string[] = [];
+
+  const cursorMatch = handoffContent.match(CURSOR_LINE_REGEX);
+  if (!cursorMatch) {
+    errors.push(
+      'Canal H: falta la tabla "Cursores : Alfa=... · Bravo=... · Charlie=..." en la cabecera (I-18, FC 054).'
+    );
+  } else {
+    const timestamps = extractMessageTimestamps(handoffContent);
+    const lastMessage = timestamps[timestamps.length - 1];
+    if (lastMessage !== undefined) {
+      const raptors = ['Alfa', 'Bravo', 'Charlie'];
+      raptors.forEach((raptor, i) => {
+        const cursor = cursorMatch[i + 1];
+        if (cursor > lastMessage) {
+          errors.push(
+            `Canal H: cursor(${raptor})=${cursor} apunta más allá del último mensaje (${lastMessage}) — CursorValid = ⊥ (I-18).`
+          );
+        }
+      });
+    }
+  }
+
+  const estadoMatch = handoffContent.match(/^ESTADO\s*$/m);
+  if (!estadoMatch || estadoMatch.index === undefined) {
+    errors.push('Canal H: falta el bloque "ESTADO" en la cabecera (FC 054 F1).');
+  } else {
+    const afterEstado = handoffContent.substring(estadoMatch.index).split(/\r?\n/);
+    let bodyLines = 0;
+    for (let i = 1; i < afterEstado.length; i += 1) {
+      if (/^═|^```/.test(afterEstado[i])) {
+        break;
+      }
+      bodyLines += 1;
+    }
+    if (bodyLines > 6) {
+      errors.push(`Canal H: el bloque ESTADO tiene ${bodyLines} líneas — máximo 6 (FC 054 F1).`);
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Check H — GC por mínimo aplicado (FC 054 F5 · I-19):
+ * GC-Aplicado(H) ≡ ∀m ∈ H_activo \ {último} : t(m) ≥ min(cursores).
+ * El último mensaje se conserva siempre como ancla de continuidad.
+ */
+export function checkMinCursorGC(handoffContent: string): string[] {
+  const cursorMatch = handoffContent.match(CURSOR_LINE_REGEX);
+  if (!cursorMatch) {
+    return []; // sin tabla no hay GC evaluable — checkCursorTable ya reporta la ausencia
+  }
+  const minCursor = [cursorMatch[1], cursorMatch[2], cursorMatch[3]].sort()[0];
+  const timestamps = extractMessageTimestamps(handoffContent);
+
+  const errors: string[] = [];
+  for (let i = 0; i < timestamps.length - 1; i += 1) {
+    if (timestamps[i] < minCursor) {
+      errors.push(
+        `Canal H: recolección pendiente — el mensaje #${i + 1} (${
+          timestamps[i]
+        }) está por debajo de min(cursores)=${minCursor} y ya fue leído por los 3 Raptors; archivarlo en HISTORICO_HANDOFF (I-19).`
+      );
+    }
+  }
+  return errors;
+}
+
 export interface ConsistencyInput {
   masterContent: string;
   claudeContent: string;
@@ -272,5 +365,7 @@ export function runConsistencyChecks(input: ConsistencyInput): string[] {
     ...checkClaudeMdCoherence(input.claudeContent, input.masterContent),
     ...checkHOrder(input.handoffContent),
     ...checkExclusionSetRegistry(input.invariantsContent),
+    ...checkCursorTable(input.handoffContent),
+    ...checkMinCursorGC(input.handoffContent),
   ];
 }
