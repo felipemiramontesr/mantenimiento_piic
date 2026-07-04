@@ -397,6 +397,36 @@ export function checkConsecutiveAuthors(handoffContent: string): string[] {
   return errors;
 }
 
+/**
+ * Check J — Sincronía de versiones L ↔ H (FC 057 · I-20):
+ * VersionSync ≡ ver(L) = ver(H_header) ∧ ver(L) = ver(H_ESTADO).
+ * Caso empírico: header H fosilizado en 467 con L y ESTADO en 468 — detectado
+ * por Ω porque verifyVersions legacy solo corre con archivos apps/** staged.
+ */
+export function checkVersionSync(masterContent: string, handoffContent: string): string[] {
+  const errors: string[] = [];
+  const lVer = masterContent.match(/VERSIÓN ACTUAL:\s*(V\.\d+\.\d+\.\d+)/)?.[1];
+  if (!lVer) {
+    return []; // checkVersionFormat ya reporta el formato inválido de L
+  }
+  const headerVer = handoffContent.match(/Versión activa\s*:\s*(V\.\d+\.\d+\.\d+)/)?.[1];
+  const estadoVer = handoffContent.match(/^\s+Versión\s*:\s*(V\.\d+\.\d+\.\d+)/m)?.[1];
+
+  if (!headerVer) {
+    errors.push('Canal H: falta la línea "Versión activa : V.x.y.z_..." en la cabecera (I-20).');
+  } else if (headerVer !== lVer) {
+    errors.push(
+      `Versión desincronizada: L declara ${lVer} pero la cabecera de H declara ${headerVer} (I-20 · FC 057).`
+    );
+  }
+  if (estadoVer !== undefined && estadoVer !== lVer) {
+    errors.push(
+      `Versión desincronizada: L declara ${lVer} pero el bloque ESTADO de H declara ${estadoVer} (I-20 · FC 057).`
+    );
+  }
+  return errors;
+}
+
 export interface ConsistencyInput {
   masterContent: string;
   claudeContent: string;
@@ -416,5 +446,6 @@ export function runConsistencyChecks(input: ConsistencyInput): string[] {
     ...checkCursorTable(input.handoffContent),
     ...checkMinCursorGC(input.handoffContent),
     ...checkConsecutiveAuthors(input.handoffContent),
+    ...checkVersionSync(input.masterContent, input.handoffContent),
   ];
 }

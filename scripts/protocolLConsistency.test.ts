@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import {
   checkClaudeMdCoherence,
   checkConsecutiveAuthors,
+  checkVersionSync,
   checkCursorTable,
   checkExclusionSetRegistry,
   checkFcActivo,
@@ -277,6 +278,33 @@ describe('FC 056 Scenarios 2/3/4 — Enforcement de R-H-COMPACT (T1: ViolatesCom
       `### Charlie → Alfa · 2026-07-03 10:00:00\n\na\n\n---\n\n### Charlie → Alfa · 2026-07-03 10:05:00\n\nb\n\n---\n\n### Charlie → Alfa · 2026-07-03 10:10:00\n\nc`
     );
     expect(checkConsecutiveAuthors(h).length).toBe(2);
+  });
+});
+
+describe('FC 057 — Sincronía de versiones L ↔ H (T1: VersionSync ≡ A ∧ B)', () => {
+  const master = `VERSIÓN ACTUAL: V.78.101.468_FC056_H_Compact_Enforcement`;
+  const handoff = (headerVer: string, estadoVer: string): string =>
+    `Versión activa  : ${headerVer}_Desc\nESTADO\n  Versión   : ${estadoVer} · commits`;
+
+  it('T1 fila ⊤⊤ — sincronía total: cero errores', () => {
+    expect(checkVersionSync(master, handoff('V.78.101.468', 'V.78.101.468'))).toEqual([]);
+  });
+
+  it('T1 fila ⊥⊤ — header desincronizado (caso empírico 467 vs 468)', () => {
+    const errors = checkVersionSync(master, handoff('V.78.101.467', 'V.78.101.468'));
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('la cabecera de H declara V.78.101.467');
+  });
+
+  it('T1 fila ⊤⊥ — ESTADO desincronizado', () => {
+    const errors = checkVersionSync(master, handoff('V.78.101.468', 'V.78.101.467'));
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('ESTADO de H declara V.78.101.467');
+  });
+
+  it('falla si falta la línea "Versión activa" en la cabecera', () => {
+    const errors = checkVersionSync(master, 'ESTADO\n  Versión   : V.78.101.468');
+    expect(errors.some((e) => e.includes('falta la línea "Versión activa"'))).toBe(true);
   });
 });
 
