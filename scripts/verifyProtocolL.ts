@@ -78,7 +78,7 @@ function verifyModificationTimes(
 
   const filesToCheck = [
     { name: 'PROTOCOLO_L.md', path: masterPath },
-    { name: 'HANDOFF_CC_TO_AG.md', path: handoffPath },
+    { name: '002_NS_Handoff.md', path: handoffPath },
     { name: 'LOG_FORENSE.md', path: forensePath },
   ];
 
@@ -94,7 +94,7 @@ function verifyModificationTimes(
         )} minutos).\n` +
           `Según el Protocolo L §13.1.1, antes de commitear debes actualizar localmente:\n` +
           `  1. PROTOCOLO_L.md (Bumpear VERSIÓN ACTUAL)\n` +
-          `  2. HANDOFF_CC_TO_AG.md (Metadata + Mensaje Consolidado en Canal H)\n` +
+          `  2. 002_NS_Handoff.md (Metadata + Mensaje Consolidado en Canal H)\n` +
           `  3. LOG_FORENSE.md (Entrada de la sesión)`
       );
       process.exit(1);
@@ -125,7 +125,7 @@ function verifyVersions(
     process.exit(1);
   }
   if (!handoffVerMatch) {
-    logError('No se encontró el patrón de "Versión activa  : V.X.Y.Z_Desc" en HANDOFF_CC_TO_AG.md');
+    logError('No se encontró el patrón de "Versión activa  : V.X.Y.Z_Desc" en 002_NS_Handoff.md');
     process.exit(1);
   }
   if (!forenseVerMatch) {
@@ -141,7 +141,7 @@ function verifyVersions(
     logError(
       `Inconsistencia de versiones detectada:\n` +
         `  - PROTOCOLO_L.md:  ${verL}\n` +
-        `  - HANDOFF_CC_TO_AG.md: ${verH}\n` +
+        `  - 002_NS_Handoff.md: ${verH}\n` +
         `  - LOG_FORENSE.md:  ${verF}\n` +
         `Las versiones en L y H deben coincidir exactamente, y la entrada en F debe ser prefijo de estas (ej: V.78.101.157).`
     );
@@ -152,12 +152,12 @@ function verifyVersions(
   return { verL, verH, verF };
 }
 
-// 5. Validar mensaje y timestamp en Canal H de HANDOFF_CC_TO_AG.md
+// 5. Validar mensaje y timestamp en Canal H de 002_NS_Handoff.md
 function verifyCanalH(handoffContent: string, forenseContent: string, verF: string): void {
   // FC 053 F7: header genérico — el roster del canal cambia (CC ↔ AG → GrayMan | Alfa | Bravo | Charlie)
   const canalHeaderIndex = handoffContent.lastIndexOf('## CANAL DE MENSAJES');
   if (canalHeaderIndex === -1) {
-    logError('No se encontró la sección "## CANAL DE MENSAJES" en HANDOFF_CC_TO_AG.md');
+    logError('No se encontró la sección "## CANAL DE MENSAJES" en 002_NS_Handoff.md');
     process.exit(1);
   }
 
@@ -168,7 +168,7 @@ function verifyCanalH(handoffContent: string, forenseContent: string, verF: stri
 
   if (matches.length === 0) {
     logError(
-      'No se encontró ningún mensaje válido en el canal de comunicación de HANDOFF_CC_TO_AG.md'
+      'No se encontró ningún mensaje válido en el canal de comunicación de 002_NS_Handoff.md'
     );
     process.exit(1);
   }
@@ -186,7 +186,7 @@ function verifyCanalH(handoffContent: string, forenseContent: string, verF: stri
   if (timeDiff > timeLimit) {
     logError(
       `El último mensaje en el canal H (${timestampStr}) tiene más de 30 minutos de antigüedad.\n` +
-        `Debes añadir un mensaje consolidado al final de HANDOFF_CC_TO_AG.md con la hora actual del sistema obtenida del shell.`
+        `Debes añadir un mensaje consolidado al final de 002_NS_Handoff.md con la hora actual del sistema obtenida del shell.`
     );
     process.exit(1);
   }
@@ -295,7 +295,7 @@ function verify(): void {
   console.log('--- VALIDACIÓN DE PROTOCOLO L ---');
 
   const rootDir = path.join(__dirname, '..');
-  const handoffPath = path.join(rootDir, 'Protocolos', 'North_Star', '002_NS_HandoffCcToAg.md');
+  const handoffPath = path.join(rootDir, 'Protocolos', 'North_Star', '002_NS_Handoff.md');
   const masterPath = path.join(rootDir, 'Protocolos', 'North_Star', '001_NS_ProtocoloL.md');
   const forensePath = path.join(rootDir, 'Protocolos', 'North_Star', '003_NS_LogForense.md');
 

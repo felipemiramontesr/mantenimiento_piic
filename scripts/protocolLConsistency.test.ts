@@ -179,7 +179,7 @@ describe('Integración — los documentos reales de gobernanza son consistentes 
     const errors = runConsistencyChecks({
       masterContent: read('Protocolos/North_Star/001_NS_ProtocoloL.md'),
       claudeContent: read('CLAUDE.md'),
-      handoffContent: read('Protocolos/North_Star/002_NS_HandoffCcToAg.md'),
+      handoffContent: read('Protocolos/North_Star/002_NS_Handoff.md'),
       invariantsContent: read('Protocolos/North_Star/052_NS_MetaLInvariants.md'),
     });
     expect(errors).toEqual([]);
