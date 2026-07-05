@@ -106,9 +106,33 @@ export function isNewSessionAck(body: string): boolean {
  * T1 — Decisión del broker (FC 061): P = SameAuthor(último, autor) · Q = NewSessionACK(post).
  * ⊥⊥→APPEND · ⊥⊤→APPEND · ⊤⊤→APPEND (excepción NewSession de AppendAllowed) ·
  * ⊤⊥→EXTEND (auto-consolidación — I-6 garantizado por construcción).
+ * T2 — Loophole cerrado (FC 063 F4): R = el último mensaje del autor ya inicia con [ACK.
+ * ⊤⊤⊤→EXTEND — un 2º ACK consecutivo del mismo autor no puede ser una sesión nueva
+ * legítima sin intervención de terceros; se consolida en vez de encolar.
  */
-export function decideAction(sameAuthor: boolean, newSessionAck: boolean): 'APPEND' | 'EXTEND' {
-  return sameAuthor && !newSessionAck ? 'EXTEND' : 'APPEND';
+export function decideAction(
+  sameAuthor: boolean,
+  newSessionAck: boolean,
+  lastOwnIsAck = false
+): 'APPEND' | 'EXTEND' {
+  if (!sameAuthor) {
+    return 'APPEND';
+  }
+  return !newSessionAck || lastOwnIsAck ? 'EXTEND' : 'APPEND';
+}
+
+/** FC 063 F4 (a) — los agentes pasan \n literales por shell; se expanden a saltos reales. */
+export function expandEscapedNewlines(text: string): string {
+  return text.split('\\n').join('\n');
+}
+
+/** FC 063 F4 (c) — verificación post-write: confirma que la escritura aterrizó íntegra. */
+export function confirmPersisted(filePath: string, expected: string): boolean {
+  try {
+    return fs.readFileSync(filePath, 'utf8') === expected;
+  } catch {
+    return false;
+  }
 }
 
 export function hashBody(body: string): string {
@@ -205,10 +229,10 @@ export function applyPost(handoffContent: string, input: PostInput): PostOutcome
     throw new Error('hPost: no se encontró la sección "## CANAL DE MENSAJES" en H.');
   }
   const last = channel.messages[channel.messages.length - 1];
-  const action = decideAction(
-    last !== undefined && last.author === input.author,
-    isNewSessionAck(body)
-  );
+  const sameAuthor = last !== undefined && last.author === input.author;
+  const lastOwnIsAck =
+    sameAuthor && isNewSessionAck(messageBody(channel, channel.messages.length - 1));
+  const action = decideAction(sameAuthor, isNewSessionAck(body), lastOwnIsAck);
   const recipients = recipientsOf(input.author);
   const header = `### ${input.author} → ${recipients} · ${input.timestamp}`;
 
@@ -433,6 +457,16 @@ export function runHPost(options: HPostOptions): HPostResult {
     if (gc.archivedCount > 0) {
       fs.appendFileSync(options.historicoPath, gc.archivedText, 'utf8');
     }
+    if (!confirmPersisted(options.handoffPath, gc.content)) {
+      // FC 063 F4 (c) — carrera de réplicas: la escritura no aterrizó íntegra
+      return {
+        status: 'invalid',
+        errors: [
+          'hPost: verificación post-write falló — H en disco no coincide con lo publicado (carrera de réplicas OneDrive); releer H real y reintentar.',
+        ],
+        lockExpropriated: lock.expropriated,
+      };
+    }
     return {
       status: 'posted',
       action: posted.action,
@@ -498,7 +532,10 @@ function main(): void {
   const ns = path.join(root, 'Protocolos', 'North_Star');
   const result = runHPost({
     author: args.author as Raptor,
-    body: args.message ?? fs.readFileSync(args.file as string, 'utf8'),
+    // FC 063 F4 (a): --message expande \n literales; --file se respeta tal cual
+    body: args.message
+      ? expandEscapedNewlines(args.message)
+      : fs.readFileSync(args.file as string, 'utf8'),
     label: args.label,
     estado: args.estado ? args.estado.split('\\n') : undefined,
     handoffPath: path.join(ns, '002_NS_Handoff.md'),

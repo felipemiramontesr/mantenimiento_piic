@@ -15,7 +15,9 @@ import {
   acquireLock,
   applyGC,
   applyPost,
+  confirmPersisted,
   decideAction,
+  expandEscapedNewlines,
   isDuplicatePost,
   isNewSessionAck,
   parseChannel,
@@ -173,6 +175,13 @@ describe('T1 — decisión del broker: P = SameAuthor · Q = NewSessionACK', () 
 
   it('fila ⊤⊥ → EXTEND (auto-consolidación — I-6 por construcción)', () => {
     expect(decideAction(true, false)).toBe('EXTEND');
+  });
+
+  it('T2 FC 063 F4 — loophole cerrado: 2º ACK consecutivo del mismo autor ⇒ EXTEND (⊤⊤⊤); 1º ACK legítimo ⇒ APPEND (⊤⊤⊥)', () => {
+    expect(decideAction(true, true, true)).toBe('EXTEND');
+    expect(decideAction(true, true, false)).toBe('APPEND');
+    expect(decideAction(true, false, true)).toBe('EXTEND');
+    expect(decideAction(false, true, true)).toBe('APPEND');
   });
 
   it('NewSessionACK se deriva del cuerpo: [ACK L] / [ACK H] en la primera línea no vacía', () => {
@@ -349,6 +358,41 @@ describe('Scenario 6 — idempotencia: reintento del mismo post se deduplica', (
     });
     expect(isDuplicatePost(handoff, 'Charlie', '[FASE 2] hito extendido')).toBe(true);
     expect(isDuplicatePost(handoff, 'Charlie', '[FASE 3] contenido nuevo')).toBe(false);
+  });
+});
+
+// ─── FC 063 F4 — Broker hardening (Scenario 4 FC 063) ───────────────────────
+
+describe('FC 063 F4 — \\n literales, loophole ACK e2e y verificación post-write', () => {
+  it('expandEscapedNewlines convierte \\n literales en saltos reales sin tocar saltos existentes', () => {
+    expect(expandEscapedNewlines('a\\nb')).toBe('a\nb');
+    expect(expandEscapedNewlines('a\nb')).toBe('a\nb');
+    expect(expandEscapedNewlines('sin escapes')).toBe('sin escapes');
+  });
+
+  it('e2e: un 2º [ACK H] consecutivo del mismo autor se convierte en EXTEND (loophole cerrado)', () => {
+    const handoff = buildHandoff({
+      msgs: '### Charlie → Alfa/Bravo · 2026-07-04 10:00:00\n\n[ACK H] primer ACK de sesión',
+      cursores:
+        'Cursores        : Alfa=2026-07-04 09:00:00 · Bravo=2026-07-04 09:00:00 · Charlie=2026-07-04 10:00:00',
+    });
+    const posted = applyPost(handoff, {
+      author: 'Charlie',
+      body: '[ACK H] segundo ACK abusivo intra-sesión',
+      timestamp: '2026-07-04 10:30:00',
+    });
+    expect(posted.action).toBe('EXTEND');
+    expect(parseChannel(posted.content).messages.filter((m) => m.author === 'Charlie').length).toBe(
+      1
+    );
+  });
+
+  it('confirmPersisted confirma escritura íntegra y detecta divergencia (carrera de réplicas)', () => {
+    const env = writeEnv(buildHandoff());
+    const content = fs.readFileSync(env.handoffPath, 'utf8');
+    expect(confirmPersisted(env.handoffPath, content)).toBe(true);
+    expect(confirmPersisted(env.handoffPath, `${content}CLOBBER`)).toBe(false);
+    expect(confirmPersisted(path.join(env.dir, 'no-existe.md'), content)).toBe(false);
   });
 });
 
