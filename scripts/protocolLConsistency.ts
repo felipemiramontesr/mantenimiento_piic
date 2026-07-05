@@ -429,6 +429,52 @@ export function checkVersionSync(masterContent: string, handoffContent: string):
   return errors;
 }
 
+/** FC 063 F3 — Dieta de Mensajes: entrada en vigor (mensajes anteriores exentos). */
+export const DIET_ENACTED = '2026-07-04 23:00:00';
+const DIET_MAX_RUN = 6;
+
+/**
+ * Check K — Dieta de Mensajes (FC 063 F3 · L §2.2):
+ * el límite de 6 líneas de cuerpo aplica POR PUBLICACIÓN. En bloques extendidos
+ * por el broker cada publicación es una racha de líneas no vacías separada por
+ * línea en blanco — se valida la racha máxima. Mensajes con t < DIET_ENACTED
+ * quedan exentos (grandfathered — el canal histórico no se re-litiga).
+ */
+export function checkMessageDiet(handoffContent: string): string[] {
+  const canalIndex = handoffContent.indexOf('## CANAL DE MENSAJES');
+  if (canalIndex === -1) {
+    return []; // checkHOrder ya reporta la ausencia del canal
+  }
+  const lines = handoffContent.substring(canalIndex).split(/\r?\n/);
+  const headerRegex = /^###\s+(\S+)\s*→.*·\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*$/;
+
+  const errors: string[] = [];
+  let author = '';
+  let timestamp = '';
+  let run = 0;
+  const closeRun = (): void => {
+    if (timestamp >= DIET_ENACTED && run > DIET_MAX_RUN) {
+      errors.push(
+        `Canal H: publicación de ${author} (${timestamp}) con ${run} líneas de cuerpo — máximo ${DIET_MAX_RUN} por publicación (Dieta de Mensajes · FC 063 F3).`
+      );
+    }
+    run = 0;
+  };
+  lines.forEach((line) => {
+    const header = line.match(headerRegex);
+    if (header) {
+      closeRun();
+      [, author, timestamp] = header;
+    } else if (line.trim() === '' || line.trim() === '---') {
+      closeRun();
+    } else if (timestamp !== '') {
+      run += 1;
+    }
+  });
+  closeRun();
+  return errors;
+}
+
 /**
  * FC 063 F2 — Hash canónico del contexto L (Cláusula L por hash · Regla 9).
  * Orden y contenido sensibles: [L-CORE, ...anexos de Libros requeridos].
@@ -474,5 +520,6 @@ export function runConsistencyChecks(input: ConsistencyInput): string[] {
     ...checkMinCursorGC(input.handoffContent),
     ...checkConsecutiveAuthors(input.handoffContent),
     ...checkVersionSync(input.masterContent, input.handoffContent),
+    ...checkMessageDiet(input.handoffContent),
   ];
 }

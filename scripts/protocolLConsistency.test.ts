@@ -8,7 +8,9 @@ import * as path from 'path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  DIET_ENACTED,
   checkClaudeMdCoherence,
+  checkMessageDiet,
   computeLHash,
   shouldReRead,
   checkConsecutiveAuthors,
@@ -307,6 +309,31 @@ describe('FC 057 — Sincronía de versiones L ↔ H (T1: VersionSync ≡ A ∧ 
   it('falla si falta la línea "Versión activa" en la cabecera', () => {
     const errors = checkVersionSync(master, 'ESTADO\n  Versión   : V.78.101.468');
     expect(errors.some((e) => e.includes('falta la línea "Versión activa"'))).toBe(true);
+  });
+});
+
+describe('FC 063 F3 — Dieta de Mensajes (Scenario 3: ≤6 líneas por publicación)', () => {
+  const canal = (msgs: string): string => `## CANAL DE MENSAJES X\n\n${msgs}\n`;
+  const post2027 = '### Charlie → Alfa/Bravo · 2027-01-01 10:00:00';
+
+  it('acepta publicaciones de ≤6 líneas y bloques EXTEND con rachas separadas por línea en blanco', () => {
+    const h = canal(`${post2027}\n\nl1\nl2\nl3\nl4\nl5\nl6\n\nextend1\nextend2`);
+    expect(checkMessageDiet(h)).toEqual([]);
+  });
+
+  it('rechaza una publicación con más de 6 líneas de cuerpo (racha continua)', () => {
+    const h = canal(`${post2027}\n\nl1\nl2\nl3\nl4\nl5\nl6\nl7`);
+    const errors = checkMessageDiet(h);
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('7 líneas');
+    expect(errors[0]).toContain('Dieta de Mensajes');
+  });
+
+  it(`exime mensajes anteriores a la entrada en vigor (${DIET_ENACTED})`, () => {
+    const h = canal(
+      `### Alfa → Bravo/Charlie · 2026-07-04 20:54:25\n\nl1\nl2\nl3\nl4\nl5\nl6\nl7\nl8`
+    );
+    expect(checkMessageDiet(h)).toEqual([]);
   });
 });
 
