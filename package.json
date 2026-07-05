@@ -61,5 +61,9 @@
   },
   "dependencies": {
     "@fastify/cookie": "^9.4.0"
+  },
+  "overrides": {
+    "yaml": "^2.9.0",
+    "micromatch": "^4.0.8"
   }
 }
