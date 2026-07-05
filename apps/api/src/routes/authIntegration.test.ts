@@ -1372,6 +1372,10 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
     const setCookieRaw = res.headers['set-cookie'];
     const setCookie = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
     expect(setCookie).toContain('.piic.com.mx');
+    // FC 062 F1 (A05) — refresh cookie hardened flags in production
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).toContain('SameSite=Strict');
   });
 
   it('AUTH-BC-11: POST /logout production → clearCookie domain .piic.com.mx (B113)', async () => {

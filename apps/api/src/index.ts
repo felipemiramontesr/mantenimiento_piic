@@ -1,4 +1,4 @@
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify, { FastifyInstance, FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import type { FastifyPluginCallback } from 'fastify';
@@ -68,10 +68,13 @@ if (process.env.NODE_ENV === 'production') {
     throw new Error('DB_ENCRYPTION_KEY env var is required in production');
 }
 
-const ALLOWED_ORIGINS =
+// FC 062 F1 (A05) — explicit CORS allowlist in every environment: production is
+// pinned to the configured frontend; non-production only reflects loopback origins.
+// Evaluated per buildApp() call so NODE_ENV can vary between test apps.
+const buildAllowedOrigins = (): Array<string | RegExp> =>
   process.env.NODE_ENV === 'production'
     ? [process.env.FRONTEND_URL ?? 'https://mantenimiento.piic.com.mx']
-    : true;
+    : [/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
 
 const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   const fastify = Fastify({
@@ -93,6 +96,11 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
         imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'"],
         frameSrc: ["'none'"],
+        // FC 062 F1 (A05) — anti-clickjacking + plugin/base/form lockdown
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
       },
     },
     hsts: { maxAge: 31536000, includeSubDomains: true },
@@ -100,7 +108,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   });
 
   fastify.register(cors, {
-    origin: ALLOWED_ORIGINS,
+    origin: buildAllowedOrigins(),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     exposedHeaders: ['Authorization'],
@@ -132,6 +140,21 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(fastifyStatic, {
     root: path.join(__dirname, '../uploads'),
     prefix: '/uploads/', // URL prefix
+  });
+
+  // FC 062 F1 (A05) — production-safe error handler (§8.2): unhandled 5xx never
+  // leak internal messages or stack traces in production; 4xx keep Fastify's
+  // default serialization (rate-limit 429, validation 400, jwt 401 untouched).
+  // In development the devTelemetry plugin re-registers its own handler on top.
+  fastify.setErrorHandler((error: FastifyError, request, reply) => {
+    const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500;
+    if (statusCode >= 500) {
+      request.log.error({ err: error }, 'Unhandled server error');
+      const message =
+        process.env.NODE_ENV === 'production' ? 'Internal Server Error' : error.message;
+      return reply.code(statusCode).send({ success: false, code: 'INTERNAL_ERROR', message });
+    }
+    return reply.code(statusCode).send(error);
   });
 
   // Dev Telemetry Gated Plugin (Doctor) — only registered in development
