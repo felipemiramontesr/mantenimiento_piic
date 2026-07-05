@@ -3,7 +3,9 @@
  * Pure consistency checks over governance documents. Each check receives file
  * contents as strings and returns an array of error messages (empty = valid),
  * so every rule is unit-testable without touching the filesystem.
+ * FC 063 F2 — Clausula_L_Hash: computeLHash/shouldReRead (Regla 9 · R-L-CONTEXT).
  */
+import * as crypto from 'crypto';
 
 const SPANISH_COUNT_WORDS: Record<string, number> = {
   VEINTE: 20,
@@ -425,6 +427,31 @@ export function checkVersionSync(masterContent: string, handoffContent: string):
     );
   }
   return errors;
+}
+
+/**
+ * FC 063 F2 — Hash canónico del contexto L (Cláusula L por hash · Regla 9).
+ * Orden y contenido sensibles: [L-CORE, ...anexos de Libros requeridos].
+ * Uso: bun -e "const{computeLHash}=require('./scripts/protocolLConsistency.ts');..."
+ * El agente registra en F el hash leído — verificable post-hoc.
+ */
+const LHASH_SEPARATOR = String.fromCharCode(0); // NUL — imposible en markdown: evita colisiones de frontera
+
+export function computeLHash(contents: string[]): string {
+  const hash = crypto.createHash('sha256');
+  contents.forEach((content) => {
+    hash.update(content, 'utf8');
+    hash.update(LHASH_SEPARATOR);
+  });
+  return hash.digest('hex').slice(0, 12);
+}
+
+/**
+ * FC 063 F2 — T1: ReRead(L) ≡ HashChanged ∨ NewSession.
+ * Fila ⊥⊥ = contexto vigente — la relectura física es innecesaria.
+ */
+export function shouldReRead(hashChanged: boolean, newSession: boolean): boolean {
+  return hashChanged || newSession;
 }
 
 export interface ConsistencyInput {

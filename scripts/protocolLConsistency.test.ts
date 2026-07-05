@@ -9,6 +9,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   checkClaudeMdCoherence,
+  computeLHash,
+  shouldReRead,
   checkConsecutiveAuthors,
   checkVersionSync,
   checkCursorTable,
@@ -305,6 +307,36 @@ describe('FC 057 — Sincronía de versiones L ↔ H (T1: VersionSync ≡ A ∧ 
   it('falla si falta la línea "Versión activa" en la cabecera', () => {
     const errors = checkVersionSync(master, 'ESTADO\n  Versión   : V.78.101.468');
     expect(errors.some((e) => e.includes('falta la línea "Versión activa"'))).toBe(true);
+  });
+});
+
+describe('FC 063 F2 — Cláusula L por hash (T1: ReRead ≡ HashChanged ∨ NewSession)', () => {
+  it('T1 filas ⊤⊤/⊤⊥/⊥⊤ → relectura obligatoria · fila ⊥⊥ → contexto vigente', () => {
+    expect(shouldReRead(true, true)).toBe(true);
+    expect(shouldReRead(true, false)).toBe(true);
+    expect(shouldReRead(false, true)).toBe(true);
+    expect(shouldReRead(false, false)).toBe(false);
+  });
+
+  it('computeLHash es determinista y sensible a contenido, orden y fronteras de archivo', () => {
+    expect(computeLHash(['core', 'anexo'])).toBe(computeLHash(['core', 'anexo']));
+    expect(computeLHash(['core', 'anexo'])).not.toBe(computeLHash(['core', 'anexo2']));
+    expect(computeLHash(['core', 'anexo'])).not.toBe(computeLHash(['anexo', 'core']));
+    expect(computeLHash(['ab', 'c'])).not.toBe(computeLHash(['a', 'bc']));
+    expect(computeLHash(['core'])).toMatch(/^[0-9a-f]{12}$/);
+  });
+
+  it('el hash del L-CORE real + anexos reales es calculable (Scenario 2 FC 063 — Gherkin)', () => {
+    const core = fs.readFileSync(
+      path.join(ROOT, 'Protocolos/North_Star/001_NS_ProtocoloL.md'),
+      'utf8'
+    );
+    const anexos = fs.readFileSync(
+      path.join(ROOT, 'Protocolos/North_Star/053_NS_LAnexosLibros.md'),
+      'utf8'
+    );
+    expect(computeLHash([core, anexos])).toMatch(/^[0-9a-f]{12}$/);
+    expect(computeLHash([core])).not.toBe(computeLHash([core, anexos]));
   });
 });
 
