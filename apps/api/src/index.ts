@@ -47,6 +47,11 @@ import portalRoutes from './routes/portal';
 import crmCampaignsRoutes from './routes/crmCampaigns';
 import socialRoutes from './routes/social';
 import universeContextPlugin from './plugins/universeContext';
+import {
+  logSecurityEvent,
+  recordHttpResponse,
+  renderPrometheusMetrics,
+} from './services/securityLog';
 import cosmonautRolesRoutes from './routes/cosmonauts/rolesRoutes';
 import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
 
@@ -141,6 +146,35 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     root: path.join(__dirname, '../uploads'),
     prefix: '/uploads/', // URL prefix
   });
+
+  // FC 062 F3 (A09) — global security observability: every response feeds the
+  // /metrics counters; 401/403/429 emit a structured security event without
+  // touching individual routes (route pattern preferred over raw URL — no params/PII).
+  fastify.addHook('onResponse', async (request, reply) => {
+    recordHttpResponse(reply.statusCode);
+    const eventByStatus: Record<number, 'AUTH_FAILURE' | 'ACCESS_DENIED' | 'RATE_LIMIT'> = {
+      401: 'AUTH_FAILURE',
+      403: 'ACCESS_DENIED',
+      429: 'RATE_LIMIT',
+    };
+    const event = eventByStatus[reply.statusCode];
+    if (event) {
+      const actor = request.user as { id?: number } | undefined;
+      logSecurityEvent({
+        event,
+        route: request.routeOptions?.url ?? request.url.split('?')[0],
+        method: request.method,
+        actorId: actor?.id,
+        ip: request.ip,
+        statusCode: reply.statusCode,
+      });
+    }
+  });
+
+  // FC 062 F3 (A09) — Prometheus exposition mínima (L §12 parcial — limitación declarada)
+  fastify.get('/metrics', async (_request, reply) =>
+    reply.type('text/plain; version=0.0.4').send(renderPrometheusMetrics())
+  );
 
   // FC 062 F1 (A05) — production-safe error handler (§8.2): unhandled 5xx never
   // leak internal messages or stack traces in production; 4xx keep Fastify's

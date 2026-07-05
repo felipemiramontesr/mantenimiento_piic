@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { randomUUID } from 'crypto';
 import db from '../services/db';
+import { logSecurityEvent } from '../services/securityLog';
 import requirePermission from '../middleware/requirePermission';
 
 type RouteGuard = {
@@ -170,6 +171,16 @@ export default async function securityRoutes(fastify: FastifyInstance): Promise<
           )
         )
       );
+
+      // FC 062 F3 (A09) — panic SOS es evento de seguridad; GPS/unitId NO se loguean (§8.1)
+      logSecurityEvent({
+        event: 'PANIC_SOS',
+        route: '/v1/security/panic',
+        method: 'POST',
+        actorId: caller.id,
+        ip: request.ip,
+        detail: { notifiedCount: allTargets.length },
+      });
 
       return reply.send({ success: true, panicUuid, notifiedCount: allTargets.length });
     }
