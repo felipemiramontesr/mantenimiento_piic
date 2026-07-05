@@ -2,6 +2,10 @@
 // @ts-nocheck
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import buildApp from '../index';
+import { outboundFetch } from '../services/outboundFetch';
+
+// FC 062 F4 — el call-site migró a outboundFetch; se mockea el módulo, no fetch global
+vi.mock('../services/outboundFetch', () => ({ outboundFetch: vi.fn() }));
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -86,21 +90,18 @@ const NHTSA_MOCK_RESULTS = [
 ];
 
 function mockFetchOk(results = NHTSA_MOCK_RESULTS) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ Count: results.length, Message: 'OK', results }),
-    })
-  );
+  vi.mocked(outboundFetch).mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({ Count: results.length, Message: 'OK', results }),
+  });
 }
 
 function mockFetchError() {
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNABORTED')));
+  vi.mocked(outboundFetch).mockRejectedValue(new Error('ECONNABORTED'));
 }
 
 function mockFetchNonOk(status = 500) {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status }));
+  vi.mocked(outboundFetch).mockResolvedValue({ ok: false, status });
 }
 
 // ── Tests: NHTSA-D-1..8 ──────────────────────────────────────────────────────
@@ -204,13 +205,10 @@ describe('GET /v1/recalls/nhtsa (FC DataResilience FaseD)', () => {
   });
 
   it('NHTSA-D-7b: json.results undefined → usa ?? [] → data=[] (line 82)', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ Count: 0, Message: 'OK' }), // no results key → undefined
-      })
-    );
+    vi.mocked(outboundFetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ Count: 0, Message: 'OK' }), // no results key → undefined
+    });
     const res = await app.inject({
       method: 'GET',
       url: '/v1/recalls/nhtsa?make=HONDA&model=CIVIC&year=2020',

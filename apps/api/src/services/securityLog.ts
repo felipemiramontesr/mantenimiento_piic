@@ -10,7 +10,8 @@ export type SecurityEventType =
   | 'ACCESS_DENIED'
   | 'PANIC_SOS'
   | 'RATE_LIMIT'
-  | 'LOCK_EXPROPRIATION';
+  | 'LOCK_EXPROPRIATION'
+  | 'SSRF_BLOCKED';
 
 export interface SecurityEvent {
   event: SecurityEventType;

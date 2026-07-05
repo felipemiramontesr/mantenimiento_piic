@@ -6,12 +6,16 @@ import NotificationService, {
   ArchonNotificationPriority,
 } from './notification.service';
 import db from './db';
+import { outboundFetch } from './outboundFetch';
 
 vi.mock('./db', () => ({
   default: {
     execute: vi.fn(),
   },
 }));
+
+// FC 062 F4 — el servicio migró a outboundFetch; se mockea el módulo, no fetch global
+vi.mock('./outboundFetch', () => ({ outboundFetch: vi.fn() }));
 
 describe('NotificationService (Intelligence Orchestrator)', () => {
   const mockPayload = {
@@ -203,7 +207,7 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
         json: async () => ({ access_token: 'mock-oauth-token' }),
       })
       .mockResolvedValueOnce({ ok: true });
-    vi.stubGlobal('fetch', mockFetch);
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
 
     await (NotificationService as any).sendPush([1], payload);
 
@@ -222,7 +226,7 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
         json: async () => ({ access_token: 'mock-oauth-token' }),
       })
       .mockResolvedValueOnce({ ok: false, status: 400 });
-    vi.stubGlobal('fetch', mockFetch);
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
 
     await (NotificationService as any).sendPush([1], payload);
 
@@ -243,7 +247,7 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
         json: async () => ({ access_token: 'mock-oauth-token' }),
       })
       .mockResolvedValueOnce({ ok: false, status: 404 });
-    vi.stubGlobal('fetch', mockFetch);
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
 
     await (NotificationService as any).sendPush([1], payload);
 
@@ -262,7 +266,7 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
         json: async () => ({ access_token: 'mock-oauth-token' }),
       })
       .mockRejectedValueOnce(new Error('Network error'));
-    vi.stubGlobal('fetch', mockFetch);
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
 
     await expect((NotificationService as any).sendPush([1], payload)).resolves.not.toThrow();
   });
@@ -274,7 +278,7 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
       ok: false,
       statusText: 'Unauthorized',
     });
-    vi.stubGlobal('fetch', mockFetch);
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
 
     await expect((NotificationService as any).sendPush([1], payload)).resolves.not.toThrow();
   });
@@ -289,7 +293,7 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
         capturedBodies.push(opts.body);
         return Promise.resolve({ ok: true });
       });
-    vi.stubGlobal('fetch', mockFetch);
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
 
     const noPriorityPayload = { ...payload, priority: undefined as any };
     await (NotificationService as any).sendPush([1], noPriorityPayload);
@@ -307,7 +311,7 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
         capturedBodies.push(opts.body);
         return Promise.resolve({ ok: true });
       });
-    vi.stubGlobal('fetch', mockFetch);
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
 
     const metaPayload = { ...payload, metadata: { orderId: 99 } };
     await (NotificationService as any).sendPush([1], metaPayload);

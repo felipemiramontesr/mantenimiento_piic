@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import db from '../services/db';
+import { outboundFetch } from '../services/outboundFetch';
 import requirePermission from '../middleware/requirePermission';
 
 const NHTSA_BASE = 'https://api.nhtsa.gov/recalls/recallsByVehicle';
@@ -42,16 +43,11 @@ const importSchema = z.object({
     .optional(),
 });
 
+// FC 062 F4 (A10) — toda salida HTTP pasa por outboundFetch (allowlist + anti-rebinding + breaker)
 async function fetchNhtsa(url: string): Promise<NhtsaApiResponse> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), NHTSA_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`NHTSA HTTP ${res.status}`);
-    return (await res.json()) as NhtsaApiResponse;
-  } finally {
-    clearTimeout(timer);
-  }
+  const res = await outboundFetch(url, { timeoutMs: NHTSA_TIMEOUT_MS });
+  if (!res.ok) throw new Error(`NHTSA HTTP ${res.status}`);
+  return (await res.json()) as NhtsaApiResponse;
 }
 
 export default async function recallsNhtsaRoutes(fastify: FastifyInstance): Promise<void> {
@@ -73,9 +69,12 @@ export default async function recallsNhtsaRoutes(fastify: FastifyInstance): Prom
       }
       const { make, model, year } = parsed.data;
 
-      const url = `${NHTSA_BASE}?make=${encodeURIComponent(make)}&model=${encodeURIComponent(
-        model
-      )}&modelYear=${encodeURIComponent(year)}`;
+      // FC 062 F4 — params de usuario jamás concatenados: URLSearchParams
+      const url = `${NHTSA_BASE}?${new URLSearchParams({
+        make,
+        model,
+        modelYear: year,
+      }).toString()}`;
 
       try {
         const json = await fetchNhtsa(url);

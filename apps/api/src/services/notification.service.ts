@@ -1,6 +1,7 @@
 import { RowDataPacket } from 'mysql2';
 import crypto from 'crypto';
 import db from './db';
+import { outboundFetch } from './outboundFetch';
 
 /**
  * 🔱 Archon Intelligence: Notification Service
@@ -61,7 +62,8 @@ function generateJWT(clientEmail: string, privateKey: string): string {
 
 async function getAccessToken(clientEmail: string, privateKey: string): Promise<string> {
   const jwtToken = generateJWT(clientEmail, privateKey);
-  const response = await fetch('https://oauth2.googleapis.com/token', {
+  // FC 062 F4 (A10) — salida vía outboundFetch (allowlist + anti-rebinding + breaker)
+  const response = await outboundFetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -70,7 +72,7 @@ async function getAccessToken(clientEmail: string, privateKey: string): Promise<
     }).toString(),
   });
   if (!response.ok) {
-    throw new Error(`Failed to obtain FCM access token: ${response.statusText}`);
+    throw new Error(`Failed to obtain FCM access token: HTTP ${response.status}`);
   }
   const data = (await response.json()) as { access_token: string };
   return data.access_token;
@@ -176,8 +178,9 @@ class NotificationService {
 
       const promises = tokens.map(async (token) => {
         try {
-          const response = await fetch(
-            `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+          // FC 062 F4 (A10) — salida vía outboundFetch (allowlist + anti-rebinding + breaker)
+          const response = await outboundFetch(
+            `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/messages:send`,
             {
               method: 'POST',
               headers: {
