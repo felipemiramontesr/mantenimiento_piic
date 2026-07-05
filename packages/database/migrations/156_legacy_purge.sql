@@ -1,10 +1,15 @@
 -- ============================================================
--- 156_legacy_purge.sql — FC 062 F5 · Data_Sanitation_Legacy_Purge (v1.2)
+-- 156_legacy_purge.sql — FC 062 F5 · Data_Sanitation_Legacy_Purge (v1.3)
 -- Purga IDEMPOTENTE de datos demo/legacy (seeds FaseA/B/C del FC
 -- DataResilience). Segunda ejecución = 0 filas afectadas (Scenario 6).
 --
 -- v1.1 (terreno PROD): unidades demo al FINAL tras SEED_B/C + purga y
 -- respaldo de TODOS sus dependientes por FK (#1451 corregido).
+-- v1.3 (terreno PROD): predicado de movimiento demo EXTENDIDO —
+-- description IN ('SEED_A','SEED_ANOMALY') (marcador SEED_ANOMALY solo
+-- existe en PROD, seeding ad-hoc de anomalías) ∨ unit_id de unidad demo
+-- pura (PIIC-304/305: todo su historial es artefacto del seeding —
+-- incluye 2 MAINTENANCE sin tag ni created_by en PROD).
 -- v1.2 (terreno PROD): deriva de esquema local↔PROD — realtime_telemetry
 -- NO existe en PROD (#1146). TODA operación sobre tablas no confirmadas
 -- en ambos entornos queda tras guard de information_schema (§23.2):
@@ -57,25 +62,25 @@ SET @has_unit_recalls := (SELECT COUNT(*) FROM information_schema.TABLES
 
 CREATE TABLE IF NOT EXISTS zz_fc062_bak_fleet_movements LIKE fleet_movements;
 INSERT IGNORE INTO zz_fc062_bak_fleet_movements
-SELECT * FROM fleet_movements WHERE description = 'SEED_A';
+SELECT * FROM fleet_movements WHERE (description IN ('SEED_A', 'SEED_ANOMALY') OR unit_id IN ('PIIC-304', 'PIIC-305'));
 
 CREATE TABLE IF NOT EXISTS zz_fc062_bak_route_extensions LIKE fleet_route_extensions;
 INSERT IGNORE INTO zz_fc062_bak_route_extensions
 SELECT fre.* FROM fleet_route_extensions fre
 JOIN fleet_movements fm ON fm.id = fre.movement_id
-WHERE fm.description = 'SEED_A';
+WHERE (fm.description IN ('SEED_A', 'SEED_ANOMALY') OR fm.unit_id IN ('PIIC-304', 'PIIC-305'));
 
 CREATE TABLE IF NOT EXISTS zz_fc062_bak_route_checkpoints LIKE fleet_route_checkpoints;
 INSERT IGNORE INTO zz_fc062_bak_route_checkpoints
 SELECT frc.* FROM fleet_route_checkpoints frc
 JOIN fleet_movements fm ON fm.id = frc.movement_id
-WHERE fm.description = 'SEED_A';
+WHERE (fm.description IN ('SEED_A', 'SEED_ANOMALY') OR fm.unit_id IN ('PIIC-304', 'PIIC-305'));
 
 CREATE TABLE IF NOT EXISTS zz_fc062_bak_route_incidents LIKE route_incidents;
 INSERT IGNORE INTO zz_fc062_bak_route_incidents
 SELECT ri.* FROM route_incidents ri
 JOIN fleet_movements fm ON fm.uuid = ri.route_uuid
-WHERE fm.description = 'SEED_A';
+WHERE (fm.description IN ('SEED_A', 'SEED_ANOMALY') OR fm.unit_id IN ('PIIC-304', 'PIIC-305'));
 INSERT IGNORE INTO zz_fc062_bak_route_incidents
 SELECT * FROM route_incidents WHERE description LIKE '[SEED_B]%';
 
@@ -96,7 +101,7 @@ SET @sql := IF(@has_maint_det = 1,
   'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 SET @sql := IF(@has_maint_det = 1,
-  'INSERT IGNORE INTO zz_fc062_bak_maintenance_details SELECT fmd.* FROM fleet_maintenance_details fmd JOIN fleet_movements fm ON fm.id = fmd.maintenance_id WHERE fm.description = ''SEED_A''',
+  'INSERT IGNORE INTO zz_fc062_bak_maintenance_details SELECT fmd.* FROM fleet_maintenance_details fmd JOIN fleet_movements fm ON fm.id = fmd.maintenance_id WHERE (fm.description IN (''SEED_A'', ''SEED_ANOMALY'') OR fm.unit_id IN (''PIIC-304'', ''PIIC-305''))',
   'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
@@ -105,7 +110,7 @@ SET @sql := IF(@has_maint_ext = 1,
   'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 SET @sql := IF(@has_maint_ext = 1,
-  'INSERT IGNORE INTO zz_fc062_bak_maintenance_extensions SELECT fme.* FROM fleet_maintenance_extensions fme JOIN fleet_movements fm ON fm.id = fme.movement_id WHERE fm.description = ''SEED_A''',
+  'INSERT IGNORE INTO zz_fc062_bak_maintenance_extensions SELECT fme.* FROM fleet_maintenance_extensions fme JOIN fleet_movements fm ON fm.id = fme.movement_id WHERE (fm.description IN (''SEED_A'', ''SEED_ANOMALY'') OR fm.unit_id IN (''PIIC-304'', ''PIIC-305''))',
   'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
@@ -149,27 +154,27 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 DELETE ri FROM route_incidents ri
 JOIN fleet_movements fm ON fm.uuid = ri.route_uuid
-WHERE fm.description = 'SEED_A';
+WHERE (fm.description IN ('SEED_A', 'SEED_ANOMALY') OR fm.unit_id IN ('PIIC-304', 'PIIC-305'));
 
 SET @sql := IF(@has_maint_det = 1,
-  'DELETE fmd FROM fleet_maintenance_details fmd JOIN fleet_movements fm ON fm.id = fmd.maintenance_id WHERE fm.description = ''SEED_A''',
+  'DELETE fmd FROM fleet_maintenance_details fmd JOIN fleet_movements fm ON fm.id = fmd.maintenance_id WHERE (fm.description IN (''SEED_A'', ''SEED_ANOMALY'') OR fm.unit_id IN (''PIIC-304'', ''PIIC-305''))',
   'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @sql := IF(@has_maint_ext = 1,
-  'DELETE fme FROM fleet_maintenance_extensions fme JOIN fleet_movements fm ON fm.id = fme.movement_id WHERE fm.description = ''SEED_A''',
+  'DELETE fme FROM fleet_maintenance_extensions fme JOIN fleet_movements fm ON fm.id = fme.movement_id WHERE (fm.description IN (''SEED_A'', ''SEED_ANOMALY'') OR fm.unit_id IN (''PIIC-304'', ''PIIC-305''))',
   'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 DELETE frc FROM fleet_route_checkpoints frc
 JOIN fleet_movements fm ON fm.id = frc.movement_id
-WHERE fm.description = 'SEED_A';
+WHERE (fm.description IN ('SEED_A', 'SEED_ANOMALY') OR fm.unit_id IN ('PIIC-304', 'PIIC-305'));
 
 DELETE fre FROM fleet_route_extensions fre
 JOIN fleet_movements fm ON fm.id = fre.movement_id
-WHERE fm.description = 'SEED_A';
+WHERE (fm.description IN ('SEED_A', 'SEED_ANOMALY') OR fm.unit_id IN ('PIIC-304', 'PIIC-305'));
 
-DELETE FROM fleet_movements WHERE description = 'SEED_A';
+DELETE FROM fleet_movements WHERE (description IN ('SEED_A', 'SEED_ANOMALY') OR unit_id IN ('PIIC-304', 'PIIC-305'));
 
 -- ─── 3 · PURGA SEED_B ────────────────────────────────────────────────
 
@@ -234,10 +239,10 @@ WHERE fu.id IN ('PIIC-304', 'PIIC-305') AND fm.id IS NULL;
 -- ─── 6 · VERIFICACIÓN (todos deben ser 0 — Scenario 6/aserción SQL) ──
 
 SELECT
-  (SELECT COUNT(*) FROM fleet_movements WHERE description = 'SEED_A') AS seed_a_movements,
+  (SELECT COUNT(*) FROM fleet_movements WHERE (description IN ('SEED_A', 'SEED_ANOMALY') OR unit_id IN ('PIIC-304', 'PIIC-305'))) AS seed_a_movements,
   (SELECT COUNT(*) FROM fleet_route_extensions fre
      JOIN fleet_movements fm ON fm.id = fre.movement_id
-     WHERE fm.description = 'SEED_A') AS seed_a_extensions,
+     WHERE (fm.description IN ('SEED_A', 'SEED_ANOMALY') OR fm.unit_id IN ('PIIC-304', 'PIIC-305'))) AS seed_a_extensions,
   (SELECT COUNT(*) FROM financial_transactions WHERE notes = 'SEED_B') AS seed_b_transactions,
   (SELECT COUNT(*) FROM route_incidents WHERE description LIKE '[SEED_B]%') AS seed_b_incidents,
   (SELECT COUNT(*) FROM financial_transactions WHERE unit_id IN ('PIIC-304', 'PIIC-305')) AS demo_unit_financials,
