@@ -21,6 +21,19 @@
 #        -pass env:DB_BACKUP_ENCRYPTION_KEY -in <file> | gunzip > dump.sql
 #   4. Validación anti-inyección: allowlist de charset + git ls-files;
 #      el input jamás se interpola sin pasar por env var quoteada.
+#
+# v1.2 (2026-07-06 — terreno): los runners GitHub-hosted tienen IP de
+# egreso rotativa → Hostinger Remote MySQL (whitelist por IP) rechaza la
+# conexión (#1045 access denied). Se migra a SELF-HOSTED runner con IP
+# fija whitelisteada (opción más segura del dictamen: mantiene el bloqueo
+# por IP intacto, abre acceso a UNA sola IP). Shell forzado a bash para
+# correr igual en el runner Windows (Git Bash: openssl/gzip/stat) y en el
+# futuro VPS Linux — mismo YAML. Prerrequisitos del runner: Git for
+# Windows (provee bash+openssl) · C:\xampp\mysql\bin en el PATH del
+# sistema (provee mysql/mysqldump) · su IP pública whitelisteada en
+# Hostinger Remote MySQL. SEGURIDAD: el repo DEBE permanecer privado —
+# un self-hosted runner en repo público permite a forks ejecutar código
+# en la máquina host.
 # ============================================================
 
 name: 🏛️ DB Migrations (PROD)
@@ -43,8 +56,13 @@ concurrency:
 jobs:
   apply-migration:
     name: 🏛️ Apply ${{ inputs.migration_file }}
-    runs-on: ubuntu-latest
+    # self-hosted (v1.2): IP fija whitelisteada en Hostinger. Runner
+    # actual = PC de Ω (Windows); portable a VPS Linux sin cambios.
+    runs-on: self-hosted
     environment: production-db
+    defaults:
+      run:
+        shell: bash
     env:
       MIGRATION_FILE: ${{ inputs.migration_file }}
     steps:
