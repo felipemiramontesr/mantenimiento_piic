@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
 import FleetService from '../services/fleetService';
+import { designateMasterOfUniverse } from '../services/universeBootstrap';
 
 /**
  * Archon Integration Test: Onboarding — Multiverso Archon
@@ -61,6 +62,12 @@ vi.mock('../services/fleetService', () => ({
     getAllUnits: vi.fn().mockResolvedValue([]),
     getUnitById: vi.fn().mockResolvedValue(null),
   },
+}));
+
+// FC 062 F6 — la designación MU se unit-testea en universeBootstrap.test.ts;
+// aquí se verifica el cableado transaccional (llamada + rollback ante fallo)
+vi.mock('../services/universeBootstrap', () => ({
+  designateMasterOfUniverse: vi.fn().mockResolvedValue('MU_DESIGNATED'),
 }));
 
 const VALID_PASSWORD = 'Archon123!@#';
@@ -226,6 +233,27 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(conn.beginTransaction).toHaveBeenCalled();
       expect(conn.commit).toHaveBeenCalled();
       expect(conn.rollback).not.toHaveBeenCalled();
+      // FC 062 F6 (Scenario 8 · §24.12 I2): MU designado en la MISMA transacción
+      expect(designateMasterOfUniverse).toHaveBeenCalledWith(conn, { tenantId: 200, userId: 100 });
+      expect(body.mu).toBe('MU_DESIGNATED');
+    });
+
+    it('UNI-MU-1 (F6 §18.3): si la designación MU falla, la transacción completa hace rollback', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check
+      const conn = makeConn();
+      vi.mocked(db).getConnection.mockResolvedValueOnce(conn);
+      vi.mocked(designateMasterOfUniverse).mockRejectedValueOnce(new Error('I1 violado'));
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/onboarding/universe',
+        headers: auth(archonToken),
+        payload: { ...VALID_UNIVERSE_BODY, username: 'universe.mu.fail' },
+      });
+
+      expect(res.statusCode).toBe(500);
+      expect(conn.rollback).toHaveBeenCalled();
+      expect(conn.commit).not.toHaveBeenCalled();
     });
 
     it('UNI-7: returns 201 and creates VIM universe (roleId=3)', async () => {

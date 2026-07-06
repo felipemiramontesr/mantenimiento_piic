@@ -9,6 +9,7 @@ import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 import FleetService from '../services/fleetService';
 import { resolveUniqueHandle } from '../utils/ownerHandle';
+import { designateMasterOfUniverse } from '../services/universeBootstrap';
 
 type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE';
 
@@ -217,8 +218,16 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
           address,
           areas,
         });
+        // FC 062 F6 (§24.12 I1/I2) — el Owner raíz nace como MU en la MISMA
+        // transacción; solo Ω llega aquí (guard '*'). Sin auto-promoción.
+        const muResult = await designateMasterOfUniverse(connection, {
+          tenantId: ownerId,
+          userId,
+        });
         await connection.commit();
-        return reply.code(201).send({ success: true, userId, ownerId, suite: suiteOf(ownerType) });
+        return reply
+          .code(201)
+          .send({ success: true, userId, ownerId, suite: suiteOf(ownerType), mu: muResult });
       } catch (error) {
         await connection.rollback();
         throw error;
@@ -262,13 +271,11 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
 
       const body = schema.safeParse(request.body);
       if (!body.success) {
-        return reply
-          .code(400)
-          .send({
-            success: false,
-            code: 'VALIDATION_ERROR',
-            message: body.error.issues[0]?.message,
-          });
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: body.error.issues[0]?.message,
+        });
       }
       const { username, email, password, roleId, targetOwnerId, fullName, profile, address } =
         body.data;
@@ -421,13 +428,11 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
 
       const body = schema.safeParse(request.body);
       if (!body.success) {
-        return reply
-          .code(400)
-          .send({
-            success: false,
-            code: 'VALIDATION_ERROR',
-            message: body.error.issues[0]?.message,
-          });
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: body.error.issues[0]?.message,
+        });
       }
       const { username, email, password, fullName } = body.data;
 
