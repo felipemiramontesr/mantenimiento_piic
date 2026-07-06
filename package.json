@@ -12,8 +12,8 @@
   ],
   "scripts": {
     "dev": "bun run --filter '*' dev",
-    "build": "bun run --filter @mantenimiento/api build",
-    "start": "bun run build && node apps/api/dist/index.js",
+    "build": "npm run build --workspace=@mantenimiento/api",
+    "start": "npm run build --workspace=@mantenimiento/api && node apps/api/dist/index.js",
     "test": "bun run --filter '*' test",
     "test:e2e": "bunx playwright test",
     "test:e2e:local": "bunx playwright test --config=playwright.local.config.ts",
