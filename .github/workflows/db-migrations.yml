@@ -1,0 +1,151 @@
+# ============================================================
+# 🏛️ DB Migrations (PROD) — FC 064 Db_Migrations_Workflow v1.1
+# Aplica UN archivo de packages/database/migrations/ contra la DB de
+# PROD bajo demanda EXCLUSIVA de Ω (workflow_dispatch — sin cron, sin
+# push-trigger: jamás corre solo · Scenario 4).
+#
+# T1 · ApplyAllowed ≡ A ∧ B ∧ C:
+#   A = migration_file validado contra git ls-files (árbol HEAD)
+#   B = backup cifrado exitoso y no-vacío (aborta si falla)
+#   C = trigger = workflow_dispatch (único trigger declarado)
+#
+# GOBERNANZA (dictamen Alfa 065_AN · condiciones v1.1):
+#   1. El job corre bajo environment `production-db` — Ω debe configurar
+#      en GitHub Settings → Environments: Required Reviewers = GrayMan.
+#   2. Summary: SOLO métricas agregadas (status/exit/verificación con
+#      contadores) — PROHIBIDO volcar filas de datos reales. Las
+#      migraciones deben cerrar con SELECTs de contadores agregados.
+#   3. Backup mysqldump comprimido y cifrado AES-256-CBC con el secret
+#      DB_BACKUP_ENCRYPTION_KEY (lo crea Ω) · artifact retención 7 días.
+#      Descifrado local: openssl enc -d -aes-256-cbc -pbkdf2
+#        -pass env:DB_BACKUP_ENCRYPTION_KEY -in <file> | gunzip > dump.sql
+#   4. Validación anti-inyección: allowlist de charset + git ls-files;
+#      el input jamás se interpola sin pasar por env var quoteada.
+# ============================================================
+
+name: 🏛️ DB Migrations (PROD)
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_file:
+        description: 'Archivo en packages/database/migrations/ (ej. 157_zero_state.sql)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-migrations-prod
+  cancel-in-progress: false
+
+jobs:
+  apply-migration:
+    name: 🏛️ Apply ${{ inputs.migration_file }}
+    runs-on: ubuntu-latest
+    environment: production-db
+    env:
+      MIGRATION_FILE: ${{ inputs.migration_file }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate migration file (T1·A — allowlist git ls-files, anti-inyección)
+        id: validate
+        run: |
+          set -euo pipefail
+          case "$MIGRATION_FILE" in
+            "" ) echo "::error::migration_file vacío"; exit 1 ;;
+            *[!A-Za-z0-9._-]* ) echo "::error::Nombre con caracteres fuera de [A-Za-z0-9._-] — rechazado"; exit 1 ;;
+            *.sql ) : ;;
+            * ) echo "::error::La migración debe terminar en .sql"; exit 1 ;;
+          esac
+          if ! git ls-files --error-unmatch "packages/database/migrations/$MIGRATION_FILE" >/dev/null 2>&1; then
+            echo "::error::$MIGRATION_FILE no existe en packages/database/migrations/ (HEAD versionado)"
+            exit 1
+          fi
+          echo "path=packages/database/migrations/$MIGRATION_FILE" >> "$GITHUB_OUTPUT"
+          echo "✅ Validación OK: $MIGRATION_FILE"
+
+      - name: Backup PROD cifrado (T1·B — mysqldump → gzip → AES-256-CBC)
+        id: backup
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_BACKUP_ENCRYPTION_KEY: ${{ secrets.DB_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DB_BACKUP_ENCRYPTION_KEY" ]; then
+            echo "::error::Falta el secret DB_BACKUP_ENCRYPTION_KEY (condición 3 del dictamen Alfa) — abortando sin tocar la DB"
+            exit 1
+          fi
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          BASE="${MIGRATION_FILE%.sql}"
+          FILE="backup_pre_${BASE}_${TS}.sql.gz.enc"
+          mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" \
+            --single-transaction --routines --triggers "$DB_NAME" \
+            | gzip \
+            | openssl enc -aes-256-cbc -pbkdf2 -salt \
+                -pass env:DB_BACKUP_ENCRYPTION_KEY -out "$FILE"
+          SIZE=$(stat -c%s "$FILE")
+          if [ "$SIZE" -lt 1024 ]; then
+            echo "::error::Backup sospechosamente pequeño (${SIZE} bytes) — abortando sin aplicar migración"
+            exit 1
+          fi
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          echo "✅ Backup cifrado: $FILE (${SIZE} bytes)"
+
+      - name: Upload backup artifact (retención 7 días — condición 3)
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.backup.outputs.file }}
+          path: ${{ steps.backup.outputs.file }}
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Apply migration (T1 · ApplyAllowed = A∧B∧C)
+        id: apply
+        if: steps.validate.outcome == 'success' && steps.backup.outcome == 'success'
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          MIGRATION_PATH: ${{ steps.validate.outputs.path }}
+        run: |
+          set -euo pipefail
+          mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" \
+            --default-character-set=utf8mb4 --table "$DB_NAME" \
+            < "$MIGRATION_PATH" > migration_output.txt 2>&1 \
+            || { echo "::error::La migración falló — DB respaldada en el artifact"; cat migration_output.txt; exit 1; }
+          echo "✅ Migración aplicada"
+
+      - name: Summary (solo métricas agregadas — condición 2)
+        if: always()
+        env:
+          BACKUP_FILE: ${{ steps.backup.outputs.file }}
+          BACKUP_SIZE: ${{ steps.backup.outputs.size }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### 🏛️ DB Migration — $MIGRATION_FILE"
+            echo ""
+            echo "| Campo | Valor |"
+            echo "| :--- | :--- |"
+            echo "| Migración | \`$MIGRATION_FILE\` |"
+            echo "| Validación (T1·A) | ${{ steps.validate.outcome }} |"
+            echo "| Backup cifrado (T1·B) | ${{ steps.backup.outcome }} — \`${BACKUP_FILE:-n/a}\` (${BACKUP_SIZE:-0} bytes) |"
+            echo "| Aplicación | ${{ steps.apply.outcome }} |"
+            echo "| Actor | ${{ github.actor }} |"
+            echo ""
+            if [ -s migration_output.txt ]; then
+              echo "#### Verificación (contadores agregados de la migración)"
+              echo '```'
+              tail -c 3000 migration_output.txt
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
