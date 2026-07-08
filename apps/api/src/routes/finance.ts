@@ -6,6 +6,7 @@ import db from '../services/db';
 import { UNIT_STATUS } from '../constants/statuses';
 import requirePermission from '../middleware/requirePermission';
 import FleetService from '../services/fleetService';
+import { resolveFinanceClusterScope } from '../services/clusterAccess';
 
 const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
   const { id, permissions } = request.user as { id: number; permissions?: string[] };
@@ -13,6 +14,34 @@ const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | nu
     return null;
   return FleetService.getUserOwnerIds(id);
 };
+
+/**
+ * FC 067 F4 — T1 (Cúmulo gastos_egresos activo) + T2 (scope Archonaut).
+ * Solo se evalúa cuando ownerScope es un array no vacío (ownerScope=null es
+ * Ω/admin, sin restricción de Cúmulo — §24.5; ownerScope=[] ya retornó antes).
+ */
+async function gateFinanceCluster(
+  ownerScope: number[]
+): Promise<
+  | { forbidden: true }
+  | { forbidden: false; ownerIds: number[]; categoryFilter: readonly string[] | null }
+> {
+  const { activeOwnerIds, categoryFilter } = await resolveFinanceClusterScope(ownerScope);
+  if (activeOwnerIds.length === 0) {
+    return { forbidden: true };
+  }
+  return { forbidden: false, ownerIds: activeOwnerIds, categoryFilter };
+}
+
+function appendCategoryFilter(
+  query: string,
+  params: (string | number)[],
+  categoryFilter: readonly string[] | null
+): string {
+  if (!categoryFilter) return query;
+  params.push(...categoryFilter);
+  return `${query} AND ft.category IN (${categoryFilter.map(() => '?').join(', ')})`;
+}
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -128,7 +157,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         });
       }
 
-      const ownerScope = await resolveOwnerScope(request);
+      let ownerScope = await resolveOwnerScope(request);
       if (ownerScope !== null && ownerScope.length === 0) {
         return reply.send({
           success: true,
@@ -155,6 +184,20 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         });
       }
 
+      let categoryFilter: readonly string[] | null = null;
+      if (ownerScope !== null) {
+        const gate = await gateFinanceCluster(ownerScope);
+        if (gate.forbidden) {
+          return reply.code(403).send({
+            success: false,
+            code: 'FORBIDDEN',
+            message: 'Cúmulo de Finanzas no disponible para este Universo',
+          });
+        }
+        ownerScope = gate.ownerIds;
+        categoryFilter = gate.categoryFilter;
+      }
+
       let kpiQuery = `SELECT
           COALESCE(SUM(ft.amount), 0)                                                    AS totalEgresos,
           COALESCE(SUM(CASE WHEN ft.category = 'MAINTENANCE' THEN ft.amount ELSE 0 END), 0) AS totalMaintenance,
@@ -173,6 +216,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         kpiQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         kpiParams.push(...ownerScope);
       }
+      kpiQuery = appendCategoryFilter(kpiQuery, kpiParams, categoryFilter);
       const [kpiRows] = await db.execute<RowDataPacket[]>(kpiQuery, kpiParams);
 
       let unitQuery = `SELECT COUNT(*) AS unitCount
@@ -194,6 +238,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         categoryQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         categoryParams.push(...ownerScope);
       }
+      categoryQuery = appendCategoryFilter(categoryQuery, categoryParams, categoryFilter);
       categoryQuery += ` GROUP BY ft.category ORDER BY amount DESC`;
       const [categoryRows] = await db.execute<RowDataPacket[]>(categoryQuery, categoryParams);
 
@@ -206,6 +251,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         monthQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         monthParams.push(...ownerScope);
       }
+      monthQuery = appendCategoryFilter(monthQuery, monthParams, categoryFilter);
       monthQuery += ` GROUP BY ft.period ORDER BY ft.period ASC`;
       const [monthRows] = await db.execute<RowDataPacket[]>(monthQuery, monthParams);
 
@@ -218,6 +264,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         topQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         topParams.push(...ownerScope);
       }
+      topQuery = appendCategoryFilter(topQuery, topParams, categoryFilter);
       topQuery += ` GROUP BY ft.unit_id ORDER BY amount DESC LIMIT 5`;
       const [topRows] = await db.execute<RowDataPacket[]>(topQuery, topParams);
 
@@ -294,7 +341,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
 
       const parsedLimit = Math.min(parseInt(limit, 10) || 50, 200);
 
-      const ownerScope = await resolveOwnerScope(request);
+      let ownerScope = await resolveOwnerScope(request);
       if (ownerScope !== null && ownerScope.length === 0) {
         return reply.send({
           success: true,
@@ -304,6 +351,20 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
             total: 0,
           },
         });
+      }
+
+      let categoryFilter: readonly string[] | null = null;
+      if (ownerScope !== null) {
+        const gate = await gateFinanceCluster(ownerScope);
+        if (gate.forbidden) {
+          return reply.code(403).send({
+            success: false,
+            code: 'FORBIDDEN',
+            message: 'Cúmulo de Finanzas no disponible para este Universo',
+          });
+        }
+        ownerScope = gate.ownerIds;
+        categoryFilter = gate.categoryFilter;
       }
 
       let query = `
@@ -322,6 +383,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         query += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         params.push(...ownerScope);
       }
+      query = appendCategoryFilter(query, params, categoryFilter);
 
       if (category) {
         query += ' AND ft.category = ?';
@@ -362,6 +424,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         countQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         countParams.push(...ownerScope);
       }
+      countQuery = appendCategoryFilter(countQuery, countParams, categoryFilter);
       if (category) {
         countQuery += ' AND ft.category = ?';
         countParams.push(category);
@@ -413,7 +476,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       const createdBy = (request.user as { id: number }).id;
 
       try {
-        const ownerScope = await resolveOwnerScope(request);
+        let ownerScope = await resolveOwnerScope(request);
         const [unitCheck] = await db.execute<RowDataPacket[]>(
           'SELECT id, ownerId FROM fleet_units WHERE id = ?',
           [unitId]
@@ -423,11 +486,33 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
             .code(404)
             .send({ success: false, code: 'NOT_FOUND', message: 'Unidad no encontrada' });
         }
+
+        let categoryFilter: readonly string[] | null = null;
+        if (ownerScope !== null) {
+          const gate = await gateFinanceCluster(ownerScope);
+          if (gate.forbidden) {
+            return reply.code(403).send({
+              success: false,
+              code: 'FORBIDDEN',
+              message: 'Cúmulo de Finanzas no disponible para este Universo',
+            });
+          }
+          ownerScope = gate.ownerIds;
+          categoryFilter = gate.categoryFilter;
+        }
         if (ownerScope !== null && !ownerScope.includes(unitCheck[0].ownerId)) {
           return reply.code(403).send({
             success: false,
             code: 'FORBIDDEN',
             message: 'Unidad fuera de los propietarios permitidos',
+          });
+        }
+        if (categoryFilter && !categoryFilter.includes(category)) {
+          return reply.code(400).send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: 'Categoría no permitida para este tipo de Universo',
+            field: 'category',
           });
         }
 
@@ -474,7 +559,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       const fromMonth = activeFrom.substring(0, 7);
       const toMonth = activeTo.substring(0, 7);
 
-      const ownerScope = await resolveOwnerScope(request);
+      let ownerScope = await resolveOwnerScope(request);
       if (ownerScope !== null && ownerScope.length === 0) {
         reply.header('Content-Type', 'text/csv; charset=utf-8');
         reply.header(
@@ -484,6 +569,20 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         return reply.send(
           'UUID,Unidad,Categoría,Monto,Período,Proveedor,Referencia,Notas,Registrado por,Fecha'
         );
+      }
+
+      let categoryFilter: readonly string[] | null = null;
+      if (ownerScope !== null) {
+        const gate = await gateFinanceCluster(ownerScope);
+        if (gate.forbidden) {
+          return reply.code(403).send({
+            success: false,
+            code: 'FORBIDDEN',
+            message: 'Cúmulo de Finanzas no disponible para este Universo',
+          });
+        }
+        ownerScope = gate.ownerIds;
+        categoryFilter = gate.categoryFilter;
       }
 
       let query = `
@@ -502,6 +601,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         query += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         params.push(...ownerScope);
       }
+      query = appendCategoryFilter(query, params, categoryFilter);
 
       if (category) {
         query += ' AND ft.category = ?';

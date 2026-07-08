@@ -484,6 +484,11 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       });
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        // FC 067 F4 — resolveFinanceClusterScope: Cúmulo gastos_egresos ACTIVE (T1 ⊤⊤)
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 1 }],
+          undefined,
+        ])
         .mockResolvedValueOnce([[], undefined]); // export query → empty rows
       const res = await app.inject({
         method: 'GET',
@@ -540,6 +545,11 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       });
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        // FC 067 F4 — resolveFinanceClusterScope: Cúmulo gastos_egresos ACTIVE (T1 ⊤⊤)
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 1 }],
+          undefined,
+        ])
         .mockResolvedValueOnce([[], undefined]) // main transactions query
         .mockResolvedValueOnce([[{ total: 0 }], undefined]); // count query
       const res = await app.inject({
@@ -573,6 +583,153 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       expect(res.statusCode).toBe(400);
       expect(res.json().code).toBe('VALIDATION_ERROR');
       expect(res.json().field).toBe('');
+    });
+  });
+
+  // ─── FC 067 F4 — Finanzas_Cluster_Granularity: 4 Scenarios Gherkin ──────────
+
+  describe('FC 067 F4 — Finanzas_Cluster_Granularity (Cúmulo gastos_egresos)', () => {
+    const scopedToken = (userId = 5): string =>
+      app.jwt.sign({
+        id: userId,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any', 'finance:transaction:create'],
+      });
+
+    it('Scenario 1 — Cúmulo SUSPENDED/inactivo → 403 (T1 no visible sin SC+Cúmulo activos)', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 0 }],
+          undefined,
+        ]); // T1 ⊤⊥/⊥⊥
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/dashboard',
+        headers: { Authorization: `Bearer ${scopedToken()}` },
+      });
+      expect(res.statusCode).toBe(403);
+      expect(res.json().code).toBe('FORBIDDEN');
+    });
+
+    it('Scenario 2 — Archonaut ve solo su subconjunto de categorías (T2 ⊤) — LEASE/FINE nunca en la query', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 7 }], undefined]) // getUserOwnerIds → [7]
+        .mockResolvedValueOnce([
+          [{ ownerId: 7, ownerType: 'ARCHONAUT', clusterActive: 1 }],
+          undefined,
+        ])
+        .mockResolvedValueOnce([[], undefined]) // main query
+        .mockResolvedValueOnce([[{ total: 0 }], undefined]); // count query
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken(7)}` },
+      });
+      expect(res.statusCode).toBe(200);
+      const mainQueryCall = (db.execute as Mock).mock.calls[2];
+      const [sql, params] = mainQueryCall as [string, unknown[]];
+      expect(sql).toContain('ft.category IN');
+      expect(params).toEqual(expect.arrayContaining(['MAINTENANCE', 'FUEL', 'TENENCIA']));
+      expect(params).not.toContain('LEASE');
+      expect(params).not.toContain('FINE');
+    });
+
+    it('Scenario 3 — Tenant de negocio (no Archonaut) ve el set completo (T2 ⊥) — sin filtro de categoría', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 1 }],
+          undefined,
+        ])
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[{ total: 0 }], undefined]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken()}` },
+      });
+      expect(res.statusCode).toBe(200);
+      const mainQueryCall = (db.execute as Mock).mock.calls[2];
+      const [sql] = mainQueryCall as [string, unknown[]];
+      expect(sql).not.toContain('ft.category IN');
+    });
+
+    it('Scenario 4 — Aislamiento entre owners: la query sigue exigiendo fu.ownerId IN (ownerScope) tras T1/T2', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined])
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 1 }],
+          undefined,
+        ])
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[{ total: 0 }], undefined]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken()}` },
+      });
+      expect(res.statusCode).toBe(200);
+      const mainQueryCall = (db.execute as Mock).mock.calls[2];
+      const [sql, params] = mainQueryCall as [string, unknown[]];
+      expect(sql).toContain('fu.ownerId IN');
+      expect(params).toContain(5);
+    });
+
+    it('POST — Archonaut con categoría fuera de personal_set (LEASE) → 400 VALIDATION_ERROR', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 7 }], undefined]) // getUserOwnerIds → [7]
+        .mockResolvedValueOnce([[{ id: 'ARC-001', ownerId: 7 }], undefined]) // unitCheck
+        .mockResolvedValueOnce([
+          [{ ownerId: 7, ownerType: 'ARCHONAUT', clusterActive: 1 }],
+          undefined,
+        ]); // gate
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken(7)}` },
+        payload: { unitId: 'ARC-001', category: 'LEASE', amount: 500 },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('VALIDATION_ERROR');
+      expect(res.json().field).toBe('category');
+    });
+
+    it('POST — Archonaut con categoría de gasto personal (MAINTENANCE) → 201', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 7 }], undefined])
+        .mockResolvedValueOnce([[{ id: 'ARC-001', ownerId: 7 }], undefined])
+        .mockResolvedValueOnce([
+          [{ ownerId: 7, ownerType: 'ARCHONAUT', clusterActive: 1 }],
+          undefined,
+        ])
+        .mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }, undefined]); // INSERT
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken(7)}` },
+        payload: { unitId: 'ARC-001', category: 'MAINTENANCE', amount: 500 },
+      });
+      expect(res.statusCode).toBe(201);
+    });
+
+    it('POST — Cúmulo inactivo para el owner de la unidad → 403 antes de insertar', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined])
+        .mockResolvedValueOnce([[{ id: 'ASM-001', ownerId: 5 }], undefined])
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 0 }],
+          undefined,
+        ]);
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken()}` },
+        payload: { unitId: 'ASM-001', category: 'FUEL', amount: 500 },
+      });
+      expect(res.statusCode).toBe(403);
+      expect(res.json().code).toBe('FORBIDDEN');
     });
   });
 });

@@ -217,6 +217,11 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
       ];
       const UNIT_COUNT_ROW = [{ unitCount: 0 }];
       vi.mocked(db.execute)
+        // FC 067 F4 — resolveFinanceClusterScope: Cúmulo gastos_egresos ACTIVE (T1 ⊤⊤) para owner 42
+        .mockResolvedValueOnce([
+          [{ ownerId: 42, ownerType: 'FLOTILLA', clusterActive: 1 }],
+          [],
+        ] as unknown as [RowDataPacket[], FieldPacket[]])
         .mockResolvedValueOnce([KPI_ROW, []] as unknown as [RowDataPacket[], FieldPacket[]])
         .mockResolvedValueOnce([UNIT_COUNT_ROW, []] as unknown as [RowDataPacket[], FieldPacket[]])
         .mockResolvedValueOnce([[], []] as unknown as [RowDataPacket[], FieldPacket[]])
@@ -267,10 +272,16 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
 
     it('POST /finance/transactions allows creating transaction for unit inside owner scope', async () => {
       // Unit has ownerId 42
-      vi.mocked(db.execute).mockResolvedValueOnce([
-        [{ id: 'owned-unit-2', ownerId: 42 }],
-        [],
-      ] as unknown as [RowDataPacket[], FieldPacket[]]);
+      vi.mocked(db.execute)
+        .mockResolvedValueOnce([[{ id: 'owned-unit-2', ownerId: 42 }], []] as unknown as [
+          RowDataPacket[],
+          FieldPacket[]
+        ])
+        // FC 067 F4 — resolveFinanceClusterScope: Cúmulo gastos_egresos ACTIVE (T1 ⊤⊤) para owner 42
+        .mockResolvedValueOnce([
+          [{ ownerId: 42, ownerType: 'FLOTILLA', clusterActive: 1 }],
+          [],
+        ] as unknown as [RowDataPacket[], FieldPacket[]]);
 
       const res = await app.inject({
         method: 'POST',
