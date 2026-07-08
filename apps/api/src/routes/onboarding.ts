@@ -11,7 +11,9 @@ import FleetService from '../services/fleetService';
 import { resolveUniqueHandle } from '../utils/ownerHandle';
 import { designateMasterOfUniverse } from '../services/universeBootstrap';
 
-type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE';
+// FC 067 F1 — códigos de owner_types_catalog (migración 159); ARCHONAUT es
+// nodo consumidor top-level, nunca sub-usuario (PRIVATE conserva esa semántica).
+type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE' | 'ARCHONAUT';
 
 const suiteOf = (ownerType: OwnerType): 'ERP' | 'VIM' => (ownerType === 'FLOTILLA' ? 'ERP' : 'VIM');
 
@@ -106,7 +108,7 @@ async function createOwnerWithUser(
   );
   const handle = await resolveUniqueHandle(connection, suite, profile?.rfc, username);
   await connection.execute<ResultSetHeader>(
-    'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO owners (id, owner_type_id, suite, label, parent_owner_id, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?, ?)',
     [ownerId, ownerType, suite, ownerLabel, parentOwnerId ?? null, handle]
   );
   await connection.execute<ResultSetHeader>(
@@ -372,7 +374,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
       const [rows] = await db.execute<RowDataPacket[]>(
         `SELECT
            o.id          AS owner_id,
-           o.owner_type,
+           otc.code      AS owner_type,
            o.suite,
            o.label,
            u.id          AS user_id,
@@ -387,10 +389,11 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
             JOIN common_catalogs cc ON cc.id = os.catalog_id
             WHERE os.owner_id = o.id) AS especialidades
          FROM owners o
+         JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
          JOIN user_owner_membership m ON m.owner_id = o.id
          JOIN users u ON u.id = m.user_id
          LEFT JOIN owner_profiles op ON op.owner_id = o.id
-         WHERE o.owner_type IN ('FLOTILLA', 'CENTER')
+         WHERE otc.code IN ('FLOTILLA', 'CENTER')
            AND o.parent_owner_id IS NULL
          ORDER BY o.id DESC`,
         []

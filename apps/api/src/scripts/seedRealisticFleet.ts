@@ -104,7 +104,7 @@ async function runFase1C(): Promise<void> {
 
     // ── Paso 4: owners ───────────────────────────────────────────────────────
     await conn.execute<ResultSetHeader>(
-      'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO owners (id, owner_type_id, suite, label, parent_owner_id, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?, ?)',
       [ownerId, 'CENTER', 'VIM', 'PIIC', null, deriveOwnerHandle('VIM', 'FOBA980115MHN', 'Abacaf')]
     );
 
@@ -168,7 +168,7 @@ async function runFase1C(): Promise<void> {
       [PIIC_USERNAME]
     );
     const [[ownerRow]] = await conn.execute<RowDataPacket[]>(
-      'SELECT id, owner_type, suite, label FROM owners WHERE id = ?',
+      'SELECT o.id, otc.code AS owner_type, o.suite, o.label FROM owners o JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE o.id = ?',
       [ownerId]
     );
     const [profileRows] = await conn.execute<RowDataPacket[]>(

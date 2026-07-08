@@ -354,7 +354,8 @@ describe('Catalogs Integration Endpoints', () => {
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
       expect(body.data).toEqual(mockCenters);
-      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining("owner_type = 'CENTER'"));
+      // FC 067 F1 — filtro por catálogo owner_types_catalog, no por ENUM legacy
+      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining("otc.code = 'CENTER'"));
     });
 
     it('returns 401 for unauthenticated request to /centers', async (): Promise<void> => {

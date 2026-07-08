@@ -75,7 +75,7 @@ export default async function serviceCentersRoutes(fastify: FastifyInstance): Pr
 
     try {
       const [centroRows] = await db.execute<RowDataPacket[]>(
-        'SELECT id, owner_type FROM owners WHERE id = ?',
+        'SELECT o.id, otc.code AS owner_type FROM owners o JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE o.id = ?',
         [centroOwnerId]
       );
       if (centroRows.length === 0) {

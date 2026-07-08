@@ -81,9 +81,10 @@ const PROFILE_SELECT_SQL = `
     m.name             AS municipalityName,
     s.id               AS stateId,
     s.name             AS stateName,
-    o.owner_type       AS ownerType
+    otc.code           AS ownerType
   FROM owner_profiles op
   JOIN owners o ON o.id = op.owner_id
+  JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
   LEFT JOIN neighborhoods n ON n.id = op.neighborhood_id
   LEFT JOIN municipalities m ON m.id = n.municipality_id
   LEFT JOIN states s ON s.id = m.state_id
@@ -220,7 +221,7 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
     }
     try {
       const [profileRows] = await db.execute<RowDataPacket[]>(
-        'SELECT op.id, o.owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id WHERE op.owner_id = ? LIMIT 1',
+        'SELECT op.id, otc.code AS owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE op.owner_id = ? LIMIT 1',
         [ownerId]
       );
       if (profileRows.length === 0) {
@@ -334,7 +335,7 @@ export default async function ownerProfileRoutes(fastify: FastifyInstance): Prom
 
     try {
       const [profileRows] = await db.execute<RowDataPacket[]>(
-        'SELECT op.id, o.owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id WHERE op.owner_id = ? LIMIT 1',
+        'SELECT op.id, otc.code AS owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE op.owner_id = ? LIMIT 1',
         [ownerId]
       );
 

@@ -783,7 +783,9 @@ describe('GET /v1/onboarding/universes', () => {
     expect(body.data[0].owner_type).toBe('FLOTILLA');
     expect(body.data[1].suite).toBe('VIM');
     const sql = (db.execute as Mock).mock.calls[0][0] as string;
-    expect(sql).toContain("owner_type IN ('FLOTILLA', 'CENTER')");
+    // FC 067 F1 — el filtro vive en el catálogo (owner_types_catalog), no en el ENUM legacy
+    expect(sql).toContain("otc.code IN ('FLOTILLA', 'CENTER')");
+    expect(sql).toContain('JOIN owner_types_catalog otc ON otc.id = o.owner_type_id');
     expect(sql).toContain('parent_owner_id IS NULL');
   });
 

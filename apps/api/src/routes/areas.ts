@@ -76,7 +76,7 @@ export default async function areasRoutes(fastify: FastifyInstance): Promise<voi
     }
     try {
       const [ownerRows] = await db.execute<RowDataPacket[]>(
-        "SELECT id FROM owners WHERE id = ? AND owner_type = 'FLOTILLA'",
+        "SELECT o.id FROM owners o JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE o.id = ? AND otc.code = 'FLOTILLA'",
         [id]
       );
       if (ownerRows.length === 0) {

@@ -109,7 +109,8 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
         `SELECT o.id, cc.label
          FROM owners o
          JOIN common_catalogs cc ON o.catalog_id = cc.id
-         WHERE o.owner_type = 'CENTER' AND o.is_active = 1
+         JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
+         WHERE otc.code = 'CENTER' AND o.is_active = 1
          ORDER BY cc.label ASC`
       );
       return reply.send({ success: true, data: rows });

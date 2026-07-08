@@ -293,7 +293,7 @@ async function runSeed(): Promise<void> {
     await Promise.all(
       SUPERCUMULOS.map((sc, idx) =>
         conn.execute<ResultSetHeader>(
-          'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, NULL, ?)',
+          'INSERT INTO owners (id, owner_type_id, suite, label, parent_owner_id, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, NULL, ?)',
           [ownerIds[idx], 'PRIVATE', 'VIM', sc.label, deriveOwnerHandle('VIM', sc.rfc, sc.username)]
         )
       )
@@ -440,7 +440,7 @@ async function runSeed(): Promise<void> {
     console.log('\n── Verificación ─────────────────────────────────────────');
 
     const [ownerRows] = await conn.execute<RowDataPacket[]>(
-      "SELECT COUNT(*) AS cnt FROM owners WHERE owner_type='PRIVATE' AND suite='VIM'"
+      "SELECT COUNT(*) AS cnt FROM owners o JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE otc.code='PRIVATE' AND o.suite='VIM'"
     );
     const ownerCnt = Number((ownerRows as RowDataPacket[])[0].cnt);
 
@@ -453,7 +453,8 @@ async function runSeed(): Promise<void> {
     const [memberRows] = await conn.execute<RowDataPacket[]>(
       `SELECT COUNT(*) AS cnt FROM user_owner_membership uom
        JOIN owners o ON o.id = uom.owner_id
-       WHERE o.owner_type='PRIVATE' AND o.suite='VIM'`
+       JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
+       WHERE otc.code='PRIVATE' AND o.suite='VIM'`
     );
     const memberCnt = Number((memberRows as RowDataPacket[])[0].cnt);
 
@@ -481,8 +482,9 @@ async function runSeed(): Promise<void> {
 
     const [distRows] = await conn.execute<RowDataPacket[]>(
       `SELECT COUNT(fu.id) AS uc FROM owners o
+       JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
        LEFT JOIN fleet_units fu ON fu.ownerId = o.id
-       WHERE o.owner_type='PRIVATE' AND o.suite='VIM'
+       WHERE otc.code='PRIVATE' AND o.suite='VIM'
        GROUP BY o.id ORDER BY uc`
     );
     const dist = (distRows as RowDataPacket[]).map((r) => Number(r.uc)).sort((a, b) => a - b);

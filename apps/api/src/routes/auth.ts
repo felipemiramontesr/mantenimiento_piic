@@ -61,7 +61,7 @@ async function resolveOwnerRow(
   const suite: 'ERP' | 'VIM' = ownerType === 'FLOTILLA' ? 'ERP' : 'VIM';
   const handle = await resolveUniqueHandle(connection, suite, rfc, username);
   await connection.execute<ResultSetHeader>(
-    'INSERT INTO owners (id, owner_type, suite, label, handle) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO owners (id, owner_type_id, suite, label, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?)',
     [ownerId, ownerType, suite, ownerLabel, handle]
   );
   return ownerId;
@@ -786,9 +786,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         }
       }
       const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT uom.owner_id AS ownerId, o.label, o.handle, o.suite, o.owner_type AS ownerType
+        `SELECT uom.owner_id AS ownerId, o.label, o.handle, o.suite, otc.code AS ownerType
          FROM user_owner_membership uom
          JOIN owners o ON o.id = uom.owner_id
+         JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
          WHERE uom.user_id = ?`,
         [id]
       );
@@ -965,7 +966,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     }
 
     const [ownerRows] = await db.execute<RowDataPacket[]>(
-      'SELECT id, owner_type, suite FROM owners WHERE id = ?',
+      'SELECT o.id, otc.code AS owner_type, o.suite FROM owners o JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE o.id = ?',
       [parentOwnerId]
     );
     if (ownerRows.length === 0) {
@@ -1034,7 +1035,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
               username
             );
             await connection.execute<ResultSetHeader>(
-              'INSERT INTO owners (id, owner_type, suite, label, parent_owner_id, handle) VALUES (?, ?, ?, ?, ?, ?)',
+              'INSERT INTO owners (id, owner_type_id, suite, label, parent_owner_id, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?, ?)',
               [
                 newPrivateOwnerId,
                 'PRIVATE',
