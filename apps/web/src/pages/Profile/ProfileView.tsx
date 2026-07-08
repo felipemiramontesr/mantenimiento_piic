@@ -26,7 +26,7 @@ const ProfileView: React.FC = () => {
   const [postError, setPostError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSectionData('Red Social', 'Muro de la comunidad Archon');
+    setSectionData('Arcsial', 'Muro de la comunidad Archon');
     refresh().catch(() => undefined);
   }, [setSectionData, refresh]);
 

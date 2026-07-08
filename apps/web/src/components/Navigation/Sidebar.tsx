@@ -388,7 +388,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                   {!isExternalClientOnly() && (
                     <NavItem
                       icon={<Rss size={20} />}
-                      label="Red Social"
+                      label="Arcsial"
                       path="/dashboard/social"
                       active={location.pathname === '/dashboard/social'}
                       isCollapsed={isCollapsed}

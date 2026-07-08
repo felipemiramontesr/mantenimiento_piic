@@ -86,6 +86,9 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Personal')).toBeDefined();
     expect(screen.getByText('Onboarding')).toBeDefined();
     expect(screen.getByText('Panel de Control')).toBeDefined();
+    // FC 067 F3 — L_social adoptado como "Arcsial" (§24.11), no "Red Social"/"SOCIAL"
+    expect(screen.getByText('Arcsial')).toBeDefined();
+    expect(screen.queryByText('Red Social')).toBeNull();
   });
 
   it('Owner-Scoped F1-A: Cliente Externo (role 9 — portal perms) solo ve Portal, no Unidades', () => {
