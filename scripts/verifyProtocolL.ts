@@ -3,7 +3,8 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { runConsistencyChecks } from './protocolLConsistency';
+import { checkOlrApproval, runConsistencyChecks } from './protocolLConsistency';
+import { findFcFile } from './olrSign';
 
 // Colores para consola
 const RED = '\x1b[31m';
@@ -291,6 +292,31 @@ function verifyLConsistency(rootDir: string, masterPath: string, handoffPath: st
   );
 }
 
+// 8. FC 068 F2 — Gate OLR (§19.1/§19.2/§20.1). Condición 2 de Bravo: solo se evalúa
+// aquí, dentro de la rama de código real staged — NUNCA en verifyLConsistency (7),
+// que corre incondicionalmente incluso sin archivos staged.
+function verifyOlrGate(rootDir: string, masterContent: string): void {
+  const fcMatch = masterContent.match(/## FEATURE CONTRACT ACTIVO\s*```\s*FC (\d+)/);
+  if (!fcMatch) {
+    return; // FC activo: ninguno — nada que verificar
+  }
+  const fcDir = path.join(rootDir, 'Protocolos', 'FC');
+  const fcPath = findFcFile(fcDir, fcMatch[1]);
+  if (!fcPath || !fs.existsSync(fcPath)) {
+    return; // archivo de FC no localizable — no bloquea por un problema de otro check
+  }
+  const fcContent = fs.readFileSync(fcPath, 'utf8');
+  const errors = checkOlrApproval(fcContent);
+  if (errors.length > 0) {
+    errors.forEach((e) => logError(e));
+    logError(
+      `Gate OLR: FC ${fcMatch[1]} declara "Requiere OLR: Sí" sin las 3 firmas completas (§19.1/§20.1 Gate 2) — commit bloqueado.`
+    );
+    process.exit(1);
+  }
+  logSuccess('Gate OLR verificado (FC 068 F2 — sin firmas pendientes o no aplica).');
+}
+
 function verify(): void {
   console.log('--- VALIDACIÓN DE PROTOCOLO L ---');
 
@@ -346,6 +372,7 @@ function verify(): void {
   const { verF } = verifyVersions(masterContent, handoffContent, forenseContent);
   verifyCanalH(handoffContent, forenseContent, verF);
   verifyNoPlaceholders();
+  verifyOlrGate(rootDir, masterContent); // FC 068 F2 — solo con código real staged
 
   logSuccess('¡Validación de Protocolo L completada con éxito! Commit permitido.');
 }

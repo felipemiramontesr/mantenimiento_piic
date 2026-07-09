@@ -20,6 +20,7 @@ import {
   checkFcActivo,
   checkHOrder,
   checkMinCursorGC,
+  checkOlrApproval,
   checkRuleRegistry,
   checkVersionFormat,
   runConsistencyChecks,
@@ -364,6 +365,79 @@ describe('FC 063 F2 — Cláusula L por hash (T1: ReRead ≡ HashChanged ∨ New
     );
     expect(computeLHash([core, anexos])).toMatch(/^[0-9a-f]{12}$/);
     expect(computeLHash([core])).not.toBe(computeLHash([core, anexos]));
+  });
+});
+
+describe('FC 068 F2 — checkOlrApproval (T1 OlrApproved ≡ Firmado(O)∧Firmado(L)∧Firmado(R))', () => {
+  const withOlr = (o: string, l: string, r: string): string => `
+FEATURE CONTRACT
+Requiere OLR : [x] Sí  [ ] No
+
+APROBACIONES OLR (solo si Requiere OLR = Sí — §19.2/§20.1, firmantes fijos):
+- [${o}] O [Operational & Safety]  — Charlie     : ${o === 'x' ? '2026-07-08 18:00:00' : '[Fecha]'}
+- [${l}] L [Legal & Privacy]       — GrayMan     : ${l === 'x' ? '2026-07-08 18:05:00' : '[Fecha]'}
+- [${r}] R [Regulatory Audit]      — Alfa/Bravo  : ${r === 'x' ? '2026-07-08 18:10:00' : '[Fecha]'}
+`;
+
+  it('Scenario 1 — Requiere OLR: No → sin errores, cualquier estado de firmas', () => {
+    const fc = `
+FEATURE CONTRACT
+Requiere OLR : [ ] Sí  [x] No
+`;
+    expect(checkOlrApproval(fc)).toEqual([]);
+  });
+
+  it('FC sin el campo "Requiere OLR" (retrocompat con FCs previos a FC 068) → sin errores', () => {
+    expect(checkOlrApproval('FEATURE CONTRACT\nSCOPE\nQué hace: algo\n')).toEqual([]);
+  });
+
+  it('Scenario 2 — Requiere OLR: Sí con 0/3 firmas → 3 errores, uno por filtro', () => {
+    const errors = checkOlrApproval(withOlr(' ', ' ', ' '));
+    expect(errors).toHaveLength(3);
+    expect(errors.some((e) => e.includes('filtro O'))).toBe(true);
+    expect(errors.some((e) => e.includes('filtro L'))).toBe(true);
+    expect(errors.some((e) => e.includes('filtro R'))).toBe(true);
+  });
+
+  it('Requiere OLR: Sí con firma parcial (2/3) → 1 error para el filtro faltante', () => {
+    const errors = checkOlrApproval(withOlr('x', 'x', ' '));
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('filtro R');
+  });
+
+  it('Scenario 5 — Requiere OLR: Sí con 3/3 firmas → sin errores (OlrApproved=⊤)', () => {
+    expect(checkOlrApproval(withOlr('x', 'x', 'x'))).toEqual([]);
+  });
+
+  it('checkbox marcado pero fecha sigue en placeholder [Fecha] → no cuenta como firmado', () => {
+    const fc = `
+FEATURE CONTRACT
+Requiere OLR : [x] Sí  [ ] No
+
+APROBACIONES OLR (solo si Requiere OLR = Sí — §19.2/§20.1, firmantes fijos):
+- [x] O [Operational & Safety]  — Charlie     : [Fecha]
+- [x] L [Legal & Privacy]       — GrayMan     : [Fecha]
+- [x] R [Regulatory Audit]      — Alfa/Bravo  : [Fecha]
+`;
+    const errors = checkOlrApproval(fc);
+    expect(errors).toHaveLength(3);
+  });
+
+  it('T1 — tabla de verdad exhaustiva de las 8 combinaciones O×L×R', () => {
+    const combos: Array<[string, string, string, boolean]> = [
+      ['x', 'x', 'x', true],
+      ['x', 'x', ' ', false],
+      ['x', ' ', 'x', false],
+      ['x', ' ', ' ', false],
+      [' ', 'x', 'x', false],
+      [' ', 'x', ' ', false],
+      [' ', ' ', 'x', false],
+      [' ', ' ', ' ', false],
+    ];
+    combos.forEach(([o, l, r, approved]) => {
+      const errors = checkOlrApproval(withOlr(o, l, r));
+      expect(errors.length === 0).toBe(approved);
+    });
   });
 });
 

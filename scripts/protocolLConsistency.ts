@@ -500,6 +500,41 @@ export function shouldReRead(hashChanged: boolean, newSession: boolean): boolean
   return hashChanged || newSession;
 }
 
+/**
+ * FC 068 F2 — Gate OLR (§19.1/§19.2/§20.1). Función pura, NO wired en
+ * runConsistencyChecks (condición 2 de Bravo — el gate OLR solo se evalúa cuando
+ * hay código real staged, nunca en la verificación incondicional de L). Se invoca
+ * directamente desde verifyProtocolL.ts dentro de la rama codeFiles.length > 0.
+ * Firmantes fijos: O=Charlie · L=GrayMan (exclusivo, ninguna IA) · R=Alfa|Bravo.
+ */
+export function checkOlrApproval(fcContent: string): string[] {
+  const requiereMatch = fcContent.match(/Requiere OLR\s*:\s*\[( |x)\]\s*S[ií]\s*\[( |x)\]\s*No/i);
+  if (!requiereMatch || requiereMatch[1].toLowerCase() !== 'x') {
+    return []; // FC no declara el campo (retrocompat) o declara "No" — nada que verificar
+  }
+
+  const errors: string[] = [];
+  (['O', 'L', 'R'] as const).forEach((filtro) => {
+    const lineMatch = fcContent.match(
+      new RegExp(`-\\s*\\[( |x)\\]\\s*${filtro}\\s*\\[[^\\]]+\\]\\s*—[^:]*:\\s*(.*)$`, 'm')
+    );
+    if (!lineMatch) {
+      errors.push(
+        `OLR: el FC declara "Requiere OLR: Sí" pero no tiene la línea de aprobación del filtro ${filtro} (§19.2).`
+      );
+      return;
+    }
+    const [, box, rest] = lineMatch;
+    const signed = box.toLowerCase() === 'x' && rest.trim() !== '' && rest.trim() !== '[Fecha]';
+    if (!signed) {
+      errors.push(
+        `OLR: FC declara "Requiere OLR: Sí" pero el filtro ${filtro} no tiene firma completa — usar scripts/olrSign.ts.`
+      );
+    }
+  });
+  return errors;
+}
+
 export interface ConsistencyInput {
   masterContent: string;
   claudeContent: string;
