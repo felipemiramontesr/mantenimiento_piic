@@ -247,7 +247,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Generate coverage (API)
         working-directory: apps/api
-        run: bunx vitest run --coverage
+        # lcov explícito: el config solo emite text/json/html y Sonar exige lcov.info
+        run: bunx vitest run --coverage --coverage.reporter=lcov --coverage.reporter=text
       - name: Generate coverage (Web)
         working-directory: apps/web
         # lcov para Sonar; umbrales globales en 0 SOLO aquí — la deriva preexistente
@@ -255,6 +256,7 @@ jobs:
         # El arbitraje de calidad de este job es el Quality Gate de Sonar, no vitest.
         run: >
           bunx vitest run --coverage --passWithNoTests
+          --coverage.reporter=lcov --coverage.reporter=text
           --coverage.thresholds.lines=0 --coverage.thresholds.functions=0
           --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
       - name: SonarQube Cloud Scan
