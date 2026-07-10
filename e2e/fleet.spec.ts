@@ -13,7 +13,7 @@ async function loginAndNavigate(page: Page): Promise<void> {
   await page.evaluate(() => {
     localStorage.setItem('cookies_accepted', 'true');
   });
-  await page.getByPlaceholder(/ID de Archon/i).fill('GrayMan');
+  await page.getByPlaceholder(/usuario o correo@empresa\.com/i).fill('GrayMan');
   await page.getByPlaceholder(/••••••••/i).fill('Archon2026!');
   await page.getByText(/Acceder al Sistema/i).click();
   await page.waitForURL('**/dashboard**', { timeout: 15_000 });
@@ -51,10 +51,13 @@ test.describe('Fleet Sovereign Operations', () => {
     await page.getByTestId('fleet-registration-btn').click();
 
     // Verify Form Sections (Industrial 2x2 Axis)
-    await expect(page.getByText('IDENTIDAD')).toBeVisible();
-    await expect(page.getByText('CUMPLIMIENTO')).toBeVisible();
-    await expect(page.getByText('Perfil Técnico de la Unidad')).toBeVisible();
-    await expect(page.getByText('Logística Estratégica & Mto.')).toBeVisible();
+    // getByRole('heading', ...): getByText('IDENTIDAD') hace match case-
+    // insensitive por substring y colisiona con el label "Identidad de Marca*"
+    // (strict mode violation, 2 elementos) — el heading es inequívoco.
+    await expect(page.getByRole('heading', { name: 'IDENTIDAD' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'CUMPLIMIENTO' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'PERFIL TÉCNICO' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'LOGÍSTICA & MTO.' })).toBeVisible();
 
     // Verify critical fields
     await expect(page.getByText('Número Económico')).toBeVisible();

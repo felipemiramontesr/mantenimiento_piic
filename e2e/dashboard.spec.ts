@@ -27,14 +27,18 @@ test.describe('Dashboard Navigation', () => {
 
   test('should navigate to Routes module via sidebar', async ({ page }) => {
     await page.getByTestId('nav-item-rutas').click();
-    await expect(page.getByText(/Bitácora de Rutas|Gestión de Rutas|Rutas/i).first()).toBeVisible({
+    // getByRole('heading', ...) en vez de getByText: el título de sección se
+    // renderiza como <h2> (SovereignHeader.tsx); getByText hacía match con el
+    // <span> del propio label del sidebar (mismo texto "Rutas", oculto por
+    // CSS cuando el sidebar colapsa) en vez del contenido de la página.
+    await expect(page.getByRole('heading', { name: 'Administrar Rutas' })).toBeVisible({
       timeout: 15_000,
     });
   });
 
   test('should navigate to Finance module via sidebar', async ({ page }) => {
     await page.getByTestId('nav-item-finanzas').click();
-    await expect(page.getByText(/Salud Financiera|Finanzas/i).first()).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Finanzas' })).toBeVisible({
       timeout: 15_000,
     });
   });
@@ -51,14 +55,14 @@ test.describe('Dashboard Navigation', () => {
 
   test('should navigate to Settings module via sidebar', async ({ page }) => {
     await page.getByTestId('nav-item-settings').click();
-    await expect(page.getByText(/Configuración del Sistema|Ajustes|Alertas/i).first()).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Configuración de Identidad' })).toBeVisible({
       timeout: 15_000,
     });
   });
 
   test('should navigate to Admin module via sidebar', async ({ page }) => {
     await page.getByTestId('nav-item-admin').click();
-    await expect(page.getByText(/Administración|Roles y Permisos/i).first()).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Panel de Control' })).toBeVisible({
       timeout: 15_000,
     });
   });

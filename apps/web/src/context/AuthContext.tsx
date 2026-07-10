@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { UserIndustrial } from '../types/user';
 import api from '../api/client';
 import { setToken, clearToken } from '../api/tokenStore';
@@ -38,6 +38,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isImpersonating = viewAsUser !== null;
   const effectiveUser = viewAsUser ?? currentUser;
 
+  // FC 070 — Auth_Session_Restore_Race_Guard. Contador de generación: cada
+  // login/logout manual avanza el epoch. La restauración silenciosa de sesión
+  // al montar (restoreSession, más abajo) captura el epoch vigente al iniciar
+  // y descarta su resultado — éxito o fallo, T1 — si el epoch ya avanzó
+  // cuando resuelve (una acción manual más reciente ya definió el estado).
+  const sessionEpochRef = useRef(0);
+
   const startImpersonation = (target: UserIndustrial): void => {
     setViewAsUser(target);
   };
@@ -47,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async (): Promise<void> => {
+    sessionEpochRef.current += 1;
     try {
       await api.post('/auth/logout');
     } catch {
@@ -59,23 +67,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = (token: string, user: UserIndustrial): void => {
+    sessionEpochRef.current += 1;
     setToken(token);
     setCurrentUser(user);
     setIsAuthenticated(true);
   };
 
   useEffect(() => {
+    const epochAtStart = sessionEpochRef.current;
     const restoreSession = async (): Promise<void> => {
       try {
         const response = await api.post<{ success: boolean; token: string; user: UserIndustrial }>(
           '/auth/refresh'
         );
+        if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
         if (response.data.success) {
           setToken(response.data.token);
           setCurrentUser(response.data.user);
           setIsAuthenticated(true);
         }
       } catch {
+        if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
         // No valid refresh token — stay unauthenticated
         clearToken();
         setIsAuthenticated(false);

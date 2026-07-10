@@ -28,12 +28,13 @@ graph TD
 
 ## 🔱 ARCHON CERTIFICATION DASHBOARD
 
-| Metric                | Status                                                                    | Certification           |
-| :-------------------- | :------------------------------------------------------------------------ | :---------------------- |
-| **Backend Coverage**  | ![100%](https://img.shields.io/badge/Coverage-100%25-brightgreen)         | Certified (Vitest)      |
-| **Security Standard** | ![OWASP](https://img.shields.io/badge/Security-OWASP%20Top%2010-blue)     | Certified (SonarJS)     |
-| **Infrastructure**    | ![Sovereign](https://img.shields.io/badge/Archon-Sovereign%20Core-orange) | Certified (v.78.100.19) |
-| **E2E Integrity**     | ![Passed](https://img.shields.io/badge/E2E-Forensic%20Parity-blueviolet)  | Certified (Playwright)  |
+[![PIIC Pro Deployment](https://github.com/felipemiramontesr/mantenimiento_piic/actions/workflows/deploy.yml/badge.svg)](https://github.com/felipemiramontesr/mantenimiento_piic/actions/workflows/deploy.yml)
+
+El estado real de certificación (Backend/Frontend/DB/E2E/SonarQube + las 9 categorías
+OWASP, calculado desde resultados de test reales — nunca texto fijo, FC 069) vive en el
+**Job Summary** de la corrida más reciente del workflow de arriba, no en badges estáticos
+de este README. Sin evidencia real detrás no se certifica nada: una categoría sin test
+mapeado se reporta como `NO VERIFICADO`, no como aprobada.
 
 _For a detailed blueprint, diagrammatic flows, and zero-trust policies, see the [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) manifesting._
 

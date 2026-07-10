@@ -17,7 +17,7 @@ export default async function loginAs(
   });
   await setupApiMocks(page);
   await page.goto('/login');
-  await page.getByPlaceholder('ID de Archon').fill(username);
+  await page.getByPlaceholder('usuario o correo@empresa.com').fill(username);
   await page.getByPlaceholder('••••••••').fill(password);
   await page.getByRole('button', { name: /Acceder al Sistema/i }).click();
   await page.waitForURL('**/dashboard**', { timeout: 15_000 });

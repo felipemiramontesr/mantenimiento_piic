@@ -1,0 +1,65 @@
+{
+  "A01": {
+    "label": "Broken Access Control",
+    "method": "junit",
+    "app": "api",
+    "files": [
+      "src/middleware/requirePermission.test.ts",
+      "src/middleware/requireFieldPermission.test.ts",
+      "src/routes/permissionEngine.test.ts",
+      "src/routes/rbacPermissions.test.ts",
+      "src/middleware/__tests__/cosmonautMiddleware.test.ts"
+    ]
+  },
+  "A02": {
+    "label": "Cryptographic Failures",
+    "method": "junit",
+    "app": "api",
+    "files": ["src/services/encryption.test.ts"]
+  },
+  "A03": {
+    "label": "Injection (SQL/NoSQL)",
+    "method": "script",
+    "script": "scripts/checkNoRawSql.ts"
+  },
+  "A05": {
+    "label": "Security Misconfiguration",
+    "method": "junit",
+    "app": "api",
+    "files": ["src/securityHeaders.test.ts"]
+  },
+  "A06": {
+    "label": "Vulnerable and Outdated Components",
+    "method": "script",
+    "script": "scripts/dependencyAuditGate.ts"
+  },
+  "A07": {
+    "label": "Identification/Auth Failures",
+    "method": "junit",
+    "app": "api",
+    "files": [
+      "src/routes/auth.test.ts",
+      "src/routes/authIntegration.test.ts",
+      "src/routes/authOwners.test.ts",
+      "src/routes/subUsers.test.ts"
+    ]
+  },
+  "A09": {
+    "label": "Security Logging and Monitoring Failures",
+    "method": "junit",
+    "app": "api",
+    "files": ["src/services/securityLog.test.ts"]
+  },
+  "A10": {
+    "label": "Server-Side Request Forgery (SSRF)",
+    "method": "junit",
+    "app": "api",
+    "files": ["src/services/outboundFetch.test.ts"]
+  },
+  "ArchonALE": {
+    "label": "Application-Level Encryption",
+    "method": "junit",
+    "app": "api",
+    "files": ["src/services/encryption.test.ts"]
+  }
+}

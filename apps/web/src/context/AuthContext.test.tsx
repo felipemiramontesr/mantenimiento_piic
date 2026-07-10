@@ -183,6 +183,79 @@ describe('AuthContext', () => {
     expect(result.current.effectiveUser).toMatchObject({ username: 'grayman' });
   });
 
+  // FC 070 — Auth_Session_Restore_Race_Guard. T1: ApplySessionRestoreResult
+  // (A=SameEpoch, B=RefreshSucceeded). Fila ⊤⊤ y ⊤⊥ ya cubiertas arriba
+  // ('after successful/failed /auth/refresh...'). Scenario 3 = fila ⊥⊥
+  // (login manual, luego el refresh stale FALLA). Scenario 4 = fila ⊥⊤
+  // (logout manual, luego el refresh stale TIENE ÉXITO). Entre las 4, T1
+  // queda exhaustivamente probado — Scenario 5 (simetría) no requiere un
+  // test aparte, es la propiedad conjunta de 3+4. Scenario 6 (isLoading
+  // siempre se resuelve) se asserta dentro de 3 y 4.
+  function createDeferred<T>(): {
+    promise: Promise<T>;
+    resolve: (value: T) => void;
+    reject: (reason: unknown) => void;
+  } {
+    let resolve!: (value: T) => void;
+    let reject!: (reason: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  }
+
+  it('Scenario 3 — manual login before a stale /auth/refresh FAILURE resolves: session persists', async () => {
+    const deferred = createDeferred<never>();
+    mockedApi.post.mockImplementation((url: string) => {
+      if (url === '/auth/refresh') return deferred.promise;
+      return Promise.resolve({ data: { success: true } });
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    expect(result.current.isLoading).toBe(true); // restoreSession en vuelo
+
+    await act(async () => {
+      result.current.login('tok-manual', stubUser);
+    });
+    expect(result.current.isAuthenticated).toBe(true);
+
+    // El refresh obsoleto finalmente falla — no debe pisar el login manual.
+    act(() => {
+      deferred.reject(new Error('stale failure'));
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false)); // Scenario 6
+
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.currentUser).toMatchObject({ username: 'grayman' });
+    expect(mockedClearToken).not.toHaveBeenCalled();
+  });
+
+  it('Scenario 4 — manual logout before a stale /auth/refresh SUCCESS resolves: stays logged out', async () => {
+    const deferred = createDeferred<{
+      data: { success: boolean; token: string; user: typeof stubUser };
+    }>();
+    mockedApi.post.mockImplementation((url: string) => {
+      if (url === '/auth/refresh') return deferred.promise;
+      return Promise.resolve({ data: { success: true } }); // /auth/logout
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    expect(result.current.isLoading).toBe(true); // restoreSession en vuelo
+
+    await act(async () => {
+      await result.current.logout();
+    });
+    expect(result.current.isAuthenticated).toBe(false);
+
+    // El refresh obsoleto finalmente "tiene éxito" — no debe resucitar la sesión.
+    act(() => {
+      deferred.resolve({ data: { success: true, token: 'tok-late', user: stubUser } });
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false)); // Scenario 6
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(mockedSetToken).not.toHaveBeenCalledWith('tok-late');
+  });
+
   it('effectiveUser equals currentUser when not impersonating', async () => {
     mockedApi.post.mockResolvedValueOnce({
       data: { success: true, token: 'tok-r', user: stubUser },

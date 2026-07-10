@@ -43,7 +43,22 @@ jobs:
         run: bun run --filter @mantenimiento/api lint
       - name: Type Check (TypeScript)
         if: matrix.shard == 1
-        run: bunx tsc --noEmit -p apps/api/tsconfig.json
+        # FC 069 F1 — captura el conteo REAL de errores (no un "0" hardcodeado
+        # en el dashboard). El job igual falla si ERRORS > 0 (mismo gate de antes).
+        run: |
+          set +e
+          bunx tsc --noEmit -p apps/api/tsconfig.json > tsc-output.txt 2>&1
+          TSC_EXIT=$?
+          cat tsc-output.txt
+          ERRORS=$(grep -c "error TS" tsc-output.txt || true)
+          echo "{\"errors\": ${ERRORS:-0}, \"warnings\": 0}" > tsc-result.json
+          exit $TSC_EXIT
+      - name: Upload TSC Result
+        if: matrix.shard == 1
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-tsc-result
+          path: tsc-result.json
       - name: Test Shard
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
@@ -90,7 +105,21 @@ jobs:
         run: bun run --filter @mantenimiento/web lint
       - name: Type Check (TypeScript)
         if: matrix.shard == 1
-        run: bunx tsc --noEmit -p apps/web/tsconfig.json
+        # FC 069 F1 — mismo tratamiento que backend: conteo real, mismo gate.
+        run: |
+          set +e
+          bunx tsc --noEmit -p apps/web/tsconfig.json > tsc-output.txt 2>&1
+          TSC_EXIT=$?
+          cat tsc-output.txt
+          ERRORS=$(grep -c "error TS" tsc-output.txt || true)
+          echo "{\"errors\": ${ERRORS:-0}, \"warnings\": 0}" > tsc-result.json
+          exit $TSC_EXIT
+      - name: Upload TSC Result
+        if: matrix.shard == 1
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-tsc-result
+          path: tsc-result.json
       - name: Test Shard
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
@@ -143,82 +172,148 @@ jobs:
           head: HEAD
           extra_args: --only-verified
 
-  global-certification:
-    name: 🔱 Archon Global Certification
-    needs: [backend-validation, frontend-validation, database-validation, security-scan]
+  e2e-validation:
+    name: 🧪 E2E (Playwright) Verification
+    needs: [backend-validation, frontend-validation]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 'latest'
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Verify local config never targets PROD — condición 3 Bravo
+        # Terreno (2026-07-09): e2e/*.spec.ts (excepto smoke.spec.ts) mockean
+        # TODA llamada al API vía page.route() (e2e/mocks.ts) — no requieren
+        # backend/DB real. smoke.spec.ts es la ÚNICA spec que navega a la URL
+        # real de PROD con credenciales reales — por diseño (Real Credentials
+        # Validation) queda EXCLUIDA aquí: usamos playwright.local.config.ts,
+        # que la excluye vía `testIgnore` (nunca `bunx playwright test` a secas,
+        # que sí la incluiría). Verificación real, no de confianza ciega al YAML.
+        run: |
+          bun -e "
+            import('./playwright.local.config.ts').then((m) => {
+              const url = m.default.use.baseURL;
+              const ignored = m.default.testIgnore ?? [];
+              console.log('Resolved baseURL:', url, '· testIgnore:', ignored);
+              if (!url.includes('localhost')) {
+                console.error('FATAL: baseURL no resuelve a localhost.');
+                process.exit(1);
+              }
+              if (!ignored.some((p) => String(p).includes('smoke.spec.ts'))) {
+                console.error('FATAL: smoke.spec.ts (login a PROD real) no está excluido.');
+                process.exit(1);
+              }
+            });
+          "
+      - name: Start Web dev server (background)
+        run: |
+          bun run --filter @mantenimiento/web dev -- --port 5173 --host &
+          npx --yes wait-on http://localhost:5173 --timeout 30000
+      - name: Install Playwright browsers (Chromium)
+        run: bunx playwright install --with-deps chromium
+      - name: Run Playwright E2E (specs mockeadas — sin smoke.spec.ts/PROD)
+        run: bunx playwright test --config=playwright.local.config.ts
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  sonar-scan:
+    name: 🔍 SonarQube Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 'latest'
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Generate coverage (API)
+        working-directory: apps/api
+        run: bunx vitest run --coverage
+      - name: Generate coverage (Web)
+        working-directory: apps/web
+        # lcov para Sonar; umbrales globales en 0 SOLO aquí — la deriva preexistente
+        # (Kanban web:coverage:drift-recovery) no debe tumbar la generación del reporte.
+        # El arbitraje de calidad de este job es el Quality Gate de Sonar, no vitest.
+        run: >
+          bunx vitest run --coverage --passWithNoTests
+          --coverage.thresholds.lines=0 --coverage.thresholds.functions=0
+          --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
+      - name: SonarQube Cloud Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+      - name: SonarQube Quality Gate Check
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+
+  global-certification:
+    name: 🔱 Archon Global Certification
+    needs:
+      [
+        backend-validation,
+        frontend-validation,
+        database-validation,
+        security-scan,
+        e2e-validation,
+        sonar-scan,
+      ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 'latest'
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
       - name: Download Shard Artifacts
         uses: actions/download-artifact@v8
         with:
           path: all-results
-      - name: Generate Certification Dashboard
+      - name: Run A03/A06 real checks (evidencia OWASP, no texto fijo)
+        id: owasp_scripts
         run: |
-          # Sum up backend shards
-          B_TESTS=0
-          B_PASSED=0
-
-          for file in all-results/backend-results-shard-*/test-results.xml; do
-            if [ -f "$file" ]; then
-              TESTS=$(grep -oP 'tests="\K[^"]+' "$file" | head -1 || echo "0")
-              FAILURES=$(grep -oP 'failures="\K[^"]+' "$file" | head -1 || echo "0")
-              PASSED=$((TESTS - FAILURES))
-              B_TESTS=$((B_TESTS + TESTS))
-              B_PASSED=$((B_PASSED + PASSED))
-            fi
-          done
-
-          # Sum up frontend shards
-          F_TESTS=0
-          F_PASSED=0
-
-          for file in all-results/frontend-results-shard-*/test-results.xml; do
-            if [ -f "$file" ]; then
-              TESTS=$(grep -oP 'tests="\K[^"]+' "$file" | head -1 || echo "0")
-              FAILURES=$(grep -oP 'failures="\K[^"]+' "$file" | head -1 || echo "0")
-              PASSED=$((TESTS - FAILURES))
-              F_TESTS=$((F_TESTS + TESTS))
-              F_PASSED=$((F_PASSED + PASSED))
-            fi
-          done
-
-          TOTAL_TESTS=$((B_TESTS + F_TESTS))
-          TOTAL_PASSED=$((B_PASSED + F_PASSED))
-
-          echo "### 🔱 ARCHON CERTIFICATION DASHBOARD" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Módulo | Estado | Tests Pasados | Integridad |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :---: | :---: | :---: |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🛡️ Backend API | ✅ PASSED | $B_PASSED / $B_TESTS | 100% |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🎨 Frontend Web | ✅ PASSED | $F_PASSED / $F_TESTS | 100% |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏷️ Static Type Checking | ✅ PASSED | 0 Errors / 0 Warnings | 100% |" >> $GITHUB_STEP_SUMMARY
-          echo "| **TOTAL** | **CERTIFICADO** | **$TOTAL_PASSED / $TOTAL_TESTS** | **100%** |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🛡️ OWASP SECURITY CERTIFICATION (TOP 10)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Categoría | Riesgo | Estado |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- | :---: |" >> $GITHUB_STEP_SUMMARY
-          echo "| **A01:2021** | Broken Access Control | ✅ PASSED |" >> $GITHUB_STEP_SUMMARY
-          echo "| **A02:2021** | Cryptographic Failures | ✅ PASSED |" >> $GITHUB_STEP_SUMMARY
-          echo "| **A03:2021** | Injection (SQL/NoSQL) | ✅ PASSED |" >> $GITHUB_STEP_SUMMARY
-          echo "| **A07:2021** | Identification/Auth Failures | ✅ PASSED |" >> $GITHUB_STEP_SUMMARY
-          echo "| **ArchonALE** | Application-Level Encryption | ✅ CERTIFIED |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🛠️ STACK DE VALIDACIÓN INDUSTRIAL" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Herramienta | Técnica | Función |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **TypeScript Compiler** | Static Type Checking | Validación estricta de tipos de datos en la compilación |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Vitest** | Unit Testing | Validación atómica de componentes UI |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Vitest (Integration)** | Integration | Pruebas de endpoints y contratos API |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Playwright** | E2E Testing | Simulación forense de navegación y paridad |" >> $GITHUB_STEP_SUMMARY
-          echo "| **ESLint / Unicorn** | Static Analysis | Cumplimiento de estándares de código |" >> $GITHUB_STEP_SUMMARY
-          echo "| **SonarJS / OWASP** | Security Audit | Análisis de vulnerabilidades y complejidad |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Bun** | Package Manager / Task Runner | Instalación determinística (frozen-lockfile) y ejecución de scripts del monorepo |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Husky + Bun** | Git Hooks | Blindaje de integridad pre-commit |" >> $GITHUB_STEP_SUMMARY
-          echo "| **rsync (SSH)** | Native Sync | Despliegue industrial mediante protocolo seguro SSH/rsync |" >> $GITHUB_STEP_SUMMARY
-          echo "| **TruffleHog** | Secret Scanning | Detección de credenciales y secretos filtrados en el historial Git |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Rollup Visualizer** | Bundle Analysis | Auditoría ad-hoc del tamaño y composición del bundle frontend |" >> $GITHUB_STEP_SUMMARY
+          set +e
+          bun scripts/checkNoRawSql.ts
+          echo "a03=$?" >> "$GITHUB_OUTPUT"
+          bun scripts/dependencyAuditGate.ts
+          echo "a06=$?" >> "$GITHUB_OUTPUT"
+      - name: Generate Certification Dashboard (script puro — F1+F4)
+        env:
+          DB_RESULT: ${{ needs.database-validation.result }}
+          E2E_RESULT: ${{ needs.e2e-validation.result }}
+          SONAR_RESULT: ${{ needs.sonar-scan.result }}
+          A03_EXIT: ${{ steps.owasp_scripts.outputs.a03 }}
+          A06_EXIT: ${{ steps.owasp_scripts.outputs.a06 }}
+        run: bun scripts/generateCertificationDashboard.ts all-results >> "$GITHUB_STEP_SUMMARY"
 
   hostinger-deployment:
     name: 🚀 Deployment to Hostinger

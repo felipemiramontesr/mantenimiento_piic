@@ -15,7 +15,7 @@ test('should login to live site with GrayMan credentials', async ({ page }) => {
   // Type credentials — sourced from environment variables (never hardcode)
   const username = process.env.E2E_USERNAME ?? 'GrayMan';
   const password = process.env.E2E_PASSWORD ?? '';
-  await page.getByPlaceholder(/ID de Archon/i).fill(username);
+  await page.getByPlaceholder(/usuario o correo@empresa\.com/i).fill(username);
   await page.getByPlaceholder(/••••••••/i).fill(password);
 
   // Click login

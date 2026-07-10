@@ -122,6 +122,24 @@ export const MAINTENANCE_FORECAST_FIXTURE = [
 // ─── Main mock setup ───────────────────────────────────────────────────────────
 
 export default async function setupApiMocks(page: Page): Promise<void> {
+  // 🔐 Auth: Session restore (AuthContext calls this once on mount). Sin mock,
+  // esta llamada cae a la red real (puerto 3001 sin listener en CI/local
+  // headless), tarda varios segundos en fallar por ECONNREFUSED y su rechazo
+  // llega DESPUÉS de un login manual exitoso — pisando isAuthenticated=true
+  // con false (race condition real en AuthContext.tsx, fuera de alcance de
+  // e2e/). Mockear con fail-fast determinista evita la carrera en el entorno
+  // de test sin tocar apps/web/src/**.
+  await page.route(
+    (url) => isApi(url) && url.pathname.includes('/auth/refresh'),
+    async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No active session' }),
+      });
+    }
+  );
+
   // 🔐 Auth: Login
   await page.route(
     (url) => isApi(url) && url.pathname.includes('/auth/login'),
@@ -141,16 +159,13 @@ export default async function setupApiMocks(page: Page): Promise<void> {
               roleId: 0,
               roleName: 'Master (Archon)',
               is_active: true,
-              permissions: [
-                'fleet:view',
-                'fleet:write',
-                'maint:view',
-                'maint:write',
-                'route:view',
-                'route:write',
-                'user:admin',
-                'financial:view',
-              ],
+              // '*' — GrayMan es el usuario omnipotente (§24.5); usePermissions.ts
+              // (isOmnipotent/hasPermission) chequea '*' de forma directa, sin
+              // pasar por LEGACY_ALIASES. Con slugs legacy puntuales (ej.
+              // 'user:admin') varios nav items reales (Personal, Admin,
+              // Onboarding) no renderizaban en el mock — hallazgo real de
+              // terreno, no cambia apps/web/src/**.
+              permissions: ['*'],
             },
           }),
         });

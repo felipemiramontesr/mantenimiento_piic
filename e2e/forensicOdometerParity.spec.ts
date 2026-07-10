@@ -12,7 +12,7 @@ test.describe('Archon Forensic Parity Certification', () => {
 
     // Login as GrayMan
     await page.goto('/login');
-    await page.getByPlaceholder(/ID de Archon/i).fill('GrayMan');
+    await page.getByPlaceholder(/usuario o correo@empresa\.com/i).fill('GrayMan');
     await page.getByPlaceholder(/••••••••/i).fill('Archon2026!');
     await page.getByText(/Acceder al Sistema/i).click();
     await page.waitForURL('**/dashboard**');
