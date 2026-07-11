@@ -124,7 +124,8 @@ export default defineConfig({
         'dist/**' /* Build artifacts compilados */,
         'vite.config.ts' /* Configuracion de build */,
         /* === Contextos y Proveedores (lifecycle + localStorage + window = E2E) === */
-        'src/context/AuthContext.tsx' /* Sesion con localStorage (test via E2E) */,
+        /* AuthContext.tsx removido del exclude (FC 070 v1.2): tiene suite unitaria
+           propia al 100% en las 4 metricas desde el fix de la race condition. */
         'src/context/FleetContext.tsx' /* Orquestador de estado con API (test via E2E) */,
         'src/context/UserContext.tsx' /* Proveedor de identidad (test via E2E) */,
         'src/api/client.ts' /* Interceptores Axios con window.location (test via E2E) */,
