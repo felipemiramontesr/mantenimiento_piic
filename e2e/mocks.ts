@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 /**
  * 🔱 Archon E2E Infrastructure: API Mocking (v.2.0.0)
