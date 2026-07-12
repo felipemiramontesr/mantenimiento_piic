@@ -11,10 +11,11 @@ export default defineConfig({
   testIgnore: ['**/smoke.spec.ts'],
   fullyParallel: true,
   forbidOnly: false,
-  // Retries solo en CI: mitigan el bug intermitente de navegación (URL cambia,
-  // módulo no monta — ~13-33% por intento, Kanban web:nav:transition-starvation).
-  // NO es la solución de fondo; el fix real requiere su propio FC en apps/web.
-  retries: process.env.CI ? 2 : 0,
+  // retries=0 deliberado (FC 071 F3): el bug de navegación que motivó retries=2
+  // quedó corregido de raíz (fixture fuera de dominio + fallbacks + ErrorBoundary).
+  // Verificado: 270/270 local + 2 runs CI consecutivos con flaky=0/unexpected=0
+  // leídos del report.json del artifact. Si reaparece flakiness, va a K — no aquí.
+  retries: 0,
   workers: 1,
   reporter: 'html',
   timeout: 45_000,
