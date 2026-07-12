@@ -115,7 +115,7 @@ export const MAINTENANCE_FORECAST_FIXTURE = [
     triggerType: 'KM',
     projectedOdometer: 360000,
     projectedServiceType: 'BASIC_10K',
-    urgency: 'MEDIUM',
+    urgency: 'WARNING',
   },
 ];
 

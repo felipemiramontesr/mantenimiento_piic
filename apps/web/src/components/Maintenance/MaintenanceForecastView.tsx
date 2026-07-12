@@ -52,6 +52,21 @@ type UrgencyMeta = {
   label: string;
 };
 
+// FC 071 F2 — fallbacks para valores fuera de dominio: un lookup fallido aquí
+// reventaba el render (`undefined.bg`) y, sin ErrorBoundary, desmontaba el root
+// completo (071_AN E3). El dato desconocido se muestra tal cual, nunca crashea.
+const FALLBACK_BADGE = {
+  bg: 'bg-slate-500/10',
+  text: 'text-slate-600',
+  border: 'border-slate-500/20',
+};
+
+const fallbackUrgencyMeta = (urgency: string): UrgencyMeta => ({
+  ...FALLBACK_BADGE,
+  icon: null,
+  label: urgency || '—',
+});
+
 const URGENCY_META: Record<ForecastUrgency, UrgencyMeta> = {
   CRITICAL: {
     bg: 'bg-red-500/10',
@@ -237,8 +252,8 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
         onSort={handleSort}
         sortConfig={sortConfig}
         renderRow={(row: MaintenanceForecastRow, index): React.JSX.Element => {
-          const svcBadge = SERVICE_BADGE[row.projectedServiceType];
-          const urgMeta = URGENCY_META[row.urgency];
+          const svcBadge = SERVICE_BADGE[row.projectedServiceType] ?? FALLBACK_BADGE;
+          const urgMeta = URGENCY_META[row.urgency] ?? fallbackUrgencyMeta(row.urgency);
           const unit = units.find((u) => u.id === row.unitId);
           return (
             <motion.tr
@@ -324,7 +339,7 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
                 <span
                   className={`${AT.statusBadge} ${svcBadge.bg} ${svcBadge.text} ${svcBadge.border}`}
                 >
-                  {SERVICE_LABELS[row.projectedServiceType]}
+                  {SERVICE_LABELS[row.projectedServiceType] ?? row.projectedServiceType}
                 </span>
                 <p className={AT.cellMeta}>odo: {row.projectedOdometer.toLocaleString()} km</p>
               </td>

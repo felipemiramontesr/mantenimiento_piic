@@ -331,4 +331,43 @@ describe('MaintenanceForecastView', () => {
       expect(matches.length).toBeGreaterThanOrEqual(1);
     });
   });
+
+  // ── Out-of-domain resilience (FC 071 F2 — root-cause mechanism) ────────────
+  // Terreno: una fila con urgency/projectedServiceType fuera de los mapas
+  // (URGENCY_META/SERVICE_BADGE) reventaba el render (`undefined.bg`) y, sin
+  // ErrorBoundary, React desmontaba el root completo (pantalla blanca — CI run 4).
+  it('renders row with fallback styling instead of crashing on out-of-domain urgency/serviceType (FC 071)', async () => {
+    const OUT_OF_DOMAIN_ROW = {
+      ...WARNING_ROW,
+      unitId: 'ASM-666',
+      projectedServiceType: 'FUTURE_TYPE_X',
+      urgency: 'MEDIUM',
+    };
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [OUT_OF_DOMAIN_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => {
+      expect(screen.getByText('ASM-666')).toBeInTheDocument();
+    });
+    // El valor desconocido se muestra tal cual (fallback), nunca crashea
+    expect(screen.getByText('MEDIUM')).toBeInTheDocument();
+    expect(screen.getByText('FUTURE_TYPE_X')).toBeInTheDocument();
+  });
+
+  it('renders mixed valid and out-of-domain rows without unmounting the valid ones (FC 071)', async () => {
+    const OUT_OF_DOMAIN_ROW = { ...OK_ROW, unitId: 'ASM-667', urgency: 'UNKNOWN_LEVEL' };
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [CRITICAL_ROW, OUT_OF_DOMAIN_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => {
+      expect(screen.getByText('ASM-001')).toBeInTheDocument();
+      expect(screen.getByText('ASM-667')).toBeInTheDocument();
+    });
+  });
 });

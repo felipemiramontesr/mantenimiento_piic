@@ -33,6 +33,7 @@ import FamilyView from './pages/Family/FamilyView';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ClientScopeGate from './components/Common/ClientScopeGate';
+import ArchonErrorBoundary from './components/Common/ArchonErrorBoundary';
 import './index.css';
 
 /**
@@ -76,7 +77,12 @@ const App: React.FC = () => (
                 <Route
                   element={
                     <ClientScopeGate>
-                      <Outlet />
+                      {/* FC 071 F2: contiene errores de render de cualquier módulo —
+                          sin esto, un throw en el outlet desmontaba el root completo
+                          (pantalla blanca, 071_AN E3) */}
+                      <ArchonErrorBoundary>
+                        <Outlet />
+                      </ArchonErrorBoundary>
                     </ClientScopeGate>
                   }
                 >
