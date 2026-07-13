@@ -4,12 +4,62 @@ import { BarChart3, ClipboardList, Cpu, ShieldAlert, CheckCircle2 } from 'lucide
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { MaintenancePanel, MaintenanceLog } from '../../types/maintenance';
 import MaintenanceGridView from '../../components/Maintenance/MaintenanceGridView';
+import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
+import ArchonCalendarView from '../../components/Common/ArchonCalendarView';
+import api from '../../api/client';
 import MaintenanceRegistrationForm from '../../components/Maintenance/MaintenanceRegistrationForm';
 import MaintenanceCompletionPanel from '../../components/Maintenance/MaintenanceCompletionPanel';
 import MaintenanceHistoryDetail from '../../components/Maintenance/MaintenanceHistoryDetail';
 import MaintenanceForecastView from '../../components/Maintenance/MaintenanceForecastView';
 import UpaWorkspace from '../Upa/UpaWorkspace';
 import { acceptMaintenance, rejectMaintenance } from '../../api/maintenance';
+
+/**
+ * FC 041 Fase C — panel de calendario del piloto (vista CALENDAR del
+ * ArchonAdaptiveView). Solo monta (y por tanto solo consulta el API) cuando
+ * el usuario selecciona la vista de calendario; reutiliza el flujo de
+ * detalle existente vía onEventClick.
+ */
+const MaintenanceCalendarPanel: React.FC<{
+  refreshTrigger: number;
+  onEventClick: (log: MaintenanceLog) => void;
+}> = ({ refreshTrigger, onEventClick }) => {
+  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchLogs = async (): Promise<void> => {
+      setLoading(true);
+      try {
+        const response = await api.get('/maintenance?limit=50');
+        setLogs(response.data.data ?? []);
+      } catch {
+        setLogs([]); // fail-safe: calendario vacío, sin crash (FC 071)
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLogs();
+  }, [refreshTrigger]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-pinnacle-navy/40 font-display font-black text-archon-md uppercase tracking-[0.2em]">
+        Cargando calendario de servicios...
+      </div>
+    );
+  }
+
+  return (
+    <ArchonCalendarView<MaintenanceLog>
+      items={logs}
+      keyExtractor={(log): number => log.id}
+      dateExtractor={(log): string => log.service_date}
+      renderEvent={(log): React.ReactNode => <span>{log.unit_id}</span>}
+      onEventClick={onEventClick}
+    />
+  );
+};
 
 const MaintenanceModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
@@ -227,14 +277,27 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
           <div ref={panelRef}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
               {activePanel === 'HISTORY' && (
-                <MaintenanceGridView
-                  refreshTrigger={refreshTrigger}
-                  onNewRequest={(): void => setActivePanel('SCHEDULE')}
-                  onCompleteRequest={handleCompleteRequest}
-                  onDetailRequest={handleDetailRequest}
-                  onAcceptOrder={handleAcceptOrder}
-                  onRejectOrder={handleRejectOrder}
-                  onOpenUpa={handleOpenUpa}
+                <ArchonAdaptiveView
+                  storageKey="maintenance-history"
+                  views={{
+                    TABLE: (
+                      <MaintenanceGridView
+                        refreshTrigger={refreshTrigger}
+                        onNewRequest={(): void => setActivePanel('SCHEDULE')}
+                        onCompleteRequest={handleCompleteRequest}
+                        onDetailRequest={handleDetailRequest}
+                        onAcceptOrder={handleAcceptOrder}
+                        onRejectOrder={handleRejectOrder}
+                        onOpenUpa={handleOpenUpa}
+                      />
+                    ),
+                    CALENDAR: (
+                      <MaintenanceCalendarPanel
+                        refreshTrigger={refreshTrigger}
+                        onEventClick={handleDetailRequest}
+                      />
+                    ),
+                  }}
                 />
               )}
               {activePanel === 'FORECAST' && (

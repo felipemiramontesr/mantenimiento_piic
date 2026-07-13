@@ -501,11 +501,81 @@ export function shouldReRead(hashChanged: boolean, newSession: boolean): boolean
 }
 
 /**
+ * L V.6.17.0 — Gate duro: L-CORE debe contener §0.5 RAPTOR CONDUCT + IDs A1/ROE.
+ */
+export function checkRaptorConduct(masterContent: string): string[] {
+  const errors: string[] = [];
+  if (!/0\.5\s+RAPTOR CONDUCT|RAPTOR CONDUCT — Asimov/i.test(masterContent)) {
+    errors.push('L-CORE: falta §0.5 RAPTOR CONDUCT (Asimov-L + ROE).');
+  }
+  [
+    'R-A1-HARM',
+    'R-A2-CHAIN',
+    'R-A3-CONTEXT',
+    'R-ROE-MISSION',
+    'R-A0-HUMAN',
+    'R-A1-DECLARE',
+  ].forEach((id) => {
+    if (!masterContent.includes(id)) {
+      errors.push(`L-CORE: falta ID de conduct ${id}.`);
+    }
+  });
+  if (!/\*\*A0\*\*|A0.*Solo GrayMan|A0.*solo GrayMan/i.test(masterContent)) {
+    errors.push('L-CORE: A0 (Zeroth solo Ω) no declarado de forma explícita.');
+  }
+  return errors;
+}
+
+/**
+ * L V.6.17.0 — Plantilla §4.1 debe exigir declaración A1 en FC de producto.
+ */
+export function checkFcTemplateA1(masterContent: string): string[] {
+  const errors: string[] = [];
+  if (!/A1 dominio\s*:/i.test(masterContent)) {
+    errors.push('Plantilla FC §4.1: falta campo obligatorio "A1 dominio :".');
+  }
+  if (!/R-DICTAMEN-A1|DICTAMEN \(producto/i.test(masterContent)) {
+    errors.push('Plantilla FC §4.1: falta bloque DICTAMEN producto / R-DICTAMEN-A1.');
+  }
+  return errors;
+}
+
+/**
+ * FC de producto debe declarar A1 (R-A1-DECLARE).
+ * Heurística: si el FC declara FEATURE CONTRACT y no es solo meta-tooling sin código,
+ * exige línea A1 dominio (o "proceso-only").
+ * FCs históricos sin el campo fallan solo cuando se evalúan explícitamente (verify path).
+ */
+export function checkFcA1Declaration(fcContent: string): string[] {
+  if (!/FEATURE CONTRACT/i.test(fcContent)) {
+    return [];
+  }
+  // Exempt pure study / no-code historical if marked
+  if (
+    /estudio sin c[oó]digo|SIN c[oó]digo de producto|gobernanza pura, cero cambios/i.test(
+      fcContent
+    ) &&
+    !/apps\//i.test(fcContent)
+  ) {
+    // still prefer A1 proceso-only but do not hard-fail pure governance docs without apps
+    if (/Requiere OLR\s*:\s*\[\s*x\s*\]\s*No/i.test(fcContent) && !/apps\//i.test(fcContent)) {
+      return [];
+    }
+  }
+  if (!/A1 dominio\s*:|A1\s*dominio\s*:|^\s*A1\s*:/im.test(fcContent)) {
+    return [
+      'FC de producto sin "A1 dominio :" (R-A1-DECLARE). Declarar clases A1-ARCHON o proceso-only + justificación.',
+    ];
+  }
+  return [];
+}
+
+/**
  * FC 068 F2 — Gate OLR (§19.1/§19.2/§20.1). Función pura, NO wired en
  * runConsistencyChecks (condición 2 de Bravo — el gate OLR solo se evalúa cuando
  * hay código real staged, nunca en la verificación incondicional de L). Se invoca
  * directamente desde verifyProtocolL.ts dentro de la rama codeFiles.length > 0.
- * Firmantes fijos: O=Charlie · L=GrayMan (exclusivo, ninguna IA) · R=Alfa|Bravo.
+ * Firmantes: O=Alfa|Charlie · L=GrayMan · R=Bravo (L V.6.15+).
  */
 export function checkOlrApproval(fcContent: string): string[] {
   const requiereMatch = fcContent.match(/Requiere OLR\s*:\s*\[( |x)\]\s*S[ií]\s*\[( |x)\]\s*No/i);
@@ -548,6 +618,8 @@ export function runConsistencyChecks(input: ConsistencyInput): string[] {
     ...checkRuleRegistry(input.masterContent),
     ...checkFcActivo(input.masterContent),
     ...checkVersionFormat(input.masterContent),
+    ...checkRaptorConduct(input.masterContent),
+    ...checkFcTemplateA1(input.masterContent),
     ...checkClaudeMdCoherence(input.claudeContent, input.masterContent),
     ...checkHOrder(input.handoffContent),
     ...checkExclusionSetRegistry(input.invariantsContent),

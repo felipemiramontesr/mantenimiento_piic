@@ -24,7 +24,7 @@ export default async function devTelemetryPlugin(fastify: FastifyInstance): Prom
       // Resolve path relative to this plugin's location (EAL6+ robust resolution)
       const handoffPath = path.resolve(
         __dirname,
-        '../../../../Protocolos/North_Star/002_NS_HandoffCcToAg.md'
+        '../../../../protocols/north-star/002_NS_HandoffCcToAg.md'
       );
 
       // Layer 2: Physical Filesystem Guard

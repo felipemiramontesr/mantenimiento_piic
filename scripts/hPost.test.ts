@@ -515,8 +515,8 @@ describe('Observación (a) auditoría Bravo — p99 del pipeline muy por debajo 
 // ─── Observación (b) de Bravo — atomicidad wx en el entorno real (OneDrive) ──
 
 describe('Observación (b) auditoría Bravo — H.lock `wx` atómico en el directorio real bajo OneDrive', () => {
-  it('25 ciclos adquirir/colisionar/liberar sobre Protocolos/North_Star/ son deterministas', () => {
-    const nsDir = path.join(ROOT, 'Protocolos', 'North_Star');
+  it('25 ciclos adquirir/colisionar/liberar sobre protocols/north-star/ son deterministas', () => {
+    const nsDir = path.join(ROOT, 'protocols', 'north-star');
     expect(fs.existsSync(nsDir)).toBe(true);
     const lockPath = path.join(nsDir, `H.lock.test-${process.pid}`);
     try {
@@ -550,13 +550,13 @@ describe('Integración — runHPost sobre una copia del canal REAL del repo', ()
       claudePath: path.join(dir, 'CLAUDE.md'),
       invariantsPath: path.join(dir, '052_NS_MetaLInvariants.md'),
     };
-    fs.writeFileSync(env.handoffPath, read('Protocolos/North_Star/002_NS_Handoff.md'), 'utf8');
+    fs.writeFileSync(env.handoffPath, read('protocols/north-star/002_NS_Handoff.md'), 'utf8');
     fs.writeFileSync(env.historicoPath, '# HISTORICO (copia de prueba)\n', 'utf8');
-    fs.writeFileSync(env.masterPath, read('Protocolos/North_Star/001_NS_ProtocoloL.md'), 'utf8');
+    fs.writeFileSync(env.masterPath, read('protocols/north-star/001_NS_ProtocoloL.md'), 'utf8');
     fs.writeFileSync(env.claudePath, read('CLAUDE.md'), 'utf8');
     fs.writeFileSync(
       env.invariantsPath,
-      read('Protocolos/North_Star/052_NS_MetaLInvariants.md'),
+      read('protocols/north-star/052_NS_MetaLInvariants.md'),
       'utf8'
     );
 
@@ -572,10 +572,10 @@ describe('Integración — runHPost sobre una copia del canal REAL del repo', ()
     expect(checkConsecutiveAuthors(after)).toEqual([]);
     expect(
       runConsistencyChecks({
-        masterContent: read('Protocolos/North_Star/001_NS_ProtocoloL.md'),
+        masterContent: read('protocols/north-star/001_NS_ProtocoloL.md'),
         claudeContent: read('CLAUDE.md'),
         handoffContent: after,
-        invariantsContent: read('Protocolos/North_Star/052_NS_MetaLInvariants.md'),
+        invariantsContent: read('protocols/north-star/052_NS_MetaLInvariants.md'),
       })
     ).toEqual([]);
   });

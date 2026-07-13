@@ -529,7 +529,7 @@ function main(): void {
     process.exit(2);
   }
   const root = path.join(__dirname, '..');
-  const ns = path.join(root, 'Protocolos', 'North_Star');
+  const ns = path.join(root, 'protocols', 'north-star');
   const result = runHPost({
     author: args.author as Raptor,
     // FC 063 F4 (a): --message expande \n literales; --file se respeta tal cual

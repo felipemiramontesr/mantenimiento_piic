@@ -55,7 +55,7 @@ export default class HandoffReporter implements Reporter {
       const workspaceRoot = process.cwd().includes('apps')
         ? path.join(process.cwd(), '../..')
         : process.cwd();
-      const handoffPath = path.join(workspaceRoot, 'Protocolos', 'HANDOFF_CC_TO_AG.md');
+      const handoffPath = path.join(workspaceRoot, 'protocols', 'HANDOFF_CC_TO_AG.md');
 
       if (fs.existsSync(handoffPath)) {
         const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);

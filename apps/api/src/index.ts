@@ -46,6 +46,7 @@ import crmInteractionsRoutes from './routes/crmInteractions';
 import portalRoutes from './routes/portal';
 import crmCampaignsRoutes from './routes/crmCampaigns';
 import socialRoutes from './routes/social';
+import reportsRoutes from './routes/reports';
 import universeContextPlugin from './plugins/universeContext';
 import {
   logSecurityEvent,
@@ -215,6 +216,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(adminRoutes, { prefix: '/v1' });
   fastify.register(alertsRoutes, { prefix: '/v1' });
   fastify.register(workOrderRoutes, { prefix: '/v1' });
+  fastify.register(reportsRoutes, { prefix: '/v1' });
   fastify.register(notificationsRoutes, { prefix: '/v1' });
   fastify.register(areasRoutes, { prefix: '/v1' });
   fastify.register(serviceCentersRoutes, { prefix: '/v1' });

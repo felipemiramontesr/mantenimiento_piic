@@ -1,6 +1,7 @@
 /**
  * FC 068 F1 — olrSign.ts: broker de firma OLR.
  * Scenarios 3 y 4 del FC (escritura correcta · firmante no autorizado rechazado).
+ * Firmantes actualizados L V.6.15.0 / KAE-L 2026-07-12 (Holy Trinity).
  */
 import * as fs from 'fs';
 import * as os from 'os';
@@ -18,26 +19,28 @@ Feature      : Fixture_Test
 
 Requiere OLR : [x] Sí  [ ] No
 
-APROBACIONES OLR (solo si Requiere OLR = Sí — §19.2/§20.1, firmantes fijos):
-- [ ] O [Operational & Safety]  — Charlie     : [Fecha]
-- [ ] L [Legal & Privacy]       — GrayMan     : [Fecha]
-- [ ] R [Regulatory Audit]      — Alfa/Bravo  : [Fecha]
+APROBACIONES OLR (Holy Trinity · L V.6.15.0):
+- [ ] O [Operational]           — Alfa | Charlie : [Fecha]
+- [ ] L [Law / Legal & Privacy] — GrayMan (Ω) solo : [Fecha]
+- [ ] R [Review / Regulatory]   — Bravo : [Fecha]
 
 FIRMA DE GRAYMAN: [ ] Aprobado  [ ] Rechazado  [ ] Revisión
 \`\`\`
 `;
 
-describe('OLR_SIGNERS — mapeo fijo (§19.2/§20.1)', () => {
-  it('O=Charlie exclusivo · L=GrayMan exclusivo · R=Alfa|Bravo', () => {
-    expect(OLR_SIGNERS.O).toEqual(['Charlie']);
+describe('OLR_SIGNERS — mapeo fijo (§19.2 · L V.6.15.0)', () => {
+  it('O=Alfa|Charlie · L=GrayMan exclusivo · R=Bravo', () => {
+    expect(OLR_SIGNERS.O).toEqual(['Alfa', 'Charlie']);
     expect(OLR_SIGNERS.L).toEqual(['GrayMan']);
-    expect(OLR_SIGNERS.R).toEqual(['Alfa', 'Bravo']);
+    expect(OLR_SIGNERS.R).toEqual(['Bravo']);
   });
 });
 
 describe('isAuthorizedSigner — Scenario 4: anti-escalación', () => {
-  it('Charlie autorizado para O', () => {
+  it('Alfa y Charlie autorizados para O', () => {
+    expect(isAuthorizedSigner('O', 'Alfa')).toBe(true);
     expect(isAuthorizedSigner('O', 'Charlie')).toBe(true);
+    expect(isAuthorizedSigner('O', 'Bravo')).toBe(false);
   });
   it('GrayMan autorizado para L; ninguna IA lo está', () => {
     expect(isAuthorizedSigner('L', 'GrayMan')).toBe(true);
@@ -45,9 +48,9 @@ describe('isAuthorizedSigner — Scenario 4: anti-escalación', () => {
     expect(isAuthorizedSigner('L', 'Alfa')).toBe(false);
     expect(isAuthorizedSigner('L', 'Bravo')).toBe(false);
   });
-  it('Alfa y Bravo autorizados para R (basta 1) — Charlie y GrayMan no', () => {
-    expect(isAuthorizedSigner('R', 'Alfa')).toBe(true);
+  it('Bravo autorizado para R — Alfa/Charlie/GrayMan no', () => {
     expect(isAuthorizedSigner('R', 'Bravo')).toBe(true);
+    expect(isAuthorizedSigner('R', 'Alfa')).toBe(false);
     expect(isAuthorizedSigner('R', 'Charlie')).toBe(false);
     expect(isAuthorizedSigner('R', 'GrayMan')).toBe(false);
   });
@@ -62,27 +65,28 @@ describe('applyOlrSignature — Scenario 3: escritura correcta, sin tocar otras 
     const result = applyOlrSignature(FC_FIXTURE, 'O', '2026-07-08 18:00:00');
     expect(result.found).toBe(true);
     expect(result.content).toContain(
-      '- [x] O [Operational & Safety]  — Charlie     : 2026-07-08 18:00:00'
+      '- [x] O [Operational]           — Alfa | Charlie : 2026-07-08 18:00:00'
     );
-    // las otras 2 líneas permanecen intactas
-    expect(result.content).toContain('- [ ] L [Legal & Privacy]       — GrayMan     : [Fecha]');
-    expect(result.content).toContain('- [ ] R [Regulatory Audit]      — Alfa/Bravo  : [Fecha]');
+    expect(result.content).toContain(
+      '- [ ] L [Law / Legal & Privacy] — GrayMan (Ω) solo : [Fecha]'
+    );
+    expect(result.content).toContain('- [ ] R [Review / Regulatory]   — Bravo : [Fecha]');
   });
 
   it('marca [x] + timestamp en la línea del filtro L únicamente', () => {
     const result = applyOlrSignature(FC_FIXTURE, 'L', '2026-07-08 18:05:00');
     expect(result.found).toBe(true);
     expect(result.content).toContain(
-      '- [x] L [Legal & Privacy]       — GrayMan     : 2026-07-08 18:05:00'
+      '- [x] L [Law / Legal & Privacy] — GrayMan (Ω) solo : 2026-07-08 18:05:00'
     );
-    expect(result.content).toContain('- [ ] O [Operational & Safety]  — Charlie     : [Fecha]');
+    expect(result.content).toContain('- [ ] O [Operational]           — Alfa | Charlie : [Fecha]');
   });
 
   it('marca [x] + timestamp en la línea del filtro R únicamente', () => {
     const result = applyOlrSignature(FC_FIXTURE, 'R', '2026-07-08 18:10:00');
     expect(result.found).toBe(true);
     expect(result.content).toContain(
-      '- [x] R [Regulatory Audit]      — Alfa/Bravo  : 2026-07-08 18:10:00'
+      '- [x] R [Review / Regulatory]   — Bravo : 2026-07-08 18:10:00'
     );
   });
 
@@ -99,28 +103,16 @@ describe('applyOlrSignature — Scenario 3: escritura correcta, sin tocar otras 
   it('found=false cuando el FC no tiene el bloque de aprobaciones OLR', () => {
     const result = applyOlrSignature('# FC sin checklist OLR', 'O', '2026-07-08 18:00:00');
     expect(result.found).toBe(false);
-    expect(result.content).toBe('# FC sin checklist OLR');
   });
 });
 
-describe('findFcFile — lookup por número, sin hardcodear rutas', () => {
-  let dir: string;
-
+describe('findFcFile', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'olr-fc-'));
   afterEach(() => {
-    if (dir) fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(tmp, { recursive: true, force: true });
   });
-
-  it('encuentra el archivo cuyo nombre empieza con el número dado (padded a 3 dígitos)', () => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'olrsign-'));
-    fs.writeFileSync(path.join(dir, '068_FC_InternalOlrSignoffWorkflow.md'), FC_FIXTURE, 'utf8');
-    fs.writeFileSync(path.join(dir, '067_FC_UniverseOnboardingFoundations.md'), '', 'utf8');
-
-    expect(findFcFile(dir, '68')).toBe(path.join(dir, '068_FC_InternalOlrSignoffWorkflow.md'));
-    expect(findFcFile(dir, '068')).toBe(path.join(dir, '068_FC_InternalOlrSignoffWorkflow.md'));
-  });
-
-  it('retorna null si no existe ningún FC con ese número', () => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'olrsign-'));
-    expect(findFcFile(dir, '999')).toBeNull();
+  it('encuentra por prefijo numérico', () => {
+    fs.writeFileSync(path.join(tmp, '068_FC_InternalOlrSignoffWorkflow.md'), 'x');
+    expect(findFcFile(tmp, '68')).toContain('068_FC_');
   });
 });

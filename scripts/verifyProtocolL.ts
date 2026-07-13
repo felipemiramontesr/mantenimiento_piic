@@ -3,7 +3,11 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { checkOlrApproval, runConsistencyChecks } from './protocolLConsistency';
+import {
+  checkFcA1Declaration,
+  checkOlrApproval,
+  runConsistencyChecks,
+} from './protocolLConsistency';
 import { findFcFile } from './olrSign';
 
 // Colores para consola
@@ -32,18 +36,20 @@ function runCommand(cmd: string): string {
   }
 }
 
-// 1. Guard: No permitir archivos de Protocolos/ o CLAUDE.md en Git Staged.
+// 1. Guard: No permitir archivos de protocols/ o CLAUDE.md en Git Staged.
 // FC 053 F7: CLAUDE.md permanece local (.gitignore línea 57); además su coherencia
 // de contenido con L se valida programáticamente en runConsistencyChecks.
 function verifyNoProtocolStaged(stagedFiles: string[]): void {
   const protocolStagedFiles = stagedFiles.filter((file) => {
     const lower = file.toLowerCase();
-    return lower.startsWith('protocolos/') || lower === 'claude.md';
+    return (
+      lower.startsWith('protocolos/') || lower.startsWith('protocols/') || lower === 'claude.md'
+    );
   });
 
   if (protocolStagedFiles.length > 0) {
     logError(
-      `Se detectaron archivos locales protegidos (Protocolos/ o CLAUDE.md) en git staged:\n${protocolStagedFiles.join(
+      `Se detectaron archivos locales protegidos (protocols/ o CLAUDE.md) en git staged:\n${protocolStagedFiles.join(
         '\n'
       )}\nEstos archivos son estrictamente locales y están en .gitignore. Remuévelos con:\n` +
         `  git restore --staged <archivo>`
@@ -268,12 +274,7 @@ function verifyNoPlaceholders(): void {
 // 7. FC 053 F7 — Auto-verificación de consistencia interna de L (siempre corre)
 function verifyLConsistency(rootDir: string, masterPath: string, handoffPath: string): void {
   const claudePath = path.join(rootDir, 'CLAUDE.md');
-  const invariantsPath = path.join(
-    rootDir,
-    'Protocolos',
-    'North_Star',
-    '052_NS_MetaLInvariants.md'
-  );
+  const invariantsPath = path.join(rootDir, 'protocols', 'north-star', '052_NS_MetaLInvariants.md');
 
   const errors = runConsistencyChecks({
     masterContent: fs.readFileSync(masterPath, 'utf8'),
@@ -300,12 +301,20 @@ function verifyOlrGate(rootDir: string, masterContent: string): void {
   if (!fcMatch) {
     return; // FC activo: ninguno — nada que verificar
   }
-  const fcDir = path.join(rootDir, 'Protocolos', 'FC');
+  const fcDir = path.join(rootDir, 'protocols', 'fc');
   const fcPath = findFcFile(fcDir, fcMatch[1]);
   if (!fcPath || !fs.existsSync(fcPath)) {
     return; // archivo de FC no localizable — no bloquea por un problema de otro check
   }
   const fcContent = fs.readFileSync(fcPath, 'utf8');
+  const a1Errors = checkFcA1Declaration(fcContent);
+  if (a1Errors.length > 0) {
+    a1Errors.forEach((e) => logError(e));
+    logError(
+      `Gate A1 (R-A1-DECLARE): FC ${fcMatch[1]} de producto sin dominio A1 — commit bloqueado (L V.6.17.0).`
+    );
+    process.exit(1);
+  }
   const errors = checkOlrApproval(fcContent);
   if (errors.length > 0) {
     errors.forEach((e) => logError(e));
@@ -314,16 +323,16 @@ function verifyOlrGate(rootDir: string, masterContent: string): void {
     );
     process.exit(1);
   }
-  logSuccess('Gate OLR verificado (FC 068 F2 — sin firmas pendientes o no aplica).');
+  logSuccess('Gate A1 + OLR verificados (producto / OLR path — L V.6.17.0).');
 }
 
 function verify(): void {
   console.log('--- VALIDACIÓN DE PROTOCOLO L ---');
 
   const rootDir = path.join(__dirname, '..');
-  const handoffPath = path.join(rootDir, 'Protocolos', 'North_Star', '002_NS_Handoff.md');
-  const masterPath = path.join(rootDir, 'Protocolos', 'North_Star', '001_NS_ProtocoloL.md');
-  const forensePath = path.join(rootDir, 'Protocolos', 'North_Star', '003_NS_LogForense.md');
+  const handoffPath = path.join(rootDir, 'protocols', 'north-star', '002_NS_Handoff.md');
+  const masterPath = path.join(rootDir, 'protocols', 'north-star', '001_NS_ProtocoloL.md');
+  const forensePath = path.join(rootDir, 'protocols', 'north-star', '003_NS_LogForense.md');
 
   // FC 053 F7: la auto-verificación de L corre SIEMPRE, incluso sin archivos staged.
   verifyFilesExist(masterPath, handoffPath, forensePath);

@@ -2,11 +2,11 @@
 /**
  * FC 068 F1 — Internal_Olr_Signoff_Workflow · Broker de firma OLR.
  * Única vía de escritura para registrar una aprobación O/L/R en el archivo de un FC
- * (Protocolos/FC/<n>_FC_*.md) — mismo principio de Vía Única que hPost.ts (Regla 8).
- * Firmantes fijos por categoría (§19.2/§20.1, enmendado FC 068):
- *   O (Operational & Safety) → Charlie (único permitido)
- *   L (Legal & Privacy)      → GrayMan (único permitido — ninguna IA)
- *   R (Regulatory Audit)     → Alfa | Bravo (basta 1)
+ * (protocols/fc/<n>_FC_*.md) — mismo principio de Vía Única que hPost.ts (Regla 8).
+ * Firmantes fijos por categoría (§19.2/§20.1 · Holy Trinity L V.6.15.0 / KAE-L 2026-07-12):
+ *   O (Operational)     → Alfa | Charlie (basta 1)
+ *   L (Law / Legal)     → GrayMan (único — ninguna IA)
+ *   R (Review / Audit)  → Bravo (único)
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,9 +16,9 @@ import { formatTimestamp } from './hPost';
 export type OlrFiltro = 'O' | 'L' | 'R';
 
 export const OLR_SIGNERS: Record<OlrFiltro, readonly string[]> = {
-  O: ['Charlie'],
+  O: ['Alfa', 'Charlie'],
   L: ['GrayMan'],
-  R: ['Alfa', 'Bravo'],
+  R: ['Bravo'],
 };
 
 export function isAuthorizedSigner(filtro: OlrFiltro, firmante: string): boolean {
@@ -48,7 +48,7 @@ export function applyOlrSignature(
   return { content, found: true };
 }
 
-/** Localiza el archivo de un FC en Protocolos/FC/ por número (lookup por prefijo, no hardcodeado). */
+/** Localiza el archivo de un FC en protocols/fc/ por número (lookup por prefijo, no hardcodeado). */
 export function findFcFile(fcDir: string, fcNumber: string): string | null {
   const padded = fcNumber.padStart(3, '0');
   const files = fs.readdirSync(fcDir).filter((f) => f.startsWith(`${padded}_FC_`));
@@ -111,11 +111,11 @@ function main(): void {
     process.exit(1);
   }
 
-  const fcDir = path.join(__dirname, '..', 'Protocolos', 'FC');
+  const fcDir = path.join(__dirname, '..', 'protocols', 'fc');
   const fcPath = findFcFile(fcDir, args.fc);
   if (!fcPath) {
     console.error(
-      `${RED}[olrSign]${RESET} No se encontró ningún FC con número "${args.fc}" en Protocolos/FC/.`
+      `${RED}[olrSign]${RESET} No se encontró ningún FC con número "${args.fc}" en protocols/fc/.`
     );
     process.exit(1);
   }

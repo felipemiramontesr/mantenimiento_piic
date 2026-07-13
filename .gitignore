@@ -53,7 +53,7 @@ checkpoints.md
 
 # 📜 INTERNAL PROTOCOLS & CLIENT DATA
 datosCliente/
-Protocolos/
+protocols/
 CLAUDE.md
 # COMMIT_PROTOCOL.md lives at repo root — tracked intentionally
 # Scratch directories

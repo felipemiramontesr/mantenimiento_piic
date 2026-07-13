@@ -21,6 +21,9 @@ import {
   checkHOrder,
   checkMinCursorGC,
   checkOlrApproval,
+  checkFcA1Declaration,
+  checkFcTemplateA1,
+  checkRaptorConduct,
   checkRuleRegistry,
   checkVersionFormat,
   runConsistencyChecks,
@@ -356,11 +359,11 @@ describe('FC 063 F2 — Cláusula L por hash (T1: ReRead ≡ HashChanged ∨ New
 
   it('el hash del L-CORE real + anexos reales es calculable (Scenario 2 FC 063 — Gherkin)', () => {
     const core = fs.readFileSync(
-      path.join(ROOT, 'Protocolos/North_Star/001_NS_ProtocoloL.md'),
+      path.join(ROOT, 'protocols/north-star/001_NS_ProtocoloL.md'),
       'utf8'
     );
     const anexos = fs.readFileSync(
-      path.join(ROOT, 'Protocolos/North_Star/053_NS_LAnexosLibros.md'),
+      path.join(ROOT, 'protocols/north-star/053_NS_LAnexosLibros.md'),
       'utf8'
     );
     expect(computeLHash([core, anexos])).toMatch(/^[0-9a-f]{12}$/);
@@ -441,21 +444,49 @@ APROBACIONES OLR (solo si Requiere OLR = Sí — §19.2/§20.1, firmantes fijos)
   });
 });
 
+describe('L V.6.17.0 — Raptor Conduct + A1 declaration (gate duro)', () => {
+  it('checkRaptorConduct / checkFcTemplateA1 pasan sobre L real', () => {
+    const master = fs.readFileSync(
+      path.join(ROOT, 'protocols/north-star/001_NS_ProtocoloL.md'),
+      'utf8'
+    );
+    expect(checkRaptorConduct(master)).toEqual([]);
+    expect(checkFcTemplateA1(master)).toEqual([]);
+  });
+
+  it('checkFcA1Declaration exige A1 dominio en FC de producto con apps/', () => {
+    const bad = `FEATURE CONTRACT\nFeature: X\nRequiere OLR : [x] Sí  [ ] No\napps/web/src/foo.ts\n`;
+    expect(checkFcA1Declaration(bad).length).toBeGreaterThan(0);
+    const good = `FEATURE CONTRACT\nA1 dominio : A1-S, A1-P\nRequiere OLR : [x] Sí  [ ] No\napps/web/src/foo.ts\n`;
+    expect(checkFcA1Declaration(good)).toEqual([]);
+  });
+
+  it('053 contiene tabla A1-ARCHON', () => {
+    const a = fs.readFileSync(
+      path.join(ROOT, 'protocols/north-star/053_NS_LAnexosLibros.md'),
+      'utf8'
+    );
+    expect(a).toContain('A1-ARCHON');
+    expect(a).toContain('A1-H');
+    expect(a).toContain('A1-S');
+  });
+});
+
 describe('Integración — los documentos reales de gobernanza son consistentes (Scenarios 1/2 anclados)', () => {
   const read = (rel: string): string => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
   it('runConsistencyChecks retorna cero errores sobre los archivos reales del repo', () => {
     const errors = runConsistencyChecks({
-      masterContent: read('Protocolos/North_Star/001_NS_ProtocoloL.md'),
+      masterContent: read('protocols/north-star/001_NS_ProtocoloL.md'),
       claudeContent: read('CLAUDE.md'),
-      handoffContent: read('Protocolos/North_Star/002_NS_Handoff.md'),
-      invariantsContent: read('Protocolos/North_Star/052_NS_MetaLInvariants.md'),
+      handoffContent: read('protocols/north-star/002_NS_Handoff.md'),
+      invariantsContent: read('protocols/north-star/052_NS_MetaLInvariants.md'),
     });
     expect(errors).toEqual([]);
   });
 
   it('L real contiene la excepción formal de nueva sesión AppendAllowed (Scenarios 1 y 2)', () => {
-    const master = read('Protocolos/North_Star/001_NS_ProtocoloL.md');
+    const master = read('protocols/north-star/001_NS_ProtocoloL.md');
     expect(master).toContain(
       'AppendAllowed(H, r, s) ≡ ConsecutiveCount(H, r, s) = 0 ∨ NewSession(s)'
     );

@@ -157,4 +157,21 @@ describe('MaintenanceHistoryDetail', () => {
     await waitFor(() => expect(screen.getByText('Tarea misteriosa')).toBeInTheDocument());
     expect(screen.getByText('Desconocido')).toBeInTheDocument();
   });
+
+  // ── FC 041 F.E — botón Descargar PDF con gate offline (T1) ─────────────────
+  it('renders the PDF download button enabled when online', async () => {
+    render(<MaintenanceHistoryDetail log={BASE_LOG} onBack={noop} />);
+    const btn = await screen.findByTestId('download-pdf-btn');
+    expect(btn).toBeEnabled();
+    expect(btn.textContent).toContain('Descargar PDF');
+  });
+
+  it('disables the PDF button offline with es-MX message (T1 fila ⊤⊥)', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: false });
+    render(<MaintenanceHistoryDetail log={BASE_LOG} onBack={noop} />);
+    const btn = await screen.findByTestId('download-pdf-btn');
+    expect(btn).toBeDisabled();
+    expect(btn.title).toContain('Acción no disponible en modo sin conexión');
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+  });
 });

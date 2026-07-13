@@ -13,7 +13,9 @@ import {
   MinusCircle,
   XCircle,
   Clock,
+  FileDown,
 } from 'lucide-react';
+import { isRemoteExportAllowed } from '../../utils/exportUtils';
 import {
   MaintenanceLog,
   MaintenanceFullDetail,
@@ -139,6 +141,32 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
             MNT-{String(log.id).padStart(5, '0')} · {log.unit_id}
           </p>
         </div>
+        {/* FC 041 F.E — exportación PDF con gate offline (T1) */}
+        <button
+          type="button"
+          data-testid="download-pdf-btn"
+          disabled={!isRemoteExportAllowed(true, navigator.onLine)}
+          title={
+            isRemoteExportAllowed(true, navigator.onLine)
+              ? 'Descargar PDF de la orden'
+              : 'Acción no disponible en modo sin conexión'
+          }
+          onClick={async (): Promise<void> => {
+            const response = await api.get(`/reports/maintenance/${log.uuid}/pdf`, {
+              responseType: 'blob',
+            });
+            const url = URL.createObjectURL(response.data as Blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `orden_${log.uuid}.pdf`;
+            anchor.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="ml-auto flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44] text-white text-archon-md font-black uppercase tracking-wider transition-all duration-200 hover:bg-[#0f2a44]/90 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <FileDown size={14} />
+          Descargar PDF
+        </button>
       </div>
 
       {/* ── SUMMARY CARDS ──────────────────────────────────────────────────────── */}

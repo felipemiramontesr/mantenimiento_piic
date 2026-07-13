@@ -429,4 +429,55 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     // activePanel → 'UPA' → setSectionData('Proceso UPA', ...) → layout title updates
     expect(await screen.findByTestId('layout-title')).toHaveTextContent('Proceso UPA');
   });
+
+  // ── FC 041 Fase C — piloto ArchonAdaptiveView (TABLE + CALENDAR) en HISTORY ──
+  describe('adaptive HISTORY panel (FC 041 pilot)', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('renders the adaptive selector with TABLE and CALENDAR only', async () => {
+      renderModule();
+      fireEvent.click(await screen.findByText('Ver Historial'));
+      await screen.findByText('NO SE ENCONTRARON REGISTROS');
+      expect(screen.getByTestId('adaptive-view-table')).toBeInTheDocument();
+      expect(screen.getByTestId('adaptive-view-calendar')).toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-cards')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-charts')).not.toBeInTheDocument();
+    });
+
+    it('switches to CALENDAR view and maps service_date events onto the grid', async () => {
+      server.use(
+        http.get('*/maintenance', () =>
+          HttpResponse.json({
+            success: true,
+            data: [
+              {
+                id: 900,
+                uuid: 'uuid-cal-1',
+                unit_id: 'PIIC-909',
+                service_date: '2026-07-20',
+                odometer_at_service: 1000,
+                service_type: 'BASIC_10K',
+                service_mode: 'PREVENTIVE',
+                system_recommended_type: null,
+                cost: 100,
+                technician: 'Tec',
+                created_at: '2026-07-01',
+                start_at: null,
+                end_at: null,
+              },
+            ],
+          })
+        )
+      );
+      renderModule();
+      fireEvent.click(await screen.findByText('Ver Historial'));
+      fireEvent.click(await screen.findByTestId('adaptive-view-calendar'));
+      // El panel de calendario consulta el API solo al montarse (vista activa)
+      const day = await screen.findByTestId('calendar-day-2026-07-20');
+      expect(day.textContent).toContain('PIIC-909');
+      expect(localStorage.getItem('archon_adaptive_view_maintenance-history')).toBe('CALENDAR');
+    });
+  });
 });
