@@ -27,7 +27,6 @@ export default defineConfig({
         'node_modules/**',
         'dist/**',
         'coverage/**',
-        'scratch/**',
       ],
       thresholds: {
         lines: 30,
