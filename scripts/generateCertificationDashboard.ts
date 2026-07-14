@@ -57,7 +57,19 @@ export interface DashboardInput {
   scriptResults: Record<string, boolean>;
 }
 
-const OWASP_DOMAIN_ORDER = ['A01', 'A02', 'A03', 'A05', 'A06', 'A07', 'A09', 'A10', 'ArchonALE'];
+const OWASP_DOMAIN_ORDER = [
+  'A01',
+  'A02',
+  'A03',
+  'A04',
+  'A05',
+  'A06',
+  'A07',
+  'A08',
+  'A09',
+  'A10',
+  'ArchonALE',
+];
 
 // ---------------------------------------------------------------------------
 // Parsing de JUnit XML (regex ligero — sin dependencia nueva de XML parser)
@@ -309,6 +321,8 @@ if (import.meta.main) {
     junitSuites: { api: backendSuites, web: frontendSuites },
     scriptResults: {
       'scripts/checkNoRawSql.ts': exitCodeToStatus(process.env.A03_EXIT) ?? false,
+      'scripts/checkSecureDesignGates.ts': exitCodeToStatus(process.env.A04_EXIT) ?? false,
+      'scripts/checkPipelineIntegrity.ts': exitCodeToStatus(process.env.A08_EXIT) ?? false,
       'scripts/dependencyAuditGate.ts': exitCodeToStatus(process.env.A06_EXIT) ?? false,
     },
   };

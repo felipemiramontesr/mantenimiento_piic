@@ -24,13 +24,13 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 'latest'
       - name: Install dependencies
@@ -55,7 +55,7 @@ jobs:
           exit $TSC_EXIT
       - name: Upload TSC Result
         if: matrix.shard == 1
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: backend-tsc-result
           path: tsc-result.json
@@ -65,14 +65,14 @@ jobs:
         working-directory: apps/api
         run: bunx vitest run --shard=${{ matrix.shard }}/4
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v6
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6
         if: always()
         with:
           report_paths: 'apps/api/test-results.xml'
           detailed_summary: true
           include_passed: true
       - name: Upload Shard Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: backend-results-shard-${{ matrix.shard }}
@@ -86,13 +86,13 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 'latest'
       - name: Install dependencies
@@ -116,7 +116,7 @@ jobs:
           exit $TSC_EXIT
       - name: Upload TSC Result
         if: matrix.shard == 1
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: frontend-tsc-result
           path: tsc-result.json
@@ -126,14 +126,14 @@ jobs:
         working-directory: apps/web
         run: bunx vitest run --shard=${{ matrix.shard }}/12 --passWithNoTests
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v6
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6
         if: always()
         with:
           report_paths: 'apps/web/test-results.xml'
           detailed_summary: true
           include_passed: true
       - name: Upload Shard Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: frontend-results-shard-${{ matrix.shard }}
@@ -143,13 +143,13 @@ jobs:
     name: 🏛️ Database (SQL) Verification
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 'latest'
       - name: Install dependencies
@@ -161,11 +161,11 @@ jobs:
     name: 🔍 Secret Scan (TruffleHog)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@v3.82.0
+        uses: trufflesecurity/trufflehog@d201e543053f24f8edbc1caab9eb63f57d95714d # v3.82.0
         with:
           path: ./
           base: ${{ github.event.before || '' }}
@@ -177,13 +177,13 @@ jobs:
     needs: [backend-validation, frontend-validation]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 'latest'
       - name: Install dependencies
@@ -222,7 +222,7 @@ jobs:
         run: bunx playwright test --config=playwright.local.config.ts
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report
           path: playwright-report/
@@ -232,15 +232,15 @@ jobs:
     name: 🔍 SonarQube Quality Gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 'latest'
       - name: Install dependencies
@@ -260,12 +260,12 @@ jobs:
           --coverage.thresholds.lines=0 --coverage.thresholds.functions=0
           --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
       - name: SonarQube Cloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
       - name: SonarQube Quality Gate Check
-        uses: SonarSource/sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-quality-gate-action@cf038b0e0cdecfa9e56c198bbb7d21d751d62c3b # v1.2.0
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -285,22 +285,22 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 'latest'
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Download Shard Artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: all-results
-      - name: Run A03/A06 real checks (evidencia OWASP, no texto fijo)
+      - name: Run A03/A04/A06/A08 real checks (evidencia OWASP, no texto fijo)
         id: owasp_scripts
         run: |
           set +e
@@ -308,6 +308,10 @@ jobs:
           echo "a03=$?" >> "$GITHUB_OUTPUT"
           bun scripts/dependencyAuditGate.ts
           echo "a06=$?" >> "$GITHUB_OUTPUT"
+          bun scripts/checkSecureDesignGates.ts
+          echo "a04=$?" >> "$GITHUB_OUTPUT"
+          bun scripts/checkPipelineIntegrity.ts
+          echo "a08=$?" >> "$GITHUB_OUTPUT"
       - name: Generate Certification Dashboard (script puro — F1+F4)
         env:
           DB_RESULT: ${{ needs.database-validation.result }}
@@ -315,6 +319,8 @@ jobs:
           SONAR_RESULT: ${{ needs.sonar-scan.result }}
           A03_EXIT: ${{ steps.owasp_scripts.outputs.a03 }}
           A06_EXIT: ${{ steps.owasp_scripts.outputs.a06 }}
+          A04_EXIT: ${{ steps.owasp_scripts.outputs.a04 }}
+          A08_EXIT: ${{ steps.owasp_scripts.outputs.a08 }}
         run: bun scripts/generateCertificationDashboard.ts all-results >> "$GITHUB_STEP_SUMMARY"
 
   hostinger-deployment:
@@ -323,13 +329,13 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 'latest'
       - name: Install dependencies

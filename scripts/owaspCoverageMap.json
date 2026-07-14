@@ -22,6 +22,11 @@
     "method": "script",
     "script": "scripts/checkNoRawSql.ts"
   },
+  "A04": {
+    "label": "Insecure Design (controles SDLC Protocolo L)",
+    "method": "script",
+    "script": "scripts/checkSecureDesignGates.ts"
+  },
   "A05": {
     "label": "Security Misconfiguration",
     "method": "junit",
@@ -43,6 +48,11 @@
       "src/routes/authOwners.test.ts",
       "src/routes/subUsers.test.ts"
     ]
+  },
+  "A08": {
+    "label": "Software & Data Integrity Failures (pipeline)",
+    "method": "script",
+    "script": "scripts/checkPipelineIntegrity.ts"
   },
   "A09": {
     "label": "Security Logging and Monitoring Failures",

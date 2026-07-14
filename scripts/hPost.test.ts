@@ -36,8 +36,14 @@ function buildMaster(version = 'V.78.101.470'): string {
   const ids = Array.from({ length: 20 }, (_, i) => `R-TEST-${i + 1}`);
   const registry = ids.map((id, i) => `| ${i + 1} | \`${id}\` |`).join('\n');
   const rules = ids.map((id, i) => `${i + 1}.  **[\`${id}\`] Regla ${i + 1}:** texto.`).join('\n');
+  // V.6.17.0: checkRaptorConduct + checkFcTemplateA1 leen master en cada hPost.
+  // Fixture mínimo que deja los gates de conducta en ⊤ sin copiar L real.
   return `
-| **Versión del Protocolo** | \`V.6.12.1\` |
+| **Versión del Protocolo** | \`V.6.17.0\` |
+
+## §0.5 RAPTOR CONDUCT — Asimov-L + ROE
+**A0** Solo GrayMan (Ω) puede firmar L y romper reglas (break-glass).
+IDs: R-A1-HARM · R-A2-CHAIN · R-A3-CONTEXT · R-ROE-MISSION · R-A0-HUMAN · R-A1-DECLARE
 
 ## VERSIÓN ACTIVA DEL PROYECTO
 \`\`\`
@@ -51,6 +57,11 @@ Estado: EN EJECUCIÓN
 \`\`\`
 
 ## ÍNDICE GENERAL
+
+## SECCIÓN 4: ESTRUCTURA DEL FEATURE CONTRACT
+Plantilla §4.1 debe incluir:
+A1 dominio : [clases A1-ARCHON o proceso-only]
+DICTAMEN (producto) · R-DICTAMEN-A1
 
 ## SECCIÓN 5: MODELO DE OPERACIÓN AUTÓNOMA (LAS VEINTE REGLAS)
 
