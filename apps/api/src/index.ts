@@ -180,7 +180,6 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   // FC 062 F1 (A05) — production-safe error handler (§8.2): unhandled 5xx never
   // leak internal messages or stack traces in production; 4xx keep Fastify's
   // default serialization (rate-limit 429, validation 400, jwt 401 untouched).
-  // In development the devTelemetry plugin re-registers its own handler on top.
   fastify.setErrorHandler((error: FastifyError, request, reply) => {
     const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500;
     if (statusCode >= 500) {
@@ -191,14 +190,6 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     }
     return reply.code(statusCode).send(error);
   });
-
-  // Dev Telemetry Gated Plugin (Doctor) — only registered in development
-  if (process.env.NODE_ENV === 'development') {
-    fastify.register(async (instance) => {
-      const devTelemetryPlugin = (await import('./plugins/devTelemetry')).default;
-      await instance.register(devTelemetryPlugin);
-    });
-  }
 
   // FC-18 FaseC-1 — UniverseContext: global tenancy middleware (registered at root, before routes)
   fastify.register(universeContextPlugin);

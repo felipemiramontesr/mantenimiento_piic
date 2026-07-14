@@ -97,9 +97,7 @@ export default defineConfig({
     clearMocks: true,
     mockReset: true,
     teardownTimeout: 1000,
-    reporters: process.env.GITHUB_ACTIONS
-      ? ['default', 'github-actions', 'junit']
-      : ['default', path.resolve(__dirname, '../../scripts/vitestHandoffReporter.ts')],
+    reporters: process.env.GITHUB_ACTIONS ? ['default', 'github-actions', 'junit'] : ['default'],
     outputFile: process.env.GITHUB_ACTIONS ? { junit: './test-results.xml' } : undefined,
     setupFiles: './src/test/setup.ts',
     globalTeardown: './src/test/globalTeardown.ts',
