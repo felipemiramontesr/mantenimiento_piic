@@ -2,10 +2,13 @@ import React, { useEffect } from 'react';
 import { UserPlus, ShieldAlert, PlusCircle } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import { UserIndustrial } from '../../types/user';
 
 // 🔱 Specialized Sub-components (Silicon Valley Standards)
 import UsersGridView from '../../components/Users/UsersGridView';
 import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
+import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
+import ArchonCardView from '../../components/Common/ArchonCardView';
 
 /**
  * 🔱 Archon Module: UsersModule
@@ -13,6 +16,48 @@ import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
  * Principles: SOLID, DRY, DIP
  * Refinement: Single Mutating Header Card (Mirror FleetModule DNA)
  */
+
+const renderUserCard = (user: UserIndustrial): React.ReactNode => (
+  <div className="flex flex-col gap-2 min-w-0">
+    <div className="flex items-center justify-between gap-2">
+      <span className="font-black text-pinnacle-navy text-archon-md truncate">
+        {user.fullName || user.username}
+      </span>
+      <span
+        className={`shrink-0 px-2 py-0.5 rounded-[4px] text-archon-xs font-bold uppercase tracking-widest ${
+          user.is_active
+            ? 'bg-emerald-500/10 text-emerald-700'
+            : 'bg-pinnacle-navy/5 text-pinnacle-navy/50'
+        }`}
+      >
+        {user.is_active ? 'Activo' : 'Inactivo'}
+      </span>
+    </div>
+    <div className="text-pinnacle-navy/70 text-archon-base truncate">{user.roleName}</div>
+    <div className="text-pinnacle-navy/40 text-archon-sm uppercase tracking-widest truncate">
+      {user.username}
+    </div>
+  </div>
+);
+
+// FC 074 F3 — vista CARDS del contenedor adaptativo; lee useUsers()
+// directamente (mismo patrón self-contained que UsersGridView) para no
+// alterar la firma de UsersModule ni tocar el grid interno existente.
+const UsersCardPanel: React.FC = (): React.ReactElement => {
+  const { users, setEditingUser, setActivePanel } = useUsers();
+  return (
+    <ArchonCardView<UserIndustrial>
+      items={users}
+      keyExtractor={(user): string => user.id}
+      renderCard={renderUserCard}
+      onCardClick={(user): void => {
+        setEditingUser(user);
+        setActivePanel('SIGNUP');
+      }}
+      emptyMessage="SIN PERSONAL REGISTRADO"
+    />
+  );
+};
 const UsersModule: React.FC = (): React.JSX.Element => {
   const { activePanel, setActivePanel, setEditingUser } = useUsers();
   const { setSectionData } = useSovereignLayout();
@@ -70,7 +115,17 @@ const UsersModule: React.FC = (): React.JSX.Element => {
         <div className="archon-axial-container">
           <div ref={panelRef}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              {activePanel === 'DIRECTORY' ? <UsersGridView /> : <UserRegistrationForm />}
+              {activePanel === 'DIRECTORY' ? (
+                <ArchonAdaptiveView
+                  storageKey="users-directory"
+                  views={{
+                    TABLE: <UsersGridView />,
+                    CARDS: <UsersCardPanel />,
+                  }}
+                />
+              ) : (
+                <UserRegistrationForm />
+              )}
             </div>
           </div>
         </div>

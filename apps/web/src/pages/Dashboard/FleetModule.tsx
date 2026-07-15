@@ -13,6 +13,8 @@ import api from '../../api/client';
 import FleetRegistrationForm from '../../components/Fleet/FleetRegistrationForm';
 import FleetSuccessView from '../../components/Fleet/FleetSuccessView';
 import useFleetForm from '../../hooks/useFleetForm';
+import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
+import ArchonCardView from '../../components/Common/ArchonCardView';
 
 /**
  * 🚀 ARCHON FLEET MODULE (v.28.19.0)
@@ -72,6 +74,25 @@ const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
   ownerId: unit.ownerId || undefined,
   complianceStatusId: unit.complianceStatusId || undefined,
 });
+
+// FC 074 F3 — render de tarjeta para la vista CARDS del contenedor adaptativo
+// (piloto FC 041: vistas solo-provistas, grid interno de FleetGridView intacto).
+const renderFleetCard = (unit: FleetUnit): React.ReactNode => (
+  <div className="flex flex-col gap-2 min-w-0">
+    <div className="flex items-center justify-between gap-2">
+      <span className="font-black text-pinnacle-navy text-archon-md truncate">{unit.id}</span>
+      <span className="shrink-0 px-2 py-0.5 rounded-[4px] bg-pinnacle-navy/5 text-pinnacle-navy/70 text-archon-xs font-bold uppercase tracking-widest">
+        {unit.status}
+      </span>
+    </div>
+    <div className="text-pinnacle-navy/70 text-archon-base truncate">
+      {unit.marca} {unit.modelo}
+    </div>
+    <div className="text-pinnacle-navy/40 text-archon-sm uppercase tracking-widest truncate">
+      {unit.placas || 'Sin placas'}
+    </div>
+  </div>
+);
 
 export const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
   ({
@@ -205,7 +226,23 @@ const FleetModule: React.FC = (): React.ReactElement => {
             ) : (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 {activePanel === 'STRATEGY' && (
-                  <FleetGridView units={units} loading={loading} onEdit={handleEditUnit} />
+                  <ArchonAdaptiveView
+                    storageKey="fleet-strategy"
+                    views={{
+                      TABLE: (
+                        <FleetGridView units={units} loading={loading} onEdit={handleEditUnit} />
+                      ),
+                      CARDS: (
+                        <ArchonCardView<FleetUnit>
+                          items={units}
+                          keyExtractor={(unit): string => unit.id}
+                          renderCard={renderFleetCard}
+                          onCardClick={handleEditUnit}
+                          emptyMessage="SIN UNIDADES REGISTRADAS"
+                        />
+                      ),
+                    }}
+                  />
                 )}
                 {activePanel === 'EXPANSION' && (
                   <FleetRegistrationForm

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, RenderResult } from '../../test/testUtils';
 import FleetModule, { mapUnitToFormData } from './FleetModule';
 import { UseFleetFormReturn, CatalogOption, FleetUnit } from '../../types/fleet';
@@ -180,6 +180,32 @@ describe('FleetModule Orchestrator', () => {
     rerender(<FleetModule />);
 
     expect(screen.getByText('Unidad Registrada con Éxito')).toBeInTheDocument();
+  });
+
+  // ── FC 074 F3 — Primera Oleada Adaptativa: ArchonAdaptiveView (TABLE + CARDS) en STRATEGY ──
+  describe('AT-FC074-F3 — adaptive STRATEGY panel', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('AT-FC074-F3-FL-1: renders the adaptive selector with TABLE and CARDS only', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      expect(screen.getByTestId('adaptive-view-table')).toBeInTheDocument();
+      expect(screen.getByTestId('adaptive-view-cards')).toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-calendar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-charts')).not.toBeInTheDocument();
+    });
+
+    it('AT-FC074-F3-FL-2: switches to CARDS view (ArchonCardView empty state, 0 units)', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByTestId('archon-card-view-empty')).toBeInTheDocument();
+      expect(localStorage.getItem('archon_adaptive_view_fleet-strategy')).toBe('CARDS');
+    });
   });
 });
 
