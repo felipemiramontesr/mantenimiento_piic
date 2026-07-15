@@ -219,6 +219,15 @@ jobs:
       - name: Install Playwright browsers (Chromium)
         run: bunx playwright install --with-deps chromium
       - name: Run Playwright E2E (specs mockeadas — sin smoke.spec.ts/PROD)
+        # FC 074 F5 — Gate_Permanente_RWD_Y_Manifest: sin --project, este
+        # comando YA corre los 7 projects declarados en
+        # playwright.local.config.ts (chromium + 6 rwd-* de e2e/responsive.spec.ts,
+        # 9 módulos × 6 viewport-configs = 54 celdas) — el gate I-RWD queda
+        # dentro de e2e-validation → global-certification sin job/step nuevo
+        # (bloqueo real: si responsive.spec.ts falla, este step falla y
+        # E2E_RESULT llega failure a global-certification). Verificado
+        # localmente: 71/72 GREEN (1 skip preexistente) en 3.4 min — el
+        # presupuesto de CI (cond.5) no exige sharding adicional.
         run: bunx playwright test --config=playwright.local.config.ts
       - name: Upload Playwright report
         if: always()

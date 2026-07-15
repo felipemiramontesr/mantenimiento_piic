@@ -80,7 +80,7 @@ const ArchonAdaptiveView: React.FC<ArchonAdaptiveViewProps> = ({ storageKey, vie
               aria-pressed={isActive}
               title={label}
               onClick={(): void => selectView(kind)}
-              className={`flex items-center gap-2 px-3 h-9 rounded-[4px] text-archon-base font-black uppercase tracking-widest transition-all ${
+              className={`flex items-center justify-center gap-2 px-3 h-11 min-w-11 rounded-[4px] text-archon-base font-black uppercase tracking-widest transition-all ${
                 isActive
                   ? 'bg-pinnacle-navy text-white shadow-sm'
                   : 'bg-pinnacle-navy/5 text-pinnacle-navy/60 hover:bg-pinnacle-navy/10 hover:text-pinnacle-navy'

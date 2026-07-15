@@ -128,4 +128,26 @@ describe('ArchonAdaptiveView (FC 041 Fase A)', () => {
     fireEvent.click(screen.getByTestId('adaptive-view-table'));
     expect(screen.getByText('CONTENIDO TABLA')).toBeInTheDocument();
   });
+
+  // FC 074 F5 — hallazgo del gate I-RWD: los botones del selector medían
+  // h-9 (36px), por debajo del mínimo táctil de 44px (Fleet/Users los
+  // exponen por defecto; Mantenimiento lo enmascaraba tras otro panel).
+  it('AT-FC074-F5-AV-1: los botones del selector usan h-11 (44px) en vez de h-9 (36px)', () => {
+    renderAdaptive({ CARDS: <div>CONTENIDO TARJETAS</div> });
+    const tableBtn = screen.getByTestId('adaptive-view-table');
+    const cardsBtn = screen.getByTestId('adaptive-view-cards');
+    expect(tableBtn.className).toMatch(/\bh-11\b/);
+    expect(cardsBtn.className).toMatch(/\bh-11\b/);
+    expect(tableBtn.className).not.toMatch(/\bh-9\b/);
+  });
+
+  // FC 074 F5 — segunda vuelta del gate: <768px el label se oculta
+  // (hidden md:inline) y el botón solo-ícono queda angosto (38px < 44px).
+  it('AT-FC074-F5-AV-2: los botones del selector garantizan min-w-11 (44px) icon-only <md', () => {
+    renderAdaptive({ CARDS: <div>CONTENIDO TARJETAS</div> });
+    const tableBtn = screen.getByTestId('adaptive-view-table');
+    const cardsBtn = screen.getByTestId('adaptive-view-cards');
+    expect(tableBtn.className).toMatch(/\bmin-w-11\b/);
+    expect(cardsBtn.className).toMatch(/\bmin-w-11\b/);
+  });
 });
