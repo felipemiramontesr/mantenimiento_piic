@@ -150,4 +150,40 @@ describe('FleetRegistrationForm Component', () => {
     expect(screen.queryByText(/Departamento Responsable/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Cuenta Contable/i)).not.toBeInTheDocument();
   });
+
+  // ── FC 074 F4 — Formularios_Y_Detalles_Apilables ──
+  describe('AT-FC074-F4 — mobile-first form hardening', () => {
+    it('AT-FC074-F4-FL-1: los contenedores 2x2 apilan a 1 columna <md (grid-cols-1 md:grid-cols-2)', (): void => {
+      const { container } = render(
+        <FleetRegistrationForm controller={mockController} {...mockProps} />
+      );
+      expect(container.innerHTML).not.toContain('"grid grid-cols-2 gap-6"');
+      expect(
+        container.querySelectorAll('.grid.grid-cols-1.md\\:grid-cols-2.gap-6').length
+      ).toBeGreaterThanOrEqual(13);
+    });
+
+    it('AT-FC074-F4-FL-2: el input de odómetro declara inputMode numeric', (): void => {
+      render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
+      const odometerInput = screen.getByPlaceholderText('Ej: 45000');
+      expect(odometerInput).toHaveAttribute('inputmode', 'numeric');
+    });
+
+    it('AT-FC074-F4-FL-3: los inputs de costo (Seguro/Cuota Mensual) declaran inputMode decimal', (): void => {
+      render(<FleetRegistrationForm controller={mockController} {...mockProps} />);
+      expect(screen.getByPlaceholderText('Ej: 850.00')).toHaveAttribute('inputmode', 'decimal');
+      expect(screen.getByPlaceholderText('Ej: 15500.50')).toHaveAttribute('inputmode', 'decimal');
+    });
+
+    it('AT-FC074-F4-FL-4: la barra de acciones (Cancelar/Guardar) es sticky bottom en móvil', (): void => {
+      const { container } = render(
+        <FleetRegistrationForm controller={mockController} {...mockProps} />
+      );
+      const cancelBtn = screen.getByText(/Cancelar/i);
+      const actionBar = cancelBtn.closest('.archon-grid-2-sovereign');
+      expect(actionBar?.className).toMatch(/\bsticky\b/);
+      expect(actionBar?.className).toMatch(/bottom-0/);
+      expect(container).toBeTruthy();
+    });
+  });
 });

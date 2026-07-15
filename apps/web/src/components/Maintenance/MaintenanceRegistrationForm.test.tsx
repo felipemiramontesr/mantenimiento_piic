@@ -382,3 +382,45 @@ describe('UPA panel — unit re-selection resets task decisions', () => {
     expect(screen.queryByText('No Aplica')).not.toBeInTheDocument();
   });
 });
+
+// ── FC 074 F4 — Formularios_Y_Detalles_Apilables ──
+describe('AT-FC074-F4 — mobile-first form hardening (MaintenanceRegistrationForm)', () => {
+  beforeEach(() => {
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] }))
+    );
+  });
+
+  it('AT-FC074-F4-MR-1: los contenedores 2x2 apilan a 1 columna <md', async () => {
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    const odometerInput = await screen.findByPlaceholderText('Ej: 125000');
+    const grid = odometerInput.closest('.grid.grid-cols-1');
+    expect(grid).not.toBeNull();
+    expect(grid?.className).toMatch(/md:grid-cols-2/);
+  });
+
+  it('AT-FC074-F4-MR-2: el input de odómetro declara inputMode numeric', async () => {
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    const odometerInput = await screen.findByPlaceholderText('Ej: 125000');
+    expect(odometerInput).toHaveAttribute('inputmode', 'numeric');
+  });
+
+  it('AT-FC074-F4-MR-3: el input de costo declara inputMode decimal', async () => {
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    const costInput = await screen.findByPlaceholderText('Ej: 3,450.00');
+    expect(costInput).toHaveAttribute('inputmode', 'decimal');
+  });
+
+  it('AT-FC074-F4-MR-4: la barra de acciones (Cancelar/Guardar) es sticky bottom en móvil', async () => {
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    const cancelBtn = await screen.findByText(/Cancelar/i);
+    const actionBar = cancelBtn.closest('.archon-grid-2-sovereign');
+    expect(actionBar?.className).toMatch(/\bsticky\b/);
+    expect(actionBar?.className).toMatch(/bottom-0/);
+  });
+});

@@ -218,6 +218,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                   required
                   type="number"
                   min={0}
+                  inputMode="numeric"
                   placeholder="Ej: 126500"
                   className={`${inputClass} font-mono pr-14`}
                   value={odometerAtService || ''}
@@ -238,6 +239,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                 <input
                   type="number"
                   min={odometerAtService}
+                  inputMode="numeric"
                   placeholder="Ej: 126680"
                   className={`${inputClass} font-mono pr-14`}
                   value={endOdometer || ''}
@@ -289,6 +291,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                   type="number"
                   step="0.01"
                   min="0"
+                  inputMode="decimal"
                   placeholder="Ej: 3,450.00"
                   className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
                   value={cost || ''}
@@ -407,7 +410,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
                     {task.isCritical && <span className="ml-2 text-red-500">● CRÍTICO</span>}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <ArchonSelect
                     options={statusOptions}
                     value={details[idx]?.status || 'PASS'}
@@ -431,7 +434,7 @@ const MaintenanceCompletionPanel: React.FC<MaintenanceCompletionPanelProps> = ({
       </div>
 
       {/* ── ACTION BAR ────────────────────────────────────────────────────── */}
-      <div className="archon-grid-2-sovereign gap-10 !mt-5 pt-0">
+      <div className="archon-grid-2-sovereign gap-10 !mt-5 pt-0 sticky bottom-0 z-10 bg-white pb-4 md:static md:bg-transparent md:pb-0">
         <div />
         <div className="grid grid-cols-2 gap-4">
           <button type="button" onClick={onCancel} className="btn-sentinel-red w-full">

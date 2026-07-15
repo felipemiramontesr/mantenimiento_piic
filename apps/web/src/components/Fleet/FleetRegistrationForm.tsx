@@ -117,7 +117,7 @@ function isDeptOk(show: boolean, departmentId: number | null | undefined): boole
 }
 
 function flotillaGridClass(show: boolean): string {
-  return `grid gap-6 ${show ? 'grid-cols-2' : 'grid-cols-1'}`;
+  return `grid gap-6 ${show ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`;
 }
 
 interface FlotillaOnlyFieldProps {
@@ -322,7 +322,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               />
             </ArchonField>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Número Económico" icon={Tag} required>
                 <input
                   required
@@ -349,7 +349,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Placas / Matrícula" icon={Tag}>
                 <input
                   type="text"
@@ -435,7 +435,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               />
             </ArchonField>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Póliza de Seguro" icon={FileText}>
                 <input
                   type="text"
@@ -461,7 +461,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Vigencia Seguro" icon={Calendar}>
                 <ArchonDatePicker
                   value={formData.insuranceExpiryDate || ''}
@@ -477,6 +477,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     type="number"
                     step="0.01"
                     min="0"
+                    inputMode="decimal"
                     placeholder="Ej: 850.00"
                     className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
                     value={
@@ -493,7 +494,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Folio Tarjeta Circulación" icon={Tag}>
                 <input
                   type="text"
@@ -515,7 +516,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Verif. Ambiental" icon={Activity}>
                 <ArchonDatePicker
                   value={formData.lastEnvironmentalVerification || ''}
@@ -638,6 +639,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                     <input
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       placeholder="Ej: 15500.50"
                       className="flex-1 w-full bg-transparent px-4 py-3 outline-none border-none focus:ring-0 font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
                       value={formData.monthlyLeasePayment ?? ''}
@@ -667,7 +669,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           </div>
 
           <div className="space-y-6 flex-1 flex flex-col">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Año de Fabricación" icon={Calendar} required>
                 <input
                   required
@@ -699,7 +701,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Tracción / Drive" icon={Gauge}>
                 <ArchonSelect
                   options={driveTypes.map((t: CatalogOption) => ({
@@ -726,7 +728,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Configuración de Motor" icon={Activity}>
                 <ArchonSelect
                   options={engineTypes.map((e: CatalogOption) => ({
@@ -841,7 +843,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               <h4 className="text-archon-base font-black text-navy-400 uppercase tracking-[0.2em]">
                 Especificaciones de Rodado & Terreno
               </h4>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ArchonField label="Medida de Llanta" icon={Activity}>
                   <input
                     type="text"
@@ -890,7 +892,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
           </div>
 
           <div className="space-y-6 flex-1 flex flex-col">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Sede de Operación" icon={MapPin}>
                 <ArchonSelect
                   options={locations.map((l) => ({ value: l.id.toString(), label: l.label }))}
@@ -906,6 +908,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
                   <input
                     type="number"
                     step="0.1"
+                    inputMode="numeric"
                     placeholder="Ej: 45000"
                     className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-14 rounded-[4px] text-archon-lg font-bold text-[#0f2a44] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     value={formData.odometer ?? ''}
@@ -932,7 +935,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Ciclo Mto. (Fec.)" icon={Calendar}>
                 <div className="relative flex items-center">
                   <input
@@ -998,7 +1001,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
               </ArchonField>
             )}
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ArchonField label="Última Fecha de Servicio" icon={Calendar}>
                 <ArchonDatePicker
                   value={formData.lastServiceDate || ''}
@@ -1149,7 +1152,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
         </div>
       </div>
 
-      <div className="archon-grid-2-sovereign mt-10 pt-0 border-t border-pinnacle-navy/5">
+      <div className="archon-grid-2-sovereign mt-10 pt-0 border-t border-pinnacle-navy/5 sticky bottom-0 z-10 bg-white pb-4 md:static md:bg-transparent md:pb-0">
         <div>
           {isEdit && (
             <button
@@ -1164,7 +1167,7 @@ const FleetRegistrationForm: React.FC<FleetRegistrationFormProps> = ({
             </button>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-4 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
           <button type="button" onClick={onCancel} className="btn-sentinel-red w-full">
             Cancelar
           </button>

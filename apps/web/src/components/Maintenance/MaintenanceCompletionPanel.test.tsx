@@ -114,4 +114,41 @@ describe('MaintenanceCompletionPanel', () => {
     await waitFor(() => expect(succeeded).toBe(true));
     expect(patchedUuid).toBe('uuid-active-001');
   });
+
+  // ── FC 074 F4 — Formularios_Y_Detalles_Apilables ──
+  describe('AT-FC074-F4 — mobile-first form hardening', () => {
+    it('AT-FC074-F4-MC-1: la fila de detalle de tarea (estatus/notas) apila a 1 columna <md', async () => {
+      render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+      await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+      const notesInput = screen.getAllByPlaceholderText('Notas...')[0];
+      const grid = notesInput.closest('.grid.grid-cols-1');
+      expect(grid).not.toBeNull();
+      expect(grid?.className).toMatch(/md:grid-cols-2/);
+    });
+
+    it('AT-FC074-F4-MC-2: los inputs de odómetro (entrada/salida) declaran inputMode numeric', async () => {
+      render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+      expect(await screen.findByPlaceholderText('Ej: 126500')).toHaveAttribute(
+        'inputmode',
+        'numeric'
+      );
+      expect(screen.getByPlaceholderText('Ej: 126680')).toHaveAttribute('inputmode', 'numeric');
+    });
+
+    it('AT-FC074-F4-MC-3: el input de costo final declara inputMode decimal', async () => {
+      render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+      expect(await screen.findByPlaceholderText('Ej: 3,450.00')).toHaveAttribute(
+        'inputmode',
+        'decimal'
+      );
+    });
+
+    it('AT-FC074-F4-MC-4: la barra de acciones (Cancelar/Finalizar) es sticky bottom en móvil', async () => {
+      render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+      const cancelBtn = await screen.findByText(/Cancelar/i);
+      const actionBar = cancelBtn.closest('.archon-grid-2-sovereign');
+      expect(actionBar?.className).toMatch(/\bsticky\b/);
+      expect(actionBar?.className).toMatch(/bottom-0/);
+    });
+  });
 });
