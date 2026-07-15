@@ -243,6 +243,66 @@ export default async function setupApiMocks(page: Page): Promise<void> {
     }
   );
 
+  // 🔐 Admin: Roles + Permissions Matrix (RoleSwitcher del header, montado
+  // globalmente en SovereignHeader, dispara este GET en cada mount — sin
+  // mock caía a la API real -> 401 -> logout forzado global, hallazgo de
+  // FC 074 F1: cualquier E2E suficientemente lento tras login lo dispara).
+  await page.route(
+    (url) => isApi(url) && url.pathname.includes('/admin/roles-permissions'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            roles: [
+              { id: 0, name: 'Master (Archon)', permissions: ['*'] },
+              {
+                id: 1,
+                name: 'Gerente de Operaciones',
+                permissions: ['fleet:view', 'fleet:write', 'maint:view'],
+              },
+              { id: 3, name: 'Operador de Unidad', permissions: ['fleet:view'] },
+            ],
+            allPermissions: [
+              { id: 1, slug: 'fleet:view' },
+              { id: 2, slug: 'fleet:write' },
+              { id: 3, slug: 'fleet:delete' },
+              { id: 4, slug: 'maint:view' },
+              { id: 5, slug: 'maint:write' },
+              { id: 6, slug: 'financial:view' },
+              { id: 7, slug: 'financial:write' },
+              { id: 8, slug: 'financial:report' },
+              { id: 9, slug: 'report:export' },
+              { id: 10, slug: 'user:admin' },
+            ],
+          },
+        }),
+      });
+    }
+  );
+
+  // 🔐 Admin: Roles CRUD (RolesManager, montado solo dentro del módulo Admin)
+  await page.route(
+    (url) =>
+      isApi(url) && url.pathname.includes('/admin/roles') && !url.pathname.includes('permissions'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            { id: 0, name: 'Master (Archon)', permissions: ['*'] },
+            { id: 1, name: 'Gerente de Operaciones', permissions: ['fleet:view', 'fleet:write'] },
+            { id: 3, name: 'Operador de Unidad', permissions: ['fleet:view'] },
+          ],
+        }),
+      });
+    }
+  );
+
   // 🚗 Fleet: inventory
   await page.route(
     (url) => isApi(url) && url.pathname.startsWith('/v1/fleet') && !url.pathname.includes('/node'),

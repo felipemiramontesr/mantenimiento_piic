@@ -8,7 +8,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: ['**/smoke.spec.ts'],
+  // e2e/audit/** = auditoría puntual FC 074 F1 (una vez, no gate de CI —
+  // el gate permanente I-RWD vive en su propia spec, FC 074 F5).
+  testIgnore: ['**/smoke.spec.ts', '**/audit/**'],
   fullyParallel: true,
   forbidOnly: false,
   // retries=0 deliberado (FC 071 F3): el bug de navegación que motivó retries=2
