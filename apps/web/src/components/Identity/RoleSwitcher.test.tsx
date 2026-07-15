@@ -87,6 +87,15 @@ describe('RoleSwitcher', () => {
     expect(await screen.findByText('God Mode')).toBeInTheDocument();
   });
 
+  it('AT-FC074-F2-RS-1: el botón God Mode tiene un hit-area real ≥44px (min-w-11 min-h-11), visual compacto vía span interno', async () => {
+    mockAuth();
+    render(<RoleSwitcher />);
+    const button = await screen.findByRole('button', { name: /God Mode/i });
+    expect(button.className).toMatch(/\bmin-w-11\b/);
+    expect(button.className).toMatch(/\bmin-h-11\b/);
+    expect(button.className).not.toMatch(/scale-\[0\.67\]/);
+  });
+
   it('opens role dropdown when God Mode button is clicked', async () => {
     mockAuth();
     render(<RoleSwitcher />);

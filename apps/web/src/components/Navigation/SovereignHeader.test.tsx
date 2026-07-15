@@ -451,6 +451,73 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     expect(mockSetMobileMenuOpen).toHaveBeenCalledWith(true);
   });
 
+  describe('FC 074 F2 — Navegación Soberana Móvil', () => {
+    it('AT-FC074-F2-SH-1: toggle expone aria-expanded="false" cuando el drawer está cerrado', () => {
+      vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+        layoutData: mockLayoutData as any,
+        searchTerm: '',
+        setSearchTerm: mockSetSearchTerm,
+        searchConfig: null,
+        setSearchConfig: vi.fn(),
+        setSectionData: vi.fn(),
+        isMobileMenuOpen: false,
+        setIsMobileMenuOpen: vi.fn(),
+      });
+      render(<SovereignHeader />);
+      const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
+      expect(menuBtn).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('AT-FC074-F2-SH-2: toggle expone aria-expanded="true" cuando el drawer está abierto', () => {
+      vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+        layoutData: mockLayoutData as any,
+        searchTerm: '',
+        setSearchTerm: mockSetSearchTerm,
+        searchConfig: null,
+        setSearchConfig: vi.fn(),
+        setSectionData: vi.fn(),
+        isMobileMenuOpen: true,
+        setIsMobileMenuOpen: vi.fn(),
+      });
+      render(<SovereignHeader />);
+      const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
+      expect(menuBtn).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('AT-FC074-F2-SH-3: toggle expone aria-controls="mobile-sidebar"', () => {
+      vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+        layoutData: mockLayoutData as any,
+        searchTerm: '',
+        setSearchTerm: mockSetSearchTerm,
+        searchConfig: null,
+        setSearchConfig: vi.fn(),
+        setSectionData: vi.fn(),
+        isMobileMenuOpen: false,
+        setIsMobileMenuOpen: vi.fn(),
+      });
+      render(<SovereignHeader />);
+      const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
+      expect(menuBtn).toHaveAttribute('aria-controls', 'mobile-sidebar');
+    });
+
+    it('AT-FC074-F2-SH-4: toggle usa p-2.5 (44px con icono 24px) en vez de p-2 (40px)', () => {
+      vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+        layoutData: mockLayoutData as any,
+        searchTerm: '',
+        setSearchTerm: mockSetSearchTerm,
+        searchConfig: null,
+        setSearchConfig: vi.fn(),
+        setSectionData: vi.fn(),
+        isMobileMenuOpen: false,
+        setIsMobileMenuOpen: vi.fn(),
+      });
+      render(<SovereignHeader />);
+      const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
+      expect(menuBtn.className).toMatch(/\bp-2\.5\b/);
+      expect(menuBtn.className).not.toMatch(/\bp-2\b(?!\.)/);
+    });
+  });
+
   it('closes suggestions when enter key is pressed on the input', () => {
     mockSearchTerm = 'aveo';
     vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({

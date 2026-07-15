@@ -87,9 +87,11 @@ const RoleSwitcher: React.FC = () => {
       <button
         type="button"
         onClick={(): void => setOpen((v) => !v)}
-        className="bg-pinnacle-navy rounded-[4px] px-3 py-1.5 shadow-sm scale-[0.67] origin-right text-pinnacle-yellow text-[10px] font-bold uppercase tracking-widest hover:shadow-pinnacle transition-shadow"
+        className="min-w-11 min-h-11 flex items-center justify-center rounded-[4px] hover:shadow-pinnacle transition-shadow"
       >
-        God Mode
+        <span className="bg-pinnacle-navy rounded-[4px] px-3 py-1.5 shadow-sm scale-[0.67] origin-right text-pinnacle-yellow text-[10px] font-bold uppercase tracking-widest">
+          God Mode
+        </span>
       </button>
       {open && (
         <div className="absolute bottom-full right-0 mb-2 bg-white border border-pinnacle-navy/15 rounded-[4px] shadow-pinnacle-hover min-w-[270px] z-50 overflow-hidden">

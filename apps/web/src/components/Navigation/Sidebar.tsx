@@ -161,6 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const scrollRef = useRef<HTMLElement>(null);
+  const firstFocusableRef = useRef<HTMLButtonElement>(null);
   const { hasPermission, hasAnyPermission, isOmnipotent, isExternalClientOnly, isFamiliar } =
     usePermissions();
   const { currentUser, logout } = useAuth();
@@ -186,6 +187,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     setIsMobileMenuOpen(false);
   };
 
+  // FC 074 F2 — Escape cierra el drawer móvil (a11y).
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined;
+    const handleEscape = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return (): void => document.removeEventListener('keydown', handleEscape);
+  }, [isMobileMenuOpen, setIsMobileMenuOpen]);
+
+  // FC 074 F2 — Focus-trap: al abrir el drawer, el foco entra al primer nav item.
+  useEffect(() => {
+    if (isMobileMenuOpen) firstFocusableRef.current?.focus();
+  }, [isMobileMenuOpen]);
+
   return (
     <>
       {/* 🌑 MOBILE OVERLAY */}
@@ -197,8 +213,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       )}
 
       <aside
+        id="mobile-sidebar"
         className={`
-          fixed md:relative z-[60] md:z-50 flex flex-col h-screen bg-pinnacle-navy shadow-[4px_0_20px_rgba(0,0,0,0.2)] shrink-0 transition-[width,transform] duration-300 ease-in-out
+          fixed md:relative z-[60] md:z-50 flex flex-col h-screen bg-pinnacle-navy shadow-[4px_0_20px_rgba(0,0,0,0.2)] shrink-0 transition-[width,transform] duration-300 ease-in-out pl-[env(safe-area-inset-left)]
           ${
             isMobileMenuOpen
               ? 'translate-x-0 w-[250px]'
@@ -225,10 +242,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         `}
         >
           <button
+            ref={firstFocusableRef}
             onClick={goToProfile}
             title="Mi perfil"
             data-testid="nav-item-settings"
-            className="w-10 h-10 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10 hover:brightness-125 transition-all duration-200 cursor-pointer outline-none border-none"
+            className="w-11 h-11 rounded-[4px] shrink-0 overflow-hidden bg-white/10 flex items-center justify-center text-pinnacle-yellow border border-white/10 hover:brightness-125 transition-all duration-200 cursor-pointer outline-none border-none"
           >
             {fullImageUrl ? (
               <img
@@ -464,7 +482,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </main>
 
         {/* ⚙️ FOOTER (15%) */}
-        <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5">
+        <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
           {isOmnipotent() && (
             <button
               onClick={goToAdmin}
@@ -475,7 +493,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                     ? 'bg-white text-pinnacle-navy hover:brightness-95'
                     : 'bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110'
                 }
-                ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
+                ${isCollapsed ? 'w-11 h-11 px-0' : 'w-full h-11 px-4'}
               `}
               title="Administración del Sistema"
               data-testid="nav-item-admin"
@@ -501,7 +519,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             className={`
               flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
               bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110
-              ${isCollapsed ? 'w-10 h-10 px-0' : 'w-full h-10 px-4'}
+              ${isCollapsed ? 'w-11 h-11 px-0' : 'w-full h-11 px-4'}
             `}
             title="Cerrar Sesión"
             data-testid="nav-item-logout"

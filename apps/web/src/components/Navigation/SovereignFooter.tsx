@@ -16,7 +16,7 @@ const SovereignFooter: React.FC = () => {
   const { isOmnipotent } = usePermissions();
 
   return (
-    <footer className="h-[10%] min-h-[60px] flex items-center justify-between w-full border-t border-pinnacle-navy/5 px-[60px] bg-white shrink-0">
+    <footer className="h-[10%] min-h-[60px] flex items-center justify-between w-full border-t border-pinnacle-navy/5 px-[60px] bg-white shrink-0 pb-[env(safe-area-inset-bottom)]">
       {/* ⚖️ Legal Metadata (Col Alfa) */}
       <div className="flex-1 text-archon-base font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left whitespace-nowrap">
         © Copyright ArchonCore by Dreamtek Versión V.{SYSTEM_VERSION}

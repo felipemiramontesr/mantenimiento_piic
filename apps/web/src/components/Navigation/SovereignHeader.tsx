@@ -130,8 +130,10 @@ const SovereignHeader: React.FC = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={(): void => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden flex items-center justify-center p-2 -ml-2 rounded hover:bg-slate-100 text-pinnacle-navy"
+                className="md:hidden flex items-center justify-center p-2.5 -ml-2.5 rounded hover:bg-slate-100 text-pinnacle-navy"
                 aria-label="Toggle Menu"
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-sidebar"
               >
                 <Menu size={24} />
               </button>

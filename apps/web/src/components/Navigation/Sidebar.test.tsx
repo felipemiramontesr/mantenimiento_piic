@@ -1172,4 +1172,112 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(alertasItem.style.opacity).toBe('1');
     });
   });
+
+  describe('FC 074 F2 — Navegación Soberana Móvil', () => {
+    it('AT-FC074-F2-SB-1: aside expone id="mobile-sidebar" para aria-controls del toggle', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      expect(container.querySelector('aside#mobile-sidebar')).not.toBeNull();
+    });
+
+    it('AT-FC074-F2-SB-2: nav-item-admin usa h-11 (44px) en vez de h-10 (40px)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const admin = container.querySelector('[data-testid="nav-item-admin"]') as HTMLElement;
+      expect(admin.className).toMatch(/\bh-11\b/);
+      expect(admin.className).not.toMatch(/\bh-10\b/);
+    });
+
+    it('AT-FC074-F2-SB-3: nav-item-logout usa h-11 (44px) en vez de h-10 (40px)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const logout = container.querySelector('[data-testid="nav-item-logout"]') as HTMLElement;
+      expect(logout.className).toMatch(/\bh-11\b/);
+      expect(logout.className).not.toMatch(/\bh-10\b/);
+    });
+
+    it('AT-FC074-F2-SB-4: nav-item-admin/logout colapsados usan w-11 (44px) en vez de w-10 (40px)', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const admin = container.querySelector('[data-testid="nav-item-admin"]') as HTMLElement;
+      const logout = container.querySelector('[data-testid="nav-item-logout"]') as HTMLElement;
+      expect(admin.className).toMatch(/\bw-11\b/);
+      expect(logout.className).toMatch(/\bw-11\b/);
+    });
+
+    it('AT-FC074-F2-SB-5: aside tiene padding de safe-area iOS (env(safe-area-inset-left))', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const aside = container.querySelector('aside') as HTMLElement;
+      expect(aside.className).toMatch(/safe-area-inset-left/);
+    });
+
+    it('AT-FC074-F2-SB-6: Escape cierra el drawer móvil cuando está abierto', () => {
+      useSovereignLayoutMock.mockReturnValue({
+        isMobileMenuOpen: true,
+        setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
+    });
+
+    it('AT-FC074-F2-SB-7: Escape no hace nada si el drawer ya está cerrado', () => {
+      useSovereignLayoutMock.mockReturnValue({
+        isMobileMenuOpen: false,
+        setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(setIsMobileMenuOpenMock).not.toHaveBeenCalled();
+    });
+
+    it('AT-FC074-F2-SB-9: nav-item-settings (avatar) usa w-11 h-11 en vez de w-10 h-10', () => {
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const settings = container.querySelector('[data-testid="nav-item-settings"]') as HTMLElement;
+      expect(settings.className).toMatch(/\bw-11\b/);
+      expect(settings.className).toMatch(/\bh-11\b/);
+    });
+
+    it('AT-FC074-F2-SB-8: al abrir el drawer, el foco entra al primer nav item (focus-trap)', () => {
+      useSovereignLayoutMock.mockReturnValue({
+        isMobileMenuOpen: true,
+        setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+      });
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const firstNavItem = container.querySelector('[data-testid="nav-item-settings"]');
+      expect(document.activeElement).toBe(firstNavItem);
+    });
+  });
 });

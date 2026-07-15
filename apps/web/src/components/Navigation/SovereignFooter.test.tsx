@@ -59,4 +59,10 @@ describe('SovereignFooter — versión dinámica', () => {
     expect(screen.getByTestId('role-switcher-mock')).toBeInTheDocument();
     expect(screen.queryByTestId('archon-logo-mock')).not.toBeInTheDocument();
   });
+
+  it('AT-FC074-F2-SF-1: footer tiene padding de safe-area iOS (env(safe-area-inset-bottom))', () => {
+    const { container } = render(<SovereignFooter />);
+    const footer = container.querySelector('footer') as HTMLElement;
+    expect(footer.className).toMatch(/safe-area-inset-bottom/);
+  });
 });
