@@ -51,7 +51,10 @@ apps/web/public/uploads/
 # Archon Dev Lore
 checkpoints.md
 
-# 📜 INTERNAL PROTOCOLS & CLIENT DATA
+# INTERNAL PROTOCOLS & CLIENT DATA (FC 053 F7 · FC 011)
+# L/H/F + annex formal = SSOT local only. NOT product remote.
+# Git tracks thin pointers only (AGENTS.md: paths + portableCompatible pin).
+# Pre-commit verifyProtocolL rejects staged protocols/ and CLAUDE.md.
 datosCliente/
 protocols/
 CLAUDE.md
