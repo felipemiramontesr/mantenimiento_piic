@@ -49,6 +49,18 @@ const TOUCH_TARGET_SELECTOR =
   'nav a, nav button, [data-testid^="nav-item"], header button, main button, main a[role="button"]';
 const MIN_TOUCH_TARGET_PX = 44;
 
+/**
+ * FC 075 — I_RWD_Gate_CiFontTolerance_Fix. El ALLOWLIST se calibró en
+ * Windows local; el runner de CI (`ubuntu-latest`, Chromium headless) no
+ * tiene la fuente de Windows y renderiza botones de texto más angostos
+ * (delta máximo observado: 7px, "Nuevo Rol" 127→120, log run 29451993989,
+ * job 87476607565). El alto nunca varió entre entornos — la tolerancia
+ * aplica SOLO al ancho. Cond.1 Bravo: margen sobre el delta máximo (7px).
+ * Cond.5 Bravo: si reaparece un fallo por ancho, recalibrar con un log real
+ * nuevo — nunca subir este valor a ciegas.
+ */
+const WIDTH_TOLERANCE_PX = 10;
+
 interface TouchViolation {
   tag: string;
   text: string;
@@ -95,12 +107,53 @@ const TOUCH_TARGET_ALLOWLIST: Record<string, TouchViolation[]> = {
   ],
 };
 
-function isAllowlisted(moduleKey: string, v: TouchViolation): boolean {
+// Único export nombrado del archivo, requerido para el test unitario de
+// Cond.2 Bravo (FC 075) — un default export rompería el patrón de spec
+// Playwright sin default.
+// eslint-disable-next-line import/prefer-default-export
+export function isAllowlisted(moduleKey: string, v: TouchViolation): boolean {
   const entries = TOUCH_TARGET_ALLOWLIST[moduleKey] ?? [];
   return entries.some(
-    (e) => e.tag === v.tag && e.text === v.text && e.width === v.width && e.height === v.height
+    (e) =>
+      e.tag === v.tag &&
+      e.text === v.text &&
+      Math.abs(e.width - v.width) <= WIDTH_TOLERANCE_PX &&
+      e.height === v.height
   );
 }
+
+test.describe('FC 075 — isAllowlisted (unit, matriz T Cond.2 Bravo)', () => {
+  // Entrada de referencia: allowlist tiene width=100,height=26 (mismo tag/text).
+  const moduleKey = '__fc075_unit__';
+  const originalEntries = TOUCH_TARGET_ALLOWLIST[moduleKey];
+  test.beforeAll(() => {
+    TOUCH_TARGET_ALLOWLIST[moduleKey] = [{ tag: 'BUTTON', text: 'X', width: 100, height: 26 }];
+  });
+  test.afterAll(() => {
+    if (originalEntries) TOUCH_TARGET_ALLOWLIST[moduleKey] = originalEntries;
+    else delete TOUCH_TARGET_ALLOWLIST[moduleKey];
+  });
+
+  test('⊤⊤ — ancho dentro de tolerancia (borde N) ∧ alto exacto → Allowlisted', () => {
+    const v: TouchViolation = { tag: 'BUTTON', text: 'X', width: 90, height: 26 }; // Δwidth=10=N
+    expect(isAllowlisted(moduleKey, v)).toBe(true);
+  });
+
+  test('⊤⊥ — ancho dentro de tolerancia ∧ alto distinto → NO Allowlisted', () => {
+    const v: TouchViolation = { tag: 'BUTTON', text: 'X', width: 95, height: 27 };
+    expect(isAllowlisted(moduleKey, v)).toBe(false);
+  });
+
+  test('⊥⊤ — ancho fuera de tolerancia (N+1) ∧ alto exacto → NO Allowlisted', () => {
+    const v: TouchViolation = { tag: 'BUTTON', text: 'X', width: 89, height: 26 }; // Δwidth=11=N+1
+    expect(isAllowlisted(moduleKey, v)).toBe(false);
+  });
+
+  test('⊥⊥ — ancho fuera de tolerancia ∧ alto distinto → NO Allowlisted', () => {
+    const v: TouchViolation = { tag: 'BUTTON', text: 'X', width: 50, height: 10 };
+    expect(isAllowlisted(moduleKey, v)).toBe(false);
+  });
+});
 
 async function waitForNextPaint(page: Page): Promise<void> {
   await page.evaluate(
