@@ -46,6 +46,7 @@
         "@fastify/multipart": "^10.0.0",
         "@fastify/rate-limit": "^11.0.0",
         "@fastify/static": "^9.1.3",
+        "@mantenimiento/contracts": "workspace:*",
         "@node-rs/argon2": "^2.0.2",
         "dotenv": "^16.3.0",
         "fastify": "^5.8.5",
@@ -83,6 +84,7 @@
         "tailwind-merge": "^1.14.0",
       },
       "devDependencies": {
+        "@mantenimiento/contracts": "workspace:*",
         "@testing-library/dom": "^10.4.1",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
@@ -102,6 +104,13 @@
         "vite": "^6.0.0",
         "vite-plugin-pwa": "^1.3.0",
         "vitest": "^3.0.0",
+      },
+    },
+    "packages/contracts": {
+      "name": "@mantenimiento/contracts",
+      "version": "1.0.0",
+      "dependencies": {
+        "zod": "^3.22.0",
       },
     },
   },
@@ -555,6 +564,8 @@
     "@lukeed/ms": ["@lukeed/ms@2.0.2", "", {}, "sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA=="],
 
     "@mantenimiento/api": ["@mantenimiento/api@workspace:apps/api"],
+
+    "@mantenimiento/contracts": ["@mantenimiento/contracts@workspace:packages/contracts"],
 
     "@mantenimiento/web": ["@mantenimiento/web@workspace:apps/web"],
 

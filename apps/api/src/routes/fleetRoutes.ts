@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { routeUpdateSchema } from '@mantenimiento/contracts';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import RouteService from '../services/routeService';
@@ -636,10 +637,9 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             .code(403)
             .send({ success: false, code: 'FORBIDDEN', message: 'Route outside scoped owners' });
         }
-        const schema = z.object({
-          data: z.record(z.any()),
-          reason: z.string().min(5),
-        });
+        // FC 076 F4 — schema movido a packages/contracts (SSOT compartido
+        // con apps/web); importado 1:1, cero cambio semántico (Cond.1 Bravo).
+        const schema = routeUpdateSchema;
         const { data, reason } = schema.parse(request.body);
         const user = request.user as { id: number };
 

@@ -4,6 +4,7 @@ import '@fastify/cookie';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import { z } from 'zod';
+import { userUpdateSchema, registerSchema } from '@mantenimiento/contracts';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
 import { recordAuditLog } from '../services/auditService';
@@ -380,43 +381,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   });
 
   fastify.post('/register', async (request, reply) => {
-    const schema = z.object({
-      username: z.string().min(3),
-      email: z.string().email(),
-      password: z
-        .string()
-        .min(10)
-        .regex(/[A-Z]/, 'R3_UPPER')
-        .regex(/[a-z]/, 'R3_LOWER')
-        .regex(/\d/, 'R3_DIGIT')
-        .regex(/[^A-Za-z0-9]/, 'R3_SPECIAL'),
-      roleId: z
-        .number()
-        .int()
-        .refine((id) => [1, 3, 4].includes(id), {
-          message: 'roleId must be 1 (Flotilla), 3 (Centro) or 4 (Privado)',
-        }),
-      fullName: z.string().optional(),
-      departmentId: z.number().int().optional(),
-      employeeNumber: z.string().optional(),
-      profile: z
-        .object({
-          rfc: z.string().min(1).max(20).optional(),
-          razon_social: z.string().optional(),
-          telefono: z.string().optional(),
-          especialidades: z.string().optional(),
-        })
-        .optional(),
-      address: z
-        .object({
-          neighborhoodId: z.number().int().positive(),
-          calle: z.string().min(1).max(200),
-          numeroExt: z.string().min(1).max(20),
-          numeroInt: z.string().optional(),
-        })
-        .optional(),
-      areas: z.array(z.string().min(1).max(100)).optional(),
-    });
+    // FC 076 F4 — schema movido a packages/contracts (SSOT compartido con
+    // apps/web); importado 1:1, cero cambio semántico (Cond.1 Bravo).
+    const schema = registerSchema;
     const body = schema.safeParse(request.body);
     if (!body.success) {
       return reply.code(400).send({ error: 'R1' });
@@ -560,20 +527,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   });
 
   fastify.patch('/users/:id', async (request, reply) => {
-    const schema = z.object({
-      data: z.object({
-        fullName: z.string().optional(),
-        department: z.string().optional(),
-        email: z.string().email().optional(),
-        password: z.string().min(8).optional(),
-        roleId: z.number().int().optional(),
-        profilePictureUrl: z.string().optional(),
-        employeeNumber: z.string().optional(),
-        departmentId: z.number().int().optional(),
-        is_active: z.boolean().optional(),
-      }),
-      reason: z.string().min(5),
-    });
+    // FC 076 F4 — schema movido a packages/contracts (SSOT compartido con
+    // apps/web); importado 1:1, cero cambio semántico (Cond.1 Bravo).
+    const schema = userUpdateSchema;
     const { id } = request.params as { id: string };
     const body = schema.safeParse(request.body);
     if (!body.success) {
