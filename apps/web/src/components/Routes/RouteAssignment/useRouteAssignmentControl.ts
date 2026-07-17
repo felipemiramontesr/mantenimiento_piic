@@ -572,6 +572,10 @@ export const useRouteAssignmentControl = (
         fuelLitersLoaded: roundToTwo(formData.fuelLitersLoaded),
         fuelAmount: roundToTwo(formData.fuelAmount),
       },
+      // FC 076 F3 (R5) — el schema del PUT exige reason ≥5 (auditoría
+      // forense); este call-site lo omitía → 400 siempre (su hermano de
+      // triggerAuditUpdate sí lo manda, capturado del modal).
+      reason: 'Corrección de destino de misión activa',
     });
     await refreshUnits();
   };

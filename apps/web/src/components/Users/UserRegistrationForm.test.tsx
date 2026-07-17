@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { screen, fireEvent, waitFor, cleanup, within, act, render } from '../../test/testUtils';
 import api from '../../api/client';
 import { compressImage } from '../../utils/imageUtils';
-import UserRegistrationForm from './UserRegistrationForm';
+import UserRegistrationForm, { buildTempPassword } from './UserRegistrationForm';
 
 // 🔱 Mock API Client
 vi.mock('../../api/client', () => ({
@@ -35,6 +35,7 @@ interface MockUserState {
   editingUser: Record<string, unknown> | null;
   setEditingUser: Mock;
   departments: string[];
+  departmentsCatalog: { id: number; label: string }[];
   roles: { id: number; label: string }[];
 }
 
@@ -50,6 +51,10 @@ const getMockState = (): MockUserState => ({
   editingUser: null,
   setEditingUser: vi.fn(),
   departments: ['IT', 'Sistemas'],
+  departmentsCatalog: [
+    { id: 41, label: 'IT' },
+    { id: 42, label: 'Sistemas' },
+  ],
   // IDs 6 and 7 = internal staff (not 0-5 Archon Master bands) — avoids triggering
   // owner/sub-user conditional fields in tests that don't specifically test them.
   roles: [
@@ -181,6 +186,51 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       image: 'B64DATA',
       mime: 'image/jpeg',
     });
+  });
+
+  it('FC 076 R4a/R4b — register envía departmentId numérico y JAMÁS department/profile_picture_url', async () => {
+    render(<UserRegistrationForm />);
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
+      target: { value: 'Test User' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
+      target: { value: 'test@t.com' },
+    });
+
+    // Departamento vía ArchonSelect (rol default 7 = staff interno lo muestra)
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    fireEvent.click(await screen.findByText('IT'));
+
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/auth/register', expect.any(Object));
+    });
+    const registerCall = vi
+      .mocked(api.post)
+      .mock.calls.find(([url]) => url === '/auth/register') as [string, Record<string, unknown>];
+    const body = registerCall[1];
+    // R4a: el schema exige departmentId numérico; 'IT' → id 41 del catálogo
+    expect(body.departmentId).toBe(41);
+    expect(body.department).toBeUndefined();
+    // R4b: profile_picture_url no existe en el schema — la foto va por upload
+    expect(body.profile_picture_url).toBeUndefined();
+  });
+
+  it('FC 076 S1 — buildTempPassword garantiza las 4 clases R3_* en toda corrida', () => {
+    // 200 corridas: la versión previa fallaba ~15-20% por clase faltante
+    for (let i = 0; i < 200; i += 1) {
+      const pwd = buildTempPassword(12);
+      expect(pwd).toHaveLength(12);
+      expect(pwd).toMatch(/[A-Z]/);
+      expect(pwd).toMatch(/[a-z]/);
+      expect(pwd).toMatch(/\d/);
+      expect(pwd).toMatch(/[^A-Za-z0-9]/);
+    }
   });
 
   it('handles edit mode and successful audit update with file', async () => {

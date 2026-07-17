@@ -39,6 +39,33 @@ const uploadProfilePhoto = async (userId: string | number, file: File): Promise<
 };
 
 /**
+ * FC 076 F3 (S1) — register/sub-users exigen regex R3_UPPER/LOWER/DIGIT/
+ * SPECIAL; la versión previa muestreaba un charset mixto SIN garantizar una
+ * char por clase → falla intermitente (~15-20%). Ahora cada clase aporta al
+ * menos un carácter y el resto se rellena del charset completo; el orden se
+ * baraja para no fijar posiciones predecibles.
+ */
+export const buildTempPassword = (length = 12): string => {
+  const classes = [
+    'abcdefghijklmnopqrstuvwxyz',
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    '0123456789',
+    '!@#$%^&*',
+  ];
+  const all = classes.join('');
+  const pick = (set: string): string => set.charAt(Math.floor(Math.random() * set.length));
+  const chars = classes.map(pick);
+  while (chars.length < Math.max(length, classes.length)) {
+    chars.push(pick(all));
+  }
+  for (let i = chars.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+};
+
+/**
  * 🔱 Archon Component: UserRegistrationForm
  * Implementation: Sovereign Identity Enrollment (Axios-based)
  * v.78.100.230 - Role-First Conditional Fields
@@ -209,6 +236,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     updateUser,
     deleteUser,
     departments,
+    departmentsCatalog,
     roles,
   } = useUsers();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -323,14 +351,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     loadAreas();
   }, [roleIdNum, formData.parentOwnerId]);
 
-  const generateTempPassword = (length = 12): string => {
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    let retVal = '';
-    for (let i = 0; i < length; i += 1) {
-      retVal += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    return retVal;
-  };
+  const generateTempPassword = (length = 12): string => buildTempPassword(length);
 
   const handleUpdate = async (reason: string): Promise<void> => {
     if (!editingUser) return;
@@ -394,15 +415,19 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       await handleCreateSubUser(tempPass);
       return;
     }
+    // FC 076 F3 (R4a/R4b) — el schema de /auth/register espera departmentId
+    // numérico (no department string) y NO conoce profile_picture_url: ambos
+    // se perdían en SILENCIO por Zod-strip. departmentId se resuelve del
+    // catálogo con ids; la foto viaja exclusivamente por upload-profile.
+    const departmentId = departmentsCatalog.find((d) => d.label === formData.department)?.id;
     const response = await api.post('/auth/register', {
       username: formData.username.toLowerCase(),
       fullName: formData.fullName,
       email: formData.email.toLowerCase(),
       roleId: roleIdNum,
-      department: formData.department,
+      ...(departmentId !== undefined ? { departmentId: Number(departmentId) } : {}),
       employeeNumber: formData.employeeNumber,
       password: formData.password || tempPass,
-      profile_picture_url: formData.imageUrl,
       ...buildOwnerProfilePayload(
         roleIdNum,
         formData.rfc,

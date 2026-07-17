@@ -54,6 +54,7 @@ const STABLE_USER_CONTEXT = {
   editingUser: null,
   setEditingUser: vi.fn(),
   departments: [],
+  departmentsCatalog: [],
   roles: [],
 };
 
@@ -101,6 +102,42 @@ describe('useRouteAssignmentControl (MSW Certified)', () => {
     });
 
     expect(STABLE_FLEET_CONTEXT.startRoute).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('FC 076 R5 — corrección de misión activa envía {data, reason} (reason ≥5)', async () => {
+    // Edit de ruta ACTIVA (endReading=0) → handleSubmit cae en
+    // handleCorrectActiveMission → PUT /routes/:uuid. El schema del backend
+    // exige reason min(5); este call-site lo omitía → 400 siempre.
+    let capturedBody: Record<string, unknown> | null = null;
+    server.use(
+      http.put('*/routes/route-123', async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ success: true });
+      })
+    );
+
+    const mockRoute = {
+      uuid: 'route-123',
+      unit_id: 'ASM-001',
+      operator_id: 1,
+      destination: 'Mina',
+      fuelLevel: 85,
+    } as unknown as RouteLog;
+
+    const onClose = vi.fn();
+    const { result } = renderHook(() => useRouteAssignmentControl(onClose, mockRoute));
+    await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+    });
+
+    await waitFor(() => expect(capturedBody).not.toBeNull());
+    const body = capturedBody as unknown as { data: Record<string, unknown>; reason: string };
+    expect(body.data).toBeDefined();
+    expect(typeof body.reason).toBe('string');
+    expect(body.reason.length).toBeGreaterThanOrEqual(5);
     expect(onClose).toHaveBeenCalled();
   });
 });

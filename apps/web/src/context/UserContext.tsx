@@ -44,6 +44,9 @@ interface UserContextType {
   editingUser: UserIndustrial | null;
   setEditingUser: (user: UserIndustrial | null) => void;
   departments: string[];
+  /** FC 076 F3 (R4a) — catálogo con ids: /auth/register exige departmentId
+   * numérico; enviar el label string se perdía en silencio (Zod-strip). */
+  departmentsCatalog: CatalogOption[];
   roles: CatalogOption[];
 }
 
@@ -191,6 +194,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         editingUser,
         setEditingUser,
         departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
+        departmentsCatalog: departmentsData,
         roles,
       }}
     >
