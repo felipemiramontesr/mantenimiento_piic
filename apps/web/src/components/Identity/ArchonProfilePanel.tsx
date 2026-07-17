@@ -71,23 +71,27 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
     try {
       if (!currentUser) return;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload: any = {
+      // FC 076 F2 — PATCH /auth/users/:id exige envoltorio { data, reason }
+      // (auth.ts Zod schema); el payload plano previo producía 400 U1 en el
+      // 100% de los envíos. `reason` fijo de autoservicio (≥5 chars, es-MX)
+      // — el endpoint lo persiste en audit_log.
+      // La foto NO viaja en el PATCH: formData.imageUrl contiene la URL
+      // resuelta (…/profile-image), no el data-URI de DB — persistirla
+      // sobreescribiría la imagen real. Su único canal es upload-profile.
+      const data: Record<string, string> = {
         fullName: formData.fullName,
         email: formData.email.toLowerCase(),
         employeeNumber: formData.employeeNumber,
       };
 
-      // 🛡️ Data Integrity: Only send profile_picture_url if it's a persisted string (not a local blob)
-      if (!selectedFile && formData.imageUrl && !formData.imageUrl.startsWith('blob:')) {
-        payload.profile_picture_url = formData.imageUrl;
-      }
-
       if (formData.password) {
-        payload.password = formData.password;
+        data.password = formData.password;
       }
 
-      const response = await api.patch(`/auth/users/${currentUser.id}`, payload);
+      const response = await api.patch(`/auth/users/${currentUser.id}`, {
+        data,
+        reason: 'Actualización de perfil propio (autoservicio)',
+      });
 
       // 🏆 Stage 1: Basic Data Synchronization
       if (response.data.success || response.status === 200) {

@@ -10,20 +10,26 @@ interface ProfileEditSlideOverProps {
 
 const ProfileEditSlideOver: React.FC<ProfileEditSlideOverProps> = ({ isOpen, onClose }) => {
   const { currentUser, updateCurrentUser } = useAuth();
-  const [username, setUsername] = useState(currentUser?.username ?? '');
   const [email, setEmail] = useState(currentUser?.email ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // FC 076 F2 (R6) — el endpoint exige envoltorio {data, reason}, resuelve
+  // por id numérico (no uuid), y su schema NO acepta username (inalterable,
+  // igual que en ArchonProfilePanel): el payload previo fallaba por las
+  // tres vías a la vez.
   const handleSave = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
     setIsSaving(true);
     try {
-      await api.patch(`/auth/users/${currentUser?.uuid}`, { username, email });
-      updateCurrentUser({ username, email });
+      await api.patch(`/auth/users/${currentUser?.id}`, {
+        data: { email: email.toLowerCase() },
+        reason: 'Actualización de perfil propio (Arcsial)',
+      });
+      updateCurrentUser({ email });
       setSuccess(true);
     } catch {
       setError('No se pudo guardar. Intenta de nuevo.');
@@ -72,18 +78,18 @@ const ProfileEditSlideOver: React.FC<ProfileEditSlideOverProps> = ({ isOpen, onC
             handleSave(e).catch(() => undefined);
           }}
         >
-          {/* Username */}
+          {/* Username — inalterable: el schema del backend no lo acepta (FC 076 R6) */}
           <div className="flex flex-col gap-1.5">
             <label className="text-archon-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
               <User className="w-3 h-3" />
-              Nombre de usuario
+              Nombre de usuario (Inalterable)
             </label>
             <input
               data-testid="profile-edit-username"
               type="text"
-              value={username}
-              onChange={(e): void => setUsername(e.target.value)}
-              className="px-3 py-2 text-archon-md text-[#0f2a44] bg-white border border-[#0f2a44]/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0f2a44]/30"
+              disabled
+              value={currentUser?.username ?? ''}
+              className="px-3 py-2 text-archon-md text-[#0f2a44] bg-white border border-[#0f2a44]/10 rounded-lg opacity-50 cursor-not-allowed"
             />
           </div>
 

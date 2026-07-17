@@ -25,6 +25,18 @@ import ArchonImageUploader from '../ArchonImageUploader';
 import api from '../../api/client';
 import AuditJustificationModal from '../Common/AuditJustificationModal';
 import ArchonAddressField, { AddressValue, EMPTY_ADDRESS } from '../Common/ArchonAddressField';
+import { compressImage } from '../../utils/imageUtils';
+
+/**
+ * FC 076 F2 (R2/R3) — POST /users/:id/upload-profile exige JSON
+ * {image: base64, mime} (users.ts); el multipart/form-data previo producía
+ * 400 "No image data received" en editar Y crear. Mismo patrón base64 que
+ * ArchonProfilePanel (400px máx, JPEG 80%).
+ */
+const uploadProfilePhoto = async (userId: string | number, file: File): Promise<void> => {
+  const { base64, mime } = await compressImage(file, 400, 0.8);
+  await api.post(`/users/${String(userId)}/upload-profile`, { image: base64, mime });
+};
 
 /**
  * 🔱 Archon Component: UserRegistrationForm
@@ -338,11 +350,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
 
     if (success) {
       if (selectedFile && editingUser) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', selectedFile);
-        await api.post(`/users/${editingUser.id}/upload-profile`, formDataUpload, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await uploadProfilePhoto(editingUser.id, selectedFile);
       }
       setSuccessData({ isEdit: true });
     } else {
@@ -411,11 +419,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     if (response.data.success) {
       const { userId } = response.data;
       if (selectedFile && userId) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', selectedFile);
-        await api.post(`/users/${userId}/upload-profile`, formDataUpload, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await uploadProfilePhoto(userId, selectedFile);
       }
       setSuccessData({ tempPass });
       await fetchUsers();

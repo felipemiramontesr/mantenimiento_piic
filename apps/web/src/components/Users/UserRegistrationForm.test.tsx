@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { screen, fireEvent, waitFor, cleanup, within, act, render } from '../../test/testUtils';
 import api from '../../api/client';
+import { compressImage } from '../../utils/imageUtils';
 import UserRegistrationForm from './UserRegistrationForm';
 
 // 🔱 Mock API Client
@@ -12,6 +13,13 @@ vi.mock('../../api/client', () => ({
     put: vi.fn().mockResolvedValue({ data: { success: true } }),
     patch: vi.fn().mockResolvedValue({ data: { success: true } }),
   },
+}));
+
+// FC 076 F2 — compressImage usa canvas (inexistente en jsdom); el contrato
+// upload es JSON {image, mime}, verificado por los asserts de payload abajo.
+// mockReset:true (vite.config) borra implementaciones → se re-arma en beforeEach.
+vi.mock('../../utils/imageUtils', () => ({
+  compressImage: vi.fn(),
 }));
 
 // 🔱 Context Mocking Factory
@@ -70,6 +78,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     vi.clearAllMocks();
     currentMockState = getMockState();
     vi.mocked(api.post).mockResolvedValue({ data: { success: true, userId: '123' } });
+    vi.mocked(compressImage).mockResolvedValue({ base64: 'B64DATA', mime: 'image/jpeg' });
   });
 
   it('renders correctly', () => {
@@ -165,6 +174,13 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(
       await screen.findByText(/Incorporación Exitosa/i, {}, { timeout: 8000 })
     ).toBeInTheDocument();
+
+    // FC 076 R3 — el upload al CREAR viaja como JSON {image, mime}, jamás
+    // multipart (users.ts exige ese contrato; FormData producía 400).
+    expect(api.post).toHaveBeenCalledWith('/users/123/upload-profile', {
+      image: 'B64DATA',
+      mime: 'image/jpeg',
+    });
   });
 
   it('handles edit mode and successful audit update with file', async () => {
@@ -202,11 +218,12 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
 
     expect(currentMockState.updateUser).toHaveBeenCalled();
     expect(await screen.findByText(/Actualización Exitosa/i)).toBeInTheDocument();
-    expect(api.post).toHaveBeenCalledWith(
-      expect.stringContaining('/upload-profile'),
-      expect.any(FormData),
-      expect.any(Object)
-    );
+    // FC 076 R2 — el upload al EDITAR viaja como JSON {image, mime}, jamás
+    // multipart (el assert previo de FormData codificaba el bug).
+    expect(api.post).toHaveBeenCalledWith('/users/1/upload-profile', {
+      image: 'B64DATA',
+      mime: 'image/jpeg',
+    });
   });
 
   it('handles update failure (logic branch)', async () => {
