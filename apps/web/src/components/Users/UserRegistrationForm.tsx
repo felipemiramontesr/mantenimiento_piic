@@ -44,7 +44,13 @@ const uploadProfilePhoto = async (userId: string | number, file: File): Promise<
  * char por clase → falla intermitente (~15-20%). Ahora cada clase aporta al
  * menos un carácter y el resto se rellena del charset completo; el orden se
  * baraja para no fijar posiciones predecibles.
+ * A05/S2245 (SonarCloud Quality Gate, hallazgo post-F3) — `Math.random()` no
+ * es apto para generar credenciales; índice aleatorio vía Web Crypto API
+ * (`crypto.getRandomValues`), disponible en todo navegador moderno y en
+ * jsdom/Vitest.
  */
+const secureIndex = (max: number): number => crypto.getRandomValues(new Uint32Array(1))[0] % max;
+
 export const buildTempPassword = (length = 12): string => {
   const classes = [
     'abcdefghijklmnopqrstuvwxyz',
@@ -53,13 +59,13 @@ export const buildTempPassword = (length = 12): string => {
     '!@#$%^&*',
   ];
   const all = classes.join('');
-  const pick = (set: string): string => set.charAt(Math.floor(Math.random() * set.length));
+  const pick = (set: string): string => set.charAt(secureIndex(set.length));
   const chars = classes.map(pick);
   while (chars.length < Math.max(length, classes.length)) {
     chars.push(pick(all));
   }
   for (let i = chars.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureIndex(i + 1);
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   return chars.join('');
