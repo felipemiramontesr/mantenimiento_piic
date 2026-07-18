@@ -65,4 +65,18 @@ describe('SovereignFooter — versión dinámica', () => {
     const footer = container.querySelector('footer') as HTMLElement;
     expect(footer.className).toMatch(/safe-area-inset-bottom/);
   });
+
+  // ── FC 078 F3 (P2-4) — el copyright se truncaba a 360px ("…VERSIÓ") ──
+  it('AT-FC078-F3-SF-1: el copyright envuelve <md y el padding del footer es responsivo', () => {
+    const { container } = render(<SovereignFooter />);
+    const footer = container.querySelector('footer') as HTMLElement;
+    expect(footer.className).toContain('px-4');
+    expect(footer.className).toContain('md:px-[60px]');
+    const copyright = screen.getByText(
+      `© Copyright ArchonCore by Dreamtek Versión V.${SYSTEM_VERSION}`
+    );
+    expect(copyright.className).toContain('whitespace-normal');
+    expect(copyright.className).toContain('md:whitespace-nowrap');
+    expect(copyright.className).toContain('min-w-0');
+  });
 });

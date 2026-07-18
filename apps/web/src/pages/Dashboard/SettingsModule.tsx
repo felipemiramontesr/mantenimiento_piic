@@ -16,12 +16,14 @@ const SettingsModule: React.FC = (): React.ReactElement => {
       null,
       {
         variant: 'yellow',
-        headerTitle: 'Configuración de Identidad',
+        // FC 078 F3 (P2-3): el card y su botón repetían el título de la
+        // página ("Configuración de Identidad" ×2) — copy diferenciado.
+        headerTitle: 'Perfil y Credenciales',
         HeaderIcon: Settings,
         PayloadIcon: User,
         actionTitle: 'Identidad',
         description: 'Perfil, credenciales y foto',
-        buttonText: 'Configuración de Identidad',
+        buttonText: 'Gestionar Perfil',
         isActive: false,
         onClick: (): void => {
           /* noop */

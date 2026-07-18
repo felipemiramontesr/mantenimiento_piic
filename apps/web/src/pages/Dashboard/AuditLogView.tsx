@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import api from '../../api/client';
 import usePermissions from '../../hooks/usePermissions';
+import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 
 interface AuditRow {
   uuid: string;
@@ -272,115 +273,111 @@ const AuditLogView: React.FC = (): React.ReactElement => {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-[4px] border border-slate-200">
-            <table className="w-full text-xs text-pinnacle-navy" data-testid="audit-log-table">
-              <thead className="bg-pinnacle-navy/5 border-b border-slate-200">
-                <tr>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-widest text-[10px] text-pinnacle-navy/50 w-6" />
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-widest text-[10px] text-pinnacle-navy/50">
-                    Fecha
-                  </th>
-                  {omnipotent && (
-                    <th
-                      className="px-3 py-2 text-left font-black uppercase tracking-widest text-[10px] text-pinnacle-navy/50"
-                      data-testid="col-universo"
+          {/* FC 078 F3 — tabla migrada a la primitiva ArchonDataTable (SSOT
+              responsive). Misma data, mismo orden; la fila expandible viaja
+              como Fragment (tr principal + tr de diff) desde renderRow. */}
+          <div className="rounded-[4px] border border-slate-200 overflow-hidden">
+            <ArchonDataTable<AuditRow>
+              data={rows}
+              headers={[
+                { key: 'expand', label: '', align: 'left', width: '32px' },
+                { key: 'fecha', label: 'Fecha', align: 'left' },
+                ...(omnipotent
+                  ? [
+                      {
+                        key: 'universo',
+                        label: <span data-testid="col-universo">Universo</span>,
+                        align: 'left',
+                      } as ArchonTableHeader,
+                    ]
+                  : []),
+                { key: 'actor', label: 'Actor', align: 'left' },
+                { key: 'entidad', label: 'Entidad', align: 'left' },
+                { key: 'accion', label: 'Acción', align: 'left' },
+                { key: 'razon', label: 'Razón', align: 'left' },
+              ]}
+              testId="audit-log-table"
+              variant="embedded"
+              emptyMessage="Sin registros de auditoría"
+              renderRow={(row): React.ReactNode => {
+                const isExpanded = expandedRow === row.uuid;
+                const date = new Date(row.created_at).toLocaleString('es-MX', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                });
+                return (
+                  <React.Fragment key={row.uuid}>
+                    <tr
+                      data-testid={`audit-row-${row.uuid}`}
+                      onClick={(): void => setExpandedRow(isExpanded ? null : row.uuid)}
+                      className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors text-xs text-pinnacle-navy"
                     >
-                      Universo
-                    </th>
-                  )}
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-widest text-[10px] text-pinnacle-navy/50">
-                    Actor
-                  </th>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-widest text-[10px] text-pinnacle-navy/50">
-                    Entidad
-                  </th>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-widest text-[10px] text-pinnacle-navy/50">
-                    Acción
-                  </th>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-widest text-[10px] text-pinnacle-navy/50">
-                    Razón
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const isExpanded = expandedRow === row.uuid;
-                  const date = new Date(row.created_at).toLocaleString('es-MX', {
-                    dateStyle: 'short',
-                    timeStyle: 'short',
-                  });
-                  return (
-                    <React.Fragment key={row.uuid}>
-                      <tr
-                        data-testid={`audit-row-${row.uuid}`}
-                        onClick={(): void => setExpandedRow(isExpanded ? null : row.uuid)}
-                        className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                      <td className="px-3 py-2 text-pinnacle-navy/30">
+                        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-pinnacle-navy/60">{date}</td>
+                      {omnipotent && (
+                        <td className="px-3 py-2 text-pinnacle-navy/70">
+                          {row.universe_label ?? '—'}
+                        </td>
+                      )}
+                      <td className="px-3 py-2">
+                        <span className="font-bold">{row.actor_username ?? '—'}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="text-pinnacle-navy/50">{row.entity_type}/</span>
+                        <span className="font-bold">{row.entity_id}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-[3px] font-black text-[10px] uppercase tracking-widest ${
+                            ACTION_BADGE[row.action] ?? ''
+                          }`}
+                        >
+                          {ACTION_LABEL[row.action] ?? row.action}
+                        </span>
+                      </td>
+                      {/* P2-2 — celda truncable expone title (tooltip nativo) */}
+                      <td
+                        className="px-3 py-2 text-pinnacle-navy/60 max-w-[200px] truncate"
+                        title={row.reason}
                       >
-                        <td className="px-3 py-2 text-pinnacle-navy/30">
-                          {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-pinnacle-navy/60">
-                          {date}
-                        </td>
-                        {omnipotent && (
-                          <td className="px-3 py-2 text-pinnacle-navy/70">
-                            {row.universe_label ?? '—'}
-                          </td>
-                        )}
-                        <td className="px-3 py-2">
-                          <span className="font-bold">{row.actor_username ?? '—'}</span>
-                        </td>
-                        <td className="px-3 py-2">
-                          <span className="text-pinnacle-navy/50">{row.entity_type}/</span>
-                          <span className="font-bold">{row.entity_id}</span>
-                        </td>
-                        <td className="px-3 py-2">
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded-[3px] font-black text-[10px] uppercase tracking-widest ${
-                              ACTION_BADGE[row.action] ?? ''
-                            }`}
-                          >
-                            {ACTION_LABEL[row.action] ?? row.action}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-pinnacle-navy/60 max-w-[200px] truncate">
-                          {row.reason}
+                        {row.reason}
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr data-testid={`audit-diff-${row.uuid}`}>
+                        <td
+                          colSpan={omnipotent ? 7 : 6}
+                          className="px-4 py-3 bg-slate-50 border-b border-slate-200"
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-pinnacle-navy/40">
+                              Diff de Cambios
+                            </span>
+                            <button
+                              onClick={(e): void => {
+                                e.stopPropagation();
+                                setOnlyDiffs((v) => !v);
+                              }}
+                              className="text-[10px] font-black uppercase tracking-widest text-pinnacle-yellow underline"
+                              data-testid="toggle-only-diffs"
+                            >
+                              {onlyDiffs ? 'Mostrar todo' : 'Solo diferencias'}
+                            </button>
+                          </div>
+                          <SnapshotDiff
+                            before={row.snapshot_before}
+                            after={row.snapshot_after}
+                            onlyDiffs={onlyDiffs}
+                          />
                         </td>
                       </tr>
-                      {isExpanded && (
-                        <tr data-testid={`audit-diff-${row.uuid}`}>
-                          <td
-                            colSpan={omnipotent ? 7 : 6}
-                            className="px-4 py-3 bg-slate-50 border-b border-slate-200"
-                          >
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-pinnacle-navy/40">
-                                Diff de Cambios
-                              </span>
-                              <button
-                                onClick={(e): void => {
-                                  e.stopPropagation();
-                                  setOnlyDiffs((v) => !v);
-                                }}
-                                className="text-[10px] font-black uppercase tracking-widest text-pinnacle-yellow underline"
-                                data-testid="toggle-only-diffs"
-                              >
-                                {onlyDiffs ? 'Mostrar todo' : 'Solo diferencias'}
-                              </button>
-                            </div>
-                            <SnapshotDiff
-                              before={row.snapshot_before}
-                              after={row.snapshot_after}
-                              onlyDiffs={onlyDiffs}
-                            />
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                    )}
+                  </React.Fragment>
+                );
+              }}
+            />
           </div>
 
           {/* ── PAGINACIÓN ── */}

@@ -16,9 +16,11 @@ const SovereignFooter: React.FC = () => {
   const { isOmnipotent } = usePermissions();
 
   return (
-    <footer className="h-[10%] min-h-[60px] flex items-center justify-between w-full border-t border-pinnacle-navy/5 px-[60px] bg-white shrink-0 pb-[env(safe-area-inset-bottom)]">
-      {/* ⚖️ Legal Metadata (Col Alfa) */}
-      <div className="flex-1 text-archon-base font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left whitespace-nowrap">
+    <footer className="h-[10%] min-h-[60px] flex items-center justify-between w-full border-t border-pinnacle-navy/5 px-4 md:px-[60px] bg-white shrink-0 pb-[env(safe-area-inset-bottom)]">
+      {/* ⚖️ Legal Metadata (Col Alfa) — FC 078 F3 (P2-4): a 360px el
+          nowrap + padding fijo de 60px truncaba el texto ("…VERSIÓ");
+          <md envuelve y el padding se reduce. */}
+      <div className="flex-1 min-w-0 text-archon-base font-bold uppercase tracking-widest text-pinnacle-navy opacity-40 text-left whitespace-normal md:whitespace-nowrap">
         © Copyright ArchonCore by Dreamtek Versión V.{SYSTEM_VERSION}
       </div>
 

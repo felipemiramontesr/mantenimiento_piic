@@ -107,4 +107,40 @@ describe('AuditLogView', () => {
     await waitFor(() => expect(screen.getByTestId('audit-log-table')).toBeTruthy());
     expect(screen.queryByTestId('col-universo')).toBeNull();
   });
+
+  it('F3-6b: columna Universo visible para Archon (omnipotente)', async () => {
+    usePermissionsMock.mockReturnValue({
+      hasPermission: (): boolean => true,
+      hasAnyPermission: (): boolean => true,
+      isOmnipotent: (): boolean => true,
+      isSuiteVIM: (): boolean => false,
+    });
+    vi.mocked(api.get).mockResolvedValue(MOCK_RESPONSE);
+    render(<AuditLogView />);
+    await waitFor(() => expect(screen.getByTestId('audit-log-table')).toBeTruthy());
+    expect(screen.getByTestId('col-universo')).toBeTruthy();
+    expect(screen.getByText('PIIC SA de CV')).toBeTruthy();
+  });
+
+  // ── FC 078 F3 — migración a la primitiva ArchonDataTable ──
+  describe('AT-FC078-F3-AL — contrato responsive de la primitiva', () => {
+    it('AT-FC078-F3-AL-1: la tabla vive en SovereignScrollArea con minWidth derivado', async () => {
+      vi.mocked(api.get).mockResolvedValue(MOCK_RESPONSE);
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-log-table')).toBeTruthy());
+      expect(screen.getByTestId('audit-log-table-scroll-viewport').className).toContain(
+        'overflow-x-auto'
+      );
+      // 6 columnas no-omnipotente → fallback 6×96 (una declara px pero no todas)
+      expect(screen.getByTestId('audit-log-table').style.minWidth).toBe(`${6 * 96}px`);
+    });
+
+    it('AT-FC078-F3-AL-2 (P2-2): la celda Razón truncable expone title', async () => {
+      vi.mocked(api.get).mockResolvedValue(MOCK_RESPONSE);
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-row-audit-uuid-001')).toBeTruthy());
+      const reasonCell = screen.getByText('Odómetro actualizado');
+      expect(reasonCell.getAttribute('title')).toBe('Odómetro actualizado');
+    });
+  });
 });

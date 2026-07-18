@@ -51,4 +51,13 @@ describe('SettingsModule', () => {
     renderModule();
     expect(screen.queryByTestId('owner-profile-panel-mock')).not.toBeInTheDocument();
   });
+
+  // ── FC 078 F3 (P2-3) — copy redundante: el card/botón repetía el título ──
+  it('AT-FC078-F3-ST-1: el botón de acción NO repite el título de la página', (): void => {
+    mockUseAuth.mockReturnValue({ currentUser: null, ownerType: null });
+    renderModule();
+    expect(screen.getByText('Gestionar Perfil')).toBeInTheDocument();
+    // "Configuración de Identidad" solo aparece como título de la página
+    expect(screen.getAllByText('Configuración de Identidad')).toHaveLength(1);
+  });
 });

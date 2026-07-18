@@ -247,9 +247,14 @@ const PeriodRangePicker: React.FC<PeriodRangePickerProps> = ({
 
   return (
     <div className="w-full">
-      {/* Trigger — col-beta del grid, mismo ancho y alineación que el card superior */}
-      <div className="grid grid-cols-2 gap-10">
-        <div />
+      {/* Trigger — col-beta del grid, mismo ancho y alineación que el card
+          superior. FC 078 F3 (P1-3): <md apila a 1 columna — el widget se
+          recortaba/solapaba a 360px al vivir en media columna. */}
+      <div
+        data-testid="period-picker-trigger-row"
+        className="grid grid-cols-1 md:grid-cols-2 md:gap-10"
+      >
+        <div className="hidden md:block" />
         <button
           onClick={handleToggle}
           style={{ borderTopColor: '#0f2a44' }}
@@ -273,8 +278,11 @@ const PeriodRangePicker: React.FC<PeriodRangePickerProps> = ({
       {/* Body colapsable */}
       {isOpen && (
         <>
-          {/* Paneles de calendario */}
-          <div className="grid grid-cols-2 gap-10 py-4">
+          {/* Paneles de calendario — FC 078 F3 (P1-3): apilados <md */}
+          <div
+            data-testid="period-picker-panels"
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-10 py-4"
+          >
             <div className="bg-white border border-slate-100 rounded-[4px] shadow-sm p-6">
               <CalendarPanel
                 title="Desde"
@@ -305,8 +313,8 @@ const PeriodRangePicker: React.FC<PeriodRangePickerProps> = ({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="grid grid-cols-2 gap-10 py-3">
+          {/* Footer — FC 078 F3 (P1-3): apilado <md */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-10 py-3">
             <div className="flex items-center">
               {error && <p className="text-archon-base font-bold text-sentinel-red">{error}</p>}
             </div>

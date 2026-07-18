@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import api from '../../api/client';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 interface Role {
   id: number;
@@ -9,6 +10,17 @@ interface Role {
 }
 
 const PROTECTED_ROLE_ID = 0;
+
+// FC 078 F3 — fila fantasma para el alta inline: la primitiva mapea `data`,
+// así que la fila de captura viaja como sentinela al final del arreglo.
+const ADDING_ROW_ID = -1;
+
+const HEADERS: ArchonTableHeader[] = [
+  { key: 'id', label: 'ID', align: 'left', width: '48px' },
+  { key: 'name', label: 'Nombre', align: 'left' },
+  { key: 'description', label: 'Descripción', align: 'left' },
+  { key: 'actions', label: 'ACCIONES', align: 'right' },
+];
 
 const RolesManager: React.FC = (): React.ReactElement => {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -124,151 +136,143 @@ const RolesManager: React.FC = (): React.ReactElement => {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[500px]" data-testid="roles-table">
-          <thead>
-            <tr className="border-b border-pinnacle-navy/10">
-              <th className="text-left py-2.5 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 w-8">
-                ID
-              </th>
-              <th className="text-left py-2.5 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50">
-                Nombre
-              </th>
-              <th className="text-left py-2.5 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50">
-                Descripción
-              </th>
-              <th className="text-left py-2.5 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 w-24">
-                ACCIONES
-              </th>
+      {/* FC 078 F3 — tabla migrada a la primitiva ArchonDataTable (SSOT
+          responsive: minWidth real + SovereignScrollArea); misma data y
+          mismo orden de columnas que la tabla artesanal que sustituye. */}
+      <ArchonDataTable<Role>
+        data={adding ? [...roles, { id: ADDING_ROW_ID, name: '', description: '' }] : roles}
+        headers={HEADERS}
+        minTableWidth={500}
+        testId="roles-table"
+        emptyMessage="SIN ROLES REGISTRADOS"
+        variant="embedded"
+        renderRow={(role): React.ReactNode =>
+          role.id === ADDING_ROW_ID ? (
+            <tr
+              key="adding-row"
+              className="border-b border-pinnacle-yellow/30 bg-pinnacle-yellow/5"
+            >
+              <td className="py-2.5 px-4 text-archon-sm font-mono text-pinnacle-navy/20">—</td>
+              <td className="py-2.5 px-4">
+                <input
+                  value={newName}
+                  onChange={(e): void => setNewName(e.target.value)}
+                  placeholder="Nombre del rol"
+                  className="w-full px-2 py-1 border border-pinnacle-yellow rounded-[4px] text-archon-md font-bold text-pinnacle-navy focus:outline-none"
+                  data-testid="new-name-input"
+                  autoFocus
+                />
+              </td>
+              <td className="py-2.5 px-4">
+                <input
+                  value={newDesc}
+                  onChange={(e): void => setNewDesc(e.target.value)}
+                  placeholder="Descripción (opcional)"
+                  className="w-full px-2 py-1 border border-pinnacle-navy/20 rounded-[4px] text-archon-md text-pinnacle-navy/70 focus:outline-none focus:border-pinnacle-yellow"
+                />
+              </td>
+              <td className="py-2.5 px-4">
+                <div className="flex items-center gap-1 justify-end">
+                  <button
+                    onClick={addRole}
+                    disabled={saving || !newName.trim()}
+                    className="p-1.5 rounded-[4px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors cursor-pointer disabled:opacity-40"
+                    data-testid="confirm-add-btn"
+                  >
+                    <Check size={13} />
+                  </button>
+                  <button
+                    onClick={(): void => {
+                      setAdding(false);
+                      setNewName('');
+                      setNewDesc('');
+                    }}
+                    className="p-1.5 rounded-[4px] bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {roles.map((role) => (
-              <tr
-                key={role.id}
-                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
-              >
-                <td className="py-2.5 px-4 text-archon-sm font-mono text-pinnacle-navy/30">
-                  {role.id}
-                </td>
-                <td className="py-2.5 px-4">
-                  {editingId === role.id ? (
-                    <input
-                      value={editName}
-                      onChange={(e): void => setEditName(e.target.value)}
-                      className="w-full px-2 py-1 border border-pinnacle-navy/20 rounded-[4px] text-archon-md font-bold text-pinnacle-navy focus:outline-none focus:border-pinnacle-yellow"
-                      data-testid="edit-name-input"
-                    />
-                  ) : (
-                    <span className="text-archon-md font-bold text-pinnacle-navy">{role.name}</span>
-                  )}
-                </td>
-                <td className="py-2.5 px-4">
-                  {editingId === role.id ? (
-                    <input
-                      value={editDesc}
-                      onChange={(e): void => setEditDesc(e.target.value)}
-                      className="w-full px-2 py-1 border border-pinnacle-navy/20 rounded-[4px] text-archon-md text-pinnacle-navy/70 focus:outline-none focus:border-pinnacle-yellow"
-                    />
-                  ) : (
-                    <span className="text-archon-md text-pinnacle-navy/50">{role.description}</span>
-                  )}
-                </td>
-                <td className="py-2.5 px-4">
-                  {role.id === PROTECTED_ROLE_ID && (
-                    <span className="text-archon-sm font-bold text-pinnacle-yellow uppercase tracking-widest">
-                      Archon
-                    </span>
-                  )}
-                  {role.id !== PROTECTED_ROLE_ID && editingId === role.id && (
-                    <div className="flex items-center gap-1 justify-end">
-                      <button
-                        onClick={(): Promise<void> => saveEdit(role.id)}
-                        disabled={saving}
-                        className="p-1.5 rounded-[4px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors cursor-pointer"
-                        data-testid="save-edit-btn"
-                      >
-                        <Check size={13} />
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="p-1.5 rounded-[4px] bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors cursor-pointer"
-                      >
-                        <X size={13} />
-                      </button>
-                    </div>
-                  )}
-                  {role.id !== PROTECTED_ROLE_ID && editingId !== role.id && (
-                    <div className="flex items-center gap-1 justify-end">
-                      <button
-                        onClick={(): void => startEdit(role)}
-                        className="p-1.5 rounded-[4px] bg-slate-100 text-pinnacle-navy/60 hover:bg-pinnacle-navy/10 transition-colors cursor-pointer"
-                        data-testid={`edit-role-${role.id}`}
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={(): Promise<void> => deleteRole(role.id)}
-                        disabled={deletingId === role.id}
-                        className="p-1.5 rounded-[4px] bg-red-50 text-red-500 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-40"
-                        data-testid={`delete-role-${role.id}`}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-
-            {adding && (
-              <tr className="border-b border-pinnacle-yellow/30 bg-pinnacle-yellow/5">
-                <td className="py-2.5 px-4 text-archon-sm font-mono text-pinnacle-navy/20">—</td>
-                <td className="py-2.5 px-4">
+          ) : (
+            <tr
+              key={role.id}
+              className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+            >
+              <td className="py-2.5 px-4 text-archon-sm font-mono text-pinnacle-navy/30">
+                {role.id}
+              </td>
+              <td className="py-2.5 px-4">
+                {editingId === role.id ? (
                   <input
-                    value={newName}
-                    onChange={(e): void => setNewName(e.target.value)}
-                    placeholder="Nombre del rol"
-                    className="w-full px-2 py-1 border border-pinnacle-yellow rounded-[4px] text-archon-md font-bold text-pinnacle-navy focus:outline-none"
-                    data-testid="new-name-input"
-                    autoFocus
+                    value={editName}
+                    onChange={(e): void => setEditName(e.target.value)}
+                    className="w-full px-2 py-1 border border-pinnacle-navy/20 rounded-[4px] text-archon-md font-bold text-pinnacle-navy focus:outline-none focus:border-pinnacle-yellow"
+                    data-testid="edit-name-input"
                   />
-                </td>
-                <td className="py-2.5 px-4">
+                ) : (
+                  <span className="text-archon-md font-bold text-pinnacle-navy">{role.name}</span>
+                )}
+              </td>
+              <td className="py-2.5 px-4">
+                {editingId === role.id ? (
                   <input
-                    value={newDesc}
-                    onChange={(e): void => setNewDesc(e.target.value)}
-                    placeholder="Descripción (opcional)"
+                    value={editDesc}
+                    onChange={(e): void => setEditDesc(e.target.value)}
                     className="w-full px-2 py-1 border border-pinnacle-navy/20 rounded-[4px] text-archon-md text-pinnacle-navy/70 focus:outline-none focus:border-pinnacle-yellow"
                   />
-                </td>
-                <td className="py-2.5 px-4">
+                ) : (
+                  <span className="text-archon-md text-pinnacle-navy/50">{role.description}</span>
+                )}
+              </td>
+              <td className="py-2.5 px-4">
+                {role.id === PROTECTED_ROLE_ID && (
+                  <span className="text-archon-sm font-bold text-pinnacle-yellow uppercase tracking-widest">
+                    Archon
+                  </span>
+                )}
+                {role.id !== PROTECTED_ROLE_ID && editingId === role.id && (
                   <div className="flex items-center gap-1 justify-end">
                     <button
-                      onClick={addRole}
-                      disabled={saving || !newName.trim()}
-                      className="p-1.5 rounded-[4px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors cursor-pointer disabled:opacity-40"
-                      data-testid="confirm-add-btn"
+                      onClick={(): Promise<void> => saveEdit(role.id)}
+                      disabled={saving}
+                      className="p-1.5 rounded-[4px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors cursor-pointer"
+                      data-testid="save-edit-btn"
                     >
                       <Check size={13} />
                     </button>
                     <button
-                      onClick={(): void => {
-                        setAdding(false);
-                        setNewName('');
-                        setNewDesc('');
-                      }}
+                      onClick={cancelEdit}
                       className="p-1.5 rounded-[4px] bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors cursor-pointer"
                     >
                       <X size={13} />
                     </button>
                   </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                )}
+                {role.id !== PROTECTED_ROLE_ID && editingId !== role.id && (
+                  <div className="flex items-center gap-1 justify-end">
+                    <button
+                      onClick={(): void => startEdit(role)}
+                      className="p-1.5 rounded-[4px] bg-slate-100 text-pinnacle-navy/60 hover:bg-pinnacle-navy/10 transition-colors cursor-pointer"
+                      data-testid={`edit-role-${role.id}`}
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={(): Promise<void> => deleteRole(role.id)}
+                      disabled={deletingId === role.id}
+                      className="p-1.5 rounded-[4px] bg-red-50 text-red-500 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-40"
+                      data-testid={`delete-role-${role.id}`}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
+              </td>
+            </tr>
+          )
+        }
+      />
 
       {!adding && (
         <button

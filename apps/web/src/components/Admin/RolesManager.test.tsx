@@ -102,4 +102,28 @@ describe('RolesManager', () => {
       expect(screen.getByText(/No se pudo cargar la lista de roles/i)).toBeInTheDocument()
     );
   });
+
+  // ── FC 078 F3 — migración a la primitiva ArchonDataTable ──
+  describe('AT-FC078-F3-RM — contrato responsive de la primitiva', () => {
+    it('AT-FC078-F3-RM-1: la tabla vive dentro de SovereignScrollArea con minWidth real', async () => {
+      render(<RolesManager />);
+      await waitFor(() => screen.getByTestId('roles-table'));
+      expect(screen.getByTestId('roles-table-scroll-viewport').className).toContain(
+        'overflow-x-auto'
+      );
+      expect(screen.getByTestId('roles-table').style.minWidth).toBe('500px');
+    });
+
+    it('AT-FC078-F3-RM-2: mismas columnas y mismo orden que la tabla artesanal', async () => {
+      render(<RolesManager />);
+      await waitFor(() => screen.getByTestId('roles-table'));
+      const ths = screen.getByTestId('roles-table').querySelectorAll('th');
+      expect(Array.from(ths).map((th) => th.textContent?.trim())).toEqual([
+        'ID',
+        'Nombre',
+        'Descripción',
+        'ACCIONES',
+      ]);
+    });
+  });
 });

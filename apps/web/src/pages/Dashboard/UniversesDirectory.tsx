@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { List } from 'lucide-react';
 import api from '../../api/client';
+import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDataTable';
 
 interface UniverseRow {
   owner_id: number;
@@ -15,6 +16,16 @@ interface UniverseRow {
   razon_social: string | null;
   telefono: string | null;
 }
+
+// FC 078 F3 — columnas de la tabla migrada a ArchonDataTable (misma data,
+// mismo orden que la tabla artesanal que sustituye).
+const HEADERS: ArchonTableHeader[] = [
+  { key: 'tipo', label: 'Tipo', align: 'left' },
+  { key: 'razon_social', label: 'Razón Social', align: 'left' },
+  { key: 'usuario_root', label: 'Usuario Root', align: 'left' },
+  { key: 'rfc', label: 'RFC', align: 'left' },
+  { key: 'estado', label: 'Estado', align: 'left' },
+];
 
 const SuiteBadge: React.FC<{ suite: 'ERP' | 'VIM' }> = ({ suite }) => (
   <span
@@ -98,57 +109,40 @@ const UniversesDirectory: React.FC = (): React.ReactElement => {
         </div>
       )}
 
+      {/* FC 078 F3 — tabla migrada a la primitiva ArchonDataTable (SSOT
+          responsive). Misma data, mismo orden de columnas. */}
       {!loading && !error && rows.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs" data-testid="universes-table">
-            <thead>
-              <tr className="border-b border-slate-200">
-                <th className="pb-2 text-left font-black uppercase tracking-widest text-pinnacle-navy/40 pr-4">
-                  Tipo
-                </th>
-                <th className="pb-2 text-left font-black uppercase tracking-widest text-pinnacle-navy/40 pr-4">
-                  Razón Social
-                </th>
-                <th className="pb-2 text-left font-black uppercase tracking-widest text-pinnacle-navy/40 pr-4">
-                  Usuario Root
-                </th>
-                <th className="pb-2 text-left font-black uppercase tracking-widest text-pinnacle-navy/40 pr-4">
-                  RFC
-                </th>
-                <th className="pb-2 text-left font-black uppercase tracking-widest text-pinnacle-navy/40">
-                  Estado
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr
-                  key={row.owner_id}
-                  className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                  data-testid={`universe-row-${row.owner_id}`}
+        <ArchonDataTable<UniverseRow>
+          data={rows}
+          headers={HEADERS}
+          testId="universes-table"
+          variant="embedded"
+          renderRow={(row): React.ReactNode => (
+            <tr
+              key={row.owner_id}
+              className="border-b border-slate-100 hover:bg-slate-50 transition-colors text-xs"
+              data-testid={`universe-row-${row.owner_id}`}
+            >
+              <td className="py-3 px-3">
+                <SuiteBadge suite={row.suite} />
+              </td>
+              <td className="py-3 px-3 font-medium text-pinnacle-navy">
+                {row.razon_social ?? row.label}
+              </td>
+              <td className="py-3 px-3 text-pinnacle-navy/60">{row.username}</td>
+              <td className="py-3 px-3 text-pinnacle-navy/60 font-mono">{row.rfc ?? '—'}</td>
+              <td className="py-3 px-3">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-[3px] text-[10px] font-black uppercase tracking-widest ${
+                    row.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                  }`}
                 >
-                  <td className="py-3 pr-4">
-                    <SuiteBadge suite={row.suite} />
-                  </td>
-                  <td className="py-3 pr-4 font-medium text-pinnacle-navy">
-                    {row.razon_social ?? row.label}
-                  </td>
-                  <td className="py-3 pr-4 text-pinnacle-navy/60">{row.username}</td>
-                  <td className="py-3 pr-4 text-pinnacle-navy/60 font-mono">{row.rfc ?? '—'}</td>
-                  <td className="py-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-[3px] text-[10px] font-black uppercase tracking-widest ${
-                        row.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
-                      }`}
-                    >
-                      {row.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  {row.is_active ? 'Activo' : 'Inactivo'}
+                </span>
+              </td>
+            </tr>
+          )}
+        />
       )}
     </div>
   );

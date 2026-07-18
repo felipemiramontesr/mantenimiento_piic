@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Save, AlertTriangle, CheckCircle } from 'lucide-react';
 import api from '../../api/client';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,11 @@ interface MatrixData {
   roles: RoleData[];
   allPermissions: PermissionData[];
 }
+
+// FC 078 F3 — fila sentinela para "Guardar por rol" (ex-tfoot): la primitiva
+// mapea `data`, así que la fila de guardado viaja al final del arreglo.
+const SAVE_ROW_ID = -1;
+const SAVE_ROW_SLUG = '__save_row__';
 
 const PERMISSION_LABELS: Record<string, string> = {
   'fleet:view': 'Ver Flota',
@@ -132,26 +138,60 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
         </p>
       </div>
 
-      {/* Tabla de matriz */}
-      <div className="card-archon-sovereign overflow-x-auto">
-        <table className="w-full min-w-[700px]">
-          <thead>
-            <tr className="border-b border-pinnacle-navy/10">
-              <th className="text-left py-3 px-4 text-archon-base font-black uppercase tracking-[0.2em] text-pinnacle-navy/50 w-48">
-                Permiso
-              </th>
-              {matrix.roles.map((role) => (
-                <th
-                  key={role.id}
-                  className="text-center py-3 px-2 text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/70 min-w-[110px]"
-                >
-                  {role.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {matrix.allPermissions.map((perm) => (
+      {/* FC 078 F3 — matriz migrada a la primitiva ArchonDataTable (SSOT
+          responsive). La fila "Guardar por rol" (ex-tfoot) viaja como
+          sentinela al final de `data` — misma data, mismo orden. */}
+      <div className="card-archon-sovereign !p-0 overflow-hidden">
+        <ArchonDataTable<PermissionData>
+          data={[...matrix.allPermissions, { id: SAVE_ROW_ID, slug: SAVE_ROW_SLUG }]}
+          headers={[
+            { key: 'perm', label: 'Permiso', align: 'left', width: '192px' },
+            ...matrix.roles.map(
+              (role): ArchonTableHeader => ({
+                key: `role-${role.id}`,
+                label: role.name,
+                align: 'center',
+              })
+            ),
+          ]}
+          minTableWidth={192 + matrix.roles.length * 110}
+          testId="role-permissions-matrix"
+          variant="embedded"
+          renderRow={(perm): React.ReactNode =>
+            perm.slug === SAVE_ROW_SLUG ? (
+              <tr key="save-row" className="border-t border-pinnacle-navy/10">
+                <td className="py-3 px-4 text-archon-base font-black text-pinnacle-navy/40 uppercase tracking-widest">
+                  Guardar por rol
+                </td>
+                {matrix.roles.map((role) => (
+                  <td key={role.id} className="py-3 px-2 text-center">
+                    {savedRole === role.id ? (
+                      <div className="flex items-center justify-center gap-1 text-emerald-600">
+                        <CheckCircle size={13} />
+                        <span className="text-archon-base font-bold">Guardado</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(): Promise<void> => saveRole(role.id)}
+                        disabled={saving === role.id}
+                        className={`
+                          flex items-center justify-center gap-1 mx-auto px-3 py-1.5 rounded-[4px] text-archon-base font-black uppercase tracking-widest transition-all duration-200
+                          ${
+                            isDirty(role.id)
+                              ? 'bg-archon-gold text-pinnacle-navy hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
+                              : 'bg-pinnacle-navy text-white hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
+                          }
+                          ${saving === role.id ? 'opacity-50 cursor-not-allowed' : ''}
+                        `}
+                      >
+                        <Save size={10} />
+                        {saving === role.id ? 'Guardando...' : 'Guardar'}
+                      </button>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ) : (
               <tr
                 key={perm.slug}
                 className="border-b border-slate-100 hover:bg-slate-50/50 transition-all duration-300"
@@ -175,43 +215,9 @@ const RolePermissionsMatrix: React.FC = (): React.ReactElement => {
                   </td>
                 ))}
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-t border-pinnacle-navy/10">
-              <td className="py-3 px-4 text-archon-base font-black text-pinnacle-navy/40 uppercase tracking-widest">
-                Guardar por rol
-              </td>
-              {matrix.roles.map((role) => (
-                <td key={role.id} className="py-3 px-2 text-center">
-                  {savedRole === role.id ? (
-                    <div className="flex items-center justify-center gap-1 text-emerald-600">
-                      <CheckCircle size={13} />
-                      <span className="text-archon-base font-bold">Guardado</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={(): Promise<void> => saveRole(role.id)}
-                      disabled={saving === role.id}
-                      className={`
-                        flex items-center justify-center gap-1 mx-auto px-3 py-1.5 rounded-[4px] text-archon-base font-black uppercase tracking-widest transition-all duration-200
-                        ${
-                          isDirty(role.id)
-                            ? 'bg-archon-gold text-pinnacle-navy hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
-                            : 'bg-pinnacle-navy text-white hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
-                        }
-                        ${saving === role.id ? 'opacity-50 cursor-not-allowed' : ''}
-                      `}
-                    >
-                      <Save size={10} />
-                      {saving === role.id ? 'Guardando...' : 'Guardar'}
-                    </button>
-                  )}
-                </td>
-              ))}
-            </tr>
-          </tfoot>
-        </table>
+            )
+          }
+        />
       </div>
     </div>
   );

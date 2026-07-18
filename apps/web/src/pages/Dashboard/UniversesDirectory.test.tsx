@@ -111,4 +111,17 @@ describe('UniversesDirectory', () => {
 
     expect(screen.queryByTestId('universes-directory-back')).not.toBeInTheDocument();
   });
+
+  // ── FC 078 F3 — migración a la primitiva ArchonDataTable ──
+  it('AT-FC078-F3-UD-1: la tabla vive en SovereignScrollArea con minWidth derivado (5×96)', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: MOCK_ROWS } });
+    render(<UniversesDirectory />);
+    await waitFor(() => {
+      expect(screen.getByTestId('universes-table')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('universes-table-scroll-viewport').className).toContain(
+      'overflow-x-auto'
+    );
+    expect(screen.getByTestId('universes-table').style.minWidth).toBe(`${5 * 96}px`);
+  });
 });

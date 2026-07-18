@@ -3,6 +3,7 @@ import { Download, Plus, ChevronDown, Search, X } from 'lucide-react';
 import api from '../../api/client';
 import { FinancialTransaction, FinanceCategory, CATEGORY_LABELS } from '../../types/finance';
 import EgressRegistrationModal from './EgressRegistrationModal';
+import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,17 @@ const ALL_CATEGORIES: FinanceCategory[] = [
   'FINE',
   'REPAIR',
   'OTHER',
+];
+
+// FC 078 F3 — columnas de la tabla migrada a ArchonDataTable (misma data,
+// mismo orden que la tabla artesanal que sustituye).
+const HEADERS: ArchonTableHeader[] = [
+  { key: 'unidad', label: 'Unidad', align: 'center' },
+  { key: 'categoria', label: 'Categoría', align: 'center' },
+  { key: 'monto', label: 'Monto', align: 'center' },
+  { key: 'concepto', label: 'Concepto', align: 'center' },
+  { key: 'origen', label: 'Origen', align: 'center' },
+  { key: 'fecha', label: 'Fecha', align: 'center' },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -302,115 +314,83 @@ const EgressTable: React.FC<EgressTableProps> = ({
         {/* fin acciones */}
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-pinnacle-navy/5 rounded-[4px] shadow-pinnacle overflow-x-auto">
-        <table className="w-full [&_td]:!border-x-0 [&_th]:!border-x-0">
-          <thead>
-            <tr className="bg-pinnacle-navy">
-              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
-                Unidad
-              </th>
-              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
-                Categoría
-              </th>
-              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
-                Monto
-              </th>
-              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
-                Concepto
-              </th>
-              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
-                Origen
-              </th>
-              <th className="text-center py-4 px-4 text-archon-base font-black uppercase tracking-[0.15em] text-white/70 whitespace-nowrap">
-                Fecha
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={6} className="py-16 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-pinnacle-navy/20 border-t-pinnacle-navy rounded-full animate-spin" />
-                    <span className="text-archon-md text-pinnacle-navy/40 font-bold uppercase tracking-widest">
-                      Cargando...
+      {/* FC 078 F3 — tabla migrada a la primitiva ArchonDataTable (SSOT
+          responsive: minWidth real + SovereignScrollArea). Misma data,
+          mismo orden de columnas que la tabla artesanal que sustituye. */}
+      <div className="bg-white border border-pinnacle-navy/5 rounded-[4px] shadow-pinnacle overflow-hidden">
+        <ArchonDataTable<FinancialTransaction>
+          data={rows}
+          headers={HEADERS}
+          loading={loading}
+          loadingMessage="Cargando..."
+          emptyMessage="Sin egresos registrados en este período"
+          testId="egress-table"
+          variant="embedded"
+          renderRow={(row): React.ReactNode => (
+            <tr
+              key={row.uuid}
+              className="border-y border-slate-200/50 bg-transparent hover:bg-slate-50/50 transition-all duration-300"
+            >
+              <td className="text-center py-4 px-4 font-mono font-black text-archon-label text-pinnacle-navy whitespace-nowrap">
+                {row.unit_name}
+              </td>
+              <td className="text-center py-4 px-4">
+                <div className="flex justify-center">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-archon-sm font-black uppercase tracking-widest ${
+                      CATEGORY_BADGE[row.category] ?? 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {CATEGORY_LABELS[row.category] ?? row.category}
+                  </span>
+                </div>
+              </td>
+              <td className="text-center py-4 px-4 font-mono font-black text-archon-lg text-pinnacle-navy whitespace-nowrap">
+                {formatMXN(row.amount)}
+              </td>
+              <td className="text-center py-4 px-4">
+                {row.source === 'AUTO' ? (
+                  <span
+                    className="text-archon-md text-pinnacle-navy/60 italic"
+                    title={cleanConcept(row)}
+                  >
+                    {cleanConcept(row)}
+                  </span>
+                ) : (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span
+                      className="text-archon-md font-bold text-pinnacle-navy"
+                      title={cleanConcept(row)}
+                    >
+                      {cleanConcept(row)}
                     </span>
-                  </div>
-                </td>
-              </tr>
-            )}
-            {!loading && rows.length === 0 && (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="py-16 text-center text-archon-md font-bold text-pinnacle-navy/30 uppercase tracking-widest"
-                >
-                  Sin egresos registrados en este período
-                </td>
-              </tr>
-            )}
-            {!loading &&
-              rows.map((row) => (
-                <tr
-                  key={row.uuid}
-                  className="border-y border-slate-200/50 bg-transparent hover:bg-slate-50/50 transition-all duration-300"
-                >
-                  <td className="text-center py-4 px-4 font-mono font-black text-archon-label text-pinnacle-navy whitespace-nowrap">
-                    {row.unit_name}
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <div className="flex justify-center">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-archon-sm font-black uppercase tracking-widest ${
-                          CATEGORY_BADGE[row.category] ?? 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {CATEGORY_LABELS[row.category] ?? row.category}
+                    {row.invoice_ref && (
+                      <span className="text-archon-sm font-mono text-pinnacle-navy/40">
+                        {row.invoice_ref}
                       </span>
-                    </div>
-                  </td>
-                  <td className="text-center py-4 px-4 font-mono font-black text-archon-lg text-pinnacle-navy whitespace-nowrap">
-                    {formatMXN(row.amount)}
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    {row.source === 'AUTO' ? (
-                      <span className="text-archon-md text-pinnacle-navy/60 italic">
-                        {cleanConcept(row)}
-                      </span>
-                    ) : (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-archon-md font-bold text-pinnacle-navy">
-                          {cleanConcept(row)}
-                        </span>
-                        {row.invoice_ref && (
-                          <span className="text-archon-sm font-mono text-pinnacle-navy/40">
-                            {row.invoice_ref}
-                          </span>
-                        )}
-                      </div>
                     )}
-                  </td>
-                  <td className="text-center py-4 px-4">
-                    <div className="flex justify-center">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-archon-sm font-black uppercase tracking-widest ${
-                          row.source === 'AUTO'
-                            ? 'bg-sky-50 text-sky-600'
-                            : 'bg-emerald-50 text-emerald-600'
-                        }`}
-                      >
-                        {row.source === 'AUTO' ? 'Sistema' : 'Manual'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="text-center py-4 px-4 text-archon-md font-bold text-pinnacle-navy/60 whitespace-nowrap">
-                    {formatDate(row.created_at)}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+                  </div>
+                )}
+              </td>
+              <td className="text-center py-4 px-4">
+                <div className="flex justify-center">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-[4px] text-archon-sm font-black uppercase tracking-widest ${
+                      row.source === 'AUTO'
+                        ? 'bg-sky-50 text-sky-600'
+                        : 'bg-emerald-50 text-emerald-600'
+                    }`}
+                  >
+                    {row.source === 'AUTO' ? 'Sistema' : 'Manual'}
+                  </span>
+                </div>
+              </td>
+              <td className="text-center py-4 px-4 text-archon-md font-bold text-pinnacle-navy/60 whitespace-nowrap">
+                {formatDate(row.created_at)}
+              </td>
+            </tr>
+          )}
+        />
       </div>
 
       {/* Load more */}
