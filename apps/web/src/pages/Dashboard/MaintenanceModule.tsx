@@ -92,10 +92,11 @@ const renderForecastCardContent = (
           {row.daysUntilService <= 0 ? 'Servicio vencido' : `Servicio en ${row.daysUntilService}d`}
         </CardAlertBadge>
       )}
+      {/* FC 078 F4 — regresión F2 atrapada por I-RWD: 85×22 < 44px táctil */}
       <button
         type="button"
         onClick={(): void => onScheduleRequest(row.unitId)}
-        className="self-start px-3 py-1.5 rounded-[4px] bg-emerald-50 text-emerald-700 text-archon-xs font-bold uppercase tracking-widest hover:bg-emerald-100 transition-colors"
+        className="self-start h-11 flex items-center px-3 rounded-[4px] bg-emerald-50 text-emerald-700 text-archon-xs font-bold uppercase tracking-widest hover:bg-emerald-100 transition-colors"
       >
         Programar
       </button>

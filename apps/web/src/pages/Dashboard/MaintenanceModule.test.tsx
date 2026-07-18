@@ -367,6 +367,8 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
       fireEvent.click(screen.getByTestId('adaptive-view-cards'));
       await screen.findByTestId('archon-card-view');
       const programarBtn = await screen.findByRole('button', { name: /Programar/i });
+      // FC 078 F4 — regresión atrapada por I-RWD: el botón medía 85×22 (<44px táctil)
+      expect(programarBtn.className).toContain('h-11');
       fireEvent.click(programarBtn);
       expect(await screen.findByText('CONFIGURACIÓN')).toBeInTheDocument();
     });

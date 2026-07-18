@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/testUtils';
 import SovereignScrollArea from './SovereignScrollArea';
 
@@ -78,5 +78,38 @@ describe('SovereignScrollArea — affordance de scroll (FC 078)', () => {
     const vp = setup();
     expect(vp.textContent).toContain('contenido ancho');
     expect(vp.className).toContain('overflow-x-auto');
+  });
+
+  // ── FC 078 F4 — regresión atrapada por el gate NoInternalCollapse ──
+  describe('ResizeObserver observa también el CONTENIDO (FC 078 F4)', () => {
+    const originalRO = globalThis.ResizeObserver;
+
+    afterEach(() => {
+      globalThis.ResizeObserver = originalRO;
+    });
+
+    it('observa viewport Y su primer hijo — el hint aparece cuando los datos async ensanchan el contenido', () => {
+      const observed: Element[] = [];
+      const mockRO = (): Pick<ResizeObserver, 'observe' | 'disconnect'> => ({
+        observe: (el: Element): void => {
+          observed.push(el);
+        },
+        disconnect: (): void => {
+          /* noop */
+        },
+      });
+      globalThis.ResizeObserver = function ResizeObserverMock(this: unknown) {
+        return mockRO();
+      } as unknown as typeof ResizeObserver;
+
+      const vp = setup();
+      // Antes del fix solo se observaba el viewport: cuando una tabla vacía
+      // recibía datos (contenido crece, viewport NO cambia de tamaño) el
+      // observer jamás disparaba y el hint no aparecía con overflow real
+      // (celda incidencias@844 del gate, overflow=115px sin hint).
+      expect(observed).toContain(vp);
+      expect(observed).toContain(vp.firstElementChild as Element);
+      expect(observed).toHaveLength(2);
+    });
   });
 });

@@ -39,6 +39,11 @@ const SovereignScrollArea: React.FC<SovereignScrollAreaProps> = ({
     if (!el || typeof ResizeObserver === 'undefined') return undefined;
     const ro = new ResizeObserver(updateAffordance);
     ro.observe(el);
+    // FC 078 F4 — regresión atrapada por el gate NoInternalCollapse: cuando
+    // el CONTENIDO crece (datos async llegan a una tabla vacía) el viewport
+    // no cambia de tamaño y el observer jamás disparaba — el hint no
+    // aparecía con overflow real. Observar también el contenido.
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
     return (): void => ro.disconnect();
   }, [updateAffordance]);
 

@@ -35,40 +35,47 @@ export default defineConfig({
       // FC 074 F5 — testIgnore de project NO se fusiona con el global, lo
       // reemplaza — hay que repetir smoke/audit aquí además de responsive
       // (el gate I-RWD corre en sus propios projects rwd-*, cond.5).
-      testIgnore: ['**/smoke.spec.ts', '**/audit/**', '**/responsive.spec.ts'],
+      // FC 078 F4 — tableIntegrity también vive SOLO en los projects rwd-*.
+      testIgnore: [
+        '**/smoke.spec.ts',
+        '**/audit/**',
+        '**/responsive.spec.ts',
+        '**/tableIntegrity.spec.ts',
+      ],
     },
     // FC 074 F5 — Gate_Permanente_RWD_Y_Manifest: 6 viewport-configs (4
     // portrait + 2 landscape, dominio cerrado en 074_AN) × 9 módulos, cada
-    // project corre SOLO e2e/responsive.spec.ts (spec dedicada, cond.5).
+    // project corre SOLO las specs de gate RWD (cond.5 FC074: responsive;
+    // FC 078 F4: + tableIntegrity — specs SEPARADAS, sin asserts cruzados).
     {
       name: 'rwd-mobile-360',
       use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 640 } },
-      testMatch: ['**/responsive.spec.ts'],
+      testMatch: ['**/responsive.spec.ts', '**/tableIntegrity.spec.ts'],
     },
     {
       name: 'rwd-mobile-390',
       use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
-      testMatch: ['**/responsive.spec.ts'],
+      testMatch: ['**/responsive.spec.ts', '**/tableIntegrity.spec.ts'],
     },
     {
       name: 'rwd-tablet-768',
       use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } },
-      testMatch: ['**/responsive.spec.ts'],
+      testMatch: ['**/responsive.spec.ts', '**/tableIntegrity.spec.ts'],
     },
     {
       name: 'rwd-desktop-1280',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 } },
-      testMatch: ['**/responsive.spec.ts'],
+      testMatch: ['**/responsive.spec.ts', '**/tableIntegrity.spec.ts'],
     },
     {
       name: 'rwd-mobile-landscape-844',
       use: { ...devices['Desktop Chrome'], viewport: { width: 844, height: 390 } },
-      testMatch: ['**/responsive.spec.ts'],
+      testMatch: ['**/responsive.spec.ts', '**/tableIntegrity.spec.ts'],
     },
     {
       name: 'rwd-tablet-landscape-1024',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } },
-      testMatch: ['**/responsive.spec.ts'],
+      testMatch: ['**/responsive.spec.ts', '**/tableIntegrity.spec.ts'],
     },
   ],
 });

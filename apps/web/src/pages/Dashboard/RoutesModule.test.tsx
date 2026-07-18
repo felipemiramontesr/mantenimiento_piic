@@ -96,6 +96,8 @@ describe('RoutesModule Orchestrator', () => {
       await screen.findByTestId('adaptive-view-cards');
       fireEvent.click(screen.getByTestId('adaptive-view-cards'));
       const editBtn = await screen.findByRole('button', { name: /Editar Ruta/i });
+      // FC 078 F4 — regresión atrapada por I-RWD: el botón medía 86×22 (<44px táctil)
+      expect(editBtn.className).toContain('h-11');
       fireEvent.click(editBtn);
       // handleEdit → DISPATCH panel renders RouteAssignmentForm
       expect(await screen.findByText(/Cerrar Formulario/i)).toBeInTheDocument();
