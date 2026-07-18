@@ -312,6 +312,66 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     expect(await screen.findByText('CONFIGURACIÓN')).toBeInTheDocument();
   });
 
+  // ── FC 078 F2(a)/(b) — Adopcion_Adaptativa_Completa: FORECAST TABLE + CARDS ──
+  describe('AT-FC078-F2a — adaptive FORECAST panel', () => {
+    const forecastRow = {
+      unitId: 'ASM-001',
+      marca: 'Nissan',
+      modelo: 'March',
+      departamento: 'MINA',
+      currentOdometer: 49800,
+      dailyUsageAvg: 120,
+      nextKmReading: 50000,
+      kmRemaining: 200,
+      nextServiceDate: '2026-05-30',
+      daysUntilService: 2,
+      triggerType: 'KM',
+      projectedOdometer: 50000,
+      projectedServiceType: 'ADVANCED_50K',
+      urgency: 'CRITICAL',
+    };
+
+    beforeEach(() => {
+      localStorage.clear();
+      server.use(
+        http.get('*/maintenance/forecast', () =>
+          HttpResponse.json({ success: true, data: [forecastRow] })
+        ),
+        http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] }))
+      );
+    });
+
+    it('AT-FC078-F2a-MN-1: renders the adaptive selector with TABLE and CARDS only', async () => {
+      renderModule();
+      await screen.findByRole('button', { name: /Programar/i });
+      expect(screen.getByTestId('adaptive-view-table')).toBeInTheDocument();
+      expect(screen.getByTestId('adaptive-view-cards')).toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-calendar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-charts')).not.toBeInTheDocument();
+    });
+
+    it('AT-FC078-F2a-MN-2: switches to CARDS view and renders enriched forecast cards', async () => {
+      renderModule();
+      await screen.findByRole('button', { name: /Programar/i });
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByTestId('archon-card-view')).toBeInTheDocument();
+      // receta v2: odómetro, km restantes, próx. servicio + alerta CRITICAL
+      expect(screen.getByText('49,800 km')).toBeInTheDocument();
+      expect(screen.getByText('200 km')).toBeInTheDocument();
+      expect(screen.getByTestId('card-alert-badge')).toHaveTextContent('Servicio en 2d');
+    });
+
+    it('AT-FC078-F2a-MN-3: Programar button inside a card navigates to SCHEDULE (onClick preservado)', async () => {
+      renderModule();
+      await screen.findByRole('button', { name: /Programar/i });
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      await screen.findByTestId('archon-card-view');
+      const programarBtn = await screen.findByRole('button', { name: /Programar/i });
+      fireEvent.click(programarBtn);
+      expect(await screen.findByText('CONFIGURACIÓN')).toBeInTheDocument();
+    });
+  });
+
   it('handleRejectOrder: clicking reject-btn on OPEN log calls rejectMaintenance', async () => {
     const openLog = {
       id: 10,

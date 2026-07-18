@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { UserPlus, ShieldAlert, PlusCircle } from 'lucide-react';
+import { UserPlus, ShieldAlert, PlusCircle, Building2, Hash, Mail } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { UserIndustrial } from '../../types/user';
@@ -8,7 +8,7 @@ import { UserIndustrial } from '../../types/user';
 import UsersGridView from '../../components/Users/UsersGridView';
 import UserRegistrationForm from '../../components/Users/UserRegistrationForm';
 import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
-import ArchonCardView from '../../components/Common/ArchonCardView';
+import ArchonCardView, { CardMetricRow } from '../../components/Common/ArchonCardView';
 
 /**
  * 🔱 Archon Module: UsersModule
@@ -17,6 +17,8 @@ import ArchonCardView from '../../components/Common/ArchonCardView';
  * Refinement: Single Mutating Header Card (Mirror FleetModule DNA)
  */
 
+// FC 078 F2(b) — receta v2: header+badge, identidad, 2 métricas nuevas
+// (depto + no. empleado) + correo — mismo recipiente que Fleet/Maintenance.
 const renderUserCard = (user: UserIndustrial): React.ReactNode => (
   <div className="flex flex-col gap-2 min-w-0">
     <div className="flex items-center justify-between gap-2">
@@ -36,6 +38,15 @@ const renderUserCard = (user: UserIndustrial): React.ReactNode => (
     <div className="text-pinnacle-navy/70 text-archon-base truncate">{user.roleName}</div>
     <div className="text-pinnacle-navy/40 text-archon-sm uppercase tracking-widest truncate">
       {user.username}
+    </div>
+    <div className="flex flex-col gap-1 pt-2 border-t border-pinnacle-navy/5">
+      <CardMetricRow icon={<Building2 size={12} />} label="Depto" value={user.department || '—'} />
+      <CardMetricRow
+        icon={<Hash size={12} />}
+        label="No. Empleado"
+        value={user.employeeNumber || '—'}
+      />
+      <CardMetricRow icon={<Mail size={12} />} label="Correo" value={user.email || '—'} />
     </div>
   </div>
 );

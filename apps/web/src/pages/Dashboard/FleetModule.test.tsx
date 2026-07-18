@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, RenderResult } from '../../test/testUtils';
-import FleetModule, { mapUnitToFormData } from './FleetModule';
+import FleetModule, { mapUnitToFormData, daysUntil, deriveFleetAlert } from './FleetModule';
 import { UseFleetFormReturn, CatalogOption, FleetUnit } from '../../types/fleet';
 import useFleetForm from '../../hooks/useFleetForm';
 
@@ -206,6 +206,143 @@ describe('FleetModule Orchestrator', () => {
       expect(await screen.findByTestId('archon-card-view-empty')).toBeInTheDocument();
       expect(localStorage.getItem('archon_adaptive_view_fleet-strategy')).toBe('CARDS');
     });
+  });
+
+  // ── FC 078 F2(b) — receta v2 de tarjeta: odómetro/sede + alerta activa ──
+  describe('AT-FC078-F2b — renderFleetCard receta v2', () => {
+    const cardUnit: FleetUnit = {
+      id: 'VEH-777',
+      uuid: 'test-uuid-777',
+      placas: 'ABC-1234',
+      numeroSerie: null,
+      marca: 'Kenworth',
+      brandId: 1,
+      modelo: 'T680',
+      modelId: 1,
+      images: null,
+      year: 2024,
+      departamento: 'Operaciones',
+      departmentId: 1,
+      uso: null,
+      operationalUseId: null,
+      locationId: null,
+      engineTypeId: null,
+      colorId: null,
+      motor: null,
+      tireSpec: null,
+      tireBrand: null,
+      tireBrandId: null,
+      tipoTerreno: null,
+      terrainTypeId: null,
+      capacidadCarga: null,
+      fuelTankCapacity: null,
+      odometer: 123456,
+      sede: 'Monterrey',
+      centroMantenimiento: null,
+      maintenanceCenterId: null,
+      protocolStartDate: null,
+      vigenciaSeguro: null,
+      vencimientoVerificacion: null,
+      lubeType: null,
+      filterBrand: null,
+      ownerId: null,
+      complianceStatusId: null,
+      accountingAccount: null,
+      legalComplianceDate: null,
+      insuranceExpiryDate: null,
+      insurancePolicyNumber: null,
+      insuranceCompanyId: null,
+      insuranceCost: null,
+      lastEnvironmentalVerification: null,
+      lastMechanicalVerification: null,
+      environmentalHologram: null,
+      circulationCardNumber: null,
+      monthlyLeasePayment: 0,
+      status: 'ACTIVE',
+      assignedOperatorId: null,
+      updatedAt: '2026-01-01',
+      assetTypeId: 1,
+      fuelTypeId: 1,
+      traccionId: 1,
+      transmisionId: 1,
+      lastFuelLevel: 100,
+      initialFuelLevel: 100,
+    };
+
+    afterEach(() => {
+      stableUnits.length = 0;
+    });
+
+    it('AT-FC078-F2b-FL-1: card shows odómetro and sede metric rows', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      stableUnits.push(cardUnit);
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByText('123,456 km')).toBeInTheDocument();
+      expect(screen.getByText('Monterrey')).toBeInTheDocument();
+    });
+
+    it('AT-FC078-F2b-FL-2: no alert badge when vencimientoVerificacion is far in the future', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      stableUnits.push({ ...cardUnit, vencimientoVerificacion: '2099-01-01' });
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      await screen.findByText('123,456 km');
+      expect(screen.queryByTestId('card-alert-badge')).not.toBeInTheDocument();
+    });
+
+    it('AT-FC078-F2b-FL-3: shows critical alert badge when vencimientoVerificacion is past', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      stableUnits.push({ ...cardUnit, vencimientoVerificacion: '2000-01-01' });
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      const badge = await screen.findByTestId('card-alert-badge');
+      expect(badge).toHaveTextContent('Verificación vencida');
+    });
+  });
+});
+
+describe('daysUntil / deriveFleetAlert (FC 078 F2b — pure logic)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-17T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('daysUntil returns null for null/invalid input', () => {
+    expect(daysUntil(null)).toBeNull();
+    expect(daysUntil('not-a-date')).toBeNull();
+  });
+
+  it('daysUntil computes positive days for a future date', () => {
+    expect(daysUntil('2026-07-27T12:00:00.000Z')).toBe(10);
+  });
+
+  it('deriveFleetAlert returns null when no vencimientoVerificacion', () => {
+    expect(deriveFleetAlert({ vencimientoVerificacion: null } as FleetUnit)).toBeNull();
+  });
+
+  it('deriveFleetAlert returns null when far in the future (>30 days)', () => {
+    expect(deriveFleetAlert({ vencimientoVerificacion: '2099-01-01' } as FleetUnit)).toBeNull();
+  });
+
+  it('deriveFleetAlert returns warning when due within 30 days', () => {
+    const result = deriveFleetAlert({
+      vencimientoVerificacion: '2026-07-25T12:00:00.000Z',
+    } as FleetUnit);
+    expect(result?.tone).toBe('warning');
+  });
+
+  it('deriveFleetAlert returns critical when already past', () => {
+    const result = deriveFleetAlert({ vencimientoVerificacion: '2026-01-01' } as FleetUnit);
+    expect(result?.tone).toBe('critical');
+    expect(result?.label).toBe('Verificación vencida');
   });
 });
 

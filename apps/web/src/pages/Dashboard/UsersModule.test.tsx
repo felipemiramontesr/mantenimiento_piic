@@ -49,5 +49,16 @@ describe('UsersModule Component', () => {
       expect(screen.getAllByTestId('archon-card-item').length).toBeGreaterThan(0);
       expect(localStorage.getItem('archon_adaptive_view_users-directory')).toBe('CARDS');
     });
+
+    // FC 078 F2(b) — receta v2: depto/no. empleado/correo como métricas nuevas
+    it('AT-FC078-F2b-US-1: card shows department, employee number and email metric rows', async () => {
+      renderModule();
+      await screen.findByText(/Administrar Personal/i);
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      await screen.findByTestId('archon-card-view');
+      expect(screen.getByText('Operaciones')).toBeInTheDocument();
+      expect(screen.getByText('EMP-001')).toBeInTheDocument();
+      expect(screen.getByText('juan.perez@piic.com.mx')).toBeInTheDocument();
+    });
   });
 });

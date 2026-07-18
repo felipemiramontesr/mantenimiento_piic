@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ArchonCardView from './ArchonCardView';
+import ArchonCardView, { CardMetricRow, CardAlertBadge } from './ArchonCardView';
 
 /**
  * 🔱 FC 041 Fase B — Vista_Tarjetas_PWA
@@ -88,5 +88,33 @@ describe('ArchonCardView (FC 041 Fase B)', () => {
       expect(card.className).toContain('overflow-hidden');
       expect(card.className).toContain('min-w-0');
     });
+  });
+});
+
+/**
+ * FC 078 F2(b) — receta v2: primitivas reutilizables de la tarjeta.
+ */
+describe('CardMetricRow (FC 078 F2b)', () => {
+  it('renders label, icon and value', () => {
+    render(<CardMetricRow icon={<span data-testid="icon" />} label="Odómetro" value="12,345 km" />);
+    expect(screen.getByText('Odómetro')).toBeInTheDocument();
+    expect(screen.getByText('12,345 km')).toBeInTheDocument();
+    expect(screen.getByTestId('icon')).toBeInTheDocument();
+  });
+});
+
+describe('CardAlertBadge (FC 078 F2b)', () => {
+  it('renders critical tone with its content', () => {
+    render(<CardAlertBadge tone="critical">Vencido</CardAlertBadge>);
+    const badge = screen.getByTestId('card-alert-badge');
+    expect(badge).toHaveTextContent('Vencido');
+    expect(badge.className).toContain('bg-red-500/10');
+  });
+
+  it('renders warning tone with its content', () => {
+    render(<CardAlertBadge tone="warning">Por vencer</CardAlertBadge>);
+    const badge = screen.getByTestId('card-alert-badge');
+    expect(badge).toHaveTextContent('Por vencer');
+    expect(badge.className).toContain('bg-amber-500/10');
   });
 });

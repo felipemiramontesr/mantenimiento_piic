@@ -1,8 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
+import { fireEvent } from '@testing-library/react';
+import { useNavigate } from 'react-router-dom';
 import { render, screen } from '../../test/testUtils';
 import server from '../../test/server';
 import IncidentsModule from './IncidentsModule';
+
+const navigateMock = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('react-router-dom');
+  return { ...actual, useNavigate: vi.fn() };
+});
 
 const INCIDENT_FIXTURE = [
   {
@@ -42,6 +51,8 @@ describe('IncidentsModule (Incidencias en Ruta)', () => {
     server.use(
       http.get('*/incidents', () => HttpResponse.json({ success: true, data: INCIDENT_FIXTURE }))
     );
+    navigateMock.mockClear();
+    (useNavigate as unknown as ReturnType<typeof vi.fn>).mockReturnValue(navigateMock);
   });
 
   it('renders incidents table with unit IDs when data loads', async (): Promise<void> => {
@@ -134,5 +145,37 @@ describe('IncidentsModule (Incidencias en Ruta)', () => {
     );
     renderModule();
     expect(await screen.findByText('RESOLVED')).toBeInTheDocument();
+  });
+
+  // ── FC 078 F2(a)/(b) — Adopcion_Adaptativa_Completa: ArchonAdaptiveView (TABLE + CARDS) ──
+  describe('AT-FC078-F2a — adaptive incidents view', () => {
+    it('AT-FC078-F2a-IN-1: renders the adaptive selector with TABLE and CARDS only', async () => {
+      renderModule();
+      await screen.findByText('ASM-001');
+      expect(screen.getByTestId('adaptive-view-table')).toBeInTheDocument();
+      expect(screen.getByTestId('adaptive-view-cards')).toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-calendar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('adaptive-view-charts')).not.toBeInTheDocument();
+    });
+
+    it('AT-FC078-F2a-IN-2: switches to CARDS view and renders incidents as enriched cards', async () => {
+      renderModule();
+      await screen.findByText('ASM-001');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByTestId('archon-card-view')).toBeInTheDocument();
+      expect(screen.getAllByTestId('archon-card-item')).toHaveLength(2);
+      // receta v2: conductor, categoría y fecha como métricas nuevas
+      expect(screen.getByText('MECHANICAL')).toBeInTheDocument();
+      expect(screen.getByText('01/06/2026')).toBeInTheDocument();
+    });
+
+    it('AT-FC078-F2a-IN-3: clicking a card navigates to the incident detail (onClick preservado)', async () => {
+      renderModule();
+      await screen.findByText('ASM-001');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      const cards = await screen.findAllByTestId('archon-card-item');
+      fireEvent.click(cards[0]);
+      expect(navigateMock).toHaveBeenCalledWith('/dashboard/incidents/aaaa-1111-bbbb-2222');
+    });
   });
 });

@@ -23,6 +23,52 @@ const CARD_BASE_CLASSES =
   'min-w-0 overflow-hidden min-h-[44px] w-full text-left bg-white ' +
   'border border-pinnacle-navy/10 rounded-[4px] p-4 shadow-sm transition-all';
 
+/**
+ * FC 078 F2(b) — Receta v2 de tarjeta (reciclaje de diseño, doctrina del AN):
+ * header (identidad + badge de estado) → línea secundaria (identidad 2) →
+ * 2-4 `CardMetricRow` (odómetro/rol, salud/próximo evento, etc.) →
+ * `CardAlertBadge` opcional cuando hay alerta activa. Mismo recipiente para
+ * Fleet/Users/Maintenance — solo cambian los datos de dominio.
+ */
+export interface CardMetricRowProps {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}
+
+export const CardMetricRow: React.FC<CardMetricRowProps> = ({ icon, label, value }) => (
+  <div className="flex items-center justify-between gap-2 min-w-0">
+    <span className="flex items-center gap-1.5 text-pinnacle-navy/40 text-archon-xs uppercase tracking-widest shrink-0">
+      {icon}
+      {label}
+    </span>
+    <span className="text-pinnacle-navy/80 text-archon-sm font-bold truncate text-right">
+      {value}
+    </span>
+  </div>
+);
+
+export type CardAlertTone = 'critical' | 'warning';
+
+const ALERT_TONE_CLASSES: Record<CardAlertTone, string> = {
+  critical: 'bg-red-500/10 text-red-700 border-red-500/20',
+  warning: 'bg-amber-500/10 text-amber-700 border-amber-400/30',
+};
+
+export interface CardAlertBadgeProps {
+  tone: CardAlertTone;
+  children: React.ReactNode;
+}
+
+export const CardAlertBadge: React.FC<CardAlertBadgeProps> = ({ tone, children }) => (
+  <div
+    data-testid="card-alert-badge"
+    className={`flex items-center gap-1.5 px-2 py-1 rounded-[4px] border text-archon-xs font-bold uppercase tracking-widest ${ALERT_TONE_CLASSES[tone]}`}
+  >
+    {children}
+  </div>
+);
+
 function ArchonCardView<T>({
   items,
   keyExtractor,

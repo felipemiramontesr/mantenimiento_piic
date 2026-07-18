@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { PlusCircle, ShieldAlert } from 'lucide-react';
+import { PlusCircle, ShieldAlert, Gauge, MapPin } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import { FleetUnit, CreateFleetUnit, ManagementPanel } from '../../types/fleet';
@@ -14,7 +14,10 @@ import FleetRegistrationForm from '../../components/Fleet/FleetRegistrationForm'
 import FleetSuccessView from '../../components/Fleet/FleetSuccessView';
 import useFleetForm from '../../hooks/useFleetForm';
 import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
-import ArchonCardView from '../../components/Common/ArchonCardView';
+import ArchonCardView, {
+  CardMetricRow,
+  CardAlertBadge,
+} from '../../components/Common/ArchonCardView';
 
 /**
  * 🚀 ARCHON FLEET MODULE (v.28.19.0)
@@ -75,24 +78,70 @@ const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
   complianceStatusId: unit.complianceStatusId || undefined,
 });
 
-// FC 074 F3 — render de tarjeta para la vista CARDS del contenedor adaptativo
-// (piloto FC 041: vistas solo-provistas, grid interno de FleetGridView intacto).
-const renderFleetCard = (unit: FleetUnit): React.ReactNode => (
-  <div className="flex flex-col gap-2 min-w-0">
-    <div className="flex items-center justify-between gap-2">
-      <span className="font-black text-pinnacle-navy text-archon-md truncate">{unit.id}</span>
-      <span className="shrink-0 px-2 py-0.5 rounded-[4px] bg-pinnacle-navy/5 text-pinnacle-navy/70 text-archon-xs font-bold uppercase tracking-widest">
-        {unit.status}
-      </span>
+// FC 078 F2(b) — días hasta una fecha ISO; null si no hay fecha o es inválida
+// (misma semántica de umbral que daysColor en MaintenanceForecastView).
+export const daysUntil = (iso: string | null): number | null => {
+  if (!iso) return null;
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return null;
+  return Math.ceil((target - Date.now()) / (1000 * 60 * 60 * 24));
+};
+
+export interface FleetCardAlert {
+  tone: 'critical' | 'warning';
+  label: string;
+}
+
+// FC 078 F2(b) — alerta activa derivada de la verificación vehicular vigente
+// (vencida = critical, <=30 días = warning, resto = sin alerta).
+export const deriveFleetAlert = (unit: FleetUnit): FleetCardAlert | null => {
+  const days = daysUntil(unit.vencimientoVerificacion);
+  if (days === null) return null;
+  if (days < 0) return { tone: 'critical', label: 'Verificación vencida' };
+  if (days <= 30) return { tone: 'warning', label: `Verificación vence en ${days}d` };
+  return null;
+};
+
+// FC 074 F3 / FC 078 F2(b) — render de tarjeta para la vista CARDS del
+// contenedor adaptativo (receta v2: header+badge, identidad, 2 métricas,
+// alerta activa opcional — piloto FC 041, grid interno de FleetGridView intacto).
+const renderFleetCard = (unit: FleetUnit): React.ReactNode => {
+  const alert = deriveFleetAlert(unit);
+  return (
+    <div className="flex flex-col gap-2 min-w-0">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-black text-pinnacle-navy text-archon-md truncate">{unit.id}</span>
+        <span className="shrink-0 px-2 py-0.5 rounded-[4px] bg-pinnacle-navy/5 text-pinnacle-navy/70 text-archon-xs font-bold uppercase tracking-widest">
+          {unit.status}
+        </span>
+      </div>
+      <div className="text-pinnacle-navy/70 text-archon-base truncate">
+        {unit.marca} {unit.modelo}
+      </div>
+      <div className="text-pinnacle-navy/40 text-archon-sm uppercase tracking-widest truncate">
+        {unit.placas || 'Sin placas'}
+      </div>
+      <div className="flex flex-col gap-1 pt-2 border-t border-pinnacle-navy/5">
+        <CardMetricRow
+          icon={<Gauge size={12} />}
+          label="Odómetro"
+          value={`${unit.odometer.toLocaleString()} km`}
+        />
+        <CardMetricRow
+          icon={<MapPin size={12} />}
+          label="Sede"
+          value={unit.sede || unit.departamento || '—'}
+        />
+      </div>
+      {alert && (
+        <CardAlertBadge tone={alert.tone}>
+          <ShieldAlert size={12} />
+          {alert.label}
+        </CardAlertBadge>
+      )}
     </div>
-    <div className="text-pinnacle-navy/70 text-archon-base truncate">
-      {unit.marca} {unit.modelo}
-    </div>
-    <div className="text-pinnacle-navy/40 text-archon-sm uppercase tracking-widest truncate">
-      {unit.placas || 'Sin placas'}
-    </div>
-  </div>
-);
+  );
+};
 
 export const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
   ({

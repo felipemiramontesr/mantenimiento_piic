@@ -1,11 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BarChart3, ClipboardList, Cpu, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import {
+  BarChart3,
+  ClipboardList,
+  Cpu,
+  ShieldAlert,
+  CheckCircle2,
+  Gauge,
+  Calendar,
+} from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import { MaintenancePanel, MaintenanceLog } from '../../types/maintenance';
+import {
+  MaintenancePanel,
+  MaintenanceLog,
+  MaintenanceForecastRow,
+  ForecastUrgency,
+} from '../../types/maintenance';
 import MaintenanceGridView from '../../components/Maintenance/MaintenanceGridView';
 import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
 import ArchonCalendarView from '../../components/Common/ArchonCalendarView';
+import ArchonCardView, {
+  CardMetricRow,
+  CardAlertBadge,
+} from '../../components/Common/ArchonCardView';
 import api from '../../api/client';
 import MaintenanceRegistrationForm from '../../components/Maintenance/MaintenanceRegistrationForm';
 import MaintenanceCompletionPanel from '../../components/Maintenance/MaintenanceCompletionPanel';
@@ -13,6 +30,113 @@ import MaintenanceHistoryDetail from '../../components/Maintenance/MaintenanceHi
 import MaintenanceForecastView from '../../components/Maintenance/MaintenanceForecastView';
 import UpaWorkspace from '../Upa/UpaWorkspace';
 import { acceptMaintenance, rejectMaintenance } from '../../api/maintenance';
+
+// FC 078 F2(a)/(b) — receta v2 de tarjeta para el pronóstico de mantenimiento
+// (única vista de datos del módulo sin estrategia móvil, 078_AN). Fetch propio
+// y ligero (mismo endpoint que MaintenanceForecastView, que NO se toca —
+// fuera de los archivos declarados para esta fase); solo uno de los dos
+// monta a la vez vía ArchonAdaptiveView, así que no hay doble-fetch real.
+const URGENCY_TONE: Record<ForecastUrgency, 'critical' | 'warning' | null> = {
+  CRITICAL: 'critical',
+  WARNING: 'warning',
+  OK: null,
+};
+
+const URGENCY_LABEL: Record<ForecastUrgency, string> = {
+  CRITICAL: 'Crítico',
+  WARNING: 'Próximo',
+  OK: 'Al Día',
+};
+
+const formatForecastDate = (iso: string): string => {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+};
+
+const renderForecastCardContent = (
+  row: MaintenanceForecastRow,
+  onScheduleRequest: (unitId: string) => void
+): React.ReactNode => {
+  const tone = URGENCY_TONE[row.urgency];
+  return (
+    <div className="flex flex-col gap-2 min-w-0">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-black text-pinnacle-navy text-archon-md truncate">{row.unitId}</span>
+        <span className="shrink-0 px-2 py-0.5 rounded-[4px] bg-pinnacle-navy/5 text-pinnacle-navy/70 text-archon-xs font-bold uppercase tracking-widest">
+          {URGENCY_LABEL[row.urgency]}
+        </span>
+      </div>
+      <div className="text-pinnacle-navy/70 text-archon-base truncate">
+        {row.marca} {row.modelo}
+      </div>
+      <div className="flex flex-col gap-1 pt-2 border-t border-pinnacle-navy/5">
+        <CardMetricRow
+          icon={<Gauge size={12} />}
+          label="Odómetro"
+          value={`${row.currentOdometer.toLocaleString()} km`}
+        />
+        <CardMetricRow
+          icon={<Gauge size={12} />}
+          label="Km Restantes"
+          value={`${row.kmRemaining.toLocaleString()} km`}
+        />
+        <CardMetricRow
+          icon={<Calendar size={12} />}
+          label="Próx. Servicio"
+          value={formatForecastDate(row.nextServiceDate)}
+        />
+      </div>
+      {tone && (
+        <CardAlertBadge tone={tone}>
+          <ShieldAlert size={12} />
+          {row.daysUntilService <= 0 ? 'Servicio vencido' : `Servicio en ${row.daysUntilService}d`}
+        </CardAlertBadge>
+      )}
+      <button
+        type="button"
+        onClick={(): void => onScheduleRequest(row.unitId)}
+        className="self-start px-3 py-1.5 rounded-[4px] bg-emerald-50 text-emerald-700 text-archon-xs font-bold uppercase tracking-widest hover:bg-emerald-100 transition-colors"
+      >
+        Programar
+      </button>
+    </div>
+  );
+};
+
+const MaintenanceForecastCardPanel: React.FC<{
+  onScheduleRequest: (unitId: string) => void;
+}> = ({ onScheduleRequest }) => {
+  const [data, setData] = useState<MaintenanceForecastRow[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    setLoading(true);
+    api
+      .get('/maintenance/forecast')
+      .then((res) => {
+        if (res.data.success) setData(res.data.data as MaintenanceForecastRow[]);
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-pinnacle-navy/40 font-display font-black text-archon-md uppercase tracking-[0.2em]">
+        Calculando pronósticos de flotilla...
+      </div>
+    );
+  }
+
+  return (
+    <ArchonCardView<MaintenanceForecastRow>
+      items={data}
+      keyExtractor={(row): string => row.unitId}
+      renderCard={(row): React.ReactNode => renderForecastCardContent(row, onScheduleRequest)}
+      emptyMessage="NO SE ENCONTRARON UNIDADES ACTIVAS"
+    />
+  );
+};
 
 /**
  * FC 041 Fase C — panel de calendario del piloto (vista CALENDAR del
@@ -301,7 +425,15 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
                 />
               )}
               {activePanel === 'FORECAST' && (
-                <MaintenanceForecastView onScheduleRequest={handleForecastSchedule} />
+                <ArchonAdaptiveView
+                  storageKey="maintenance-forecast"
+                  views={{
+                    TABLE: <MaintenanceForecastView onScheduleRequest={handleForecastSchedule} />,
+                    CARDS: (
+                      <MaintenanceForecastCardPanel onScheduleRequest={handleForecastSchedule} />
+                    ),
+                  }}
+                />
               )}
               {activePanel === 'SCHEDULE' && (
                 <MaintenanceRegistrationForm
