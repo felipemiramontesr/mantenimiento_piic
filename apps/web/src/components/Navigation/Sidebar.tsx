@@ -278,9 +278,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           </div>
         </header>
 
-        {/* 🗺️ BODY (80%) */}
-        <main
-          ref={scrollRef as React.RefObject<HTMLElement>}
+        {/* 🗺️ BODY (80%) — FC 078 F1(c): era <main> (dos landmarks main en
+            el DOM + main anidado en aside = HTML inválido y A11Y rota, ver
+            078_AN_F1c_ShellDiagnosis). Ahora <div>: el único <main> del
+            documento es el workspace (Layout.tsx:35). Ref/máscara/clases
+            intactas — cero cambio visual. */}
+        <div
+          ref={scrollRef as React.RefObject<HTMLDivElement>}
           data-mask-gradient="40"
           className="flex-1 min-h-0 py-6 px-3 overflow-y-auto custom-scrollbar"
           style={{
@@ -479,7 +483,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               )}
             </nav>
           </ScrollContainerCtx.Provider>
-        </main>
+        </div>
 
         {/* ⚙️ FOOTER (15%) */}
         <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5 pb-[env(safe-area-inset-bottom)]">

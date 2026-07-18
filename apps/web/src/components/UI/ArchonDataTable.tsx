@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
+import SovereignScrollArea from './SovereignScrollArea';
 
 export interface ArchonTableHeader {
   key: string;
@@ -8,6 +9,33 @@ export interface ArchonTableHeader {
   align?: 'left' | 'center' | 'right';
   sortable?: boolean;
   width?: string;
+}
+
+/**
+ * FC 078 F1 (Cond.1 Bravo) — ancho mínimo por columna cuando el consumidor
+ * no declara `width`: garantiza que la tabla exceda su contenedor y el
+ * scroll actúe, en vez del colapso table-fixed que encimaba encabezados
+ * (078_AN §1: 8-10 columnas aplastadas a ~35px con whitespace-nowrap).
+ * 96px = mínimo legible para un header uppercase tracking-[0.15em] corto.
+ */
+export const MIN_COL_PX = 96;
+
+/**
+ * FC 078 F1 — minWidth REAL de la tabla: override explícito > suma de
+ * widths declarados (px) > headers × MIN_COL_PX. Si algún width declarado
+ * no es px-parseable (%, auto), se cae al derivado por conteo — jamás NaN.
+ */
+export function deriveMinTableWidth(headers: ArchonTableHeader[], minTableWidth?: number): number {
+  if (minTableWidth !== undefined) return minTableWidth;
+  // Solo anchos en px explícitos ("120px") cuentan para la suma; %, auto,
+  // rem u otras unidades caen al derivado por conteo (parseFloat('10%')=10
+  // sería un falso positivo — de ahí el regex estricto).
+  const parsed = headers.map((h) =>
+    h.width && /^\d+(\.\d+)?px$/.test(h.width.trim()) ? Number.parseFloat(h.width) : NaN
+  );
+  const allPx = headers.length > 0 && parsed.every((n) => Number.isFinite(n) && n > 0);
+  if (allPx) return parsed.reduce((a, b) => a + b, 0);
+  return headers.length * MIN_COL_PX;
 }
 
 interface ArchonDataTableProps<T> {
@@ -25,6 +53,8 @@ interface ArchonDataTableProps<T> {
     direction: 'asc' | 'desc';
   };
   variant?: 'master' | 'embedded';
+  /** FC 078 — override explícito del ancho mínimo (px) de la tabla. */
+  minTableWidth?: number;
 }
 
 /**
@@ -45,6 +75,7 @@ export function ArchonDataTable<T>({
   onSort,
   sortConfig,
   variant = 'master',
+  minTableWidth,
 }: ArchonDataTableProps<T>): React.JSX.Element {
   if (loading) {
     const loadingClasses =
@@ -77,17 +108,27 @@ export function ArchonDataTable<T>({
     return 'text-center';
   };
 
+  // FC 078 F1 — el contenedor de scroll ahora es SovereignScrollArea
+  // (affordance de gradientes incluida); estas clases visten su viewport.
   const containerClasses =
     variant === 'master'
-      ? `bg-white overflow-x-auto custom-scrollbar border-y border-pinnacle-navy/5 animate-in fade-in duration-700 relative w-full ${className}`
-      : `w-full !p-0 !m-0 !rounded-none !border-none overflow-x-auto custom-scrollbar relative ${className}`;
+      ? `bg-white border-y border-pinnacle-navy/5 animate-in fade-in duration-700 w-full ${className}`
+      : `w-full !p-0 !m-0 !rounded-none !border-none ${className}`;
+
+  // FC 078 F1 — minWidth real: la tabla declara su ancho y el scroll actúa;
+  // table-fixed SOLO cuando el consumidor declaró anchos por columna (si no,
+  // table-auto deja que el contenido respire sobre el mínimo garantizado).
+  const resolvedMinWidth = deriveMinTableWidth(headers, minTableWidth);
+  const hasExplicitWidths = headers.some((h) => h.width);
 
   return (
-    <div className={containerClasses} style={{ borderLeft: 'none', borderRight: 'none' }}>
+    <SovereignScrollArea className={containerClasses} testId={`${testId}-scroll`}>
       <table
         data-testid={testId}
-        style={{ borderLeft: 'none', borderRight: 'none' }}
-        className="w-full border-collapse table-fixed [&_td]:!border-x-0 [&_th]:!border-x-0 [&_tr]:!border-x-0"
+        style={{ borderLeft: 'none', borderRight: 'none', minWidth: `${resolvedMinWidth}px` }}
+        className={`w-full border-collapse ${
+          hasExplicitWidths ? 'table-fixed' : 'table-auto'
+        } [&_td]:!border-x-0 [&_th]:!border-x-0 [&_tr]:!border-x-0`}
       >
         <thead className="sticky top-0 z-20">
           <tr className="border-b border-pinnacle-navy/10 shadow-md">
@@ -146,7 +187,7 @@ export function ArchonDataTable<T>({
           )}
         </tbody>
       </table>
-    </div>
+    </SovereignScrollArea>
   );
 }
 

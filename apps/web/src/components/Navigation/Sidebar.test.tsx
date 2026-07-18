@@ -850,7 +850,9 @@ describe('Sidebar Component (Archon Core)', () => {
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
         </BrowserRouter>
       );
-      const mainEl = container.querySelector('aside main');
+      // FC 078 F1(c): el body scrolleable dejó de ser <main> (dos landmarks
+      // main invalidaban el documento) — ahora es <div data-mask-gradient>.
+      const mainEl = container.querySelector('aside div[data-mask-gradient]');
       expect(mainEl).not.toBeNull();
       expect(mainEl?.className).toContain('flex-1');
       expect(mainEl?.className).not.toContain('h-[80%]');
@@ -1124,7 +1126,8 @@ describe('Sidebar Component (Archon Core)', () => {
           <Sidebar isCollapsed={false} onToggle={vi.fn()} />
         </BrowserRouter>
       );
-      const scrollMain = container.querySelector('aside main') as HTMLElement;
+      // FC 078 F1(c): body scrolleable ahora es <div data-mask-gradient>, no <main>.
+      const scrollMain = container.querySelector('aside div[data-mask-gradient]') as HTMLElement;
       expect(scrollMain).not.toBeNull();
       expect(scrollMain.getAttribute('data-mask-gradient')).toBe('40');
     });
