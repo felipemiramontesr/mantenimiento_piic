@@ -67,7 +67,10 @@ const renderIncidentCard = (incident: RouteIncident): React.ReactNode => (
         {incident.severity}
       </span>
     </div>
-    <div className="text-pinnacle-navy/70 text-archon-base truncate">{incident.description}</div>
+    {/* FC 081 F1 — card: contenedor vertical, texto SIEMPRE completo (sin clamp) */}
+    <div className="text-pinnacle-navy/70 text-archon-base whitespace-normal break-words">
+      {incident.description}
+    </div>
     <div className="flex flex-col gap-1 pt-2 border-t border-pinnacle-navy/5">
       <CardMetricRow icon={<User size={12} />} label="Conductor" value={incident.driver_name} />
       <CardMetricRow icon={<Tag size={12} />} label="Categoría" value={incident.category} />
@@ -174,8 +177,17 @@ const IncidentsModule: React.FC = (): React.ReactElement => {
                             </span>
                           </div>
                         </td>
-                        <td className="text-left py-3 px-4 text-archon-label text-[#0f2a44]/70 max-w-[200px] truncate">
-                          {incident.description}
+                        {/* FC 081 F1 — doctrina cascada Ω: el texto corto se ve
+                            COMPLETO (line-clamp-3, no truncate a 1 línea); title
+                            incondicional como respaldo para legacy >3 líneas
+                            (Cond.1 Bravo). */}
+                        <td
+                          className="text-left py-3 px-4 max-w-[240px]"
+                          title={incident.description}
+                        >
+                          <span className="block text-archon-label text-[#0f2a44]/70 whitespace-normal break-words line-clamp-3">
+                            {incident.description}
+                          </span>
                         </td>
                         <td className="text-center py-3 px-4 font-mono text-archon-label text-[#0f2a44]/60">
                           {formatDate(incident.reported_at)}

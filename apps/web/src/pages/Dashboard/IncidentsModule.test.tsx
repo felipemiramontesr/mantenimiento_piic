@@ -178,4 +178,41 @@ describe('IncidentsModule (Incidencias en Ruta)', () => {
       expect(navigateMock).toHaveBeenCalledWith('/dashboard/incidents/aaaa-1111-bbbb-2222');
     });
   });
+
+  // ── FC 081 F1 — Visibilidad_En_Lectura (doctrina cascada Ω: el texto
+  // corto se ve COMPLETO; el tooltip es solo respaldo — Cond.1/3 Bravo) ──
+  describe('AT-FC081-F1 — descripción visible completa', () => {
+    beforeEach(() => {
+      // los tests F2a dejan CARDS persistido — la vista por defecto debe ser TABLE
+      localStorage.clear();
+    });
+    it('AT-FC081-F1-IN-1: la celda TABLE envuelve (line-clamp-3+break-words) — sin truncate de 1 línea', async () => {
+      renderModule();
+      const desc = await screen.findByText('Falla en sistema de frenos');
+      expect(desc.className).toContain('line-clamp-3');
+      expect(desc.className).toContain('break-words');
+      expect(desc.className).not.toContain('truncate');
+    });
+
+    it('AT-FC081-F1-IN-2: la celda TABLE expone title con el texto completo (respaldo incondicional)', async () => {
+      renderModule();
+      const desc = await screen.findByText('Falla en sistema de frenos');
+      const cell = desc.closest('td');
+      expect(cell?.getAttribute('title')).toBe('Falla en sistema de frenos');
+    });
+
+    it('AT-FC081-F1-IN-3: la card CARDS muestra la descripción completa — sin truncate ni clamp', async () => {
+      renderModule();
+      await screen.findByText('ASM-001');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      await screen.findByTestId('archon-card-view');
+      const cardDesc = screen
+        .getAllByText('Falla en sistema de frenos')
+        .find((el) => el.closest('[data-testid="archon-card-item"]'));
+      expect(cardDesc).toBeDefined();
+      expect(cardDesc!.className).not.toContain('truncate');
+      expect(cardDesc!.className).not.toContain('line-clamp');
+      expect(cardDesc!.className).toContain('break-words');
+    });
+  });
 });

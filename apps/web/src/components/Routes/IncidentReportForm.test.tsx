@@ -95,9 +95,27 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     renderForm();
     expect(screen.getByText(/Protocolo Sentinel: Alerta de Incidencia/i)).toBeDefined();
     expect(
-      screen.getByPlaceholderText(/Describa el evento, ubicación y estado de la unidad/i)
+      screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i)
     ).toBeDefined();
     expect(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i })).toBeDefined();
+  });
+
+  // ── FC 081 F2 — Origen_Corto_Por_Diseño (doctrina cascada Ω nivel 2:
+  // el dato nace corto — maxLength solo FE, sin validación API, Cond.2) ──
+  describe('AT-FC081-F2 — captura corta por diseño', () => {
+    it('AT-FC081-F2-IR-1: el textarea limita a 280 caracteres (maxLength FE)', () => {
+      renderForm();
+      const textarea = screen.getByPlaceholderText(/Describe la incidencia de forma breve/i);
+      expect(textarea.getAttribute('maxLength')).toBe('280');
+    });
+
+    it('AT-FC081-F2-IR-2: el contador refleja la longitud escrita (N/280)', () => {
+      renderForm();
+      expect(screen.getByText('0/280')).toBeDefined();
+      const textarea = screen.getByPlaceholderText(/Describe la incidencia de forma breve/i);
+      fireEvent.change(textarea, { target: { value: 'Fuga de aceite en motor' } });
+      expect(screen.getByText('23/280')).toBeDefined();
+    });
   });
 
   it('validates required fields: submission button should be disabled when empty', () => {
@@ -109,9 +127,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
   it('executes forensic submission correctly when fields are filled', async () => {
     renderForm();
 
-    const desc = screen.getByPlaceholderText(
-      /Describa el evento, ubicación y estado de la unidad/i
-    );
+    const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Falla crítica en transmisión' } });
 
     const submitBtn = screen.getByRole('button', { name: /Emitir Alerta Sentinel/i });
@@ -142,9 +158,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
 
     renderForm();
 
-    const desc = screen.getByPlaceholderText(
-      /Describa el evento, ubicación y estado de la unidad/i
-    );
+    const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Evento de prueba' } });
 
     await act(async () => {
@@ -195,9 +209,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     mockReportIncident.mockImplementation(() => new Promise(() => {}));
     const { container } = renderForm();
 
-    const desc = screen.getByPlaceholderText(
-      /Describa el evento, ubicación y estado de la unidad/i
-    );
+    const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Test doble envío' } });
 
     // First click: submitting becomes true (line 288 true branch: 'Transmitiendo...')
@@ -216,9 +228,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     mockReportIncident.mockRejectedValue({ code: 500 });
     renderForm();
 
-    const desc = screen.getByPlaceholderText(
-      /Describa el evento, ubicación y estado de la unidad/i
-    );
+    const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Error test' } });
 
     await act(async () => {
@@ -244,9 +254,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     const criticaBtn = screen.getByText(/CRÍTICA/i);
     fireEvent.click(criticaBtn);
 
-    const desc = screen.getByPlaceholderText(
-      /Describa el evento, ubicación y estado de la unidad/i
-    );
+    const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Accidente total' } });
 
     await act(async () => {

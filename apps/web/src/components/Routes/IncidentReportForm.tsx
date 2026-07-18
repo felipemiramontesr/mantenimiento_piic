@@ -225,16 +225,24 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
                 </label>
                 <div className="relative">
                   <MessageSquare size={16} className="absolute left-4 top-4 text-[#0f2a44]/20" />
+                  {/* FC 081 F2 — origen corto por diseño (doctrina cascada Ω
+                      nivel 2): maxLength=280 + contador guían a redactar
+                      descriptivo y efectivo. Límite SOLO front-end — el
+                      schema del API queda intacto (Cond.2 Bravo). */}
                   <textarea
                     required
                     rows={6}
-                    placeholder="Describa el evento, ubicación y estado de la unidad..."
+                    maxLength={280}
+                    placeholder="Describe la incidencia de forma breve y precisa: evento, ubicación y estado de la unidad..."
                     value={formData.description}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
                       setFormData({ ...formData, description: e.target.value })
                     }
                     className="w-full bg-[#0f2a44]/2 border-2 border-[#0f2a44]/5 focus:border-rose-500 p-4 pl-12 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] h-[160px]"
                   />
+                  <span className="absolute bottom-2 right-3 text-archon-xs font-bold text-[#0f2a44]/30 tracking-widest pointer-events-none">
+                    {formData.description.length}/280
+                  </span>
                 </div>
               </div>
 
