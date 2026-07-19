@@ -58,7 +58,8 @@ CREATE OR REPLACE VIEW user_owner_membership AS SELECT * FROM tenant_user_member
 -- ambas vistas inválidas y rompería TCO/recalls (núcleo FMS, Prohibido).
 -- Se redefinen SIN suite ANTES del DROP (mismo cuerpo 128/134, columna fuera).
 
-CREATE OR REPLACE VIEW view_fleet_units_tco AS
+DROP VIEW IF EXISTS view_fleet_units_tco;
+CREATE VIEW view_fleet_units_tco AS
 SELECT
   fu.id                                                                               AS fleet_unit_id,
   fu.ownerId                                                                          AS owner_id,
@@ -73,11 +74,12 @@ SELECT
   COUNT(ft.id)                                                                        AS total_records,
   MAX(ft.created_at)                                                                  AS last_record_at
 FROM fleet_units fu
-JOIN owners o ON fu.ownerId = o.id
+JOIN tenants o ON fu.ownerId = o.id
 LEFT JOIN financial_transactions ft ON ft.unit_id = fu.id
 GROUP BY fu.id, fu.ownerId;
 
-CREATE OR REPLACE VIEW view_fleet_model_failure_patterns AS
+DROP VIEW IF EXISTS view_fleet_model_failure_patterns;
+CREATE VIEW view_fleet_model_failure_patterns AS
 SELECT
   p.brand_id,
   p.model_id,
@@ -108,7 +110,7 @@ FROM (
     MIN(ft.period)                AS first_seen_at
   FROM financial_transactions ft
   JOIN fleet_units fu ON ft.unit_id = fu.id
-  JOIN owners o ON fu.ownerId = o.id
+  JOIN tenants o ON fu.ownerId = o.id
   LEFT JOIN common_catalogs cb ON fu.brandId = cb.id AND cb.category = 'BRAND'
   LEFT JOIN common_catalogs cm ON fu.modelId = cm.id AND cm.category = 'MODEL'
   WHERE ft.category IN ('MAINTENANCE', 'REPAIR')
@@ -132,7 +134,7 @@ FROM (
   FROM route_incidents ri
   JOIN fleet_movements fm ON ri.route_uuid = fm.uuid
   JOIN fleet_units fu ON fm.unit_id = fu.id
-  JOIN owners o ON fu.ownerId = o.id
+  JOIN tenants o ON fu.ownerId = o.id
   LEFT JOIN common_catalogs cb ON fu.brandId = cb.id AND cb.category = 'BRAND'
   LEFT JOIN common_catalogs cm ON fu.modelId = cm.id AND cm.category = 'MODEL'
   GROUP BY fu.brandId, fu.modelId, fu.year, ri.category, cb.label, cm.label
