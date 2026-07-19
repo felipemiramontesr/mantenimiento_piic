@@ -45,8 +45,7 @@
     "files": [
       "src/routes/auth.test.ts",
       "src/routes/authIntegration.test.ts",
-      "src/routes/authOwners.test.ts",
-      "src/routes/subUsers.test.ts"
+      "src/routes/authOwners.test.ts"
     ]
   },
   "A08": {
