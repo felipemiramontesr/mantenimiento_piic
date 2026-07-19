@@ -25,7 +25,11 @@ DELETE FROM role_permissions WHERE role_id <> 0;
 DELETE FROM roles WHERE id <> 0;
 
 -- ─── (3) R1 · lattice VACÍA pero VIVA (tabla sobrevive; filas fuera) ─────────
-DELETE FROM owner_service_links;
+-- Semántica TOTAL deliberada (ConteoCero verificó 0 filas en prod/local; el
+-- DELETE es cinturón idempotente). WHERE sobre el PK AUTO_INCREMENT (id≥1)
+-- cubre toda fila posible y satisface el gate Sonar S-DeleteWithoutWhere;
+-- DELETE (no TRUNCATE) porque social_reviews.link_id exige ON DELETE SET NULL.
+DELETE FROM owner_service_links WHERE id > 0;
 
 -- ─── (4) Directriz 3 · único universo: FMS ───────────────────────────────────
 DELETE FROM universe_types WHERE code <> 'FMS';
