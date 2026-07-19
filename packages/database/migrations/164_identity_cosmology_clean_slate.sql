@@ -46,7 +46,11 @@ DROP TABLE IF EXISTS crm_contacts;          -- PII AES: ConteoCero=0 verificado
 DROP TABLE IF EXISTS campaign_templates;
 
 -- ─── (7) Concepto "familiar" fuera del schema ────────────────────────────────
-ALTER TABLE user_owner_membership DROP COLUMN IF EXISTS familiar_type;
+-- Hallazgo run 29704706200 (ERROR 1347): user_owner_membership es VISTA desde
+-- la 149 — se opera sobre la tabla base tenant_user_memberships y se RE-EMITE
+-- la vista (patrón 159: las vistas SELECT * capturan columnas al crearse).
+ALTER TABLE tenant_user_memberships DROP COLUMN IF EXISTS familiar_type;
+CREATE OR REPLACE VIEW user_owner_membership AS SELECT * FROM tenant_user_memberships;
 
 -- ─── (8) Eje suite (ERP|VIM) fuera — un solo eje cosmológico: universo/Arc ───
 -- Hallazgo F0c: view_fleet_units_tco (128) y view_fleet_model_failure_patterns
@@ -139,7 +143,9 @@ JOIN (
   GROUP BY brandId, modelId, year
 ) ut ON p.brand_id = ut.brandId AND p.model_id = ut.modelId AND p.year = ut.year;
 
-ALTER TABLE owners DROP COLUMN IF EXISTS suite;
+-- owners es VISTA de tenants (149/159): columna en la base + re-emisión.
+ALTER TABLE tenants DROP COLUMN IF EXISTS suite;
+CREATE OR REPLACE VIEW owners AS SELECT * FROM tenants;
 
 -- ─── Verificación post (S5/S6/S7 del Gherkin — el workflow muestra salidas) ──
 SELECT 'S5_users_solo_grayman' k, COUNT(*) v FROM users WHERE role_id <> 0
