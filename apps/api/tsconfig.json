@@ -1,8 +1,17 @@
 {
   "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
+    // FC 082 F0c — typecheck-only (esbuild emite el bundle): noEmit +
+    // composite off permiten mapear @mantenimiento/contracts a la fuente del
+    // workspace tras sacar la dep de package.json (el npm de Hostinger no
+    // soporta workspace:*).
+    "noEmit": true,
+    "composite": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@mantenimiento/contracts": ["../../packages/contracts/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "tests"]

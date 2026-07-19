@@ -1,6 +1,15 @@
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      // FC 082 F0c — @mantenimiento/contracts salió de dependencies (el npm de
+      // Hostinger no soporta workspace:*); esbuild lo inlinea vía --alias y
+      // aquí vitest lo resuelve directo a la fuente del workspace.
+      '@mantenimiento/contracts': path.resolve(__dirname, '../../packages/contracts/src/index.ts'),
+    },
+  },
   test: {
     environment: 'node',
     globals: true,
