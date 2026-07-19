@@ -13,9 +13,12 @@ import { designateMasterOfUniverse } from '../services/universeBootstrap';
 
 // FC 067 F1 — códigos de owner_types_catalog (migración 159); ARCHONAUT es
 // nodo consumidor top-level, nunca sub-usuario (PRIVATE conserva esa semántica).
+// FC 082 F0c — eje suite (ERP|VIM) eliminado del schema (migración 164);
+// el handle ahora se prefija con el universo (FMS único sobreviviente).
+// Endpoints con sujeto muerto (roles 1-10) quedan fail-soft hasta el chasis F3.
 type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE' | 'ARCHONAUT';
 
-const suiteOf = (ownerType: OwnerType): 'ERP' | 'VIM' => (ownerType === 'FLOTILLA' ? 'ERP' : 'VIM');
+const HANDLE_PREFIX = 'FMS';
 
 type RouteGuard = {
   onRequest: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -88,7 +91,6 @@ async function createOwnerWithUser(
   } = params;
   const hash = await argon2Hash(password);
   const enc = EncryptionService.encrypt(email);
-  const suite = suiteOf(ownerType);
 
   const [res] = await connection.execute<ResultSetHeader>(
     'INSERT INTO users (username, email, password_hash, role_id, full_name) VALUES (?, ?, ?, ?, ?)',
@@ -106,10 +108,10 @@ async function createOwnerWithUser(
     "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
     [ownerId, `OWN_U${userId}`, ownerLabel]
   );
-  const handle = await resolveUniqueHandle(connection, suite, profile?.rfc, username);
+  const handle = await resolveUniqueHandle(connection, HANDLE_PREFIX, profile?.rfc, username);
   await connection.execute<ResultSetHeader>(
-    'INSERT INTO owners (id, owner_type_id, suite, label, parent_owner_id, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?, ?)',
-    [ownerId, ownerType, suite, ownerLabel, parentOwnerId ?? null, handle]
+    'INSERT INTO owners (id, owner_type_id, label, parent_owner_id, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?)',
+    [ownerId, ownerType, ownerLabel, parentOwnerId ?? null, handle]
   );
   await connection.execute<ResultSetHeader>(
     'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
@@ -227,9 +229,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
           userId,
         });
         await connection.commit();
-        return reply
-          .code(201)
-          .send({ success: true, userId, ownerId, suite: suiteOf(ownerType), mu: muResult });
+        return reply.code(201).send({ success: true, userId, ownerId, mu: muResult });
       } catch (error) {
         await connection.rollback();
         throw error;
@@ -375,7 +375,6 @@ export default async function onboardingRoutes(fastify: FastifyInstance): Promis
         `SELECT
            o.id          AS owner_id,
            otc.code      AS owner_type,
-           o.suite,
            o.label,
            u.id          AS user_id,
            u.username,

@@ -17,8 +17,6 @@ import {
   MapPin,
   Rss,
   Building2,
-  Briefcase,
-  Monitor,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import usePermissions from '../../hooks/usePermissions';
@@ -162,8 +160,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const location = useLocation();
   const scrollRef = useRef<HTMLElement>(null);
   const firstFocusableRef = useRef<HTMLButtonElement>(null);
-  const { hasPermission, hasAnyPermission, isOmnipotent, isExternalClientOnly, isFamiliar } =
-    usePermissions();
+  // FC 082 F0c — ramas Familiar (rol 10) y Cliente Externo (rol 9) purgadas
+  // junto con los nav-items CRM/Portal/Familia (084_AN §1a-1b).
+  const { hasPermission, hasAnyPermission, isOmnipotent } = usePermissions();
   const { currentUser, logout } = useAuth();
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useSovereignLayout();
   const { count: alertsCount } = useAlertsCount();
@@ -296,191 +295,125 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         >
           <ScrollContainerCtx.Provider value={scrollRef as React.RefObject<HTMLElement>}>
             <nav className="flex flex-col">
-              {/* ─── Familiar Subuniverso — Sidebar reducido exclusivo ─── */}
-              {isFamiliar() ? (
-                <>
+              <>
+                {hasAnyPermission(['alert:view:any', 'alert:view:own']) && (
                   <NavItem
-                    icon={<Users size={20} />}
-                    label="Mi Familia"
-                    path="/dashboard/familia"
-                    active={location.pathname === '/dashboard/familia'}
+                    icon={<Bell size={20} />}
+                    label="Alertas"
+                    path="/dashboard/alerts"
+                    active={location.pathname === '/dashboard/alerts'}
+                    isCollapsed={isCollapsed}
+                    badgeCount={alertsCount}
+                  />
+                )}
+                <NavItem
+                  icon={<LayoutDashboard size={20} />}
+                  label="Comando"
+                  path="/dashboard"
+                  active={location.pathname === '/dashboard'}
+                  isCollapsed={isCollapsed}
+                />
+                {hasAnyPermission(['finance:dashboard:view:any', 'finance:dashboard:view:own']) && (
+                  <NavItem
+                    icon={<Wallet size={20} />}
+                    label="Finanzas"
+                    path="/dashboard/financial"
+                    active={location.pathname === '/dashboard/financial'}
                     isCollapsed={isCollapsed}
                   />
-                  {hasAnyPermission(['alert:view:any', 'alert:view:own']) && (
-                    <NavItem
-                      icon={<Bell size={20} />}
-                      label="Alertas"
-                      path="/dashboard/alerts"
-                      active={location.pathname === '/dashboard/alerts'}
-                      isCollapsed={isCollapsed}
-                      badgeCount={alertsCount}
-                    />
-                  )}
-                </>
-              ) : (
-                <>
-                  {hasAnyPermission(['alert:view:any', 'alert:view:own']) && (
-                    <NavItem
-                      icon={<Bell size={20} />}
-                      label="Alertas"
-                      path="/dashboard/alerts"
-                      active={location.pathname === '/dashboard/alerts'}
-                      isCollapsed={isCollapsed}
-                      badgeCount={alertsCount}
-                    />
-                  )}
-                  {!isExternalClientOnly() && (
-                    <NavItem
-                      icon={<LayoutDashboard size={20} />}
-                      label="Comando"
-                      path="/dashboard"
-                      active={location.pathname === '/dashboard'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasAnyPermission([
-                    'finance:dashboard:view:any',
-                    'finance:dashboard:view:own',
-                  ]) && (
-                    <NavItem
-                      icon={<Wallet size={20} />}
-                      label="Finanzas"
-                      path="/dashboard/financial"
-                      active={location.pathname === '/dashboard/financial'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasAnyPermission(['fleet:unit:view:any', 'fleet:unit:view:own']) && (
-                    <NavItem
-                      icon={<Truck size={20} />}
-                      label="Unidades"
-                      path="/dashboard/fleet"
-                      active={location.pathname === '/dashboard/fleet'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasAnyPermission([
-                    'geolocation:view:any',
-                    'geolocation:realtime:view',
-                    'fleet:unit:view:any',
-                    'fleet:unit:view:own',
-                  ]) && (
-                    <NavItem
-                      icon={<MapPin size={20} />}
-                      label="Rastreo GPS"
-                      path="/dashboard/tracking"
-                      active={location.pathname === '/dashboard/tracking'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasAnyPermission([
-                    'fleet:unit:view:any',
-                    'fleet:unit:view:own',
-                    'maint:record:view:any',
-                    'maint:record:view:own',
-                    'crm:contact:view:any',
-                    'crm:contact:view:own',
-                    'crm:pipeline:view',
-                  ]) &&
-                    !isExternalClientOnly() && (
-                      <NavItem
-                        icon={<Briefcase size={20} />}
-                        label="CRM"
-                        path="/dashboard/crm"
-                        active={[
-                          '/dashboard/crm',
-                          '/dashboard/contacts',
-                          '/dashboard/contracts',
-                          '/dashboard/pipeline',
-                          '/dashboard/interactions',
-                          '/dashboard/campaigns',
-                        ].includes(location.pathname)}
-                        isCollapsed={isCollapsed}
-                      />
-                    )}
-                  {isExternalClientOnly() && (
-                    <NavItem
-                      icon={<Monitor size={20} />}
-                      label="Portal"
-                      path="/dashboard/portal"
-                      active={location.pathname === '/dashboard/portal'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {!isExternalClientOnly() && (
-                    <NavItem
-                      icon={<Rss size={20} />}
-                      label="Arcsial"
-                      path="/dashboard/social"
-                      active={location.pathname === '/dashboard/social'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {!isExternalClientOnly() && (
-                    <NavItem
-                      icon={<Building2 size={20} />}
-                      label="Talleres"
-                      path="/dashboard/talleres"
-                      active={location.pathname === '/dashboard/talleres'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasAnyPermission(['route:record:view:any', 'route:record:view:own']) && (
-                    <NavItem
-                      icon={<Navigation size={20} />}
-                      label="Rutas"
-                      path="/dashboard/routes"
-                      active={location.pathname === '/dashboard/routes'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasAnyPermission(['route:record:view:any', 'route:record:view:own']) && (
-                    <NavItem
-                      icon={<AlertTriangle size={20} />}
-                      label="Incidencias"
-                      path="/dashboard/incidents"
-                      active={location.pathname.startsWith('/dashboard/incidents')}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasAnyPermission(['maint:record:view:any', 'maint:record:view:own']) && (
-                    <NavItem
-                      icon={<Wrench size={20} />}
-                      label="Mantenimiento"
-                      path="/dashboard/maintenance"
-                      active={location.pathname === '/dashboard/maintenance'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasPermission('users:collaborator:view') && (
-                    <NavItem
-                      icon={<Users size={20} />}
-                      label="Personal"
-                      path="/dashboard/users"
-                      active={location.pathname === '/dashboard/users'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {hasPermission('security:audit:view') && (
-                    <NavItem
-                      icon={<ShieldAlert size={20} />}
-                      label="Seguridad"
-                      path="/dashboard/logs"
-                      active={location.pathname === '/dashboard/logs'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                  {isOmnipotent() && (
-                    <NavItem
-                      icon={<Globe size={20} />}
-                      label="Onboarding"
-                      path="/dashboard/onboarding"
-                      active={location.pathname === '/dashboard/onboarding'}
-                      isCollapsed={isCollapsed}
-                    />
-                  )}
-                </>
-              )}
+                )}
+                {hasAnyPermission(['fleet:unit:view:any', 'fleet:unit:view:own']) && (
+                  <NavItem
+                    icon={<Truck size={20} />}
+                    label="Unidades"
+                    path="/dashboard/fleet"
+                    active={location.pathname === '/dashboard/fleet'}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                {hasAnyPermission([
+                  'geolocation:view:any',
+                  'geolocation:realtime:view',
+                  'fleet:unit:view:any',
+                  'fleet:unit:view:own',
+                ]) && (
+                  <NavItem
+                    icon={<MapPin size={20} />}
+                    label="Rastreo GPS"
+                    path="/dashboard/tracking"
+                    active={location.pathname === '/dashboard/tracking'}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                <NavItem
+                  icon={<Rss size={20} />}
+                  label="Arcsial"
+                  path="/dashboard/social"
+                  active={location.pathname === '/dashboard/social'}
+                  isCollapsed={isCollapsed}
+                />
+                <NavItem
+                  icon={<Building2 size={20} />}
+                  label="Talleres"
+                  path="/dashboard/talleres"
+                  active={location.pathname === '/dashboard/talleres'}
+                  isCollapsed={isCollapsed}
+                />
+                {hasAnyPermission(['route:record:view:any', 'route:record:view:own']) && (
+                  <NavItem
+                    icon={<Navigation size={20} />}
+                    label="Rutas"
+                    path="/dashboard/routes"
+                    active={location.pathname === '/dashboard/routes'}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                {hasAnyPermission(['route:record:view:any', 'route:record:view:own']) && (
+                  <NavItem
+                    icon={<AlertTriangle size={20} />}
+                    label="Incidencias"
+                    path="/dashboard/incidents"
+                    active={location.pathname.startsWith('/dashboard/incidents')}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                {hasAnyPermission(['maint:record:view:any', 'maint:record:view:own']) && (
+                  <NavItem
+                    icon={<Wrench size={20} />}
+                    label="Mantenimiento"
+                    path="/dashboard/maintenance"
+                    active={location.pathname === '/dashboard/maintenance'}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                {hasPermission('users:collaborator:view') && (
+                  <NavItem
+                    icon={<Users size={20} />}
+                    label="Personal"
+                    path="/dashboard/users"
+                    active={location.pathname === '/dashboard/users'}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                {hasPermission('security:audit:view') && (
+                  <NavItem
+                    icon={<ShieldAlert size={20} />}
+                    label="Seguridad"
+                    path="/dashboard/logs"
+                    active={location.pathname === '/dashboard/logs'}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+                {isOmnipotent() && (
+                  <NavItem
+                    icon={<Globe size={20} />}
+                    label="Onboarding"
+                    path="/dashboard/onboarding"
+                    active={location.pathname === '/dashboard/onboarding'}
+                    isCollapsed={isCollapsed}
+                  />
+                )}
+              </>
             </nav>
           </ScrollContainerCtx.Provider>
         </div>

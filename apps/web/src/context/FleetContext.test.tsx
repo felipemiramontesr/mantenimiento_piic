@@ -19,8 +19,6 @@ vi.mock('../hooks/usePermissions', () => ({
     hasPermission: (): boolean => true,
     hasAnyPermission: (): boolean => true,
     isOmnipotent: (): boolean => false,
-    isExternalClientOnly: (): boolean => false,
-    isSuiteVIM: (): boolean => false,
   }),
 }));
 

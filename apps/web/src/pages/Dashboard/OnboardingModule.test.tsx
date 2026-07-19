@@ -84,13 +84,13 @@ vi.mock('../../components/Common/SpecialtiesSelect', () => ({
   ),
 }));
 
-const mockPerms = (opts: { omnipotent?: boolean; vimCentro?: boolean } = {}): void => {
+// FC 082 F0c — la puerta VIM Centro (isSuiteVIM) murió con el eje suite; el
+// formulario de clientes queda inalcanzable hasta el chasis Arc (F3).
+const mockPerms = (opts: { omnipotent?: boolean } = {}): void => {
   vi.mocked(usePermissions).mockReturnValue({
     hasPermission: (): boolean => false,
     hasAnyPermission: (): boolean => false,
     isOmnipotent: (): boolean => opts.omnipotent ?? false,
-    isExternalClientOnly: (): boolean => false,
-    isSuiteVIM: (): boolean => opts.vimCentro ?? false,
   });
 };
 
@@ -118,20 +118,11 @@ describe('OnboardingModule', () => {
     expect(screen.queryByTestId('client-form')).not.toBeInTheDocument();
   });
 
-  it('shows the client form for Centro VIM (isSuiteVIM)', async () => {
-    mockPerms({ vimCentro: true });
+  it('F0c-OM-1: el formulario de clientes ya no se muestra ni para omnipotente (puerta VIM muerta)', async () => {
+    mockPerms({ omnipotent: true });
     render(<OnboardingModule />);
-    await waitFor(() => expect(screen.getByTestId('client-form')).toBeInTheDocument());
-    expect(screen.queryByTestId('universe-form')).not.toBeInTheDocument();
-  });
-
-  it('shows both forms when omnipotent and vimCentro are both true', async () => {
-    mockPerms({ omnipotent: true, vimCentro: true });
-    render(<OnboardingModule />);
-    await waitFor(() => {
-      expect(screen.getByTestId('universe-form')).toBeInTheDocument();
-      expect(screen.getByTestId('client-form')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(screen.getByTestId('universe-form')).toBeInTheDocument());
+    expect(screen.queryByTestId('client-form')).not.toBeInTheDocument();
   });
 
   it('shows no-access message when neither omnipotent nor vimCentro', async () => {
@@ -244,82 +235,8 @@ describe('OnboardingModule', () => {
     );
   });
 
-  // ─── Client form — tabs ─────────────────────────────────────────────────────
-
-  it('client form defaults to P.Privado tab', async () => {
-    mockPerms({ vimCentro: true });
-    render(<OnboardingModule />);
-    await waitFor(() => expect(screen.getByTestId('tab-private')).toBeInTheDocument());
-    expect(screen.getByText(/Registra un nuevo Propietario Privado/i)).toBeInTheDocument();
-  });
-
-  it('client form shows targetOwnerId field only on Familiar tab', async () => {
-    mockPerms({ vimCentro: true });
-    render(<OnboardingModule />);
-    await screen.findByTestId('client-form');
-
-    expect(screen.queryByLabelText(/ID del Propietario/i)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('tab-familiar'));
-    expect(screen.getByLabelText(/ID del Propietario/i)).toBeInTheDocument();
-  });
-
-  // ─── Client form — submission ───────────────────────────────────────────────
-
-  it('submits /onboarding/client with roleId 4 for P.Privado tab', async () => {
-    mockPerms({ vimCentro: true });
-    vi.mocked(api.post).mockImplementation(async (url: string) => {
-      if (url === '/auth/refresh') throw new Error('no session');
-      return { data: { success: true } };
-    });
-
-    render(<OnboardingModule />);
-    await screen.findByTestId('client-form');
-
-    fillField(/^Usuario/i, 'privado.uno');
-    fillField(/^Correo/i, 'p@vim.mx');
-    fillField(/^Contraseña/i, 'Archon@1234!');
-    fireEvent.click(screen.getByTestId('btn-create-client'));
-
-    await waitFor(() =>
-      expect(vi.mocked(api.post)).toHaveBeenCalledWith(
-        '/onboarding/client',
-        expect.objectContaining({ roleId: 4, username: 'privado.uno' })
-      )
-    );
-    await waitFor(() =>
-      expect(screen.getByTestId('onboarding-status')).toHaveTextContent(
-        /Propietario Privado registrado/i
-      )
-    );
-  });
-
-  it('submits /onboarding/client with roleId 5 and targetOwnerId for Familiar tab', async () => {
-    mockPerms({ vimCentro: true });
-    vi.mocked(api.post).mockImplementation(async (url: string) => {
-      if (url === '/auth/refresh') throw new Error('no session');
-      return { data: { success: true } };
-    });
-
-    render(<OnboardingModule />);
-    await screen.findByTestId('client-form');
-    fireEvent.click(screen.getByTestId('tab-familiar'));
-
-    fillField(/^Usuario/i, 'familiar.uno');
-    fillField(/^Correo/i, 'fam@vim.mx');
-    fillField(/^Contraseña/i, 'Archon@1234!');
-    fillField(/ID del Propietario/i, '42');
-    fireEvent.click(screen.getByTestId('btn-create-client'));
-
-    await waitFor(() =>
-      expect(vi.mocked(api.post)).toHaveBeenCalledWith(
-        '/onboarding/client',
-        expect.objectContaining({ roleId: 5, targetOwnerId: 42 })
-      )
-    );
-    await waitFor(() =>
-      expect(screen.getByTestId('onboarding-status')).toHaveTextContent(/Familiar agregado/i)
-    );
-  });
+  // ─── FC 082 F0c — tests del client form (tabs P.Privado/Familiar, submits
+  // roleId 4/5) purgados: roles 4/5 y puerta VIM muertos (084_AN §1a).
 
   // ─── Universe form — new profile fields ────────────────────────────────────
 
@@ -463,42 +380,6 @@ describe('OnboardingModule', () => {
 
     fireEvent.click(screen.getByTestId('uni-password-toggle'));
     expect(input.type).toBe('password');
-  });
-
-  it('password toggle shows/hides password on client form', async () => {
-    mockPerms({ vimCentro: true });
-    render(<OnboardingModule />);
-    await screen.findByTestId('client-form');
-
-    const input = screen.getByLabelText(/^Contraseña/i) as HTMLInputElement;
-    expect(input.type).toBe('password');
-
-    fireEvent.click(screen.getByTestId('cli-password-toggle'));
-    expect(input.type).toBe('text');
-
-    fireEvent.click(screen.getByTestId('cli-password-toggle'));
-    expect(input.type).toBe('password');
-  });
-
-  it('shows error message from API on client creation failure', async () => {
-    mockPerms({ vimCentro: true });
-    vi.mocked(api.post).mockImplementation(async (url: string) => {
-      if (url === '/auth/refresh') throw new Error('no session');
-      throw Object.assign(new Error('api error'), {
-        response: { data: { code: 'OWNER_NOT_FOUND' } },
-      });
-    });
-
-    render(<OnboardingModule />);
-    await screen.findByTestId('client-form');
-    fillField(/^Usuario/i, 'x.user');
-    fillField(/^Correo/i, 'x@x.mx');
-    fillField(/^Contraseña/i, 'Archon@1234!');
-    fireEvent.click(screen.getByTestId('btn-create-client'));
-
-    await waitFor(() =>
-      expect(screen.getByTestId('onboarding-status')).toHaveTextContent(/OWNER_NOT_FOUND/i)
-    );
   });
 
   it('sovereign header button opens universes directory (Archon)', async () => {

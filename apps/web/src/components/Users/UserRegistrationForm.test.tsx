@@ -5,6 +5,14 @@ import api from '../../api/client';
 import { compressImage } from '../../utils/imageUtils';
 import UserRegistrationForm, { buildTempPassword } from './UserRegistrationForm';
 
+/**
+ * FC 082 F0c — el ALTA murió con POST /auth/register y /auth/sub-users
+ * (084_AN §1a): los tests de creación/sub-usuarios/familiar/centro fueron
+ * purgados con sus ramas. Sobreviven los flujos de EDICIÓN (update/delete/
+ * auditoría), la validación de contraseñas y buildTempPassword; se agrega el
+ * gate de puerta-cerrada (F0c-URF-1).
+ */
+
 // 🔱 Mock API Client
 vi.mock('../../api/client', () => ({
   default: {
@@ -55,11 +63,9 @@ const getMockState = (): MockUserState => ({
     { id: 41, label: 'IT' },
     { id: 42, label: 'Sistemas' },
   ],
-  // IDs 6 and 7 = internal staff (not 0-5 Archon Master bands) — avoids triggering
-  // owner/sub-user conditional fields in tests that don't specifically test them.
   roles: [
+    { id: 0, label: 'GrayMan' },
     { id: 6, label: 'Admin' },
-    { id: 7, label: 'Operador' },
   ],
 });
 
@@ -97,9 +103,8 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(screen.getByText(/Rol del Sistema/i)).toBeInTheDocument();
   });
 
-  it('shows Departamento field for internal staff roles (id not in 1-5)', () => {
+  it('shows Departamento field (siempre visible tras la purga de bandas)', () => {
     render(<UserRegistrationForm />);
-    // Default roleId = '7' → isInternalStaff → Departamento shown
     expect(screen.getByText(/Departamento/i)).toBeInTheDocument();
   });
 
@@ -115,7 +120,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(await screen.findByTestId('error-message')).toBeInTheDocument();
   });
 
-  it('handles password mismatch validation', async () => {
+  it('F0c-URF-1: alta con datos completos muestra puerta cerrada FC 082 y NO llama la API', async () => {
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
       target: { value: 'Test User' },
@@ -124,7 +129,20 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
       target: { value: 'test@t.com' },
     });
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    expect(await screen.findByTestId('error-message')).toHaveTextContent(
+      /alta de usuarios está deshabilitada/i
+    );
+    // El AuthProvider dispara /auth/refresh al montar; lo que NO debe existir
+    // es ninguna llamada de alta (register/sub-users murieron en F0c).
+    expect(api.post).not.toHaveBeenCalledWith('/auth/register', expect.anything());
+    expect(api.post).not.toHaveBeenCalledWith('/auth/sub-users', expect.anything());
+  });
 
+  it('handles password mismatch visual validation', async () => {
+    render(<UserRegistrationForm />);
     const passInput = screen.getByPlaceholderText(/Auto-generada/i);
     fireEvent.change(passInput, { target: { value: 'password123' } });
 
@@ -132,12 +150,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     fireEvent.change(confirmInput, { target: { value: 'mismatch' } });
 
     expect(screen.getByText(/^No coincide$/i)).toBeInTheDocument();
-
-    const form = screen.getByTestId('registration-form');
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-    expect(await screen.findByText(/Las contraseñas no coinciden/i)).toBeInTheDocument();
   });
 
   it('handles password match visual validation', async () => {
@@ -148,77 +160,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     fireEvent.change(confirmInput, { target: { value: 'password123' } });
 
     expect(screen.queryByText(/^No coincide$/i)).toBeNull();
-  });
-
-  it('handles successful registration with file upload', async () => {
-    const file = new File(['hello'], 'hello.png', { type: 'image/png' });
-    render(<UserRegistrationForm />);
-
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Test User' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'test@t.com' },
-    });
-
-    fireEvent.change(screen.getByPlaceholderText(/EMP-XXX/i), { target: { value: '123' } });
-
-    const uploaderZone = screen.getByText(/Arrastra/i).closest('div')?.parentElement;
-    if (!uploaderZone) throw new Error('Uploader zone not found');
-    const fileInput = uploaderZone.querySelector('input[type="file"]');
-    if (!fileInput) throw new Error('File input not found');
-    await act(async () => {
-      fireEvent.change(fileInput, { target: { files: [file] } });
-    });
-
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-
-    expect(
-      await screen.findByText(/Incorporación Exitosa/i, {}, { timeout: 8000 })
-    ).toBeInTheDocument();
-
-    // FC 076 R3 — el upload al CREAR viaja como JSON {image, mime}, jamás
-    // multipart (users.ts exige ese contrato; FormData producía 400).
-    expect(api.post).toHaveBeenCalledWith('/users/123/upload-profile', {
-      image: 'B64DATA',
-      mime: 'image/jpeg',
-    });
-  });
-
-  it('FC 076 R4a/R4b — register envía departmentId numérico y JAMÁS department/profile_picture_url', async () => {
-    render(<UserRegistrationForm />);
-
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Test User' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'test@t.com' },
-    });
-
-    // Departamento vía ArchonSelect (rol default 7 = staff interno lo muestra)
-    fireEvent.click(screen.getByText('Seleccionar...'));
-    fireEvent.click(await screen.findByText('IT'));
-
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-
-    await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/auth/register', expect.any(Object));
-    });
-    const registerCall = vi
-      .mocked(api.post)
-      .mock.calls.find(([url]) => url === '/auth/register') as [string, Record<string, unknown>];
-    const body = registerCall[1];
-    // R4a: el schema exige departmentId numérico; 'IT' → id 41 del catálogo
-    expect(body.departmentId).toBe(41);
-    expect(body.department).toBeUndefined();
-    // R4b: profile_picture_url no existe en el schema — la foto va por upload
-    expect(body.profile_picture_url).toBeUndefined();
   });
 
   it('FC 076 S1 — buildTempPassword garantiza las 4 clases R3_* en toda corrida', () => {
@@ -239,7 +180,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       username: 'admin',
       fullName: 'Admin User',
       email: 'a@p.com',
-      roleId: 1,
+      roleId: 0,
       department: 'IT',
     };
     render(<UserRegistrationForm />);
@@ -282,7 +223,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       username: 'admin',
       fullName: 'Admin User',
       email: 'a@p.com',
-      roleId: 1,
+      roleId: 0,
       department: 'IT',
     };
     currentMockState.updateUser.mockResolvedValue(false);
@@ -308,7 +249,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       username: 'admin',
       fullName: 'Admin User',
       email: 'a@p.com',
-      roleId: 1,
+      roleId: 0,
       department: 'IT',
     };
     render(<UserRegistrationForm />);
@@ -332,7 +273,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       username: 'admin',
       fullName: 'Admin User',
       email: 'a@p.com',
-      roleId: 1,
+      roleId: 0,
       department: 'IT',
     };
     currentMockState.deleteUser.mockResolvedValue(false);
@@ -356,7 +297,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       username: 'admin',
       fullName: 'Admin User',
       email: 'a@p.com',
-      roleId: 1,
+      roleId: 0,
       department: 'IT',
     };
     currentMockState.updateUser.mockRejectedValue(new Error('Crash'));
@@ -378,24 +319,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     ).toBeInTheDocument();
   });
 
-  it('handles API errors during creation (success: false)', async () => {
-    vi.mocked(api.post).mockResolvedValue({
-      data: { success: false, error: 'Custom Server Error' },
-    });
-    render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Test User' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'test@t.com' },
-    });
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-    expect(await screen.findByText(/Custom Server Error/i)).toBeInTheDocument();
-  });
-
   it('toggles password visibility', () => {
     render(<UserRegistrationForm />);
     const toggleButtons = screen.getAllByRole('button').filter((b) => b.querySelector('svg'));
@@ -412,7 +335,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
       username: 'admin',
       fullName: 'Admin User',
       email: 'a@p.com',
-      roleId: 1,
+      roleId: 0,
       department: 'IT',
     };
     render(<UserRegistrationForm />);
@@ -442,24 +365,30 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(currentMockState.setEditingUser).toHaveBeenCalledWith(null);
   });
 
-  it('navigates back from success view', async () => {
+  it('navigates back from success view (flujo de edición)', async () => {
+    currentMockState.editingUser = {
+      id: '1',
+      username: 'admin',
+      fullName: 'Admin User',
+      email: 'a@p.com',
+      roleId: 0,
+      department: 'IT',
+    };
     render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'T' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 't' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 't@t.com' },
-    });
     await act(async () => {
       fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    const modal = await screen.findByRole('dialog');
+    fireEvent.change(within(modal).getByPlaceholderText(/error en kilometraje/i), {
+      target: { value: 'Valid update' },
+    });
+    await act(async () => {
+      fireEvent.click(within(modal).getByText('Sincronizar'));
     });
     const backBtn = await screen.findByText(/Volver al Directorio/i);
     fireEvent.click(backBtn);
     expect(currentMockState.setActivePanel).toHaveBeenCalledWith('DIRECTORY');
   });
-
-  // ── Oleada 6: UserRegistrationForm branch coverage ──────────────────────
 
   it('update with password and no file: sends password to updateUser and skips upload', async () => {
     currentMockState.editingUser = {
@@ -497,79 +426,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(await screen.findByText(/Actualización Exitosa/i)).toBeInTheDocument();
   });
 
-  it('create with explicit matching password uses provided password instead of tempPass', async () => {
-    render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'New User' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'newuser' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'new@t.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), {
-      target: { value: 'pass12345' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/Repita la clave/i), {
-      target: { value: 'pass12345' },
-    });
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-    expect(vi.mocked(api.post)).toHaveBeenCalledWith(
-      '/auth/register',
-      expect.objectContaining({ password: 'pass12345' })
-    );
-    expect(await screen.findByText(/Incorporación Exitosa/i)).toBeInTheDocument();
-  });
-
-  it('create error with no error field uses "Error en el servidor." fallback', async () => {
-    vi.mocked(api.post).mockResolvedValue({ data: { success: false } });
-    render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Test' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser2' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'test2@t.com' },
-    });
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-    expect(await screen.findByTestId('error-message')).toHaveTextContent(/Error en el servidor\./i);
-  });
-
-  it('create error with axios-style rejection uses errObj.response.data.error (first branch)', async () => {
-    vi.mocked(api.post).mockRejectedValue({ response: { data: { error: 'Axios API Error' } } });
-    render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Test' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser3' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'test3@t.com' },
-    });
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-    expect(await screen.findByTestId('error-message')).toHaveTextContent(/Axios API Error/i);
-  });
-
-  it('create error with non-Error rejection uses "Falla en el alta." final fallback', async () => {
-    vi.mocked(api.post).mockRejectedValue({});
-    render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Test' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser4' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'test4@t.com' },
-    });
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-    expect(await screen.findByTestId('error-message')).toHaveTextContent(/Falla en el alta\./i);
-  });
-
   it('editingUser with imageUrl renders image in uploader and removal clears it', async () => {
     currentMockState.editingUser = {
       id: '3',
@@ -594,21 +450,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     });
   });
 
-  it('submit button shows Transmitiendo during create while api is pending', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    vi.mocked(api.post).mockImplementation(() => new Promise(() => {}));
-    render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Test User' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'testuser5' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'test5@t.com' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Confirmar Alta/i }));
-    await waitFor(() => expect(screen.getByText('Transmitiendo...')).toBeInTheDocument());
-  });
-
   it('submit button is disabled when password set but shorter than 8 chars', () => {
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), { target: { value: 'ab' } });
@@ -626,154 +467,5 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     const toggleBtn = screen.getAllByRole('button').filter((b) => b.querySelector('svg'))[0];
     fireEvent.click(toggleBtn);
     expect(confirmInput).toHaveAttribute('type', 'text');
-  });
-
-  // ── Oleada 7: Role-conditional fields ──────────────────────────────────────
-
-  it('shows Área sub-user fields when role is id=2', async () => {
-    currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
-    vi.mocked(api.get).mockResolvedValue({
-      data: { success: true, data: [{ id: 100, label: 'Flotilla X' }] },
-    });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('area-subuser-fields')).toBeInTheDocument();
-    });
-  });
-
-  it('submit is disabled for Área role when parentOwner and area are not selected', async () => {
-    currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => expect(screen.getByTestId('area-subuser-fields')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
-  });
-
-  it('shows Familiar sub-user fields when role is id=5', async () => {
-    currentMockState.roles = [{ id: 5, label: 'Familiar Operador' }];
-    vi.mocked(api.get).mockResolvedValue({
-      data: { success: true, data: [{ id: 200, label: 'Propietario Y' }] },
-    });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('familiar-subuser-fields')).toBeInTheDocument();
-      expect(screen.getByTestId('familiar-type-pareja')).toBeInTheDocument();
-      expect(screen.getByTestId('familiar-type-hijo_a')).toBeInTheDocument();
-    });
-  });
-
-  it('submit is disabled for Familiar role when parentOwner and familiarType are not set', async () => {
-    currentMockState.roles = [{ id: 5, label: 'Familiar Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => expect(screen.getByTestId('familiar-subuser-fields')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
-  });
-
-  it('familiar type PAREJA button applies active style when clicked', async () => {
-    currentMockState.roles = [{ id: 5, label: 'Familiar Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => expect(screen.getByTestId('familiar-type-pareja')).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId('familiar-type-pareja'));
-    expect(screen.getByTestId('familiar-type-pareja')).toHaveClass('bg-pinnacle-navy');
-  });
-
-  // ── Oleada 8: Fase 5 — role-scoped new fields ──────────────────────────────
-
-  it('shows CENTER selector for Rol 4 (Propietario Privado)', async () => {
-    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url.includes('/catalogs/centers')) {
-        return Promise.resolve({
-          data: { success: true, data: [{ id: 10, label: 'Centro Uno' }] },
-        });
-      }
-      return Promise.resolve({ data: { success: true, data: [] } });
-    });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('privado-centro-section')).toBeInTheDocument();
-    });
-  });
-
-  it('submit is disabled for Rol 4 when no centro selected', async () => {
-    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
-    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-    render(<UserRegistrationForm />);
-    await waitFor(() => expect(screen.getByTestId('privado-centro-section')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
-  });
-
-  it('sub-user create (role 2) calls /auth/sub-users endpoint', async () => {
-    currentMockState.roles = [{ id: 2, label: 'Área Operador' }];
-    // Provide parent owners so the select has options
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url.includes('/owners/') && url.includes('/areas')) {
-        return Promise.resolve({
-          data: { success: true, data: [{ id: 55, name: 'Taller Principal' }] },
-        });
-      }
-      return Promise.resolve({
-        data: { success: true, data: [{ id: 10, label: 'Flotilla Alpha' }] },
-      });
-    });
-    vi.mocked(api.post).mockResolvedValue({ data: { success: true } });
-
-    // Manually inject formData via submitting: bypass canSubmit disabled by forcing form submit
-    render(<UserRegistrationForm />);
-    fireEvent.change(screen.getByPlaceholderText(/Ej\. Ana Karen Flores Baca/i), {
-      target: { value: 'Sub User' },
-    });
-    fireEvent.change(screen.getByPlaceholderText(/aflores/i), { target: { value: 'subuser' } });
-    fireEvent.change(screen.getByPlaceholderText(/ana.karen@piic.com.mx/i), {
-      target: { value: 'sub@t.com' },
-    });
-    // Use fireEvent.submit to bypass button disabled state
-    await act(async () => {
-      fireEvent.submit(screen.getByTestId('registration-form'));
-    });
-    // canSubmit=false → handleCreate NOT called → validation error shown (missing fields)
-    // This verifies that role 2 with missing parentOwnerId/areaId does NOT call /auth/register
-    expect(api.post).not.toHaveBeenCalledWith('/auth/register', expect.anything());
-  });
-
-  // ── Scenario 11 — Fase 6-C: owner-profile-section for Rol 4 ─────────────
-
-  it('shows owner-profile-section for Rol 4 (Privado) with Perfil Personal title — Scenario 11', async () => {
-    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url.includes('/catalogs/centers')) {
-        return Promise.resolve({
-          data: { success: true, data: [{ id: 10, label: 'Centro Uno' }] },
-        });
-      }
-      return Promise.resolve({ data: { success: true, data: [] } });
-    });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
-      expect(screen.getByText('Perfil Personal')).toBeInTheDocument();
-    });
-    expect(screen.queryByTestId('centro-especialidades-input')).not.toBeInTheDocument();
-  });
-
-  // ── Scenario 12 — Fase 6-C: ArchonAddressField rendered inside profile section ─────
-
-  it('renders ArchonAddressField inside owner-profile-section for Rol 4 — Scenario 12', async () => {
-    currentMockState.roles = [{ id: 4, label: 'Privado Operador' }];
-    vi.mocked(api.get).mockImplementation((url: string) => {
-      if (url.includes('/catalogs/centers')) {
-        return Promise.resolve({
-          data: { success: true, data: [{ id: 10, label: 'Centro Uno' }] },
-        });
-      }
-      return Promise.resolve({ data: { success: true, data: [] } });
-    });
-    render(<UserRegistrationForm />);
-    await waitFor(() => {
-      expect(screen.getByTestId('owner-profile-section')).toBeInTheDocument();
-      expect(screen.getByTestId('archon-address-field')).toBeInTheDocument();
-    });
   });
 });

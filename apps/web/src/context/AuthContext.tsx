@@ -21,7 +21,6 @@ interface AuthContextType {
   startImpersonation: (target: UserIndustrial) => void;
   stopImpersonation: () => void;
   ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null;
-  suite: 'ERP' | 'VIM' | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,8 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // FC 082 F0c — eje suite eliminado (084_AN §1a); ownerType queda null hasta
+  // que F3 lo re-derive del chasis Arc.
   const ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = currentUser?.ownerType ?? null;
-  const suite: 'ERP' | 'VIM' | null = currentUser?.suite ?? null;
 
   const isImpersonating = viewAsUser !== null;
   const effectiveUser = viewAsUser ?? currentUser;
@@ -120,7 +120,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         startImpersonation,
         stopImpersonation,
         ownerType,
-        suite,
       }}
     >
       {children}

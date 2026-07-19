@@ -10,9 +10,6 @@ const mockHasPermission = (allowed: boolean): void => {
     hasPermission: (): boolean => allowed,
     hasAnyPermission: (): boolean => allowed,
     isOmnipotent: (): boolean => false,
-    isExternalClientOnly: (): boolean => false,
-    isSuiteVIM: (): boolean => false,
-    isFamiliar: (): boolean => false,
   });
 };
 
@@ -57,9 +54,6 @@ describe('FC-18 FaseD-4 — PermissionGate (AT-FC18-D4-PG)', () => {
       hasPermission: hasPermissionSpy,
       hasAnyPermission: (): boolean => true,
       isOmnipotent: (): boolean => false,
-      isExternalClientOnly: (): boolean => false,
-      isSuiteVIM: (): boolean => false,
-      isFamiliar: (): boolean => false,
     });
     render(
       <PermissionGate permission="security:audit:view">

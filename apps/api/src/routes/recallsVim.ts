@@ -19,15 +19,9 @@ function resolveSignalLevel(score: number): SignalLevel {
   return 'DATOS_INSUFICIENTES';
 }
 
-async function resolveUserSuite(userId: number): Promise<string | null> {
-  const [rows] = await db.execute<RowDataPacket[]>(
-    'SELECT o.suite FROM owners o JOIN user_owner_membership uom ON o.id = uom.owner_id WHERE uom.user_id = ? LIMIT 1',
-    [userId]
-  );
-  if (rows.length === 0 || !rows[0].suite) return null;
-  return rows[0].suite as string;
-}
-
+// FC 082 F0c — eje suite eliminado (migración 164): el scope 'suite' conserva
+// el nombre por compatibilidad pero se comporta como el camino sin-suite ya
+// legislado (VIM-F-10): consulta sin filtro. F3 re-ancla el scope al Arc.
 export default async function recallsVimRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
@@ -46,7 +40,7 @@ export default async function recallsVimRoutes(fastify: FastifyInstance): Promis
         return reply.code(400).send({ error: parsed.error.errors[0].message });
       }
       const { make, model, year, scope } = parsed.data;
-      const { id, permissions } = request.user as { id: number; permissions?: string[] };
+      const { permissions } = request.user as { id: number; permissions?: string[] };
 
       if (scope === 'global') {
         const hasGlobal = permissions?.includes('*') || permissions?.includes('fleet:global');
@@ -55,22 +49,11 @@ export default async function recallsVimRoutes(fastify: FastifyInstance): Promis
         }
       }
 
-      const sqlParams: (string | number)[] = [make, model, Number(year)];
-      let scopeClause = '';
-
-      if (scope === 'suite') {
-        const suite = await resolveUserSuite(id);
-        if (suite) {
-          scopeClause = ' AND suite = ?';
-          sqlParams.push(suite);
-        }
-      }
-
       const [patterns] = await db.execute<RowDataPacket[]>(
         `SELECT * FROM view_fleet_model_failure_patterns
-         WHERE make = ? AND model = ? AND year = ?${scopeClause}
+         WHERE make = ? AND model = ? AND year = ?
          ORDER BY confidence_score DESC`,
-        sqlParams
+        [make, model, Number(year)]
       );
 
       const [nhtsaRows] = await db.execute<RowDataPacket[]>(

@@ -68,7 +68,6 @@ const VIM_PATTERN_FIXTURE = {
   make: 'NISSAN',
   model: 'NP300',
   year: 2021,
-  suite: 'VIM_PIIC',
   failure_category: 'MAINTENANCE',
   occurrence_count: 6,
   affected_units: 2,
@@ -119,7 +118,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-1: 200 con ≥1 patrón MAINTENANCE para scope=suite (seeding FaseB)', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined]) // resolveUserSuite
       .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined]) // view query
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]); // nhtsa check
 
@@ -139,7 +137,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-2: confidence_score = 0.6667 cuando 2 de 3 unidades mismo modelo con falla', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
       .mockResolvedValueOnce([[VIM_REPAIR_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
@@ -182,7 +179,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-4: nhtsa_covered = true cuando recall existe en catalog_recalls', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
       .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 3 }], undefined]); // 3 NHTSA recalls found
 
@@ -199,7 +195,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-4b: nhtsa_covered = false cuando no hay recall en catalog_recalls', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
       .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
@@ -215,7 +210,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-5: signal_level SEÑAL cuando confidence_score >= 0.6', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
       .mockResolvedValueOnce([[{ ...VIM_PATTERN_FIXTURE, confidence_score: '0.7500' }], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
@@ -231,7 +225,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-6: signal_level INVESTIGAR cuando 0.3 <= confidence_score < 0.6', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
       .mockResolvedValueOnce([[{ ...VIM_PATTERN_FIXTURE, confidence_score: '0.4000' }], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
@@ -256,7 +249,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-8: lista vacía cuando vista no retorna filas', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
       .mockResolvedValueOnce([[], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
@@ -273,7 +265,6 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
   it('VIM-F-9: signal_level DATOS_INSUFICIENTES cuando confidence_score < 0.3 (lines 19-20)', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ suite: 'VIM_PIIC' }], undefined])
       .mockResolvedValueOnce([[{ ...VIM_PATTERN_FIXTURE, confidence_score: '0.2000' }], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
@@ -286,11 +277,10 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     expect(res.json().data[0].signal_level).toBe('DATOS_INSUFICIENTES');
   });
 
-  it('VIM-F-10: scope=suite usuario sin suite (resolveUserSuite rows vacíos → B27[1] ||short-circuit) → query sin filtro suite', async () => {
+  it('VIM-F-10 (FC082 F0c): scope=suite sin eje suite → query sin filtro (comportamiento único)', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[], undefined]) // resolveUserSuite: rows vacíos → rows.length===0 TRUE → return null
-      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined]) // query sin suite filter
+      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined]) // query sin filtro suite
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({

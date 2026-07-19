@@ -32,7 +32,6 @@ vi.mock('../services/fleetService', () => ({
 const baseTcoRow: TcoRow = {
   fleet_unit_id: 'PIIC-101',
   owner_id: 9100,
-  suite: 'VIM',
   tco_total: '4200.00',
   tco_maintenance: '1000.00',
   tco_insurance: '1200.00',
@@ -46,10 +45,9 @@ const baseTcoRow: TcoRow = {
 };
 
 describe('buildTcoResponse (FT-TCO-1..2)', () => {
-  it('FT-TCO-1: convierte todos los campos DECIMAL a number y preserva fleet_unit_id y suite', () => {
+  it('FT-TCO-1: convierte todos los campos DECIMAL a number y preserva fleet_unit_id', () => {
     const result = buildTcoResponse(baseTcoRow);
     expect(result.fleet_unit_id).toBe('PIIC-101');
-    expect(result.suite).toBe('VIM');
     expect(result.tco_total).toBe(4200);
     expect(result.tco_maintenance).toBe(1000);
     expect(result.tco_insurance).toBe(1200);

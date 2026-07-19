@@ -239,13 +239,13 @@ describe('FC-3 Realtime_Telemetry FaseB — POST /v1/telemetry/ping + GET /v1/te
  */
 describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family-units', () => {
   const app = buildApp();
-  let familiarToken: string;
+  let restrictedToken: string;
   let privateOwnerToken: string;
 
   beforeAll(async () => {
     await app.ready();
     const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
-    familiarToken = jwt.sign({ id: 20, permissions: [] });
+    restrictedToken = jwt.sign({ id: 20, permissions: [] });
     privateOwnerToken = jwt.sign({ id: 21, permissions: ['fleet:view', 'fleet:scoped'] });
   });
 
@@ -287,7 +287,7 @@ describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family
     const res = await app.inject({
       method: 'GET',
       url: '/v1/telemetry/family-units',
-      headers: { authorization: `Bearer ${familiarToken}` },
+      headers: { authorization: `Bearer ${restrictedToken}` },
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).units).toEqual([]);
@@ -325,7 +325,7 @@ describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family
     const res = await app.inject({
       method: 'GET',
       url: '/v1/telemetry/family-units',
-      headers: { authorization: `Bearer ${familiarToken}` },
+      headers: { authorization: `Bearer ${restrictedToken}` },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -355,7 +355,7 @@ describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family
     const res = await app.inject({
       method: 'GET',
       url: '/v1/telemetry/family-units',
-      headers: { authorization: `Bearer ${familiarToken}` },
+      headers: { authorization: `Bearer ${restrictedToken}` },
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).units[0].latitude).toBeNull();
@@ -383,7 +383,7 @@ describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family
     const res = await app.inject({
       method: 'GET',
       url: '/v1/telemetry/family-units',
-      headers: { authorization: `Bearer ${familiarToken}` },
+      headers: { authorization: `Bearer ${restrictedToken}` },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -396,7 +396,7 @@ describe('FC-10 VIM_SubUniverse_FamiliarScope FaseA — GET /v1/telemetry/family
     const res = await app.inject({
       method: 'GET',
       url: '/v1/telemetry/family-units',
-      headers: { authorization: `Bearer ${familiarToken}` },
+      headers: { authorization: `Bearer ${restrictedToken}` },
     });
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.body).error).toBe('FAMILIAR_SCOPE_REQUIRED');

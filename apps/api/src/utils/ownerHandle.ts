@@ -10,15 +10,16 @@ function randomSuffix(): string {
 }
 
 /**
- * Derives a deterministic handle base: {SUITE}-{6CHARS}
- * Priority: RFC ≥6 chars → RFC padded → username → throw (§14 impossible)
+ * Derives a deterministic handle base: {PREFIX}-{6CHARS}
+ * FC 082 F0c: el prefijo era la suite (ERP|VIM); con el eje muerto ahora es el
+ * universo (FMS). Priority: RFC ≥6 chars → RFC padded → username → throw (§14)
  */
 export function deriveOwnerHandle(
-  suite: string,
+  prefixSource: string,
   rfc: string | null | undefined,
   username: string
 ): string {
-  const prefix = suite.toUpperCase();
+  const prefix = prefixSource.toUpperCase();
   const cleanRfc = rfc ? rfc.replace(/[^A-Z0-9]/gi, '').toUpperCase() : '';
 
   let base: string;
@@ -49,11 +50,11 @@ type DbConn = {
  */
 export async function resolveUniqueHandle(
   connection: DbConn,
-  suite: string,
+  prefixSource: string,
   rfc: string | null | undefined,
   username: string
 ): Promise<string> {
-  const base = deriveOwnerHandle(suite, rfc, username);
+  const base = deriveOwnerHandle(prefixSource, rfc, username);
 
   const [existing] = await connection.execute<RowDataPacket[]>(
     'SELECT id FROM owners WHERE handle = ? LIMIT 1',

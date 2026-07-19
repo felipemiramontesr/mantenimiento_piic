@@ -95,9 +95,10 @@ describe('isAllowlisted / filterNewViolations — Scenario 6', () => {
     expect(isAllowlisted(violation, ALLOWLIST)).toBe(true);
   });
 
-  it('las 9 violaciones reales de terreno (2026-07-09) están todas cubiertas por el ALLOWLIST', () => {
-    // Fija el terreno verificado manualmente al momento del F1 — si crece, se agrega al
-    // ALLOWLIST vía FC firmado, nunca silenciosamente.
-    expect(ALLOWLIST).toHaveLength(10);
+  it('el terreno vivo está todo cubierto por el ALLOWLIST (6 tras FC 082 F0c)', () => {
+    // Fija el terreno verificado manualmente — si crece, se agrega al
+    // ALLOWLIST vía FC firmado, nunca silenciosamente. FC 082 F0c retiró las
+    // 4 entradas de seedSupercumulosPiic.ts (script muerto con la banda VIM).
+    expect(ALLOWLIST).toHaveLength(6);
   });
 });

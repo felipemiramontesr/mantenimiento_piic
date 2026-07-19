@@ -14,7 +14,6 @@ const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | nu
 export type TcoRow = {
   fleet_unit_id: string;
   owner_id: number;
-  suite: string;
   tco_total: string | number;
   tco_maintenance: string | number;
   tco_insurance: string | number;
@@ -30,7 +29,6 @@ export type TcoRow = {
 export function buildTcoResponse(row: TcoRow): Record<string, unknown> {
   return {
     fleet_unit_id: row.fleet_unit_id,
-    suite: row.suite,
     tco_total: Number(row.tco_total),
     tco_maintenance: Number(row.tco_maintenance),
     tco_insurance: Number(row.tco_insurance),
@@ -64,7 +62,7 @@ export default async function fleetTcoRoutes(fastify: FastifyInstance): Promise<
           return reply.code(403).send({ error: 'Access denied' });
         }
         const [rows] = await db.query<RowDataPacket[]>(
-          `SELECT fleet_unit_id, owner_id, suite,
+          `SELECT fleet_unit_id, owner_id,
                   tco_total, tco_maintenance, tco_insurance, tco_lease,
                   tco_tenencia, tco_verificacion, tco_fuel, tco_other,
                   total_records, last_record_at

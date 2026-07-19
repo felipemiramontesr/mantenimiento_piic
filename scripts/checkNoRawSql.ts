@@ -130,27 +130,6 @@ export const ALLOWLIST: AllowlistEntry[] = [
     snippetIncludes: 'SET time_zone',
     reason: 'MEXICO_TZ_OFFSET es constante hardcodeada (-06:00), no input de usuario.',
   },
-  {
-    file: 'apps/api/src/scripts/seedSupercumulosPiic.ts',
-    snippetIncludes: 'DELETE FROM user_owner_membership WHERE user_id IN',
-    reason:
-      'uidPH es string de placeholders `?` vía .map(()=>"?").join(",") — valores parametrizados; script de seed dev-only, no ruta HTTP.',
-  },
-  {
-    file: 'apps/api/src/scripts/seedSupercumulosPiic.ts',
-    snippetIncludes: 'DELETE FROM user_roles WHERE user_id IN',
-    reason: 'Mismo patrón placeholder-string seguro que la línea anterior.',
-  },
-  {
-    file: 'apps/api/src/scripts/seedSupercumulosPiic.ts',
-    snippetIncludes: 'DELETE FROM users WHERE id IN',
-    reason: 'Mismo patrón placeholder-string seguro.',
-  },
-  {
-    file: 'apps/api/src/scripts/seedSupercumulosPiic.ts',
-    snippetIncludes: 'DELETE FROM fleet_units WHERE id IN',
-    reason: 'Mismo patrón placeholder-string seguro (idPH).',
-  },
 ];
 
 /* v8 ignore start */

@@ -61,7 +61,6 @@ describe('AuditLogView', () => {
       hasPermission: (): boolean => true,
       hasAnyPermission: (): boolean => true,
       isOmnipotent: (): boolean => false,
-      isSuiteVIM: (): boolean => false,
     });
   });
 
@@ -113,7 +112,6 @@ describe('AuditLogView', () => {
       hasPermission: (): boolean => true,
       hasAnyPermission: (): boolean => true,
       isOmnipotent: (): boolean => true,
-      isSuiteVIM: (): boolean => false,
     });
     vi.mocked(api.get).mockResolvedValue(MOCK_RESPONSE);
     render(<AuditLogView />);

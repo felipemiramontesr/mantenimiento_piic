@@ -75,13 +75,14 @@ describe('FC-18 FaseC-2 — Universe Routing (AT-FC18-C2-AR)', () => {
     expect(universe.statusCode).toBe(legacy.statusCode);
   });
 
-  // AT-FC18-C2-AR-3: Universe-prefixed CRM contacts route is live
-  it('AT-FC18-C2-AR-3 — GET /v1/mantenimiento/contacts responds (not 404)', async () => {
+  // AT-FC18-C2-AR-3 (FC 082 F0c): las rutas CRM murieron (084_AN §1b) — el
+  // prefijo de universo ahora debe responder 404 para /contacts.
+  it('AT-FC18-C2-AR-3 — GET /v1/mantenimiento/contacts responde 404 (CRM purgado)', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/v1/mantenimiento/contacts',
       headers: auth(),
     });
-    expect(res.statusCode).not.toBe(404);
+    expect(res.statusCode).toBe(404);
   });
 });

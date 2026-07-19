@@ -127,44 +127,15 @@ describe('authIntegration.test', () => {
     expect(JSON.parse(r2.body).user.imageUrl).toContain('/profile-image');
   });
 
-  it('Path: Register & Conflict Sovereign Logic', async () => {
-    // roleId: 1 — user INSERT now inside withConnection transaction (Fase 3)
-    (db.getConnection as Mock).mockResolvedValue(mockConnection);
-    (mockConnection.execute as Mock)
-      .mockResolvedValueOnce([{ insertId: 70 }, undefined]) // INSERT users (inside transaction)
-      .mockResolvedValueOnce([[], undefined]) // owner label lookup → none
-      .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
-      .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check → no collision
-      .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT owners + membership
-
-    (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username check only
+  // FC 082 F0c — "Register & Conflict Sovereign Logic" murió con POST /register
+  // (bandas {1,3,4} — 084_AN §1a); el gate confirma la ruta muerta.
+  it('Path: POST /register purgado responde 404', async () => {
     const r1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/register',
-      payload: {
-        username: 'user70',
-        email: 'e70@e.com',
-        password: 'Archon@1234!',
-        roleId: 1,
-        profile: { rfc: 'ABC010101000' },
-      },
+      payload: { username: 'user70', email: 'e70@e.com', password: 'Archon@1234!' },
     });
-    expect(r1.statusCode).toBe(201);
-
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 70 }], undefined]);
-    const r2 = await app.inject({
-      method: 'POST',
-      url: '/v1/auth/register',
-      payload: {
-        username: 'user70',
-        email: 'e70@e.com',
-        password: 'Archon@1234!',
-        roleId: 1,
-        profile: { rfc: 'ABC010101000' },
-      },
-    });
-    expect(r2.statusCode).toBe(409);
+    expect(r1.statusCode).toBe(404);
   });
 
   it('Path: Users (Filtered & Unfiltered) & Roles', async () => {
@@ -253,18 +224,8 @@ describe('authIntegration.test', () => {
       throw new Error('FATAL_CONN');
     });
 
+    // FC 082 F0c — /register fuera de la matriz: el endpoint murió (404, no 500).
     const r1 = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: validCreds });
-    const r2 = await app.inject({
-      method: 'POST',
-      url: '/v1/auth/register',
-      payload: {
-        username: 'user80',
-        email: 'e@e.com',
-        password: 'Archon@1234!',
-        roleId: 1,
-        profile: { rfc: 'RFC_FATAL' },
-      },
-    });
     const r3 = await app.inject({
       method: 'GET',
       url: '/v1/auth/users',
@@ -278,7 +239,7 @@ describe('authIntegration.test', () => {
     });
     const r5 = await app.inject({ method: 'GET', url: '/v1/auth/roles', headers: authHeader() });
 
-    expect([r1, r2, r3, r4, r5].every((r) => r.statusCode === 500)).toBe(true);
+    expect([r1, r3, r4, r5].every((r) => r.statusCode === 500)).toBe(true);
   });
 
   it('Edge: Validation & Atomic Fallbacks', async () => {
@@ -338,14 +299,7 @@ describe('authIntegration.test', () => {
     expect(rFailPass.statusCode).toBe(401);
     expect(JSON.parse(rFailPass.body)).toEqual({ error: 'L4' });
 
-    // Validation rejection paths
-    const rV1 = await app.inject({
-      method: 'POST',
-      url: '/v1/auth/register',
-      payload: { username: 'a', email: 'not-an-email', password: '1' },
-    });
-    expect(rV1.statusCode).toBe(400);
-
+    // Validation rejection paths (FC 082 F0c: /register murió — fuera del edge)
     const rV2 = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/1',
@@ -1042,66 +996,9 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     await bcApp.close();
   });
 
-  it('AUTH-BC-1: POST /register roleId=4 no profile → insertOwnerProfile early return (B16)', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
-    (db.getConnection as Mock).mockResolvedValueOnce(mockConnection);
-    (mockConnection.execute as Mock)
-      .mockResolvedValueOnce([{ insertId: 80 }, undefined])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ nextId: 900 }], undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
-    const res = await bcApp.inject({
-      method: 'POST',
-      url: '/v1/auth/register',
-      payload: {
-        username: 'privado.bc1',
-        email: 'bc1@test.mx',
-        password: 'Archon@1234!',
-        roleId: 4,
-        fullName: 'Sin Perfil',
-      },
-    });
-    expect(res.statusCode).toBe(201);
-    const calls = (mockConnection.execute as Mock).mock.calls.map((c) => c[0] as string);
-    expect(calls.some((s) => s.includes('owner_profiles'))).toBe(false);
-  });
-
-  it('AUTH-BC-2: POST /register roleId=3 profile no especialidades → null param in INSERT (B21)', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
-    (db.getConnection as Mock).mockResolvedValueOnce(mockConnection);
-    (mockConnection.execute as Mock)
-      .mockResolvedValueOnce([{ insertId: 81 }, undefined])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ nextId: 901 }], undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
-    const res = await bcApp.inject({
-      method: 'POST',
-      url: '/v1/auth/register',
-      payload: {
-        username: 'centro.bc2',
-        email: 'bc2@test.mx',
-        password: 'Archon@1234!',
-        roleId: 3,
-        fullName: 'Taller BC2',
-        profile: { rfc: 'ABC010101000', razon_social: 'Taller' },
-      },
-    });
-    expect(res.statusCode).toBe(201);
-    const profileCall = (mockConnection.execute as Mock).mock.calls.find((c) =>
-      (c[0] as string).includes('owner_profiles')
-    );
-    expect(profileCall).toBeDefined();
-    expect(profileCall![1][4]).toBeNull();
-  });
-
-  it('AUTH-BC-3: POST /login resolveSuite non-empty → return suite (B47)', async () => {
+  // FC 082 F0c — AUTH-BC-1/2 (escenarios de /register) murieron con el
+  // endpoint; AUTH-BC-3 muta: sin eje suite el login ya no expone user.suite.
+  it('AUTH-BC-3 (FC082 F0c): POST /login sin eje suite → user.suite ausente', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([
         [
@@ -1118,15 +1015,14 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
         undefined,
       ])
       .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined])
-      .mockResolvedValueOnce([[{ suite: 'ERP' }], undefined]);
+      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
     const res = await bcApp.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'admin_test', password: 'password123' },
     });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).user.suite).toBe('ERP');
+    expect(JSON.parse(res.body).user.suite).toBeUndefined();
   });
 
   it('AUTH-BC-4: POST /login user_roles non-empty → roleIds from table (B80)', async () => {
@@ -1155,7 +1051,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     expect(res.statusCode).toBe(200);
   });
 
-  it('AUTH-BC-5: POST /login roleId=3 → ownerType=CENTER (B87)', async () => {
+  it('AUTH-BC-5 (FC082 F0c): POST /login roleId=3 → ownerType null (mapeo muerto)', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([
         [
@@ -1179,10 +1075,10 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
       payload: { username: 'admin_test', password: 'password123' },
     });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).user.ownerType).toBe('CENTER');
+    expect(JSON.parse(res.body).user.ownerType).toBeNull();
   });
 
-  it('AUTH-BC-6: POST /login roleId=4 → ownerType=PRIVATE (B88)', async () => {
+  it('AUTH-BC-6 (FC082 F0c): POST /login roleId=4 → ownerType null (mapeo muerto)', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([
         [
@@ -1206,7 +1102,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
       payload: { username: 'admin_test', password: 'password123' },
     });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).user.ownerType).toBe('PRIVATE');
+    expect(JSON.parse(res.body).user.ownerType).toBeNull();
   });
 
   it('AUTH-BC-7: POST /refresh user_roles non-empty → roleIds from table (B102)', async () => {
@@ -1244,7 +1140,7 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     expect(JSON.parse(res.body).success).toBe(true);
   });
 
-  it('AUTH-BC-8: POST /refresh roleId=3 → ownerType=CENTER (B105)', async () => {
+  it('AUTH-BC-8 (FC082 F0c): POST /refresh roleId=3 → owner_type null en JWT', async () => {
     const refreshToken = bcApp.jwt.sign({ id: 11, type: 'refresh' }, { expiresIn: '7d' });
     (db.execute as Mock)
       .mockResolvedValueOnce([
@@ -1276,11 +1172,11 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
       cookies: { refresh_token: refreshToken },
     });
     expect(res.statusCode).toBe(200);
-    const decoded = bcApp.jwt.decode<{ owner_type: string }>(JSON.parse(res.body).token);
-    expect(decoded!.owner_type).toBe('CENTER');
+    const decoded = bcApp.jwt.decode<{ owner_type: string | null }>(JSON.parse(res.body).token);
+    expect(decoded!.owner_type).toBeNull();
   });
 
-  it('AUTH-BC-9: POST /refresh roleId=4 → ownerType=PRIVATE (B108)', async () => {
+  it('AUTH-BC-9 (FC082 F0c): POST /refresh roleId=4 → owner_type null en JWT', async () => {
     const refreshToken = bcApp.jwt.sign({ id: 12, type: 'refresh' }, { expiresIn: '7d' });
     (db.execute as Mock)
       .mockResolvedValueOnce([
@@ -1312,8 +1208,8 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
       cookies: { refresh_token: refreshToken },
     });
     expect(res.statusCode).toBe(200);
-    const decoded = bcApp.jwt.decode<{ owner_type: string }>(JSON.parse(res.body).token);
-    expect(decoded!.owner_type).toBe('PRIVATE');
+    const decoded = bcApp.jwt.decode<{ owner_type: string | null }>(JSON.parse(res.body).token);
+    expect(decoded!.owner_type).toBeNull();
   });
 });
 

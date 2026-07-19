@@ -235,101 +235,16 @@ describe('User Fleet-Owner Links (A3)', () => {
     });
   });
 
-  describe('POST /v1/auth/register — roles 1, 3 and 4 auto-link an owners row', () => {
-    const clientPayload = {
-      username: 'juan.perez',
-      email: 'juan@cliente.mx',
-      password: 'Archon@1234!',
-      roleId: 1,
-      fullName: 'Juan Pérez',
-      profile: { rfc: 'RFC_TEST001' },
-    };
-
-    it('creates the owners row and the membership link when the owner does not exist', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
-      mockConnection.execute
-        .mockResolvedValueOnce([{ insertId: 55 }, undefined]) // INSERT users (inside transaction)
-        .mockResolvedValueOnce([[], undefined]) // owners lookup by label → none
-        .mockResolvedValueOnce([[{ nextId: 1051 }], undefined]) // MAX(id)+1 from common_catalogs
-        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT common_catalogs
-        .mockResolvedValueOnce([[], undefined]) // SELECT handle collision check
-        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT owners
-        .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT user_owner_membership
-
+  // FC 082 F0c — el bloque "POST /v1/auth/register auto-link" murió con el
+  // endpoint (bandas {1,3,4} — 084_AN §1a); el gate confirma la ruta muerta.
+  describe('POST /v1/auth/register — purgado (FC 082 F0c)', () => {
+    it('responde 404 (endpoint eliminado con las bandas de roles)', async (): Promise<void> => {
       const response = await app.inject({
         method: 'POST',
         url: '/v1/auth/register',
-        payload: clientPayload,
+        payload: { username: 'juan.perez', email: 'juan@cliente.mx', password: 'Archon@1234!' },
       });
-
-      expect(response.statusCode).toBe(201);
-
-      const { calls } = mockConnection.execute.mock;
-      const catalogInsert = calls.find((c) =>
-        (c[0] as string).includes('INSERT INTO common_catalogs')
-      );
-      expect(catalogInsert).toBeDefined();
-      expect(catalogInsert?.[1]).toEqual([1051, 'OWN_U55', 'Juan Pérez']);
-
-      const ownersInsert = calls.find((c) => (c[0] as string).includes('INSERT INTO owners'));
-      expect(ownersInsert).toBeDefined();
-      expect(ownersInsert?.[1]).toEqual([1051, 'FLOTILLA', 'ERP', 'Juan Pérez', 'ERP-RFCTES']);
-
-      const membershipInsert = calls.find((c) =>
-        (c[0] as string).includes('user_owner_membership')
-      );
-      expect(membershipInsert?.[1]).toEqual([55, 1051]);
-      expect(mockConnection.commit).toHaveBeenCalled();
-    });
-
-    it('reuses the existing owners row when the owner label already exists', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // username unique check
-      mockConnection.execute
-        .mockResolvedValueOnce([{ insertId: 56 }, undefined]) // INSERT users (inside transaction)
-        .mockResolvedValueOnce([[{ id: 880 }], undefined]) // owners lookup by label → exists
-        .mockResolvedValue([{ affectedRows: 1 }, undefined]); // INSERT user_owner_membership
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/auth/register',
-        payload: clientPayload,
-      });
-
-      expect(response.statusCode).toBe(201);
-
-      const sqls = mockConnection.execute.mock.calls.map((c) => c[0] as string);
-      expect(sqls.some((s) => s.includes('INSERT INTO owners '))).toBe(false);
-      const membershipInsert = mockConnection.execute.mock.calls.find((c) =>
-        (c[0] as string).includes('user_owner_membership')
-      );
-      expect(membershipInsert?.[1]).toEqual([56, 880]);
-    });
-
-    it('returns 400 for roleId outside [1,3,4] — schema rejects non-owner roles', async (): Promise<void> => {
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/auth/register',
-        payload: { ...clientPayload, username: 'staff.user', roleId: 0 },
-      });
-
-      expect(response.statusCode).toBe(400);
-      expect(mockConnection.execute).not.toHaveBeenCalled();
-    });
-
-    it('returns 500 and rolls back when the owner linking fails', async (): Promise<void> => {
-      (db.execute as Mock)
-        .mockResolvedValueOnce([[], undefined]) // username unique check
-        .mockResolvedValueOnce([{ insertId: 58 }, undefined]); // user insert
-      mockConnection.execute.mockRejectedValueOnce(new Error('LINK_FAIL'));
-
-      const response = await app.inject({
-        method: 'POST',
-        url: '/v1/auth/register',
-        payload: clientPayload,
-      });
-
-      expect(response.statusCode).toBe(500);
-      expect(mockConnection.rollback).toHaveBeenCalled();
+      expect(response.statusCode).toBe(404);
     });
   });
 });

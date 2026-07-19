@@ -4,14 +4,13 @@ import '@fastify/cookie';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import { z } from 'zod';
-import { userUpdateSchema, registerSchema } from '@mantenimiento/contracts';
+import { userUpdateSchema } from '@mantenimiento/contracts';
 import db from '../services/db';
 import EncryptionService from '../services/encryption';
 import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 import FleetService from '../services/fleetService';
-import { resolveUniqueHandle } from '../utils/ownerHandle';
 
 const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
   const { id, permissions } = request.user as { id: number; permissions?: string[] };
@@ -33,72 +32,9 @@ const isUserInOwnerScope = async (
   return targetOwnerIds.some((oid) => ownerScope.includes(oid));
 };
 
-type OwnerType = 'FLOTILLA' | 'CENTER' | 'PRIVATE';
-
-/** Finds or creates the owners + common_catalogs rows inside an existing transaction. */
-async function resolveOwnerRow(
-  connection: PoolConnection,
-  userId: number,
-  ownerLabel: string,
-  ownerType: OwnerType,
-  username: string,
-  rfc?: string | null
-): Promise<number> {
-  const [existing] = await connection.execute<RowDataPacket[]>(
-    'SELECT id FROM owners WHERE label = ? LIMIT 1',
-    [ownerLabel]
-  );
-  if ((existing as RowDataPacket[]).length > 0) {
-    return (existing as RowDataPacket[])[0].id as number;
-  }
-  const [nextRows] = await connection.execute<RowDataPacket[]>(
-    'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
-  );
-  const ownerId = (nextRows as RowDataPacket[])[0].nextId as number;
-  await connection.execute<ResultSetHeader>(
-    "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
-    [ownerId, `OWN_U${userId}`, ownerLabel]
-  );
-  const suite: 'ERP' | 'VIM' = ownerType === 'FLOTILLA' ? 'ERP' : 'VIM';
-  const handle = await resolveUniqueHandle(connection, suite, rfc, username);
-  await connection.execute<ResultSetHeader>(
-    'INSERT INTO owners (id, owner_type_id, suite, label, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?)',
-    [ownerId, ownerType, suite, ownerLabel, handle]
-  );
-  return ownerId;
-}
-
-type ProfileData =
-  | { rfc?: string; razon_social?: string; telefono?: string; especialidades?: string }
-  | undefined;
-type AddressData =
-  | { calle: string; numeroExt: string; numeroInt?: string; neighborhoodId: number }
-  | undefined;
-
-/** Inserts owner_profiles row inside an existing transaction (no-op when profile is absent). */
-async function insertOwnerProfile(
-  connection: PoolConnection,
-  ownerId: number,
-  roleId: number,
-  profile: ProfileData,
-  address: AddressData
-): Promise<void> {
-  if (!profile) return;
-  await connection.execute<ResultSetHeader>(
-    'INSERT INTO owner_profiles (owner_id, rfc, razon_social, telefono, especialidades, calle, numero_exterior, numero_interior, neighborhood_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [
-      ownerId,
-      profile.rfc || null,
-      profile.razon_social || null,
-      profile.telefono || null,
-      roleId === 3 ? profile.especialidades || null : null,
-      address?.calle || null,
-      address?.numeroExt || null,
-      address?.numeroInt || null,
-      address?.neighborhoodId || null,
-    ]
-  );
-}
+// FC 082 F0c — /register y sus helpers (resolveOwnerRow, insertOwnerProfile)
+// murieron con las bandas de roles {1,3,4} (084_AN v3.1 §1a). El alta de
+// usuarios/Arcs renace en F3 sobre el chasis §24.13 + Contrato §C (dual-door).
 
 /**
  * 🔱 Archon Auth Engine (v.8.7.0) - THE NUCLEUS
@@ -150,16 +86,6 @@ function mapUserResponse(user: RowDataPacket): {
     employeeNumber: user.employee_number || user.employeeNumber || null,
     is_active: user.is_active !== undefined ? Boolean(user.is_active) : true,
   };
-}
-
-async function resolveSuite(userId: number, roleId: number): Promise<'ERP' | 'VIM' | null> {
-  if (roleId === 0) return null;
-  const [suiteRows] = await db.execute<RowDataPacket[]>(
-    'SELECT o.suite FROM owners o JOIN user_owner_membership uom ON o.id = uom.owner_id WHERE uom.user_id = ? LIMIT 1',
-    [userId]
-  );
-  if (suiteRows.length > 0) return suiteRows[0].suite as 'ERP' | 'VIM';
-  return null;
 }
 
 async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
@@ -267,12 +193,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           permissions = permRows.map((r) => r.slug as string);
         }
 
-        let ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
-        if (mapped.roleId === 1) ownerType = 'FLOTILLA';
-        else if (mapped.roleId === 3) ownerType = 'CENTER';
-        else if (mapped.roleId === 4) ownerType = 'PRIVATE';
-
-        const suite = await resolveSuite(mapped.id, mapped.roleId);
+        // FC 082 F0c — sin roles 1/3/4 ni eje suite no hay ownerType derivable;
+        // queda null (gate web lo trata como usuario interno). F3 lo re-deriva del Arc.
+        const ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
 
         const token = fastify.jwt.sign({
           id: user.id,
@@ -282,7 +205,6 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           permissions,
           type: 'access',
           owner_type: ownerType,
-          suite,
         });
         const refreshToken = fastify.jwt.sign(
           { id: user.id, type: 'refresh' },
@@ -299,7 +221,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         };
         return reply
           .setCookie('refresh_token', refreshToken, refreshCookieOpts)
-          .send({ success: true, token, user: { ...mapped, permissions, ownerType, suite } });
+          .send({ success: true, token, user: { ...mapped, permissions, ownerType } });
       } catch (e) {
         fastify.log.error(e);
         return reply.code(500).send({ error: 'LOGIN_FAIL' });
@@ -341,12 +263,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         );
         permissions = permRows.map((r) => r.slug as string);
       }
-      let ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
-      if (mapped.roleId === 1) ownerType = 'FLOTILLA';
-      else if (mapped.roleId === 3) ownerType = 'CENTER';
-      else if (mapped.roleId === 4) ownerType = 'PRIVATE';
-
-      const suite = await resolveSuite(mapped.id, mapped.roleId);
+      // FC 082 F0c — ownerType null (ver /login); eje suite eliminado.
+      const ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
 
       const accessToken = fastify.jwt.sign({
         id: user.id,
@@ -356,12 +274,11 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         permissions,
         type: 'access',
         owner_type: ownerType,
-        suite,
       });
       return reply.send({
         success: true,
         token: accessToken,
-        user: { ...mapped, permissions, ownerType, suite },
+        user: { ...mapped, permissions, ownerType },
       });
     } catch {
       return reply.code(401).send({ error: 'REFRESH_FAIL' });
@@ -380,106 +297,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     return reply.clearCookie('refresh_token', clearCookieOpts).send({ success: true });
   });
 
-  fastify.post('/register', async (request, reply) => {
-    // FC 076 F4 — schema movido a packages/contracts (SSOT compartido con
-    // apps/web); importado 1:1, cero cambio semántico (Cond.1 Bravo).
-    const schema = registerSchema;
-    const body = schema.safeParse(request.body);
-    if (!body.success) {
-      return reply.code(400).send({ error: 'R1' });
-    }
-    const {
-      username,
-      email,
-      password,
-      roleId,
-      fullName,
-      departmentId,
-      employeeNumber,
-      profile,
-      address,
-      areas,
-    } = body.data;
-
-    if ([1, 3].includes(roleId) && !profile?.rfc) {
-      return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
-    }
-
-    try {
-      const existing = await db.execute<RowDataPacket[]>(
-        'SELECT id FROM users WHERE username = ?',
-        [username]
-      );
-      if (existing) {
-        const [results] = existing;
-        if (results && results.length > 0) {
-          return reply.code(409).send({ error: 'R2' });
-        }
-      }
-      const hash = await argon2Hash(password);
-      const enc = EncryptionService.encrypt(email);
-
-      return await withConnection(async (connection) => {
-        await connection.beginTransaction();
-        try {
-          const [res] = await connection.execute<ResultSetHeader>(
-            'INSERT INTO users (username, email, password_hash, role_id, full_name, department_id, employee_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [
-              username,
-              enc,
-              hash,
-              roleId,
-              fullName || '',
-              departmentId || null,
-              employeeNumber || null,
-            ]
-          );
-          const userId = res.insertId;
-          let ownerType: OwnerType;
-          if (roleId === 1) ownerType = 'FLOTILLA';
-          else if (roleId === 4) ownerType = 'PRIVATE';
-          else ownerType = 'CENTER';
-          const ownerLabel = fullName || username;
-
-          const ownerId = await resolveOwnerRow(
-            connection,
-            userId,
-            ownerLabel,
-            ownerType,
-            username,
-            profile?.rfc
-          );
-
-          await connection.execute<ResultSetHeader>(
-            'INSERT IGNORE INTO user_owner_membership (user_id, owner_id) VALUES (?, ?)',
-            [userId, ownerId]
-          );
-
-          await insertOwnerProfile(connection, ownerId, roleId, profile, address);
-
-          if (roleId === 1 && areas && areas.length > 0) {
-            await Promise.all(
-              areas.map((areaName) =>
-                connection.execute<ResultSetHeader>(
-                  'INSERT INTO areas (owner_id, name) VALUES (?, ?)',
-                  [ownerId, areaName]
-                )
-              )
-            );
-          }
-
-          await connection.commit();
-          return reply.code(201).send({ success: true, userId });
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        }
-      });
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ error: 'REG_FAIL' });
-    }
-  });
+  // FC 082 F0c — POST /register eliminado (bandas {1,3,4} muertas — 084_AN §1a).
 
   fastify.get('/users', async (request, reply) => {
     await request.jwtVerify();
@@ -742,7 +560,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         }
       }
       const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT uom.owner_id AS ownerId, o.label, o.handle, o.suite, otc.code AS ownerType
+        `SELECT uom.owner_id AS ownerId, o.label, o.handle, otc.code AS ownerType
          FROM user_owner_membership uom
          JOIN owners o ON o.id = uom.owner_id
          JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
@@ -871,169 +689,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     });
   });
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Archon Master: create sub-user (Área role_id=2 / Familiar role_id=5)
-  // Guard: caller must own the parentOwnerId via user_owner_membership
-  // ──────────────────────────────────────────────────────────────────────────
-  fastify.post('/sub-users', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.code(401).send({ error: 'Session required' });
-    }
-    const caller = request.user as { id: number };
-
-    const schema = z.object({
-      username: z.string().min(3),
-      email: z.string().email(),
-      password: z
-        .string()
-        .min(10)
-        .regex(/[A-Z]/, 'R3_UPPER')
-        .regex(/[a-z]/, 'R3_LOWER')
-        .regex(/\d/, 'R3_DIGIT')
-        .regex(/[^A-Za-z0-9]/, 'R3_SPECIAL'),
-      roleId: z
-        .number()
-        .int()
-        .refine((id) => [2, 4, 5].includes(id), {
-          message: 'roleId must be 2 (Área), 4 (Privado) or 5 (Familiar)',
-        }),
-      parentOwnerId: z.number().int().positive(),
-      areaId: z.number().int().positive().optional(),
-      familiarType: z.enum(['PAREJA', 'HIJO_A']).optional(),
-      fullName: z.string().optional(),
-    });
-
-    const parsed = schema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.code(400).send({ error: 'SU_VALIDATION', details: parsed.error.format() });
-    }
-    const { username, email, password, roleId, parentOwnerId, areaId, familiarType, fullName } =
-      parsed.data;
-
-    const [callerOwnerRows] = await db.execute<RowDataPacket[]>(
-      'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
-      [caller.id]
-    );
-    const callerOwnerIds = callerOwnerRows.map((r) => r.owner_id as number);
-    if (!callerOwnerIds.includes(parentOwnerId)) {
-      return reply.code(403).send({ error: 'OWNER_MISMATCH' });
-    }
-
-    const [ownerRows] = await db.execute<RowDataPacket[]>(
-      'SELECT o.id, otc.code AS owner_type, o.suite FROM owners o JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE o.id = ?',
-      [parentOwnerId]
-    );
-    if (ownerRows.length === 0) {
-      return reply.code(400).send({ error: 'OWNER_NOT_FOUND' });
-    }
-    const ownerType = ownerRows[0].owner_type as string;
-    const parentSuite = (ownerRows[0].suite as string) ?? 'VIM';
-
-    if (roleId === 2 && ownerType !== 'FLOTILLA') {
-      return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
-    }
-    if (roleId === 4 && ownerType !== 'CENTER') {
-      return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
-    }
-    if (roleId === 5 && ownerType !== 'PRIVATE') {
-      return reply.code(400).send({ error: 'ROLE_OWNER_MISMATCH' });
-    }
-
-    if (roleId === 2) {
-      if (!areaId) {
-        return reply.code(400).send({ error: 'AREA_REQUIRED' });
-      }
-      const [areaRows] = await db.execute<RowDataPacket[]>(
-        'SELECT id FROM areas WHERE id = ? AND owner_id = ? AND is_active = 1',
-        [areaId, parentOwnerId]
-      );
-      if (areaRows.length === 0) {
-        return reply.code(400).send({ error: 'AREA_NOT_FOUND' });
-      }
-    }
-
-    if (roleId === 5 && !familiarType) {
-      return reply.code(400).send({ error: 'FAMILIAR_TYPE_REQUIRED' });
-    }
-
-    const [existing] = await db.execute<RowDataPacket[]>(
-      'SELECT id FROM users WHERE username = ?',
-      [username]
-    );
-    if (existing.length > 0) {
-      return reply.code(409).send({ error: 'SU_USERNAME_EXISTS' });
-    }
-
-    try {
-      const passwordHash = await argon2Hash(password);
-      const encEmail = EncryptionService.encrypt(email);
-
-      return await withConnection(async (connection) => {
-        await connection.beginTransaction();
-        try {
-          let membershipOwnerId = parentOwnerId;
-
-          if (roleId === 4) {
-            const [nextRows] = await connection.execute<RowDataPacket[]>(
-              'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM common_catalogs FOR UPDATE'
-            );
-            const newPrivateOwnerId = (nextRows as RowDataPacket[])[0].nextId as number;
-            await connection.execute<ResultSetHeader>(
-              "INSERT INTO common_catalogs (id, category, code, label) VALUES (?, 'FLEET_OWNER', ?, ?)",
-              [newPrivateOwnerId, `OWN_U${newPrivateOwnerId}`, fullName || username]
-            );
-            const privateHandle = await resolveUniqueHandle(
-              connection,
-              parentSuite,
-              null,
-              username
-            );
-            await connection.execute<ResultSetHeader>(
-              'INSERT INTO owners (id, owner_type_id, suite, label, parent_owner_id, handle) VALUES (?, (SELECT id FROM owner_types_catalog WHERE code = ?), ?, ?, ?, ?)',
-              [
-                newPrivateOwnerId,
-                'PRIVATE',
-                parentSuite,
-                fullName || username,
-                parentOwnerId,
-                privateHandle,
-              ]
-            );
-            membershipOwnerId = newPrivateOwnerId;
-          }
-
-          const [insertResult] = await connection.execute<ResultSetHeader>(
-            'INSERT INTO users (username, email, password_hash, role_id, full_name, is_active) VALUES (?, ?, ?, ?, ?, 1)',
-            [username, encEmail, passwordHash, roleId, fullName ?? '']
-          );
-          const newUserId = insertResult.insertId;
-
-          await connection.execute('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [
-            newUserId,
-            roleId,
-          ]);
-
-          await connection.execute(
-            'INSERT INTO user_owner_membership (user_id, owner_id, familiar_type, area_id) VALUES (?, ?, ?, ?)',
-            [newUserId, membershipOwnerId, familiarType ?? null, areaId ?? null]
-          );
-
-          await connection.commit();
-          return reply
-            .code(201)
-            .send({ success: true, data: { id: newUserId, username, roleId, parentOwnerId } });
-        } catch (error) {
-          await connection.rollback();
-          throw error;
-        }
-      });
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ error: 'SUB_USER_CREATE_FAIL' });
-    }
-  });
+  // FC 082 F0c — POST /sub-users eliminado (roles {2,4,5} y concepto familiar
+  // muertos — 084_AN §1a). Los sub-usuarios renacen en F3 como relaciones Arc.
 
   fastify.get('/roles', async (request, reply) => {
     await request.jwtVerify();

@@ -229,7 +229,8 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       expect(res.statusCode).toBe(201);
       const body = JSON.parse(res.body);
       expect(body.success).toBe(true);
-      expect(body.suite).toBe('ERP');
+      // FC 082 F0c — la respuesta ya no expone suite (eje muerto, migración 164)
+      expect(body.suite).toBeUndefined();
       expect(conn.beginTransaction).toHaveBeenCalled();
       expect(conn.commit).toHaveBeenCalled();
       expect(conn.rollback).not.toHaveBeenCalled();
@@ -275,7 +276,8 @@ describe('Onboarding Routes — Multiverso Archon', () => {
       });
 
       expect(res.statusCode).toBe(201);
-      expect(JSON.parse(res.body).suite).toBe('VIM');
+      // FC 082 F0c — sin eje suite en la respuesta
+      expect(JSON.parse(res.body).suite).toBeUndefined();
     });
 
     it('UNI-9: inserts areas rows for roleId=1 when areas array provided', async () => {
@@ -742,7 +744,6 @@ describe('GET /v1/onboarding/universes', () => {
       {
         owner_id: 1,
         owner_type: 'FLOTILLA',
-        suite: 'ERP',
         label: 'PIIC SA de CV',
         user_id: 10,
         username: 'piic.flotilla',
@@ -756,7 +757,6 @@ describe('GET /v1/onboarding/universes', () => {
       {
         owner_id: 2,
         owner_type: 'CENTER',
-        suite: 'VIM',
         label: 'Taller Centro',
         user_id: 20,
         username: 'taller.centro',
@@ -781,7 +781,8 @@ describe('GET /v1/onboarding/universes', () => {
     expect(body.success).toBe(true);
     expect(body.data).toHaveLength(2);
     expect(body.data[0].owner_type).toBe('FLOTILLA');
-    expect(body.data[1].suite).toBe('VIM');
+    // FC 082 F0c — sin columna suite en el SELECT (eje muerto)
+    expect(body.data[1].suite).toBeUndefined();
     const sql = (db.execute as Mock).mock.calls[0][0] as string;
     // FC 067 F1 — el filtro vive en el catálogo (owner_types_catalog), no en el ENUM legacy
     expect(sql).toContain("otc.code IN ('FLOTILLA', 'CENTER')");

@@ -2,7 +2,6 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
-import { isCategoryExclusiveToSuite } from '../constants/suiteCatalogs';
 import { getAssetTypes, getFieldVisibility } from '../services/assetTypeFieldsService';
 
 /**
@@ -49,18 +48,6 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
       const { category } = request.params;
       const { parentId } = request.query;
 
-      const userSuite = (request.user as { suite?: 'VIM' | 'ERP' }).suite;
-      if (userSuite) {
-        const otherSuite = userSuite === 'VIM' ? 'ERP' : 'VIM';
-        if (isCategoryExclusiveToSuite(otherSuite, category)) {
-          return reply.code(403).send({
-            success: false,
-            code: 'FORBIDDEN',
-            message: `Category '${category}' is not available for suite ${userSuite}`,
-          });
-        }
-      }
-
       try {
         let query =
           'SELECT id, code, label, numeric_value as numericValue, unit FROM common_catalogs WHERE category = ? AND is_active = TRUE';
@@ -101,26 +88,6 @@ export default async function catalogRoutes(fastify: FastifyInstance): Promise<v
       }
     }
   );
-
-  // 2. Fetch Center owners list (for Rol 4 centro selector in registration form)
-  fastify.get('/centers', async (_request, reply) => {
-    try {
-      const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT o.id, cc.label
-         FROM owners o
-         JOIN common_catalogs cc ON o.catalog_id = cc.id
-         JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
-         WHERE otc.code = 'CENTER' AND o.is_active = 1
-         ORDER BY cc.label ASC`
-      );
-      return reply.send({ success: true, data: rows });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply
-        .status(500)
-        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Failed to fetch centers' });
-    }
-  });
 
   // 3. Fetch specific item by Code
   fastify.get(

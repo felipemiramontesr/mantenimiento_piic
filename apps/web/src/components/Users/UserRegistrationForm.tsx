@@ -6,7 +6,6 @@ import {
   Contact,
   Briefcase,
   Save,
-  Copy,
   CheckCircle,
   Hash,
   Image as ImageIcon,
@@ -14,9 +13,6 @@ import {
   Eye,
   EyeOff,
   Trash2,
-  Building2,
-  Users,
-  MapPin,
 } from 'lucide-react';
 import { useUsers } from '../../context/UserContext';
 import ArchonField from '../ArchonField';
@@ -24,7 +20,6 @@ import ArchonSelect from '../ArchonSelect';
 import ArchonImageUploader from '../ArchonImageUploader';
 import api from '../../api/client';
 import AuditJustificationModal from '../Common/AuditJustificationModal';
-import ArchonAddressField, { AddressValue, EMPTY_ADDRESS } from '../Common/ArchonAddressField';
 import { compressImage } from '../../utils/imageUtils';
 
 /**
@@ -39,15 +34,10 @@ const uploadProfilePhoto = async (userId: string | number, file: File): Promise<
 };
 
 /**
- * FC 076 F3 (S1) — register/sub-users exigen regex R3_UPPER/LOWER/DIGIT/
- * SPECIAL; la versión previa muestreaba un charset mixto SIN garantizar una
- * char por clase → falla intermitente (~15-20%). Ahora cada clase aporta al
- * menos un carácter y el resto se rellena del charset completo; el orden se
- * baraja para no fijar posiciones predecibles.
- * A05/S2245 (SonarCloud Quality Gate, hallazgo post-F3) — `Math.random()` no
- * es apto para generar credenciales; índice aleatorio vía Web Crypto API
- * (`crypto.getRandomValues`), disponible en todo navegador moderno y en
- * jsdom/Vitest.
+ * FC 076 F3 (S1) — las contraseñas temporales exigen regex R3_UPPER/LOWER/
+ * DIGIT/SPECIAL; cada clase aporta al menos un carácter y el resto se rellena
+ * del charset completo; el orden se baraja para no fijar posiciones.
+ * A05/S2245 — índice aleatorio vía Web Crypto API (no Math.random()).
  */
 const secureIndex = (max: number): number => crypto.getRandomValues(new Uint32Array(1))[0] % max;
 
@@ -73,159 +63,28 @@ export const buildTempPassword = (length = 12): string => {
 
 /**
  * 🔱 Archon Component: UserRegistrationForm
- * Implementation: Sovereign Identity Enrollment (Axios-based)
- * v.78.100.230 - Role-First Conditional Fields
- * Refactor: Rol Archon first; role-scoped conditional fields per Archon Master bands.
+ * FC 082 F0c — el ALTA murió con POST /auth/register y /auth/sub-users
+ * (bandas de roles {1,3,4}/{2,4,5} y concepto familiar — 084_AN §1a). El
+ * formulario queda en modo EDICIÓN de identidades existentes; el alta renace
+ * en F3 sobre el chasis Arc (§24.13 + Contrato de Onboarding §C).
  */
 
 interface SuccessViewProps {
-  data: { tempPass?: string; isEdit?: boolean };
+  data: { isEdit?: boolean };
   onClose: () => void;
 }
 
-interface ParentOwnerOption {
-  id: number;
-  label: string;
-}
-
-interface AreaOption {
-  id: number;
-  name: string;
-}
-
-interface CenterOption {
-  id: number;
-  label: string;
-}
-
-// ── Role classification helpers (outside component for cognitive-complexity budget) ──
-
-function isAreaSubUser(roleId: number): boolean {
-  return roleId === 2;
-}
-
-function isFamiliarSubUser(roleId: number): boolean {
-  return roleId === 5;
-}
-
-function isPrivadoRole(roleId: number): boolean {
-  return roleId === 4;
-}
-
-function isInternalStaff(roleId: number): boolean {
-  return !isAreaSubUser(roleId) && !isFamiliarSubUser(roleId);
-}
-
-function getRoleFieldsValid(
-  roleId: number,
-  parentOwnerId: string,
-  areaId: string,
-  familiarType: string,
-  centroOwnerId: string
-): boolean {
-  if (isAreaSubUser(roleId)) return Boolean(parentOwnerId && areaId);
-  if (isFamiliarSubUser(roleId)) return Boolean(parentOwnerId && familiarType);
-  if (isPrivadoRole(roleId)) return Boolean(centroOwnerId);
-  return true;
-}
-
-function buildSubUserPayload(
-  roleId: number,
-  username: string,
-  fullName: string,
-  email: string,
-  password: string,
-  parentOwnerId: string,
-  areaId: string,
-  familiarType: string,
-  tempPass: string
-): Record<string, unknown> {
-  const base: Record<string, unknown> = {
-    username: username.toLowerCase(),
-    fullName,
-    email: email.toLowerCase(),
-    roleId,
-    password: password || tempPass,
-    parentOwnerId: parseInt(parentOwnerId, 10),
-  };
-  if (isAreaSubUser(roleId)) {
-    base.areaId = parseInt(areaId, 10);
-  } else {
-    base.familiarType = familiarType;
-  }
-  return base;
-}
-
-function computeCanSubmit(
-  password: string,
-  passwordsMatch: boolean,
-  hasEditingUser: boolean,
-  roleId: number,
-  parentOwnerId: string,
-  areaId: string,
-  familiarType: string,
-  centroOwnerId: string
-): boolean {
-  const passwordValid = !password || (passwordsMatch && password.length >= 8);
-  const roleValid =
-    hasEditingUser ||
-    getRoleFieldsValid(roleId, parentOwnerId, areaId, familiarType, centroOwnerId);
-  return passwordValid && roleValid;
-}
-
-function buildOwnerProfilePayload(
-  roleId: number,
-  rfc: string,
-  razonSocial: string,
-  telefono: string,
-  addressVal: AddressValue
-): Record<string, unknown> {
-  if (roleId !== 4) return {};
-  const profile: Record<string, unknown> = {};
-  if (rfc) profile.rfc = rfc;
-  if (razonSocial) profile.razon_social = razonSocial;
-  if (telefono) profile.telefono = telefono;
-  const result: Record<string, unknown> = { profile };
-  if (addressVal.neighborhoodId) {
-    const address: Record<string, unknown> = {
-      neighborhoodId: parseInt(addressVal.neighborhoodId, 10),
-    };
-    if (addressVal.calle) address.calle = addressVal.calle;
-    if (addressVal.numeroExt) address.numeroExt = addressVal.numeroExt;
-    if (addressVal.numeroInt) address.numeroInt = addressVal.numeroInt;
-    result.address = address;
-  }
-  return result;
-}
-
-const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
+const SuccessView: React.FC<SuccessViewProps> = ({ onClose }) => (
   <div className="card-archon-sovereign bg-white p-12 w-full flex flex-col items-center text-center space-y-8 rounded-[4px] border-t-emerald-500">
     <CheckCircle size={64} className="text-emerald-500 animate-in zoom-in duration-500" />
     <div className="space-y-4">
       <h2 className="text-2xl font-black text-pinnacle-navy uppercase tracking-tight">
-        {data.isEdit ? 'Actualización Exitosa' : 'Incorporación Exitosa'}
+        Actualización Exitosa
       </h2>
       <p className="text-pinnacle-navy/60 font-medium">
-        {data.isEdit
-          ? 'La identidad ha sido sincronizada correctamente en los sistemas Archon.'
-          : 'El personal ha sido registrado bajo el estándar Archon. Entregue la siguiente clave temporal al operador:'}
+        La identidad ha sido sincronizada correctamente en los sistemas Archon.
       </p>
     </div>
-
-    {!data.isEdit && data.tempPass && (
-      <div className="w-full bg-pinnacle-navy/5 p-6 rounded-[4px] border-2 border-dashed border-pinnacle-navy/20 group relative">
-        <span className="text-3xl font-black text-pinnacle-navy tracking-[0.2em] font-mono">
-          {data.tempPass}
-        </span>
-        <button
-          type="button"
-          onClick={(): Promise<void> => navigator.clipboard.writeText(data.tempPass || '')}
-          className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity text-pinnacle-navy/40 hover:text-pinnacle-navy"
-        >
-          <Copy size={16} />
-        </button>
-      </div>
-    )}
 
     <button onClick={onClose} className="btn-sentinel-red">
       Volver al Directorio
@@ -236,20 +95,16 @@ const SuccessView: React.FC<SuccessViewProps> = ({ data, onClose }) => (
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const {
     setActivePanel,
-    fetchUsers,
     editingUser,
     setEditingUser,
     updateUser,
     deleteUser,
     departments,
-    departmentsCatalog,
     roles,
   } = useUsers();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [successData, setSuccessData] = useState<{ tempPass?: string; isEdit?: boolean } | null>(
-    null
-  );
+  const [successData, setSuccessData] = useState<{ isEdit?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -257,34 +112,16 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [auditAction, setAuditAction] = useState<'UPDATE' | 'DELETE'>('UPDATE');
 
-  // 🔱 Sub-user parent catalog
-  const [parentOwners, setParentOwners] = useState<ParentOwnerOption[]>([]);
-  const [areas, setAreas] = useState<AreaOption[]>([]);
-
-  // 🔱 Fase 5: Rol 4 CENTER catalog
-  const [centers, setCenters] = useState<CenterOption[]>([]);
-
-  // 🔱 Fase 6: Multi-campo address for Rol 1/3/4
-  const [addressValue, setAddressValue] = useState<AddressValue>(EMPTY_ADDRESS);
-
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
     email: '',
-    roleId: roles.find((r) => r.label?.toLowerCase().includes('operador'))?.id.toString() || '',
+    roleId: '',
     department: '',
     employeeNumber: '',
     imageUrl: '',
     password: '',
     confirmPassword: '',
-    parentOwnerId: '',
-    areaId: '',
-    familiarType: '',
-    // Fase 6 profile fields (Rol 4):
-    rfc: '',
-    razonSocial: '',
-    telefono: '',
-    centroOwnerId: '',
   });
 
   useEffect(() => {
@@ -299,65 +136,9 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         imageUrl: editingUser.imageUrl || '',
         password: '',
         confirmPassword: '',
-        parentOwnerId: '',
-        areaId: '',
-        familiarType: '',
-        rfc: '',
-        razonSocial: '',
-        telefono: '',
-        centroOwnerId: '',
       });
-      setAddressValue(EMPTY_ADDRESS);
     }
   }, [editingUser, roles]);
-
-  const roleIdNum = parseInt(formData.roleId, 10) || 0;
-  const isPrivadoOwner = isPrivadoRole(roleIdNum);
-
-  useEffect(() => {
-    if (!isPrivadoOwner) return;
-    const loadCenters = async (): Promise<void> => {
-      try {
-        const res = await api.get<{ success: boolean; data: CenterOption[] }>('/catalogs/centers');
-        setCenters(res.data?.data || []);
-      } catch {
-        setCenters([]);
-      }
-    };
-    loadCenters();
-  }, [isPrivadoOwner]);
-
-  useEffect(() => {
-    if (!isAreaSubUser(roleIdNum) && !isFamiliarSubUser(roleIdNum)) return;
-    const loadParentOwners = async (): Promise<void> => {
-      try {
-        const res = await api.get<{ success: boolean; data: ParentOwnerOption[] }>(
-          '/catalogs/FLEET_OWNER'
-        );
-        setParentOwners(res.data?.data || []);
-      } catch {
-        setParentOwners([]);
-      }
-    };
-    loadParentOwners();
-  }, [roleIdNum]);
-
-  useEffect(() => {
-    if (!isAreaSubUser(roleIdNum) || !formData.parentOwnerId) return;
-    const loadAreas = async (): Promise<void> => {
-      try {
-        const res = await api.get<{ success: boolean; data: AreaOption[] }>(
-          `/owners/${formData.parentOwnerId}/areas`
-        );
-        setAreas(res.data?.data || []);
-      } catch {
-        setAreas([]);
-      }
-    };
-    loadAreas();
-  }, [roleIdNum, formData.parentOwnerId]);
-
-  const generateTempPassword = (length = 12): string => buildTempPassword(length);
 
   const handleUpdate = async (reason: string): Promise<void> => {
     if (!editingUser) return;
@@ -395,70 +176,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     }
   };
 
-  const handleCreateSubUser = async (tempPass: string): Promise<void> => {
-    const payload = buildSubUserPayload(
-      roleIdNum,
-      formData.username,
-      formData.fullName,
-      formData.email,
-      formData.password,
-      formData.parentOwnerId,
-      formData.areaId,
-      formData.familiarType,
-      tempPass
-    );
-    const response = await api.post('/auth/sub-users', payload);
-    if (!response.data.success) {
-      throw new Error(response.data.error || 'Error en el servidor.');
-    }
-    setSuccessData({ tempPass });
-    await fetchUsers();
-  };
-
-  const handleCreate = async (): Promise<void> => {
-    const tempPass = generateTempPassword();
-    if (isAreaSubUser(roleIdNum) || isFamiliarSubUser(roleIdNum)) {
-      await handleCreateSubUser(tempPass);
-      return;
-    }
-    // FC 076 F3 (R4a/R4b) — el schema de /auth/register espera departmentId
-    // numérico (no department string) y NO conoce profile_picture_url: ambos
-    // se perdían en SILENCIO por Zod-strip. departmentId se resuelve del
-    // catálogo con ids; la foto viaja exclusivamente por upload-profile.
-    const departmentId = departmentsCatalog.find((d) => d.label === formData.department)?.id;
-    const response = await api.post('/auth/register', {
-      username: formData.username.toLowerCase(),
-      fullName: formData.fullName,
-      email: formData.email.toLowerCase(),
-      roleId: roleIdNum,
-      ...(departmentId !== undefined ? { departmentId: Number(departmentId) } : {}),
-      employeeNumber: formData.employeeNumber,
-      password: formData.password || tempPass,
-      ...buildOwnerProfilePayload(
-        roleIdNum,
-        formData.rfc,
-        formData.razonSocial,
-        formData.telefono,
-        addressValue
-      ),
-      ...(roleIdNum === 4 &&
-        formData.centroOwnerId && {
-          centroOwnerId: parseInt(formData.centroOwnerId, 10),
-        }),
-    });
-
-    if (response.data.success) {
-      const { userId } = response.data;
-      if (selectedFile && userId) {
-        await uploadProfilePhoto(userId, selectedFile);
-      }
-      setSuccessData({ tempPass });
-      await fetchUsers();
-    } else {
-      throw new Error(response.data.error || 'Error en el servidor.');
-    }
-  };
-
   const handleConfirmAudit = async (reason: string): Promise<void> => {
     setIsSubmitting(true);
     try {
@@ -485,41 +202,22 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       return;
     }
 
-    if (!editingUser && formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+    if (!editingUser) {
+      // FC 082 F0c — puerta de alta cerrada durante la transición de identidad.
+      setError(
+        'El alta de usuarios está deshabilitada durante la transición de identidad (FC 082); renace con el chasis Arc en F3.'
+      );
       return;
     }
 
-    if (editingUser) {
-      setAuditAction('UPDATE');
-      setIsAuditModalOpen(true);
-    } else {
-      setIsSubmitting(true);
-      try {
-        await handleCreate();
-      } catch (err: unknown) {
-        const errObj = err as { response?: { data?: { error?: string } }; message?: string };
-        const msg = errObj.response?.data?.error || errObj.message || 'Falla en el alta.';
-        setError(msg);
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
+    setAuditAction('UPDATE');
+    setIsAuditModalOpen(true);
   };
 
   const passwordsMatch = formData.password === formData.confirmPassword;
-  const canSubmit = computeCanSubmit(
-    formData.password,
-    passwordsMatch,
-    !!editingUser,
-    roleIdNum,
-    formData.parentOwnerId,
-    formData.areaId,
-    formData.familiarType,
-    formData.centroOwnerId
-  );
+  const canSubmit = !formData.password || (passwordsMatch && formData.password.length >= 8);
 
-  const sortedRoles = [...roles].filter((r) => ![1, 3].includes(r.id)).sort((a, b) => a.id - b.id);
+  const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
 
   if (successData) {
     return (
@@ -567,15 +265,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
             <ArchonSelect
               options={sortedRoles.map((r) => ({ value: r.id.toString(), label: r.label }))}
               value={formData.roleId}
-              onChange={(val: string): void =>
-                setFormData({
-                  ...formData,
-                  roleId: val,
-                  parentOwnerId: '',
-                  areaId: '',
-                  familiarType: '',
-                })
-              }
+              onChange={(val: string): void => setFormData({ ...formData, roleId: val })}
             />
           </ArchonField>
         </div>
@@ -667,77 +357,13 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
               />
             </ArchonField>
 
-            {isAreaSubUser(roleIdNum) && (
-              <div
-                data-testid="area-subuser-fields"
-                className="pt-6 border-t border-pinnacle-navy/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300"
-              >
-                <ArchonField label="Propietario de Flotilla" icon={Building2} required>
-                  <ArchonSelect
-                    options={parentOwners.map((o) => ({ value: o.id.toString(), label: o.label }))}
-                    value={formData.parentOwnerId}
-                    onChange={(val: string): void =>
-                      setFormData({ ...formData, parentOwnerId: val, areaId: '' })
-                    }
-                  />
-                </ArchonField>
-                {formData.parentOwnerId && (
-                  <ArchonField label="Área de Trabajo" icon={MapPin} required>
-                    <ArchonSelect
-                      options={areas.map((a) => ({ value: a.id.toString(), label: a.name }))}
-                      value={formData.areaId}
-                      onChange={(val: string): void => setFormData({ ...formData, areaId: val })}
-                    />
-                  </ArchonField>
-                )}
-              </div>
-            )}
-
-            {isFamiliarSubUser(roleIdNum) && (
-              <div
-                data-testid="familiar-subuser-fields"
-                className="pt-6 border-t border-pinnacle-navy/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300"
-              >
-                <ArchonField label="Propietario Familiar" icon={Users} required>
-                  <ArchonSelect
-                    options={parentOwners.map((o) => ({ value: o.id.toString(), label: o.label }))}
-                    value={formData.parentOwnerId}
-                    onChange={(val: string): void =>
-                      setFormData({ ...formData, parentOwnerId: val })
-                    }
-                  />
-                </ArchonField>
-                <ArchonField label="Tipo de Familiar" icon={Users} required>
-                  <div className="flex gap-3 pt-1">
-                    {(['PAREJA', 'HIJO_A'] as const).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        data-testid={`familiar-type-${type.toLowerCase()}`}
-                        onClick={(): void => setFormData({ ...formData, familiarType: type })}
-                        className={`flex-1 py-2.5 rounded-[4px] text-archon-md font-black uppercase tracking-widest transition-all duration-300 ${
-                          formData.familiarType === type
-                            ? 'bg-pinnacle-navy text-white'
-                            : 'bg-pinnacle-navy/5 text-pinnacle-navy/60 hover:bg-pinnacle-navy/10'
-                        }`}
-                      >
-                        {type === 'HIJO_A' ? 'HIJO/A' : type}
-                      </button>
-                    ))}
-                  </div>
-                </ArchonField>
-              </div>
-            )}
-
-            {isInternalStaff(roleIdNum) && (
-              <ArchonField label="Departamento" icon={Briefcase}>
-                <ArchonSelect
-                  options={departments}
-                  value={formData.department}
-                  onChange={(val: string): void => setFormData({ ...formData, department: val })}
-                />
-              </ArchonField>
-            )}
+            <ArchonField label="Departamento" icon={Briefcase}>
+              <ArchonSelect
+                options={departments}
+                value={formData.department}
+                onChange={(val: string): void => setFormData({ ...formData, department: val })}
+              />
+            </ArchonField>
 
             <div className="relative">
               <ArchonField
@@ -804,85 +430,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
             )}
           </div>
         </div>
-
-        {/* 🔱 Rol 4 — Perfil de Propietario Privado */}
-        {roleIdNum === 4 && !editingUser && (
-          <div
-            data-testid="owner-profile-section"
-            className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#8b5cf6]"
-          >
-            <div className="card-sovereign-header">
-              <Building2 size={22} className="text-[var(--card-accent)]" />
-              <h3 className="card-sovereign-title text-archon-xl opacity-100">Perfil Personal</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-8">
-              <ArchonField label="RFC (Opcional)" icon={Shield}>
-                <input
-                  type="text"
-                  placeholder="RFC (opcional)"
-                  className="archon-input"
-                  data-testid="centro-rfc-input"
-                  value={formData.rfc}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                    setFormData({ ...formData, rfc: e.target.value })
-                  }
-                />
-              </ArchonField>
-              <ArchonField label="Nombre Legal" icon={Briefcase} required>
-                <input
-                  type="text"
-                  placeholder="Nombre del propietario"
-                  className="archon-input"
-                  data-testid="centro-razon-social-input"
-                  value={formData.razonSocial}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                    setFormData({ ...formData, razonSocial: e.target.value })
-                  }
-                />
-              </ArchonField>
-            </div>
-            <div className="grid grid-cols-2 gap-8">
-              <ArchonField label="Teléfono" icon={Contact}>
-                <input
-                  type="tel"
-                  placeholder="Teléfono"
-                  className="archon-input"
-                  data-testid="centro-telefono-input"
-                  value={formData.telefono}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                    setFormData({ ...formData, telefono: e.target.value })
-                  }
-                />
-              </ArchonField>
-            </div>
-            <ArchonAddressField value={addressValue} onChange={setAddressValue} />
-          </div>
-        )}
-
-        {/* 🔱 Fase 5: Rol 4 — Centro de Servicio Asignado */}
-        {isPrivadoOwner && !editingUser && (
-          <div
-            data-testid="privado-centro-section"
-            className="card-archon-sovereign bg-white p-8 space-y-4 [--card-accent:#0f2a44]"
-          >
-            <div className="card-sovereign-header">
-              <Building2 size={20} className="text-[var(--card-accent)]" />
-              <h3 className="card-sovereign-title text-archon-xl opacity-100">
-                Centro de Servicio
-              </h3>
-            </div>
-            <ArchonField label="Centro Especializado Asignado" icon={Building2} required>
-              <ArchonSelect
-                options={centers.map((c) => ({ value: c.id.toString(), label: c.label }))}
-                value={formData.centroOwnerId}
-                onChange={(val: string): void => setFormData({ ...formData, centroOwnerId: val })}
-              />
-            </ArchonField>
-            <p className="text-archon-base uppercase tracking-widest opacity-40 text-sm">
-              El propietario privado quedará vinculado operativamente a este centro.
-            </p>
-          </div>
-        )}
 
         <div className="archon-grid-2-sovereign mt-5 pt-0 border-t border-pinnacle-navy/5">
           <div className="flex gap-4">

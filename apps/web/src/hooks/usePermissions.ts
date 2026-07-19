@@ -1,12 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 
-const EXTERNAL_CLIENT_PERMISSIONS = [
-  'fleet:view',
-  'fleet:scoped',
-  'fleet:write:scoped',
-  'maint:view',
-  'maint:write',
-];
+// FC 082 F0c — isExternalClientOnly (rol 9), isSuiteVIM (eje suite) e
+// isFamiliar (rol 10) murieron con la purga de identidad (084_AN §1a).
 
 export const LEGACY_ALIASES: Record<string, string> = {
   'fleet:view': 'fleet:unit:view:any',
@@ -36,9 +31,6 @@ export default function usePermissions(): {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmnipotent: () => boolean;
-  isExternalClientOnly: () => boolean;
-  isSuiteVIM: () => boolean;
-  isFamiliar: () => boolean;
 } {
   const { currentUser, effectiveUser } = useAuth();
 
@@ -64,27 +56,9 @@ export default function usePermissions(): {
     return currentUser.permissions?.includes('admin:role:edit') ?? false;
   };
 
-  const isExternalClientOnly = (): boolean => {
-    const permissions = effectiveUser?.permissions;
-    if (!permissions || permissions.length === 0) return false;
-    // Granular path: role 9 (Cliente Externo) carries portal:dashboard:view, not fleet:scoped.
-    if (permissions.includes('portal:dashboard:view')) return true;
-    // Legacy path: backward compat for old JWTs with fleet:scoped envelope.
-    if (!permissions.includes('fleet:scoped')) return false;
-    return permissions.every((p) => EXTERNAL_CLIENT_PERMISSIONS.includes(p));
-  };
-
-  const isSuiteVIM = (): boolean => effectiveUser?.suite === 'VIM';
-
-  // roleId 10 = Operador / Familiar (FC-18 post-migration-095).
-  const isFamiliar = (): boolean => effectiveUser?.roleId === 10;
-
   return {
     hasPermission,
     hasAnyPermission,
     isOmnipotent,
-    isExternalClientOnly,
-    isSuiteVIM,
-    isFamiliar,
   };
 }

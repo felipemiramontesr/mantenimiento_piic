@@ -126,99 +126,11 @@ describe('Catalogs Integration Endpoints', () => {
     });
   });
 
-  // ── Suite Isolation — FC-2 Subfase 2C (EAL6+ multi-tenant) ─────────────
+  // ── FC 082 F0c — el aislamiento por suite (SC2C-1..6) murió con el eje
+  // ERP|VIM (084_AN §1a); toda categoría queda accesible con el permiso base.
 
-  describe('Suite Isolation — FC-2 Subfase 2C', () => {
-    let vimToken: string;
-    let erpToken: string;
-
-    beforeAll(() => {
-      vimToken = app.jwt.sign({
-        id: 2,
-        username: 'vim_user',
-        roleId: 4,
-        roleName: 'Owner',
-        permissions: ['fleet:catalog:view'],
-        suite: 'VIM',
-      });
-      erpToken = app.jwt.sign({
-        id: 3,
-        username: 'erp_user',
-        roleId: 2,
-        roleName: 'Fleet',
-        permissions: ['fleet:catalog:view'],
-        suite: 'ERP',
-      });
-    });
-
-    // SC2C-1: VIM accede a categoría exclusiva VIM
-    it('SC2C-1: VIM user can access SPECIALTY (VIM-exclusive) — 200', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[]]);
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/SPECIALTY',
-        headers: { authorization: `Bearer ${vimToken}` },
-      });
-      expect(response.statusCode).toBe(200);
-    });
-
-    // SC2C-2: ERP bloqueado de categoría exclusiva VIM
-    it('SC2C-2: ERP user is blocked from SPECIALTY — 403 FORBIDDEN', async (): Promise<void> => {
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/SPECIALTY',
-        headers: { authorization: `Bearer ${erpToken}` },
-      });
-      expect(response.statusCode).toBe(403);
-      const body = JSON.parse(response.body);
-      expect(body.success).toBe(false);
-      expect(body.code).toBe('FORBIDDEN');
-    });
-
-    // SC2C-3: ERP accede a categoría exclusiva ERP
-    it('SC2C-3: ERP user can access FLEET_AREA (ERP-exclusive) — 200', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[]]);
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/FLEET_AREA',
-        headers: { authorization: `Bearer ${erpToken}` },
-      });
-      expect(response.statusCode).toBe(200);
-    });
-
-    // SC2C-4: VIM bloqueado de categoría exclusiva ERP
-    it('SC2C-4: VIM user is blocked from FLEET_AREA — 403 FORBIDDEN', async (): Promise<void> => {
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/FLEET_AREA',
-        headers: { authorization: `Bearer ${vimToken}` },
-      });
-      expect(response.statusCode).toBe(403);
-      const body = JSON.parse(response.body);
-      expect(body.success).toBe(false);
-      expect(body.code).toBe('FORBIDDEN');
-    });
-
-    // SC2C-5: categoría compartida accesible por ambas suites
-    it('SC2C-5: ASSET_TYPE accessible by both VIM and ERP suites', async (): Promise<void> => {
-      (db.execute as Mock).mockResolvedValueOnce([[]]);
-      const res1 = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/ASSET_TYPE',
-        headers: { authorization: `Bearer ${vimToken}` },
-      });
-      (db.execute as Mock).mockResolvedValueOnce([[]]);
-      const res2 = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/ASSET_TYPE',
-        headers: { authorization: `Bearer ${erpToken}` },
-      });
-      expect(res1.statusCode).toBe(200);
-      expect(res2.statusCode).toBe(200);
-    });
-
-    // SC2C-6: admin sin suite no es restringido (bypass)
-    it('SC2C-6: admin without suite can access SPECIALTY and FLEET_AREA', async (): Promise<void> => {
+  describe('Catálogos sin eje suite — FC 082 F0c', () => {
+    it('F0c-CAT-1: cualquier categoría es accesible con fleet:catalog:view', async (): Promise<void> => {
       (db.execute as Mock).mockResolvedValueOnce([[]]);
       const res1 = await app.inject({
         method: 'GET',
@@ -334,46 +246,7 @@ describe('Catalogs Integration Endpoints', () => {
     });
   });
 
-  // ── Scenario 7 — GET /v1/catalogs/centers ────────────────────────────────
-
-  describe('GET /v1/catalogs/centers — Scenario 7', () => {
-    it('returns list of CENTER owners for authenticated user', async (): Promise<void> => {
-      const mockCenters = [
-        { id: 10, label: 'Centro A' },
-        { id: 11, label: 'Centro B' },
-      ];
-      (db.execute as Mock).mockResolvedValueOnce([mockCenters]);
-
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/centers',
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
-      expect(body.success).toBe(true);
-      expect(body.data).toEqual(mockCenters);
-      // FC 067 F1 — filtro por catálogo owner_types_catalog, no por ENUM legacy
-      expect(db.execute).toHaveBeenCalledWith(expect.stringContaining("otc.code = 'CENTER'"));
-    });
-
-    it('returns 401 for unauthenticated request to /centers', async (): Promise<void> => {
-      const response = await app.inject({ method: 'GET', url: '/v1/catalogs/centers' });
-      expect(response.statusCode).toBe(401);
-    });
-
-    it('returns 500 on database error for /centers', async (): Promise<void> => {
-      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
-
-      const response = await app.inject({
-        method: 'GET',
-        url: '/v1/catalogs/centers',
-        headers: { authorization: `Bearer ${token}` },
-      });
-
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).code).toBe('INTERNAL_ERROR');
-    });
-  });
+  // ── FC 082 F0c — GET /v1/catalogs/centers (Scenario 7) murió con ownerType
+  // CENTER (084_AN §1a); 'centers' cae ahora en el handler genérico /:category,
+  // ya cubierto arriba.
 });

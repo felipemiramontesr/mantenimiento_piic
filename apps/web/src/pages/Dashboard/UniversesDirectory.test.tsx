@@ -24,7 +24,6 @@ const MOCK_ROWS = [
   {
     owner_id: 1,
     owner_type: 'FLOTILLA',
-    suite: 'ERP',
     label: 'PIIC SA de CV',
     user_id: 10,
     username: 'piic.flotilla',
@@ -37,7 +36,6 @@ const MOCK_ROWS = [
   {
     owner_id: 2,
     owner_type: 'CENTER',
-    suite: 'VIM',
     label: 'Taller Centro',
     user_id: 20,
     username: 'taller.centro',
@@ -78,9 +76,9 @@ describe('UniversesDirectory', () => {
     expect(screen.getByText('Taller Centro')).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(screen.getByText('Inactivo')).toBeInTheDocument();
-    // Suite badges
-    expect(screen.getByText('ERP')).toBeInTheDocument();
-    expect(screen.getByText('VIM')).toBeInTheDocument();
+    // FC 082 F0c — el badge muestra owner_type (SuiteBadge murió con el eje suite)
+    expect(screen.getByText('FLOTILLA')).toBeInTheDocument();
+    expect(screen.getByText('CENTER')).toBeInTheDocument();
   });
 
   it('UD-3: renders empty state when list is empty', async () => {

@@ -654,6 +654,36 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(body.talleres[2].avgRating).toBe(3.2);
   });
 
+  // ── FC 082 F0b — fail-soft social (R8): tras la purga (roles viejos y
+  // lattice sin filas) los endpoints degradan a dominio vacío SIN crash;
+  // el POST degrada a 403 NO_VERIFIED_LINK (cubierto por AT-SOC9-C-3). ──
+  it('AT-FC082-F0b-1: GET /social/directory con dominio de roles muerto → 200 lista vacía sin crash', async () => {
+    (db.execute as any).mockResolvedValueOnce([[]]); // JOIN role_id=3 sin sujetos post-purga
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/directory',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.talleres).toEqual([]);
+  });
+
+  it('AT-FC082-F0b-2: GET /social/reviews con dominio vacío → 200 reviews:[] + avgRating 0 sin crash', async () => {
+    (db.execute as any)
+      .mockResolvedValueOnce([[]]) // reviews sin filas
+      .mockResolvedValueOnce([[{ avg_rating: null }]]); // AVG sobre vacío
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/social/reviews?tallerId=3',
+      headers: { authorization: `Bearer ${userToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.reviews).toEqual([]);
+    expect(body.avgRating).toBe(0);
+  });
+
   it('AT-SOC9-D-6: GET /social/directory?specialties=Motor → 200 filtrado por especialidad', async () => {
     (db.execute as any).mockResolvedValueOnce([[MOCK_TALLERES[0]]]);
     const res = await app.inject({

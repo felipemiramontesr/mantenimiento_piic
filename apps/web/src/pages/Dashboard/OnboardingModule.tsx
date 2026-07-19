@@ -560,11 +560,13 @@ type OnboardingView = 'FORM' | 'DIRECTORY';
 
 const OnboardingModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
-  const { isOmnipotent, isSuiteVIM } = usePermissions();
+  const { isOmnipotent } = usePermissions();
   const [view, setView] = useState<OnboardingView>('FORM');
 
   const omnipotent = isOmnipotent();
-  const vimCentro = isSuiteVIM();
+  // FC 082 F0c — eje suite muerto (084_AN §1a): la puerta de onboarding VIM
+  // Centro queda apagada; F3 la re-ancla al chasis Arc.
+  const vimCentro = false;
 
   useEffect((): void => {
     setSectionData(

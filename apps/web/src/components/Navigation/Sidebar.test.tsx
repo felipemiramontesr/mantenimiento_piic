@@ -41,9 +41,6 @@ const defaultPermissions = {
   hasPermission: (): boolean => true,
   hasAnyPermission: (): boolean => true,
   isOmnipotent: (): boolean => true,
-  isExternalClientOnly: (): boolean => false,
-  isSuiteVIM: (): boolean => false,
-  isFamiliar: (): boolean => false,
 };
 
 const defaultAuth = {
@@ -79,7 +76,8 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText(/Soberano/i)).toBeDefined();
     expect(screen.getByText('Comando')).toBeDefined();
     expect(screen.getByText('Unidades')).toBeDefined();
-    expect(screen.getByText('CRM')).toBeDefined();
+    // FC 082 F0c — NavItem CRM purgado (clusters CRM muertos, 084_AN §1b)
+    expect(screen.queryByText('CRM')).toBeNull();
     expect(screen.getByText('Rutas')).toBeDefined();
     expect(screen.getByText('Incidencias')).toBeDefined();
     expect(screen.getByText('Seguridad')).toBeDefined();
@@ -91,20 +89,14 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.queryByText('Red Social')).toBeNull();
   });
 
-  it('Owner-Scoped F1-A: Cliente Externo (role 9 — portal perms) solo ve Portal, no Unidades', () => {
-    const clientPerms = [
-      'portal:dashboard:view',
-      'portal:fleet:view:own',
-      'portal:report:download',
-      'notifications:view:own',
-    ];
+  // FC 082 F0c — el escenario "Cliente Externo (rol 9) solo ve Portal" murió
+  // con el rol 9 y el NavItem Portal (084_AN §1a-1b). Un usuario sin permisos
+  // ve solo los items sin gate (Comando/Arcsial/Talleres) + logout.
+  it('F0c-SB-1: usuario sin permisos ve solo items sin gate (sin Portal ni CRM)', () => {
     usePermissionsMock.mockReturnValue({
-      hasPermission: (p: string): boolean => clientPerms.includes(p),
-      hasAnyPermission: (ps: string[]): boolean => ps.some((p) => clientPerms.includes(p)),
+      hasPermission: (): boolean => false,
+      hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
-      isExternalClientOnly: (): boolean => true,
-      isSuiteVIM: (): boolean => false,
-      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -113,18 +105,14 @@ describe('Sidebar Component (Archon Core)', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Portal')).toBeDefined();
-    expect(screen.queryByText('Unidades')).toBeNull(); // role 9 accede a flota vía Portal, no módulo Unidades
+    expect(screen.queryByText('Portal')).toBeNull();
     expect(screen.queryByText('CRM')).toBeNull();
-    expect(screen.queryByText('Comando')).toBeNull();
+    expect(screen.getByText('Comando')).toBeDefined();
+    expect(screen.getByText('Arcsial')).toBeDefined();
+    expect(screen.getByText('Talleres')).toBeDefined();
+    expect(screen.queryByText('Unidades')).toBeNull();
     expect(screen.queryByText('Rutas')).toBeNull();
-    expect(screen.queryByText('Alertas')).toBeNull();
-    expect(screen.queryByText('Finanzas')).toBeNull();
-    expect(screen.queryByText('Incidencias')).toBeNull();
-    expect(screen.queryByText('Mantenimiento')).toBeNull();
     expect(screen.queryByText('Personal')).toBeNull();
-    expect(screen.queryByText('Seguridad')).toBeNull();
-    expect(screen.queryByText('Panel de Control')).toBeNull();
     expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
   });
 
@@ -134,9 +122,6 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (p: string): boolean => directorPerms.includes(p),
       hasAnyPermission: (ps: string[]): boolean => ps.some((p) => directorPerms.includes(p)),
       isOmnipotent: (): boolean => false,
-      isExternalClientOnly: (): boolean => false,
-      isSuiteVIM: (): boolean => false,
-      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -298,9 +283,6 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (): boolean => true,
       hasAnyPermission: (): boolean => true,
       isOmnipotent: (): boolean => false,
-      isExternalClientOnly: (): boolean => false,
-      isSuiteVIM: (): boolean => false,
-      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -318,9 +300,6 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (): boolean => false,
       hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
-      isExternalClientOnly: (): boolean => false,
-      isSuiteVIM: (): boolean => false,
-      isFamiliar: (): boolean => false,
     });
 
     render(
@@ -443,8 +422,6 @@ describe('Sidebar Component (Archon Core)', () => {
         label: 'Omnipotente (rol 0 — Master Archon)',
         perms: {
           isOmnipotent: true,
-          isExternalClientOnly: false,
-          isSuiteVIM: false,
           hasPermission: true,
         },
       },
@@ -452,8 +429,6 @@ describe('Sidebar Component (Archon Core)', () => {
         label: 'Operador General (rol 1 — sin permisos admin)',
         perms: {
           isOmnipotent: false,
-          isExternalClientOnly: false,
-          isSuiteVIM: false,
           hasPermission: true,
         },
       },
@@ -461,8 +436,6 @@ describe('Sidebar Component (Archon Core)', () => {
         label: 'Cliente Externo (rol 9 — fleet:scoped only)',
         perms: {
           isOmnipotent: false,
-          isExternalClientOnly: true,
-          isSuiteVIM: false,
           hasPermission: false,
         },
       },
@@ -470,8 +443,6 @@ describe('Sidebar Component (Archon Core)', () => {
         label: 'Sin ningún permiso (rol huérfano)',
         perms: {
           isOmnipotent: false,
-          isExternalClientOnly: false,
-          isSuiteVIM: false,
           hasPermission: false,
         },
       },
@@ -483,9 +454,6 @@ describe('Sidebar Component (Archon Core)', () => {
           hasPermission: (): boolean => perms.hasPermission,
           hasAnyPermission: (): boolean => perms.hasPermission,
           isOmnipotent: (): boolean => perms.isOmnipotent,
-          isExternalClientOnly: (): boolean => perms.isExternalClientOnly,
-          isSuiteVIM: (): boolean => perms.isSuiteVIM,
-          isFamiliar: (): boolean => false,
         });
 
         render(
@@ -508,91 +476,12 @@ describe('Sidebar Component (Archon Core)', () => {
     });
   });
 
-  describe('FC-11 CRM_Hub_Navigation FaseA — NavItem CRM y Portal', () => {
-    it('AT-FC11-A-SB-1: NavItem "CRM" visible para usuario con fleet:view y !isFamiliar()', () => {
-      render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      expect(screen.getByText('CRM')).toBeInTheDocument();
-      expect(screen.queryByText('Directorio CRM')).toBeNull();
-    });
-
-    it('AT-FC11-A-SB-2: click en "CRM" navega a /dashboard/crm', () => {
-      render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      fireEvent.click(screen.getByText('CRM'));
-      expect(navigateMock).toHaveBeenCalledWith('/dashboard/crm');
-    });
-
-    it('AT-FC11-A-SB-3: usuario con maint:record:view:any (sin fleet) ve "CRM"', () => {
-      const tallerPerms = ['maint:record:view:any', 'maint:record:edit:any'];
-      usePermissionsMock.mockReturnValue({
-        hasPermission: (p: string): boolean => tallerPerms.includes(p),
-        hasAnyPermission: (ps: string[]): boolean => ps.some((p) => tallerPerms.includes(p)),
-        isOmnipotent: (): boolean => false,
-        isExternalClientOnly: (): boolean => false,
-        isSuiteVIM: (): boolean => false,
-        isFamiliar: (): boolean => false,
-      });
-      render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      expect(screen.getByText('CRM')).toBeInTheDocument();
-    });
-
-    it('AT-FC11-A-SB-4: familiar no ve NavItem "CRM"', () => {
-      usePermissionsMock.mockReturnValue({
-        hasPermission: (): boolean => true,
-        hasAnyPermission: (): boolean => true,
-        isOmnipotent: (): boolean => false,
-        isExternalClientOnly: (): boolean => false,
-        isSuiteVIM: (): boolean => false,
-        isFamiliar: (): boolean => true,
-      });
-      render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      expect(screen.queryByText('CRM')).toBeNull();
-    });
-
-    it('AT-FC11-A-SB-5: ExternalClientOnly ve Portal y no CRM', () => {
-      const clientPerms = ['fleet:view', 'fleet:scoped'];
-      usePermissionsMock.mockReturnValue({
-        hasPermission: (p: string): boolean => clientPerms.includes(p),
-        hasAnyPermission: (ps: string[]): boolean => ps.some((p) => clientPerms.includes(p)),
-        isOmnipotent: (): boolean => false,
-        isExternalClientOnly: (): boolean => true,
-        isSuiteVIM: (): boolean => false,
-        isFamiliar: (): boolean => false,
-      });
-      render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      expect(screen.getByText('Portal')).toBeInTheDocument();
-      expect(screen.queryByText('CRM')).toBeNull();
-    });
-  });
-
   describe('FC-18 FaseD-4 — Sidebar NavItems con slugs granulares (AT-FC18-D4-SB)', () => {
     it('AT-FC18-D4-SB-1 — Alertas visible para usuario con alert:view:any', () => {
       usePermissionsMock.mockReturnValue({
         hasPermission: (p: string): boolean => p === 'alert:view:any',
         hasAnyPermission: (ps: string[]): boolean => ps.includes('alert:view:any'),
         isOmnipotent: (): boolean => false,
-        isExternalClientOnly: (): boolean => false,
-        isSuiteVIM: (): boolean => false,
-        isFamiliar: (): boolean => false,
       });
       render(
         <BrowserRouter>
@@ -609,9 +498,6 @@ describe('Sidebar Component (Archon Core)', () => {
         hasAnyPermission: (ps: string[]): boolean =>
           ps.some((p) => ['users:collaborator:view', 'security:audit:view'].includes(p)),
         isOmnipotent: (): boolean => false,
-        isExternalClientOnly: (): boolean => false,
-        isSuiteVIM: (): boolean => false,
-        isFamiliar: (): boolean => false,
       });
       render(
         <BrowserRouter>
@@ -627,9 +513,6 @@ describe('Sidebar Component (Archon Core)', () => {
         hasPermission: (p: string): boolean => p === 'user:admin',
         hasAnyPermission: (ps: string[]): boolean => ps.includes('user:admin'),
         isOmnipotent: (): boolean => false,
-        isExternalClientOnly: (): boolean => false,
-        isSuiteVIM: (): boolean => false,
-        isFamiliar: (): boolean => false,
       });
       render(
         <BrowserRouter>

@@ -34,17 +34,13 @@ import recallsNhtsaRoutes from './routes/recallsNhtsa';
 import recallsVimRoutes from './routes/recallsVim';
 import notificationsRoutes from './routes/notifications';
 import areasRoutes from './routes/areas';
-import serviceCentersRoutes from './routes/serviceCenters';
+// FC 082 F0c — purga 084_AN v3.1: serviceCenters, crm* (5) y portal
+// eliminados (clusters CRM + banda VIM de negocio fuera; supercúmulo CRM
+// queda como estructura vacía).
 import ownerProfileRoutes from './routes/ownerProfile';
 import onboardingRoutes from './routes/onboarding';
 import securityRoutes from './routes/security';
 import realtimeTelemetryRoutes from './routes/realtimeTelemetry';
-import crmContactsRoutes from './routes/crmContacts';
-import crmContractsRoutes from './routes/crmContracts';
-import crmPipelineRoutes from './routes/crmPipeline';
-import crmInteractionsRoutes from './routes/crmInteractions';
-import portalRoutes from './routes/portal';
-import crmCampaignsRoutes from './routes/crmCampaigns';
 import socialRoutes from './routes/social';
 import reportsRoutes from './routes/reports';
 import universeContextPlugin from './plugins/universeContext';
@@ -210,17 +206,10 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(reportsRoutes, { prefix: '/v1' });
   fastify.register(notificationsRoutes, { prefix: '/v1' });
   fastify.register(areasRoutes, { prefix: '/v1' });
-  fastify.register(serviceCentersRoutes, { prefix: '/v1' });
   fastify.register(ownerProfileRoutes, { prefix: '/v1' });
   fastify.register(onboardingRoutes, { prefix: '/v1' });
   fastify.register(securityRoutes, { prefix: '/v1' });
   fastify.register(realtimeTelemetryRoutes, { prefix: '/v1' });
-  fastify.register(crmContactsRoutes, { prefix: '/v1' });
-  fastify.register(crmContractsRoutes, { prefix: '/v1' });
-  fastify.register(crmPipelineRoutes, { prefix: '/v1' });
-  fastify.register(crmInteractionsRoutes, { prefix: '/v1' });
-  fastify.register(portalRoutes, { prefix: '/v1' });
-  fastify.register(crmCampaignsRoutes, { prefix: '/v1' });
   fastify.register(fleetTcoRoutes, { prefix: '/v1' });
   fastify.register(fleetRecallsRoutes, { prefix: '/v1' });
   fastify.register(fleetIntelligenceRoutes, { prefix: '/v1' });
@@ -245,17 +234,10 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(workOrderRoutes, { prefix: universePrefix });
   fastify.register(notificationsRoutes, { prefix: universePrefix });
   fastify.register(areasRoutes, { prefix: universePrefix });
-  fastify.register(serviceCentersRoutes, { prefix: universePrefix });
   fastify.register(ownerProfileRoutes, { prefix: universePrefix });
   fastify.register(onboardingRoutes, { prefix: universePrefix });
   fastify.register(securityRoutes, { prefix: universePrefix });
   fastify.register(realtimeTelemetryRoutes, { prefix: universePrefix });
-  fastify.register(crmContactsRoutes, { prefix: universePrefix });
-  fastify.register(crmContractsRoutes, { prefix: universePrefix });
-  fastify.register(crmPipelineRoutes, { prefix: universePrefix });
-  fastify.register(crmInteractionsRoutes, { prefix: universePrefix });
-  fastify.register(portalRoutes, { prefix: universePrefix });
-  fastify.register(crmCampaignsRoutes, { prefix: universePrefix });
   fastify.register(fleetTcoRoutes, { prefix: universePrefix });
   fastify.register(fleetRecallsRoutes, { prefix: universePrefix });
   fastify.register(fleetIntelligenceRoutes, { prefix: universePrefix });

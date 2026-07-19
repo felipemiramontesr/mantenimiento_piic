@@ -558,9 +558,11 @@ const FleetUnitRow = React.memo(
   }): React.JSX.Element => {
     const forecast = getUnitForecast(unit);
     const isOverdue = !!forecast?.isOverdue;
-    const { hasPermission, isSuiteVIM } = usePermissions();
+    const { hasPermission } = usePermissions();
     const canEdit = hasPermission('fleet:write') || hasPermission('fleet:write:scoped');
-    const isVIM = isSuiteVIM();
+    // FC 082 F0c — eje suite muerto (084_AN §1a): vista única FMS; las ramas
+    // VIM quedan apagadas y F3 re-ancla la variante al chasis Arc.
+    const isVIM = false;
     const { fields: assetFields } = useAssetTypeFields(unit.assetTypeId);
 
     const usageUnit = unit.usageUnitName || 'KM';

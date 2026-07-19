@@ -24,7 +24,6 @@ describe('useTco (UT-TCO-1..3)', () => {
   it('UT-TCO-2: carga y retorna datos TCO al recibir respuesta exitosa', async () => {
     const mockData: TcoData = {
       fleet_unit_id: 'PIIC-101',
-      suite: 'VIM',
       tco_total: 4200,
       tco_maintenance: 1000,
       tco_insurance: 1200,

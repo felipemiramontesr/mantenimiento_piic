@@ -20,19 +20,13 @@ import RouteNode from './pages/Dashboard/nodes/RouteNode';
 import IncidentNode from './pages/Dashboard/nodes/IncidentNode';
 import UserNode from './pages/Dashboard/nodes/UserNode';
 import RealtimeTrackingModule from './pages/Dashboard/RealtimeTrackingModule';
-import ContactsDirectory from './pages/Dashboard/ContactsDirectory';
-import ContractsPanel from './pages/Dashboard/ContractsPanel';
-import PipelineBoard from './pages/Dashboard/PipelineBoard';
-import InteractionsLog from './pages/Dashboard/InteractionsLog';
-import PortalView from './pages/Dashboard/PortalView';
-import CampaignsPanel from './pages/Dashboard/CampaignsPanel';
+// FC 082 F0c — purga 084_AN v3.1: CRM (Contacts/Contracts/Pipeline/
+// Interactions/Campaigns/CrmHub), PortalView, FamilyView y ClientScopeGate
+// eliminados (clusters CRM + roles 4/5/9/10 muertos).
 import ProfileView from './pages/Profile/ProfileView';
 import TalleresDirectory from './pages/Social/TalleresDirectory';
-import CrmHub from './pages/Dashboard/CrmHub';
-import FamilyView from './pages/Family/FamilyView';
 import { UserProvider } from './context/UserContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import ClientScopeGate from './components/Common/ClientScopeGate';
 import ArchonErrorBoundary from './components/Common/ArchonErrorBoundary';
 import './index.css';
 
@@ -76,14 +70,12 @@ const App: React.FC = () => (
               >
                 <Route
                   element={
-                    <ClientScopeGate>
-                      {/* FC 071 F2: contiene errores de render de cualquier módulo —
-                          sin esto, un throw en el outlet desmontaba el root completo
-                          (pantalla blanca, 071_AN E3) */}
-                      <ArchonErrorBoundary>
-                        <Outlet />
-                      </ArchonErrorBoundary>
-                    </ClientScopeGate>
+                    /* FC 071 F2: contiene errores de render de cualquier módulo —
+                       sin esto, un throw en el outlet desmontaba el root completo
+                       (pantalla blanca, 071_AN E3) */
+                    <ArchonErrorBoundary>
+                      <Outlet />
+                    </ArchonErrorBoundary>
                   }
                 >
                   <Route index element={<ArchonCenter />} />
@@ -104,16 +96,8 @@ const App: React.FC = () => (
                   <Route path="users" element={<UsersModule />} />
                   <Route path="users/:uuid" element={<UserNode />} />
                   <Route path="tracking" element={<RealtimeTrackingModule />} />
-                  <Route path="contacts" element={<ContactsDirectory />} />
-                  <Route path="contracts" element={<ContractsPanel />} />
-                  <Route path="pipeline" element={<PipelineBoard />} />
-                  <Route path="interactions" element={<InteractionsLog />} />
-                  <Route path="portal" element={<PortalView />} />
-                  <Route path="campaigns" element={<CampaignsPanel />} />
                   <Route path="social" element={<ProfileView />} />
                   <Route path="talleres" element={<TalleresDirectory />} />
-                  <Route path="crm" element={<CrmHub />} />
-                  <Route path="familia" element={<FamilyView />} />
                 </Route>
               </Route>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

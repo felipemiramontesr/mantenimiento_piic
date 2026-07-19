@@ -6,7 +6,6 @@ import ArchonDataTable, { ArchonTableHeader } from '../../components/UI/ArchonDa
 interface UniverseRow {
   owner_id: number;
   owner_type: 'FLOTILLA' | 'CENTER';
-  suite: 'ERP' | 'VIM';
   label: string;
   user_id: number;
   username: string;
@@ -27,15 +26,11 @@ const HEADERS: ArchonTableHeader[] = [
   { key: 'estado', label: 'Estado', align: 'left' },
 ];
 
-const SuiteBadge: React.FC<{ suite: 'ERP' | 'VIM' }> = ({ suite }) => (
-  <span
-    className={`inline-flex items-center px-2 py-0.5 rounded-[3px] text-[10px] font-black uppercase tracking-widest ${
-      suite === 'ERP'
-        ? 'bg-pinnacle-navy/10 text-pinnacle-navy'
-        : 'bg-pinnacle-yellow/20 text-pinnacle-navy/70'
-    }`}
-  >
-    {suite}
+// FC 082 F0c — SuiteBadge murió con el eje suite (084_AN §1a); la columna
+// "Tipo" muestra ahora el owner_type (FLOTILLA — único código vivo tras 164).
+const TypeBadge: React.FC<{ ownerType: UniverseRow['owner_type'] }> = ({ ownerType }) => (
+  <span className="inline-flex items-center px-2 py-0.5 rounded-[3px] text-[10px] font-black uppercase tracking-widest bg-pinnacle-navy/10 text-pinnacle-navy">
+    {ownerType}
   </span>
 );
 
@@ -124,7 +119,7 @@ const UniversesDirectory: React.FC = (): React.ReactElement => {
               data-testid={`universe-row-${row.owner_id}`}
             >
               <td className="py-3 px-3">
-                <SuiteBadge suite={row.suite} />
+                <TypeBadge ownerType={row.owner_type} />
               </td>
               <td className="py-3 px-3 font-medium text-pinnacle-navy">
                 {row.razon_social ?? row.label}

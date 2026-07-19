@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { userUpdateSchema, registerSchema, routeUpdateSchema } from '@mantenimiento/contracts';
+import { userUpdateSchema, routeUpdateSchema } from '@mantenimiento/contracts';
 
 /**
  * FC 076 F4 — Gate_Permanente_Tests_De_Contrato (Opción B acotada).
@@ -11,8 +11,10 @@ import { userUpdateSchema, registerSchema, routeUpdateSchema } from '@mantenimie
  * contra el mock de axios):
  *   - userUpdateSchema  → ArchonProfilePanel.test.tsx (R1) +
  *                          ProfileEditSlideOver.test.tsx (R6)
- *   - registerSchema    → UserRegistrationForm.test.tsx (R4a/R4b)
  *   - routeUpdateSchema → useRouteAssignmentControl.test.tsx (R5)
+ *
+ * FC 082 F0c — registerSchema y su bloque murieron con POST /auth/register
+ * (bandas {1,3,4} — 084_AN §1a).
  *
  * Este archivo cierra el círculo: prueba que ESA forma pasa el contrato
  * REAL del backend, no una copia que pueda desalinearse en silencio. Si
@@ -55,47 +57,6 @@ describe('FC 076 F4 — Contrato real: PATCH /auth/users/:id (userUpdateSchema)'
     // schema se relajó por accidente.
     const brokenPayload = { fullName: 'Gray Man', email: 'gm@test.mx' };
     expect(userUpdateSchema.safeParse(brokenPayload).success).toBe(false);
-  });
-});
-
-describe('FC 076 F4 — Contrato real: POST /auth/register (registerSchema)', () => {
-  it('acepta el payload con departmentId numérico (UserRegistrationForm, R4a)', () => {
-    const payload = {
-      username: 'testuser',
-      email: 'test@t.com',
-      password: 'Password123!',
-      roleId: 4,
-      departmentId: 41,
-      employeeNumber: '',
-    };
-    expect(registerSchema.safeParse(payload).success).toBe(true);
-  });
-
-  it('RECHAZA department string (R4a original — regresión centinela)', () => {
-    // Forma previa: department (string) en vez de departmentId (number).
-    // Zod la descartaba en silencio (safeParse "éxito" porque el campo
-    // desconocido se ignora) — el centinela real es que el valor NUNCA
-    // llega a persistirse; verificado a nivel de componente, no aquí.
-    const payload = {
-      username: 'testuser',
-      email: 'test@t.com',
-      password: 'Password123!',
-      roleId: 4,
-      department: 'IT',
-    };
-    const parsed = registerSchema.parse(payload) as Record<string, unknown>;
-    expect(parsed.departmentId).toBeUndefined();
-    expect(parsed.department).toBeUndefined();
-  });
-
-  it('RECHAZA roleId fuera de {1,3,4} (R4d, K — gap de backend documentado)', () => {
-    const payload = {
-      username: 'testuser',
-      email: 'test@t.com',
-      password: 'Password123!',
-      roleId: 6,
-    };
-    expect(registerSchema.safeParse(payload).success).toBe(false);
   });
 });
 

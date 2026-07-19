@@ -3,7 +3,6 @@ import api from '../api/client';
 
 export type TcoData = {
   fleet_unit_id: string;
-  suite: string;
   tco_total: number;
   tco_maintenance: number;
   tco_insurance: number;
