@@ -7,6 +7,7 @@ import { UNIT_STATUS } from '../constants/statuses';
 import requirePermission from '../middleware/requirePermission';
 import FleetService from '../services/fleetService';
 import { resolveFinanceClusterScope } from '../services/clusterAccess';
+import { resolveCatalogId, CatalogMappingError } from '../services/catalogMapper';
 
 const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
   const { id, permissions } = request.user as { id: number; permissions?: string[] };
@@ -516,16 +517,24 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
+        // FC 082 F2b1 — dual-write (Cond.2): category/source siguen siendo la
+        // fuente de verdad (ENUM intacto hasta F2b2); category_id/source_id
+        // se escriben en paridad para cerrar el drift de Cond.3.
+        const categoryId = await resolveCatalogId('FINANCE_CATEGORY', category);
+        const sourceId = await resolveCatalogId('FINANCE_SOURCE', 'MANUAL');
+
         await db.execute<ResultSetHeader>(
           `INSERT INTO financial_transactions
-           (uuid, unit_id, category, amount, period, source, vendor, invoice_ref, notes, created_by)
-         VALUES (?, ?, ?, ?, ?, 'MANUAL', ?, ?, ?, ?)`,
+           (uuid, unit_id, category, category_id, amount, period, source, source_id, vendor, invoice_ref, notes, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, 'MANUAL', ?, ?, ?, ?, ?)`,
           [
             uuid,
             unitId,
             category,
+            categoryId,
             amount,
             period,
+            sourceId,
             vendor ?? null,
             invoiceRef ?? null,
             notes ?? null,
@@ -535,6 +544,14 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
 
         return reply.code(201).send({ success: true, data: { uuid } });
       } catch (error) {
+        if (error instanceof CatalogMappingError) {
+          return reply.code(400).send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: 'Categoría no catalogada',
+            field: 'category',
+          });
+        }
         fastify.log.error({ err: (error as Error).message }, 'Finance create transaction error');
         return reply.code(500).send({
           success: false,

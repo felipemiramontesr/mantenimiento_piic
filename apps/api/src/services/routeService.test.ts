@@ -254,13 +254,14 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       };
 
       mockConnection.execute.mockResolvedValueOnce([[mockRoute]]); // SELECT fm JOIN fre
+      mockConnection.execute.mockResolvedValueOnce([[{ id: 9130 }]]); // resolveCatalogId INCIDENT_CATEGORY (FC 082 F2b1)
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT incident
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT log
 
       await RouteService.reportIncident('UUID-123', 'MECANICA', 'Test', 'LOW');
 
       expect(mockConnection.commit).toHaveBeenCalled();
-      expect(mockConnection.execute).toHaveBeenCalledTimes(3);
+      expect(mockConnection.execute).toHaveBeenCalledTimes(4);
     });
 
     it('should trigger unit status change to En Mantenimiento for CRITICAL severity', async () => {
@@ -272,6 +273,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       };
 
       mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
+      mockConnection.execute.mockResolvedValueOnce([[{ id: 9130 }]]); // resolveCatalogId INCIDENT_CATEGORY (FC 082 F2b1)
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
@@ -293,6 +295,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       };
 
       mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
+      mockConnection.execute.mockResolvedValueOnce([[{ id: 9131 }]]); // resolveCatalogId INCIDENT_CATEGORY (FC 082 F2b1)
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
@@ -314,6 +317,7 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       };
 
       mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
+      mockConnection.execute.mockResolvedValueOnce([[{ id: 9134 }]]); // resolveCatalogId INCIDENT_CATEGORY (FC 082 F2b1)
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 

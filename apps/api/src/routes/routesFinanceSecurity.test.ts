@@ -281,7 +281,10 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
         .mockResolvedValueOnce([
           [{ ownerId: 42, ownerType: 'FLOTILLA', clusterActive: 1 }],
           [],
-        ] as unknown as [RowDataPacket[], FieldPacket[]]);
+        ] as unknown as [RowDataPacket[], FieldPacket[]])
+        // FC 082 F2b1 — resolveCatalogId FINANCE_CATEGORY/FINANCE_SOURCE (dual-write)
+        .mockResolvedValueOnce([[{ id: 9103 }], []] as unknown as [RowDataPacket[], FieldPacket[]])
+        .mockResolvedValueOnce([[{ id: 9111 }], []] as unknown as [RowDataPacket[], FieldPacket[]]);
 
       const res = await app.inject({
         method: 'POST',

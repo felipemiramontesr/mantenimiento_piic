@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import db from './db';
 import { recordAuditLog } from './auditService';
 import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
+import { resolveCatalogId } from './catalogMapper';
 
 /**
  * 🔱 Archon RouteService — CTI Architecture (V2)
@@ -324,11 +325,14 @@ export default class RouteService {
       const route = routes[0];
 
       // 2. Insert incident
+      // FC 082 F2b1 — dual-write (Cond.2): category sigue siendo la fuente de
+      // verdad (ENUM intacto hasta F2b2); category_id se escribe en paridad.
+      const categoryId = await resolveCatalogId('INCIDENT_CATEGORY', category, connection);
       await connection.execute(
         `INSERT INTO route_incidents
-        (route_uuid, category, description, severity, evidence_image, status)
-        VALUES (?, ?, ?, ?, ?, 'OPEN')`,
-        [routeUuid, category, description, severity, evidenceImage || null]
+        (route_uuid, category, category_id, description, severity, evidence_image, status)
+        VALUES (?, ?, ?, ?, ?, ?, 'OPEN')`,
+        [routeUuid, category, categoryId, description, severity, evidenceImage || null]
       );
 
       // 3. Determine unit status impact (Industrial Safety Protocol)

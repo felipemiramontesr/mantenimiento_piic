@@ -444,6 +444,7 @@ describe('FleetMaintenance — Push Hooks Capa 2a (PATCH complete + POST OPEN)',
       .mockResolvedValueOnce([[activeMovement], undefined]) // SELECT movements
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements COMPLETED
       .mockResolvedValueOnce([[{ maintIntervalKm: 10000 }], undefined]) // SELECT maintIntervalKm
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_maintenance_extensions
       .mockResolvedValueOnce([[{ odometer: 50000 }], undefined]) // SELECT odometer (applyCompletion)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE fleet_units (applyCompletion)
@@ -506,6 +507,7 @@ describe('FleetMaintenance — Push Hooks Capa 2a (PATCH complete + POST OPEN)',
         undefined,
       ])
       .mockResolvedValueOnce([{ insertId: 99, affectedRows: 1 }, undefined]) // INSERT fleet_movements
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }, undefined]); // INSERT fleet_maintenance_extensions
 
     vi.mocked(db.getConnection).mockResolvedValueOnce({

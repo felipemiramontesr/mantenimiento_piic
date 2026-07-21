@@ -143,8 +143,10 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
   describe('POST /finance/transactions — con token válido', () => {
     it('returns 201 and uses request.user.id as createdBy', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined])
-        .mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }, undefined]);
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // unit check
+        .mockResolvedValueOnce([[{ id: 9103 }], undefined]) // resolveCatalogId FINANCE_CATEGORY
+        .mockResolvedValueOnce([[{ id: 9111 }], undefined]) // resolveCatalogId FINANCE_SOURCE
+        .mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }, undefined]); // INSERT
 
       const res = await app.inject({
         method: 'POST',
@@ -158,9 +160,28 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       expect(body.success).toBe(true);
       expect(body.data.uuid).toBeDefined();
 
-      const insertCall = (db.execute as Mock).mock.calls[1];
+      const insertCall = (db.execute as Mock).mock.calls[3];
       const insertParams = insertCall[1] as unknown[];
-      expect(insertParams[8]).toBe(1);
+      expect(insertParams[3]).toBe(9103); // category_id (FC 082 F2b1 dual-write)
+      expect(insertParams[6]).toBe(9111); // source_id (FC 082 F2b1 dual-write)
+      expect(insertParams[10]).toBe(1); // createdBy
+    });
+
+    it('returns 400 VALIDATION_ERROR when category is not catalogued (FC 082 F2b1 Cond.2 fail-closed)', async (): Promise<void> => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // unit check
+        .mockResolvedValueOnce([[], undefined]); // resolveCatalogId FINANCE_CATEGORY → not found
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/finance/transactions',
+        headers: authHeader(),
+        payload: { unitId: 'ASM-001', category: 'FUEL', amount: 750 },
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('VALIDATION_ERROR');
+      expect(res.json().field).toBe('category');
     });
   });
 
@@ -704,6 +725,8 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
           [{ ownerId: 7, ownerType: 'ARCHONAUT', clusterActive: 1 }],
           undefined,
         ])
+        .mockResolvedValueOnce([[{ id: 9102 }], undefined]) // resolveCatalogId FINANCE_CATEGORY (FC 082 F2b1)
+        .mockResolvedValueOnce([[{ id: 9111 }], undefined]) // resolveCatalogId FINANCE_SOURCE (FC 082 F2b1)
         .mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }, undefined]); // INSERT
       const res = await app.inject({
         method: 'POST',

@@ -678,6 +678,7 @@ describe('POST /maintenance — COMPLETED path (is_in_progress: false)', () => {
       .fn()
       .mockResolvedValueOnce([[unitRow], undefined]) // SELECT fleet_units
       .mockResolvedValueOnce([{ insertId: 50, affectedRows: 1 }, undefined]) // INSERT fleet_movements COMPLETED
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ insertId: 51, affectedRows: 1 }, undefined]) // INSERT extensions
       .mockResolvedValueOnce([[{ odometer: 45000 }], undefined]) // applyCompletion: SELECT odometer
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // applyCompletion: UPDATE fleet_units
@@ -719,6 +720,7 @@ describe('POST /maintenance — COMPLETED path (is_in_progress: false)', () => {
       .fn()
       .mockResolvedValueOnce([[unitRow], undefined])
       .mockResolvedValueOnce([{ insertId: 52, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ insertId: 53, affectedRows: 1 }, undefined])
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT detail
       .mockResolvedValueOnce([[{ odometer: 45000 }], undefined])
@@ -760,6 +762,7 @@ describe('POST /maintenance — COMPLETED path (is_in_progress: false)', () => {
       .fn()
       .mockResolvedValueOnce([[unitRow], undefined]) // SELECT fleet_units (connection)
       .mockResolvedValueOnce([{ insertId: 77, affectedRows: 1 }, undefined]) // INSERT fleet_movements OPEN
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ insertId: 78, affectedRows: 1 }, undefined]); // INSERT extensions
     vi.mocked(db.getConnection).mockResolvedValueOnce({
       beginTransaction: vi.fn().mockResolvedValue(undefined),
@@ -997,6 +1000,7 @@ describe('PATCH /maintenance/:uuid/complete — with task details', () => {
       .mockResolvedValueOnce([[activeMovement], undefined]) // SELECT movements
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements COMPLETED
       .mockResolvedValueOnce([[{ maintIntervalKm: 10000 }], undefined]) // SELECT maintIntervalKm
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_maintenance_extensions
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT detail 1 (CHASSIS)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT detail 2 (DISTRIBUTION)
@@ -1025,7 +1029,7 @@ describe('PATCH /maintenance/:uuid/complete — with task details', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(executeMock).toHaveBeenCalledTimes(8);
+    expect(executeMock).toHaveBeenCalledTimes(9);
   });
 });
 
@@ -1594,6 +1598,7 @@ describe('FleetMaintenance — additional branch coverage (FM-BC)', () => {
         undefined,
       ])
       .mockResolvedValueOnce([{ insertId: 60, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ insertId: 61, affectedRows: 1 }, undefined])
       .mockResolvedValueOnce([[{ odometer: 0 }], undefined]) // B31[0]: 0||0 → right-side
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);
@@ -1643,6 +1648,7 @@ describe('FleetMaintenance — additional branch coverage (FM-BC)', () => {
       ])
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements
       .mockResolvedValueOnce([[{ maintIntervalKm: 10000 }], undefined]) // SELECT maintIntervalKm
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_maintenance_extensions
       .mockResolvedValueOnce([{ insertId: 200, affectedRows: 1 }, undefined]) // INSERT detail
       .mockResolvedValueOnce([[{ odometer: 45000 }], undefined]) // applyCompletion SELECT odometer
@@ -1685,6 +1691,7 @@ describe('FleetMaintenance — additional branch coverage (FM-BC)', () => {
         undefined,
       ])
       .mockResolvedValueOnce([{ insertId: 70, affectedRows: 1 }, undefined])
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ insertId: 71, affectedRows: 1 }, undefined])
       .mockResolvedValueOnce([[{ odometer: 45000 }], undefined])
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // UPDATE includes lastFuelLevel
@@ -1762,6 +1769,7 @@ describe('FleetMaintenance — additional branch coverage (FM-BC)', () => {
       ])
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
       .mockResolvedValueOnce([[{ maintIntervalKm: null }], undefined]) // → ??AGENCY_DEFAULT (10000)
+      .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE (FC 082 F2b1)
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined])
       .mockResolvedValueOnce([[{ odometer: 45000 }], undefined])
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]);

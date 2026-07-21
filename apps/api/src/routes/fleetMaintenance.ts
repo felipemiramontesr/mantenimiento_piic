@@ -13,6 +13,7 @@ import NotificationService, {
 import { createWorkOrder } from '../services/workOrderService';
 import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
 import FleetService from '../services/fleetService';
+import { resolveCatalogId } from '../services/catalogMapper';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -818,16 +819,23 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         const movementId = movementResult.insertId;
 
         // 2. Insert CTI maintenance extension
+        // FC 082 F2b1 — dual-write (Cond.2): service_type/system_recommended_type
+        // siguen siendo la fuente de verdad (ENUM intacto hasta F2b2); sus *_id
+        // gemelas se escriben en paridad para cerrar el drift de Cond.3.
+        const serviceTypeId = await resolveCatalogId('MAINT_SERVICE_TYPE', serviceType, connection);
         await connection.execute(
           `INSERT INTO fleet_maintenance_extensions
-          (movement_id, service_date, service_type, service_mode, system_recommended_type, cost, technician)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          (movement_id, service_date, service_type, service_type_id, service_mode,
+           system_recommended_type, system_recommended_type_id, cost, technician)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             movementId,
             data.serviceDate,
             serviceType,
+            serviceTypeId,
             serviceMode,
             serviceType,
+            serviceTypeId,
             data.cost,
             data.technician,
           ]
@@ -994,16 +1002,26 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         const finalTechnician = data.technician ?? movement.technician;
         const finalCost = data.cost;
 
+        // FC 082 F2b1 — dual-write (Cond.2): paridad con el INSERT de arriba,
+        // mantiene service_type_id/system_recommended_type_id sincronizadas
+        // en cada completación (evita el drift que Bravo señaló en Cond.3).
+        const finalServiceTypeId = await resolveCatalogId(
+          'MAINT_SERVICE_TYPE',
+          finalServiceType,
+          connection
+        );
         await connection.execute(
           `UPDATE fleet_maintenance_extensions
-         SET service_date = ?, service_type = ?, service_mode = ?,
-             system_recommended_type = ?, cost = ?, technician = ?
+         SET service_date = ?, service_type = ?, service_type_id = ?, service_mode = ?,
+             system_recommended_type = ?, system_recommended_type_id = ?, cost = ?, technician = ?
          WHERE movement_id = ?`,
           [
             finalServiceDate,
             finalServiceType,
+            finalServiceTypeId,
             finalServiceMode,
             finalServiceType,
+            finalServiceTypeId,
             finalCost,
             finalTechnician,
             movement.id,
