@@ -13,7 +13,7 @@ import NotificationService, {
 import { createWorkOrder } from '../services/workOrderService';
 import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
 import FleetService from '../services/fleetService';
-import { resolveCatalogId } from '../services/catalogMapper';
+import { resolveCatalogId, CatalogMappingError } from '../services/catalogMapper';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -933,6 +933,15 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         await connection.rollback();
         fastify.log.error(error);
         connection.release();
+        // FC 082 F2b2 Cond.C: shape unificado con finance.ts para CatalogMappingError.
+        if (error instanceof CatalogMappingError) {
+          return reply.code(400).send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: error.message,
+            field: 'serviceType',
+          });
+        }
         return reply.code(400).send({ success: false, message: (error as Error).message });
       }
     }
@@ -1106,6 +1115,15 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         await connection.rollback();
         fastify.log.error(error);
         connection.release();
+        // FC 082 F2b2 Cond.C: shape unificado con finance.ts para CatalogMappingError.
+        if (error instanceof CatalogMappingError) {
+          return reply.code(400).send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: error.message,
+            field: 'serviceType',
+          });
+        }
         return reply.code(400).send({ success: false, message: (error as Error).message });
       }
     }

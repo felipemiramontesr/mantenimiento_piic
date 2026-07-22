@@ -3,6 +3,7 @@ import buildApp from '../index';
 import db from '../services/db';
 import RouteService from '../services/routeService';
 import NotificationService from '../services/notification.service';
+import { CatalogMappingError } from '../services/catalogMapper';
 
 // 🔱 Nucleus Mocks
 vi.mock('../services/db', () => ({
@@ -245,6 +246,27 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
 
       expect(response.statusCode).toBe(201);
       expect(JSON.parse(response.body).success).toBe(true);
+    });
+
+    // FC 082 F2b2 — Cond.C: shape unificado 400/VALIDATION_ERROR cuando el
+    // mapper de catálogo falla (fail-closed, propagado desde routeService.ts).
+    it('POST /v1/routes/:uuid/incidents returns 400 VALIDATION_ERROR when category is not catalogued (CatalogMappingError)', async (): Promise<void> => {
+      (RouteService.reportIncident as Mock).mockRejectedValue(
+        new CatalogMappingError('INCIDENT_CATEGORY', 'MECANICA')
+      );
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/routes/UUID-123/incidents',
+        payload: { category: 'MECANICA', description: 'Falla de prueba', severity: 'LOW' },
+        headers: { authorization: `Bearer ${token}` },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.code).toBe('VALIDATION_ERROR');
+      expect(body.field).toBe('category');
     });
 
     it('POST /v1/routes/:uuid/incidents should return 400 if validation fails', async (): Promise<void> => {

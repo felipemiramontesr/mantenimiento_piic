@@ -4,6 +4,7 @@ import { routeUpdateSchema } from '@mantenimiento/contracts';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import RouteService from '../services/routeService';
+import { CatalogMappingError } from '../services/catalogMapper';
 import FleetService from '../services/fleetService';
 import requirePermission from '../middleware/requirePermission';
 import NotificationService, {
@@ -580,6 +581,15 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         });
       } catch (error) {
         fastify.log.error(error);
+        // FC 082 F2b2 Cond.C: shape unificado con finance.ts para CatalogMappingError.
+        if (error instanceof CatalogMappingError) {
+          return reply.code(400).send({
+            success: false,
+            code: 'VALIDATION_ERROR',
+            message: error.message,
+            field: 'category',
+          });
+        }
         return reply.code(400).send({ success: false, message: (error as Error).message });
       }
     }

@@ -708,6 +708,50 @@ describe('POST /maintenance — COMPLETED path (is_in_progress: false)', () => {
     expect(res.json().movement_status).toBe('COMPLETED');
   });
 
+  // FC 082 F2b2 — Cond.C: shape unificado 400/VALIDATION_ERROR cuando el
+  // mapper de catálogo falla (fail-closed, Cond.2 F2b1).
+  it('returns 400 VALIDATION_ERROR when serviceType is not catalogued (CatalogMappingError)', async () => {
+    const unitRow = {
+      id: 'ASM-001',
+      odometer: 45000,
+      maintIntervalKm: 10000,
+      status: 'Disponible',
+      lastFuelLevel: 75,
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[unitRow], undefined]) // SELECT fleet_units
+      .mockResolvedValueOnce([{ insertId: 50, affectedRows: 1 }, undefined]) // INSERT fleet_movements COMPLETED
+      .mockResolvedValueOnce([[], undefined]); // resolveCatalogId MAINT_SERVICE_TYPE — sin fila, fail-closed
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/maintenance',
+      payload: {
+        unitId: 'ASM-001',
+        serviceDate: '2026-06-10',
+        odometerAtService: 45000,
+        cost: 800,
+        technician: 'Tech B',
+        is_in_progress: false,
+        details: [],
+      },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(400);
+    const body = res.json();
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.field).toBe('serviceType');
+  });
+
   it('returns 201 COMPLETED with details inserting task rows', async () => {
     const unitRow = {
       id: 'ASM-001',
@@ -1030,6 +1074,47 @@ describe('PATCH /maintenance/:uuid/complete — with task details', () => {
 
     expect(res.statusCode).toBe(200);
     expect(executeMock).toHaveBeenCalledTimes(9);
+  });
+
+  // FC 082 F2b2 — Cond.C: shape unificado 400/VALIDATION_ERROR cuando el
+  // mapper de catálogo falla en la completación (fail-closed, Cond.2 F2b1).
+  it('returns 400 VALIDATION_ERROR when finalServiceType is not catalogued (CatalogMappingError)', async () => {
+    const activeMovement = {
+      id: 56,
+      unit_id: 'ASM-010',
+      status: 'ACTIVE',
+      service_date: '2026-06-10',
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      technician: 'Tech Z',
+      cost: 700,
+    };
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[activeMovement], undefined]) // SELECT movements
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements COMPLETED
+      .mockResolvedValueOnce([[{ maintIntervalKm: 10000 }], undefined]) // SELECT maintIntervalKm
+      .mockResolvedValueOnce([[], undefined]); // resolveCatalogId MAINT_SERVICE_TYPE — sin fila, fail-closed
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: executeMock,
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/active-uuid-3/complete',
+      payload: { odometerAtService: 45000, cost: 700, details: [] },
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = res.json();
+    expect(body.success).toBe(false);
+    expect(body.code).toBe('VALIDATION_ERROR');
+    expect(body.field).toBe('serviceType');
   });
 });
 
