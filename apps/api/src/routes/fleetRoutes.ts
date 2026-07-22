@@ -384,7 +384,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             NULL as reading_after,
             'En Ruta' COLLATE utf8mb4_general_ci as status_before,
             'En Ruta' COLLATE utf8mb4_general_ci as status_after,
-            CONVERT(CONCAT(ri.category, ': ', SUBSTR(ri.description, 1, 100)) USING utf8mb4) COLLATE utf8mb4_general_ci as description,
+            CONVERT(CONCAT(COALESCE(cc_inc.code, ri.category), ': ', SUBSTR(ri.description, 1, 100)) USING utf8mb4) COLLATE utf8mb4_general_ci as description,
             NULL as created_by,
             ri.reported_at as created_at,
             NULL as fuel_before,
@@ -397,6 +397,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             NULL as snapshot_after
           FROM route_incidents ri
           JOIN fleet_movements fm ON fm.uuid = ri.route_uuid COLLATE utf8mb4_unicode_ci
+          LEFT JOIN common_catalogs cc_inc ON cc_inc.id = ri.category_id
           WHERE NOT EXISTS (
             SELECT 1 FROM unit_activity_logs ual
             WHERE ual.reference_id = ri.route_uuid COLLATE utf8mb4_unicode_ci
@@ -746,7 +747,8 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
           .send({ success: false, code: 'FORBIDDEN', message: 'Incident outside scoped owners' });
       }
       const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT ri.id, ri.uuid, ri.route_uuid, ri.category, ri.description,
+        `SELECT ri.id, ri.uuid, ri.route_uuid,
+                COALESCE(cc_inc.code, ri.category) AS category, ri.description,
                 ri.severity, ri.evidence_image, ri.status, ri.reported_at,
                 fm.unit_id, fm.start_at AS route_start, fm.end_at AS route_end,
                 fre.destination, fre.driver_id,
@@ -757,6 +759,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
          JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
          LEFT JOIN users u ON fre.driver_id = u.id
          LEFT JOIN fleet_units fu ON fm.unit_id = fu.id
+         LEFT JOIN common_catalogs cc_inc ON cc_inc.id = ri.category_id
          LEFT JOIN common_catalogs c_brand ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
          LEFT JOIN common_catalogs c_model ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
          WHERE ri.uuid = ?`,

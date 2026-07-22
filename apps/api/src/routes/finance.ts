@@ -199,18 +199,22 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         categoryFilter = gate.categoryFilter;
       }
 
+      // FC 082 F2b2 — read-cutover (Cond.3 Bravo): LEFT JOIN + COALESCE en vez
+      // de INNER JOIN — si category_id no resolvió (fila huérfana), cae al
+      // ENUM crudo en vez de excluir la fila o romper.
       let kpiQuery = `SELECT
           COALESCE(SUM(ft.amount), 0)                                                    AS totalEgresos,
-          COALESCE(SUM(CASE WHEN ft.category = 'MAINTENANCE' THEN ft.amount ELSE 0 END), 0) AS totalMaintenance,
-          COALESCE(SUM(CASE WHEN ft.category = 'FUEL'        THEN ft.amount ELSE 0 END), 0) AS totalFuel,
-          COALESCE(SUM(CASE WHEN ft.category = 'INSURANCE'   THEN ft.amount ELSE 0 END), 0) AS totalInsurance,
-          COALESCE(SUM(CASE WHEN ft.category = 'LEASE'       THEN ft.amount ELSE 0 END), 0) AS totalLeaseRegistered,
-          COALESCE(SUM(CASE WHEN ft.category = 'TIRE'        THEN ft.amount ELSE 0 END), 0) AS totalTire,
-          COALESCE(SUM(CASE WHEN ft.category = 'FINE'        THEN ft.amount ELSE 0 END), 0) AS totalFine,
-          COALESCE(SUM(CASE WHEN ft.category = 'REPAIR'      THEN ft.amount ELSE 0 END), 0) AS totalRepair,
-          COALESCE(SUM(CASE WHEN ft.category = 'OTHER'       THEN ft.amount ELSE 0 END), 0) AS totalOther
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'MAINTENANCE' THEN ft.amount ELSE 0 END), 0) AS totalMaintenance,
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'FUEL'        THEN ft.amount ELSE 0 END), 0) AS totalFuel,
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'INSURANCE'   THEN ft.amount ELSE 0 END), 0) AS totalInsurance,
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'LEASE'       THEN ft.amount ELSE 0 END), 0) AS totalLeaseRegistered,
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'TIRE'        THEN ft.amount ELSE 0 END), 0) AS totalTire,
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'FINE'        THEN ft.amount ELSE 0 END), 0) AS totalFine,
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'REPAIR'      THEN ft.amount ELSE 0 END), 0) AS totalRepair,
+          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'OTHER'       THEN ft.amount ELSE 0 END), 0) AS totalOther
          FROM financial_transactions ft
          JOIN fleet_units fu ON ft.unit_id = fu.id
+         LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
          WHERE ft.period >= ? AND ft.period <= ?`;
       const kpiParams: (string | number)[] = [fromMonth, toMonth];
       if (ownerScope !== null) {
@@ -230,9 +234,10 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       }
       const [unitRows] = await db.execute<RowDataPacket[]>(unitQuery, unitParams);
 
-      let categoryQuery = `SELECT ft.category, SUM(ft.amount) AS amount
+      let categoryQuery = `SELECT COALESCE(cc.code, ft.category) AS category, SUM(ft.amount) AS amount
          FROM financial_transactions ft
          JOIN fleet_units fu ON ft.unit_id = fu.id
+         LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
          WHERE ft.period >= ? AND ft.period <= ?`;
       const categoryParams: (string | number)[] = [fromMonth, toMonth];
       if (ownerScope !== null) {
@@ -240,7 +245,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         categoryParams.push(...ownerScope);
       }
       categoryQuery = appendCategoryFilter(categoryQuery, categoryParams, categoryFilter);
-      categoryQuery += ` GROUP BY ft.category ORDER BY amount DESC`;
+      categoryQuery += ` GROUP BY COALESCE(cc.code, ft.category) ORDER BY amount DESC`;
       const [categoryRows] = await db.execute<RowDataPacket[]>(categoryQuery, categoryParams);
 
       let monthQuery = `SELECT ft.period, COALESCE(SUM(ft.amount), 0) AS amount
@@ -370,12 +375,15 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
 
       let query = `
         SELECT ft.id, ft.uuid, ft.unit_id, fu.id AS unit_name,
-               ft.category, ft.amount, ft.period, ft.source,
+               COALESCE(cc_cat.code, ft.category) AS category, ft.amount, ft.period,
+               COALESCE(cc_src.code, ft.source) AS source,
                ft.vendor, ft.invoice_ref, ft.notes,
                u.full_name AS created_by_name, ft.created_at
         FROM financial_transactions ft
         JOIN fleet_units fu ON fu.id = ft.unit_id
         JOIN users u        ON u.id  = ft.created_by
+        LEFT JOIN common_catalogs cc_cat ON cc_cat.id = ft.category_id
+        LEFT JOIN common_catalogs cc_src ON cc_src.id = ft.source_id
         WHERE ft.period >= ? AND ft.period <= ?
       `;
       const params: (string | number)[] = [fromMonth, toMonth];
@@ -603,13 +611,15 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       let query = `
-        SELECT ft.uuid, fu.id AS unit_name, ft.category, ft.amount, ft.period,
+        SELECT ft.uuid, fu.id AS unit_name, COALESCE(cc.code, ft.category) AS category,
+               ft.amount, ft.period,
                ft.vendor, ft.invoice_ref, ft.notes,
                u.full_name AS created_by_name,
                DATE_FORMAT(ft.created_at, '%Y-%m-%d') AS created_at
         FROM financial_transactions ft
         JOIN fleet_units fu ON fu.id = ft.unit_id
         JOIN users u        ON u.id  = ft.created_by
+        LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
         WHERE ft.period >= ? AND ft.period <= ?
       `;
       const params: (string | number)[] = [fromMonth, toMonth];

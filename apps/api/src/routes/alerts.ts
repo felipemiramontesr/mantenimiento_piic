@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import FleetService from '../services/fleetService';
+import { resolveCatalogId } from '../services/catalogMapper';
 
 export type AlertSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type AlertType =
@@ -309,6 +310,9 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
       }
 
       if (scope.has('LEASE_PAYMENT_MISSING')) {
+        // FC 082 F2b2 — read-cutover (Cond.2 Bravo): resolver category_id UNA
+        // VEZ por request, comparar por id (no por string ni subquery por fila).
+        const leaseCategoryId = await resolveCatalogId('FINANCE_CATEGORY', 'LEASE');
         const [leaseRows] = await db.execute<RowDataPacket[]>(
           `SELECT COUNT(*) AS leaseMissingCount
            FROM fleet_units u
@@ -316,19 +320,22 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
              AND u.monthlyLeasePayment IS NOT NULL AND u.monthlyLeasePayment > 0
              AND NOT EXISTS (
                SELECT 1 FROM financial_transactions ft
-               WHERE ft.unit_id = u.id AND ft.category = 'LEASE'
+               WHERE ft.unit_id = u.id AND ft.category_id = ?
                  AND ft.period = DATE_FORMAT(CURDATE(), '%Y-%m')
-             )`
+             )`,
+          [leaseCategoryId]
         );
         total += Number(leaseRows[0].leaseMissingCount);
       }
 
       if (scope.has('FINE_REGISTERED')) {
+        const fineCategoryId = await resolveCatalogId('FINANCE_CATEGORY', 'FINE');
         const [fineRows] = await db.execute<RowDataPacket[]>(
           `SELECT COUNT(*) AS fineCount
            FROM financial_transactions
-           WHERE category = 'FINE'
-             AND created_at >= DATE_SUB(NOW(), INTERVAL ${FINE_WINDOW_DAYS} DAY)`
+           WHERE category_id = ?
+             AND created_at >= DATE_SUB(NOW(), INTERVAL ${FINE_WINDOW_DAYS} DAY)`,
+          [fineCategoryId]
         );
         total += Number(fineRows[0].fineCount);
       }
@@ -430,10 +437,11 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
       // 2. Open incidents
       if (scope.has('INCIDENT_OPEN')) {
         const [incidentRows] = await db.execute<RowDataPacket[]>(
-          `SELECT i.id, i.category, i.description, i.reported_at,
+          `SELECT i.id, COALESCE(cc.code, i.category) AS category, i.description, i.reported_at,
                   fm.unit_id
            FROM route_incidents i
            JOIN fleet_movements fm ON i.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
+           LEFT JOIN common_catalogs cc ON cc.id = i.category_id
            WHERE i.status = 'OPEN'
            ORDER BY i.reported_at DESC
            LIMIT 50`
@@ -524,6 +532,9 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
 
       // 5. Finanzas — renta del mes sin registrar (Contrato Alerts_Finance_Domain)
       if (scope.has('LEASE_PAYMENT_MISSING')) {
+        // FC 082 F2b2 — read-cutover (Cond.2 Bravo): category_id resuelto una
+        // vez, comparación por id.
+        const leaseCategoryId = await resolveCatalogId('FINANCE_CATEGORY', 'LEASE');
         const [leaseRows] = await db.execute<RowDataPacket[]>(
           `SELECT u.id, u.monthlyLeasePayment, DAY(CURDATE()) AS dayOfMonth
            FROM fleet_units u
@@ -531,10 +542,11 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
              AND u.monthlyLeasePayment IS NOT NULL AND u.monthlyLeasePayment > 0
              AND NOT EXISTS (
                SELECT 1 FROM financial_transactions ft
-               WHERE ft.unit_id = u.id AND ft.category = 'LEASE'
+               WHERE ft.unit_id = u.id AND ft.category_id = ?
                  AND ft.period = DATE_FORMAT(CURDATE(), '%Y-%m')
              )
-           LIMIT 50`
+           LIMIT 50`,
+          [leaseCategoryId]
         );
 
         leaseRows.forEach((row) => {
@@ -553,13 +565,15 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
 
       // 6. Finanzas — multas registradas recientemente
       if (scope.has('FINE_REGISTERED')) {
+        const fineCategoryId = await resolveCatalogId('FINANCE_CATEGORY', 'FINE');
         const [fineRows] = await db.execute<RowDataPacket[]>(
           `SELECT id, unit_id, amount, vendor, created_at
            FROM financial_transactions
-           WHERE category = 'FINE'
+           WHERE category_id = ?
              AND created_at >= DATE_SUB(NOW(), INTERVAL ${FINE_WINDOW_DAYS} DAY)
            ORDER BY created_at DESC
-           LIMIT 50`
+           LIMIT 50`,
+          [fineCategoryId]
         );
 
         fineRows.forEach((row) => {

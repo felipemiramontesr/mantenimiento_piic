@@ -78,15 +78,17 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/reports/maintenance/:uuid/pdf', async (request, reply) => {
     try {
       const { uuid } = request.params as { uuid: string };
+      // FC 082 F2b2 — read-cutover (Cond.3 Bravo): LEFT JOIN + COALESCE fail-soft.
       const [movements] = await db.execute<RowDataPacket[]>(
         `SELECT fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
                 fme.service_date,
                 fm.start_reading AS odometer_at_service,
                 fm.end_reading AS odometer_at_close,
-                fme.service_type, fme.service_mode,
+                COALESCE(cc_st.code, fme.service_type) AS service_type, fme.service_mode,
                 fme.cost, fme.technician, fm.created_at
          FROM fleet_movements fm
          JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+         LEFT JOIN common_catalogs cc_st ON cc_st.id = fme.service_type_id
          WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE'`,
         [uuid]
       );

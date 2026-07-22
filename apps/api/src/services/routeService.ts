@@ -453,8 +453,19 @@ export default class RouteService {
    * Fetches incidents for a specific route UUID.
    */
   static async getIncidents(routeUuid: string): Promise<RowDataPacket[]> {
+    // FC 082 F2b2 — read-cutover (Cond.3 Bravo): proyección explícita en vez
+    // de SELECT * (que ya exponía category_id crudo sin resolver). category
+    // sigue viniendo del ENUM vía COALESCE fail-soft; category_id se expone
+    // de forma aditiva (Cond del dictamen Bravo 18:01:49).
     const [rows] = await db.execute<RowDataPacket[]>(
-      'SELECT * FROM route_incidents WHERE route_uuid = ? ORDER BY reported_at DESC',
+      `SELECT ri.id, ri.uuid, ri.route_uuid,
+              COALESCE(cc.code, ri.category) AS category, ri.category_id,
+              ri.description, ri.severity, ri.evidence_image, ri.status,
+              ri.reported_at, ri.resolved_at, ri.resolved_by, ri.resolution_notes
+       FROM route_incidents ri
+       LEFT JOIN common_catalogs cc ON cc.id = ri.category_id
+       WHERE ri.route_uuid = ?
+       ORDER BY ri.reported_at DESC`,
       [routeUuid]
     );
     return rows;
@@ -468,8 +479,14 @@ export default class RouteService {
       ownerIds && ownerIds.length > 0
         ? `AND fu.ownerId IN (${ownerIds.map(() => '?').join(', ')})`
         : '';
+    // FC 082 F2b2 — read-cutover: proyección explícita (antes SELECT i.*, que
+    // ya exponía category_id crudo). category vía COALESCE fail-soft;
+    // category_id aditivo.
     const query = `SELECT
-        i.*,
+        i.id, i.uuid, i.route_uuid,
+        COALESCE(cc.code, i.category) AS category, i.category_id,
+        i.description, i.severity, i.evidence_image, i.status,
+        i.reported_at, i.resolved_at, i.resolved_by, i.resolution_notes,
         fm.unit_id,
         u.full_name as driver_name
       FROM route_incidents i
@@ -477,6 +494,7 @@ export default class RouteService {
       JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
       JOIN users u ON fre.driver_id = u.id
       JOIN fleet_units fu ON fm.unit_id = fu.id
+      LEFT JOIN common_catalogs cc ON cc.id = i.category_id
       WHERE 1=1 ${scopeFilter}
       ORDER BY i.reported_at DESC`;
 

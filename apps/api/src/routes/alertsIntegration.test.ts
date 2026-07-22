@@ -90,7 +90,9 @@ describe('Alerts Routes — Integration', () => {
         .mockResolvedValueOnce([[{ incidentCount: '2' }], undefined])
         .mockResolvedValueOnce([[{ criticalCount: '1' }], undefined])
         .mockResolvedValueOnce([[{ complianceCount: '2' }], undefined])
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[{ leaseMissingCount: '2' }], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[{ fineCount: '1' }], undefined])
         .mockResolvedValueOnce([[{ anomalyCount: '1' }], undefined]);
 
@@ -111,7 +113,9 @@ describe('Alerts Routes — Integration', () => {
         .mockResolvedValueOnce([[{ incidentCount: '0' }], undefined])
         .mockResolvedValueOnce([[{ criticalCount: '0' }], undefined])
         .mockResolvedValueOnce([[{ complianceCount: null }], undefined])
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[{ leaseMissingCount: '0' }], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[{ fineCount: '0' }], undefined])
         .mockResolvedValueOnce([[{ anomalyCount: null }], undefined]);
 
@@ -143,7 +147,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[], undefined])
-        .mockResolvedValueOnce([[], undefined]);
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -164,7 +172,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[overdueRow], undefined])
         .mockResolvedValueOnce([[], undefined])
-        .mockResolvedValueOnce([[], undefined]);
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -186,7 +198,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[incidentRow], undefined])
-        .mockResolvedValueOnce([[], undefined]);
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -208,7 +224,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[incidentRow], undefined])
-        .mockResolvedValueOnce([[], undefined]);
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -225,7 +245,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[], undefined])
-        .mockResolvedValueOnce([[criticalRow], undefined]);
+        .mockResolvedValueOnce([[criticalRow], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -245,7 +269,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[], undefined])
-        .mockResolvedValueOnce([[criticalRow], undefined]);
+        .mockResolvedValueOnce([[criticalRow], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -270,7 +298,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[incidentOlder, incidentNewer], undefined])
-        .mockResolvedValueOnce([[], undefined]);
+        .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -298,7 +330,11 @@ describe('Alerts Routes — Integration', () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[overdueRowLow], undefined])
         .mockResolvedValueOnce([[], undefined])
-        .mockResolvedValueOnce([[criticalRow], undefined]);
+        .mockResolvedValueOnce([[criticalRow], undefined])
+        .mockResolvedValueOnce([[], undefined]) // COMPLIANCE_EXPIRY
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
+        .mockResolvedValueOnce([[], undefined]) // LEASE query
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]); // FC 082 F2b2: resolveCatalogId FINE
 
       const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: auth() });
       expect(res.statusCode).toBe(200);
@@ -405,7 +441,9 @@ describe('Alerts Routes — Integration', () => {
         .mockResolvedValueOnce([[incidentRow], undefined])
         .mockResolvedValueOnce([[criticalRow], undefined])
         .mockResolvedValueOnce([[complianceRow], undefined])
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[leaseMissingRow], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[fineRow], undefined])
         .mockResolvedValueOnce([[anomalyRow], undefined]);
 
@@ -423,7 +461,7 @@ describe('Alerts Routes — Integration', () => {
       expect(types).toContain('LEASE_PAYMENT_MISSING');
       expect(types).toContain('FINE_REGISTERED');
       expect(types).toContain('EXPENSE_ANOMALY');
-      expect(db.execute).toHaveBeenCalledTimes(7);
+      expect(db.execute).toHaveBeenCalledTimes(9);
     });
 
     it('Scenario 4: maint:view + fleet:view receive their three types, never INCIDENT_OPEN', async () => {
@@ -508,9 +546,11 @@ describe('Alerts Routes — Integration', () => {
 
     // ─── Contrato Alerts_Finance_Domain ───────────────────────────────────────
 
-    it('Finanzas 1: financial:view receives only finance types with exactly 3 queries', async () => {
+    it('Finanzas 1: financial:view receives only finance types with exactly 5 queries', async () => {
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[leaseMissingRow], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[fineRow], undefined])
         .mockResolvedValueOnce([[anomalyRow], undefined]);
 
@@ -527,12 +567,14 @@ describe('Alerts Routes — Integration', () => {
       expect(types).toContain('FINE_REGISTERED');
       expect(types).toContain('EXPENSE_ANOMALY');
       expect(types).not.toContain('MAINTENANCE_OVERDUE');
-      expect(db.execute).toHaveBeenCalledTimes(3);
+      expect(db.execute).toHaveBeenCalledTimes(5);
     });
 
     it('Finanzas 2: renta sin registrar el día 25 escala a HIGH con descripción es-MX', async () => {
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[leaseMissingRow], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[], undefined]);
 
@@ -550,7 +592,9 @@ describe('Alerts Routes — Integration', () => {
 
     it('Finanzas 3: multa reciente HIGH con monto y proveedor', async () => {
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[fineRow], undefined])
         .mockResolvedValueOnce([[], undefined]);
 
@@ -570,7 +614,9 @@ describe('Alerts Routes — Integration', () => {
 
     it('Finanzas 4: gasto anómalo 2.5× escala a HIGH con promedio semestral', async () => {
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[anomalyRow], undefined]);
 
@@ -607,7 +653,9 @@ describe('Alerts Routes — Integration', () => {
         prevPeriods: 6,
       };
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[sparseRow, zeroHistoryRow, lowRatioRow], undefined]);
 
@@ -628,7 +676,9 @@ describe('Alerts Routes — Integration', () => {
         created_at: new Date('2026-06-10T08:00:00.000Z'),
       };
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[fineDateRow], undefined])
         .mockResolvedValueOnce([[], undefined]);
 
@@ -642,9 +692,11 @@ describe('Alerts Routes — Integration', () => {
       expect(alert.description).toBe('Multa registrada: $1,200.00 — sin proveedor');
     });
 
-    it('Finanzas 6: /alerts/count con financial:view ejecuta solo las 3 queries financieras', async () => {
+    it('Finanzas 6: /alerts/count con financial:view ejecuta solo las 5 queries financieras', async () => {
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // FC 082 F2b2: resolveCatalogId LEASE
         .mockResolvedValueOnce([[{ leaseMissingCount: '2' }], undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b2: resolveCatalogId FINE
         .mockResolvedValueOnce([[{ fineCount: '1' }], undefined])
         .mockResolvedValueOnce([[{ anomalyCount: '0' }], undefined]);
 
@@ -655,7 +707,58 @@ describe('Alerts Routes — Integration', () => {
       });
       expect(res.statusCode).toBe(200);
       expect(res.json().count).toBe(3);
-      expect(db.execute).toHaveBeenCalledTimes(3);
+      expect(db.execute).toHaveBeenCalledTimes(5);
+    });
+
+    // FC 082 F2b2 — Cond.2 Bravo: resolveCatalogId(LEASE/FINE) debe resolverse
+    // UNA VEZ por request, no por fila. Con 3 unidades sin renta registrada y
+    // 3 multas, el call count debe seguir en 5 (no 3+3+3=9 ó más si fuera
+    // per-fila).
+    it('Finanzas 7: resolveCatalogId LEASE/FINE se resuelve una vez por request, no por fila (Cond.2)', async () => {
+      const leaseRows = [
+        { id: 'ASM-201', monthlyLeasePayment: '5000.00', dayOfMonth: 20 },
+        { id: 'ASM-202', monthlyLeasePayment: '6000.00', dayOfMonth: 20 },
+        { id: 'ASM-203', monthlyLeasePayment: '7000.00', dayOfMonth: 20 },
+      ];
+      const fineRows = [
+        {
+          id: 601,
+          unit_id: 'ASM-204',
+          amount: '100.00',
+          vendor: 'A',
+          created_at: '2026-06-01T00:00:00Z',
+        },
+        {
+          id: 602,
+          unit_id: 'ASM-205',
+          amount: '200.00',
+          vendor: 'B',
+          created_at: '2026-06-02T00:00:00Z',
+        },
+        {
+          id: 603,
+          unit_id: 'ASM-206',
+          amount: '300.00',
+          vendor: 'C',
+          created_at: '2026-06-03T00:00:00Z',
+        },
+      ];
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9100 }], undefined]) // resolveCatalogId LEASE — UNA sola vez
+        .mockResolvedValueOnce([leaseRows, undefined])
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // resolveCatalogId FINE — UNA sola vez
+        .mockResolvedValueOnce([fineRows, undefined])
+        .mockResolvedValueOnce([[], undefined]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts',
+        headers: authWith(['financial:view']),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.count).toBe(6);
+      expect(db.execute).toHaveBeenCalledTimes(5);
     });
   });
 
