@@ -34,14 +34,36 @@ async function gateFinanceCluster(
   return { forbidden: false, ownerIds: activeOwnerIds, categoryFilter };
 }
 
+// FC 082 F2b3a — Cond.A residual: filtra por category_id (fuente única tras
+// el cutover de escritura), no por el string ENUM.
 function appendCategoryFilter(
   query: string,
   params: (string | number)[],
-  categoryFilter: readonly string[] | null
+  categoryFilterIds: readonly number[] | null
 ): string {
-  if (!categoryFilter) return query;
-  params.push(...categoryFilter);
-  return `${query} AND ft.category IN (${categoryFilter.map(() => '?').join(', ')})`;
+  if (!categoryFilterIds) return query;
+  params.push(...categoryFilterIds);
+  return `${query} AND ft.category_id IN (${categoryFilterIds.map(() => '?').join(', ')})`;
+}
+
+// Resuelve la lista de categorías permitidas (strings, viene de
+// clusterAccess.ts) a ids en UNA sola query por request (no N queries por
+// categoría) — fail-closed: cualquier código no catalogado lanza.
+async function resolveCategoryFilterIds(
+  categoryFilter: readonly string[] | null
+): Promise<number[] | null> {
+  if (!categoryFilter) return null;
+  const placeholders = categoryFilter.map(() => '?').join(', ');
+  const [rows] = await db.execute<RowDataPacket[]>(
+    `SELECT id, code FROM common_catalogs WHERE category = 'FINANCE_CATEGORY' AND code IN (${placeholders})`,
+    [...categoryFilter]
+  );
+  if (rows.length !== categoryFilter.length) {
+    const foundCodes = new Set(rows.map((r) => r.code as string));
+    const missing = categoryFilter.find((code) => !foundCodes.has(code));
+    if (missing) throw new CatalogMappingError('FINANCE_CATEGORY', missing);
+  }
+  return rows.map((r) => r.id as number);
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -198,6 +220,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         ownerScope = gate.ownerIds;
         categoryFilter = gate.categoryFilter;
       }
+      const categoryFilterIds = await resolveCategoryFilterIds(categoryFilter);
 
       // FC 082 F2b2 — read-cutover (Cond.3 Bravo): LEFT JOIN + COALESCE en vez
       // de INNER JOIN — si category_id no resolvió (fila huérfana), cae al
@@ -221,7 +244,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         kpiQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         kpiParams.push(...ownerScope);
       }
-      kpiQuery = appendCategoryFilter(kpiQuery, kpiParams, categoryFilter);
+      kpiQuery = appendCategoryFilter(kpiQuery, kpiParams, categoryFilterIds);
       const [kpiRows] = await db.execute<RowDataPacket[]>(kpiQuery, kpiParams);
 
       let unitQuery = `SELECT COUNT(*) AS unitCount
@@ -244,7 +267,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         categoryQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         categoryParams.push(...ownerScope);
       }
-      categoryQuery = appendCategoryFilter(categoryQuery, categoryParams, categoryFilter);
+      categoryQuery = appendCategoryFilter(categoryQuery, categoryParams, categoryFilterIds);
       categoryQuery += ` GROUP BY COALESCE(cc.code, ft.category) ORDER BY amount DESC`;
       const [categoryRows] = await db.execute<RowDataPacket[]>(categoryQuery, categoryParams);
 
@@ -257,7 +280,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         monthQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         monthParams.push(...ownerScope);
       }
-      monthQuery = appendCategoryFilter(monthQuery, monthParams, categoryFilter);
+      monthQuery = appendCategoryFilter(monthQuery, monthParams, categoryFilterIds);
       monthQuery += ` GROUP BY ft.period ORDER BY ft.period ASC`;
       const [monthRows] = await db.execute<RowDataPacket[]>(monthQuery, monthParams);
 
@@ -270,7 +293,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         topQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         topParams.push(...ownerScope);
       }
-      topQuery = appendCategoryFilter(topQuery, topParams, categoryFilter);
+      topQuery = appendCategoryFilter(topQuery, topParams, categoryFilterIds);
       topQuery += ` GROUP BY ft.unit_id ORDER BY amount DESC LIMIT 5`;
       const [topRows] = await db.execute<RowDataPacket[]>(topQuery, topParams);
 
@@ -312,6 +335,14 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         },
       });
     } catch (error) {
+      if (error instanceof CatalogMappingError) {
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: error.message,
+          field: 'category',
+        });
+      }
       fastify.log.error({ err: (error as Error).message }, 'Finance dashboard error');
       return reply.code(500).send({
         success: false,
@@ -372,6 +403,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         ownerScope = gate.ownerIds;
         categoryFilter = gate.categoryFilter;
       }
+      const categoryFilterIds = await resolveCategoryFilterIds(categoryFilter);
+      // FC 082 F2b3a — Cond.A: resuelto UNA VEZ, reusado en query + countQuery.
+      const categoryIdFilter = category
+        ? await resolveCatalogId('FINANCE_CATEGORY', category)
+        : null;
 
       let query = `
         SELECT ft.id, ft.uuid, ft.unit_id, fu.id AS unit_name,
@@ -392,11 +428,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         query += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         params.push(...ownerScope);
       }
-      query = appendCategoryFilter(query, params, categoryFilter);
+      query = appendCategoryFilter(query, params, categoryFilterIds);
 
-      if (category) {
-        query += ' AND ft.category = ?';
-        params.push(category);
+      if (categoryIdFilter !== null) {
+        query += ' AND ft.category_id = ?';
+        params.push(categoryIdFilter);
       }
       if (unitId) {
         query += ' AND ft.unit_id = ?';
@@ -433,10 +469,10 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         countQuery += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         countParams.push(...ownerScope);
       }
-      countQuery = appendCategoryFilter(countQuery, countParams, categoryFilter);
-      if (category) {
-        countQuery += ' AND ft.category = ?';
-        countParams.push(category);
+      countQuery = appendCategoryFilter(countQuery, countParams, categoryFilterIds);
+      if (categoryIdFilter !== null) {
+        countQuery += ' AND ft.category_id = ?';
+        countParams.push(categoryIdFilter);
       }
       if (unitId) {
         countQuery += ' AND ft.unit_id = ?';
@@ -454,6 +490,14 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         },
       });
     } catch (error) {
+      if (error instanceof CatalogMappingError) {
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: error.message,
+          field: 'category',
+        });
+      }
       fastify.log.error({ err: (error as Error).message }, 'Finance transactions list error');
       return reply.code(500).send({
         success: false,
@@ -525,20 +569,19 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
           });
         }
 
-        // FC 082 F2b1 — dual-write (Cond.2): category/source siguen siendo la
-        // fuente de verdad (ENUM intacto hasta F2b2); category_id/source_id
-        // se escriben en paridad para cerrar el drift de Cond.3.
+        // FC 082 F2b3a — cutover de escritura: category_id/source_id son la
+        // única fuente de verdad (ENUM ya nullable desde F2b3a-pre, mig.168).
+        // El ENUM deja de escribirse — DROP real llega en F2b3b.
         const categoryId = await resolveCatalogId('FINANCE_CATEGORY', category);
         const sourceId = await resolveCatalogId('FINANCE_SOURCE', 'MANUAL');
 
         await db.execute<ResultSetHeader>(
           `INSERT INTO financial_transactions
-           (uuid, unit_id, category, category_id, amount, period, source, source_id, vendor, invoice_ref, notes, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, 'MANUAL', ?, ?, ?, ?, ?)`,
+           (uuid, unit_id, category_id, amount, period, source_id, vendor, invoice_ref, notes, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             uuid,
             unitId,
-            category,
             categoryId,
             amount,
             period,
@@ -609,6 +652,10 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         ownerScope = gate.ownerIds;
         categoryFilter = gate.categoryFilter;
       }
+      const categoryFilterIds = await resolveCategoryFilterIds(categoryFilter);
+      const categoryIdFilter = category
+        ? await resolveCatalogId('FINANCE_CATEGORY', category)
+        : null;
 
       let query = `
         SELECT ft.uuid, fu.id AS unit_name, COALESCE(cc.code, ft.category) AS category,
@@ -628,11 +675,11 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         query += ` AND fu.ownerId IN (${ownerScope.map(() => '?').join(', ')})`;
         params.push(...ownerScope);
       }
-      query = appendCategoryFilter(query, params, categoryFilter);
+      query = appendCategoryFilter(query, params, categoryFilterIds);
 
-      if (category) {
-        query += ' AND ft.category = ?';
-        params.push(category);
+      if (categoryIdFilter !== null) {
+        query += ' AND ft.category_id = ?';
+        params.push(categoryIdFilter);
       }
       query += ' ORDER BY ft.created_at DESC';
 
@@ -650,6 +697,14 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       );
       return reply.send(csvContent);
     } catch (error) {
+      if (error instanceof CatalogMappingError) {
+        return reply.code(400).send({
+          success: false,
+          code: 'VALIDATION_ERROR',
+          message: error.message,
+          field: 'category',
+        });
+      }
       fastify.log.error({ err: (error as Error).message }, 'Finance export error');
       return reply
         .code(500)

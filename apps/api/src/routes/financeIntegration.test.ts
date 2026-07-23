@@ -162,9 +162,10 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
 
       const insertCall = (db.execute as Mock).mock.calls[3];
       const insertParams = insertCall[1] as unknown[];
-      expect(insertParams[3]).toBe(9103); // category_id (FC 082 F2b1 dual-write)
-      expect(insertParams[6]).toBe(9111); // source_id (FC 082 F2b1 dual-write)
-      expect(insertParams[10]).toBe(1); // createdBy
+      // FC 082 F2b3a: el ENUM ya no se escribe, los índices se recorren.
+      expect(insertParams[2]).toBe(9103); // category_id
+      expect(insertParams[5]).toBe(9111); // source_id
+      expect(insertParams[9]).toBe(1); // createdBy
     });
 
     it('returns 400 VALIDATION_ERROR when category is not catalogued (FC 082 F2b1 Cond.2 fail-closed)', async (): Promise<void> => {
@@ -326,6 +327,7 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
 
     it('applies category and unitId filters', async () => {
       (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b3a: resolveCatalogId FUEL
         .mockResolvedValueOnce([[], undefined])
         .mockResolvedValueOnce([[{ total: 0 }], undefined]);
 
@@ -456,13 +458,26 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
     });
 
     it('applies category filter in export query', async () => {
-      (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 9105 }], undefined]) // FC 082 F2b3a: resolveCatalogId FUEL
+        .mockResolvedValueOnce([[], undefined]);
       const res = await app.inject({
         method: 'GET',
         url: '/v1/finance/export?category=FUEL',
         headers: authHeader(),
       });
       expect(res.statusCode).toBe(200);
+    });
+
+    it('returns 400 VALIDATION_ERROR when export category is not catalogued (FC 082 F2b3a fail-closed)', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // resolveCatalogId — sin fila
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/export?category=NOPE',
+        headers: authHeader(),
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('VALIDATION_ERROR');
     });
 
     it('returns 500 on db error', async () => {
@@ -635,12 +650,27 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
     });
 
     it('Scenario 2 — Archonaut ve solo su subconjunto de categorías (T2 ⊤) — LEASE/FINE nunca en la query', async () => {
+      // FC 082 F2b3a: FINANCE_PERSONAL_CATEGORIES resuelto en UNA query a
+      // ids (MAINTENANCE=9102, FUEL=9103, TIRE=9104, REPAIR=9106,
+      // TENENCIA=9107, VERIFICACION=9108, OTHER=9109 — mig. 165).
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ id: 7 }], undefined]) // getUserOwnerIds → [7]
         .mockResolvedValueOnce([
           [{ ownerId: 7, ownerType: 'ARCHONAUT', clusterActive: 1 }],
           undefined,
         ])
+        .mockResolvedValueOnce([
+          [
+            { id: 9102, code: 'MAINTENANCE' },
+            { id: 9103, code: 'FUEL' },
+            { id: 9104, code: 'TIRE' },
+            { id: 9106, code: 'REPAIR' },
+            { id: 9107, code: 'TENENCIA' },
+            { id: 9108, code: 'VERIFICACION' },
+            { id: 9109, code: 'OTHER' },
+          ],
+          undefined,
+        ]) // resolveCategoryFilterIds — UNA query para las 7 categorías
         .mockResolvedValueOnce([[], undefined]) // main query
         .mockResolvedValueOnce([[{ total: 0 }], undefined]); // count query
       const res = await app.inject({
@@ -649,12 +679,12 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
         headers: { Authorization: `Bearer ${scopedToken(7)}` },
       });
       expect(res.statusCode).toBe(200);
-      const mainQueryCall = (db.execute as Mock).mock.calls[2];
+      const mainQueryCall = (db.execute as Mock).mock.calls[3];
       const [sql, params] = mainQueryCall as [string, unknown[]];
-      expect(sql).toContain('ft.category IN');
-      expect(params).toEqual(expect.arrayContaining(['MAINTENANCE', 'FUEL', 'TENENCIA']));
-      expect(params).not.toContain('LEASE');
-      expect(params).not.toContain('FINE');
+      expect(sql).toContain('ft.category_id IN');
+      expect(params).toEqual(expect.arrayContaining([9102, 9103, 9107]));
+      expect(params).not.toContain(9100); // LEASE
+      expect(params).not.toContain(9105); // FINE
     });
 
     it('Scenario 3 — Tenant de negocio (no Archonaut) ve el set completo (T2 ⊥) — sin filtro de categoría', async () => {

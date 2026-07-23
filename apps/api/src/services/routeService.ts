@@ -325,14 +325,16 @@ export default class RouteService {
       const route = routes[0];
 
       // 2. Insert incident
-      // FC 082 F2b1 — dual-write (Cond.2): category sigue siendo la fuente de
-      // verdad (ENUM intacto hasta F2b2); category_id se escribe en paridad.
+      // FC 082 F2b3a — cutover de escritura: category_id es la única fuente
+      // de verdad (ENUM ya nullable desde F2b3a-pre, mig.168). `category`
+      // (el parámetro) sigue usándose para el branch de negocio de abajo y
+      // la notificación — solo la columna DB deja de escribirse.
       const categoryId = await resolveCatalogId('INCIDENT_CATEGORY', category, connection);
       await connection.execute(
         `INSERT INTO route_incidents
-        (route_uuid, category, category_id, description, severity, evidence_image, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'OPEN')`,
-        [routeUuid, category, categoryId, description, severity, evidenceImage || null]
+        (route_uuid, category_id, description, severity, evidence_image, status)
+        VALUES (?, ?, ?, ?, ?, 'OPEN')`,
+        [routeUuid, categoryId, description, severity, evidenceImage || null]
       );
 
       // 3. Determine unit status impact (Industrial Safety Protocol)
