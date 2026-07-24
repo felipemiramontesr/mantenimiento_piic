@@ -236,6 +236,41 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       expect(res.statusCode).toBe(500);
     });
 
+    it('returns 400 VALIDATION_ERROR when the Archonaut allowlist has an uncatalogued code (FC 082 F2b3a fail-closed)', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 7,
+        username: 'archonaut.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 7 }], undefined]) // getUserOwnerIds → [7]
+        .mockResolvedValueOnce([
+          [{ ownerId: 7, ownerType: 'ARCHONAUT', clusterActive: 1 }],
+          undefined,
+        ])
+        // resolveCategoryFilterIds: solo 6 de las 7 categorías del allowlist
+        // existen en common_catalogs (falta OTHER) → fail-closed, lanza.
+        .mockResolvedValueOnce([
+          [
+            { id: 9102, code: 'MAINTENANCE' },
+            { id: 9103, code: 'FUEL' },
+            { id: 9104, code: 'TIRE' },
+            { id: 9106, code: 'REPAIR' },
+            { id: 9107, code: 'TENENCIA' },
+            { id: 9108, code: 'VERIFICACION' },
+          ],
+          undefined,
+        ]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/dashboard',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('VALIDATION_ERROR');
+    });
+
     it('returns 200 with byCategory populated (lines 195-198 map callback)', async () => {
       const categoryRow = { category: 'MAINTENANCE', amount: '85000' };
       (db.execute as Mock)
@@ -337,6 +372,39 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
         headers: authHeader(),
       });
       expect(res.statusCode).toBe(200);
+    });
+
+    it('returns 400 VALIDATION_ERROR when category query param is not catalogued (FC 082 F2b3a fail-closed)', async () => {
+      (db.execute as Mock).mockResolvedValueOnce([[], undefined]); // resolveCatalogId — sin fila
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions?category=NOPE',
+        headers: authHeader(),
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().code).toBe('VALIDATION_ERROR');
+    });
+
+    it('GET /finance/transactions — Cúmulo inactivo → 403', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 5,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 0 }],
+          undefined,
+        ]);
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(403);
+      expect(res.json().code).toBe('FORBIDDEN');
     });
 
     it('applies cursor for pagination', async () => {
@@ -533,6 +601,28 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       });
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toContain('text/csv');
+    });
+
+    it('GET /finance/export — Cúmulo inactivo → 403 antes de exportar', async () => {
+      const scopedToken = app.jwt.sign({
+        id: 5,
+        username: 'scoped.user',
+        roleId: 2,
+        permissions: ['fleet:scoped', 'finance:dashboard:view:any'],
+      });
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 0 }],
+          undefined,
+        ]); // Cúmulo gastos_egresos SUSPENDED (T1 ⊤⊥)
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/export',
+        headers: { Authorization: `Bearer ${scopedToken}` },
+      });
+      expect(res.statusCode).toBe(403);
+      expect(res.json().code).toBe('FORBIDDEN');
     });
   });
 
@@ -783,6 +873,25 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       });
       expect(res.statusCode).toBe(403);
       expect(res.json().code).toBe('FORBIDDEN');
+    });
+
+    it('POST — unidad pertenece a un owner fuera del scope → 403 (Unidad fuera de los propietarios permitidos)', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
+        .mockResolvedValueOnce([[{ id: 'ASM-999', ownerId: 99 }], undefined]) // unidad es de owner 99
+        .mockResolvedValueOnce([
+          [{ ownerId: 5, ownerType: 'FLOTILLA', clusterActive: 1 }],
+          undefined,
+        ]); // Cúmulo activo para el owner 5 (no forbidden), pero 99 no está en el scope
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken()}` },
+        payload: { unitId: 'ASM-999', category: 'FUEL', amount: 500 },
+      });
+      expect(res.statusCode).toBe(403);
+      expect(res.json().code).toBe('FORBIDDEN');
+      expect(res.json().message).toBe('Unidad fuera de los propietarios permitidos');
     });
   });
 });
