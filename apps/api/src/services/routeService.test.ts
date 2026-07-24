@@ -185,6 +185,12 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
       // 5. INSERT unit_activity_logs
       mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      // 6. resolveCatalogId FINANCE_CATEGORY FUEL (FC 082 F2b3a residual cutover, real id mig.165)
+      mockConnection.execute.mockResolvedValueOnce([[{ id: 9103 }]]);
+      // 7. resolveCatalogId FINANCE_SOURCE AUTO (real id mig.165)
+      mockConnection.execute.mockResolvedValueOnce([[{ id: 9110 }]]);
+      // 8. INSERT financial_transactions (fuel cost, AUTO, idempotent via source_id+source_uuid)
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
       await RouteService.finishRoute('UUID-123', {
         endReading: 1200,
@@ -199,6 +205,46 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
           'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ?, status = "Disponible"'
         ),
         [1200, 95, 'UNIT-001']
+      );
+      expect(mockConnection.execute).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO financial_transactions'),
+        expect.arrayContaining([9103, 500, 9110, 'UUID-123'])
+      );
+      const fuelInsertCall = mockConnection.execute.mock.calls.find(([sql]: [string]) =>
+        sql.includes('INSERT INTO financial_transactions')
+      );
+      expect(fuelInsertCall[0]).not.toContain("'FUEL'");
+      expect(fuelInsertCall[0]).not.toContain("'AUTO'");
+      expect(fuelInsertCall[0]).not.toContain('source =');
+    });
+
+    it('does not touch the financial ledger when fuelAmount is 0 or absent', async () => {
+      const mockRoute = {
+        id: 10,
+        unit_id: 'UNIT-001',
+        start_reading: 1000,
+        status: 'ACTIVE',
+        driver_id: 1,
+      };
+
+      mockConnection.execute.mockResolvedValueOnce([[mockRoute]]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+      mockConnection.execute.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+      await RouteService.finishRoute('UUID-123', {
+        endReading: 1200,
+        fuelLevelEnd: 95,
+        fuelLiters: 0,
+        fuelAmount: 0,
+      });
+
+      expect(mockConnection.commit).toHaveBeenCalled();
+      expect(mockConnection.execute).toHaveBeenCalledTimes(5);
+      expect(mockConnection.execute).not.toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO financial_transactions'),
+        expect.anything()
       );
     });
 

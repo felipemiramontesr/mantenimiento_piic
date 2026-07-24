@@ -253,23 +253,32 @@ export default class RouteService {
       );
 
       // 6. Register fuel cost in financial ledger (AUTO — idempotent via source_uuid)
+      // FC 082 F2b3a residual (Cond.1 Bravo, 2026-07-23) — cutover de escritura:
+      // category_id/source_id son la única fuente de verdad (ENUM ya nullable
+      // desde F2b3a-pre, mig.168). La idempotencia migra de source='AUTO' a
+      // source_id, que identifica el mismo origen sin depender del ENUM.
       if (fuelAmount > 0) {
         const period = new Date().toISOString().slice(0, 7);
+        const fuelCategoryId = await resolveCatalogId('FINANCE_CATEGORY', 'FUEL', connection);
+        const autoSourceId = await resolveCatalogId('FINANCE_SOURCE', 'AUTO', connection);
         await connection.execute(
           `INSERT INTO financial_transactions
-             (uuid, unit_id, category, amount, period, source, source_uuid, notes, created_by, created_at)
-           SELECT UUID(), ?, 'FUEL', ?, ?, 'AUTO', ?, ?, ?, NOW()
+             (uuid, unit_id, category_id, amount, period, source_id, source_uuid, notes, created_by, created_at)
+           SELECT UUID(), ?, ?, ?, ?, ?, ?, ?, ?, NOW()
            WHERE NOT EXISTS (
              SELECT 1 FROM financial_transactions
-             WHERE source = 'AUTO' AND source_uuid = ?
+             WHERE source_id = ? AND source_uuid = ?
            )`,
           [
             route.unit_id,
+            fuelCategoryId,
             fuelAmount,
             period,
+            autoSourceId,
             routeUuid,
             `Combustible + insumos ruta — ${routeUuid}`,
             route.driver_id,
+            autoSourceId,
             routeUuid,
           ]
         );
