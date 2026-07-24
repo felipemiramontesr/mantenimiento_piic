@@ -320,8 +320,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
           fm.start_reading AS odometer_at_service,
           fm.end_reading AS odometer_at_close,
           fm.fuel_level_start, fm.fuel_level_end, fm.fuel_liters_loaded, fm.fuel_amount,
-          COALESCE(cc_st.code, fme.service_type) AS service_type, fme.service_mode,
-          COALESCE(cc_srt.code, fme.system_recommended_type) AS system_recommended_type,
+          cc_st.code AS service_type, fme.service_mode,
+          cc_srt.code AS system_recommended_type,
           fme.cost, fme.technician, fm.created_at, fm.start_at, fm.end_at
         FROM fleet_movements fm
         JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
@@ -633,8 +633,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
                 fm.start_reading AS odometer_at_service,
                 fm.end_reading AS odometer_at_close,
                 fm.fuel_level_start, fm.fuel_level_end, fm.fuel_liters_loaded, fm.fuel_amount,
-                COALESCE(cc_st.code, fme.service_type) AS service_type, fme.service_mode,
-                COALESCE(cc_srt.code, fme.system_recommended_type) AS system_recommended_type,
+                cc_st.code AS service_type, fme.service_mode,
+                cc_srt.code AS system_recommended_type,
                 fme.cost, fme.technician, fm.created_at
          FROM fleet_movements fm
          JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
@@ -687,8 +687,8 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
                 fm.end_reading AS odometer_at_close,
                 fm.fuel_level_start, fm.fuel_level_end,
                 fm.fuel_liters_loaded, fm.fuel_amount,
-                COALESCE(cc_st.code, fme.service_type) AS service_type, fme.service_mode,
-                COALESCE(cc_srt.code, fme.system_recommended_type) AS system_recommended_type,
+                cc_st.code AS service_type, fme.service_mode,
+                cc_srt.code AS system_recommended_type,
                 fme.cost, fme.technician, fm.created_at, fm.start_at, fm.end_at
          FROM fleet_movements fm
          JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
@@ -963,7 +963,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
         // 1. Verify movement exists and is ACTIVE MAINTENANCE
         const [movements] = await connection.execute<RowDataPacket[]>(
           `SELECT fm.id, fm.unit_id, fm.status, fme.service_date,
-                COALESCE(cc_st.code, fme.service_type) AS service_type,
+                cc_st.code AS service_type,
                 fme.service_mode, fme.technician, fme.cost
          FROM fleet_movements fm
          JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
@@ -1140,7 +1140,7 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
 
         const [movements] = await connection.execute<RowDataPacket[]>(
           `SELECT fm.id, fm.unit_id, fm.status, fm.created_by_user_id,
-                  COALESCE(cc_st.code, fme.service_type) AS service_type, fme.technician
+                  cc_st.code AS service_type, fme.technician
            FROM fleet_movements fm
            JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
            LEFT JOIN common_catalogs cc_st ON cc_st.id = fme.service_type_id

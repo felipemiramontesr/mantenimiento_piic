@@ -464,13 +464,11 @@ export default class RouteService {
    * Fetches incidents for a specific route UUID.
    */
   static async getIncidents(routeUuid: string): Promise<RowDataPacket[]> {
-    // FC 082 F2b2 — read-cutover (Cond.3 Bravo): proyección explícita en vez
-    // de SELECT * (que ya exponía category_id crudo sin resolver). category
-    // sigue viniendo del ENUM vía COALESCE fail-soft; category_id se expone
-    // de forma aditiva (Cond del dictamen Bravo 18:01:49).
+    // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado);
+    // category_id se expone de forma aditiva (Cond del dictamen Bravo 18:01:49).
     const [rows] = await db.execute<RowDataPacket[]>(
       `SELECT ri.id, ri.uuid, ri.route_uuid,
-              COALESCE(cc.code, ri.category) AS category, ri.category_id,
+              cc.code AS category, ri.category_id,
               ri.description, ri.severity, ri.evidence_image, ri.status,
               ri.reported_at, ri.resolved_at, ri.resolved_by, ri.resolution_notes
        FROM route_incidents ri
@@ -490,12 +488,11 @@ export default class RouteService {
       ownerIds && ownerIds.length > 0
         ? `AND fu.ownerId IN (${ownerIds.map(() => '?').join(', ')})`
         : '';
-    // FC 082 F2b2 — read-cutover: proyección explícita (antes SELECT i.*, que
-    // ya exponía category_id crudo). category vía COALESCE fail-soft;
+    // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado);
     // category_id aditivo.
     const query = `SELECT
         i.id, i.uuid, i.route_uuid,
-        COALESCE(cc.code, i.category) AS category, i.category_id,
+        cc.code AS category, i.category_id,
         i.description, i.severity, i.evidence_image, i.status,
         i.reported_at, i.resolved_at, i.resolved_by, i.resolution_notes,
         fm.unit_id,

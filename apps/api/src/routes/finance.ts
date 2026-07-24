@@ -222,19 +222,20 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       }
       const categoryFilterIds = await resolveCategoryFilterIds(categoryFilter);
 
-      // FC 082 F2b2 — read-cutover (Cond.3 Bravo): LEFT JOIN + COALESCE en vez
-      // de INNER JOIN — si category_id no resolvió (fila huérfana), cae al
-      // ENUM crudo en vez de excluir la fila o romper.
+      // FC 082 F2b3b — read cutover final: cc.code es la única fuente (ENUM
+      // dropeado). LEFT JOIN se conserva por disciplina fail-soft de lectura
+      // (Cond.3 Bravo original), aunque category_id siempre resuelve desde
+      // el write-cutover fail-closed de F2b1/F2b3a.
       let kpiQuery = `SELECT
           COALESCE(SUM(ft.amount), 0)                                                    AS totalEgresos,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'MAINTENANCE' THEN ft.amount ELSE 0 END), 0) AS totalMaintenance,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'FUEL'        THEN ft.amount ELSE 0 END), 0) AS totalFuel,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'INSURANCE'   THEN ft.amount ELSE 0 END), 0) AS totalInsurance,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'LEASE'       THEN ft.amount ELSE 0 END), 0) AS totalLeaseRegistered,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'TIRE'        THEN ft.amount ELSE 0 END), 0) AS totalTire,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'FINE'        THEN ft.amount ELSE 0 END), 0) AS totalFine,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'REPAIR'      THEN ft.amount ELSE 0 END), 0) AS totalRepair,
-          COALESCE(SUM(CASE WHEN COALESCE(cc.code, ft.category) = 'OTHER'       THEN ft.amount ELSE 0 END), 0) AS totalOther
+          COALESCE(SUM(CASE WHEN cc.code = 'MAINTENANCE' THEN ft.amount ELSE 0 END), 0) AS totalMaintenance,
+          COALESCE(SUM(CASE WHEN cc.code = 'FUEL'        THEN ft.amount ELSE 0 END), 0) AS totalFuel,
+          COALESCE(SUM(CASE WHEN cc.code = 'INSURANCE'   THEN ft.amount ELSE 0 END), 0) AS totalInsurance,
+          COALESCE(SUM(CASE WHEN cc.code = 'LEASE'       THEN ft.amount ELSE 0 END), 0) AS totalLeaseRegistered,
+          COALESCE(SUM(CASE WHEN cc.code = 'TIRE'        THEN ft.amount ELSE 0 END), 0) AS totalTire,
+          COALESCE(SUM(CASE WHEN cc.code = 'FINE'        THEN ft.amount ELSE 0 END), 0) AS totalFine,
+          COALESCE(SUM(CASE WHEN cc.code = 'REPAIR'      THEN ft.amount ELSE 0 END), 0) AS totalRepair,
+          COALESCE(SUM(CASE WHEN cc.code = 'OTHER'       THEN ft.amount ELSE 0 END), 0) AS totalOther
          FROM financial_transactions ft
          JOIN fleet_units fu ON ft.unit_id = fu.id
          LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
@@ -257,7 +258,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
       }
       const [unitRows] = await db.execute<RowDataPacket[]>(unitQuery, unitParams);
 
-      let categoryQuery = `SELECT COALESCE(cc.code, ft.category) AS category, SUM(ft.amount) AS amount
+      let categoryQuery = `SELECT cc.code AS category, SUM(ft.amount) AS amount
          FROM financial_transactions ft
          JOIN fleet_units fu ON ft.unit_id = fu.id
          LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
@@ -268,7 +269,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         categoryParams.push(...ownerScope);
       }
       categoryQuery = appendCategoryFilter(categoryQuery, categoryParams, categoryFilterIds);
-      categoryQuery += ` GROUP BY COALESCE(cc.code, ft.category) ORDER BY amount DESC`;
+      categoryQuery += ` GROUP BY cc.code ORDER BY amount DESC`;
       const [categoryRows] = await db.execute<RowDataPacket[]>(categoryQuery, categoryParams);
 
       let monthQuery = `SELECT ft.period, COALESCE(SUM(ft.amount), 0) AS amount
@@ -411,8 +412,8 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
 
       let query = `
         SELECT ft.id, ft.uuid, ft.unit_id, fu.id AS unit_name,
-               COALESCE(cc_cat.code, ft.category) AS category, ft.amount, ft.period,
-               COALESCE(cc_src.code, ft.source) AS source,
+               cc_cat.code AS category, ft.amount, ft.period,
+               cc_src.code AS source,
                ft.vendor, ft.invoice_ref, ft.notes,
                u.full_name AS created_by_name, ft.created_at
         FROM financial_transactions ft
@@ -658,7 +659,7 @@ export async function financeRoutes(fastify: FastifyInstance): Promise<void> {
         : null;
 
       let query = `
-        SELECT ft.uuid, fu.id AS unit_name, COALESCE(cc.code, ft.category) AS category,
+        SELECT ft.uuid, fu.id AS unit_name, cc.code AS category,
                ft.amount, ft.period,
                ft.vendor, ft.invoice_ref, ft.notes,
                u.full_name AS created_by_name,

@@ -437,7 +437,7 @@ export default async function alertsRoutes(fastify: FastifyInstance): Promise<vo
       // 2. Open incidents
       if (scope.has('INCIDENT_OPEN')) {
         const [incidentRows] = await db.execute<RowDataPacket[]>(
-          `SELECT i.id, COALESCE(cc.code, i.category) AS category, i.description, i.reported_at,
+          `SELECT i.id, cc.code AS category, i.description, i.reported_at,
                   fm.unit_id
            FROM route_incidents i
            JOIN fleet_movements fm ON i.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci

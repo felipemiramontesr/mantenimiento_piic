@@ -321,12 +321,12 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const yearStart = `${new Date().getFullYear()}-01`;
       const yearEnd = `${new Date().getFullYear()}-12`;
 
-      // FC 082 F2b2 — read-cutover (Cond.3 Bravo): LEFT JOIN + COALESCE fail-soft.
+      // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado).
       const [maintenanceRows, financialRows, incidentRows] = await Promise.all([
         // Last 5 maintenance records
         db.execute<RowDataPacket[]>(
           `SELECT fm.uuid, fme.service_date,
-                  COALESCE(cc_st.code, fme.service_type) AS service_type, fme.service_mode,
+                  cc_st.code AS service_type, fme.service_mode,
                   fme.cost, fme.technician, fm.start_reading AS odometer,
                   fm.end_reading, fm.status, fm.start_at, fm.end_at
            FROM fleet_movements fm
@@ -339,16 +339,16 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
         ),
         // Financial summary by category for current year
         db.execute<RowDataPacket[]>(
-          `SELECT COALESCE(cc.code, ft.category) AS category, SUM(ft.amount) AS total
+          `SELECT cc.code AS category, SUM(ft.amount) AS total
            FROM financial_transactions ft
            LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
            WHERE ft.unit_id = ? AND ft.period >= ? AND ft.period <= ?
-           GROUP BY COALESCE(cc.code, ft.category)`,
+           GROUP BY cc.code`,
           [id, yearStart, yearEnd]
         ),
         // Last 3 incidents linked to this unit
         db.execute<RowDataPacket[]>(
-          `SELECT ri.id, COALESCE(cc_cat.code, ri.category) AS category, ri.description, ri.severity,
+          `SELECT ri.id, cc_cat.code AS category, ri.description, ri.severity,
                   ri.status, ri.reported_at
            FROM route_incidents ri
            JOIN fleet_movements fm ON ri.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci

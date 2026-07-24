@@ -385,7 +385,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
             NULL as reading_after,
             'En Ruta' COLLATE utf8mb4_general_ci as status_before,
             'En Ruta' COLLATE utf8mb4_general_ci as status_after,
-            CONVERT(CONCAT(COALESCE(cc_inc.code, ri.category), ': ', SUBSTR(ri.description, 1, 100)) USING utf8mb4) COLLATE utf8mb4_general_ci as description,
+            CONVERT(CONCAT(cc_inc.code, ': ', SUBSTR(ri.description, 1, 100)) USING utf8mb4) COLLATE utf8mb4_general_ci as description,
             NULL as created_by,
             ri.reported_at as created_at,
             NULL as fuel_before,
@@ -758,7 +758,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       }
       const [rows] = await db.execute<RowDataPacket[]>(
         `SELECT ri.id, ri.uuid, ri.route_uuid,
-                COALESCE(cc_inc.code, ri.category) AS category, ri.description,
+                cc_inc.code AS category, ri.description,
                 ri.severity, ri.evidence_image, ri.status, ri.reported_at,
                 fm.unit_id, fm.start_at AS route_start, fm.end_at AS route_end,
                 fre.destination, fre.driver_id,
