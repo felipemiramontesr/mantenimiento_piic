@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file IncidentReportForm.tsx
  * @version 78.0.0 (Archon Elite)
  * @description High-fidelity forensic reporting interface for route incidents.

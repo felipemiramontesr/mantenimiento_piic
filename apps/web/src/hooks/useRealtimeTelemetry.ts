@@ -58,7 +58,7 @@ export function useRealtimeTelemetry(): UseTelemetryResult {
       HEARTBEAT_INTERVAL_MS
     );
 
-    return () => {
+    return (): void => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };

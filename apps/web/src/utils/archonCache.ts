@@ -63,7 +63,7 @@ export const archonCache = {
       }
 
       return payload.data;
-    } catch (err) {
+    } catch {
       return null;
     }
   },

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, User, Wrench, ExternalLink, CheckCircle2, XCircle, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -113,13 +113,13 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
       },
     });
 
-    return () => {
+    return (): void => {
       setSearchConfig(null);
     };
   }, [logs, setSearchConfig, setSearchTerm]);
 
   // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
-  useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
+  useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
 
   useEffect(() => {
     const fetchLogs = async (): Promise<void> => {
@@ -129,7 +129,7 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
         if (response.data.success) {
           setLogs(response.data.data);
         }
-      } catch (err) {
+      } catch {
         setError('Error al recuperar registros de mantenimiento.');
       } finally {
         setLoading(false);

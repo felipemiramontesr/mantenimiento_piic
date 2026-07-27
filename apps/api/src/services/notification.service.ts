@@ -9,7 +9,6 @@ import { outboundFetch } from './outboundFetch';
  * Purpose: Centralized orchestration for Email, Push, and System Alerts.
  */
 
-/* eslint-disable no-shadow */
 export enum ArchonNotificationType {
   ROUTE_ASSIGNED = 'ROUTE_ASSIGNED',
   ROUTE_STARTED = 'ROUTE_STARTED',
@@ -24,7 +23,6 @@ export enum ArchonNotificationPriority {
   HIGH = 'HIGH',
   CRITICAL = 'CRITICAL',
 }
-/* eslint-enable no-shadow */
 
 export interface NotificationPayload {
   userId?: number;
@@ -124,7 +122,7 @@ class NotificationService {
 
       // 4. Trigger Push Notification (FCM Bridge)
       await this.sendPush(userIds, payload);
-    } catch (error: unknown) {
+    } catch {
       // Failure suppressed to maintain industrial zero-noise policy
     }
   }
@@ -209,13 +207,13 @@ class NotificationService {
               await db.execute('DELETE FROM user_push_tokens WHERE token = ?', [token]);
             }
           }
-        } catch (err) {
+        } catch {
           // Suppress individual token failure to maintain zero-noise
         }
       });
 
       await Promise.all(promises);
-    } catch (error) {
+    } catch {
       // Suppress broad failures
     }
   }

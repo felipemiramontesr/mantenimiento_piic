@@ -24,7 +24,9 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      all: true,
+      // Vitest 4: `coverage.all` fue removido — `include` reemplaza su función de
+      // escanear todo el árbol; `exclude` abajo sigue aplicando exactamente igual.
+      include: ['src/**/*.ts'],
       reporter: ['text', 'json', 'html'],
       exclude: [
         'src/index.ts' /* Bootstrap puro, inaccesible unitariamente sin lanzar puerto */,

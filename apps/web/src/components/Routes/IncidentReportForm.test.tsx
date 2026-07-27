@@ -205,7 +205,6 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
   });
 
   it('shows Transmitiendo text while submitting and blocks second submission', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     mockReportIncident.mockImplementation(() => new Promise(() => {}));
     const { container } = renderForm();
 

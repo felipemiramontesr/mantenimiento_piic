@@ -57,20 +57,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }): React.JSX.Element => {
   // 1. Universal Hydration Layer (DRY)
   const usersTransform = useMemo(
-    () => (data: unknown) =>
-      (data as RawUserResponse[]).map((u) => ({
-        id: String(u.id),
-        uuid: u.uuid,
-        username: u.username,
-        fullName: u.full_name || u.fullName || '',
-        email: u.email,
-        roleId: u.roleId,
-        department: u.department,
-        employeeNumber: u.employee_number || u.employeeNumber || '',
-        is_active: Boolean(u.is_active),
-        imageUrl: u.profile_picture_url || u.image_url || '',
-        roleName: u.roleName,
-      })),
+    () =>
+      (data: unknown): UserIndustrial[] =>
+        (data as RawUserResponse[]).map((u) => ({
+          id: String(u.id),
+          uuid: u.uuid,
+          username: u.username,
+          fullName: u.full_name || u.fullName || '',
+          email: u.email,
+          roleId: u.roleId,
+          department: u.department,
+          employeeNumber: u.employee_number || u.employeeNumber || '',
+          is_active: Boolean(u.is_active),
+          imageUrl: u.profile_picture_url || u.image_url || '',
+          roleName: u.roleName,
+        })),
     []
   );
 
@@ -128,7 +129,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       if (response.data.success) {
         await fetchUsers();
       }
-    } catch (err: unknown) {
+    } catch {
       // Silently handle error
     }
   };
@@ -160,7 +161,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         return true;
       }
       return false;
-    } catch (err: unknown) {
+    } catch {
       return false;
     }
   };
@@ -175,7 +176,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         return true;
       }
       return false;
-    } catch (err) {
+    } catch {
       return false;
     }
   };

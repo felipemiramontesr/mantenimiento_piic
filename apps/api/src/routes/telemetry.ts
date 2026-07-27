@@ -10,7 +10,7 @@ export default async function telemetryRoutes(fastify: FastifyInstance): Promise
         return reply.code(403).send({ error: 'Forbidden: Archon clearance required' });
       }
       return undefined;
-    } catch (err) {
+    } catch {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
   });

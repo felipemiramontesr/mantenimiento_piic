@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Shield, Clock, ArrowRight, Activity, AlertTriangle, Fuel } from 'lucide-react';
 import api from '../../api/client';
 import { formatDateTime } from '../../utils/dateUtils';
@@ -131,7 +131,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
         }
         return data;
       });
-    } catch (err) {
+    } catch {
       // Sovereign silence
     } finally {
       setLoading(false);
@@ -480,7 +480,7 @@ const ForensicJournalTable: React.FC<ForensicJournalTableProps> = ({
                               typeof rawAfter === 'string'
                                 ? JSON.parse(rawAfter)
                                 : (rawAfter as Record<string, unknown>);
-                          } catch (e) {
+                          } catch {
                             return null;
                           }
 

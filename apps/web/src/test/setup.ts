@@ -124,7 +124,7 @@ class MockIntersectionObserver
     mockIOCallbacks.delete(el);
   }
 
-  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-empty-function
+  // eslint-disable-next-line class-methods-use-this
   disconnect(): void {}
 
   // eslint-disable-next-line class-methods-use-this

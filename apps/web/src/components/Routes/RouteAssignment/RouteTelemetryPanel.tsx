@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Gauge, Milestone, Fuel, Info, AlertCircle } from 'lucide-react';
 import ArchonFuelSensor from '../ArchonFuelSensor';
 import FuelVolumeChart from '../FuelVolumeChart';

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ChevronRight, Save, Trash2 } from 'lucide-react';
 import useRouteAssignmentControl from './RouteAssignment/useRouteAssignmentControl';
 import { RouteLog } from './RouteLogTable';

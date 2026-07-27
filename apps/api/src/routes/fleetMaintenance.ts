@@ -17,6 +17,8 @@ import { resolveCatalogId, CatalogMappingError } from '../services/catalogMapper
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
+// Declarado solo para derivar el tipo ServiceType vía `typeof` -- nunca se lee como valor en runtime.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SERVICE_TYPE_ENUM = [
   'BASIC_10K',
   'INTERMEDIATE_20K',
@@ -361,7 +363,6 @@ export async function fleetMaintenanceRoutes(fastify: FastifyInstance): Promise<
   });
 
   // GET /v1/maintenance/template/:unitId — Generate checklist for a unit
-  // eslint-disable-next-line sonarjs/cognitive-complexity
   fastify.get('/maintenance/template/:unitId', async (request, reply) => {
     try {
       const { unitId } = request.params as { unitId: string };

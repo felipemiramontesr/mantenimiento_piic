@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Mail,
@@ -133,7 +133,7 @@ const ArchonProfilePanel: React.FC = (): React.JSX.Element => {
           }
         }
       }
-    } catch (err: unknown) {
+    } catch {
       setError('Falla crítica al sincronizar la identidad. Verifique su conexión.');
     } finally {
       setIsSubmitting(false);

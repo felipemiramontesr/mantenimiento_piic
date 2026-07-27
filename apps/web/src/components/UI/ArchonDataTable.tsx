@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { ArchonTableSkeleton } from '../ArchonSkeleton';
 import SovereignScrollArea from './SovereignScrollArea';

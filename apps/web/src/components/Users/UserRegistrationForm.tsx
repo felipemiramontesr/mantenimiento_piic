@@ -184,7 +184,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       } else if (auditAction === 'DELETE' && editingUser) {
         await handleDelete(reason);
       }
-    } catch (err) {
+    } catch {
       setError('Falla crítica en el protocolo de auditoría.');
     } finally {
       setIsSubmitting(false);

@@ -109,7 +109,7 @@ describe('OwnerProfilePanel', () => {
 
   it('shows loading state while profile is fetching — Scenario P1', (): void => {
     setupAuth(1, 'FLOTILLA');
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+
     (api.get as Mock).mockReturnValue(new Promise<void>(() => {}));
 
     render(<OwnerProfilePanel />);

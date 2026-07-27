@@ -103,7 +103,7 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
         return true;
       }
       return false;
-    } catch (e) {
+    } catch {
       return false;
     }
   });

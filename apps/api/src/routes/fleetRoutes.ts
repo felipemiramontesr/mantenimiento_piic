@@ -203,7 +203,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         success: true,
         activeRoute,
       });
-    } catch (error) {
+    } catch {
       return reply.code(400).send({ success: false, message: 'Error fetching active route' });
     }
   });
@@ -257,7 +257,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
         success: true,
         data: rows,
       });
-    } catch (error) {
+    } catch {
       return reply.code(400).send({ success: false, message: 'Error fetching routes' });
     }
   });
@@ -610,7 +610,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       }
       const incidents = await RouteService.getIncidents(uuid);
       return reply.send({ success: true, data: incidents });
-    } catch (error) {
+    } catch {
       return reply.code(400).send({ success: false, message: 'Error fetching incidents' });
     }
   });
@@ -627,7 +627,7 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
       }
       const incidents = await RouteService.getAllIncidents(ownerScope ?? undefined);
       return reply.send({ success: true, data: incidents });
-    } catch (error) {
+    } catch {
       return reply.code(400).send({ success: false, message: 'Error fetching global incidents' });
     }
   });

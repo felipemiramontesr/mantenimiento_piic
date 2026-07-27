@@ -38,7 +38,7 @@ const ArchonGalleryOverlay: React.FC<ArchonGalleryOverlayProps> = ({
       if (e.key === 'ArrowLeft') handlePrev();
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return (): void => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, handleNext, handlePrev]);
 
   if (images.length === 0) return null;

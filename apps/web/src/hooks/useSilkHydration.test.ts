@@ -130,7 +130,6 @@ describe('useSilkHydration', () => {
         })
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation((): void => {});
 
     const { result } = renderHook(() => useSilkHydration({ key: mockKey, endpoint: mockEndpoint }));

@@ -38,7 +38,7 @@ export function deriveOwnerHandle(
   return `${prefix}-${base}`;
 }
 
-type DbConn = {
+export type DbConn = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   execute<T extends RowDataPacket[]>(sql: string, values?: any): Promise<[T, unknown]>;
 };

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { AlertCircle, X, CheckCircle, Info } from 'lucide-react';
 
 /**

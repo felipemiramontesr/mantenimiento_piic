@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, DollarSign } from 'lucide-react';
 import api from '../../api/client';
 import { FinanceCategory, CATEGORY_LABELS, CreateTransactionPayload } from '../../types/finance';

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Download, Plus, ChevronDown, Search, X } from 'lucide-react';
 import api from '../../api/client';
 import { FinancialTransaction, FinanceCategory, CATEGORY_LABELS } from '../../types/finance';

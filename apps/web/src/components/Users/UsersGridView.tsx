@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Activity, Pencil, Hash, Briefcase, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -199,13 +199,13 @@ const UsersGridView: React.FC = () => {
       },
     });
 
-    return () => {
+    return (): void => {
       setSearchConfig(null);
     };
   }, [users, setSearchConfig, setSearchTerm]);
 
   // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
-  React.useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
+  React.useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
 
   const handleSort = (key: string): void => {
     const field = key as 'username' | 'identity' | 'role' | 'status';

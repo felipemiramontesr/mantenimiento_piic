@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { deriveOwnerHandle, resolveUniqueHandle } from './ownerHandle';
+import { deriveOwnerHandle, resolveUniqueHandle, type DbConn } from './ownerHandle';
 
 describe('deriveOwnerHandle', () => {
   it('OH-1: uses first 6 chars of RFC when RFC length >= 6', () => {
@@ -43,12 +43,12 @@ describe('deriveOwnerHandle', () => {
 });
 
 describe('resolveUniqueHandle', () => {
-  const makeConn = (rowResults: unknown[][]): { execute: ReturnType<typeof vi.fn> } => {
+  const makeConn = (rowResults: unknown[][]): DbConn & { execute: ReturnType<typeof vi.fn> } => {
     const mockFn = vi.fn();
     rowResults.forEach((rows) => {
       mockFn.mockResolvedValueOnce([rows, undefined]);
     });
-    return { execute: mockFn };
+    return { execute: mockFn } as unknown as DbConn & { execute: typeof mockFn };
   };
 
   it('RUH-1: returns base handle when no collision exists', async () => {

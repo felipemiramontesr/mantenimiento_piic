@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Settings,
   LayoutDashboard,
@@ -48,7 +48,7 @@ const SovereignHeader: React.FC = () => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
+    return (): void => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
@@ -61,7 +61,7 @@ const SovereignHeader: React.FC = () => {
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => {
+    return (): void => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);

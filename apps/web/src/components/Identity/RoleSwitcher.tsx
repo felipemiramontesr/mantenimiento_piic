@@ -33,7 +33,7 @@ const RoleSwitcher: React.FC = () => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return (): void => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (!isOmnipotent()) return null;

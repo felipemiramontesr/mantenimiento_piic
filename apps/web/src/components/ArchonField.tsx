@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
 // ⚡ ARCHON UNITARY FIELD COMPONENT (v.9.0.0)

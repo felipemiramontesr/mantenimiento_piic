@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ArrowRight, Truck, Layers, Wrench, Activity, History } from 'lucide-react';
 
 interface CategoryData {

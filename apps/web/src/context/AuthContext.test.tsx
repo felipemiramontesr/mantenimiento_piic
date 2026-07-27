@@ -45,7 +45,7 @@ describe('AuthContext', () => {
 
   it('initializes with isLoading=true and isAuthenticated=false before refresh resolves', () => {
     // Never resolves during this synchronous check
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+
     mockedApi.post.mockReturnValue(new Promise(() => {}));
     const { result } = renderHook(() => useAuth(), { wrapper });
     expect(result.current.isLoading).toBe(true);

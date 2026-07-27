@@ -183,7 +183,7 @@ export const validateTirePressures = (formData: RouteAssignmentFormData): string
   let tires: Record<string, unknown> = {};
   try {
     tires = JSON.parse(formData.tirePressureJson || '{}');
-  } catch (e) {
+  } catch {
     // Ignored
   }
 
@@ -336,7 +336,7 @@ export const useRouteAssignmentControl = (
       const res = await api.get('/routes');
       const active = (res.data?.data || []).filter((r: RouteLog) => !r.end_time);
       setActiveRoutes(active);
-    } catch (err) {
+    } catch {
       /* Silent fail */
     }
   }, []);
@@ -348,7 +348,7 @@ export const useRouteAssignmentControl = (
         const data = res.data?.data || res.data || [];
         setOrigins(data);
         archonCache.set('route_origins', data);
-      } catch (err) {
+      } catch {
         if (origins.length === 0) setOrigins([{ id: 1, label: 'Arian Silver Zacatecas' }]);
       }
     };

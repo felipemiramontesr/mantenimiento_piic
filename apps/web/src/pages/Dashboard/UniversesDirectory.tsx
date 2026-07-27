@@ -54,7 +54,7 @@ const UniversesDirectory: React.FC = (): React.ReactElement => {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => {
+    return (): void => {
       cancelled = true;
     };
   }, []);

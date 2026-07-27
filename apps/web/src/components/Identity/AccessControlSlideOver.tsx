@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   X,
   ShieldCheck,
@@ -56,7 +56,7 @@ const AccessControlSlideOver: React.FC<AccessControlSlideOverProps> = ({ isOpen,
       );
       const data = await response.json();
       if (data.success) setUsers(data.data);
-    } catch (err: unknown) {
+    } catch {
       // Zero-Noise: Silence error logs in production
     } finally {
       setIsLoading(false);

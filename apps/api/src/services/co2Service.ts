@@ -65,8 +65,8 @@ export default class Co2Service {
         AND fuel_liters_loaded > 0`;
 
     let totalLiters: number;
-    let derivedFrom: string | null = null;
-    let derivedTo: string | null = null;
+    let derivedFrom: string | null;
+    let derivedTo: string | null;
     const periodFrom = params.from ?? null;
     const periodTo = params.to ?? null;
 

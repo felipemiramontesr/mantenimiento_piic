@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { MapPin, Home, Hash } from 'lucide-react';
 import ArchonSelect from '../../ArchonSelect';
 import ArchonGeoSelector from './ArchonGeoSelector';

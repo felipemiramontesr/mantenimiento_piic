@@ -63,7 +63,7 @@ class EncryptionService {
       decrypted += decipher.final('utf8');
 
       return decrypted;
-    } catch (e) {
+    } catch {
       // 🛡️ Fail-Safe: Return original text if decryption fails (orphaned data / key mismatch)
       return encryptedText;
     }

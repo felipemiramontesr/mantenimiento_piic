@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar } from 'lucide-react';
 import { DateRange } from '../../types/finance';
 

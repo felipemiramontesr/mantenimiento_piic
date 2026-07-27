@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ArchonDoctor } from '../../ArchonDoctor';
 import ArchonLogo from '../Logo/ArchonLogo';
 import RoleSwitcher from '../Identity/RoleSwitcher';

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -202,13 +202,13 @@ const MaintenanceForecastView: React.FC<MaintenanceForecastViewProps> = ({ onSch
       },
     });
 
-    return () => {
+    return (): void => {
       setSearchConfig(null);
     };
   }, [data, setSearchConfig, setSearchTerm]);
 
   // 🛡️ Auto-cleanup Search Term on Unmount
-  useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
+  useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
 
   const handleSort = (key: string): void => {
     const field = key as keyof MaintenanceForecastRow;

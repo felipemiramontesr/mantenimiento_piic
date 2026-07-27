@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { countBySeverity, evaluateAuditPass } from './dependencyAuditGate';
+import { ACCEPTED_EXCEPTIONS, countBySeverity, evaluateAuditPass } from './dependencyAuditGate';
 
 describe('T2 — AuditPass (4 filas · dominio {⊤, ⊥})', () => {
   it('fila ⊤⊤: critical=0 ∧ high=0 → AuditPass ≡ ⊤', () => {
@@ -69,5 +69,66 @@ describe('countBySeverity — parser del reporte `bun audit --json`', () => {
     expect(() => countBySeverity([1, 2])).toThrow();
     expect(() => countBySeverity('nope')).toThrow();
     expect(() => countBySeverity({ pkg: 'not-an-array' })).toThrow();
+  });
+});
+
+describe('FC083 H4 — ACCEPTED_EXCEPTIONS (excepción acotada, Cond.1-2 Bravo 2026-07-26)', () => {
+  it('la excepción activa es exacta: solo brace-expansion + advisory 1124334', () => {
+    expect(ACCEPTED_EXCEPTIONS).toHaveLength(1);
+    expect(ACCEPTED_EXCEPTIONS[0]).toMatchObject({
+      packageName: 'brace-expansion',
+      advisoryId: 1124334,
+    });
+  });
+
+  it('high de brace-expansion CON el advisory exacto → se exceptúa, AuditPass ⊤', () => {
+    const report = {
+      'brace-expansion': [
+        {
+          id: 1124334,
+          severity: 'high',
+          title: 'brace-expansion: DoS via unbounded expansion length',
+          url: 'https://github.com/advisories/GHSA-mh99-v99m-4gvg',
+        },
+      ],
+    };
+    const counts = countBySeverity(report);
+    expect(counts.high).toBe(0);
+    expect(evaluateAuditPass(counts)).toBe(true);
+  });
+
+  it('Cond.2 Bravo: high de brace-expansion con OTRO advisory ID → NO se exceptúa, AuditPass ⊥', () => {
+    const report = {
+      'brace-expansion': [
+        {
+          id: 9999999, // CVE futuro distinto, no cubierto por la allowlist
+          severity: 'high',
+          title: 'brace-expansion: otra vulnerabilidad hipotética',
+          url: 'https://example.invalid',
+        },
+      ],
+    };
+    const counts = countBySeverity(report);
+    expect(counts.high).toBe(1);
+    expect(evaluateAuditPass(counts)).toBe(false);
+  });
+
+  it('Cond.1 Bravo: high de OTRO paquete distinto → NO se exceptúa, AuditPass ⊥', () => {
+    const report = {
+      'left-pad': [{ id: 1124334, severity: 'high', title: 'RCE', url: 'https://x' }],
+    };
+    const counts = countBySeverity(report);
+    expect(counts.high).toBe(1);
+    expect(evaluateAuditPass(counts)).toBe(false);
+  });
+
+  it('excepción convive con un high real no relacionado: solo se descuenta el exceptuado', () => {
+    const report = {
+      'brace-expansion': [{ id: 1124334, severity: 'high', title: 'x', url: 'https://x' }],
+      'left-pad': [{ id: 42, severity: 'high', title: 'RCE', url: 'https://y' }],
+    };
+    const counts = countBySeverity(report);
+    expect(counts.high).toBe(1);
+    expect(evaluateAuditPass(counts)).toBe(false);
   });
 });

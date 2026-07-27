@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -625,13 +625,13 @@ const RouteLogTable: React.FC<RouteLogTableProps> = ({ onEdit }) => {
       },
     });
 
-    return () => {
+    return (): void => {
       setSearchConfig(null);
     };
   }, [logs, users, units, setSearchConfig, setSearchTerm]);
 
   // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
-  React.useEffect(() => () => setSearchTerm(''), [setSearchTerm]);
+  React.useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
 
   const filteredLogs = React.useMemo(() => {
     let result = logs;

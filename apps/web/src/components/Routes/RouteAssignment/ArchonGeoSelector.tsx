@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, ChevronDown, Loader2 } from 'lucide-react';
 import api from '../../../api/client';
 import { archonCache } from '../../../utils/archonCache';
@@ -335,7 +335,7 @@ export default function ArchonGeoSelector({
           stateObj?.name || ''
         }`;
         onChange(neighborhoodId, destinationString);
-      } catch (err) {
+      } catch {
         onChange(neighborhoodId, neighborhoodName);
       }
     },

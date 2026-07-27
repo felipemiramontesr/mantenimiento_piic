@@ -231,7 +231,7 @@ const AlertsPanelContent: React.FC = (): React.JSX.Element => {
         setSearchTerm((suggestion.rawItem as Alert).unitId);
       },
     });
-    return () => setSearchConfig(null);
+    return (): void => setSearchConfig(null);
   }, [alerts, setSearchConfig, setSearchTerm]);
 
   React.useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
