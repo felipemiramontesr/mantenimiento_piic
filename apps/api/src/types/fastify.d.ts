@@ -10,7 +10,8 @@ declare module 'fastify' {
       roleId: number;
       roleName: string;
       permissions: string[];
-      owner_type?: string;
+      owner_type?: string | null;
+      tenant_id?: number | null;
     };
     universeCtx: UniverseCtx | null;
     scopeFilter: ScopeFilter | null;

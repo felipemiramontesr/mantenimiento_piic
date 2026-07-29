@@ -7,6 +7,13 @@ import {
   requireOmega,
   requireMuOrOmega,
   antiEscalationGuard,
+  resolvePrimaryTenant,
+  getAvailableTenants,
+  deriveOwnerType,
+  isTenantAssignmentActive,
+  resolveAuthContext,
+  resolveAuthContextForRefresh,
+  MultiMembershipHaltError,
 } from '../cosmonautMiddleware';
 
 /**
@@ -246,5 +253,181 @@ describe('AT-FC24-C-4: antiEscalationGuard (I8)', () => {
       .mockResolvedValueOnce([[{ schema_definition: 'NOT_VALID_JSON' }]]); // invalid JSON → catch
     const result = await antiEscalationGuard(5, 7, 3);
     expect(result).toBe(false);
+  });
+});
+
+// ─── FC 082 F3b (089_AN §9) — resolvePrimaryTenant / getAvailableTenants /
+// deriveOwnerType / isTenantAssignmentActive / resolveAuthContext(ForRefresh) ──
+
+describe('AT-FC082-F3b-1: resolvePrimaryTenant', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC082-F3b-1-1: 1 fila en tenant_user_memberships → esa owner_id (prioridad 1)', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[{ owner_id: 4 }]]);
+    const tenantId = await resolvePrimaryTenant(10);
+    expect(tenantId).toBe(4);
+  });
+
+  it('AT-FC082-F3b-1-2: 0 membresías, 1 asignación activa con tenant_id → esa asignación (prioridad 2)', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[]]) // tenant_user_memberships vacío
+      .mockResolvedValueOnce([[{ tenant_id: 9 }]]); // MIN(id) asignación activa
+    const tenantId = await resolvePrimaryTenant(11);
+    expect(tenantId).toBe(9);
+  });
+
+  it('AT-FC082-F3b-1-3: sin membresía ni asignación → null (Arc Itinerante puro, §24.15)', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[]]).mockResolvedValueOnce([[]]);
+    const tenantId = await resolvePrimaryTenant(12);
+    expect(tenantId).toBeNull();
+  });
+
+  it('AT-FC082-F3b-1-4 (R2a): >1 fila en tenant_user_memberships → MultiMembershipHaltError, nunca elige en silencio', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[{ owner_id: 4 }, { owner_id: 9 }]]);
+    await expect(resolvePrimaryTenant(13)).rejects.toThrow(MultiMembershipHaltError);
+  });
+});
+
+describe('AT-FC082-F3b-2: getAvailableTenants', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC082-F3b-2-1: retorna la unión deduplicada de membresías + asignaciones', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[{ tenantId: 4 }, { tenantId: 9 }]]);
+    const tenants = await getAvailableTenants(10);
+    expect(tenants).toEqual([4, 9]);
+  });
+});
+
+describe('AT-FC082-F3b-3: deriveOwnerType', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC082-F3b-3-1: tenantId null → null sin consultar DB (Ω o Arc puro)', async () => {
+    const ownerType = await deriveOwnerType(null);
+    expect(ownerType).toBeNull();
+    expect((db as unknown as MockDb).execute).not.toHaveBeenCalled();
+  });
+
+  it('AT-FC082-F3b-3-2: tenantId resuelto → código real del catálogo (no el ENUM legacy)', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[{ code: 'FLOTILLA' }]]);
+    const ownerType = await deriveOwnerType(4);
+    expect(ownerType).toBe('FLOTILLA');
+  });
+
+  it('AT-FC082-F3b-3-3: tenant sin fila en owner_types_catalog → null (fail-safe)', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[]]);
+    const ownerType = await deriveOwnerType(999);
+    expect(ownerType).toBeNull();
+  });
+});
+
+describe('AT-FC082-F3b-4: isTenantAssignmentActive', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC082-F3b-4-1: membresía formal presente → true sin consultar asignaciones', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[{ 1: 1 }]]);
+    const active = await isTenantAssignmentActive(10, 4);
+    expect(active).toBe(true);
+    expect((db as unknown as MockDb).execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('AT-FC082-F3b-4-2: sin membresía pero con asignación activa → true', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[]])
+      .mockResolvedValueOnce([[{ 1: 1 }]]);
+    const active = await isTenantAssignmentActive(10, 4);
+    expect(active).toBe(true);
+  });
+
+  it('AT-FC082-F3b-4-3: ni membresía ni asignación → false (Cond.2 anti-enumeración)', async () => {
+    (db as unknown as MockDb).execute.mockResolvedValueOnce([[]]).mockResolvedValueOnce([[]]);
+    const active = await isTenantAssignmentActive(10, 999);
+    expect(active).toBe(false);
+  });
+});
+
+describe('AT-FC082-F3b-5: resolveAuthContext (Cond.1/6.4 bypass Ω)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC082-F3b-5-1: roleId=0 → bypass total, jamás toca resolveEffectivePermissions', async () => {
+    const ctx = await resolveAuthContext(1, 0);
+    expect(ctx).toEqual({
+      tenantId: null,
+      permissions: ['*'],
+      ownerType: null,
+      availableTenants: [],
+    });
+    expect((db as unknown as MockDb).execute).not.toHaveBeenCalled();
+  });
+
+  it('AT-FC082-F3b-5-2: roleId!=0 resuelve tenant + permisos + ownerType + availableTenants', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[{ owner_id: 4 }]]) // resolvePrimaryTenant → membership
+      .mockResolvedValueOnce([[{ slug: 'fleet:read' }]]) // resolveEffectivePermissions
+      .mockResolvedValueOnce([[{ code: 'FLOTILLA' }]]) // deriveOwnerType
+      .mockResolvedValueOnce([[{ tenantId: 4 }]]); // getAvailableTenants
+    const ctx = await resolveAuthContext(10, 2);
+    expect(ctx).toEqual({
+      tenantId: 4,
+      permissions: ['fleet:read'],
+      ownerType: 'FLOTILLA',
+      availableTenants: [4],
+    });
+  });
+});
+
+describe('AT-FC082-F3b-6: resolveAuthContextForRefresh (§9.2.1 fail-safe, R2c)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('AT-FC082-F3b-6-1: roleId=0 → bypass, ignora cualquier claimedTenantId', async () => {
+    const ctx = await resolveAuthContextForRefresh(1, 0, 4);
+    expect(ctx.permissions).toEqual(['*']);
+    expect(ctx.tenantId).toBeNull();
+  });
+
+  it('AT-FC082-F3b-6-2: claimedTenantId activo → re-firma CON ESE tenant, no recalcula primario', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[{ 1: 1 }]]) // isTenantAssignmentActive → membership match
+      .mockResolvedValueOnce([[{ slug: 'maint:view' }]]) // resolveEffectivePermissions
+      .mockResolvedValueOnce([[{ code: 'FLOTILLA' }]]) // deriveOwnerType
+      .mockResolvedValueOnce([[{ tenantId: 9 }]]); // getAvailableTenants
+    const ctx = await resolveAuthContextForRefresh(10, 2, 9);
+    expect(ctx.tenantId).toBe(9);
+    expect(ctx.permissions).toEqual(['maint:view']);
+  });
+
+  it('AT-FC082-F3b-6-3 (R2c): claimedTenantId revocado → cae a resolveAuthContext desde cero', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[]]) // isTenantAssignmentActive: membership → no
+      .mockResolvedValueOnce([[]]) // isTenantAssignmentActive: assignment → no (revocada)
+      .mockResolvedValueOnce([[{ owner_id: 4 }]]) // resolveAuthContext → resolvePrimaryTenant
+      .mockResolvedValueOnce([[{ slug: 'fleet:read' }]]) // resolveEffectivePermissions
+      .mockResolvedValueOnce([[{ code: 'FLOTILLA' }]]) // deriveOwnerType
+      .mockResolvedValueOnce([[{ tenantId: 4 }]]); // getAvailableTenants
+    const ctx = await resolveAuthContextForRefresh(10, 2, 9);
+    expect(ctx.tenantId).toBe(4);
+  });
+
+  it('AT-FC082-F3b-6-4 (R2c): token legacy sin claim (undefined) → resolveAuthContext desde cero', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[]]) // resolvePrimaryTenant: sin membresía
+      .mockResolvedValueOnce([[]]) // resolvePrimaryTenant: sin asignación → null
+      .mockResolvedValueOnce([[]]) // resolveEffectivePermissions
+      // deriveOwnerType(null) no consulta DB (AT-FC082-F3b-3-1) — sin mock para esa llamada
+      .mockResolvedValueOnce([[]]); // getAvailableTenants
+    const ctx = await resolveAuthContextForRefresh(10, 2, undefined);
+    expect(ctx.tenantId).toBeNull();
+    expect(ctx.ownerType).toBeNull();
   });
 });

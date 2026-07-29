@@ -11,6 +11,15 @@ import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
 import withConnection from '../utils/withConnection';
 import FleetService from '../services/fleetService';
+import {
+  resolveAuthContext,
+  resolveAuthContextForRefresh,
+  isTenantAssignmentActive,
+  resolveEffectivePermissions,
+  deriveOwnerType,
+  getAvailableTenants,
+  MultiMembershipHaltError,
+} from '../middleware/cosmonautMiddleware';
 
 const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
   const { id, permissions } = request.user as { id: number; permissions?: string[] };
@@ -111,7 +120,9 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
     return null;
   }
   const fullResponse = await db.execute<RowDataPacket[]>(
-    'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.id = ?',
+    // FC 082 F3b Cond.5 — LEFT JOIN: post-mig.164 `roles` solo tiene la fila 0,
+    // un INNER JOIN excluiría (401) a cualquier Arc/MU real con role_id != 0.
+    'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u LEFT JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.id = ?',
     [found.id]
   );
   if (!fullResponse) {
@@ -122,6 +133,23 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
     return null;
   }
   return fullRows[0];
+}
+
+/** FC 082 F3b Cond.1 (Bravo) — respuesta uniforme para R2a: nunca elegir tenant en
+ *  silencio cuando un usuario tiene >1 fila en tenant_user_memberships. HALT + log
+ *  forense, requiere resolución manual de Ω (sin producto de "multi-home" aún).
+ */
+function haltMultiMembership(
+  fastify: FastifyInstance,
+  reply: FastifyReply,
+  error: MultiMembershipHaltError
+): FastifyReply {
+  fastify.log.error({ userId: error.userId, tenantIds: error.tenantIds }, error.message);
+  return reply.code(409).send({
+    success: false,
+    code: 'MULTI_TENANT_MEMBERSHIP_UNRESOLVED',
+    message: 'Se detectaron múltiples Universos para este usuario — requiere resolución manual',
+  });
 }
 
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
@@ -145,7 +173,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       try {
         const response = await db.execute<RowDataPacket[]>(
-          'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.username = ?',
+          // FC 082 F3b Cond.5 — LEFT JOIN: post-mig.164 `roles` solo tiene la fila 0,
+          // un INNER JOIN excluiría (401 L3) a cualquier Arc/MU real con role_id != 0.
+          'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u LEFT JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.username = ?',
           [username]
         );
         let user: RowDataPacket | null = null;
@@ -170,32 +200,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         }
         const mapped = mapUserResponse(user);
 
-        // Multi-role: resolve permissions as union of all assigned roles
-        const [userRoleRows] = await db.execute<RowDataPacket[]>(
-          'SELECT role_id FROM user_roles WHERE user_id = ?',
-          [mapped.id]
+        // FC 082 F3b — cutover al chasis cosmonauta (089_AN §9, O✓Alfa/R✓Bravo).
+        // Ω (roleId=0) nunca toca resolveEffectivePermissions (§6.4).
+        const { tenantId, permissions, ownerType, availableTenants } = await resolveAuthContext(
+          mapped.id,
+          mapped.roleId
         );
-        const roleIds: number[] =
-          userRoleRows.length > 0 ? userRoleRows.map((r) => r.role_id as number) : [mapped.roleId]; // backward compat: fall back to users.role_id
-
-        let permissions: string[];
-        if (roleIds.includes(0)) {
-          permissions = ['*'];
-        } else {
-          const placeholders = roleIds.map(() => '?').join(',');
-          const [permRows] = await db.execute<RowDataPacket[]>(
-            `SELECT DISTINCT p.slug
-             FROM role_permissions rp
-             JOIN permissions p ON p.id = rp.permission_id
-             WHERE rp.role_id IN (${placeholders})`,
-            roleIds
-          );
-          permissions = permRows.map((r) => r.slug as string);
-        }
-
-        // FC 082 F0c — sin roles 1/3/4 ni eje suite no hay ownerType derivable;
-        // queda null (gate web lo trata como usuario interno). F3 lo re-deriva del Arc.
-        const ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
 
         const token = fastify.jwt.sign({
           id: user.id,
@@ -204,10 +214,11 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           roleName: mapped.roleName,
           permissions,
           type: 'access',
+          tenant_id: tenantId,
           owner_type: ownerType,
         });
         const refreshToken = fastify.jwt.sign(
-          { id: user.id, type: 'refresh' },
+          { id: user.id, type: 'refresh', tenant_id: tenantId },
           { expiresIn: '7d' }
         );
         const isProduction = process.env.NODE_ENV === 'production';
@@ -219,10 +230,15 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
           path: '/v1/auth',
           maxAge: 7 * 24 * 60 * 60,
         };
-        return reply
-          .setCookie('refresh_token', refreshToken, refreshCookieOpts)
-          .send({ success: true, token, user: { ...mapped, permissions, ownerType } });
+        return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts).send({
+          success: true,
+          token,
+          user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+        });
       } catch (e) {
+        if (e instanceof MultiMembershipHaltError) {
+          return haltMultiMembership(fastify, reply, e);
+        }
         fastify.log.error(e);
         return reply.code(500).send({ error: 'LOGIN_FAIL' });
       }
@@ -231,13 +247,18 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
   fastify.post('/refresh', async (request, reply) => {
     try {
-      const decoded = await request.jwtVerify<{ id: number; type: string }>();
+      const decoded = await request.jwtVerify<{
+        id: number;
+        type: string;
+        tenant_id?: number | null;
+      }>();
       if (!decoded || decoded.type !== 'refresh') {
         return reply.code(401).send({ error: 'INVALID_TOKEN_TYPE' });
       }
       const [userRows] = await db.execute<RowDataPacket[]>(
+        // FC 082 F3b Cond.5 — LEFT JOIN, ver /login.
         `SELECT u.*, r.name as role_name, cat.label as department_name
-         FROM users u JOIN roles r ON u.role_id = r.id
+         FROM users u LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id
          WHERE u.id = ? AND u.is_active = 1`,
         [decoded.id]
@@ -245,26 +266,12 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       if (!userRows.length) return reply.code(401).send({ error: 'USER_NOT_FOUND' });
       const user = userRows[0];
       const mapped = mapUserResponse(user);
-      const [roleRows] = await db.execute<RowDataPacket[]>(
-        'SELECT role_id FROM user_roles WHERE user_id = ?',
-        [mapped.id]
-      );
-      const roleIds: number[] =
-        roleRows.length > 0 ? roleRows.map((r) => r.role_id as number) : [mapped.roleId];
-      let permissions: string[];
-      if (roleIds.includes(0)) {
-        permissions = ['*'];
-      } else {
-        const ph = roleIds.map(() => '?').join(',');
-        const [permRows] = await db.execute<RowDataPacket[]>(
-          `SELECT DISTINCT p.slug FROM role_permissions rp
-           JOIN permissions p ON p.id = rp.permission_id WHERE rp.role_id IN (${ph})`,
-          roleIds
-        );
-        permissions = permRows.map((r) => r.slug as string);
-      }
-      // FC 082 F0c — ownerType null (ver /login); eje suite eliminado.
-      const ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = null;
+
+      // FC 082 F3b §9.2.1 — si el token trae tenant_id y la asignación sigue activa,
+      // se re-firma CON ESE tenant (evita revertir un switch-tenant en silencio).
+      // R2c: token legacy sin claim cae a resolveAuthContext desde cero.
+      const { tenantId, permissions, ownerType, availableTenants } =
+        await resolveAuthContextForRefresh(mapped.id, mapped.roleId, decoded.tenant_id);
 
       const accessToken = fastify.jwt.sign({
         id: user.id,
@@ -273,15 +280,104 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         roleName: mapped.roleName,
         permissions,
         type: 'access',
+        tenant_id: tenantId,
         owner_type: ownerType,
       });
       return reply.send({
         success: true,
         token: accessToken,
-        user: { ...mapped, permissions, ownerType },
+        user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
       });
-    } catch {
+    } catch (e) {
+      if (e instanceof MultiMembershipHaltError) {
+        return haltMultiMembership(fastify, reply, e);
+      }
       return reply.code(401).send({ error: 'REFRESH_FAIL' });
+    }
+  });
+
+  // FC 082 F3b §9.2 (089_AN, O✓Alfa Opción B/R✓Bravo Cond.2+R2b) — switcher de
+  // Universo activo. Nunca confía tenantId/permissions/ownerType del cliente:
+  // valida asignación activa, recalcula todo server-side, re-firma access+refresh.
+  fastify.post<{ Body: { tenantId?: number } }>('/switch-tenant', async (request, reply) => {
+    // jwtVerify fuera del try/catch: un token ausente/inválido debe serializar
+    // como 401 vía el error handler global (index.ts — "jwt 401 untouched"),
+    // no como 500 genérico.
+    await request.jwtVerify();
+    try {
+      const caller = request.user as { id: number; roleId: number };
+      const { tenantId } = request.body ?? {};
+
+      if (caller.roleId === 0) {
+        return reply
+          .code(400)
+          .send({ success: false, code: 'OMEGA_NO_TENANT', message: 'Ω no tiene Universo' });
+      }
+      if (typeof tenantId !== 'number') {
+        return reply
+          .code(400)
+          .send({ success: false, code: 'VALIDATION_ERROR', message: 'tenantId requerido' });
+      }
+
+      const allowed = await isTenantAssignmentActive(caller.id, tenantId);
+      if (!allowed) {
+        return reply
+          .code(403)
+          .send({ success: false, code: 'FORBIDDEN', message: 'Sin asignación en ese Universo' });
+      }
+
+      const [userRows] = await db.execute<RowDataPacket[]>(
+        `SELECT u.*, r.name as role_name, cat.label as department_name
+         FROM users u LEFT JOIN roles r ON u.role_id = r.id
+         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
+         WHERE u.id = ? AND u.is_active = 1`,
+        [caller.id]
+      );
+      if (!userRows.length) {
+        return reply.code(404).send({ success: false, code: 'NOT_FOUND' });
+      }
+      const user = userRows[0];
+      const mapped = mapUserResponse(user);
+
+      const [permissions, ownerType, availableTenants] = await Promise.all([
+        resolveEffectivePermissions(mapped.id, tenantId),
+        deriveOwnerType(tenantId),
+        getAvailableTenants(mapped.id),
+      ]);
+
+      const token = fastify.jwt.sign({
+        id: user.id,
+        username: user.username,
+        roleId: mapped.roleId,
+        roleName: mapped.roleName,
+        permissions,
+        type: 'access',
+        tenant_id: tenantId,
+        owner_type: ownerType,
+      });
+      const refreshToken = fastify.jwt.sign(
+        { id: user.id, type: 'refresh', tenant_id: tenantId },
+        { expiresIn: '7d' }
+      );
+      // R2b (Bravo) — reemitir la cookie con los MISMOS atributos que /login,
+      // si no la cookie vieja sin tenant_id gana en el próximo /refresh.
+      const isProduction = process.env.NODE_ENV === 'production';
+      const refreshCookieOpts = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'strict' as const,
+        domain: isProduction ? '.piic.com.mx' : undefined,
+        path: '/v1/auth',
+        maxAge: 7 * 24 * 60 * 60,
+      };
+      return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts).send({
+        success: true,
+        token,
+        user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+      });
+    } catch (e) {
+      fastify.log.error(e);
+      return reply.code(500).send({ success: false, code: 'INTERNAL_ERROR' });
     }
   });
 
@@ -720,12 +816,16 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.get('/me', async (request, reply) => {
     try {
       await request.jwtVerify();
-      const { id } = request.user as { id: number };
+      const { id, tenant_id: claimedTenantId } = request.user as {
+        id: number;
+        tenant_id?: number | null;
+      };
 
       const [userRows] = await db.execute<RowDataPacket[]>(
+        // FC 082 F3b Cond.5 — LEFT JOIN, ver /login.
         `SELECT u.*, r.name AS role_name, cat.label AS department_name
          FROM users u
-         JOIN roles r ON u.role_id = r.id
+         LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id
          WHERE u.id = ?`,
         [id]
@@ -737,35 +837,26 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
 
       const user = userRows[0];
 
-      const [userRoleRows] = await db.execute<RowDataPacket[]>(
-        'SELECT role_id FROM user_roles WHERE user_id = ?',
-        [id]
-      );
-      const roleIds: number[] =
-        userRoleRows.length > 0
-          ? userRoleRows.map((r) => r.role_id as number)
-          : [user.role_id as number];
-
-      let capabilities: string[];
-      if (roleIds.includes(0)) {
-        capabilities = ['*'];
-      } else {
-        const placeholders = roleIds.map(() => '?').join(',');
-        const [permRows] = await db.execute<RowDataPacket[]>(
-          `SELECT DISTINCT p.slug
-           FROM role_permissions rp
-           JOIN permissions p ON p.id = rp.permission_id
-           WHERE rp.role_id IN (${placeholders})`,
-          roleIds
-        );
-        capabilities = permRows.map((r) => r.slug as string);
-      }
+      // FC 082 F3b Cond.7 "paridad /login-/me" — misma función de resolución que
+      // /refresh, anclada al tenant_id vigente del JWT (no re-elige primario en
+      // silencio si el usuario ya hizo switch-tenant en esta sesión).
+      const { tenantId, permissions, ownerType, availableTenants } =
+        await resolveAuthContextForRefresh(id, user.role_id as number, claimedTenantId);
 
       return reply.send({
         success: true,
-        data: { ...mapUserResponse(user), capabilities },
+        data: {
+          ...mapUserResponse(user),
+          capabilities: permissions,
+          tenantId,
+          ownerType,
+          availableTenants,
+        },
       });
     } catch (error) {
+      if (error instanceof MultiMembershipHaltError) {
+        return haltMultiMembership(fastify, reply, error);
+      }
       fastify.log.error(error);
       return reply
         .code(500)
@@ -784,9 +875,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       const { uuid } = request.params as { uuid: string };
       const [userRows] = await db.execute<RowDataPacket[]>(
+        // FC 082 F3b Cond.5/§7.2 (Bravo) — LEFT JOIN, ver /login. Nota: el listado de
+        // permisos de este endpoint (abajo) sigue leyendo role_permissions de un solo
+        // role_id — no se amplía a resolveEffectivePermissions aquí (fuera del
+        // perímetro de login/refresh/me dictaminado); re-anclaje completo queda para F3c.
         `SELECT u.*, r.name AS role_name, cat.label AS department_name
          FROM users u
-         JOIN roles r ON u.role_id = r.id
+         LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
          WHERE u.uuid = ?`,
         [uuid]

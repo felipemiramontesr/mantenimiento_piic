@@ -20,7 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   startImpersonation: (target: UserIndustrial) => void;
   stopImpersonation: () => void;
-  ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null;
+  ownerType: 'FLOTILLA' | 'ARCHONAUT' | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,9 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // FC 082 F0c — eje suite eliminado (084_AN §1a); ownerType queda null hasta
-  // que F3 lo re-derive del chasis Arc.
-  const ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null = currentUser?.ownerType ?? null;
+  // FC 082 F3b — ownerType re-derivado server-side desde tenants.owner_type_id
+  // (089_AN §9.3); pasa tal cual desde la respuesta de login/refresh/me.
+  const ownerType: 'FLOTILLA' | 'ARCHONAUT' | null = currentUser?.ownerType ?? null;
 
   const isImpersonating = viewAsUser !== null;
   const effectiveUser = viewAsUser ?? currentUser;

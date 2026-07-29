@@ -108,7 +108,7 @@ const getPronosticoArchon = (
   return result;
 };
 
-function getIsFlotillaOrInternal(ownerType: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null): boolean {
+function getIsFlotillaOrInternal(ownerType: 'FLOTILLA' | 'ARCHONAUT' | null): boolean {
   return ownerType === 'FLOTILLA' || ownerType === null;
 }
 

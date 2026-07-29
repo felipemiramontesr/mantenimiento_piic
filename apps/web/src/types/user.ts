@@ -28,5 +28,9 @@ export interface UserIndustrial {
   password?: string;
   created_at?: string;
   updated_at?: string;
-  ownerType?: 'FLOTILLA' | 'PRIVATE' | 'CENTER' | null;
+  // FC 082 F3b Cond.6 — catálogo real post-mig.164 es {FLOTILLA, ARCHONAUT}
+  // (PRIVATE/CENTER retirados en owner_types_catalog, mig.164 directriz 5).
+  ownerType?: 'FLOTILLA' | 'ARCHONAUT' | null;
+  tenantId?: number | null;
+  availableTenants?: number[];
 }

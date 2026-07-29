@@ -3,10 +3,25 @@ import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import buildApp from '../index';
 import db from '../services/db';
 import FleetService from '../services/fleetService';
+import {
+  resolveAuthContext,
+  resolveAuthContextForRefresh,
+  isTenantAssignmentActive,
+  resolveEffectivePermissions,
+  deriveOwnerType,
+  getAvailableTenants,
+  MultiMembershipHaltError,
+  type ResolvedAuthContext,
+} from '../middleware/cosmonautMiddleware';
 
 /**
  * 🔱 Archon Integration Test: Nucleus Saturation (v.43.0.0)
  * Absolute Branch/Line/Statement/Function Coverage Strike
+ *
+ * FC 082 F3b (089_AN, O✓Alfa/R✓Bravo) — la resolución de permisos/tenant/ownerType
+ * se mockea a nivel de cosmonautMiddleware (ya unit-testeada en
+ * middleware/__tests__/cosmonautMiddleware.test.ts), no recomponiendo la cadena
+ * SQL legacy (user_roles/role_permissions, retirada — Cond.5/9 Bravo).
  */
 
 const mockConnection = {
@@ -33,6 +48,33 @@ vi.mock('../services/encryption', () => ({
     decrypt: vi.fn((v) => (v ? v.replace('enc_', '') : '')),
   },
 }));
+vi.mock('../middleware/cosmonautMiddleware', async () => {
+  const actual = await vi.importActual<typeof import('../middleware/cosmonautMiddleware')>(
+    '../middleware/cosmonautMiddleware'
+  );
+  return {
+    ...actual,
+    resolveAuthContext: vi.fn(),
+    resolveAuthContextForRefresh: vi.fn(),
+    resolveEffectivePermissions: vi.fn().mockResolvedValue([]),
+    deriveOwnerType: vi.fn().mockResolvedValue(null),
+    getAvailableTenants: vi.fn().mockResolvedValue([]),
+    isTenantAssignmentActive: vi.fn().mockResolvedValue(false),
+  };
+});
+
+const ARC_NO_TENANT: ResolvedAuthContext = {
+  tenantId: null,
+  permissions: [],
+  ownerType: null,
+  availableTenants: [],
+};
+const OMEGA_CTX: ResolvedAuthContext = {
+  tenantId: null,
+  permissions: ['*'],
+  ownerType: null,
+  availableTenants: [],
+};
 
 describe('authIntegration.test', () => {
   const app = buildApp();
@@ -48,10 +90,14 @@ describe('authIntegration.test', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    // Restore default after reset — login now makes 2 extra db.execute calls (user_roles + perms)
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     (argon2Verify as Mock).mockResolvedValue(true);
     (argon2Hash as Mock).mockResolvedValue('hash_value');
+    // FC 082 F3b — default: Arc puro sin tenant (la mayoría de los tests de este
+    // bloque no ejercitan la resolución de tenant/permisos en sí, solo el flujo).
+    vi.mocked(resolveAuthContext).mockResolvedValue({ ...ARC_NO_TENANT });
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValue({ ...ARC_NO_TENANT });
+    vi.mocked(isTenantAssignmentActive).mockResolvedValue(false);
   });
 
   const authHeader = (): Record<string, string> => ({
@@ -113,11 +159,13 @@ describe('authIntegration.test', () => {
           },
         ],
         undefined,
-      ])
-      // user_roles query (V.124) — empty → falls back to roleId for permission resolution
-      .mockResolvedValueOnce([[], undefined])
-      // permissions query for non-master role
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }, { slug: 'maint:view' }], undefined]);
+      ]);
+    vi.mocked(resolveAuthContext).mockResolvedValueOnce({
+      tenantId: null,
+      permissions: ['fleet:view', 'maint:view'],
+      ownerType: null,
+      availableTenants: [],
+    });
     const r2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
@@ -371,7 +419,7 @@ describe('authIntegration.test', () => {
     expect(JSON.parse(res.payload).code).toBe('NOT_FOUND');
   });
 
-  it('GET /me — 200 uses user.role_id when user_roles table returns empty', async () => {
+  it('GET /me — 200 uses resolveAuthContextForRefresh (Cond.7 paridad login/me)', async () => {
     const userRow = {
       id: 1,
       uuid: 'uuid-1',
@@ -388,10 +436,13 @@ describe('authIntegration.test', () => {
       role_name: 'Tecnico',
       department_name: null,
     };
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[userRow], undefined]) // SELECT user JOIN roles
-      .mockResolvedValueOnce([[], undefined]) // SELECT user_roles → empty → fallback to role_id=5
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]); // SELECT permissions for role 5
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]);
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({
+      tenantId: 7,
+      permissions: ['fleet:view'],
+      ownerType: 'FLOTILLA',
+      availableTenants: [7],
+    });
 
     const res = await app.inject({
       method: 'GET',
@@ -399,7 +450,11 @@ describe('authIntegration.test', () => {
       headers: authHeader(),
     });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.payload).data.capabilities).toContain('fleet:view');
+    const body = JSON.parse(res.payload);
+    expect(body.data.capabilities).toContain('fleet:view');
+    expect(body.data.tenantId).toBe(7);
+    expect(body.data.ownerType).toBe('FLOTILLA');
+    expect(vi.mocked(resolveAuthContextForRefresh)).toHaveBeenCalledWith(1, 5, undefined);
   });
 
   it('GET /me — 200 with roleId=0 returns capabilities=[*]', async () => {
@@ -419,9 +474,8 @@ describe('authIntegration.test', () => {
       role_name: 'ARCHON',
       department_name: null,
     };
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[userRow], undefined]) // SELECT user JOIN roles
-      .mockResolvedValueOnce([[{ role_id: 0 }], undefined]); // SELECT user_roles
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]);
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({ ...OMEGA_CTX });
 
     const res = await app.inject({
       method: 'GET',
@@ -432,9 +486,10 @@ describe('authIntegration.test', () => {
     const body = JSON.parse(res.payload);
     expect(body.success).toBe(true);
     expect(body.data.capabilities).toEqual(['*']);
+    expect(body.data.tenantId).toBeNull();
   });
 
-  it('GET /me — 200 with non-0 role fetches permissions from DB', async () => {
+  it('GET /me — 200 with non-0 role fetches permissions via resolveAuthContextForRefresh', async () => {
     const userRow = {
       id: 1,
       uuid: 'uuid-1',
@@ -451,10 +506,13 @@ describe('authIntegration.test', () => {
       role_name: 'Tecnico',
       department_name: 'Taller',
     };
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[userRow], undefined]) // SELECT user JOIN roles
-      .mockResolvedValueOnce([[{ role_id: 3 }], undefined]) // SELECT user_roles
-      .mockResolvedValueOnce([[{ slug: 'maint:write' }], undefined]); // SELECT permissions
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]);
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({
+      tenantId: null,
+      permissions: ['maint:write'],
+      ownerType: null,
+      availableTenants: [],
+    });
 
     const res = await app.inject({
       method: 'GET',
@@ -465,6 +523,31 @@ describe('authIntegration.test', () => {
     const body = JSON.parse(res.payload);
     expect(body.success).toBe(true);
     expect(body.data.capabilities).toContain('maint:write');
+  });
+
+  it('GET /me — 409 MULTI_TENANT_MEMBERSHIP_UNRESOLVED on R2a halt', async () => {
+    const userRow = {
+      id: 1,
+      uuid: 'uuid-1',
+      username: 'multi',
+      full_name: 'Multi',
+      email: 'enc_multi@piic.mx',
+      role_id: 2,
+      is_active: 1,
+      role_name: 'Arc',
+    };
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]);
+    vi.mocked(resolveAuthContextForRefresh).mockRejectedValueOnce(
+      new MultiMembershipHaltError(1, [7, 8])
+    );
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/me',
+      headers: authHeader(),
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.payload).code).toBe('MULTI_TENANT_MEMBERSHIP_UNRESOLVED');
   });
 
   it('GET /me — 500 on DB error', async () => {
@@ -682,9 +765,8 @@ describe('authIntegration.test', () => {
       role_name: 'ARCHON',
       department_name: null,
     };
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[userRow], undefined]) // user query
-      .mockResolvedValueOnce([[{ role_id: 0 }], undefined]); // user_roles
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]); // user query
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({ ...OMEGA_CTX });
     const res = await app.inject({
       method: 'POST',
       url: '/v1/auth/refresh',
@@ -694,9 +776,13 @@ describe('authIntegration.test', () => {
     const body = JSON.parse(res.payload);
     expect(body.success).toBe(true);
     expect(typeof body.token).toBe('string');
-    const decoded = app.jwt.decode<{ type: string; permissions: string[] }>(body.token);
+    const decoded = app.jwt.decode<{ type: string; permissions: string[]; tenant_id: null }>(
+      body.token
+    );
     expect(decoded!.type).toBe('access');
     expect(decoded!.permissions).toEqual(['*']);
+    expect(decoded!.tenant_id).toBeNull();
+    expect(vi.mocked(resolveAuthContextForRefresh)).toHaveBeenCalledWith(1, 0, undefined);
   });
 
   it('POST /refresh — 200 with new access token (non-zero role, fetches permissions)', async () => {
@@ -717,10 +803,13 @@ describe('authIntegration.test', () => {
       role_name: 'Tecnico',
       department_name: null,
     };
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[userRow], undefined]) // user query
-      .mockResolvedValueOnce([[{ role_id: 3 }], undefined]) // user_roles
-      .mockResolvedValueOnce([[{ slug: 'maint:view' }], undefined]); // permissions
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]); // user query
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({
+      tenantId: 9,
+      permissions: ['maint:view'],
+      ownerType: 'FLOTILLA',
+      availableTenants: [9],
+    });
     const res = await app.inject({
       method: 'POST',
       url: '/v1/auth/refresh',
@@ -729,9 +818,60 @@ describe('authIntegration.test', () => {
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.payload);
     expect(body.success).toBe(true);
-    const decoded = app.jwt.decode<{ type: string; permissions: string[] }>(body.token);
+    const decoded = app.jwt.decode<{ type: string; permissions: string[]; tenant_id: number }>(
+      body.token
+    );
     expect(decoded!.type).toBe('access');
     expect(decoded!.permissions).toContain('maint:view');
+    expect(decoded!.tenant_id).toBe(9);
+    expect(vi.mocked(resolveAuthContextForRefresh)).toHaveBeenCalledWith(2, 3, undefined);
+  });
+
+  it('POST /refresh — 200 preserves claimed tenant_id from refresh token (§9.2.1, no reversión silenciosa)', async () => {
+    const refreshToken = app.jwt.sign(
+      { id: 2, type: 'refresh', tenant_id: 9 },
+      { expiresIn: '7d' }
+    );
+    const userRow = {
+      id: 2,
+      uuid: 'uuid-2',
+      username: 'operador',
+      full_name: 'Operador',
+      email: 'enc_op@piic.mx',
+      role_id: 3,
+      is_active: 1,
+      role_name: 'Tecnico',
+    };
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]);
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({
+      tenantId: 9,
+      permissions: ['maint:view'],
+      ownerType: 'FLOTILLA',
+      availableTenants: [9, 12],
+    });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(vi.mocked(resolveAuthContextForRefresh)).toHaveBeenCalledWith(2, 3, 9);
+  });
+
+  it('POST /refresh — 409 MULTI_TENANT_MEMBERSHIP_UNRESOLVED on R2a halt', async () => {
+    const refreshToken = app.jwt.sign({ id: 2, type: 'refresh' }, { expiresIn: '7d' });
+    const userRow = { id: 2, username: 'multi', role_id: 2, is_active: 1, role_name: 'Arc' };
+    (db.execute as Mock).mockResolvedValueOnce([[userRow], undefined]);
+    vi.mocked(resolveAuthContextForRefresh).mockRejectedValueOnce(
+      new MultiMembershipHaltError(2, [9, 12])
+    );
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/refresh',
+      cookies: { refresh_token: refreshToken },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.payload).code).toBe('MULTI_TENANT_MEMBERSHIP_UNRESOLVED');
   });
 
   it('POST /refresh — 401 REFRESH_FAIL on DB error', async () => {
@@ -990,6 +1130,8 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     (argon2Verify as Mock).mockResolvedValue(true);
     (argon2Hash as Mock).mockResolvedValue('hash_value');
+    vi.mocked(resolveAuthContext).mockResolvedValue({ ...ARC_NO_TENANT });
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValue({ ...ARC_NO_TENANT });
   });
 
   afterAll(async () => {
@@ -999,23 +1141,20 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
   // FC 082 F0c — AUTH-BC-1/2 (escenarios de /register) murieron con el
   // endpoint; AUTH-BC-3 muta: sin eje suite el login ya no expone user.suite.
   it('AUTH-BC-3 (FC082 F0c): POST /login sin eje suite → user.suite ausente', async () => {
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 2,
-            username: 'admin_test',
-            email: 'enc_a',
-            password_hash: 'h',
-            role_id: 1,
-            role_name: 'Admin',
-            profile_picture_url: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 2,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 1,
+          role_name: 'Admin',
+          profile_picture_url: null,
+        },
+      ],
+      undefined,
+    ]);
     const res = await bcApp.inject({
       method: 'POST',
       url: '/v1/auth/login',
@@ -1025,189 +1164,152 @@ describe('AUTH — branch coverage supplement (AUTH-BC)', () => {
     expect(JSON.parse(res.body).user.suite).toBeUndefined();
   });
 
-  it('AUTH-BC-4: POST /login user_roles non-empty → roleIds from table (B80)', async () => {
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 4,
-            username: 'admin_test',
-            email: 'enc_a',
-            password_hash: 'h',
-            role_id: 1,
-            role_name: 'Admin',
-            profile_picture_url: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[{ role_id: 1 }, { role_id: 2 }], undefined])
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+  // FC 082 F3b — Cond.7 (Bravo) matriz de tests C-ventana-equivalente.
+  // AUTH-BC-4/7 (user_roles multi-fila) retirados: esa tabla/concepto no
+  // participa del cutover — cosmonaut_role_assignments no tiene equivalente
+  // de "unión de varios roleIds legacy simultáneos" (089_AN §9, Cond.5/9).
+
+  it('AUTH-BC-5 (FC082 F3b): POST /login Arc R_global sin tenant → ownerType/tenantId null', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 5,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 2,
+          role_name: 'Arc',
+          profile_picture_url: null,
+        },
+      ],
+      undefined,
+    ]);
+    vi.mocked(resolveAuthContext).mockResolvedValueOnce({ ...ARC_NO_TENANT });
     const res = await bcApp.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'admin_test', password: 'password123' },
     });
     expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.user.ownerType).toBeNull();
+    expect(body.user.tenantId).toBeNull();
   });
 
-  it('AUTH-BC-5 (FC082 F0c): POST /login roleId=3 → ownerType null (mapeo muerto)', async () => {
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 5,
-            username: 'admin_test',
-            email: 'enc_a',
-            password_hash: 'h',
-            role_id: 3,
-            role_name: 'Centro',
-            profile_picture_url: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ slug: 'maint:view' }], undefined]);
+  it('AUTH-BC-6 (FC082 F3b): POST /login MU con 1 tenant → ownerType FLOTILLA derivado', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 6,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 2,
+          role_name: 'MU',
+          profile_picture_url: null,
+        },
+      ],
+      undefined,
+    ]);
+    vi.mocked(resolveAuthContext).mockResolvedValueOnce({
+      tenantId: 4,
+      permissions: ['admin:owner:view'],
+      ownerType: 'FLOTILLA',
+      availableTenants: [4],
+    });
     const res = await bcApp.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'admin_test', password: 'password123' },
     });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).user.ownerType).toBeNull();
+    const body = JSON.parse(res.body);
+    expect(body.user.ownerType).toBe('FLOTILLA');
+    expect(body.user.tenantId).toBe(4);
+    expect(body.user.availableTenants).toEqual([4]);
   });
 
-  it('AUTH-BC-6 (FC082 F0c): POST /login roleId=4 → ownerType null (mapeo muerto)', async () => {
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 6,
-            username: 'admin_test',
-            email: 'enc_a',
-            password_hash: 'h',
-            role_id: 4,
-            role_name: 'Privado',
-            profile_picture_url: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+  it('AUTH-BC-7 (FC082 F3b): POST /login Arc con N tenants → availableTenants expone todos', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 7,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 2,
+          role_name: 'Arc',
+          profile_picture_url: null,
+        },
+      ],
+      undefined,
+    ]);
+    vi.mocked(resolveAuthContext).mockResolvedValueOnce({
+      tenantId: 4,
+      permissions: ['fleet:read'],
+      ownerType: 'FLOTILLA',
+      availableTenants: [4, 9],
+    });
     const res = await bcApp.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'admin_test', password: 'password123' },
     });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).user.ownerType).toBeNull();
+    expect(JSON.parse(res.body).user.availableTenants).toEqual([4, 9]);
   });
 
-  it('AUTH-BC-7: POST /refresh user_roles non-empty → roleIds from table (B102)', async () => {
-    const refreshToken = bcApp.jwt.sign({ id: 10, type: 'refresh' }, { expiresIn: '7d' });
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 10,
-            uuid: 'uuid-10',
-            username: 'op',
-            full_name: 'Op',
-            email: 'enc_op@piic.mx',
-            role_id: 1,
-            employee_number: 'E010',
-            is_active: 1,
-            last_login: null,
-            created_at: '2026-01-01',
-            profile_picture_url: null,
-            department_id: null,
-            role_name: 'Op',
-            department_name: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[{ role_id: 1 }, { role_id: 2 }], undefined])
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+  it('AUTH-BC-8 (FC082 F3b): POST /login — 409 MULTI_TENANT_MEMBERSHIP_UNRESOLVED (R2a)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 8,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 2,
+          role_name: 'Arc',
+          profile_picture_url: null,
+        },
+      ],
+      undefined,
+    ]);
+    vi.mocked(resolveAuthContext).mockRejectedValueOnce(new MultiMembershipHaltError(8, [4, 9]));
     const res = await bcApp.inject({
       method: 'POST',
-      url: '/v1/auth/refresh',
-      cookies: { refresh_token: refreshToken },
+      url: '/v1/auth/login',
+      payload: { username: 'admin_test', password: 'password123' },
     });
-    expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.body).success).toBe(true);
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.body).code).toBe('MULTI_TENANT_MEMBERSHIP_UNRESOLVED');
   });
 
-  it('AUTH-BC-8 (FC082 F0c): POST /refresh roleId=3 → owner_type null en JWT', async () => {
-    const refreshToken = bcApp.jwt.sign({ id: 11, type: 'refresh' }, { expiresIn: '7d' });
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 11,
-            uuid: 'uuid-11',
-            username: 'centro',
-            full_name: 'Centro',
-            email: 'enc_c@piic.mx',
-            role_id: 3,
-            employee_number: null,
-            is_active: 1,
-            last_login: null,
-            created_at: '2026-01-01',
-            profile_picture_url: null,
-            department_id: null,
-            role_name: 'Centro',
-            department_name: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ slug: 'maint:view' }], undefined]);
-    const res = await bcApp.inject({
-      method: 'POST',
-      url: '/v1/auth/refresh',
-      cookies: { refresh_token: refreshToken },
-    });
-    expect(res.statusCode).toBe(200);
-    const decoded = bcApp.jwt.decode<{ owner_type: string | null }>(JSON.parse(res.body).token);
-    expect(decoded!.owner_type).toBeNull();
-  });
-
-  it('AUTH-BC-9 (FC082 F0c): POST /refresh roleId=4 → owner_type null en JWT', async () => {
+  it('AUTH-BC-9 (FC082 F3b): POST /refresh — legacy token sin tenant_id cae a resolveAuthContext (R2c)', async () => {
     const refreshToken = bcApp.jwt.sign({ id: 12, type: 'refresh' }, { expiresIn: '7d' });
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 12,
-            uuid: 'uuid-12',
-            username: 'privado',
-            full_name: 'Privado',
-            email: 'enc_p@piic.mx',
-            role_id: 4,
-            employee_number: null,
-            is_active: 1,
-            last_login: null,
-            created_at: '2026-01-01',
-            profile_picture_url: null,
-            department_id: null,
-            role_name: 'Privado',
-            department_name: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 12,
+          uuid: 'uuid-12',
+          username: 'legacy',
+          full_name: 'Legacy',
+          email: 'enc_p@piic.mx',
+          role_id: 2,
+          is_active: 1,
+          role_name: 'Arc',
+        },
+      ],
+      undefined,
+    ]);
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValueOnce({ ...ARC_NO_TENANT });
     const res = await bcApp.inject({
       method: 'POST',
       url: '/v1/auth/refresh',
       cookies: { refresh_token: refreshToken },
     });
     expect(res.statusCode).toBe(200);
+    // decoded.tenant_id del refresh legacy es undefined — confirmado el fallback R2c
+    expect(vi.mocked(resolveAuthContextForRefresh)).toHaveBeenCalledWith(12, 2, undefined);
     const decoded = bcApp.jwt.decode<{ owner_type: string | null }>(JSON.parse(res.body).token);
     expect(decoded!.owner_type).toBeNull();
   });
@@ -1229,6 +1331,8 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     (argon2Verify as Mock).mockResolvedValue(true);
     (argon2Hash as Mock).mockResolvedValue('hash_value');
+    vi.mocked(resolveAuthContext).mockResolvedValue({ ...ARC_NO_TENANT });
+    vi.mocked(resolveAuthContextForRefresh).mockResolvedValue({ ...ARC_NO_TENANT });
     process.env.NODE_ENV = 'production';
   });
 
@@ -1242,23 +1346,20 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
   });
 
   it('AUTH-BC-10: POST /login production → rate limit max=10 + cookie domain .piic.com.mx (B63+B90)', async () => {
-    (db.execute as Mock)
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 7,
-            username: 'admin_test',
-            email: 'enc_a',
-            password_hash: 'h',
-            role_id: 1,
-            role_name: 'Admin',
-            profile_picture_url: null,
-          },
-        ],
-        undefined,
-      ])
-      .mockResolvedValueOnce([[], undefined])
-      .mockResolvedValueOnce([[{ slug: 'fleet:view' }], undefined]);
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 7,
+          username: 'admin_test',
+          email: 'enc_a',
+          password_hash: 'h',
+          role_id: 1,
+          role_name: 'Admin',
+          profile_picture_url: null,
+        },
+      ],
+      undefined,
+    ]);
     const res = await prodApp.inject({
       method: 'POST',
       url: '/v1/auth/login',
@@ -1281,5 +1382,135 @@ describe('AUTH — production mode branch coverage (AUTH-BC-PROD)', () => {
     const setCookieRaw = res.headers['set-cookie'];
     const setCookie = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
     expect(setCookie).toContain('.piic.com.mx');
+  });
+});
+
+// ─── POST /switch-tenant (FC 082 F3b §9.2, 089_AN — O✓Alfa/R✓Bravo Cond.2+R2b) ─
+describe('POST /v1/auth/switch-tenant', () => {
+  const app = buildApp();
+  let arcToken: string;
+  let omegaToken: string;
+
+  beforeAll(async () => {
+    await app.ready();
+    arcToken = app.jwt.sign({ id: 20, roleId: 2, permissions: ['fleet:read'] });
+    omegaToken = app.jwt.sign({ id: 1, roleId: 0, permissions: ['*'] });
+  });
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (db.execute as Mock).mockResolvedValue([[], undefined]);
+    vi.mocked(isTenantAssignmentActive).mockResolvedValue(false);
+  });
+
+  it('400 OMEGA_NO_TENANT — Ω no puede hacer switch-tenant', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      headers: { Authorization: `Bearer ${omegaToken}` },
+      payload: { tenantId: 4 },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).code).toBe('OMEGA_NO_TENANT');
+  });
+
+  it('400 VALIDATION_ERROR — tenantId ausente/no numérico', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      headers: { Authorization: `Bearer ${arcToken}` },
+      payload: {},
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.payload).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('403 FORBIDDEN — sin asignación activa en el tenant solicitado (anti-enumeración)', async () => {
+    vi.mocked(isTenantAssignmentActive).mockResolvedValueOnce(false);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      headers: { Authorization: `Bearer ${arcToken}` },
+      payload: { tenantId: 999 },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).code).toBe('FORBIDDEN');
+  });
+
+  it('200 — recalcula permisos/ownerType server-side y reemite ambas cookies (R2b)', async () => {
+    vi.mocked(isTenantAssignmentActive).mockResolvedValueOnce(true);
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ id: 20, username: 'arc_multi', role_id: 2, is_active: 1, role_name: 'Arc' }],
+      undefined,
+    ]);
+    vi.mocked(resolveEffectivePermissions).mockResolvedValueOnce(['fleet:read', 'maint:read']);
+    vi.mocked(deriveOwnerType).mockResolvedValueOnce('FLOTILLA');
+    vi.mocked(getAvailableTenants).mockResolvedValueOnce([4, 9]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      headers: { Authorization: `Bearer ${arcToken}` },
+      payload: { tenantId: 9 },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload);
+    expect(body.user.tenantId).toBe(9);
+    expect(body.user.ownerType).toBe('FLOTILLA');
+    expect(body.user.permissions).toEqual(['fleet:read', 'maint:read']);
+
+    // Nunca confía tenantId/permissions del cliente — recalculado server-side
+    expect(vi.mocked(resolveEffectivePermissions)).toHaveBeenCalledWith(20, 9);
+
+    const decoded = app.jwt.decode<{ tenant_id: number; type: string }>(body.token);
+    expect(decoded!.tenant_id).toBe(9);
+
+    // R2b — misma cookie refresh_token que /login, con el tenant_id nuevo
+    const setCookieRaw = res.headers['set-cookie'];
+    const setCookie = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
+    expect(setCookie).toContain('refresh_token=');
+    expect(setCookie).toContain('HttpOnly');
+    const cookieMatch = /refresh_token=([^;]+)/.exec(setCookie);
+    const refreshDecoded = app.jwt.decode<{ tenant_id: number; type: string }>(cookieMatch![1]);
+    expect(refreshDecoded!.type).toBe('refresh');
+    expect(refreshDecoded!.tenant_id).toBe(9);
+  });
+
+  it('404 NOT_FOUND — usuario inactivo/eliminado entre la validación y la relectura', async () => {
+    vi.mocked(isTenantAssignmentActive).mockResolvedValueOnce(true);
+    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      headers: { Authorization: `Bearer ${arcToken}` },
+      payload: { tenantId: 9 },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('401 sin JWT válido', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      payload: { tenantId: 9 },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('500 INTERNAL_ERROR — error inesperado al recalcular permisos/ownerType', async () => {
+    vi.mocked(isTenantAssignmentActive).mockResolvedValueOnce(true);
+    (db.execute as Mock).mockResolvedValueOnce([
+      [{ id: 20, username: 'arc_multi', role_id: 2, is_active: 1, role_name: 'Arc' }],
+      undefined,
+    ]);
+    vi.mocked(resolveEffectivePermissions).mockRejectedValueOnce(new Error('DB_FAIL'));
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/switch-tenant',
+      headers: { Authorization: `Bearer ${arcToken}` },
+      payload: { tenantId: 9 },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).code).toBe('INTERNAL_ERROR');
   });
 });
