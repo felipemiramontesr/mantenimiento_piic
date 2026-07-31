@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import FleetService from './fleetService';
 import db from './db';
+import { clearKpiCache } from './fleetIntelligence';
 
 // 🔱 Mock Database Interface
 const mockConnection = {
@@ -24,6 +25,10 @@ vi.mock('./db', () => ({
 describe('FleetService - Unit Certification (Sovereign Grade)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Incidente DB-1045 P2 — la caché de 10s de computeKpis persiste entre
+    // tests del mismo archivo si no se limpia (mockResolvedValueOnce queda
+    // sin consumir y desfasa los siguientes tests).
+    clearKpiCache();
   });
 
   describe('getAllUnits', () => {

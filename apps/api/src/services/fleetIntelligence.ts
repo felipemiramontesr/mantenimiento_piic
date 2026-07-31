@@ -23,6 +23,25 @@ interface KpiData {
   availabilityIndex: number;
   backlogCount: number;
 }
+
+// ============================================================================
+// Incidente DB-1045 (FC082, Alfa/Bravo P2) — caché de 10s para computeKpis.
+// Mitigación, NO reemplaza el fix de conexión (Cond.3 Bravo): si la primera
+// llamada de una ventana de 10s falla, la caché queda fría y esa petición
+// sigue expuesta igual que antes. TTL corto deliberado — GET /fleet no
+// necesita datos de KPI al segundo, pero sí evitar recalcular 3 window
+// functions en cada petición del mismo burst. Invalidación: solo por
+// expiración de TTL o clearKpiCache() explícito (tests); no hay invalidación
+// por escritura porque los KPIs derivan de fleet_movements histórico, no de
+// un valor que un usuario edite y espere ver reflejado al instante.
+// ============================================================================
+const KPI_CACHE_TTL_MS = 10_000;
+const kpiCache = new Map<string, { expiresAt: number; value: Map<string, KpiData> }>();
+
+/** Solo para tests — evita que el TTL de un test contamine el siguiente. */
+export function clearKpiCache(): void {
+  kpiCache.clear();
+}
 export interface FleetUnit extends RowDataPacket {
   id: string;
   uuid: string;
@@ -196,6 +215,12 @@ export class FleetIntelligenceEngine {
     const kpiMap = new Map<string, KpiData>();
     if (unitIds.length === 0) return kpiMap;
 
+    const cacheKey = [...unitIds].sort().join(',');
+    const cached = kpiCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+
     const ph = unitIds.map(() => '?').join(',');
     const defaults = (): KpiData => ({
       mtbfHours: 0,
@@ -282,6 +307,7 @@ export class FleetIntelligenceEngine {
       kpiMap.set(uid, entry);
     });
 
+    kpiCache.set(cacheKey, { expiresAt: Date.now() + KPI_CACHE_TTL_MS, value: kpiMap });
     return kpiMap;
   }
 }

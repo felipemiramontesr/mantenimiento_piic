@@ -29,6 +29,15 @@ describe('Database Service (ARCHON CORE)', () => {
     expect(mysql.createPool).toHaveBeenCalledWith(expect.objectContaining({ charset: 'utf8mb4' }));
   });
 
+  // Incidente DB-1045 P1 (Alfa/Bravo) — keep-alive para reducir reconexiones
+  // bajo el burst concurrente del SPA. connectionLimit se deja intacto (10):
+  // Bravo lo marcó como experimento a medir, no un cambio a aplicar a ciegas.
+  it('enables TCP keep-alive on the pool — incidente DB-1045 P1', () => {
+    expect(mysql.createPool).toHaveBeenCalledWith(
+      expect.objectContaining({ enableKeepAlive: true, keepAliveInitialDelay: expect.any(Number) })
+    );
+  });
+
   it('should utilize localhost as a fallback if DB_HOST is missing', () => {
     delete process.env.DB_HOST;
     expect(resolveDbHost()).toBe('localhost');

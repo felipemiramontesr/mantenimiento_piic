@@ -159,10 +159,12 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
       const units = await FleetService.getAllUnits(fastify.log, ownerScope ?? undefined);
       return reply.send({ success: true, count: units.length, data: units });
     } catch (error) {
-      fastify.log.error(error);
+      // FC 082 incidente DB-1045 P3 (A09) — nunca reenviar (error as Error).message
+      // crudo de MySQL al cliente (filtraba usuario@host). Traza completa solo en log.
+      fastify.log.error({ route: '/fleet', err: error }, 'Fleet listing failed');
       return reply
         .code(500)
-        .send({ error: `Internal Database Exception: ${(error as Error).message}` });
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al cargar la flota' });
     }
   });
 

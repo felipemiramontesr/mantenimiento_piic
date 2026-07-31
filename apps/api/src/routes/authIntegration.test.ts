@@ -874,7 +874,7 @@ describe('authIntegration.test', () => {
     expect(JSON.parse(res.payload).code).toBe('MULTI_TENANT_MEMBERSHIP_UNRESOLVED');
   });
 
-  it('POST /refresh — 401 REFRESH_FAIL on DB error', async () => {
+  it('POST /refresh — 500 INTERNAL_ERROR on DB/system error (incidente DB-1045 P3 — ya no se disfraza de 401)', async () => {
     const refreshToken = app.jwt.sign({ id: 1, type: 'refresh' }, { expiresIn: '7d' });
     (db.execute as Mock).mockRejectedValueOnce(new Error('DB_FAIL'));
     const res = await app.inject({
@@ -882,8 +882,8 @@ describe('authIntegration.test', () => {
       url: '/v1/auth/refresh',
       cookies: { refresh_token: refreshToken },
     });
-    expect(res.statusCode).toBe(401);
-    expect(JSON.parse(res.payload).error).toBe('REFRESH_FAIL');
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload).code).toBe('INTERNAL_ERROR');
   });
 
   // ─── POST /logout ─────────────────────────────────────────────────────────────

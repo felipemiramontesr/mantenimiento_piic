@@ -25,6 +25,11 @@ export const resolveDbHost = (): string => process.env.DB_HOST || 'localhost';
  */
 export const MEXICO_TZ_OFFSET = '-06:00';
 
+// Incidente DB-1045 (FC082, Alfa/Bravo P1) — enableKeepAlive mantiene los
+// sockets del pool vivos entre requests, reduciendo los handshakes nuevos que
+// el burst concurrente del SPA fuerza al arrancar frío. connectionLimit NO se
+// toca aquí — Bravo lo marcó como experimento a medir con datos de antes/después
+// (Cond.2), no como cambio a aplicar a ciegas junto con esto.
 const db = mysql.createPool({
   host: resolveDbHost(),
   user: process.env.DB_USER,
@@ -34,11 +39,29 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10_000,
 });
 
 db.on('connection', (connection) => {
   connection.query(`SET time_zone = '${MEXICO_TZ_OFFSET}'`);
   connection.query(`SET NAMES utf8mb4`);
 });
+
+// Incidente DB-1045 (Cond.6 Bravo) — traza de arranque de la config de conexión
+// SIN password, para poder correlacionar despliegues con el comportamiento del
+// pool en los logs (host/usuario/base/límite ya son públicos en el propio error
+// de MySQL que se está diagnosticando; el password nunca se loguea).
+// eslint-disable-next-line no-console
+console.log(
+  JSON.stringify({
+    msg: 'db-pool-boot',
+    host: resolveDbHost(),
+    user: process.env.DB_USER,
+    database: process.env.DB_NAME,
+    pid: process.pid,
+    connectionLimit: 10,
+  })
+);
 
 export default db;

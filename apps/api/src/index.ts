@@ -11,6 +11,7 @@ import fastifyStatic from '@fastify/static';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import db from './services/db';
 import authRoutes from './routes/auth';
 import telemetryRoutes from './routes/telemetry';
 import fleetRoutes from './routes/fleet';
@@ -274,6 +275,24 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
       timestamp: new Date().toISOString(),
     })
   );
+
+  // Incidente DB-1045 P4 (Alfa/Bravo) — /health no prueba la DB (era ciego a
+  // caídas de conexión). Sonda separada para no cambiar la latencia/semántica
+  // del liveness check que ya consumen monitores externos.
+  fastify.get('/health/db', async (_request, reply) => {
+    const startedAt = Date.now();
+    try {
+      await db.execute('SELECT 1');
+      return reply.send({ status: 'operational', latencyMs: Date.now() - startedAt });
+    } catch (error) {
+      const err = error as { errno?: number; code?: string; sqlState?: string };
+      fastify.log.error(
+        { route: '/health/db', errno: err.errno, code: err.code, sqlState: err.sqlState },
+        'DB health probe failed'
+      );
+      return reply.code(503).send({ status: 'down', latencyMs: Date.now() - startedAt });
+    }
+  });
 
   return fastify;
 };

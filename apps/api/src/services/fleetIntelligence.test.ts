@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FleetIntelligenceEngine, FleetUnit } from './fleetIntelligence';
+import { FleetIntelligenceEngine, FleetUnit, clearKpiCache } from './fleetIntelligence';
 
 // ── DB mock for computeKpis ───────────────────────────────────────────────────
 vi.mock('./db', () => ({
@@ -107,6 +107,7 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
   describe('computeKpis — KPI Aggregation Engine', () => {
     beforeEach(() => {
       vi.mocked(db.execute).mockReset();
+      clearKpiCache();
     });
 
     it('returns an empty map when unitIds is empty', async () => {
@@ -234,6 +235,52 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
       expect(kpi.mttrHours).toBe(0);
       // MTBF entry creates entry but with 0 values → availabilityIndex stays 100
       expect(kpi.availabilityIndex).toBe(100);
+    });
+
+    // Incidente DB-1045 P2 — caché de 10s (mitigación, no fix de conexión)
+    it('caches the result for the same unitIds — a 2nd call within TTL hits 0 DB calls', async () => {
+      vi.mocked(db.execute)
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-CACHE', mttr_hours: 10 }]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]]);
+
+      const first = await FleetIntelligenceEngine.computeKpis(['ASM-CACHE']);
+      expect(first.get('ASM-CACHE')?.mttrHours).toBe(10);
+      expect(db.execute).toHaveBeenCalledTimes(3);
+
+      vi.mocked(db.execute).mockClear();
+      const second = await FleetIntelligenceEngine.computeKpis(['ASM-CACHE']);
+      expect(second.get('ASM-CACHE')?.mttrHours).toBe(10);
+      expect(db.execute).not.toHaveBeenCalled();
+    });
+
+    it('cache key is order-independent — [A,B] and [B,A] hit the same entry', async () => {
+      vi.mocked(db.execute)
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-A', mttr_hours: 5 }]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]]);
+
+      await FleetIntelligenceEngine.computeKpis(['ASM-A', 'ASM-B']);
+      vi.mocked(db.execute).mockClear();
+      const reordered = await FleetIntelligenceEngine.computeKpis(['ASM-B', 'ASM-A']);
+      expect(reordered.get('ASM-A')?.mttrHours).toBe(5);
+      expect(db.execute).not.toHaveBeenCalled();
+    });
+
+    it('clearKpiCache() forces a fresh DB round-trip', async () => {
+      vi.mocked(db.execute)
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-CLR', mttr_hours: 1 }]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]]);
+      await FleetIntelligenceEngine.computeKpis(['ASM-CLR']);
+
+      clearKpiCache();
+      vi.mocked(db.execute)
+        .mockResolvedValueOnce([[{ unit_id: 'ASM-CLR', mttr_hours: 99 }]])
+        .mockResolvedValueOnce([[]])
+        .mockResolvedValueOnce([[]]);
+      const result = await FleetIntelligenceEngine.computeKpis(['ASM-CLR']);
+      expect(result.get('ASM-CLR')?.mttrHours).toBe(99);
     });
   });
 

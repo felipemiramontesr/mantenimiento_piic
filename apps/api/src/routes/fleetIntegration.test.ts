@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
+import { clearKpiCache } from '../services/fleetIntelligence';
 
 /**
  * 🔱 Archon Integration Test: Fleet Routes (v.22.0.1)
@@ -51,6 +52,9 @@ describe('Fleet Integration Endpoints', () => {
     // Restore default for security hooks etc
     (db.execute as Mock).mockResolvedValue([[], undefined]);
     mockConnection.execute.mockResolvedValue([[], undefined]);
+    // Incidente DB-1045 P2 — sin esto, la caché de 10s de computeKpis serviría
+    // resultados de un test anterior con el mismo unitId a un test nuevo.
+    clearKpiCache();
   });
 
   const authHeader = (token = mockToken): Record<string, string> => ({
@@ -191,6 +195,24 @@ describe('Fleet Integration Endpoints', () => {
         headers: authHeader(),
       });
       expect(response.statusCode).toBe(500);
+    });
+
+    // Incidente DB-1045 P3 (A09) — el mensaje crudo de MySQL (usuario@host) ya
+    // no debe llegar al cliente, solo al log del servidor.
+    it('sanitizes the DB error — never echoes error.message to the client', async (): Promise<void> => {
+      (db.execute as Mock).mockRejectedValueOnce(
+        new Error("Access denied for user 'u701509674_Felipe'@'127.0.0.1' (using password: YES)")
+      );
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet',
+        headers: authHeader(),
+      });
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.code).toBe('INTERNAL_ERROR');
+      expect(JSON.stringify(body)).not.toContain('u701509674_Felipe');
+      expect(JSON.stringify(body)).not.toContain('Access denied');
     });
   });
 

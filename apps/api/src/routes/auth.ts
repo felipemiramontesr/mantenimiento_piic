@@ -292,7 +292,20 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       if (e instanceof MultiMembershipHaltError) {
         return haltMultiMembership(fastify, reply, e);
       }
-      return reply.code(401).send({ error: 'REFRESH_FAIL' });
+      // Incidente DB-1045 P3 (Alfa/Bravo) — error boundary: un token ausente/
+      // expirado/inválido (@fastify/jwt siempre marca statusCode=401) sigue
+      // siendo 401 REFRESH_FAIL sin ensuciar logs. Cualquier OTRO error (DB,
+      // sistema) ya no se disfraza de fallo de sesión — se loguea completo y
+      // responde 500, para no confundir una caída de infraestructura con un
+      // logout legítimo.
+      const err = e as { statusCode?: number; code?: string };
+      if (err.statusCode === 401 || err.code?.startsWith('FST_JWT_')) {
+        return reply.code(401).send({ error: 'REFRESH_FAIL' });
+      }
+      fastify.log.error({ route: '/refresh', err: e }, 'Refresh failed — system error');
+      return reply
+        .code(500)
+        .send({ success: false, code: 'INTERNAL_ERROR', message: 'REFRESH_FAIL' });
     }
   });
 
@@ -376,7 +389,7 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
       });
     } catch (e) {
-      fastify.log.error(e);
+      fastify.log.error({ route: '/switch-tenant', err: e }, 'Switch-tenant failed');
       return reply.code(500).send({ success: false, code: 'INTERNAL_ERROR' });
     }
   });
