@@ -215,7 +215,7 @@ export class FleetIntelligenceEngine {
     const kpiMap = new Map<string, KpiData>();
     if (unitIds.length === 0) return kpiMap;
 
-    const cacheKey = [...unitIds].sort().join(',');
+    const cacheKey = [...unitIds].sort((a, b) => a.localeCompare(b)).join(',');
     const cached = kpiCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.value;
