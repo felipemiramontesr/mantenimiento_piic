@@ -299,6 +299,13 @@ describe('authIntegration.test', () => {
     const calls = mockConnection.execute.mock.calls.map((c) => String(c[0]));
     expect(calls.some((sql) => sql.includes('user_roles'))).toBe(false);
     expect(calls.some((sql) => sql.includes('cosmonaut_role_assignments'))).toBe(true);
+    // Hallazgo soft Bravo (auditoría F3c1) — UNIQUE(user_id,role_id,tenant_id)
+    // no protege con tenant_id NULL (NULL≠NULL); el INSERT debe ser NULL-safe
+    // vía WHERE NOT EXISTS, no INSERT IGNORE (mismo footgun que mig.155).
+    const insertSql = calls.find((sql) => sql.includes('INSERT INTO cosmonaut_role_assignments'));
+    expect(insertSql).toBeDefined();
+    expect(insertSql).toContain('WHERE NOT EXISTS');
+    expect(insertSql).not.toContain('INSERT IGNORE');
   });
 
   it('Resilience: Catch Block Nucleus (Aggressive Rejection)', async () => {

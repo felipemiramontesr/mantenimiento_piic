@@ -143,10 +143,18 @@ const syncGrayManCosmonautAssignment = async (
      WHERE user_id = ? AND tenant_id IS NULL AND revoked_at IS NULL`,
     [adminId, Number(targetUserId)]
   );
+  // Hallazgo soft Bravo (auditoría F3c1, 2026-08-01) — mismo footgun que
+  // mig.155: UNIQUE(user_id, role_id, tenant_id) no protege nada cuando
+  // tenant_id IS NULL (MySQL trata NULL≠NULL), así que INSERT IGNORE nunca
+  // detectaría un duplicado real. WHERE NOT EXISTS sí es NULL-safe.
   await connection.execute(
-    `INSERT IGNORE INTO cosmonaut_role_assignments (user_id, role_id, tenant_id, assigned_by)
-     VALUES (?, ?, NULL, ?)`,
-    [Number(targetUserId), grayManRoleId, adminId]
+    `INSERT INTO cosmonaut_role_assignments (user_id, role_id, tenant_id, assigned_by)
+     SELECT ?, ?, NULL, ?
+     WHERE NOT EXISTS (
+       SELECT 1 FROM cosmonaut_role_assignments
+       WHERE user_id = ? AND role_id = ? AND tenant_id IS NULL AND revoked_at IS NULL
+     )`,
+    [Number(targetUserId), grayManRoleId, adminId, Number(targetUserId), grayManRoleId]
   );
   return true;
 };
