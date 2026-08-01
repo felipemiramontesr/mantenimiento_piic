@@ -8,7 +8,6 @@ const vimQuerySchema = z.object({
   make: z.string().min(1, 'make es requerido'),
   model: z.string().min(1, 'model es requerido'),
   year: z.string().regex(/^\d{4}$/, 'year debe ser un año de 4 dígitos'),
-  scope: z.enum(['suite', 'global']).default('suite'),
 });
 
 type SignalLevel = 'SEÑAL' | 'INVESTIGAR' | 'DATOS_INSUFICIENTES';
@@ -19,9 +18,14 @@ function resolveSignalLevel(score: number): SignalLevel {
   return 'DATOS_INSUFICIENTES';
 }
 
-// FC 082 F0c — eje suite eliminado (migración 164): el scope 'suite' conserva
-// el nombre por compatibilidad pero se comporta como el camino sin-suite ya
-// legislado (VIM-F-10): consulta sin filtro. F3 re-ancla el scope al Arc.
+// FC 082 F3c Cond.1 (Bravo) — enum scope 'suite'/'global' retirado.
+// view_fleet_model_failure_patterns (mig.171) es inteligencia agregada
+// CROSS-TENANT por diseño (patrones de falla por make/model/year a través de
+// toda la flota, sin columna tenant_id — análogo a datos de recall NHTSA,
+// industry-wide) — no existe un "scope propio del tenant" real que filtrar.
+// El default 'suite' anterior ya se comportaba idéntico a 'global' (mismo
+// resultado sin filtro), haciendo el gate fleet:global evitable por el
+// caller — se cierra exigiéndolo siempre, sin bypass por default.
 export default async function recallsVimRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.addHook('onRequest', async (request, reply) => {
     try {
@@ -39,14 +43,12 @@ export default async function recallsVimRoutes(fastify: FastifyInstance): Promis
       if (!parsed.success) {
         return reply.code(400).send({ error: parsed.error.errors[0].message });
       }
-      const { make, model, year, scope } = parsed.data;
+      const { make, model, year } = parsed.data;
       const { permissions } = request.user as { id: number; permissions?: string[] };
 
-      if (scope === 'global') {
-        const hasGlobal = permissions?.includes('*') || permissions?.includes('fleet:global');
-        if (!hasGlobal) {
-          return reply.code(403).send({ error: 'Requiere permiso fleet:global para scope global' });
-        }
+      const hasGlobal = permissions?.includes('*') || permissions?.includes('fleet:global');
+      if (!hasGlobal) {
+        return reply.code(403).send({ error: 'Requiere permiso fleet:global' });
       }
 
       const [patterns] = await db.execute<RowDataPacket[]>(

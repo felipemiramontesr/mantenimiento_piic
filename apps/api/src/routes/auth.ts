@@ -16,8 +16,10 @@ import {
   resolveAuthContextForRefresh,
   isTenantAssignmentActive,
   resolveEffectivePermissions,
+  resolvePrimaryTenant,
   deriveOwnerType,
   getAvailableTenants,
+  antiEscalationGuard,
   MultiMembershipHaltError,
 } from '../middleware/cosmonautMiddleware';
 
@@ -39,6 +41,114 @@ const isUserInOwnerScope = async (
   );
   const targetOwnerIds = memberships.map((m) => m.owner_id as number);
   return targetOwnerIds.some((oid) => ownerScope.includes(oid));
+};
+
+/** Extraído del handler PATCH /users/:id (sonarjs/cognitive-complexity) — cada
+ *  campo opcional del payload se traduce 1:1 a un fragmento SET, sin lógica
+ *  de negocio propia más allá de "¿vino en el payload?".
+ */
+const buildUserUpdateFields = async (
+  updates: z.infer<typeof userUpdateSchema>['data']
+): Promise<{ fields: string[]; values: (string | number | boolean)[] }> => {
+  const fields: string[] = [];
+  const values: (string | number | boolean)[] = [];
+  if (updates.fullName) {
+    fields.push('full_name = ?');
+    values.push(updates.fullName);
+  }
+  if (updates.department) {
+    fields.push('department = ?');
+    values.push(updates.department);
+  }
+  if (updates.email) {
+    fields.push('email = ?');
+    values.push(EncryptionService.encrypt(updates.email));
+  }
+  if (updates.password) {
+    fields.push('password_hash = ?');
+    values.push(await argon2Hash(updates.password));
+  }
+  if (updates.roleId !== undefined) {
+    fields.push('role_id = ?');
+    values.push(updates.roleId);
+  }
+  if (updates.profilePictureUrl) {
+    fields.push('profile_picture_url = ?');
+    values.push(updates.profilePictureUrl);
+  }
+  if (updates.employeeNumber) {
+    fields.push('employee_number = ?');
+    values.push(updates.employeeNumber);
+  }
+  if (updates.departmentId) {
+    fields.push('department_id = ?');
+    values.push(updates.departmentId);
+  }
+  if (updates.is_active !== undefined) {
+    fields.push('is_active = ?');
+    values.push(updates.is_active ? 1 : 0);
+  }
+  return { fields, values };
+};
+
+/** FC 082 F3c Cond.1 (Bravo) — R4: "role_id=0 solo Ω". roles solo conserva la
+ *  fila 0 (GrayMan) desde la purga de mig.164 (F0c) — cualquier otro valor ya
+ *  no tiene contraparte real y violaría la FK legacy; se rechaza explícito en
+ *  vez de dejar que un error crudo de MySQL llegue al cliente. "Ω" se checa
+ *  igual que en cosmonautMiddleware (roleId=0 O permissions incluye '*'), no
+ *  solo el claim roleId — mismo criterio que requireOmega(). Retorna null si
+ *  el update es válido (o no toca roleId), o el shape de error a responder.
+ */
+const validateRoleIdUpdate = (
+  roleId: number | undefined,
+  adminIsOmega: boolean
+): { status: number; code: string; message: string } | null => {
+  if (roleId === undefined) return null;
+  if (roleId !== 0) {
+    return {
+      status: 400,
+      code: 'ROLE_ID_UNSUPPORTED',
+      message:
+        'roleId legacy solo admite 0 (GrayMan) — la asignación de roles reales usa POST /cosmonauts/:userId/roles',
+    };
+  }
+  if (!adminIsOmega) {
+    return { status: 403, code: 'FORBIDDEN', message: 'Solo Ω puede asignar role_id=0' };
+  }
+  return null;
+};
+
+/** FC 082 F3c Cond.1 (Bravo) — R4: refleja roleId=0 en el chasis cosmonauta
+ *  (cosmonaut_role_assignments) en vez de user_roles legacy. I8 se invoca
+ *  explícito por consistencia con POST /cosmonauts/:userId/roles, aunque para
+ *  un caller Ω siempre pase (bypass '*' documentado en antiEscalationGuard).
+ *  Retorna false si I8 deniega el grant (caller debe hacer rollback + 403).
+ */
+const syncGrayManCosmonautAssignment = async (
+  connection: PoolConnection,
+  targetUserId: string,
+  adminId: number
+): Promise<boolean> => {
+  const [grayManRoleRows] = await connection.execute<RowDataPacket[]>(
+    "SELECT id FROM cosmonaut_roles WHERE tenant_id IS NULL AND name = 'GrayMan' LIMIT 1",
+    []
+  );
+  if (grayManRoleRows.length === 0) return true;
+  const grayManRoleId = grayManRoleRows[0].id as number;
+  const allowed = await antiEscalationGuard(adminId, null, grayManRoleId);
+  if (!allowed) return false;
+  await connection.execute(
+    `UPDATE cosmonaut_role_assignments
+     SET revoked_at = NOW(), revoked_by = ?
+     WHERE user_id = ? AND tenant_id IS NULL AND revoked_at IS NULL`,
+    [adminId, Number(targetUserId)]
+  );
+  await connection.execute(
+    `INSERT IGNORE INTO cosmonaut_role_assignments (user_id, role_id, tenant_id, assigned_by)
+     VALUES (?, ?, NULL, ?)`,
+    [Number(targetUserId), grayManRoleId, adminId]
+  );
+  return true;
 };
 
 // FC 082 F0c — /register y sus helpers (resolveOwnerRow, insertOwnerProfile)
@@ -464,7 +574,14 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
     }
     const { data: updates, reason } = body.data;
     await request.jwtVerify();
-    const admin = request.user as { id: number };
+    const admin = request.user as { id: number; roleId?: number; permissions?: string[] };
+    const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
+    const roleIdError = validateRoleIdUpdate(updates.roleId, adminIsOmega);
+    if (roleIdError) {
+      return reply
+        .code(roleIdError.status)
+        .send({ success: false, code: roleIdError.code, message: roleIdError.message });
+    }
 
     let connection;
     try {
@@ -490,57 +607,26 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
 
       // 2. Build Updates
-      const fields: string[] = [];
-      const values: (string | number | boolean)[] = [];
-      if (updates.fullName) {
-        fields.push('full_name = ?');
-        values.push(updates.fullName);
-      }
-      if (updates.department) {
-        fields.push('department = ?');
-        values.push(updates.department);
-      }
-      if (updates.email) {
-        fields.push('email = ?');
-        values.push(EncryptionService.encrypt(updates.email));
-      }
-      if (updates.password) {
-        fields.push('password_hash = ?');
-        values.push(await argon2Hash(updates.password));
-      }
-      if (updates.roleId !== undefined) {
-        fields.push('role_id = ?');
-        values.push(updates.roleId);
-      }
-      if (updates.profilePictureUrl) {
-        fields.push('profile_picture_url = ?');
-        values.push(updates.profilePictureUrl);
-      }
-      if (updates.employeeNumber) {
-        fields.push('employee_number = ?');
-        values.push(updates.employeeNumber);
-      }
-      if (updates.departmentId) {
-        fields.push('department_id = ?');
-        values.push(updates.departmentId);
-      }
-      if (updates.is_active !== undefined) {
-        fields.push('is_active = ?');
-        values.push(updates.is_active ? 1 : 0);
-      }
+      const { fields, values } = await buildUserUpdateFields(updates);
 
       if (fields.length > 0) {
         values.push(id);
         await connection.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
       }
 
-      // Sync user_roles when role changes — keeps login resolution consistent
-      if (updates.roleId !== undefined) {
-        await connection.execute('DELETE FROM user_roles WHERE user_id = ?', [id]);
-        await connection.execute('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [
-          Number(id),
-          updates.roleId,
-        ]);
+      // FC 082 F3c Cond.1 (Bravo) — R4: ya NO se escribe user_roles (legacy);
+      // se refleja en el chasis cosmonauta (ver syncGrayManCosmonautAssignment).
+      if (updates.roleId === 0) {
+        const synced = await syncGrayManCosmonautAssignment(connection, id, admin.id);
+        if (!synced) {
+          await connection.rollback();
+          connection.release();
+          return reply.code(403).send({
+            success: false,
+            code: 'PRIVILEGE_ESCALATION',
+            message: 'Privilege escalation denied',
+          });
+        }
       }
 
       // 3. Snapshot After
@@ -888,13 +974,10 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       const { uuid } = request.params as { uuid: string };
       const [userRows] = await db.execute<RowDataPacket[]>(
-        // FC 082 F3b Cond.5/§7.2 (Bravo) — LEFT JOIN, ver /login. Nota: el listado de
-        // permisos de este endpoint (abajo) sigue leyendo role_permissions de un solo
-        // role_id — no se amplía a resolveEffectivePermissions aquí (fuera del
-        // perímetro de login/refresh/me dictaminado); re-anclaje completo queda para F3c.
-        `SELECT u.*, r.name AS role_name, cat.label AS department_name
+        // FC 082 F3c Cond.1 (Bravo) — role_name ahora cosmético (solo display),
+        // se resuelve abajo desde el chasis cosmonauta junto con los permisos.
+        `SELECT u.*, cat.label AS department_name
          FROM users u
-         LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
          WHERE u.uuid = ?`,
         [uuid]
@@ -917,34 +1000,64 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
             .send({ success: false, code: 'FORBIDDEN', message: 'User outside owner scope' });
         }
       }
-      const [permRows, routeRows] = await Promise.all([
-        db.execute<RowDataPacket[]>(
-          `SELECT p.slug, p.description
-         FROM role_permissions rp
-         JOIN permissions p ON p.id = rp.permission_id
-         WHERE rp.role_id = ?
-         ORDER BY p.slug`,
-          [user.role_id]
-        ),
-        db.execute<RowDataPacket[]>(
-          `SELECT fm.uuid, fm.unit_id, fre.destination, fm.status,
+
+      // FC 082 F3c Cond.1 (Bravo) — R3: permisos resueltos vía el chasis cosmonauta
+      // (cosmonaut_role_assignments/cosmonaut_role_permissions) para el tenant real
+      // del usuario objetivo, ya no un role_id legacy único. Ω (role_id=0) no tiene
+      // filas propias — su poder es el bypass runtime '*', no un set almacenado.
+      let permRows: RowDataPacket[] = [];
+      let roleName: string | null = null;
+      if ((user.role_id as number) === 0) {
+        roleName = 'GrayMan';
+      } else {
+        try {
+          const tenantId = await resolvePrimaryTenant(user.id as number);
+          [permRows] = await db.execute<RowDataPacket[]>(
+            `SELECT DISTINCT p.slug, p.description
+             FROM cosmonaut_role_assignments cra
+             JOIN cosmonaut_roles cr ON cr.id = cra.role_id
+             JOIN cosmonaut_role_permissions crp ON crp.role_id = cr.id
+             JOIN permissions p ON p.id = crp.permission_id
+             WHERE cra.user_id = ?
+               AND cra.revoked_at IS NULL
+               AND (cra.tenant_id = ? OR cra.tenant_id IS NULL)
+             ORDER BY p.slug`,
+            [user.id, tenantId]
+          );
+          const [roleRows] = await db.execute<RowDataPacket[]>(
+            `SELECT cr.name FROM cosmonaut_role_assignments cra
+             JOIN cosmonaut_roles cr ON cr.id = cra.role_id
+             WHERE cra.user_id = ? AND cra.revoked_at IS NULL
+             ORDER BY cra.id ASC LIMIT 1`,
+            [user.id]
+          );
+          roleName = roleRows.length > 0 ? (roleRows[0].name as string) : null;
+        } catch (e) {
+          if (e instanceof MultiMembershipHaltError) {
+            return haltMultiMembership(fastify, reply, e);
+          }
+          throw e;
+        }
+      }
+
+      const [routeRows] = await db.execute<RowDataPacket[]>(
+        `SELECT fm.uuid, fm.unit_id, fre.destination, fm.status,
                 fm.start_at, fm.end_at
          FROM fleet_movements fm
          JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
          WHERE fre.driver_id = ? AND fm.movement_type = 'ROUTE'
          ORDER BY fm.created_at DESC LIMIT 5`,
-          [user.id]
-        ),
-      ]);
+        [user.id]
+      );
 
       const emailDecrypted = EncryptionService.decrypt(user.email as string);
 
       return reply.send({
         success: true,
         data: {
-          user: { ...user, email: emailDecrypted },
-          permissions: permRows[0],
-          recentRoutes: routeRows[0],
+          user: { ...user, email: emailDecrypted, role_name: roleName },
+          permissions: permRows,
+          recentRoutes: routeRows,
         },
       });
     } catch (error) {

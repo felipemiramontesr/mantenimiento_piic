@@ -88,26 +88,28 @@ class NotificationService {
       if (payload.userId !== undefined) {
         userIds.push(payload.userId);
       } else if (payload.permission !== undefined) {
-        // Resolve users holding role(s) linked to this permission slug,
-        // direct roles, or master bypass role (id = 0)
+        // FC 082 F3c Cond.1 (Bravo) — resuelve destinatarios vía el chasis
+        // cosmonauta (cosmonaut_role_assignments/cosmonaut_role_permissions) en
+        // vez de user_roles/role_permissions legacy. role_id=0 se conserva como
+        // marcador de Ω (Cond.3 — el bypass '*' de GrayMan no vive en tablas).
         const query = `
           SELECT DISTINCT u.id
           FROM users u
-          LEFT JOIN user_roles ur ON u.id = ur.user_id
-          LEFT JOIN role_permissions rp ON rp.role_id = COALESCE(ur.role_id, u.role_id)
-          LEFT JOIN permissions p ON rp.permission_id = p.id
+          LEFT JOIN cosmonaut_role_assignments cra
+            ON cra.user_id = u.id AND cra.revoked_at IS NULL
+          LEFT JOIN cosmonaut_role_permissions crp ON crp.role_id = cra.role_id
+          LEFT JOIN permissions p ON crp.permission_id = p.id
           WHERE p.slug = ?
-             OR COALESCE(ur.role_id, u.role_id) = 0
+             OR u.role_id = 0
         `;
         const [rows] = await db.execute<RowDataPacket[]>(query, [payload.permission]);
         userIds = rows.map((r) => r.id as number);
       } else if (payload.roleId !== undefined) {
-        const query = `
-          SELECT DISTINCT u.id
-          FROM users u
-          LEFT JOIN user_roles ur ON u.id = ur.user_id
-          WHERE COALESCE(ur.role_id, u.role_id) = ?
-        `;
+        // Sin llamadores reales hoy (verificado FC082 F3c) — roleId legacy solo
+        // admite 0 tras la purga de mig.164; se resuelve directo sobre users.role_id
+        // (el marcador Ω, Cond.3), no sobre cosmonaut_role_assignments.role_id
+        // (IDs autoincrementales sin equivalencia estable con el roleId legacy).
+        const query = `SELECT id FROM users WHERE role_id = ?`;
         const [rows] = await db.execute<RowDataPacket[]>(query, [payload.roleId]);
         userIds = rows.map((r) => r.id as number);
       }

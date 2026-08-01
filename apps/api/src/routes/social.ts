@@ -493,9 +493,16 @@ export default async function socialRoutes(fastify: FastifyInstance): Promise<vo
            COUNT(DISTINCT sr.id) AS review_count
          FROM owners o
          INNER JOIN (
+           -- FC 082 F3c Cond.1 (Bravo), R8: el rol legacy role_id=3 ("centro") no
+           -- tiene contraparte en la cosmología post-mig.164 — el owner_type CENTER
+           -- fue retirado del catálogo y no existe un concepto de "taller/centro"
+           -- en el chasis cosmonauta. Se preserva el comportamiento actual (0 filas,
+           -- fail-soft desde 087 §3) sin depender de la columna role_id que F3c3
+           -- eliminará; un rediseño real de "directorio de talleres" es producto
+           -- nuevo, fuera de alcance de FC082.
            SELECT DISTINCT uom.owner_id
            FROM user_owner_membership uom
-           JOIN users u ON u.id = uom.user_id AND u.role_id = 3
+           WHERE 1 = 0
          ) AS centro_owners ON centro_owners.owner_id = o.id
          LEFT JOIN owner_profiles op ON op.owner_id = o.id
          LEFT JOIN social_reviews sr ON sr.taller_owner_id = o.id

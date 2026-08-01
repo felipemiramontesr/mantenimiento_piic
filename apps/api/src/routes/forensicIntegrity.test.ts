@@ -183,12 +183,14 @@ describe('🔱 Archon Forensic Integrity Certification', () => {
         .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update
         .mockResolvedValueOnce([[{ id: 1 }], undefined]); // After
 
+      // FC 082 F3c Cond.1 (Bravo) — roleId retirado del payload: roles legacy
+      // solo conserva la fila 0 desde mig.164, cualquier otro valor se rechaza
+      // (400 ROLE_ID_UNSUPPORTED, ver authIntegration.test.ts para esa rama).
       const payload = {
         fullName: 'N',
         department: 'D',
         email: 'e@e.com',
         password: 'password123',
-        roleId: 2,
         profilePictureUrl: 'p.jpg',
         employeeNumber: 'E1',
         departmentId: 5,

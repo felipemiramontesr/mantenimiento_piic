@@ -641,7 +641,7 @@ function NhtsaResultsModal({
       .get<{ success: boolean; data: VimPattern[] }>(
         `/recalls/vim-patterns?make=${encodeURIComponent(make)}&model=${encodeURIComponent(
           model
-        )}&year=${year}&scope=suite`
+        )}&year=${year}`
       )
       .then((res) => setVimResults(res.data.data))
       .catch(() => setVimError('No se pudieron cargar los patrones VIM.'))

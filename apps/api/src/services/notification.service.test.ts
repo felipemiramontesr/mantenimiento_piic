@@ -80,10 +80,10 @@ describe('NotificationService (Intelligence Orchestrator)', () => {
     const persistSpy = vi.spyOn(NotificationService as any, 'persistToSystem');
     await NotificationService.dispatch(payloadWithRole);
 
-    expect(db.execute).toHaveBeenCalledWith(
-      expect.stringContaining('COALESCE(ur.role_id, u.role_id) = ?'),
-      [2]
-    );
+    // FC 082 F3c Cond.1 (Bravo) — sin callers reales de roleId targeting; la
+    // query se resuelve sobre users.role_id (marcador Ω, Cond.3), no sobre
+    // cosmonaut_role_assignments (IDs sin equivalencia estable con roleId legacy).
+    expect(db.execute).toHaveBeenCalledWith(expect.stringContaining('WHERE role_id = ?'), [2]);
     expect(persistSpy).toHaveBeenCalledWith([10, 20], payloadWithRole);
   });
 

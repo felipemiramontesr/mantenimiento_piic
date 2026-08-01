@@ -658,7 +658,10 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
   // lattice sin filas) los endpoints degradan a dominio vacío SIN crash;
   // el POST degrada a 403 NO_VERIFIED_LINK (cubierto por AT-SOC9-C-3). ──
   it('AT-FC082-F0b-1: GET /social/directory con dominio de roles muerto → 200 lista vacía sin crash', async () => {
-    (db.execute as any).mockResolvedValueOnce([[]]); // JOIN role_id=3 sin sujetos post-purga
+    // FC 082 F3c Cond.1 (Bravo), R8: subquery centro_owners ahora WHERE 1=0
+    // explícito (concepto CENTER retirado del catálogo, sin equivalente
+    // cosmonauta) — mismo comportamiento observable, ya no depende de role_id.
+    (db.execute as any).mockResolvedValueOnce([[]]);
     const res = await app.inject({
       method: 'GET',
       url: '/v1/social/directory',

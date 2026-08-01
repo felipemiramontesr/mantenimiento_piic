@@ -80,12 +80,19 @@ describe('authIntegration.test', () => {
   const app = buildApp();
   const validCreds = { username: 'admin_test', password: 'password123' };
   let mockToken: string;
+  let omegaToken: string;
 
   beforeAll(async () => {
     await app.ready();
     mockToken = await (
       app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
     ).jwt.sign({ id: 1, email: 'admin@piic.mx' });
+    // FC 082 F3c Cond.1 (Bravo) — R4 exige que el caller sea Ω (roleId=0) para
+    // asignar role_id=0; mockToken no lleva roleId, así que las pruebas de esa
+    // rama necesitan un token propio con el claim real.
+    omegaToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx', roleId: 0, permissions: ['*'] });
   });
 
   beforeEach(() => {
@@ -214,8 +221,6 @@ describe('authIntegration.test', () => {
       .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot After 2
       .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before 3
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // Update 3
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // DELETE user_roles 3
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_roles 3
       .mockResolvedValueOnce([[{ id: 1 }], undefined]); // Snapshot After 3
     await app.inject({
       method: 'PATCH',
@@ -229,11 +234,12 @@ describe('authIntegration.test', () => {
       headers: authHeader(),
       payload: { data: { is_active: false }, reason: 'Rectification B' },
     });
+    // FC 082 F3c Cond.1 (Bravo) — R4: roleId ya no forma parte de este payload
+    // (solo 0 sería válido, y requeriría caller Ω — ver los 2 tests siguientes).
     const p3 = {
       department: 'D',
       email: 'e@e.com',
       password: 'password123',
-      roleId: 2,
       profilePictureUrl: 'p.jpg',
       employeeNumber: 'E1',
       departmentId: 5,
@@ -247,21 +253,52 @@ describe('authIntegration.test', () => {
     expect(r3.statusCode).toBe(200);
   });
 
-  it('PATCH — roleId=0 (Archon) persists role change and syncs user_roles', async () => {
+  // FC 082 F3c Cond.1 (Bravo) — R4: roles solo conserva la fila 0 desde mig.164;
+  // cualquier roleId != 0 se rechaza explícito (400) antes de tocar la DB.
+  it('PATCH roleId != 0 — 400 ROLE_ID_UNSUPPORTED (roles legacy purgada salvo id=0)', async () => {
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      headers: authHeader(),
+      payload: { data: { roleId: 2 }, reason: 'Attempt legacy role' },
+    });
+    expect(r.statusCode).toBe(400);
+    expect(JSON.parse(r.payload).code).toBe('ROLE_ID_UNSUPPORTED');
+  });
+
+  it('PATCH roleId=0 — 403 FORBIDDEN si el caller no es Ω', async () => {
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/5',
+      headers: authHeader(), // mockToken sin claim roleId (no-Ω)
+      payload: { data: { roleId: 0 }, reason: 'Attempt Archon grant as non-Ω' },
+    });
+    expect(r.statusCode).toBe(403);
+    expect(JSON.parse(r.payload).code).toBe('FORBIDDEN');
+  });
+
+  it('PATCH — roleId=0 by Ω persists role change via cosmonaut_role_assignments (no user_roles)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[], undefined]) // antiEscalationGuard -> resolveEffectivePermissions(admin.id, null)
+      .mockResolvedValueOnce([[{ role_id: 0 }], undefined]); // antiEscalationGuard -> omegaCheck bypass
     mockConnection.execute
       .mockResolvedValueOnce([[{ id: 5 }], undefined]) // Snapshot Before
       .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE users SET role_id=0
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // DELETE user_roles
-      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT user_roles
+      .mockResolvedValueOnce([[{ id: 8 }], undefined]) // SELECT cosmonaut_roles WHERE name='GrayMan'
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE cosmonaut_role_assignments revoke
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT cosmonaut_role_assignments
       .mockResolvedValueOnce([[{ id: 5, role_id: 0 }], undefined]); // Snapshot After
     const r = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/5',
-      headers: authHeader(),
+      headers: { Authorization: `Bearer ${omegaToken}` },
       payload: { data: { roleId: 0 }, reason: 'Revert to Archon role' },
     });
     expect(r.statusCode).toBe(200);
     expect(JSON.parse(r.payload).success).toBe(true);
+    const calls = mockConnection.execute.mock.calls.map((c) => String(c[0]));
+    expect(calls.some((sql) => sql.includes('user_roles'))).toBe(false);
+    expect(calls.some((sql) => sql.includes('cosmonaut_role_assignments'))).toBe(true);
   });
 
   it('Resilience: Catch Block Nucleus (Aggressive Rejection)', async () => {
@@ -584,21 +621,22 @@ describe('authIntegration.test', () => {
       role_name: 'Admin',
       department_name: 'IT',
     };
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[userRow]])
-      .mockResolvedValueOnce([[{ slug: 'user:admin', description: 'Manage users' }]])
-      .mockResolvedValueOnce([
-        [
-          {
-            uuid: 'r-uuid',
-            unit_id: 'ASM-001',
-            destination: 'Mina',
-            status: 'COMPLETED',
-            start_at: null,
-            end_at: null,
-          },
-        ],
-      ]);
+    // FC 082 F3c Cond.1 (Bravo) — R3: role_id=2 (no Ω) entra al chasis cosmonauta.
+    // Sin membresías/asignaciones sembradas, resolvePrimaryTenant/permisos/nombre
+    // de rol resuelven vacío por el default del mock (comportamiento real correcto
+    // para un usuario sin cosmonaut_role_assignments, no un artefacto del test).
+    (db.execute as Mock).mockResolvedValueOnce([[userRow]]).mockResolvedValueOnce([
+      [
+        {
+          uuid: 'r-uuid',
+          unit_id: 'ASM-001',
+          destination: 'Mina',
+          status: 'COMPLETED',
+          start_at: null,
+          end_at: null,
+        },
+      ],
+    ]);
     const res = await app.inject({
       method: 'GET',
       url: `/v1/auth/users/${uuid}/node`,
@@ -607,10 +645,118 @@ describe('authIntegration.test', () => {
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.payload) as {
       success: boolean;
-      data: { user: { username: string } };
+      data: { user: { username: string }; permissions: unknown[] };
     };
     expect(body.success).toBe(true);
     expect(body.data.user.username).toBe('graymantest');
+    expect(body.data.permissions).toEqual([]);
+  });
+
+  it('GET /users/:uuid/node — resolves permissions + role name via cosmonaut_role_assignments', async () => {
+    const omniToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });
+    const uuid = 'fd88fbc8-6060-11f1-8001-30f6ef818500';
+    const userRow = {
+      id: 21,
+      uuid,
+      username: 'arctest',
+      full_name: 'Arc Test',
+      email: 'enc_arc@a.mx',
+      role_id: 2,
+      employee_number: 'E021',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow]]) // user select
+      .mockResolvedValueOnce([[{ owner_id: 4 }]]) // resolvePrimaryTenant -> tenant_user_memberships (1 fila)
+      .mockResolvedValueOnce([[{ slug: 'maint:write', description: 'Registrar mantenimientos' }]]) // cosmonaut permissions JOIN
+      .mockResolvedValueOnce([[{ name: 'Arc' }]]) // cosmonaut role name
+      .mockResolvedValueOnce([[]]); // recent routes
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/auth/users/${uuid}/node`,
+      headers: { Authorization: `Bearer ${omniToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload) as {
+      data: { user: { role_name: string }; permissions: { slug: string }[] };
+    };
+    expect(body.data.permissions).toEqual([
+      { slug: 'maint:write', description: 'Registrar mantenimientos' },
+    ]);
+    expect(body.data.user.role_name).toBe('Arc');
+  });
+
+  it('GET /users/:uuid/node — role_id=0 (Ω) skips cosmonaut lookup, role_name=GrayMan', async () => {
+    const omniToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });
+    const uuid = 'fd88fbc8-6060-11f1-8001-30f6ef818501';
+    const userRow = {
+      id: 1,
+      uuid,
+      username: 'graymanself',
+      full_name: 'GrayMan',
+      email: 'enc_gm@a.mx',
+      role_id: 0,
+      employee_number: 'E000',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      department_name: null,
+    };
+    (db.execute as Mock).mockResolvedValueOnce([[userRow]]).mockResolvedValueOnce([[]]); // recent routes
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/auth/users/${uuid}/node`,
+      headers: { Authorization: `Bearer ${omniToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.payload) as {
+      data: { user: { role_name: string }; permissions: unknown[] };
+    };
+    expect(body.data.permissions).toEqual([]);
+    expect(body.data.user.role_name).toBe('GrayMan');
+  });
+
+  it('GET /users/:uuid/node — 409 MULTI_TENANT_MEMBERSHIP_UNRESOLVED on R2a halt', async () => {
+    const omniToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'a@a.mx', permissions: ['*'] });
+    const uuid = 'fd88fbc8-6060-11f1-8001-30f6ef818502';
+    const userRow = {
+      id: 22,
+      uuid,
+      username: 'multitest',
+      full_name: 'Multi Test',
+      email: 'enc_multi@a.mx',
+      role_id: 2,
+      employee_number: 'E022',
+      is_active: 1,
+      last_login: null,
+      created_at: '2026-01-01',
+      profile_picture_url: null,
+      department_id: null,
+      department_name: null,
+    };
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[userRow]]) // user select
+      .mockResolvedValueOnce([[{ owner_id: 4 }, { owner_id: 9 }]]); // R2a: >1 membresía
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/auth/users/${uuid}/node`,
+      headers: { Authorization: `Bearer ${omniToken}` },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.payload).code).toBe('MULTI_TENANT_MEMBERSHIP_UNRESOLVED');
   });
 
   it('GET /users/:uuid/node — 404 when user not found', async () => {
