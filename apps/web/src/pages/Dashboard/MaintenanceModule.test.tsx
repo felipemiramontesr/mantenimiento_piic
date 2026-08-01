@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { render, renderWithRoute, screen, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
@@ -496,6 +496,15 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
   describe('adaptive HISTORY panel (FC 041 pilot)', () => {
     beforeEach(() => {
       localStorage.clear();
+      // ArchonCalendarView sin initialMonth cae a new Date() real — fija "hoy"
+      // dentro de julio 2026 para que el mock service_date: '2026-07-20' caiga
+      // en el mes visible por defecto, sin importar la fecha real del sistema.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-07-20T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
     it('renders the adaptive selector with TABLE and CALENDAR only', async () => {
