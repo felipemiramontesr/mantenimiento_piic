@@ -238,9 +238,10 @@ async function findUserByEmail(username: string): Promise<RowDataPacket | null> 
     return null;
   }
   const fullResponse = await db.execute<RowDataPacket[]>(
-    // FC 082 F3b Cond.5 — LEFT JOIN: post-mig.164 `roles` solo tiene la fila 0,
-    // un INNER JOIN excluiría (401) a cualquier Arc/MU real con role_id != 0.
-    'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u LEFT JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.id = ?',
+    // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada; role_name cosmético
+    // vía CASE (equivalente exacto al LEFT JOIN previo: solo role_id=0
+    // resolvía nombre, cualquier otro ya era NULL).
+    "SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name FROM users u LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.id = ?",
     [found.id]
   );
   if (!fullResponse) {
@@ -291,9 +292,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
       try {
         const response = await db.execute<RowDataPacket[]>(
-          // FC 082 F3b Cond.5 — LEFT JOIN: post-mig.164 `roles` solo tiene la fila 0,
-          // un INNER JOIN excluiría (401 L3) a cualquier Arc/MU real con role_id != 0.
-          'SELECT u.*, r.name as role_name, cat.label as department_name FROM users u LEFT JOIN roles r ON u.role_id = r.id LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.username = ?',
+          // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
+          "SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name FROM users u LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.username = ?",
           [username]
         );
         let user: RowDataPacket | null = null;
@@ -374,9 +374,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         return reply.code(401).send({ error: 'INVALID_TOKEN_TYPE' });
       }
       const [userRows] = await db.execute<RowDataPacket[]>(
-        // FC 082 F3b Cond.5 — LEFT JOIN, ver /login.
-        `SELECT u.*, r.name as role_name, cat.label as department_name
-         FROM users u LEFT JOIN roles r ON u.role_id = r.id
+        // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
+        `SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name
+         FROM users u
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id
          WHERE u.id = ? AND u.is_active = 1`,
         [decoded.id]
@@ -458,8 +458,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       }
 
       const [userRows] = await db.execute<RowDataPacket[]>(
-        `SELECT u.*, r.name as role_name, cat.label as department_name
-         FROM users u LEFT JOIN roles r ON u.role_id = r.id
+        // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
+        `SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name
+         FROM users u
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id
          WHERE u.id = ? AND u.is_active = 1`,
         [caller.id]
@@ -535,10 +536,13 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         return reply.send({ success: true, data: [] });
       }
 
+      // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada. El INNER JOIN previo
+      // era además un bug real preexistente: excluía en silencio del
+      // Directorio a cualquier usuario con role_id != 0 (roles solo tiene
+      // la fila 0 desde mig.164) — nunca visible porque PROD sigue zero-state.
       let q = `
-        SELECT DISTINCT u.*, r.name as role_name, cat.label as department_name
+        SELECT DISTINCT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name
         FROM users u
-        JOIN roles r ON u.role_id = r.id
         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
       `;
       const p: (string | number)[] = [];
@@ -919,10 +923,9 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
       };
 
       const [userRows] = await db.execute<RowDataPacket[]>(
-        // FC 082 F3b Cond.5 — LEFT JOIN, ver /login.
-        `SELECT u.*, r.name AS role_name, cat.label AS department_name
+        // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
+        `SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) AS role_name, cat.label AS department_name
          FROM users u
-         LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN common_catalogs cat ON u.department_id = cat.id
          WHERE u.id = ?`,
         [id]

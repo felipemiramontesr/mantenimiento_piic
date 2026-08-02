@@ -715,12 +715,12 @@ async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
                 fre.driver_id, fre.origin_id, fre.destination,
                 fre.destination_neighborhood_id,
                 fre.additives_check, fre.tire_pressure_json, fre.checklist_json,
-                u.full_name AS driver_name, r.name AS driver_role,
+                u.full_name AS driver_name,
+                (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) AS driver_role,
                 c_brand.label AS unit_marca, c_model.label AS unit_modelo, fu.year AS unit_year
          FROM fleet_movements fm
          JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
          LEFT JOIN users u ON fre.driver_id = u.id
-         LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN fleet_units fu ON fm.unit_id = fu.id
          LEFT JOIN common_catalogs c_brand ON fu.brandId = c_brand.id AND c_brand.category = 'BRAND'
          LEFT JOIN common_catalogs c_model ON fu.modelId = c_model.id AND c_model.category = 'MODEL'
