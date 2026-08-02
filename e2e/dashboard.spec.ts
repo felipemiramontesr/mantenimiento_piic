@@ -59,11 +59,4 @@ test.describe('Dashboard Navigation', () => {
       timeout: 15_000,
     });
   });
-
-  test('should navigate to Admin module via sidebar', async ({ page }) => {
-    await page.getByTestId('nav-item-admin').click();
-    await expect(page.getByRole('heading', { name: 'Panel de Control' })).toBeVisible({
-      timeout: 15_000,
-    });
-  });
 });

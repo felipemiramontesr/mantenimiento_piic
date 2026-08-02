@@ -51,7 +51,7 @@ const MODULES: ModuleConfig[] = [
     heading: 'Configuración de Identidad',
     byRole: true,
   },
-  { key: 'admin', testId: 'nav-item-admin', heading: 'Panel de Control', byRole: true },
+  // FC 082 F3c2 retiró el módulo Admin (nav-item-admin/Panel de Control) del sidebar.
 ];
 
 interface OverflowFinding {

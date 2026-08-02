@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop, no-restricted-syntax, no-continue --
-   barrido secuencial e intencional de una matriz 9x6 en sesión única (login
+   barrido secuencial e intencional de una matriz 8x6 en sesión única (login
    real, navegación de UI) — no es paralelizable ni expresable como array
    iteration sin perder el orden de navegación/medición. */
 import fs from 'fs';
@@ -10,7 +10,7 @@ import loginAs from '../helpers';
 /**
  * FC 074 F1 — Mobile_First_Global_Responsiveness
  * Auditoria unica (NO gate de CI, eso es F5): barre el dominio I-RWD
- * (9 modulos x 6 viewport-configs = 54 celdas) en una sola sesion
+ * (8 modulos x 6 viewport-configs = 48 celdas) en una sola sesion
  * autenticada (login unico, navegacion secuencial — evita 54 logins reales
  * que degradan el dev-server bajo carga sostenida) y escribe evidencia
  * cruda a protocols/analysis/074_AN_MobileAuditMatrix.raw.json.
@@ -68,7 +68,7 @@ const MODULES: ModuleConfig[] = [
     heading: 'Configuración de Identidad',
     byRole: true,
   },
-  { key: 'admin', testId: 'nav-item-admin', heading: 'Panel de Control', byRole: true },
+  // FC 082 F3c2 retiró el módulo Admin (nav-item-admin/Panel de Control) del sidebar.
 ];
 
 // Cond.3 Bravo: tolerancia documentada ±1px (redondeo de scrollbar/subpixel).

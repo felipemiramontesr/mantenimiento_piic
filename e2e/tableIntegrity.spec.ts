@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-syntax, no-continue --
-   for-loop de generación de tests (dominio 9 módulos) y bucle de medición
+   for-loop de generación de tests (dominio 8 módulos) y bucle de medición
    dentro de page.evaluate (ejecuta en el DOM, no en Node) — mismo patrón
    que e2e/responsive.spec.ts (FC 074 F5). */
 import { test, expect, Page } from '@playwright/test';
@@ -11,7 +11,7 @@ import loginAs from './helpers';
  * Invariante (complementario a I-RWD, que mide a nivel DOCUMENTO y es ciego
  * al desborde INTERNO — punto ciego confirmado en 078_AN):
  *
- *   ∀ tabla visible en el dominio (9 módulos × projects rwd-*):
+ *   ∀ tabla visible en el dominio (8 módulos × projects rwd-*):
  *     VistaDatosOk ≡ CardsActiva ∨ (ScrollReal ∧ Affordance)
  *
  * Operacionalización por tabla visible (si CARDS está activa no hay tabla
@@ -57,7 +57,7 @@ const MODULES: ModuleConfig[] = [
     heading: 'Configuración de Identidad',
     byRole: true,
   },
-  { key: 'admin', testId: 'nav-item-admin', heading: 'Panel de Control', byRole: true },
+  // FC 082 F3c2 retiró el módulo Admin (nav-item-admin/Panel de Control) del sidebar.
 ];
 
 // Tolerancia ±1px por redondeo de scrollbar/subpixel — misma doctrina que
@@ -236,7 +236,7 @@ test.describe('FC 078 F4 — findTableIntegrityViolations (unit, tabla T VistaDa
   });
 });
 
-// ─── Barrido del dominio (9 módulos × project rwd-* actual) ─────────────────
+// ─── Barrido del dominio (8 módulos × project rwd-* actual) ─────────────────
 
 async function waitForNextPaint(page: Page): Promise<void> {
   await page.evaluate(

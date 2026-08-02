@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-syntax, no-continue --
-   for-loop de generación de tests (dominio 9 módulos) y bucle de medición
+   for-loop de generación de tests (dominio 8 módulos) y bucle de medición
    dentro de page.evaluate (ejecuta en el DOM, no en Node) — ninguno es
    expresable como array iteration sin perder claridad o sin poder correr
    en el contexto del navegador. */
@@ -8,8 +8,8 @@ import loginAs from './helpers';
 
 /**
  * FC 074 F5 — Gate_Permanente_RWD_Y_Manifest.
- * Invariante I-RWD: ∀ (módulo, viewport) ∈ dominio (9 módulos × 6
- * viewport-configs = 54 celdas, ver playwright.local.config.ts projects
+ * Invariante I-RWD: ∀ (módulo, viewport) ∈ dominio (8 módulos × 6
+ * viewport-configs = 48 celdas, ver playwright.local.config.ts projects
  * rwd-*): NoHScroll ∧ TouchTargetsOk. Una sola celda en ⊥ rompe el gate
  * (T2, conjunción pura — 074_FC §TABLAS DE VERDAD).
  *
@@ -39,7 +39,7 @@ const MODULES: ModuleConfig[] = [
     heading: 'Configuración de Identidad',
     byRole: true,
   },
-  { key: 'admin', testId: 'nav-item-admin', heading: 'Panel de Control', byRole: true },
+  // FC 082 F3c2 retiró el módulo Admin (nav-item-admin/Panel de Control) del sidebar.
 ];
 
 // Cond.3 Bravo: tolerancia documentada ±1px (redondeo de scrollbar/subpixel).
