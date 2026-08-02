@@ -83,7 +83,8 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Seguridad')).toBeDefined();
     expect(screen.getByText('Personal')).toBeDefined();
     expect(screen.getByText('Onboarding')).toBeDefined();
-    expect(screen.getByText('Panel de Control')).toBeDefined();
+    // FC 082 F3c2 — "Panel de Control" (RolesManager) retirado
+    expect(screen.queryByText('Panel de Control')).toBeNull();
     // FC 067 F3 — L_social adoptado como "Arcsial" (§24.11), no "Red Social"/"SOCIAL"
     expect(screen.getByText('Arcsial')).toBeDefined();
     expect(screen.queryByText('Red Social')).toBeNull();
@@ -178,17 +179,6 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(navigateMock).toHaveBeenCalledWith('/dashboard/settings');
   });
 
-  it('navigates to admin panel when clicking the admin footer button', () => {
-    render(
-      <BrowserRouter>
-        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-      </BrowserRouter>
-    );
-
-    fireEvent.click(screen.getByTestId('nav-item-admin'));
-    expect(navigateMock).toHaveBeenCalledWith('/dashboard/admin');
-  });
-
   it('calls logout when clicking Cerrar Sesión', () => {
     render(
       <BrowserRouter>
@@ -278,23 +268,6 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(img.src).toBe('http://localhost:3000/');
   });
 
-  it('does not render admin button when user is not omnipotent (logout always visible)', () => {
-    usePermissionsMock.mockReturnValue({
-      hasPermission: (): boolean => true,
-      hasAnyPermission: (): boolean => true,
-      isOmnipotent: (): boolean => false,
-    });
-
-    render(
-      <BrowserRouter>
-        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-      </BrowserRouter>
-    );
-
-    expect(screen.queryByTestId('nav-item-admin')).toBeNull();
-    expect(screen.getByTestId('nav-item-logout')).toBeInTheDocument();
-  });
-
   it('hides permission-gated nav items when all permissions are denied', () => {
     usePermissionsMock.mockReturnValue({
       hasPermission: (): boolean => false,
@@ -357,17 +330,6 @@ describe('Sidebar Component (Archon Core)', () => {
 
     fireEvent.click(screen.getByText('Comando'));
     expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
-  });
-
-  it('admin button uses bg-white style when pathname is /dashboard/admin', () => {
-    mockLocation.pathname = '/dashboard/admin';
-    render(
-      <BrowserRouter>
-        <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-      </BrowserRouter>
-    );
-    const adminBtn = screen.getByTestId('nav-item-admin');
-    expect(adminBtn.className).toContain('bg-white');
   });
 
   it('renders Soberano fallback when currentUser has no username', () => {
@@ -717,16 +679,6 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(screen.getByText('Cerrar Sesión')).toBeInTheDocument();
     });
 
-    it('AT-FC13-A-SB-2: Panel de Control visible para usuario omnipotente', () => {
-      render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      expect(screen.getByTestId('nav-item-admin')).toBeInTheDocument();
-      expect(screen.getByText('Panel de Control')).toBeInTheDocument();
-    });
-
     it('AT-FC13-A-SB-3: sección nav tiene clase flex-1 (no h-[80%])', () => {
       const { container } = render(
         <BrowserRouter>
@@ -1069,17 +1021,6 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(container.querySelector('aside#mobile-sidebar')).not.toBeNull();
     });
 
-    it('AT-FC074-F2-SB-2: nav-item-admin usa h-11 (44px) en vez de h-10 (40px)', () => {
-      const { container } = render(
-        <BrowserRouter>
-          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
-        </BrowserRouter>
-      );
-      const admin = container.querySelector('[data-testid="nav-item-admin"]') as HTMLElement;
-      expect(admin.className).toMatch(/\bh-11\b/);
-      expect(admin.className).not.toMatch(/\bh-10\b/);
-    });
-
     it('AT-FC074-F2-SB-3: nav-item-logout usa h-11 (44px) en vez de h-10 (40px)', () => {
       const { container } = render(
         <BrowserRouter>
@@ -1091,15 +1032,13 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(logout.className).not.toMatch(/\bh-10\b/);
     });
 
-    it('AT-FC074-F2-SB-4: nav-item-admin/logout colapsados usan w-11 (44px) en vez de w-10 (40px)', () => {
+    it('AT-FC074-F2-SB-4: nav-item-logout colapsado usa w-11 (44px) en vez de w-10 (40px)', () => {
       const { container } = render(
         <BrowserRouter>
           <Sidebar isCollapsed onToggle={vi.fn()} />
         </BrowserRouter>
       );
-      const admin = container.querySelector('[data-testid="nav-item-admin"]') as HTMLElement;
       const logout = container.querySelector('[data-testid="nav-item-logout"]') as HTMLElement;
-      expect(admin.className).toMatch(/\bw-11\b/);
       expect(logout.className).toMatch(/\bw-11\b/);
     });
 

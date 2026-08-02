@@ -1,21 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import SovereignFooter from './SovereignFooter';
 import { SYSTEM_VERSION } from '../../constants/versionConstants';
 
-const usePermissionsMock = vi.hoisted(() => vi.fn());
-
-vi.mock('../../hooks/usePermissions', () => ({
-  default: usePermissionsMock,
-}));
-
 vi.mock('../../ArchonDoctor', () => ({
   ArchonDoctor: (): React.ReactElement => <div data-testid="archon-doctor-mock" />,
-}));
-
-vi.mock('../Identity/RoleSwitcher', () => ({
-  default: (): React.ReactElement => <div data-testid="role-switcher-mock" />,
 }));
 
 vi.mock('../Logo/ArchonLogo', () => ({
@@ -23,15 +13,6 @@ vi.mock('../Logo/ArchonLogo', () => ({
 }));
 
 describe('SovereignFooter — versión dinámica', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    usePermissionsMock.mockReturnValue({
-      hasPermission: (): boolean => false,
-      hasAnyPermission: (): boolean => false,
-      isOmnipotent: (): boolean => false,
-    });
-  });
-
   it('muestra la versión inyectada en build-time, nunca hardcodeada', () => {
     render(<SovereignFooter />);
     expect(
@@ -44,20 +25,11 @@ describe('SovereignFooter — versión dinámica', () => {
     expect(screen.queryByText(/78\.100\.154/)).not.toBeInTheDocument();
   });
 
-  it('muestra RoleSwitcher solo para omnipotente y logo para el resto', () => {
-    const { unmount } = render(<SovereignFooter />);
-    expect(screen.getByTestId('archon-logo-mock')).toBeInTheDocument();
-    expect(screen.queryByTestId('role-switcher-mock')).not.toBeInTheDocument();
-    unmount();
-
-    usePermissionsMock.mockReturnValue({
-      hasPermission: (): boolean => true,
-      hasAnyPermission: (): boolean => true,
-      isOmnipotent: (): boolean => true,
-    });
+  // FC 082 F3c2 (Cond.8 Bravo) — RoleSwitcher ("God Mode", impersonación
+  // client-side sobre roles legacy) retirado; el logo se muestra siempre.
+  it('muestra el logo siempre, sin distinción de permisos (RoleSwitcher retirado)', () => {
     render(<SovereignFooter />);
-    expect(screen.getByTestId('role-switcher-mock')).toBeInTheDocument();
-    expect(screen.queryByTestId('archon-logo-mock')).not.toBeInTheDocument();
+    expect(screen.getByTestId('archon-logo-mock')).toBeInTheDocument();
   });
 
   it('AT-FC074-F2-SF-1: footer tiene padding de safe-area iOS (env(safe-area-inset-bottom))', () => {

@@ -47,7 +47,6 @@ interface UserContextType {
   /** FC 076 F3 (R4a) — catálogo con ids: /auth/register exige departmentId
    * numérico; enviar el label string se perdía en silencio (Zod-strip). */
   departmentsCatalog: CatalogOption[];
-  roles: CatalogOption[];
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -100,22 +99,14 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const { data: departmentsData } = useSilkHydration<CatalogOption>(departmentsOptions);
 
-  const rolesOptions = useMemo(
-    () => ({
-      key: 'system_roles',
-      endpoint: '/auth/roles?scope=personal',
-    }),
-    []
-  );
-
-  const { data: rolesData } = useSilkHydration<CatalogOption>(rolesOptions);
-
+  // FC 082 F3c2 (Cond.2 Bravo) — dropdown de roles legacy retirado junto con
+  // /auth/roles (410) y el CRUD de RolesManager. Roles reales se gestionan
+  // vía /v1/cosmonauts/roles*.
   const [activePanel, setActivePanel] = useState<UserPanel>('DIRECTORY');
   const [editingUser, setEditingUser] = useState<UserIndustrial | null>(null);
 
   const departments = useMemo(() => departmentsData.map((d) => d.label), [departmentsData]);
 
-  const roles = rolesData;
   const isLoading = usersSyncing && !users.length;
 
   const toggleUserStatus = async (id: string, currentStatus: boolean): Promise<void> => {
@@ -196,7 +187,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         setEditingUser,
         departments: departments.length > 0 ? departments : (DEPARTAMENTOS as unknown as string[]),
         departmentsCatalog: departmentsData,
-        roles,
       }}
     >
       {children}

@@ -181,11 +181,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     setIsMobileMenuOpen(false);
   };
 
-  const goToAdmin = (): void => {
-    navigate('/dashboard/admin');
-    setIsMobileMenuOpen(false);
-  };
-
   // FC 074 F2 — Escape cierra el drawer móvil (a11y).
   useEffect(() => {
     if (!isMobileMenuOpen) return undefined;
@@ -419,38 +414,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </div>
 
         {/* ⚙️ FOOTER (15%) */}
+        {/* FC 082 F3c2 — botón "Panel de Control" (/dashboard/admin) retirado
+            junto con RolesManager/RolePermissionsMatrix. */}
         <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
-          {isOmnipotent() && (
-            <button
-              onClick={goToAdmin}
-              className={`
-                flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden
-                ${
-                  location.pathname === '/dashboard/admin'
-                    ? 'bg-white text-pinnacle-navy hover:brightness-95'
-                    : 'bg-pinnacle-yellow text-pinnacle-navy hover:brightness-110'
-                }
-                ${isCollapsed ? 'w-11 h-11 px-0' : 'w-full h-11 px-4'}
-              `}
-              title="Administración del Sistema"
-              data-testid="nav-item-admin"
-            >
-              <Users size={14} className="shrink-0" />
-              <div
-                className={`
-                transition-[opacity,transform] duration-200 ease-in-out flex flex-col justify-center overflow-hidden whitespace-nowrap
-                ${
-                  isCollapsed
-                    ? 'opacity-0 -translate-x-1 pointer-events-none w-0'
-                    : 'opacity-100 translate-x-0 ml-2'
-                }
-              `}
-              >
-                <span>Panel de Control</span>
-              </div>
-            </button>
-          )}
-
           <button
             onClick={logout}
             className={`

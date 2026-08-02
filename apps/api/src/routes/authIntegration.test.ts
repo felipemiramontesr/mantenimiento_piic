@@ -193,7 +193,7 @@ describe('authIntegration.test', () => {
     expect(r1.statusCode).toBe(404);
   });
 
-  it('Path: Users (Filtered & Unfiltered) & Roles', async () => {
+  it('Path: Users (Filtered & Unfiltered) — Roles (FC 082 F3c2: retirado, 410)', async () => {
     (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, email: 'e', role_id: 1 }], undefined]);
     const r1 = await app.inject({ method: 'GET', url: '/v1/auth/users', headers: authHeader() });
     expect(r1.statusCode).toBe(200);
@@ -206,9 +206,8 @@ describe('authIntegration.test', () => {
     });
     expect(r1b.statusCode).toBe(200);
 
-    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, name: 'Admin' }], undefined]);
     const r2 = await app.inject({ method: 'GET', url: '/v1/auth/roles', headers: authHeader() });
-    expect(r2.statusCode).toBe(200);
+    expect(r2.statusCode).toBe(410);
   });
 
   it('Path: PATCH Identity (Active & Inactive)', async () => {
@@ -329,9 +328,9 @@ describe('authIntegration.test', () => {
       headers: authHeader(),
       payload: { data: { fullName: 'X' }, reason: 'FATAL_REASON' },
     });
-    const r5 = await app.inject({ method: 'GET', url: '/v1/auth/roles', headers: authHeader() });
-
-    expect([r1, r3, r4, r5].every((r) => r.statusCode === 500)).toBe(true);
+    // GET /auth/roles excluido: FC 082 F3c2 lo retiró a 410 estático, sin
+    // tocar DB — ya no ejercita el catch-block que este test verifica.
+    expect([r1, r3, r4].every((r) => r.statusCode === 500)).toBe(true);
   });
 
   it('Edge: Validation & Atomic Fallbacks', async () => {

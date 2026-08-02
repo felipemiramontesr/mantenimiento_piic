@@ -10,7 +10,6 @@ import FinancialHealthModule from './pages/Dashboard/FinancialHealthModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
 import AlertsModule from './pages/Dashboard/AlertsModule';
-import AdminModule from './pages/Dashboard/AdminModule';
 import OnboardingModule from './pages/Dashboard/OnboardingModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
@@ -89,7 +88,8 @@ const App: React.FC = () => (
                   <Route path="logs" element={<LogsModule />} />
                   <Route path="settings" element={<SettingsModule />} />
                   <Route path="alerts" element={<AlertsModule />} />
-                  <Route path="admin" element={<AdminModule />} />
+                  {/* FC 082 F3c2 — /admin (RolesManager/RolePermissionsMatrix)
+                      retirado: roles reales se gobiernan vía /v1/cosmonauts/roles */}
                   <Route path="onboarding" element={<OnboardingModule />} />
                   <Route path="incidents" element={<IncidentsModule />} />
                   <Route path="incidents/:uuid" element={<IncidentNode />} />

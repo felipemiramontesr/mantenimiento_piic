@@ -168,7 +168,6 @@ export default defineConfig({
         /* === Herramientas de diagnóstico y admin === */
         'src/ArchonDoctor.tsx' /* Tool de diagnóstico de admin (test via E2E) */,
         'src/api/navigation.ts' /* Redirección via window.location (E2E por naturaleza) */,
-        'src/components/Admin/RolePermissionsMatrix.tsx' /* Matriz admin compleja (test via E2E) */,
         'src/components/Common/AuditJustificationModal.tsx' /* Modal de auditoría (test via E2E) */,
         /* === Módulo financiero (módulo padre ya excluido) === */
         'src/components/Finance/**' /* Tablas, modales y charts financieros (test via E2E) */,

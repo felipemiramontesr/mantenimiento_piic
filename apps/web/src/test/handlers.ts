@@ -131,13 +131,6 @@ const handlers = [
     })
   ),
 
-  http.get('*/auth/roles', () =>
-    HttpResponse.json({
-      success: true,
-      data: [],
-    })
-  ),
-
   // 🔱 Logistics & Unit Logs Handlers
   http.get('*/routes', () =>
     HttpResponse.json({

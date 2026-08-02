@@ -21,7 +21,6 @@ import userRoutes from './routes/users';
 import geolocationRoutes from './routes/geolocation';
 import fleetMaintenanceRoutes from './routes/fleetMaintenance';
 import financeRoutes from './routes/finance';
-import adminRoutes from './routes/admin';
 import alertsRoutes from './routes/alerts';
 import workOrderRoutes from './routes/workOrders';
 import fleetTcoRoutes from './routes/fleetTco';
@@ -201,7 +200,6 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(geolocationRoutes, { prefix: '/v1/geolocation' });
   fastify.register(fleetMaintenanceRoutes, { prefix: '/v1' });
   fastify.register(financeRoutes, { prefix: '/v1' });
-  fastify.register(adminRoutes, { prefix: '/v1' });
   fastify.register(alertsRoutes, { prefix: '/v1' });
   fastify.register(workOrderRoutes, { prefix: '/v1' });
   fastify.register(reportsRoutes, { prefix: '/v1' });
@@ -230,7 +228,6 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(userRoutes, { prefix: universePrefix });
   fastify.register(fleetMaintenanceRoutes, { prefix: universePrefix });
   fastify.register(financeRoutes, { prefix: universePrefix });
-  fastify.register(adminRoutes, { prefix: universePrefix });
   fastify.register(alertsRoutes, { prefix: universePrefix });
   fastify.register(workOrderRoutes, { prefix: universePrefix });
   fastify.register(notificationsRoutes, { prefix: universePrefix });

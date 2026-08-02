@@ -93,15 +93,8 @@ const SuccessView: React.FC<SuccessViewProps> = ({ onClose }) => (
 );
 
 const UserRegistrationForm: React.FC = (): React.JSX.Element => {
-  const {
-    setActivePanel,
-    editingUser,
-    setEditingUser,
-    updateUser,
-    deleteUser,
-    departments,
-    roles,
-  } = useUsers();
+  const { setActivePanel, editingUser, setEditingUser, updateUser, deleteUser, departments } =
+    useUsers();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [successData, setSuccessData] = useState<{ isEdit?: boolean } | null>(null);
@@ -116,7 +109,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
     username: '',
     fullName: '',
     email: '',
-    roleId: '',
     department: '',
     employeeNumber: '',
     imageUrl: '',
@@ -130,7 +122,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         username: editingUser.username,
         fullName: editingUser.fullName,
         email: editingUser.email,
-        roleId: String(editingUser.roleId),
         department: editingUser.department || '',
         employeeNumber: editingUser.employeeNumber || '',
         imageUrl: editingUser.imageUrl || '',
@@ -138,7 +129,7 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
         confirmPassword: '',
       });
     }
-  }, [editingUser, roles]);
+  }, [editingUser]);
 
   const handleUpdate = async (reason: string): Promise<void> => {
     if (!editingUser) return;
@@ -147,7 +138,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
       {
         fullName: formData.fullName,
         email: formData.email.toLowerCase(),
-        roleId: parseInt(formData.roleId, 10),
         department: formData.department,
         employeeNumber: formData.employeeNumber,
         imageUrl: formData.imageUrl,
@@ -217,8 +207,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
   const passwordsMatch = formData.password === formData.confirmPassword;
   const canSubmit = !formData.password || (passwordsMatch && formData.password.length >= 8);
 
-  const sortedRoles = [...roles].sort((a, b) => a.id - b.id);
-
   if (successData) {
     return (
       <SuccessView
@@ -254,21 +242,6 @@ const UserRegistrationForm: React.FC = (): React.JSX.Element => {
             </div>
           </div>
         )}
-
-        {/* 🔱 ROL ARCHON — primer campo, ancho completo */}
-        <div className="card-archon-sovereign bg-white px-10 py-8 [--card-accent:#0f2a44]">
-          <div className="card-sovereign-header mb-6">
-            <Shield size={22} className="text-pinnacle-navy" />
-            <h3 className="card-sovereign-title text-archon-xl opacity-100">Rol Archon</h3>
-          </div>
-          <ArchonField label="Rol del Sistema" icon={Shield} required>
-            <ArchonSelect
-              options={sortedRoles.map((r) => ({ value: r.id.toString(), label: r.label }))}
-              value={formData.roleId}
-              onChange={(val: string): void => setFormData({ ...formData, roleId: val })}
-            />
-          </ArchonField>
-        </div>
 
         <div className="archon-grid-2-sovereign">
           <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#10b981]">

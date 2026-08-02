@@ -66,7 +66,7 @@ describe('POST /v1/auth/register — purgado (FC 082 F0c)', () => {
   });
 });
 
-// ── GET /v1/auth/roles — scope=personal hardening ─────────────────────────
+// ── GET /v1/auth/roles — retirado FC 082 F3c2 (Cond.2 Bravo) ───────────────
 
 describe('GET /v1/auth/roles', () => {
   const app = buildApp();
@@ -82,41 +82,14 @@ describe('GET /v1/auth/roles', () => {
     vi.clearAllMocks();
   });
 
-  it('RS-1: without scope returns all roles (no WHERE filter)', async () => {
-    const allRoles = [
-      { id: 1, label: 'Propietario de Flotilla' },
-      { id: 3, label: 'Centro Especializado' },
-      { id: 2, label: 'Operador de Área' },
-    ];
-    (db.execute as Mock).mockResolvedValueOnce([allRoles, undefined]);
+  it('410 GONE — retirado junto con el CRUD legacy de roles, sin tocar la DB', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/v1/auth/roles',
       headers: { authorization: `Bearer ${token}` },
     });
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body) as { id: number }[];
-    expect(body).toHaveLength(3);
-    expect((db.execute as Mock).mock.calls[0][0]).not.toContain('NOT IN');
-  });
-
-  it('RS-2: scope=personal uses SQL that excludes ids 1, 3, and Master (Archon)', async () => {
-    const personalRoles = [
-      { id: 2, label: 'Operador de Área' },
-      { id: 4, label: 'Propietario Privado' },
-      { id: 5, label: 'Familiar' },
-    ];
-    (db.execute as Mock).mockResolvedValueOnce([personalRoles, undefined]);
-    const res = await app.inject({
-      method: 'GET',
-      url: '/v1/auth/roles?scope=personal',
-      headers: { authorization: `Bearer ${token}` },
-    });
-    expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body) as { id: number }[];
-    expect(body).toHaveLength(3);
-    const sql = (db.execute as Mock).mock.calls[0][0] as string;
-    expect(sql).toContain('id NOT IN (1, 3)');
-    expect(sql).toContain("name != 'Master (Archon)'");
+    expect(res.statusCode).toBe(410);
+    expect(JSON.parse(res.body).code).toBe('GONE');
+    expect(db.execute).not.toHaveBeenCalled();
   });
 });

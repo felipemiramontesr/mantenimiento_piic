@@ -44,7 +44,6 @@ interface MockUserState {
   setEditingUser: Mock;
   departments: string[];
   departmentsCatalog: { id: number; label: string }[];
-  roles: { id: number; label: string }[];
 }
 
 const getMockState = (): MockUserState => ({
@@ -62,10 +61,6 @@ const getMockState = (): MockUserState => ({
   departmentsCatalog: [
     { id: 41, label: 'IT' },
     { id: 42, label: 'Sistemas' },
-  ],
-  roles: [
-    { id: 0, label: 'GrayMan' },
-    { id: 6, label: 'Admin' },
   ],
 });
 
@@ -95,12 +90,6 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
   it('renders correctly', () => {
     render(<UserRegistrationForm />);
     expect(screen.getByText(/Identidad de Personal/i)).toBeInTheDocument();
-  });
-
-  it('renders Rol Archon as the first top-level card above the grid', () => {
-    render(<UserRegistrationForm />);
-    expect(screen.getByText(/Rol Archon/i)).toBeInTheDocument();
-    expect(screen.getByText(/Rol del Sistema/i)).toBeInTheDocument();
   });
 
   it('shows Departamento field (siempre visible tras la purga de bandas)', () => {

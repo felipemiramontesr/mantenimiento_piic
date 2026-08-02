@@ -22,12 +22,11 @@ vi.mock('../utils/archonCache', () => ({
 }));
 
 const TestComponent = (): React.JSX.Element => {
-  const { users, roles, isLoading } = useUsers();
+  const { users, isLoading } = useUsers();
   return (
     <div>
       <div data-testid="loading">{isLoading.toString()}</div>
       <div data-testid="users-count">{users.length}</div>
-      <div data-testid="roles-count">{roles.length}</div>
     </div>
   );
 };
@@ -136,8 +135,6 @@ describe('UserContext (Silk Hydration Suite)', () => {
       if (url === '/auth/users')
         return Promise.resolve({ data: { success: true, data: rawUsers } });
       if (url === '/catalogs/DEPARTMENT')
-        return Promise.resolve({ data: { success: true, data: [] } });
-      if (url.includes('/auth/roles'))
         return Promise.resolve({ data: { success: true, data: [] } });
       return Promise.resolve({ data: { success: true, data: [] } });
     });

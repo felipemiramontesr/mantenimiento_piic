@@ -895,27 +895,17 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   // FC 082 F0c — POST /sub-users eliminado (roles {2,4,5} y concepto familiar
   // muertos — 084_AN §1a). Los sub-usuarios renacen en F3 como relaciones Arc.
 
+  // FC 082 F3c2 Cond.2 (Bravo) — retirado con el CRUD legacy de roles (roles
+  // solo conserva la fila 0 desde mig.164). 410, no 404: la ruta existió y
+  // fue retirada a propósito, no es un typo de URL. Gobernanza de roles reales
+  // vía /v1/cosmonauts/roles* (chasis cosmonauta, Cond.9).
   fastify.get('/roles', async (request, reply) => {
     await request.jwtVerify();
-    try {
-      const { scope } = request.query as { scope?: string };
-      const isPersonal = scope === 'personal';
-      const sql = isPersonal
-        ? "SELECT id, name as label FROM roles WHERE id NOT IN (1, 3) AND name != 'Master (Archon)' ORDER BY name ASC"
-        : "SELECT id, name as label FROM roles ORDER BY (name = 'Master (Archon)') DESC, name ASC";
-      const res = await db.execute(sql, []);
-      let rows: RowDataPacket[] = [];
-      if (res) {
-        const [results] = res;
-        if (results) {
-          rows = results as RowDataPacket[];
-        }
-      }
-      return reply.send(rows);
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ error: 'ROLE_FAIL' });
-    }
+    return reply.code(410).send({
+      success: false,
+      code: 'GONE',
+      message: 'Retirado en FC082 F3c2 — usar /v1/cosmonauts/roles',
+    });
   });
 
   // GET /v1/auth/users/:uuid/node — Sovereign node: full user profile + permissions + recent activity
