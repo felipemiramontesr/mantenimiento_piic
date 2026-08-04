@@ -1,0 +1,12 @@
+{
+  "versioning": {
+    "scheme": "semver",
+    "codeVersion": null,
+    "semver": "78.101.697",
+    "packageSync": false,
+    "tagPrefix": {
+      "lEpoch": "code/",
+      "semver": "v"
+    }
+  }
+}
