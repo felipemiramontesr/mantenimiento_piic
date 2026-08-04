@@ -11,7 +11,7 @@ import {
   buildFineDescription,
   buildAnomalyDescription,
   meetsMaintenanceKmCriteria,
-} from './alerts';
+} from '../services/alerts.calculators';
 
 // ─── meetsMaintenanceKmCriteria (ALERT-COALESCE) ─────────────────────────────
 

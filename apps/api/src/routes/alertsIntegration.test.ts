@@ -354,8 +354,18 @@ describe('Alerts Routes — Integration', () => {
   // ─── Role-Scoped Alerts (Feature Contract: Alerts_Role_Scoped_Panel) ─────────
 
   describe('GET /v1/alerts — role-scoped', () => {
+    // FC 094 F3 — T1/T2: a resolvable tenant_id is required for a non-Ω actor
+    // to be scoped at all (default-deny otherwise) — see the dedicated BOLA
+    // describe block below for the no-tenant_id denial itself.
     const signWith = (permissions: string[]): string =>
-      app.jwt.sign({ id: 2, username: 'scoped', roleId: 5, roleName: 'Scoped', permissions });
+      app.jwt.sign({
+        id: 2,
+        username: 'scoped',
+        roleId: 5,
+        roleName: 'Scoped',
+        permissions,
+        tenant_id: 900,
+      });
 
     const authWith = (permissions: string[]) => ({
       authorization: `Bearer ${signWith(permissions)}`,
@@ -770,6 +780,7 @@ describe('Alerts Routes — Integration', () => {
         roleId: 5,
         roleName: 'Scoped',
         permissions,
+        tenant_id: 900,
       })}`,
     });
 
@@ -838,6 +849,42 @@ describe('Alerts Routes — Integration', () => {
       expect(res.statusCode).toBe(200);
       expect(res.json().count).toBe(2);
       expect(db.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // FC 094 F3 — Cond.R-F3-T7: BOLA negativo end-to-end (unit coverage of the
+  // same rule lives in `alerts.service.test.ts`; this confirms it holds
+  // through the real HTTP route + Fastify JWT deserialization too).
+  describe('GET /v1/alerts, /v1/alerts/count — tenant scoping BOLA (T7)', () => {
+    const noTenantAuth = () => ({
+      authorization: `Bearer ${app.jwt.sign({
+        id: 7,
+        username: 'sin.tenant',
+        roleId: 5,
+        roleName: 'Scoped',
+        permissions: ['fleet:view', 'maint:view', 'route:view', 'financial:view'],
+        // sin tenant_id — nunca debe tratarse como acceso global (T2)
+      })}`,
+    });
+
+    it('denies every alert type for a non-Ω actor with no tenant_id — never falls back to global', async () => {
+      const res = await app.inject({ method: 'GET', url: '/v1/alerts', headers: noTenantAuth() });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.data).toEqual([]);
+      expect(body.count).toBe(0);
+      expect(db.execute).not.toHaveBeenCalled();
+    });
+
+    it('/alerts/count mirrors the same denial (0, zero queries)', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/alerts/count',
+        headers: noTenantAuth(),
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().count).toBe(0);
+      expect(db.execute).not.toHaveBeenCalled();
     });
   });
 
