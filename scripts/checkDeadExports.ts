@@ -43,6 +43,7 @@ export interface AllowlistEntry {
 const VALUE_EXPORT_PATTERN =
   /export\s+(?:default\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
 
+/** Nombres de exports de valor (`function`/`class`/`const`/`let`/`var`) en `content` — `interface`/`type`/`enum` quedan fuera a propósito (ver cabecera). */
 export function extractValueExports(content: string): string[] {
   return Array.from(content.matchAll(VALUE_EXPORT_PATTERN))
     .map((match) => match[1])
@@ -71,9 +72,12 @@ function countWordOccurrences(content: string, name: string): number {
   return (content.match(new RegExp(String.raw`\b${name}\b`, 'g')) || []).length;
 }
 
-// Reserved for future use: test-only usage does not clear a finding on its
-// own (Bravo, FC094 F0: "solo tests != vivo en producto") -- allowlisted
-// explicitly instead, see ALLOWLIST below.
+/**
+ * Exports de `productFiles` sin ningún consumidor fuera de su propio archivo.
+ * Reserved for future use: test-only usage does not clear a finding on its
+ * own (Bravo, FC094 F0: "solo tests != vivo en producto") -- allowlisted
+ * explicitly instead, see ALLOWLIST below.
+ */
 export function findDeadExports(
   productFiles: Record<string, string>,
   _testFiles: Record<string, string> = {}
@@ -240,11 +244,13 @@ export const ALLOWLIST: readonly AllowlistEntry[] = [
   },
 ];
 
+/** `true` si `finding` cae en `IGNORED_DIRS` o está listado en `ALLOWLIST`. */
 export function isIgnored(finding: DeadExportFinding): boolean {
   if (IGNORED_DIRS.some((dir) => finding.file.startsWith(`${dir}/`))) return true;
   return ALLOWLIST.some((e) => e.file === finding.file && e.symbol === finding.name);
 }
 
+/** `findings` sin lo ya cubierto por `IGNORED_DIRS`/`ALLOWLIST` — lo que debe bloquear CI. */
 export function filterNewFindings(findings: DeadExportFinding[]): DeadExportFinding[] {
   return findings.filter((f) => !isIgnored(f));
 }

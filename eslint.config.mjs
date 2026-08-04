@@ -37,7 +37,11 @@ const compat = new FlatCompat({
 // archivo sale cuando su FC de dominio lo cierra; 0 altas sin FC + dictamen R
 // propio nuevo. Estar aquí NO exime a los servicios de I1-I3 cuando les toque su
 // FC de dominio (el SQL sigue debiendo migrar a Repository).
-const LEGACY_GODFILES = [
+// Exportada (no solo local) para que scripts/checkDiffQuality.ts (Gate 2,
+// FC094 F1 Dual-Gate, 111_AN/Bravo 21:54:11) reuse la MISMA lista como fuente
+// única — el umbral de complexity relajado (20 vs 15) de Gate 2 depende de
+// saber si un archivo tocado en el diff está aquí.
+export const LEGACY_GODFILES = [
   // Backend routes (8) — presupuesto normal 250 LOC
   'apps/api/src/routes/fleetMaintenance.ts', // 1338 LOC
   'apps/api/src/routes/auth.ts', // 1069 LOC
@@ -215,12 +219,28 @@ export default [
   },
   {
     // T1 del FC: RatchetPass exento de max-lines (tamaño de archivo) para la
-    // semilla congelada de 32 — max-lines-per-function/cognitive-complexity NO
-    // se tocan aquí (ver nota arriba: pendientes de mecanismo diff-scoped,
-    // hallazgo en H 2026-08-03, sin resolver O/R todavía).
+    // semilla congelada de 32. max-lines-per-function/cognitive-complexity para
+    // ESTOS 32 archivos se enforzan vía Gate 2 (scripts/checkDiffQuality.ts,
+    // diff-scoped) — no aquí, per Dual-Gate (111_AN/Bravo 21:54:11).
     files: LEGACY_GODFILES,
     rules: {
       'max-lines': 'off',
+    },
+  },
+  {
+    // Dual-Gate F1 (111_AN Alfa + auditoría Bravo 21:54:11) — Gate 1 puede
+    // exigir max-lines-per-function:50 en BLANKET solo para capas Clean que
+    // hoy no existen (0 archivos coinciden, confirmado 2026-08-03): el sufijo
+    // `.repository.ts` es exclusivo del patrón Route→Service→Repository que
+    // introduce este mismo FC (F3+) — no hay legado que romper. Cuando F3/F4
+    // creen el cliente HTTP centralizado de apps/web, su directorio nuevo debe
+    // sumarse aquí con el mismo razonamiento (0 legado = seguro blanket).
+    files: ['**/*.repository.ts'],
+    rules: {
+      'max-lines-per-function': [
+        'error',
+        { max: 50, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
     },
   },
   {
