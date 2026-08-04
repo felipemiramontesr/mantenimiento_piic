@@ -157,9 +157,12 @@ export const ALLOWLIST: readonly AllowlistEntry[] = [
     reason: 'Helper interno probado en recalls.test.ts -- usado por su propio modulo.',
   },
   {
-    file: 'apps/api/src/routes/alerts.ts',
+    file: 'apps/api/src/services/alerts.calculators.ts',
     symbol: 'meetsMaintenanceKmCriteria',
-    reason: 'Helper interno del handler de alerts, probado en alerts.test.ts.',
+    reason:
+      'Helper puro de alerts, probado en alerts.test.ts. Movido de routes/alerts.ts a ' +
+      'services/alerts.calculators.ts en FC094 F3 (Route->Service->Repository) — mismo ' +
+      'símbolo, misma justificación, solo cambió el archivo.',
   },
   {
     file: 'apps/api/src/services/auditService.ts',
