@@ -50,15 +50,3 @@ export function buildCsv(rows: Record<string, unknown>[], columns: CsvColumn[]):
   const lines = rows.map((row) => columns.map((c) => cellValue(row, c)).join(','));
   return [header, ...lines].join('\r\n');
 }
-
-/* v8 ignore start -- helper DOM puro de descarga; sin lógica ramificada propia */
-export function downloadTextFile(filename: string, content: string, mime = 'text/csv'): void {
-  const blob = new Blob([content], { type: `${mime};charset=utf-8;` });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-/* v8 ignore stop */

@@ -21,7 +21,3 @@ export async function registerPushToken(
 ): Promise<void> {
   await api.post('/notifications/push-token', { token, deviceType });
 }
-
-export async function unregisterPushToken(token: string): Promise<void> {
-  await api.post('/notifications/push-token/unregister', { token });
-}
