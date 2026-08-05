@@ -21,9 +21,80 @@ interface AuthContextType {
   startImpersonation: (target: UserIndustrial) => void;
   stopImpersonation: () => void;
   ownerType: 'FLOTILLA' | 'ARCHONAUT' | null;
+  /** FC 094 F4/I10/ADR-007 — the single session-race guard (FC070). Any async
+   * flow that can outlive a login/logout must capture this before awaiting
+   * and compare after resolving, discarding a stale result if it moved.
+   * Reads `sessionEpochRef.current` fresh each call — never build a second,
+   * competing guard. */
+  getSessionEpoch: () => number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** FC 070 mount-time session restore, extracted out of `AuthProvider` to keep
+ * it under Gate 2's maxFnLoc budget (FC094 F1) — same epoch-guard behavior
+ * verbatim, just called from a `useEffect(() => {...}, [])` instead of
+ * defined inline inside one. */
+async function restoreSession(
+  sessionEpochRef: React.MutableRefObject<number>,
+  epochAtStart: number,
+  setCurrentUser: (user: UserIndustrial | null) => void,
+  setIsAuthenticated: (value: boolean) => void,
+  setIsLoading: (value: boolean) => void
+): Promise<void> {
+  try {
+    const response = await api.post<{ success: boolean; token: string; user: UserIndustrial }>(
+      '/auth/refresh'
+    );
+    if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
+    if (response.data.success) {
+      setToken(response.data.token);
+      setCurrentUser(response.data.user);
+      setIsAuthenticated(true);
+    }
+  } catch {
+    if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
+    // No valid refresh token — stay unauthenticated
+    clearToken();
+    setIsAuthenticated(false);
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+/** `login`/`logout`, extracted out of `AuthProvider` alongside `restoreSession`
+ * to keep it under Gate 2's maxFnLoc budget (FC094 F1) — same epoch-bump
+ * behavior verbatim, just built once per render instead of defined inline. */
+function createSessionActions(
+  bumpEpoch: () => void,
+  setCurrentUser: (user: UserIndustrial | null) => void,
+  setIsAuthenticated: (value: boolean) => void
+): {
+  login: (token: string, user: UserIndustrial) => void;
+  logout: () => Promise<void>;
+} {
+  const login = (token: string, user: UserIndustrial): void => {
+    bumpEpoch();
+    setToken(token);
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+  };
+
+  const logout = async (): Promise<void> => {
+    bumpEpoch();
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // best-effort — clear local state regardless
+    }
+    clearToken();
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    window.location.href = '/login';
+  };
+
+  return { login, logout };
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<UserIndustrial | null>(null);
@@ -45,58 +116,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // cuando resuelve (una acción manual más reciente ya definió el estado).
   const sessionEpochRef = useRef(0);
 
-  const startImpersonation = (target: UserIndustrial): void => {
-    setViewAsUser(target);
-  };
+  const startImpersonation = (target: UserIndustrial): void => setViewAsUser(target);
 
-  const stopImpersonation = (): void => {
-    setViewAsUser(null);
-  };
+  const stopImpersonation = (): void => setViewAsUser(null);
 
-  const logout = async (): Promise<void> => {
+  const getSessionEpoch = (): number => sessionEpochRef.current;
+
+  const bumpEpoch = (): void => {
     sessionEpochRef.current += 1;
-    try {
-      await api.post('/auth/logout');
-    } catch {
-      // best-effort — clear local state regardless
-    }
-    clearToken();
-    setCurrentUser(null);
-    setIsAuthenticated(false);
-    window.location.href = '/login';
   };
 
-  const login = (token: string, user: UserIndustrial): void => {
-    sessionEpochRef.current += 1;
-    setToken(token);
-    setCurrentUser(user);
-    setIsAuthenticated(true);
-  };
+  const { login, logout } = createSessionActions(bumpEpoch, setCurrentUser, setIsAuthenticated);
 
   useEffect(() => {
     const epochAtStart = sessionEpochRef.current;
-    const restoreSession = async (): Promise<void> => {
-      try {
-        const response = await api.post<{ success: boolean; token: string; user: UserIndustrial }>(
-          '/auth/refresh'
-        );
-        if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
-        if (response.data.success) {
-          setToken(response.data.token);
-          setCurrentUser(response.data.user);
-          setIsAuthenticated(true);
-        }
-      } catch {
-        if (sessionEpochRef.current !== epochAtStart) return; // stale — T1 ⊥*
-        // No valid refresh token — stay unauthenticated
-        clearToken();
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    restoreSession();
+    restoreSession(sessionEpochRef, epochAtStart, setCurrentUser, setIsAuthenticated, setIsLoading);
   }, []);
 
   const updateCurrentUser = (data: Partial<UserIndustrial>): void => {
@@ -120,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         startImpersonation,
         stopImpersonation,
         ownerType,
+        getSessionEpoch,
       }}
     >
       {children}

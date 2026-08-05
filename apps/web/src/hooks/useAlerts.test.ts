@@ -73,6 +73,14 @@ describe('useAlerts', () => {
     expect(silkHydration.default).toHaveBeenCalledWith({
       key: 'system_alerts',
       endpoint: '/alerts',
+      transform: expect.any(Function),
     });
+  });
+
+  it('transform validates raw data against alertsArraySchema', () => {
+    renderHook(() => useAlerts());
+    const { transform } = vi.mocked(silkHydration.default).mock.calls[0][0];
+    expect(transform?.(MOCK_ALERTS)).toEqual(MOCK_ALERTS);
+    expect(() => transform?.([{ id: 'bad' }])).toThrow();
   });
 });

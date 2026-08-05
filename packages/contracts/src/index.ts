@@ -34,3 +34,48 @@ export const routeUpdateSchema = z.object({
   data: z.record(z.any()),
   reason: z.string().min(5),
 });
+
+/**
+ * FC 094 F4 — GET /v1/alerts, GET /v1/alerts/count (alerts.ts, Route→Service→
+ * Repository piloted in F3). First RESPONSE-shape schema in this file (the
+ * three above are request bodies) — same drift risk this package already
+ * guards against, just checked in the other direction: apps/api's
+ * `Alert`/`AlertType`/`AlertSeverity` (`alerts.calculators.ts`) and
+ * apps/web's (`hooks/useAlerts.ts`, re-exported for its existing consumers)
+ * both derive from this single definition instead of two hand-maintained
+ * copies.
+ */
+export const alertTypeSchema = z.enum([
+  'MAINTENANCE_OVERDUE',
+  'INCIDENT_OPEN',
+  'UNIT_CRITICAL',
+  'COMPLIANCE_EXPIRY',
+  'LEASE_PAYMENT_MISSING',
+  'FINE_REGISTERED',
+  'EXPENSE_ANOMALY',
+]);
+export type AlertType = z.infer<typeof alertTypeSchema>;
+
+export const alertSeveritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
+export type AlertSeverity = z.infer<typeof alertSeveritySchema>;
+
+export const alertSchema = z.object({
+  id: z.string(),
+  type: alertTypeSchema,
+  severity: alertSeveritySchema,
+  title: z.string(),
+  description: z.string(),
+  unitId: z.string(),
+  createdAt: z.string(),
+});
+export type Alert = z.infer<typeof alertSchema>;
+
+/** `hooks/useAlerts.ts` validates the unwrapped array from `useSilkHydration`
+ * against this — keeps `zod` itself out of apps/web's direct dependencies. */
+export const alertsArraySchema = z.array(alertSchema);
+
+/** GET /v1/alerts/count response envelope. */
+export const alertsCountResponseSchema = z.object({
+  success: z.boolean(),
+  count: z.number(),
+});
