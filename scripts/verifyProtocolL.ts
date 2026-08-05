@@ -159,6 +159,41 @@ function verifyVersions(
   return { verL, verH, verF };
 }
 
+// FC094 F5 (Cond.10) — l-harness.config.json/package.json drifted silently from L's
+// declared version for months (Bravo's F1 "higiene semver" finding, never enforced).
+// Runs unconditionally alongside verifyLConsistency, not gated behind codeFiles.length
+// (l-harness.config.json/package.json are root-level, not under apps/ or packages/, so
+// they never counted as "código" for that gate — the exact blind spot that let them
+// go stale in the first place).
+function verifyPackageVersionSync(rootDir: string, masterContent: string): void {
+  const masterVerMatch = masterContent.match(/VERSIÓN ACTUAL:\s*V\.(\d+\.\d+\.\d+)_/);
+  if (!masterVerMatch) {
+    logError('No se encontró el patrón de "VERSIÓN ACTUAL: V.X.Y.Z_Desc" en PROTOCOLO_L.md');
+    process.exit(1);
+  }
+  const [, verL] = masterVerMatch;
+
+  const harnessPath = path.join(rootDir, 'l-harness.config.json');
+  const packagePath = path.join(rootDir, 'package.json');
+  const harness = JSON.parse(fs.readFileSync(harnessPath, 'utf8'));
+  const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+  const verHarness = harness?.versioning?.semver;
+  const verPkg = pkg?.version;
+
+  if (verHarness !== verL || verPkg !== verL) {
+    logError(
+      `l-harness.config.json/package.json desincronizados de L (Cond.10 · FC094 F5):\n` +
+        `  - PROTOCOLO_L.md (VERSIÓN ACTUAL):        ${verL}\n` +
+        `  - l-harness.config.json (versioning.semver): ${verHarness}\n` +
+        `  - package.json (version):                   ${verPkg}\n` +
+        `Actualiza ambos campos a "${verL}" y agrégalos al mismo commit (no son protocols/, sí van en git add).`
+    );
+    process.exit(1);
+  }
+  logSuccess(`l-harness.config.json/package.json en sincronía con L: ${verL}.`);
+}
+
 // 5. Validar mensaje y timestamp en Canal H de 002_NS_Handoff.md
 function verifyCanalH(handoffContent: string, forenseContent: string, verF: string): void {
   // FC 053 F7: header genérico — el roster del canal cambia (CC ↔ AG → GrayMan | Alfa | Bravo | Charlie)
@@ -337,6 +372,7 @@ function verify(): void {
   // FC 053 F7: la auto-verificación de L corre SIEMPRE, incluso sin archivos staged.
   verifyFilesExist(masterPath, handoffPath, forensePath);
   verifyLConsistency(rootDir, masterPath, handoffPath);
+  verifyPackageVersionSync(rootDir, fs.readFileSync(masterPath, 'utf8'));
 
   // 1. Obtener archivos en staged (git diff --cached, excluyendo eliminados)
   const stagedFilesStr = runCommand('git diff --cached --name-only --diff-filter=d');

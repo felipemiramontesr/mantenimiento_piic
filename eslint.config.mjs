@@ -47,7 +47,9 @@ export const LEGACY_GODFILES = [
   'apps/api/src/routes/auth.ts', // 1069 LOC
   'apps/api/src/routes/fleetRoutes.ts', // 789 LOC
   'apps/api/src/routes/finance.ts', // 717 LOC
-  'apps/api/src/routes/alerts.ts', // 653 LOC
+  // alerts.ts REMOVED FC094 F5 (RR2/Inv-C) — migrated to Route->Service->Repository
+  // in F3 (653 -> 53 LOC), well under the 250 LOC route budget; no longer needs the
+  // size exemption. Allowlist only shrinks, never grows without a signed FC.
   'apps/api/src/routes/social.ts', // 532 LOC
   'apps/api/src/routes/fleet.ts', // 395 LOC
   'apps/api/src/routes/ownerProfile.ts', // 383 LOC
