@@ -3,6 +3,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, Mock } from 'vitest';
 import buildApp from '../index';
 import db from '../services/db';
+import RouteService from '../services/routeService';
 
 vi.mock('../services/routeService', () => ({
   default: {
@@ -12,6 +13,13 @@ vi.mock('../services/routeService', () => ({
     reportIncident: vi.fn().mockResolvedValue({}),
     getIncidents: vi.fn().mockResolvedValue([]),
     getAllIncidents: vi.fn().mockResolvedValue([]),
+    // FC126 F1 — admin token (permissions:['*']) bypass defaults; node lookups
+    // mocked per-test below instead of the db.execute sequences they replaced.
+    resolveOwnerScope: vi.fn().mockResolvedValue(null),
+    checkRouteScope: vi.fn().mockResolvedValue(true),
+    checkIncidentScope: vi.fn().mockResolvedValue(true),
+    getRouteNode: vi.fn(),
+    getIncidentNode: vi.fn(),
   },
 }));
 
@@ -64,7 +72,7 @@ const auth = () => ({ Authorization: `Bearer ${token}` });
 
 describe('GET /routes/:uuid/node — Sovereign Route Node', () => {
   it('returns 404 when route not found', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    (RouteService.getRouteNode as Mock).mockResolvedValueOnce(null);
 
     const res = await app.inject({
       method: 'GET',
@@ -103,9 +111,10 @@ describe('GET /routes/:uuid/node — Sovereign Route Node', () => {
         reported_at: '2026-06-01T10:00:00Z',
       },
     ];
-    (db.execute as Mock)
-      .mockResolvedValueOnce([[routeRow], undefined]) // routeRows
-      .mockResolvedValueOnce([incidentRows, undefined]); // incidentRows
+    (RouteService.getRouteNode as Mock).mockResolvedValueOnce({
+      route: routeRow,
+      incidents: incidentRows,
+    });
 
     const res = await app.inject({
       method: 'GET',
@@ -121,8 +130,8 @@ describe('GET /routes/:uuid/node — Sovereign Route Node', () => {
     expect(body.data.incidents[0].uuid).toBe('inc-1');
   });
 
-  it('returns 500 on db.execute throw', async () => {
-    (db.execute as Mock).mockRejectedValueOnce(new Error('DB down'));
+  it('returns 500 on RouteService.getRouteNode throw', async () => {
+    (RouteService.getRouteNode as Mock).mockRejectedValueOnce(new Error('DB down'));
 
     const res = await app.inject({
       method: 'GET',
@@ -139,7 +148,7 @@ describe('GET /routes/:uuid/node — Sovereign Route Node', () => {
 
 describe('GET /incidents/:uuid/node — Sovereign Incident Node', () => {
   it('returns 404 when incident not found', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[], undefined]);
+    (RouteService.getIncidentNode as Mock).mockResolvedValueOnce(null);
 
     const res = await app.inject({
       method: 'GET',
@@ -168,7 +177,7 @@ describe('GET /incidents/:uuid/node — Sovereign Incident Node', () => {
       unit_modelo: 'Ranger',
       unit_year: 2021,
     };
-    (db.execute as Mock).mockResolvedValueOnce([[incidentRow], undefined]);
+    (RouteService.getIncidentNode as Mock).mockResolvedValueOnce(incidentRow);
 
     const res = await app.inject({
       method: 'GET',
@@ -184,8 +193,8 @@ describe('GET /incidents/:uuid/node — Sovereign Incident Node', () => {
     expect(body.data.driver_name).toBe('María López');
   });
 
-  it('returns 500 on db.execute throw', async () => {
-    (db.execute as Mock).mockRejectedValueOnce(new Error('DB down'));
+  it('returns 500 on RouteService.getIncidentNode throw', async () => {
+    (RouteService.getIncidentNode as Mock).mockRejectedValueOnce(new Error('DB down'));
 
     const res = await app.inject({
       method: 'GET',

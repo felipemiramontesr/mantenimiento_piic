@@ -1,15 +1,30 @@
 /* eslint-disable */
 // @ts-nocheck
-import { RowDataPacket, PoolConnection, ResultSetHeader } from 'mysql2';
+import { PoolConnection } from 'mysql2';
 import { randomUUID } from 'node:crypto';
 import db from './db';
 import { recordAuditLog } from './auditService';
 import { UNIT_STATUS, MOVEMENT_STATUS } from '../constants/statuses';
 import { resolveCatalogId } from './catalogMapper';
+import * as RouteMovementsRepository from './routeMovements.repository';
+import * as RouteIncidentsRepository from './routeIncidents.repository';
+import * as RouteRoutesRepository from './routeRoutes.repository';
+import FleetService from './fleetService';
 
 /**
  * 🔱 Archon RouteService — CTI Architecture (V2)
  * All journey data lives in fleet_movements (base) + fleet_route_extensions (child).
+ * FC126 F1 — zero-SQL (I2): every data access delegates to the 3 repository
+ * modules (I3), split by origin — `routeMovements.repository.ts` (start/
+ * finish/update/delete a route + odometer sync), `routeIncidents.repository.ts`
+ * (active-route/incidents/checkpoints), `routeRoutes.repository.ts` (queries
+ * that originate directly in `routes/fleetRoutes.ts` — ownership scope,
+ * listings, node views). Split was mechanical (Gate 1 max-lines:400 on the
+ * original monolithic file), not a domain boundary — all 3 share the same
+ * `Pool | PoolConnection` executor pattern. Transaction boundaries
+ * (getConnection/beginTransaction/commit/rollback/release) stay here — that's
+ * orchestration, not persistence — the repositories only ever receive the
+ * already-open `connection` to run their parametrized SQL against.
  */
 export type RouteStatus = 'OPEN' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 
@@ -44,18 +59,14 @@ export default class RouteService {
   private static async syncUnitState(connection: PoolConnection, unitId: string): Promise<void> {
     if (!unitId) return;
 
-    const [rows] = await connection.execute<RowDataPacket[]>(
-      `SELECT end_reading, fuel_level_end
-       FROM fleet_movements
-       WHERE unit_id = ? AND movement_type = 'ROUTE' AND status = 'COMPLETED'
-       ORDER BY end_at DESC, id DESC LIMIT 1`,
-      [unitId]
-    );
+    const lastRoute = await RouteMovementsRepository.findLastCompletedRoute(unitId, connection);
 
-    if (rows.length > 0) {
-      await connection.execute(
-        'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ? WHERE id = ?',
-        [rows[0].end_reading, rows[0].fuel_level_end, unitId]
+    if (lastRoute) {
+      await RouteMovementsRepository.updateUnitOdometerAndFuel(
+        unitId,
+        lastRoute.end_reading,
+        lastRoute.fuel_level_end,
+        connection
       );
     }
   }
@@ -80,34 +91,26 @@ export default class RouteService {
       await connection.beginTransaction();
 
       // 1. Validate unit availability
-      const [units] = await connection.execute<RowDataPacket[]>(
-        'SELECT status, odometer FROM fleet_units WHERE id = ? FOR UPDATE',
-        [unitId]
-      );
+      const unit = await RouteMovementsRepository.findUnitStatusForUpdate(unitId, connection);
 
-      if (units.length === 0) throw new Error(`Unit ${unitId} not found`);
-      if (units[0].status === UNIT_STATUS.IN_ROUTE)
+      if (!unit) throw new Error(`Unit ${unitId} not found`);
+      if (unit.status === UNIT_STATUS.IN_ROUTE)
         throw new Error(`Unit ${unitId} is already in transit`);
-      if (units[0].status === 'Downtime') throw new Error(`Unit ${unitId} is under maintenance`);
-      if (startReading < units[0].odometer) {
+      if (unit.status === 'Downtime') throw new Error(`Unit ${unitId} is under maintenance`);
+      if (startReading < unit.odometer) {
         throw new Error(
-          `Start reading (${startReading} KM) cannot be lower than the unit's current odometer (${units[0].odometer} KM)`
+          `Start reading (${startReading} KM) cannot be lower than the unit's current odometer (${unit.odometer} KM)`
         );
       }
 
       // 1.1 Resolve destination via neighborhood catalog if ID provided
       let finalDestination = destination;
       if (destinationNeighborhoodId) {
-        const [coloniaRows] = await connection.execute<RowDataPacket[]>(
-          `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state
-           FROM neighborhoods c
-           JOIN municipalities m ON c.municipality_id = m.id
-           JOIN states e ON m.state_id = e.id
-           WHERE c.id = ?`,
-          [destinationNeighborhoodId]
+        const row = await RouteMovementsRepository.findNeighborhoodLabel(
+          destinationNeighborhoodId,
+          connection
         );
-        if (coloniaRows.length > 0) {
-          const row = coloniaRows[0];
+        if (row) {
           const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
           if (destination && destination !== suffix) {
             const parts = destination.split(row.neighborhood);
@@ -120,37 +123,37 @@ export default class RouteService {
       }
 
       // 2. Insert CTI base record
-      const [movementResult] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO fleet_movements
-        (uuid, unit_id, movement_type, status, start_reading, fuel_level_start, description, start_at)
-        VALUES (?, ?, 'ROUTE', 'ACTIVE', ?, ?, ?, NOW())`,
-        [routeUuid, unitId, startReading, fuelLevelStart, description || null]
+      const movementId = await RouteMovementsRepository.insertRouteMovement(
+        { uuid: routeUuid, unitId, startReading, fuelLevelStart, description },
+        connection
       );
-      const movementId = movementResult.insertId;
 
       // 3. Insert CTI route extension
-      await connection.execute(
-        `INSERT INTO fleet_route_extensions
-        (movement_id, driver_id, origin_id, destination_neighborhood_id, destination)
-        VALUES (?, ?, ?, ?, ?)`,
-        [
+      await RouteMovementsRepository.insertRouteExtension(
+        {
           movementId,
           driverId,
-          originId || null,
-          destinationNeighborhoodId || null,
-          finalDestination,
-        ]
+          originId,
+          destinationNeighborhoodId,
+          destination: finalDestination,
+        },
+        connection
       );
 
       // 4. Update unit status
-      await connection.execute('UPDATE fleet_units SET status = "En Ruta" WHERE id = ?', [unitId]);
+      await RouteMovementsRepository.updateUnitStatusToEnRuta(unitId, connection);
 
       // 5. Forensic log
-      await connection.execute(
-        `INSERT INTO unit_activity_logs
-        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, created_by)
-        VALUES (?, ?, 'ROUTE_START', ?, ?, ?, 'En Ruta', ?)`,
-        [randomUUID(), unitId, routeUuid, units[0].odometer, units[0].status, driverId]
+      await RouteMovementsRepository.insertRouteStartActivityLog(
+        {
+          logUuid: randomUUID(),
+          unitId,
+          routeUuid,
+          readingBefore: unit.odometer,
+          statusBefore: unit.status,
+          createdBy: driverId,
+        },
+        connection
       );
 
       await connection.commit();
@@ -197,59 +200,47 @@ export default class RouteService {
       await connection.beginTransaction();
 
       // 1. Get movement + extension context
-      const [routes] = await connection.execute<RowDataPacket[]>(
-        `SELECT fm.*, fre.driver_id
-         FROM fleet_movements fm
-         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-         WHERE fm.uuid = ? FOR UPDATE`,
-        [routeUuid]
-      );
+      const route = await RouteMovementsRepository.findRouteForUpdateByUuid(routeUuid, connection);
 
-      if (routes.length === 0) throw new Error('Route not found');
-      const route = routes[0];
+      if (!route) throw new Error('Route not found');
       if (route.status !== 'ACTIVE') throw new Error('Route is not active');
       if (endReading < route.start_reading) {
         throw new Error('End reading cannot be lower than start reading');
       }
 
       // 2. Update movement (telemetry fields)
-      await connection.execute(
-        `UPDATE fleet_movements
-        SET status = 'COMPLETED', end_reading = ?, end_at = NOW(),
-            fuel_level_end = ?, fuel_liters_loaded = ?, fuel_amount = ?, fuel_ticket_image = ?,
-            description = COALESCE(?, description)
-        WHERE uuid = ?`,
-        [
-          endReading,
-          fuelLevelEnd,
-          fuelLiters,
-          fuelAmount,
-          fuelImage || null,
-          description || null,
-          routeUuid,
-        ]
+      await RouteMovementsRepository.updateRouteMovementCompletion(
+        routeUuid,
+        { endReading, fuelLevelEnd, fuelLiters, fuelAmount, fuelImage, description },
+        connection
       );
 
       // 3. Update route extension (logistics fields)
-      await connection.execute(
-        `UPDATE fleet_route_extensions
-        SET additives_check = ?, tire_pressure_json = ?, checklist_json = ?
-        WHERE movement_id = ?`,
-        [additivesCheck, tirePressureJson || null, checklistJson || null, route.id]
+      await RouteMovementsRepository.updateRouteExtensionLogistics(
+        route.id,
+        { additivesCheck, tirePressureJson, checklistJson },
+        connection
       );
 
       // 4. Update unit
-      await connection.execute(
-        'UPDATE fleet_units SET odometer = ?, lastFuelLevel = ?, status = "Disponible" WHERE id = ?',
-        [endReading, fuelLevelEnd, route.unit_id]
+      await RouteMovementsRepository.updateUnitTelemetryOnFinish(
+        route.unit_id,
+        endReading,
+        fuelLevelEnd,
+        connection
       );
 
       // 5. Forensic log
-      await connection.execute(
-        `INSERT INTO unit_activity_logs
-        (uuid, unit_id, event_type, reference_id, reading_before, reading_after, status_before, status_after, created_by)
-        VALUES (?, ?, 'ROUTE_FINISH', ?, ?, ?, 'En Ruta', 'Disponible', ?)`,
-        [randomUUID(), route.unit_id, routeUuid, route.start_reading, endReading, route.driver_id]
+      await RouteMovementsRepository.insertRouteFinishActivityLog(
+        {
+          logUuid: randomUUID(),
+          unitId: route.unit_id,
+          routeUuid,
+          readingBefore: route.start_reading,
+          readingAfter: endReading,
+          createdBy: route.driver_id,
+        },
+        connection
       );
 
       // 6. Register fuel cost in financial ledger (AUTO — idempotent via source_uuid)
@@ -261,26 +252,18 @@ export default class RouteService {
         const period = new Date().toISOString().slice(0, 7);
         const fuelCategoryId = await resolveCatalogId('FINANCE_CATEGORY', 'FUEL', connection);
         const autoSourceId = await resolveCatalogId('FINANCE_SOURCE', 'AUTO', connection);
-        await connection.execute(
-          `INSERT INTO financial_transactions
-             (uuid, unit_id, category_id, amount, period, source_id, source_uuid, notes, created_by, created_at)
-           SELECT UUID(), ?, ?, ?, ?, ?, ?, ?, ?, NOW()
-           WHERE NOT EXISTS (
-             SELECT 1 FROM financial_transactions
-             WHERE source_id = ? AND source_uuid = ?
-           )`,
-          [
-            route.unit_id,
-            fuelCategoryId,
-            fuelAmount,
+        await RouteMovementsRepository.insertFuelTransactionIfAbsent(
+          {
+            unitId: route.unit_id,
+            categoryId: fuelCategoryId,
+            amount: fuelAmount,
             period,
-            autoSourceId,
-            routeUuid,
-            `Combustible + insumos ruta — ${routeUuid}`,
-            route.driver_id,
-            autoSourceId,
-            routeUuid,
-          ]
+            sourceId: autoSourceId,
+            sourceUuid: routeUuid,
+            notes: `Combustible + insumos ruta — ${routeUuid}`,
+            createdBy: route.driver_id,
+          },
+          connection
         );
       }
 
@@ -297,15 +280,8 @@ export default class RouteService {
    * Returns the active ROUTE movement for a unit, with extension fields merged.
    */
   static async getActiveRoute(unitId: string): Promise<RouteEntry | null> {
-    const [rows] = await db.execute<RowDataPacket[]>(
-      `SELECT fm.*, fre.driver_id, fre.origin_id, fre.destination_neighborhood_id,
-              fre.destination, fre.additives_check, fre.tire_pressure_json, fre.checklist_json
-       FROM fleet_movements fm
-       JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-       WHERE fm.unit_id = ? AND fm.movement_type = 'ROUTE' AND fm.status = 'ACTIVE' LIMIT 1`,
-      [unitId]
-    );
-    return rows.length > 0 ? (rows[0] as RouteEntry) : null;
+    const row = await RouteIncidentsRepository.findActiveRouteByUnit(unitId);
+    return row ? (row as RouteEntry) : null;
   }
 
   /**
@@ -323,15 +299,8 @@ export default class RouteService {
       await connection.beginTransaction();
 
       // 1. Get movement + driver context
-      const [routes] = await connection.execute<RowDataPacket[]>(
-        `SELECT fm.*, fre.driver_id
-         FROM fleet_movements fm
-         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-         WHERE fm.uuid = ?`,
-        [routeUuid]
-      );
-      if (routes.length === 0) throw new Error('Route not found');
-      const route = routes[0];
+      const route = await RouteIncidentsRepository.findRouteWithDriverByUuid(routeUuid, connection);
+      if (!route) throw new Error('Route not found');
 
       // 2. Insert incident
       // FC 082 F2b3a — cutover de escritura: category_id es la única fuente
@@ -339,11 +308,9 @@ export default class RouteService {
       // (el parámetro) sigue usándose para el branch de negocio de abajo y
       // la notificación — solo la columna DB deja de escribirse.
       const categoryId = await resolveCatalogId('INCIDENT_CATEGORY', category, connection);
-      await connection.execute(
-        `INSERT INTO route_incidents
-        (route_uuid, category_id, description, severity, evidence_image, status)
-        VALUES (?, ?, ?, ?, ?, 'OPEN')`,
-        [routeUuid, categoryId, description, severity, evidenceImage || null]
+      await RouteIncidentsRepository.insertIncident(
+        { routeUuid, categoryId, description, severity, evidenceImage },
+        connection
       );
 
       // 3. Determine unit status impact (Industrial Safety Protocol)
@@ -356,31 +323,29 @@ export default class RouteService {
       }
 
       // 4. Forensic journal entry
-      await connection.execute(
-        `INSERT INTO unit_activity_logs
-        (uuid, unit_id, event_type, reference_id, reading_before, status_before, status_after, description, created_by)
-        VALUES (?, ?, 'ROUTE_INCIDENT', ?, ?, ?, ?, ?, ?)`,
-        [
-          randomUUID(),
-          route.unit_id,
+      const statusBefore =
+        route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE;
+      await RouteIncidentsRepository.insertIncidentActivityLog(
+        {
+          logUuid: randomUUID(),
+          unitId: route.unit_id,
           routeUuid,
-          route.start_reading,
-          route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE,
-          nextStatus,
-          `${category}: ${description.substring(0, 100)}`,
-          route.driver_id,
-        ]
+          readingBefore: route.start_reading,
+          statusBefore,
+          statusAfter: nextStatus,
+          description: `${category}: ${description.substring(0, 100)}`,
+          createdBy: route.driver_id,
+        },
+        connection
       );
 
       // 5. Apply unit status impact if it changed
-      if (
-        nextStatus !==
-        (route.status === MOVEMENT_STATUS.ACTIVE ? UNIT_STATUS.IN_ROUTE : UNIT_STATUS.AVAILABLE)
-      ) {
-        await connection.execute('UPDATE fleet_units SET status = ? WHERE id = ?', [
-          nextStatus,
+      if (nextStatus !== statusBefore) {
+        await RouteIncidentsRepository.updateUnitStatusForIncident(
           route.unit_id,
-        ]);
+          nextStatus,
+          connection
+        );
       }
 
       await connection.commit();
@@ -400,117 +365,54 @@ export default class RouteService {
     routeUuid: string,
     params: { sequence: number; name: string; neighborhoodId?: number; eta?: string }
   ): Promise<number> {
-    const [routes] = await db.execute<RowDataPacket[]>(
-      `SELECT fm.id, fm.status FROM fleet_movements fm
-       WHERE fm.uuid = ? AND fm.movement_type = 'ROUTE'`,
-      [routeUuid]
-    );
-    if (routes.length === 0) throw new Error('Route not found');
-    const movementId = routes[0].id as number;
+    const route = await RouteIncidentsRepository.findRouteIdByUuid(routeUuid);
+    if (!route) throw new Error('Route not found');
 
-    const [result] = await db.execute<ResultSetHeader>(
-      `INSERT INTO fleet_route_checkpoints (movement_id, sequence, name, neighborhood_id, eta)
-       VALUES (?, ?, ?, ?, ?)`,
-      [movementId, params.sequence, params.name, params.neighborhoodId ?? null, params.eta ?? null]
-    );
-    return (result as ResultSetHeader).insertId;
+    return RouteIncidentsRepository.insertCheckpoint({
+      movementId: route.id,
+      sequence: params.sequence,
+      name: params.name,
+      neighborhoodId: params.neighborhoodId ?? null,
+      eta: params.eta ?? null,
+    });
   }
 
   /**
    * Returns all checkpoints for a route, ordered by sequence ASC.
    */
-  static async getCheckpoints(routeUuid: string): Promise<RowDataPacket[]> {
-    const [routes] = await db.execute<RowDataPacket[]>(
-      `SELECT fm.id FROM fleet_movements fm
-       WHERE fm.uuid = ? AND fm.movement_type = 'ROUTE'`,
-      [routeUuid]
-    );
-    if (routes.length === 0) throw new Error('Route not found');
-    const movementId = routes[0].id as number;
+  static async getCheckpoints(routeUuid: string) {
+    const route = await RouteIncidentsRepository.findRouteIdByUuid(routeUuid);
+    if (!route) throw new Error('Route not found');
 
-    const [rows] = await db.execute<RowDataPacket[]>(
-      `SELECT id, movement_id, sequence, name, neighborhood_id, eta, arrived_at, status, created_at
-       FROM fleet_route_checkpoints
-       WHERE movement_id = ?
-       ORDER BY sequence ASC`,
-      [movementId]
-    );
-    return rows;
+    return RouteIncidentsRepository.listCheckpointsByMovementId(route.id);
   }
 
   /**
    * Marks a checkpoint as VISITED with arrived_at = NOW().
    */
   static async arriveAtCheckpoint(routeUuid: string, checkpointId: number): Promise<void> {
-    const [routes] = await db.execute<RowDataPacket[]>(
-      `SELECT fm.id FROM fleet_movements fm
-       WHERE fm.uuid = ? AND fm.movement_type = 'ROUTE'`,
-      [routeUuid]
-    );
-    if (routes.length === 0) throw new Error('Route not found');
-    const movementId = routes[0].id as number;
+    const route = await RouteIncidentsRepository.findRouteIdByUuid(routeUuid);
+    if (!route) throw new Error('Route not found');
 
-    const [result] = await db.execute<ResultSetHeader>(
-      `UPDATE fleet_route_checkpoints
-       SET status = 'VISITED', arrived_at = NOW()
-       WHERE id = ? AND movement_id = ? AND status = 'PENDING'`,
-      [checkpointId, movementId]
+    const affectedRows = await RouteIncidentsRepository.markCheckpointVisited(
+      checkpointId,
+      route.id
     );
-    if ((result as ResultSetHeader).affectedRows === 0)
-      throw new Error('Checkpoint not found or already visited');
+    if (affectedRows === 0) throw new Error('Checkpoint not found or already visited');
   }
 
   /**
    * Fetches incidents for a specific route UUID.
    */
-  static async getIncidents(routeUuid: string): Promise<RowDataPacket[]> {
-    // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado);
-    // category_id se expone de forma aditiva (Cond del dictamen Bravo 18:01:49).
-    const [rows] = await db.execute<RowDataPacket[]>(
-      `SELECT ri.id, ri.uuid, ri.route_uuid,
-              cc.code AS category, ri.category_id,
-              ri.description, ri.severity, ri.evidence_image, ri.status,
-              ri.reported_at, ri.resolved_at, ri.resolved_by, ri.resolution_notes
-       FROM route_incidents ri
-       LEFT JOIN common_catalogs cc ON cc.id = ri.category_id
-       WHERE ri.route_uuid = ?
-       ORDER BY ri.reported_at DESC`,
-      [routeUuid]
-    );
-    return rows;
+  static async getIncidents(routeUuid: string) {
+    return RouteIncidentsRepository.listIncidentsByRouteUuid(routeUuid);
   }
 
   /**
    * Fetches all incidents across the fleet.
    */
-  static async getAllIncidents(ownerIds?: number[]): Promise<RowDataPacket[]> {
-    const scopeFilter =
-      ownerIds && ownerIds.length > 0
-        ? `AND fu.ownerId IN (${ownerIds.map(() => '?').join(', ')})`
-        : '';
-    // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado);
-    // category_id aditivo.
-    const query = `SELECT
-        i.id, i.uuid, i.route_uuid,
-        cc.code AS category, i.category_id,
-        i.description, i.severity, i.evidence_image, i.status,
-        i.reported_at, i.resolved_at, i.resolved_by, i.resolution_notes,
-        fm.unit_id,
-        u.full_name as driver_name
-      FROM route_incidents i
-      JOIN fleet_movements fm ON i.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
-      JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-      JOIN users u ON fre.driver_id = u.id
-      JOIN fleet_units fu ON fm.unit_id = fu.id
-      LEFT JOIN common_catalogs cc ON cc.id = i.category_id
-      WHERE 1=1 ${scopeFilter}
-      ORDER BY i.reported_at DESC`;
-
-    const [rows] = await db.execute<RowDataPacket[]>(
-      query,
-      ownerIds && ownerIds.length > 0 ? ownerIds : undefined
-    );
-    return rows;
+  static async getAllIncidents(ownerIds?: number[]) {
+    return RouteIncidentsRepository.listAllIncidents(ownerIds);
   }
 
   /**
@@ -529,29 +431,19 @@ export default class RouteService {
       await connection.beginTransaction();
 
       // 1. Get full snapshot before (joined)
-      const [rows] = await connection.execute<RowDataPacket[]>(
-        `SELECT fm.*, fre.driver_id, fre.origin_id, fre.destination_neighborhood_id,
-                fre.destination, fre.additives_check, fre.tire_pressure_json, fre.checklist_json
-         FROM fleet_movements fm
-         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-         WHERE fm.uuid = ? FOR UPDATE`,
-        [uuid]
+      const snapshotBefore = await RouteMovementsRepository.findRouteSnapshotForUpdate(
+        uuid,
+        connection
       );
-      if (rows.length === 0) throw new Error('Route not found');
-      const snapshotBefore = rows[0];
+      if (!snapshotBefore) throw new Error('Route not found');
 
       // 2. Resolve destination if neighborhoodId is being updated
       if (data.destinationNeighborhoodId !== undefined && data.destinationNeighborhoodId) {
-        const [coloniaRows] = await connection.execute<RowDataPacket[]>(
-          `SELECT c.name AS neighborhood, m.name AS municipality, e.name AS state
-           FROM neighborhoods c
-           JOIN municipalities m ON c.municipality_id = m.id
-           JOIN states e ON m.state_id = e.id
-           WHERE c.id = ?`,
-          [data.destinationNeighborhoodId]
+        const row = await RouteMovementsRepository.findNeighborhoodLabel(
+          data.destinationNeighborhoodId,
+          connection
         );
-        if (coloniaRows.length > 0) {
-          const row = coloniaRows[0];
+        if (row) {
           const suffix = `${row.neighborhood}, ${row.municipality}, ${row.state}`;
           const inputDest = data.destination || '';
           if (inputDest && inputDest !== suffix) {
@@ -612,29 +504,28 @@ export default class RouteService {
       });
 
       if (movementFields.length > 0) {
-        await connection.execute(
-          `UPDATE fleet_movements SET ${movementFields.join(', ')} WHERE uuid = ?`,
-          [...movementValues, uuid]
+        await RouteMovementsRepository.updateRouteMovementFields(
+          uuid,
+          movementFields.join(', '),
+          movementValues,
+          connection
         );
       }
 
       if (extensionFields.length > 0) {
-        await connection.execute(
-          `UPDATE fleet_route_extensions SET ${extensionFields.join(', ')} WHERE movement_id = ?`,
-          [...extensionValues, snapshotBefore.id]
+        await RouteMovementsRepository.updateRouteExtensionFields(
+          snapshotBefore.id,
+          extensionFields.join(', '),
+          extensionValues,
+          connection
         );
       }
 
       // 5. Get snapshot after (joined)
-      const [rowsAfter] = await connection.execute<RowDataPacket[]>(
-        `SELECT fm.*, fre.driver_id, fre.origin_id, fre.destination_neighborhood_id,
-                fre.destination, fre.additives_check, fre.tire_pressure_json, fre.checklist_json
-         FROM fleet_movements fm
-         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-         WHERE fm.uuid = ?`,
-        [uuid]
+      const snapshotAfter = await RouteMovementsRepository.findRouteSnapshotByUuid(
+        uuid,
+        connection
       );
-      const snapshotAfter = rowsAfter[0];
 
       // 6. Forensic audit log
       await recordAuditLog({
@@ -669,17 +560,14 @@ export default class RouteService {
       await connection.beginTransaction();
 
       // 1. Get snapshot before
-      const [rows] = await connection.execute<RowDataPacket[]>(
-        `SELECT fm.*, fre.driver_id FROM fleet_movements fm
-         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-         WHERE fm.uuid = ? FOR UPDATE`,
-        [uuid]
+      const snapshotBefore = await RouteMovementsRepository.findRouteWithDriverForUpdateByUuid(
+        uuid,
+        connection
       );
-      if (rows.length === 0) throw new Error('Route not found');
-      const snapshotBefore = rows[0];
+      if (!snapshotBefore) throw new Error('Route not found');
 
       // 2. Delete base record (CASCADE removes fleet_route_extensions)
-      await connection.execute('DELETE FROM fleet_movements WHERE uuid = ?', [uuid]);
+      await RouteMovementsRepository.deleteRouteByUuid(uuid, connection);
 
       // 3. Forensic audit log
       await recordAuditLog({
@@ -701,5 +589,64 @@ export default class RouteService {
       connection.release();
       throw e;
     }
+  }
+
+  // ─── FC126 F1 (Cond.R-126-S1) — ownership scope, centralized here instead of
+  // ad-hoc in routes/fleetRoutes.ts. T2 prescrita (127_AN Bravo): Ω sees
+  // everything (null); `fleet:scoped` carriers keep the pre-existing
+  // multi-owner mechanism (empty array ⇒ deny, unchanged); everyone else is
+  // restricted to their own tenant_id — never unrestricted by default.
+  static async resolveOwnerScope(user: {
+    id: number;
+    permissions?: string[];
+    tenant_id?: number | null;
+  }): Promise<number[] | null> {
+    const { id, permissions, tenant_id: tenantId } = user;
+    if (permissions?.includes('*')) return null;
+    if (permissions?.includes('fleet:scoped')) {
+      return FleetService.getUserOwnerIds(id);
+    }
+    if (tenantId == null) return [];
+    return [tenantId];
+  }
+
+  static async checkRouteScope(uuid: string, ownerScope: number[] | null): Promise<boolean> {
+    if (ownerScope === null) return true;
+    const ownerId = await RouteRoutesRepository.findRouteOwnerByUuid(uuid);
+    if (ownerId === null) return false;
+    return ownerScope.includes(ownerId);
+  }
+
+  static async checkIncidentScope(uuid: string, ownerScope: number[] | null): Promise<boolean> {
+    if (ownerScope === null) return true;
+    const ownerId = await RouteRoutesRepository.findIncidentOwnerByUuid(uuid);
+    if (ownerId === null) return false;
+    return ownerScope.includes(ownerId);
+  }
+
+  static async checkUnitScope(unitId: string, ownerScope: number[] | null): Promise<boolean> {
+    if (ownerScope === null) return true;
+    const ownerId = await RouteRoutesRepository.findUnitOwner(unitId);
+    if (ownerId === null) return false;
+    return ownerScope.includes(ownerId);
+  }
+
+  static async listRoutes(ownerScope: number[] | null) {
+    return RouteRoutesRepository.listRoutesForOwnerScope(ownerScope);
+  }
+
+  static async listUnitActivityLogs(ownerScope: number[] | null) {
+    return RouteRoutesRepository.listUnitActivityLogsForOwnerScope(ownerScope);
+  }
+
+  static async getRouteNode(uuid: string) {
+    const route = await RouteRoutesRepository.findRouteNodeByUuid(uuid);
+    if (!route) return null;
+    const incidents = await RouteRoutesRepository.findRouteNodeIncidents(uuid);
+    return { route, incidents };
+  }
+
+  static async getIncidentNode(uuid: string) {
+    return RouteRoutesRepository.findIncidentNodeByUuid(uuid);
   }
 }

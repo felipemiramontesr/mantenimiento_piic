@@ -29,6 +29,13 @@ vi.mock('../services/routeService', () => ({
     updateRoute: vi.fn(),
     deleteRoute: vi.fn(),
     reportIncident: vi.fn(),
+    // FC126 F1 — ownership-scope resolution moved into RouteService
+    // (Cond.R-126-S1); Section 1 below mocks these directly instead of the
+    // db.execute sequences that used to back the route's own inline checks.
+    resolveOwnerScope: vi.fn(),
+    checkRouteScope: vi.fn(),
+    checkUnitScope: vi.fn(),
+    listRoutes: vi.fn(),
   },
 }));
 
@@ -90,32 +97,37 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
 
   describe('1. Routes Scoping & IDOR Prevention', () => {
     it('GET /routes filters by owner scope for scoped user', async () => {
+      vi.mocked(RouteService.resolveOwnerScope).mockResolvedValueOnce([42]);
+      vi.mocked(RouteService.listRoutes).mockResolvedValueOnce([]);
+
       await app.inject({
         method: 'GET',
         url: '/v1/routes',
         headers: authHeader(scopedToken),
       });
 
-      expect(FleetService.getUserOwnerIds).toHaveBeenCalledWith(10);
-      const call = vi.mocked(db.execute).mock.calls[0];
-      expect(call[0]).toContain('AND fu.ownerId IN (?)');
-      expect(call[1]).toEqual([42]);
+      expect(RouteService.resolveOwnerScope).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 10 })
+      );
+      expect(RouteService.listRoutes).toHaveBeenCalledWith([42]);
     });
 
     it('GET /routes does NOT filter for unscoped user', async () => {
+      vi.mocked(RouteService.resolveOwnerScope).mockResolvedValueOnce(null);
+      vi.mocked(RouteService.listRoutes).mockResolvedValueOnce([]);
+
       await app.inject({
         method: 'GET',
         url: '/v1/routes',
         headers: authHeader(unscopedToken),
       });
 
-      expect(FleetService.getUserOwnerIds).not.toHaveBeenCalled();
-      const call = vi.mocked(db.execute).mock.calls[0];
-      expect(call[0]).not.toContain('fu.ownerId IN');
+      expect(RouteService.listRoutes).toHaveBeenCalledWith(null);
     });
 
     it('GET /routes returns empty array immediately if owner scope is empty', async () => {
-      vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
+      vi.mocked(RouteService.resolveOwnerScope).mockResolvedValueOnce([]);
+      vi.mocked(RouteService.listRoutes).mockResolvedValueOnce([]);
 
       const res = await app.inject({
         method: 'GET',
@@ -125,15 +137,13 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.json().data).toEqual([]);
-      expect(db.execute).not.toHaveBeenCalled();
+      expect(RouteService.listRoutes).toHaveBeenCalledWith([]);
     });
 
     it('POST /routes/start blocks starting a route for a unit outside owner scope', async () => {
-      // Unit ownerId is 99 (outside user's scope of [42])
-      vi.mocked(db.execute).mockResolvedValueOnce([[{ ownerId: 99 }], []] as unknown as [
-        RowDataPacket[],
-        FieldPacket[]
-      ]);
+      // Unit outside the scoped user's owner scope of [42]
+      vi.mocked(RouteService.resolveOwnerScope).mockResolvedValueOnce([42]);
+      vi.mocked(RouteService.checkUnitScope).mockResolvedValueOnce(false);
 
       const res = await app.inject({
         method: 'POST',
@@ -154,11 +164,9 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
     });
 
     it('POST /routes/start allows starting a route for a unit inside owner scope', async () => {
-      // Unit ownerId is 42 (inside user's scope of [42])
-      vi.mocked(db.execute).mockResolvedValueOnce([[{ ownerId: 42 }], []] as unknown as [
-        RowDataPacket[],
-        FieldPacket[]
-      ]);
+      // Unit inside the scoped user's owner scope of [42]
+      vi.mocked(RouteService.resolveOwnerScope).mockResolvedValueOnce([42]);
+      vi.mocked(RouteService.checkUnitScope).mockResolvedValueOnce(true);
       vi.mocked(RouteService.startRoute).mockResolvedValueOnce('mocked-route-uuid');
 
       const res = await app.inject({
@@ -179,11 +187,9 @@ describe('Security Hardening & Scoping (EAL6+ Integration Tests)', () => {
     });
 
     it('PATCH /routes/:uuid/finish blocks finishing route outside owner scope', async () => {
-      // Route's unit has ownerId 99
-      vi.mocked(db.execute).mockResolvedValueOnce([[{ ownerId: 99 }], []] as unknown as [
-        RowDataPacket[],
-        FieldPacket[]
-      ]);
+      // Route's unit is outside the scoped user's owner scope of [42]
+      vi.mocked(RouteService.resolveOwnerScope).mockResolvedValueOnce([42]);
+      vi.mocked(RouteService.checkRouteScope).mockResolvedValueOnce(false);
 
       const res = await app.inject({
         method: 'PATCH',

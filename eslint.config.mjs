@@ -41,11 +41,47 @@ const compat = new FlatCompat({
 // FC094 F1 Dual-Gate, 111_AN/Bravo 21:54:11) reuse la MISMA lista como fuente
 // única — el umbral de complexity relajado (20 vs 15) de Gate 2 depende de
 // saber si un archivo tocado en el diff está aquí.
+// FC126 F1 (Cond.R-I1-G1…G7, mandato 125_AN Bravo) — I1 (routes zero-SQL) no
+// tenía gate mecánico: la tabla de invariantes de FC094 citaba
+// `no-restricted-imports` pero nunca se implementó, hallazgo real de la
+// interconsulta previa a este FC. Allowlist EXACTA (grep real, no estimada) de
+// rutas que aún importan `../services/db` directamente — monótonamente
+// decreciente (RR2, mismo principio que LEGACY_GODFILES): un archivo sale de
+// aquí en el commit de cierre de su propio FC de dominio, nunca antes. Rutas
+// NUEVAS (no listadas) fallan el gate por defecto — sin excepción manual (G4).
+export const LEGACY_DB_IMPORT_ALLOWLIST = [
+  'apps/api/src/routes/areas.ts',
+  'apps/api/src/routes/auth.ts',
+  'apps/api/src/routes/catalogs.ts',
+  'apps/api/src/routes/finance.ts',
+  'apps/api/src/routes/fleet.ts',
+  'apps/api/src/routes/fleetMaintenance.ts',
+  'apps/api/src/routes/fleetRecalls.ts',
+  'apps/api/src/routes/fleetTco.ts',
+  'apps/api/src/routes/geolocation.ts',
+  'apps/api/src/routes/notifications.ts',
+  'apps/api/src/routes/ownerProfile.ts',
+  'apps/api/src/routes/realtimeTelemetry.ts',
+  'apps/api/src/routes/recallsNhtsa.ts',
+  'apps/api/src/routes/recallsVim.ts',
+  'apps/api/src/routes/reports.ts',
+  'apps/api/src/routes/security.ts',
+  'apps/api/src/routes/social.ts',
+  'apps/api/src/routes/users.ts',
+];
+
 export const LEGACY_GODFILES = [
   // Backend routes (8) — presupuesto normal 250 LOC
   'apps/api/src/routes/fleetMaintenance.ts', // 1338 LOC
   'apps/api/src/routes/auth.ts', // 1069 LOC
-  'apps/api/src/routes/fleetRoutes.ts', // 789 LOC
+  // FC126 F1 — fleetRoutes.ts migrated to Route->Service->Repository (I1-I3
+  // clean, zero-SQL, 43 call-sites moved to 3 repository files) but STAYS
+  // here: even after the SQL migration it counts 390 lines (ESLint
+  // skipBlankLines/skipComments), still over the 250 LOC route budget — 15
+  // endpoints is simply a wide domain. Flagged to Alfa/Bravo (126_FC Fase 2
+  // evidence) rather than force-splitting the plugin file further to hit the
+  // number; RR2 still applies whenever it does get split.
+  'apps/api/src/routes/fleetRoutes.ts', // 390 LOC (post-migration, was 789)
   'apps/api/src/routes/finance.ts', // 717 LOC
   // alerts.ts REMOVED FC094 F5 (RR2/Inv-C) — migrated to Route->Service->Repository
   // in F3 (653 -> 53 LOC), well under the 250 LOC route budget; no longer needs the
@@ -55,7 +91,14 @@ export const LEGACY_GODFILES = [
   'apps/api/src/routes/ownerProfile.ts', // 383 LOC
   // Backend services (4) — presupuesto normal 400 LOC
   'apps/api/src/services/upaEngine.ts', // 870 LOC
-  'apps/api/src/services/routeService.ts', // 705 LOC
+  // FC126 F1 — routeService.ts migrated to zero-SQL (I2, delegates to 2
+  // repository files) but keeps its pre-existing `/* eslint-disable */` +
+  // `// @ts-nocheck` pragma (out of this FC's scope to lift — that's a
+  // separate, larger governance gap unrelated to the SQL-boundary migration
+  // this FC actually authorized). The pragma already exempts the whole file
+  // from max-lines regardless of this entry; kept here for documentation
+  // continuity, not because the gate needs it.
+  'apps/api/src/services/routeService.ts', // 643 LOC (post-migration, was 705)
   'apps/api/src/services/fleetService.ts', // 486 LOC
   'apps/api/src/services/workOrderService.ts', // 448 LOC
   // Web components/pages/context (18) — presupuesto normal 400 LOC
@@ -220,6 +263,35 @@ export default [
     },
   },
   {
+    // FC126 F1 — Cond.R-I1-G1/G2: bloquea `import ... from '../services/db'`
+    // en cualquier ruta de `routes/**` no listada en LEGACY_DB_IMPORT_ALLOWLIST
+    // (bloque siguiente = precedencia). Path real confirmado por grep — NO es
+    // `../db` (corrección de terreno, 127_AN Bravo).
+    files: ['apps/api/src/routes/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '../services/db',
+              message:
+                'I1 (routes zero-SQL, FC126 Cond.R-I1-G1): las rutas no acceden a la DB directamente — delega a un Service, que a su vez delega a un Repository (I2/I3). Si este archivo es legado aún no migrado, agrégalo a LEGACY_DB_IMPORT_ALLOWLIST en eslint.config.mjs vía su propio FC de dominio.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Cond.R-I1-G3: exención temporal — sale de esta lista en el commit de
+    // cierre del FC de dominio que migre ese archivo (RR2), nunca antes.
+    files: LEGACY_DB_IMPORT_ALLOWLIST,
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  {
     // T1 del FC: RatchetPass exento de max-lines (tamaño de archivo) para la
     // semilla congelada de 32. max-lines-per-function/cognitive-complexity para
     // ESTOS 32 archivos se enforzan vía Gate 2 (scripts/checkDiffQuality.ts,
@@ -249,15 +321,13 @@ export default [
     // El ratchet de tamaño de archivo nunca aplicó a tests (ni el inventario
     // F0/F1 los auditó) — suites exhaustivas legítimamente exceden 400/250 sin
     // ser "código espagueti". Bloque final: siempre gana sobre los anteriores.
-    files: [
-      '**/*.test.ts',
-      '**/*.test.tsx',
-      '**/*.spec.ts',
-      '**/*.spec.tsx',
-      'e2e/**/*.ts',
-    ],
+    // Cond.R-I1-G1 tampoco aplica a tests — mockean/ejercitan `../services/db`
+    // directamente por diseño (integration tests), no es el I1 que el gate
+    // vigila (código de producto en routes/**).
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx', 'e2e/**/*.ts'],
     rules: {
       'max-lines': 'off',
+      'no-restricted-imports': 'off',
     },
   },
 ];
