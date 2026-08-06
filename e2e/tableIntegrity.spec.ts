@@ -247,6 +247,56 @@ async function waitForNextPaint(page: Page): Promise<void> {
   );
 }
 
+/** Recolección CRUDA (cero lógica de gate en el browser — FC 077). */
+async function measureTables(page: Page, vpWidth: number): Promise<TableMeasurement[]> {
+  return page.evaluate((vw) => {
+    const out: TableMeasurement[] = [];
+    const isVisible = (el: Element): boolean => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    };
+    // ancestro de scroll horizontal más cercano
+    const findScrollContainer = (table: Element): HTMLElement | null => {
+      let cur = table.parentElement;
+      while (cur && cur !== document.body) {
+        const ox = getComputedStyle(cur).overflowX;
+        if (ox === 'auto' || ox === 'scroll') return cur;
+        cur = cur.parentElement;
+      }
+      return null;
+    };
+    // hints de SovereignScrollArea: hermanos del viewport dentro del wrapper
+    const hasVisibleAffordance = (container: HTMLElement | null): boolean => {
+      if (!container?.parentElement) return false;
+      const hints = container.parentElement.querySelectorAll(
+        '[data-testid$="-hint-left"], [data-testid$="-hint-right"]'
+      );
+      return Array.from(hints).some(isVisible);
+    };
+    for (const table of Array.from(document.querySelectorAll('table'))) {
+      if (table.closest('nav, aside, header, footer')) continue;
+      if (!isVisible(table)) continue;
+
+      const container = findScrollContainer(table);
+      const affordanceVisible = hasVisibleAffordance(container);
+
+      out.push({
+        id:
+          table.getAttribute('data-testid') ||
+          `table.${(table.className || '').split(' ').slice(0, 2).join('.')}`,
+        styleMinWidth: table.style.minWidth || '',
+        tableWidth: table.getBoundingClientRect().width,
+        hasScrollContainer: container !== null,
+        containerClientWidth: container ? container.clientWidth : 0,
+        containerScrollWidth: container ? container.scrollWidth : 0,
+        affordanceVisible,
+        viewportWidth: vw,
+      });
+    }
+    return out;
+  }, vpWidth);
+}
+
 test.describe('FC078 F4 — NoInternalCollapse Gate Permanente', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page);
@@ -278,71 +328,22 @@ test.describe('FC078 F4 — NoInternalCollapse Gate Permanente', () => {
         await waitForNextPaint(page);
       }
 
-      // Recolección CRUDA (cero lógica de gate en el browser — FC 077).
-      const measurements: TableMeasurement[] = await page.evaluate((vw) => {
-        const out: {
-          id: string;
-          styleMinWidth: string;
-          tableWidth: number;
-          hasScrollContainer: boolean;
-          containerClientWidth: number;
-          containerScrollWidth: number;
-          affordanceVisible: boolean;
-          viewportWidth: number;
-        }[] = [];
-        const isVisible = (el: Element): boolean => {
-          const r = el.getBoundingClientRect();
-          return r.width > 0 && r.height > 0;
-        };
-        // ancestro de scroll horizontal más cercano
-        const findScrollContainer = (table: Element): HTMLElement | null => {
-          let cur = table.parentElement;
-          while (cur && cur !== document.body) {
-            const ox = getComputedStyle(cur).overflowX;
-            if (ox === 'auto' || ox === 'scroll') return cur;
-            cur = cur.parentElement;
-          }
-          return null;
-        };
-        // hints de SovereignScrollArea: hermanos del viewport dentro del wrapper
-        const hasVisibleAffordance = (container: HTMLElement | null): boolean => {
-          if (!container?.parentElement) return false;
-          const hints = container.parentElement.querySelectorAll(
-            '[data-testid$="-hint-left"], [data-testid$="-hint-right"]'
-          );
-          return Array.from(hints).some(isVisible);
-        };
-        for (const table of Array.from(document.querySelectorAll('table'))) {
-          if (table.closest('nav, aside, header, footer')) continue;
-          if (!isVisible(table)) continue;
-
-          const container = findScrollContainer(table);
-          const affordanceVisible = hasVisibleAffordance(container);
-
-          out.push({
-            id:
-              table.getAttribute('data-testid') ||
-              `table.${(table.className || '').split(' ').slice(0, 2).join('.')}`,
-            styleMinWidth: table.style.minWidth || '',
-            tableWidth: table.getBoundingClientRect().width,
-            hasScrollContainer: container !== null,
-            containerClientWidth: container ? container.clientWidth : 0,
-            containerScrollWidth: container ? container.scrollWidth : 0,
-            affordanceVisible,
-            viewportWidth: vw,
-          });
-        }
-        return out;
-      }, vpWidth);
-
-      const violations = findTableIntegrityViolations(measurements);
-
-      expect(
-        violations,
-        `[${testInfo.project.name}/${mod.key}] NoInternalCollapse violado: ${JSON.stringify(
-          violations
-        )}`
-      ).toEqual([]);
+      // FC127 — polling acotado (5s): el hint de SovereignScrollArea se
+      // calcula async (mount useEffect + ResizeObserver, ver
+      // SovereignScrollArea.tsx:36-48) y puede tardar más de 2 RAF en
+      // asentarse cuando los datos de la tabla resuelven async. Reintenta
+      // hasta que las violaciones queden vacías o expire el timeout — una
+      // violación PERSISTENTE sigue fallando exactamente igual que antes.
+      await expect(async () => {
+        const measurements = await measureTables(page, vpWidth);
+        const violations = findTableIntegrityViolations(measurements);
+        expect(
+          violations,
+          `[${testInfo.project.name}/${mod.key}] NoInternalCollapse violado: ${JSON.stringify(
+            violations
+          )}`
+        ).toEqual([]);
+      }).toPass({ timeout: 5_000 });
     });
   }
 });

@@ -74,13 +74,13 @@ export const LEGACY_GODFILES = [
   // Backend routes (8) — presupuesto normal 250 LOC
   'apps/api/src/routes/fleetMaintenance.ts', // 1338 LOC
   'apps/api/src/routes/auth.ts', // 1069 LOC
-  // FC126 F1 — fleetRoutes.ts migrated to Route->Service->Repository (I1-I3
-  // clean, zero-SQL, 43 call-sites moved to 3 repository files) but STAYS
-  // here: even after the SQL migration it counts 390 lines (ESLint
-  // skipBlankLines/skipComments), still over the 250 LOC route budget — 15
-  // endpoints is simply a wide domain. Flagged to Alfa/Bravo (126_FC Fase 2
-  // evidence) rather than force-splitting the plugin file further to hit the
-  // number; RR2 still applies whenever it does get split.
+  // FC126 F1/F2 — fleetRoutes.ts migrated to Route->Service->Repository (I1-I3
+  // clean, zero-SQL, 43 call-sites moved to 3 repository files); 390 LOC
+  // (ESLint skipBlankLines/skipComments) stays over the 250 LOC route budget
+  // purely from endpoint count — 15 endpoints is a wide domain, not a
+  // SQL-coupling problem. F2 dictamen (128_AN Alfa, 2026-08-05) audited and
+  // APPROVED this as a standing size exception rather than forcing a further
+  // mechanical split; RR2 still applies whenever it does get split.
   'apps/api/src/routes/fleetRoutes.ts', // 390 LOC (post-migration, was 789)
   'apps/api/src/routes/finance.ts', // 717 LOC
   // alerts.ts REMOVED FC094 F5 (RR2/Inv-C) — migrated to Route->Service->Repository
