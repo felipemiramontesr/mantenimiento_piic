@@ -130,6 +130,18 @@ export const ALLOWLIST: AllowlistEntry[] = [
     snippetIncludes: 'SET time_zone',
     reason: 'MEXICO_TZ_OFFSET es constante hardcodeada (-06:00), no input de usuario.',
   },
+  {
+    file: 'apps/api/src/services/routeMovements.repository.ts',
+    snippetIncludes: 'UPDATE fleet_movements SET',
+    reason:
+      'FC126 F1 — mismo patrón SET dinámico seguro: setClause construido en routeService.ts a partir de movementColumnMap (fragmentos fijos `col = ?`, claves no mapeadas se descartan), valores reales parametrizados en values[].',
+  },
+  {
+    file: 'apps/api/src/services/routeMovements.repository.ts',
+    snippetIncludes: 'UPDATE fleet_route_extensions SET',
+    reason:
+      'FC126 F1 — mismo patrón SET dinámico seguro: setClause construido en routeService.ts a partir de extensionColumnMap (fragmentos fijos `col = ?`, claves no mapeadas se descartan), valores reales parametrizados en values[].',
+  },
 ];
 
 /* v8 ignore start */
