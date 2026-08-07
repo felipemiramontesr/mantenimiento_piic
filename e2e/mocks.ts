@@ -179,6 +179,19 @@ export default async function setupApiMocks(page: Page): Promise<void> {
     }
   );
 
+  // 🔐 Auth: Logout — best-effort per AuthContext.tsx (clears local state
+  // regardless of response), mocked 200 for a clean deterministic E2E path.
+  await page.route(
+    (url) => isApi(url) && url.pathname.includes('/auth/logout'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    }
+  );
+
   // 👥 Auth: Users list
   await page.route(
     (url) =>

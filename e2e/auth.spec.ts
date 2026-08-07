@@ -78,4 +78,20 @@ test.describe('Archon Authentication Flow', () => {
     await page.getByTestId('nav-item-unidades').click();
     await expect(page.getByText('Administrar Unidades')).toBeVisible({ timeout: 15_000 });
   });
+
+  // FC130 F1 Cond.R-130-M1 — logout tenía cobertura de integración (POST
+  // /logout, authIntegration.test.ts) pero ningún E2E ejercía el flujo real
+  // de UI (clic → limpieza de sesión → redirect). Cerraba el hallazgo aquí.
+  test('should logout and redirect to login', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByPlaceholder('usuario o correo@empresa.com').fill('GrayMan');
+    await page.getByPlaceholder('••••••••').fill('Archon2026!');
+    await page.getByRole('button', { name: /Acceder al Sistema/i }).click();
+    await page.waitForURL('**/dashboard**', { timeout: 15_000 });
+
+    await page.getByTestId('nav-item-logout').click();
+
+    await page.waitForURL('**/login**', { timeout: 10_000 });
+    await expect(page.getByText('Acceso Archon')).toBeVisible({ timeout: 5_000 });
+  });
 });
