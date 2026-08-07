@@ -104,9 +104,10 @@ export const ALLOWLIST: AllowlistEntry[] = [
       'fields[] son fragmentos fijos `col = ?` empujados condicionalmente; valores reales parametrizados en values[].',
   },
   {
-    file: 'apps/api/src/routes/auth.ts',
+    file: 'apps/api/src/services/authUserManagement.repository.ts',
     snippetIncludes: 'UPDATE users SET',
-    reason: 'Mismo patrón SET dinámico seguro que admin.ts — valores en values[] parametrizados.',
+    reason:
+      'FC130 F1 — reubicado desde routes/auth.ts (mismo query literal). setClause construido en authUserManagement.service.ts::buildUserUpdateFields (fragmentos fijos `col = ?`, un push condicional por campo conocido), valores reales parametrizados en values[].',
   },
   {
     file: 'apps/api/src/routes/crmContracts.ts',

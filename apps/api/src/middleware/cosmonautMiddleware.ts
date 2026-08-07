@@ -1,6 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { RowDataPacket } from 'mysql2';
-import db from '../services/db';
+import * as CosmonautRepository from '../services/cosmonaut.repository';
 
 /**
  * FC24 FaseC — Cosmonaut Middleware
@@ -10,6 +9,9 @@ import db from '../services/db';
  * FC082 F3b — Auth Cutover (089_AN §9, O✓Alfa/R✓Bravo 1ª+2ª ronda):
  * resolvePrimaryTenant · getAvailableTenants · deriveOwnerType ·
  * isTenantAssignmentActive · resolveAuthContext · resolveAuthContextForRefresh
+ *
+ * FC130 F1 — zero-SQL (I2): toda persistencia delega a `cosmonaut.repository.ts`
+ * (Alfa 130_AN §2, Cond.R-130-E2 — INCLUSIÓN OBLIGATORIA). API pública sin cambio.
  */
 
 /** R2a (Bravo, 2ª ronda) — thrown when a user has >1 row in tenant_user_memberships.
@@ -37,18 +39,7 @@ export async function resolveEffectivePermissions(
   userId: number,
   tenantId: number | null
 ): Promise<string[]> {
-  const [rows] = await db.execute<RowDataPacket[]>(
-    `SELECT DISTINCT p.slug
-     FROM cosmonaut_role_assignments cra
-     JOIN cosmonaut_roles cr          ON cr.id  = cra.role_id
-     JOIN cosmonaut_role_permissions crp ON crp.role_id = cr.id
-     JOIN permissions p               ON p.id   = crp.permission_id
-     WHERE cra.user_id = ?
-       AND cra.revoked_at IS NULL
-       AND (cra.tenant_id = ? OR cra.tenant_id IS NULL)`,
-    [userId, tenantId]
-  );
-  return rows.map((r) => r.slug as string);
+  return CosmonautRepository.findEffectivePermissionSlugs(userId, tenantId);
 }
 
 /** Prehandler: caller must be Ω (roleId=0) OR have cosmonaut_type='MU' in the given Universe.
@@ -64,12 +55,8 @@ export function requireMuOrOmega(
     // Ω bypass — roleId=0 or wildcard permissions
     if (caller.roleId === 0 || (caller.permissions ?? []).includes('*')) return;
 
-    const [rows] = await db.execute<RowDataPacket[]>(
-      `SELECT cosmonaut_type FROM tenant_user_memberships
-       WHERE user_id = ? AND owner_id = ? LIMIT 1`,
-      [caller.id, tenantId]
-    );
-    if (rows.length === 0 || (rows[0].cosmonaut_type as string) !== 'MU') {
+    const cosmonautType = await CosmonautRepository.findCosmonautType(caller.id, tenantId);
+    if (cosmonautType !== 'MU') {
       reply.code(403).send({
         success: false,
         code: 'FORBIDDEN',
@@ -106,21 +93,10 @@ export async function antiEscalationGuard(
   const grantorPerms = await resolveEffectivePermissions(grantorId, tenantId);
 
   // Ω holds '*' via legacy permissions — full bypass
-  const [omegaCheck] = await db.execute<RowDataPacket[]>(
-    'SELECT role_id FROM users WHERE id = ? AND role_id = 0 LIMIT 1',
-    [grantorId]
-  );
-  if (omegaCheck.length > 0) return true;
+  if (await CosmonautRepository.isOmegaUser(grantorId)) return true;
 
   // Get permissions of the role being granted
-  const [rolePerms] = await db.execute<RowDataPacket[]>(
-    `SELECT p.slug
-     FROM cosmonaut_role_permissions crp
-     JOIN permissions p ON p.id = crp.permission_id
-     WHERE crp.role_id = ?`,
-    [roleId]
-  );
-  const roleSlugs = rolePerms.map((r) => r.slug as string);
+  const roleSlugs = await CosmonautRepository.findRolePermissionSlugs(roleId);
 
   // I8: every role permission must be in grantor's effective permissions
   const escalated = roleSlugs.filter((slug) => !grantorPerms.includes(slug));
@@ -128,15 +104,8 @@ export async function antiEscalationGuard(
 
   // Lattice exception (OQ-4 AG): check if an active Lattice grants cross-Universe access
   if (tenantId !== null) {
-    const [lattices] = await db.execute<RowDataPacket[]>(
-      `SELECT schema_definition FROM universe_lattices
-       WHERE (u1_tenant_id = ? OR u2_tenant_id = ?)
-         AND status = 'ACTIVE'
-       LIMIT 1`,
-      [tenantId, tenantId]
-    );
-    if (lattices.length > 0) {
-      const schema = lattices[0].schema_definition as string;
+    const schema = await CosmonautRepository.findActiveLatticeSchema(tenantId);
+    if (schema !== null) {
       const allowed = escalated.every((slug) => {
         try {
           return JSON.parse(schema)?.cross_permissions?.includes(slug) === true;
@@ -159,26 +128,14 @@ export async function antiEscalationGuard(
  *  R2a: >1 fila en tenant_user_memberships para el mismo user_id → HALT, nunca elegir.
  */
 export async function resolvePrimaryTenant(userId: number): Promise<number | null> {
-  const [memberships] = await db.execute<RowDataPacket[]>(
-    'SELECT owner_id FROM tenant_user_memberships WHERE user_id = ?',
-    [userId]
-  );
-  if (memberships.length > 1) {
-    throw new MultiMembershipHaltError(
-      userId,
-      memberships.map((m) => m.owner_id as number)
-    );
+  const ownerIds = await CosmonautRepository.findTenantMembershipOwnerIds(userId);
+  if (ownerIds.length > 1) {
+    throw new MultiMembershipHaltError(userId, ownerIds);
   }
-  if (memberships.length === 1) {
-    return memberships[0].owner_id as number;
+  if (ownerIds.length === 1) {
+    return ownerIds[0];
   }
-  const [assignments] = await db.execute<RowDataPacket[]>(
-    `SELECT tenant_id FROM cosmonaut_role_assignments
-     WHERE user_id = ? AND revoked_at IS NULL AND tenant_id IS NOT NULL
-     ORDER BY id ASC LIMIT 1`,
-    [userId]
-  );
-  return assignments.length > 0 ? (assignments[0].tenant_id as number) : null;
+  return CosmonautRepository.findEarliestActiveAssignmentTenantId(userId);
 }
 
 /** Universos disponibles para el switcher (Alfa, Opción B) — unión de la membresía
@@ -186,14 +143,7 @@ export async function resolvePrimaryTenant(userId: number): Promise<number | nul
  *  para POST /auth/switch-tenant (Cond.2 Bravo).
  */
 export async function getAvailableTenants(userId: number): Promise<number[]> {
-  const [rows] = await db.execute<RowDataPacket[]>(
-    `SELECT owner_id AS tenantId FROM tenant_user_memberships WHERE user_id = ?
-     UNION
-     SELECT tenant_id AS tenantId FROM cosmonaut_role_assignments
-     WHERE user_id = ? AND revoked_at IS NULL AND tenant_id IS NOT NULL`,
-    [userId, userId]
-  );
-  return rows.map((r) => r.tenantId as number);
+  return CosmonautRepository.findAvailableTenantIds(userId);
 }
 
 /** §9.3 (089_AN) — ownerType re-derivado (decisión de Alfa) desde el catálogo real,
@@ -201,29 +151,15 @@ export async function getAvailableTenants(userId: number): Promise<number[]> {
  */
 export async function deriveOwnerType(tenantId: number | null): Promise<string | null> {
   if (tenantId === null) return null;
-  const [rows] = await db.execute<RowDataPacket[]>(
-    `SELECT otc.code FROM tenants t
-     JOIN owner_types_catalog otc ON otc.id = t.owner_type_id
-     WHERE t.id = ?`,
-    [tenantId]
-  );
-  return rows.length > 0 ? (rows[0].code as string) : null;
+  return CosmonautRepository.findOwnerTypeCode(tenantId);
 }
 
 /** Verifica que el usuario tenga membresía formal o asignación activa en tenantId —
  *  usado por switch-tenant (Cond.2) y por el fail-safe de refresh (§9.2.1).
  */
 export async function isTenantAssignmentActive(userId: number, tenantId: number): Promise<boolean> {
-  const [memberships] = await db.execute<RowDataPacket[]>(
-    'SELECT 1 FROM tenant_user_memberships WHERE user_id = ? AND owner_id = ? LIMIT 1',
-    [userId, tenantId]
-  );
-  if (memberships.length > 0) return true;
-  const [assignments] = await db.execute<RowDataPacket[]>(
-    'SELECT 1 FROM cosmonaut_role_assignments WHERE user_id = ? AND tenant_id = ? AND revoked_at IS NULL LIMIT 1',
-    [userId, tenantId]
-  );
-  return assignments.length > 0;
+  if (await CosmonautRepository.hasTenantMembership(userId, tenantId)) return true;
+  return CosmonautRepository.hasActiveAssignment(userId, tenantId);
 }
 
 export interface ResolvedAuthContext {

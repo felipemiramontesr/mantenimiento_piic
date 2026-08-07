@@ -1,269 +1,30 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { PoolConnection } from 'mysql2/promise';
 import '@fastify/cookie';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import { z } from 'zod';
 import { userUpdateSchema } from '@mantenimiento/contracts';
-import db from '../services/db';
-import EncryptionService from '../services/encryption';
-import { recordAuditLog } from '../services/auditService';
 import requirePermission from '../middleware/requirePermission';
-import withConnection from '../utils/withConnection';
-import FleetService from '../services/fleetService';
-import {
-  resolveAuthContext,
-  resolveAuthContextForRefresh,
-  isTenantAssignmentActive,
-  resolveEffectivePermissions,
-  resolvePrimaryTenant,
-  deriveOwnerType,
-  getAvailableTenants,
-  antiEscalationGuard,
-  MultiMembershipHaltError,
-} from '../middleware/cosmonautMiddleware';
-
-const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
-  const { id, permissions } = request.user as { id: number; permissions?: string[] };
-  if (!permissions || permissions.includes('*') || !permissions.includes('fleet:scoped'))
-    return null;
-  return FleetService.getUserOwnerIds(id);
-};
-
-const isUserInOwnerScope = async (
-  connection: PoolConnection,
-  targetUserId: string,
-  ownerScope: number[]
-): Promise<boolean> => {
-  const [memberships] = await connection.execute<RowDataPacket[]>(
-    'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
-    [targetUserId]
-  );
-  const targetOwnerIds = memberships.map((m) => m.owner_id as number);
-  return targetOwnerIds.some((oid) => ownerScope.includes(oid));
-};
-
-/** Extraído del handler PATCH /users/:id (sonarjs/cognitive-complexity) — cada
- *  campo opcional del payload se traduce 1:1 a un fragmento SET, sin lógica
- *  de negocio propia más allá de "¿vino en el payload?".
- */
-const buildUserUpdateFields = async (
-  updates: z.infer<typeof userUpdateSchema>['data']
-): Promise<{ fields: string[]; values: (string | number | boolean)[] }> => {
-  const fields: string[] = [];
-  const values: (string | number | boolean)[] = [];
-  if (updates.fullName) {
-    fields.push('full_name = ?');
-    values.push(updates.fullName);
-  }
-  if (updates.department) {
-    fields.push('department = ?');
-    values.push(updates.department);
-  }
-  if (updates.email) {
-    fields.push('email = ?');
-    values.push(EncryptionService.encrypt(updates.email));
-  }
-  if (updates.password) {
-    fields.push('password_hash = ?');
-    values.push(await argon2Hash(updates.password));
-  }
-  if (updates.roleId !== undefined) {
-    fields.push('role_id = ?');
-    values.push(updates.roleId);
-  }
-  if (updates.profilePictureUrl) {
-    fields.push('profile_picture_url = ?');
-    values.push(updates.profilePictureUrl);
-  }
-  if (updates.employeeNumber) {
-    fields.push('employee_number = ?');
-    values.push(updates.employeeNumber);
-  }
-  if (updates.departmentId) {
-    fields.push('department_id = ?');
-    values.push(updates.departmentId);
-  }
-  if (updates.is_active !== undefined) {
-    fields.push('is_active = ?');
-    values.push(updates.is_active ? 1 : 0);
-  }
-  return { fields, values };
-};
-
-/** FC 082 F3c Cond.1 (Bravo) — R4: "role_id=0 solo Ω". roles solo conserva la
- *  fila 0 (GrayMan) desde la purga de mig.164 (F0c) — cualquier otro valor ya
- *  no tiene contraparte real y violaría la FK legacy; se rechaza explícito en
- *  vez de dejar que un error crudo de MySQL llegue al cliente. "Ω" se checa
- *  igual que en cosmonautMiddleware (roleId=0 O permissions incluye '*'), no
- *  solo el claim roleId — mismo criterio que requireOmega(). Retorna null si
- *  el update es válido (o no toca roleId), o el shape de error a responder.
- */
-const validateRoleIdUpdate = (
-  roleId: number | undefined,
-  adminIsOmega: boolean
-): { status: number; code: string; message: string } | null => {
-  if (roleId === undefined) return null;
-  if (roleId !== 0) {
-    return {
-      status: 400,
-      code: 'ROLE_ID_UNSUPPORTED',
-      message:
-        'roleId legacy solo admite 0 (GrayMan) — la asignación de roles reales usa POST /cosmonauts/:userId/roles',
-    };
-  }
-  if (!adminIsOmega) {
-    return { status: 403, code: 'FORBIDDEN', message: 'Solo Ω puede asignar role_id=0' };
-  }
-  return null;
-};
-
-/** FC 082 F3c Cond.1 (Bravo) — R4: refleja roleId=0 en el chasis cosmonauta
- *  (cosmonaut_role_assignments) en vez de user_roles legacy. I8 se invoca
- *  explícito por consistencia con POST /cosmonauts/:userId/roles, aunque para
- *  un caller Ω siempre pase (bypass '*' documentado en antiEscalationGuard).
- *  Retorna false si I8 deniega el grant (caller debe hacer rollback + 403).
- */
-const syncGrayManCosmonautAssignment = async (
-  connection: PoolConnection,
-  targetUserId: string,
-  adminId: number
-): Promise<boolean> => {
-  const [grayManRoleRows] = await connection.execute<RowDataPacket[]>(
-    "SELECT id FROM cosmonaut_roles WHERE tenant_id IS NULL AND name = 'GrayMan' LIMIT 1",
-    []
-  );
-  if (grayManRoleRows.length === 0) return true;
-  const grayManRoleId = grayManRoleRows[0].id as number;
-  const allowed = await antiEscalationGuard(adminId, null, grayManRoleId);
-  if (!allowed) return false;
-  await connection.execute(
-    `UPDATE cosmonaut_role_assignments
-     SET revoked_at = NOW(), revoked_by = ?
-     WHERE user_id = ? AND tenant_id IS NULL AND revoked_at IS NULL`,
-    [adminId, Number(targetUserId)]
-  );
-  // Hallazgo soft Bravo (auditoría F3c1, 2026-08-01) — mismo footgun que
-  // mig.155: UNIQUE(user_id, role_id, tenant_id) no protege nada cuando
-  // tenant_id IS NULL (MySQL trata NULL≠NULL), así que INSERT IGNORE nunca
-  // detectaría un duplicado real. WHERE NOT EXISTS sí es NULL-safe.
-  await connection.execute(
-    `INSERT INTO cosmonaut_role_assignments (user_id, role_id, tenant_id, assigned_by)
-     SELECT ?, ?, NULL, ?
-     WHERE NOT EXISTS (
-       SELECT 1 FROM cosmonaut_role_assignments
-       WHERE user_id = ? AND role_id = ? AND tenant_id IS NULL AND revoked_at IS NULL
-     )`,
-    [Number(targetUserId), grayManRoleId, adminId, Number(targetUserId), grayManRoleId]
-  );
-  return true;
-};
-
-// FC 082 F0c — /register y sus helpers (resolveOwnerRow, insertOwnerProfile)
-// murieron con las bandas de roles {1,3,4} (084_AN v3.1 §1a). El alta de
-// usuarios/Arcs renace en F3 sobre el chasis §24.13 + Contrato §C (dual-door).
+import { MultiMembershipHaltError } from '../middleware/cosmonautMiddleware';
+import * as SessionService from '../services/authSession.service';
+import * as UserManagementService from '../services/authUserManagement.service';
 
 /**
  * 🔱 Archon Auth Engine (v.8.7.0) - THE NUCLEUS
- * Goal: 100.00% Absolute Everything. Catch-Compaction for V8 reporting.
+ * FC130 F1 — zero-SQL (I1): toda persistencia delega a authSession.service.ts /
+ * authUserManagement.service.ts / cosmonautMiddleware.ts. Esta ruta solo
+ * parsea request, llama al service y formatea la respuesta HTTP (firma JWT +
+ * cookies incluida — Cond.R-130-E4, adapters explícitos fuera del service).
  */
-
-function mapUserResponse(user: RowDataPacket): {
-  id: number;
-  uuid: string;
-  username: string;
-  fullName: string;
-  email: string;
-  roleId: number;
-  roleName: string;
-  department: string;
-  imageUrl: string | null;
-  employeeNumber: string | null;
-  is_active: boolean;
-} {
-  let rid = user.role_id;
-  if (rid === undefined) {
-    rid = user.roleId;
-  }
-  let rname = user.role_name;
-  if (!rname) {
-    rname = user.roleName;
-  }
-  let img = user.profile_picture_url;
-  if (!img) {
-    img = user.imageUrl;
-  }
-  // Plan Omega: data URIs pass through directly, legacy filenames use endpoint
-  let pic = null;
-  if (img && img.startsWith('data:')) {
-    pic = img;
-  } else if (img) {
-    pic = `/v1/users/${user.id}/profile-image`;
-  }
-  return {
-    id: user.id,
-    uuid: user.uuid,
-    username: user.username,
-    fullName: user.full_name || user.fullName,
-    email: EncryptionService.decrypt(user.email),
-    roleId: rid,
-    roleName: rname,
-    department: user.department_name || user.department,
-    imageUrl: pic,
-    employeeNumber: user.employee_number || user.employeeNumber || null,
-    is_active: user.is_active !== undefined ? Boolean(user.is_active) : true,
-  };
-}
-
-async function findUserByEmail(username: string): Promise<RowDataPacket | null> {
-  const response = await db.execute<RowDataPacket[]>('SELECT * FROM users WHERE is_active = 1', []);
-  if (!response) {
-    return null;
-  }
-  const [results] = response;
-  if (!results) {
-    return null;
-  }
-  const found = results.find((u) => {
-    try {
-      if (EncryptionService.decrypt(u.email) === username) {
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  });
-  if (!found) {
-    return null;
-  }
-  const fullResponse = await db.execute<RowDataPacket[]>(
-    // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada; role_name cosmético
-    // vía CASE (equivalente exacto al LEFT JOIN previo: solo role_id=0
-    // resolvía nombre, cualquier otro ya era NULL).
-    "SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name FROM users u LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.id = ?",
-    [found.id]
-  );
-  if (!fullResponse) {
-    return null;
-  }
-  const [fullRows] = fullResponse;
-  if (!fullRows || !fullRows[0]) {
-    return null;
-  }
-  return fullRows[0];
-}
 
 /** FC 082 F3b Cond.1 (Bravo) — respuesta uniforme para R2a: nunca elegir tenant en
  *  silencio cuando un usuario tiene >1 fila en tenant_user_memberships. HALT + log
  *  forense, requiere resolución manual de Ω (sin producto de "multi-home" aún).
  */
 function haltMultiMembership(
-  fastify: FastifyInstance,
+  request: FastifyRequest,
   reply: FastifyReply,
   error: MultiMembershipHaltError
 ): FastifyReply {
-  fastify.log.error({ userId: error.userId, tenantIds: error.tenantIds }, error.message);
+  request.log.error({ userId: error.userId, tenantIds: error.tenantIds }, error.message);
   return reply.code(409).send({
     success: false,
     code: 'MULTI_TENANT_MEMBERSHIP_UNRESOLVED',
@@ -271,6 +32,404 @@ function haltMultiMembership(
   });
 }
 
+function refreshCookieOpts(): {
+  httpOnly: true;
+  secure: boolean;
+  sameSite: 'strict';
+  domain: string | undefined;
+  path: string;
+  maxAge: number;
+} {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'strict',
+    domain: isProduction ? '.piic.com.mx' : undefined,
+    path: '/v1/auth',
+    maxAge: 7 * 24 * 60 * 60,
+  };
+}
+
+async function handleLogin(
+  request: FastifyRequest<{ Body: { username?: string; password?: string } }>,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const { username, password } = request.body;
+  if (!username) {
+    return reply.code(400).send({ error: 'L1' });
+  }
+  if (!password) {
+    return reply.code(400).send({ error: 'L2' });
+  }
+  try {
+    const result = await SessionService.login(username, password);
+    if (!result.ok) {
+      return reply.code(401).send({ error: result.errorCode });
+    }
+    const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
+    const token = request.server.jwt.sign({
+      id: result.userId,
+      username: result.username,
+      roleId: mapped.roleId,
+      roleName: mapped.roleName,
+      permissions,
+      type: 'access',
+      tenant_id: tenantId,
+      owner_type: ownerType,
+    });
+    const refreshToken = request.server.jwt.sign(
+      { id: result.userId, type: 'refresh', tenant_id: tenantId },
+      { expiresIn: '7d' }
+    );
+    return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts()).send({
+      success: true,
+      token,
+      user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+    });
+  } catch (e) {
+    if (e instanceof MultiMembershipHaltError) {
+      return haltMultiMembership(request, reply, e);
+    }
+    request.log.error(e);
+    return reply.code(500).send({ error: 'LOGIN_FAIL' });
+  }
+}
+
+async function handleRefresh(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  try {
+    const decoded = await request.jwtVerify<{
+      id: number;
+      type: string;
+      tenant_id?: number | null;
+    }>();
+    if (!decoded || decoded.type !== 'refresh') {
+      return reply.code(401).send({ error: 'INVALID_TOKEN_TYPE' });
+    }
+    const result = await SessionService.refresh(decoded.id, decoded.tenant_id);
+    if (!result.ok) {
+      return reply.code(401).send({ error: result.errorCode });
+    }
+    const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
+    const accessToken = request.server.jwt.sign({
+      id: result.userId,
+      username: result.username,
+      roleId: mapped.roleId,
+      roleName: mapped.roleName,
+      permissions,
+      type: 'access',
+      tenant_id: tenantId,
+      owner_type: ownerType,
+    });
+    return reply.send({
+      success: true,
+      token: accessToken,
+      user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+    });
+  } catch (e) {
+    if (e instanceof MultiMembershipHaltError) {
+      return haltMultiMembership(request, reply, e);
+    }
+    // Incidente DB-1045 P3 (Alfa/Bravo) — error boundary: un token ausente/
+    // expirado/inválido (@fastify/jwt siempre marca statusCode=401) sigue
+    // siendo 401 REFRESH_FAIL sin ensuciar logs. Cualquier OTRO error (DB,
+    // sistema) ya no se disfraza de fallo de sesión — se loguea completo y
+    // responde 500, para no confundir una caída de infraestructura con un
+    // logout legítimo.
+    const err = e as { statusCode?: number; code?: string };
+    if (err.statusCode === 401 || err.code?.startsWith('FST_JWT_')) {
+      return reply.code(401).send({ error: 'REFRESH_FAIL' });
+    }
+    request.log.error({ route: '/refresh', err: e }, 'Refresh failed — system error');
+    return reply
+      .code(500)
+      .send({ success: false, code: 'INTERNAL_ERROR', message: 'REFRESH_FAIL' });
+  }
+}
+
+async function handleSwitchTenant(
+  request: FastifyRequest<{ Body: { tenantId?: number } }>,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  // jwtVerify fuera del try/catch: un token ausente/inválido debe serializar
+  // como 401 vía el error handler global (index.ts — "jwt 401 untouched"),
+  // no como 500 genérico.
+  await request.jwtVerify();
+  try {
+    const caller = request.user as { id: number; roleId: number };
+    const result = await SessionService.switchTenant(
+      caller.id,
+      caller.roleId,
+      request.body?.tenantId
+    );
+    if (!result.ok) {
+      return reply.code(result.status).send({
+        success: false,
+        code: result.code,
+        ...(result.message ? { message: result.message } : {}),
+      });
+    }
+    const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
+    const token = request.server.jwt.sign({
+      id: result.userId,
+      username: result.username,
+      roleId: mapped.roleId,
+      roleName: mapped.roleName,
+      permissions,
+      type: 'access',
+      tenant_id: tenantId,
+      owner_type: ownerType,
+    });
+    const refreshToken = request.server.jwt.sign(
+      { id: result.userId, type: 'refresh', tenant_id: tenantId },
+      { expiresIn: '7d' }
+    );
+    // R2b (Bravo) — reemitir la cookie con los MISMOS atributos que /login,
+    // si no la cookie vieja sin tenant_id gana en el próximo /refresh.
+    return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts()).send({
+      success: true,
+      token,
+      user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+    });
+  } catch (e) {
+    request.log.error({ route: '/switch-tenant', err: e }, 'Switch-tenant failed');
+    return reply.code(500).send({ success: false, code: 'INTERNAL_ERROR' });
+  }
+}
+
+async function handleLogout(_request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return reply
+    .clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict' as const,
+      domain: isProduction ? '.piic.com.mx' : undefined,
+      path: '/v1/auth',
+    })
+    .send({ success: true });
+}
+
+async function handleGetUsers(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  await request.jwtVerify();
+  const { role } = request.query as { role?: string };
+  try {
+    const ownerScope = await UserManagementService.resolveOwnerScope(
+      request.user as { id: number; permissions?: string[] }
+    );
+    const data = await UserManagementService.listUsers(ownerScope, role);
+    return reply.send({ success: true, data });
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send({ error: 'USER_FAIL' });
+  }
+}
+
+async function handlePatchUser(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  // FC 076 F4 — schema movido a packages/contracts (SSOT compartido con
+  // apps/web); importado 1:1, cero cambio semántico (Cond.1 Bravo).
+  const { id } = request.params as { id: string };
+  const body = userUpdateSchema.safeParse(request.body);
+  if (!body.success) {
+    return reply.code(400).send({ error: 'U1', details: body.error.format() });
+  }
+  const { data: updates, reason } = body.data;
+  await request.jwtVerify();
+  const admin = request.user as { id: number; roleId?: number; permissions?: string[] };
+  const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
+  const roleIdError = UserManagementService.validateRoleIdUpdate(updates.roleId, adminIsOmega);
+  if (roleIdError) {
+    return reply
+      .code(roleIdError.status)
+      .send({ success: false, code: roleIdError.code, message: roleIdError.message });
+  }
+  try {
+    const result = await UserManagementService.updateUser(id, updates, reason, admin);
+    if (!result.ok) {
+      return reply.code(result.status).send({ error: result.code });
+    }
+    return reply.send({ success: true });
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send({ error: 'UPDATE_FAIL' });
+  }
+}
+
+async function handleDeleteUser(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const { id } = request.params as { id: string };
+  const parse = z.object({ reason: z.string().min(5) }).safeParse(request.body);
+  if (!parse.success) {
+    return reply.code(400).send({ error: 'D1', details: parse.error.format() });
+  }
+  const { reason } = parse.data;
+  await request.jwtVerify();
+  const admin = request.user as { id: number };
+  try {
+    const result = await UserManagementService.deleteUser(id, reason, admin);
+    if (!result.ok) {
+      return reply.code(result.status).send({ error: result.code });
+    }
+    return reply.send({ success: true });
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send({ error: 'DELETE_FAIL' });
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Archon Master: user ↔ owner membership management
+// Guard: user:admin — only user administrators manage owner assignments.
+// ──────────────────────────────────────────────────────────────────────────
+const ownersGuard = {
+  onRequest: async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      reply.code(401).send({ error: 'Archon Protection: Session required' });
+    }
+  },
+  preHandler: [requirePermission('admin:role:edit')],
+};
+
+async function handleGetUserOwners(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const { id } = request.params as { id: string };
+  try {
+    const ownerScope = await UserManagementService.resolveOwnerScope(
+      request.user as { id: number; permissions?: string[] }
+    );
+    const result = await UserManagementService.getUserOwners(id, ownerScope);
+    if (!result.ok) {
+      return reply
+        .code(result.status)
+        .send({ success: false, code: result.code, message: result.message });
+    }
+    return reply.send({ success: true, data: result.data });
+  } catch (e) {
+    request.log.error({ err: (e as Error).message }, 'User owners fetch failed');
+    return reply.code(500).send({ success: false, code: 'INTERNAL_ERROR', message: 'OWNERS_FAIL' });
+  }
+}
+
+async function handlePutUserOwners(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const parsed = z
+    .object({ ownerIds: z.array(z.number().int()), reason: z.string().min(5) })
+    .safeParse(request.body);
+  if (!parsed.success) {
+    return reply
+      .code(400)
+      .send({ success: false, code: 'VALIDATION_ERROR', message: parsed.error.issues[0].message });
+  }
+  const { id } = request.params as { id: string };
+  const { ownerIds, reason } = parsed.data;
+  const admin = request.user as { id: number; permissions?: string[] };
+  try {
+    const result = await UserManagementService.updateUserOwners(id, ownerIds, reason, admin);
+    if (!result.ok) {
+      return reply.code(result.status).send({
+        success: false,
+        code: result.code,
+        message: result.message,
+        ...(result.field ? { field: result.field } : {}),
+      });
+    }
+    return reply.send({ success: true, data: { ownerIds: result.ownerIds } });
+  } catch (e) {
+    request.log.error({ err: (e as Error).message }, 'User owners update failed');
+    return reply
+      .code(500)
+      .send({ success: false, code: 'INTERNAL_ERROR', message: 'OWNERS_UPDATE_FAIL' });
+  }
+}
+
+// FC 082 F3c2 Cond.2 (Bravo) — retirado con el CRUD legacy de roles (roles
+// solo conserva la fila 0 desde mig.164). 410, no 404: la ruta existió y
+// fue retirada a propósito, no es un typo de URL. Gobernanza de roles reales
+// vía /v1/cosmonauts/roles* (chasis cosmonauta, Cond.9).
+async function handleGetRoles(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  await request.jwtVerify();
+  return reply.code(410).send({
+    success: false,
+    code: 'GONE',
+    message: 'Retirado en FC082 F3c2 — usar /v1/cosmonauts/roles',
+  });
+}
+
+async function handleGetMe(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  try {
+    await request.jwtVerify();
+    const { id, tenant_id: claimedTenantId } = request.user as {
+      id: number;
+      tenant_id?: number | null;
+    };
+    const result = await SessionService.getMe(id, claimedTenantId);
+    if (!result) {
+      return reply
+        .code(404)
+        .send({ success: false, code: 'NOT_FOUND', message: 'Usuario no encontrado' });
+    }
+    const { mapped, permissions, tenantId, ownerType, availableTenants } = result;
+    return reply.send({
+      success: true,
+      data: { ...mapped, capabilities: permissions, tenantId, ownerType, availableTenants },
+    });
+  } catch (error) {
+    if (error instanceof MultiMembershipHaltError) {
+      return haltMultiMembership(request, reply, error);
+    }
+    request.log.error(error);
+    return reply
+      .code(500)
+      .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al cargar perfil' });
+  }
+}
+
+async function handleGetUserNode(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  try {
+    await request.jwtVerify();
+    const perms = (request.user as { permissions: string[] }).permissions;
+    if (!perms.includes('*') && !perms.includes('user:admin')) {
+      return reply
+        .code(403)
+        .send({ success: false, code: 'FORBIDDEN', message: 'Permission required: user:admin' });
+    }
+    const { uuid } = request.params as { uuid: string };
+    const ownerScope = await UserManagementService.resolveOwnerScope(
+      request.user as { id: number; permissions?: string[] }
+    );
+    const result = await UserManagementService.getUserNode(uuid, ownerScope);
+    if (!result.ok) {
+      return reply.code(result.status).send({
+        success: false,
+        ...(result.code ? { code: result.code } : {}),
+        message: result.message,
+      });
+    }
+    return reply.send({ success: true, data: result.data });
+  } catch (error) {
+    if (error instanceof MultiMembershipHaltError) {
+      return haltMultiMembership(request, reply, error);
+    }
+    request.log.error(error);
+    return reply.code(500).send({ success: false, message: 'Error al cargar nodo de usuario' });
+  }
+}
+
+/** Registers the 12 /v1/auth endpoints — thin handlers only, all logic delegated to services. */
 export default async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{ Body: { username?: string; password?: string } }>(
     '/login',
@@ -282,788 +441,22 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
         },
       },
     },
-    async (request, reply) => {
-      const { username, password } = request.body;
-      if (!username) {
-        return reply.code(400).send({ error: 'L1' });
-      }
-      if (!password) {
-        return reply.code(400).send({ error: 'L2' });
-      }
-      try {
-        const response = await db.execute<RowDataPacket[]>(
-          // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
-          "SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name FROM users u LEFT JOIN common_catalogs cat ON u.department_id = cat.id WHERE u.username = ?",
-          [username]
-        );
-        let user: RowDataPacket | null = null;
-        if (response) {
-          const [results] = response;
-          if (results && results.length > 0) {
-            [user] = results;
-          }
-          if (!user) {
-            user = await findUserByEmail(username);
-          }
-        }
-        if (!user) {
-          return reply.code(401).send({ error: 'L3' });
-        }
-        let hash = user.password_hash;
-        if (!hash) {
-          hash = user.passwordHash;
-        }
-        if (!hash || !(await argon2Verify(hash, password))) {
-          return reply.code(401).send({ error: 'L4' });
-        }
-        const mapped = mapUserResponse(user);
-
-        // FC 082 F3b — cutover al chasis cosmonauta (089_AN §9, O✓Alfa/R✓Bravo).
-        // Ω (roleId=0) nunca toca resolveEffectivePermissions (§6.4).
-        const { tenantId, permissions, ownerType, availableTenants } = await resolveAuthContext(
-          mapped.id,
-          mapped.roleId
-        );
-
-        const token = fastify.jwt.sign({
-          id: user.id,
-          username: user.username,
-          roleId: mapped.roleId,
-          roleName: mapped.roleName,
-          permissions,
-          type: 'access',
-          tenant_id: tenantId,
-          owner_type: ownerType,
-        });
-        const refreshToken = fastify.jwt.sign(
-          { id: user.id, type: 'refresh', tenant_id: tenantId },
-          { expiresIn: '7d' }
-        );
-        const isProduction = process.env.NODE_ENV === 'production';
-        const refreshCookieOpts = {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: 'strict' as const,
-          domain: isProduction ? '.piic.com.mx' : undefined,
-          path: '/v1/auth',
-          maxAge: 7 * 24 * 60 * 60,
-        };
-        return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts).send({
-          success: true,
-          token,
-          user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
-        });
-      } catch (e) {
-        if (e instanceof MultiMembershipHaltError) {
-          return haltMultiMembership(fastify, reply, e);
-        }
-        fastify.log.error(e);
-        return reply.code(500).send({ error: 'LOGIN_FAIL' });
-      }
-    }
+    handleLogin
   );
-
-  fastify.post('/refresh', async (request, reply) => {
-    try {
-      const decoded = await request.jwtVerify<{
-        id: number;
-        type: string;
-        tenant_id?: number | null;
-      }>();
-      if (!decoded || decoded.type !== 'refresh') {
-        return reply.code(401).send({ error: 'INVALID_TOKEN_TYPE' });
-      }
-      const [userRows] = await db.execute<RowDataPacket[]>(
-        // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
-        `SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name
-         FROM users u
-         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
-         WHERE u.id = ? AND u.is_active = 1`,
-        [decoded.id]
-      );
-      if (!userRows.length) return reply.code(401).send({ error: 'USER_NOT_FOUND' });
-      const user = userRows[0];
-      const mapped = mapUserResponse(user);
-
-      // FC 082 F3b §9.2.1 — si el token trae tenant_id y la asignación sigue activa,
-      // se re-firma CON ESE tenant (evita revertir un switch-tenant en silencio).
-      // R2c: token legacy sin claim cae a resolveAuthContext desde cero.
-      const { tenantId, permissions, ownerType, availableTenants } =
-        await resolveAuthContextForRefresh(mapped.id, mapped.roleId, decoded.tenant_id);
-
-      const accessToken = fastify.jwt.sign({
-        id: user.id,
-        username: user.username,
-        roleId: mapped.roleId,
-        roleName: mapped.roleName,
-        permissions,
-        type: 'access',
-        tenant_id: tenantId,
-        owner_type: ownerType,
-      });
-      return reply.send({
-        success: true,
-        token: accessToken,
-        user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
-      });
-    } catch (e) {
-      if (e instanceof MultiMembershipHaltError) {
-        return haltMultiMembership(fastify, reply, e);
-      }
-      // Incidente DB-1045 P3 (Alfa/Bravo) — error boundary: un token ausente/
-      // expirado/inválido (@fastify/jwt siempre marca statusCode=401) sigue
-      // siendo 401 REFRESH_FAIL sin ensuciar logs. Cualquier OTRO error (DB,
-      // sistema) ya no se disfraza de fallo de sesión — se loguea completo y
-      // responde 500, para no confundir una caída de infraestructura con un
-      // logout legítimo.
-      const err = e as { statusCode?: number; code?: string };
-      if (err.statusCode === 401 || err.code?.startsWith('FST_JWT_')) {
-        return reply.code(401).send({ error: 'REFRESH_FAIL' });
-      }
-      fastify.log.error({ route: '/refresh', err: e }, 'Refresh failed — system error');
-      return reply
-        .code(500)
-        .send({ success: false, code: 'INTERNAL_ERROR', message: 'REFRESH_FAIL' });
-    }
-  });
-
-  // FC 082 F3b §9.2 (089_AN, O✓Alfa Opción B/R✓Bravo Cond.2+R2b) — switcher de
-  // Universo activo. Nunca confía tenantId/permissions/ownerType del cliente:
-  // valida asignación activa, recalcula todo server-side, re-firma access+refresh.
-  fastify.post<{ Body: { tenantId?: number } }>('/switch-tenant', async (request, reply) => {
-    // jwtVerify fuera del try/catch: un token ausente/inválido debe serializar
-    // como 401 vía el error handler global (index.ts — "jwt 401 untouched"),
-    // no como 500 genérico.
-    await request.jwtVerify();
-    try {
-      const caller = request.user as { id: number; roleId: number };
-      const { tenantId } = request.body ?? {};
-
-      if (caller.roleId === 0) {
-        return reply
-          .code(400)
-          .send({ success: false, code: 'OMEGA_NO_TENANT', message: 'Ω no tiene Universo' });
-      }
-      if (typeof tenantId !== 'number') {
-        return reply
-          .code(400)
-          .send({ success: false, code: 'VALIDATION_ERROR', message: 'tenantId requerido' });
-      }
-
-      const allowed = await isTenantAssignmentActive(caller.id, tenantId);
-      if (!allowed) {
-        return reply
-          .code(403)
-          .send({ success: false, code: 'FORBIDDEN', message: 'Sin asignación en ese Universo' });
-      }
-
-      const [userRows] = await db.execute<RowDataPacket[]>(
-        // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
-        `SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name
-         FROM users u
-         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
-         WHERE u.id = ? AND u.is_active = 1`,
-        [caller.id]
-      );
-      if (!userRows.length) {
-        return reply.code(404).send({ success: false, code: 'NOT_FOUND' });
-      }
-      const user = userRows[0];
-      const mapped = mapUserResponse(user);
-
-      const [permissions, ownerType, availableTenants] = await Promise.all([
-        resolveEffectivePermissions(mapped.id, tenantId),
-        deriveOwnerType(tenantId),
-        getAvailableTenants(mapped.id),
-      ]);
-
-      const token = fastify.jwt.sign({
-        id: user.id,
-        username: user.username,
-        roleId: mapped.roleId,
-        roleName: mapped.roleName,
-        permissions,
-        type: 'access',
-        tenant_id: tenantId,
-        owner_type: ownerType,
-      });
-      const refreshToken = fastify.jwt.sign(
-        { id: user.id, type: 'refresh', tenant_id: tenantId },
-        { expiresIn: '7d' }
-      );
-      // R2b (Bravo) — reemitir la cookie con los MISMOS atributos que /login,
-      // si no la cookie vieja sin tenant_id gana en el próximo /refresh.
-      const isProduction = process.env.NODE_ENV === 'production';
-      const refreshCookieOpts = {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'strict' as const,
-        domain: isProduction ? '.piic.com.mx' : undefined,
-        path: '/v1/auth',
-        maxAge: 7 * 24 * 60 * 60,
-      };
-      return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts).send({
-        success: true,
-        token,
-        user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
-      });
-    } catch (e) {
-      fastify.log.error({ route: '/switch-tenant', err: e }, 'Switch-tenant failed');
-      return reply.code(500).send({ success: false, code: 'INTERNAL_ERROR' });
-    }
-  });
-
-  fastify.post('/logout', async (_request, reply) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const clearCookieOpts = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict' as const,
-      domain: isProduction ? '.piic.com.mx' : undefined,
-      path: '/v1/auth',
-    };
-    return reply.clearCookie('refresh_token', clearCookieOpts).send({ success: true });
-  });
-
+  fastify.post('/refresh', handleRefresh);
+  fastify.post<{ Body: { tenantId?: number } }>('/switch-tenant', handleSwitchTenant);
+  fastify.post('/logout', handleLogout);
   // FC 082 F0c — POST /register eliminado (bandas {1,3,4} muertas — 084_AN §1a).
-
-  fastify.get('/users', async (request, reply) => {
-    await request.jwtVerify();
-    const { role } = request.query as { role?: string };
-    try {
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null && ownerScope.length === 0) {
-        return reply.send({ success: true, data: [] });
-      }
-
-      // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada. El INNER JOIN previo
-      // era además un bug real preexistente: excluía en silencio del
-      // Directorio a cualquier usuario con role_id != 0 (roles solo tiene
-      // la fila 0 desde mig.164) — nunca visible porque PROD sigue zero-state.
-      let q = `
-        SELECT DISTINCT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) as role_name, cat.label as department_name
-        FROM users u
-        LEFT JOIN common_catalogs cat ON u.department_id = cat.id
-      `;
-      const p: (string | number)[] = [];
-
-      if (ownerScope !== null) {
-        q += ` JOIN user_owner_membership uom ON u.id = uom.user_id WHERE uom.owner_id IN (${ownerScope
-          .map(() => '?')
-          .join(', ')})`;
-        p.push(...ownerScope);
-      } else {
-        q += ' WHERE 1=1';
-      }
-
-      if (role) {
-        q += ' AND u.role_id = ?';
-        p.push(Number(role));
-      }
-      const res = await db.execute<RowDataPacket[]>(q, p);
-      let rows: RowDataPacket[] = [];
-      if (res) {
-        const [results] = res;
-        if (results) {
-          rows = results as RowDataPacket[];
-        }
-      }
-      return reply.send({ success: true, data: rows.map(mapUserResponse) });
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ error: 'USER_FAIL' });
-    }
-  });
-
-  fastify.patch('/users/:id', async (request, reply) => {
-    // FC 076 F4 — schema movido a packages/contracts (SSOT compartido con
-    // apps/web); importado 1:1, cero cambio semántico (Cond.1 Bravo).
-    const schema = userUpdateSchema;
-    const { id } = request.params as { id: string };
-    const body = schema.safeParse(request.body);
-    if (!body.success) {
-      return reply.code(400).send({ error: 'U1', details: body.error.format() });
-    }
-    const { data: updates, reason } = body.data;
-    await request.jwtVerify();
-    const admin = request.user as { id: number; roleId?: number; permissions?: string[] };
-    const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
-    const roleIdError = validateRoleIdUpdate(updates.roleId, adminIsOmega);
-    if (roleIdError) {
-      return reply
-        .code(roleIdError.status)
-        .send({ success: false, code: roleIdError.code, message: roleIdError.message });
-    }
-
-    let connection;
-    try {
-      connection = await db.getConnection();
-      await connection.beginTransaction();
-
-      // 1. Snapshot Before
-      const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM users WHERE id = ? FOR UPDATE',
-        [id]
-      );
-      if (rows.length === 0) {
-        connection.release();
-        return reply.code(404).send({ error: 'U3' });
-      }
-      const snapshotBefore = rows[0];
-
-      // Scoping Guard
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null && !(await isUserInOwnerScope(connection, id, ownerScope))) {
-        connection.release();
-        return reply.code(403).send({ error: 'FORBIDDEN', message: 'User outside owner scope' });
-      }
-
-      // 2. Build Updates
-      const { fields, values } = await buildUserUpdateFields(updates);
-
-      if (fields.length > 0) {
-        values.push(id);
-        await connection.execute(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
-      }
-
-      // FC 082 F3c Cond.1 (Bravo) — R4: ya NO se escribe user_roles (legacy);
-      // se refleja en el chasis cosmonauta (ver syncGrayManCosmonautAssignment).
-      if (updates.roleId === 0) {
-        const synced = await syncGrayManCosmonautAssignment(connection, id, admin.id);
-        if (!synced) {
-          await connection.rollback();
-          connection.release();
-          return reply.code(403).send({
-            success: false,
-            code: 'PRIVILEGE_ESCALATION',
-            message: 'Privilege escalation denied',
-          });
-        }
-      }
-
-      // 3. Snapshot After
-      const [rowsAfter] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM users WHERE id = ?',
-        [id]
-      );
-      const snapshotAfter = rowsAfter[0];
-
-      // 4. Audit
-      await recordAuditLog({
-        entity_type: 'user',
-        entity_id: String(id),
-        action: 'UPDATE',
-        snapshot_before: snapshotBefore,
-        snapshot_after: snapshotAfter,
-        reason,
-        user_id: admin.id,
-      });
-
-      await connection.commit();
-      connection.release();
-      return reply.send({ success: true });
-    } catch (e) {
-      if (connection) {
-        await connection.rollback();
-        connection.release();
-      }
-      fastify.log.error(e);
-      return reply.code(500).send({ error: 'UPDATE_FAIL' });
-    }
-  });
-
-  fastify.delete('/users/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const schema = z.object({
-      reason: z.string().min(5),
-    });
-    const parse = schema.safeParse(request.body);
-    if (!parse.success) {
-      return reply.code(400).send({ error: 'D1', details: parse.error.format() });
-    }
-    const { reason } = parse.data;
-    await request.jwtVerify();
-    const admin = request.user as { id: number };
-
-    let connection;
-    try {
-      connection = await db.getConnection();
-      await connection.beginTransaction();
-
-      // 1. Snapshot Before
-      const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM users WHERE id = ? FOR UPDATE',
-        [id]
-      );
-      if (rows.length === 0) {
-        connection.release();
-        return reply.code(404).send({ error: 'D3' });
-      }
-      const snapshotBefore = rows[0];
-
-      // Scoping Guard
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null && !(await isUserInOwnerScope(connection, id, ownerScope))) {
-        connection.release();
-        return reply.code(403).send({ error: 'FORBIDDEN', message: 'User outside owner scope' });
-      }
-
-      // 2. Perform Delete
-      await connection.execute('DELETE FROM users WHERE id = ?', [id]);
-
-      // 3. Audit
-      await recordAuditLog({
-        entity_type: 'user',
-        entity_id: String(id),
-        action: 'DELETE',
-        snapshot_before: snapshotBefore,
-        reason,
-        user_id: admin.id,
-      });
-
-      await connection.commit();
-      connection.release();
-      return reply.send({ success: true });
-    } catch (e) {
-      if (connection) {
-        await connection.rollback();
-        connection.release();
-      }
-      fastify.log.error(e);
-      return reply.code(500).send({ error: 'DELETE_FAIL' });
-    }
-  });
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Archon Master: user ↔ owner membership management
-  // Guard: user:admin — only user administrators manage owner assignments.
-  // ──────────────────────────────────────────────────────────────────────────
-  const ownersGuard = {
-    onRequest: async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-      try {
-        await request.jwtVerify();
-      } catch {
-        reply.code(401).send({ error: 'Archon Protection: Session required' });
-      }
-    },
-    preHandler: [requirePermission('admin:role:edit')],
-  };
-
-  fastify.get('/users/:id/owners', ownersGuard, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    try {
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null) {
-        const [memberships] = await db.execute<RowDataPacket[]>(
-          'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
-          [id]
-        );
-        const targetOwnerIds = memberships.map((m) => m.owner_id as number);
-        const hasOverlap = targetOwnerIds.some((oid) => ownerScope.includes(oid));
-        if (!hasOverlap) {
-          return reply
-            .code(403)
-            .send({ success: false, code: 'FORBIDDEN', message: 'User outside owner scope' });
-        }
-      }
-      const [rows] = await db.execute<RowDataPacket[]>(
-        `SELECT uom.owner_id AS ownerId, o.label, o.handle, otc.code AS ownerType
-         FROM user_owner_membership uom
-         JOIN owners o ON o.id = uom.owner_id
-         JOIN owner_types_catalog otc ON otc.id = o.owner_type_id
-         WHERE uom.user_id = ?`,
-        [id]
-      );
-      return reply.send({ success: true, data: rows });
-    } catch (e) {
-      fastify.log.error({ err: (e as Error).message }, 'User owners fetch failed');
-      return reply
-        .code(500)
-        .send({ success: false, code: 'INTERNAL_ERROR', message: 'OWNERS_FAIL' });
-    }
-  });
-
-  fastify.put('/users/:id/owners', ownersGuard, async (request, reply) => {
-    const schema = z.object({
-      ownerIds: z.array(z.number().int()),
-      reason: z.string().min(5),
-    });
-    const parsed = schema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.code(400).send({
-        success: false,
-        code: 'VALIDATION_ERROR',
-        message: parsed.error.issues[0].message,
-      });
-    }
-    const { id } = request.params as { id: string };
-    const { ownerIds, reason } = parsed.data;
-    const admin = request.user as { id: number };
-
-    return withConnection(async (connection) => {
-      await connection.beginTransaction();
-      try {
-        const [userRows] = await connection.execute<RowDataPacket[]>(
-          'SELECT id FROM users WHERE id = ? FOR UPDATE',
-          [id]
-        );
-        if (userRows.length === 0) {
-          await connection.rollback();
-          return reply
-            .code(404)
-            .send({ success: false, code: 'NOT_FOUND', message: 'Usuario no encontrado' });
-        }
-
-        const ownerScope = await resolveOwnerScope(request);
-        if (ownerScope !== null) {
-          const [beforeRows] = await connection.execute<RowDataPacket[]>(
-            'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
-            [id]
-          );
-          const targetOwnerIds = beforeRows.map((r) => r.owner_id as number);
-          const hasOverlap = targetOwnerIds.some((oid) => ownerScope.includes(oid));
-          if (targetOwnerIds.length > 0 && !hasOverlap) {
-            await connection.rollback();
-            return reply
-              .code(403)
-              .send({ success: false, code: 'FORBIDDEN', message: 'User outside owner scope' });
-          }
-          const allInScope = ownerIds.every((oid) => ownerScope.includes(oid));
-          if (!allInScope) {
-            await connection.rollback();
-            return reply.code(403).send({
-              success: false,
-              code: 'FORBIDDEN',
-              message: 'Cannot assign owner outside of scope',
-            });
-          }
-        }
-
-        if (ownerIds.length > 0) {
-          const [ownerRows] = await connection.execute<RowDataPacket[]>(
-            `SELECT id FROM owners WHERE id IN (${ownerIds.map(() => '?').join(',')})`,
-            ownerIds
-          );
-          if (ownerRows.length !== ownerIds.length) {
-            await connection.rollback();
-            return reply.code(400).send({
-              success: false,
-              code: 'VALIDATION_ERROR',
-              message: 'Propietario inválido: no existe en la tabla de propietarios',
-              field: 'ownerIds',
-            });
-          }
-        }
-
-        const [beforeRows] = await connection.execute<RowDataPacket[]>(
-          'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
-          [id]
-        );
-
-        await connection.execute<ResultSetHeader>(
-          'DELETE FROM user_owner_membership WHERE user_id = ?',
-          [id]
-        );
-
-        if (ownerIds.length > 0) {
-          await connection.execute<ResultSetHeader>(
-            `INSERT INTO user_owner_membership (user_id, owner_id) VALUES ${ownerIds
-              .map(() => '(?,?)')
-              .join(',')}`,
-            ownerIds.flatMap((ownerId) => [Number(id), ownerId])
-          );
-        }
-
-        await recordAuditLog({
-          entity_type: 'user',
-          entity_id: String(id),
-          action: 'UPDATE',
-          snapshot_before: { ownerIds: beforeRows.map((r) => r.owner_id as number) },
-          snapshot_after: { ownerIds },
-          reason,
-          user_id: admin.id,
-        });
-
-        await connection.commit();
-        return reply.send({ success: true, data: { ownerIds } });
-      } catch (error) {
-        await connection.rollback();
-        fastify.log.error({ err: (error as Error).message }, 'User owners update failed');
-        return reply
-          .code(500)
-          .send({ success: false, code: 'INTERNAL_ERROR', message: 'OWNERS_UPDATE_FAIL' });
-      }
-    });
-  });
-
+  fastify.get('/users', handleGetUsers);
+  fastify.patch('/users/:id', handlePatchUser);
+  fastify.delete('/users/:id', handleDeleteUser);
+  fastify.get('/users/:id/owners', ownersGuard, handleGetUserOwners);
+  fastify.put('/users/:id/owners', ownersGuard, handlePutUserOwners);
   // FC 082 F0c — POST /sub-users eliminado (roles {2,4,5} y concepto familiar
   // muertos — 084_AN §1a). Los sub-usuarios renacen en F3 como relaciones Arc.
-
-  // FC 082 F3c2 Cond.2 (Bravo) — retirado con el CRUD legacy de roles (roles
-  // solo conserva la fila 0 desde mig.164). 410, no 404: la ruta existió y
-  // fue retirada a propósito, no es un typo de URL. Gobernanza de roles reales
-  // vía /v1/cosmonauts/roles* (chasis cosmonauta, Cond.9).
-  fastify.get('/roles', async (request, reply) => {
-    await request.jwtVerify();
-    return reply.code(410).send({
-      success: false,
-      code: 'GONE',
-      message: 'Retirado en FC082 F3c2 — usar /v1/cosmonauts/roles',
-    });
-  });
-
+  fastify.get('/roles', handleGetRoles);
   // GET /v1/auth/users/:uuid/node — Sovereign node: full user profile + permissions + recent activity
   // GET /v1/auth/me — resolved user profile + capabilities (union of all assigned roles)
-  fastify.get('/me', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-      const { id, tenant_id: claimedTenantId } = request.user as {
-        id: number;
-        tenant_id?: number | null;
-      };
-
-      const [userRows] = await db.execute<RowDataPacket[]>(
-        // FC 082 F3c3 (Cond.5 grep CI) — `roles` eliminada, ver findUserByEmail.
-        `SELECT u.*, (CASE WHEN u.role_id = 0 THEN 'GrayMan' ELSE NULL END) AS role_name, cat.label AS department_name
-         FROM users u
-         LEFT JOIN common_catalogs cat ON u.department_id = cat.id
-         WHERE u.id = ?`,
-        [id]
-      );
-      if (userRows.length === 0)
-        return reply
-          .code(404)
-          .send({ success: false, code: 'NOT_FOUND', message: 'Usuario no encontrado' });
-
-      const user = userRows[0];
-
-      // FC 082 F3b Cond.7 "paridad /login-/me" — misma función de resolución que
-      // /refresh, anclada al tenant_id vigente del JWT (no re-elige primario en
-      // silencio si el usuario ya hizo switch-tenant en esta sesión).
-      const { tenantId, permissions, ownerType, availableTenants } =
-        await resolveAuthContextForRefresh(id, user.role_id as number, claimedTenantId);
-
-      return reply.send({
-        success: true,
-        data: {
-          ...mapUserResponse(user),
-          capabilities: permissions,
-          tenantId,
-          ownerType,
-          availableTenants,
-        },
-      });
-    } catch (error) {
-      if (error instanceof MultiMembershipHaltError) {
-        return haltMultiMembership(fastify, reply, error);
-      }
-      fastify.log.error(error);
-      return reply
-        .code(500)
-        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al cargar perfil' });
-    }
-  });
-
-  fastify.get('/users/:uuid/node', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-      const perms = (request.user as { permissions: string[] }).permissions;
-      if (!perms.includes('*') && !perms.includes('user:admin')) {
-        return reply
-          .code(403)
-          .send({ success: false, code: 'FORBIDDEN', message: 'Permission required: user:admin' });
-      }
-      const { uuid } = request.params as { uuid: string };
-      const [userRows] = await db.execute<RowDataPacket[]>(
-        // FC 082 F3c Cond.1 (Bravo) — role_name ahora cosmético (solo display),
-        // se resuelve abajo desde el chasis cosmonauta junto con los permisos.
-        `SELECT u.*, cat.label AS department_name
-         FROM users u
-         LEFT JOIN common_catalogs cat ON u.department_id = cat.id AND cat.category = 'DEPARTMENT'
-         WHERE u.uuid = ?`,
-        [uuid]
-      );
-      if (userRows.length === 0)
-        return reply.code(404).send({ success: false, message: 'Usuario no encontrado' });
-
-      const user = userRows[0];
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null) {
-        const [memberships] = await db.execute<RowDataPacket[]>(
-          'SELECT owner_id FROM user_owner_membership WHERE user_id = ?',
-          [user.id]
-        );
-        const targetOwnerIds = memberships.map((m) => m.owner_id as number);
-        const hasOverlap = targetOwnerIds.some((oid) => ownerScope.includes(oid));
-        if (!hasOverlap) {
-          return reply
-            .code(403)
-            .send({ success: false, code: 'FORBIDDEN', message: 'User outside owner scope' });
-        }
-      }
-
-      // FC 082 F3c Cond.1 (Bravo) — R3: permisos resueltos vía el chasis cosmonauta
-      // (cosmonaut_role_assignments/cosmonaut_role_permissions) para el tenant real
-      // del usuario objetivo, ya no un role_id legacy único. Ω (role_id=0) no tiene
-      // filas propias — su poder es el bypass runtime '*', no un set almacenado.
-      let permRows: RowDataPacket[] = [];
-      let roleName: string | null = null;
-      if ((user.role_id as number) === 0) {
-        roleName = 'GrayMan';
-      } else {
-        try {
-          const tenantId = await resolvePrimaryTenant(user.id as number);
-          [permRows] = await db.execute<RowDataPacket[]>(
-            `SELECT DISTINCT p.slug, p.description
-             FROM cosmonaut_role_assignments cra
-             JOIN cosmonaut_roles cr ON cr.id = cra.role_id
-             JOIN cosmonaut_role_permissions crp ON crp.role_id = cr.id
-             JOIN permissions p ON p.id = crp.permission_id
-             WHERE cra.user_id = ?
-               AND cra.revoked_at IS NULL
-               AND (cra.tenant_id = ? OR cra.tenant_id IS NULL)
-             ORDER BY p.slug`,
-            [user.id, tenantId]
-          );
-          const [roleRows] = await db.execute<RowDataPacket[]>(
-            `SELECT cr.name FROM cosmonaut_role_assignments cra
-             JOIN cosmonaut_roles cr ON cr.id = cra.role_id
-             WHERE cra.user_id = ? AND cra.revoked_at IS NULL
-             ORDER BY cra.id ASC LIMIT 1`,
-            [user.id]
-          );
-          roleName = roleRows.length > 0 ? (roleRows[0].name as string) : null;
-        } catch (e) {
-          if (e instanceof MultiMembershipHaltError) {
-            return haltMultiMembership(fastify, reply, e);
-          }
-          throw e;
-        }
-      }
-
-      const [routeRows] = await db.execute<RowDataPacket[]>(
-        `SELECT fm.uuid, fm.unit_id, fre.destination, fm.status,
-                fm.start_at, fm.end_at
-         FROM fleet_movements fm
-         JOIN fleet_route_extensions fre ON fre.movement_id = fm.id
-         WHERE fre.driver_id = ? AND fm.movement_type = 'ROUTE'
-         ORDER BY fm.created_at DESC LIMIT 5`,
-        [user.id]
-      );
-
-      const emailDecrypted = EncryptionService.decrypt(user.email as string);
-
-      return reply.send({
-        success: true,
-        data: {
-          user: { ...user, email: emailDecrypted, role_name: roleName },
-          permissions: permRows,
-          recentRoutes: routeRows,
-        },
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ success: false, message: 'Error al cargar nodo de usuario' });
-    }
-  });
+  fastify.get('/me', handleGetMe);
+  fastify.get('/users/:uuid/node', handleGetUserNode);
 }

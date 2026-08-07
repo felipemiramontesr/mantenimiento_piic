@@ -51,7 +51,9 @@ const compat = new FlatCompat({
 // NUEVAS (no listadas) fallan el gate por defecto — sin excepción manual (G4).
 export const LEGACY_DB_IMPORT_ALLOWLIST = [
   'apps/api/src/routes/areas.ts',
-  'apps/api/src/routes/auth.ts',
+  // auth.ts REMOVED FC130 F1 (Cond.R-130-G2) — migrated to Route->Service->Repository,
+  // zero-SQL confirmed (I1). cosmonautMiddleware.ts also zero-SQL (Cond.R-130-E2), never
+  // needed to be in this list (it's middleware, not a route).
   'apps/api/src/routes/catalogs.ts',
   'apps/api/src/routes/finance.ts',
   'apps/api/src/routes/fleet.ts',
@@ -73,7 +75,11 @@ export const LEGACY_DB_IMPORT_ALLOWLIST = [
 export const LEGACY_GODFILES = [
   // Backend routes (8) — presupuesto normal 250 LOC
   'apps/api/src/routes/fleetMaintenance.ts', // 1338 LOC
-  'apps/api/src/routes/auth.ts', // 1069 LOC
+  // FC130 F1 — auth.ts migrated to Route->Service->Repository (I1-I3 clean,
+  // zero-SQL, ~29 call-sites moved to authSession/authUserManagement
+  // repositories); 12 endpoints post-migration (incl. POST /switch-tenant).
+  // LOC vs 250 route budget evaluated at F3 close (Cond.R-130-G3), not here.
+  'apps/api/src/routes/auth.ts', // 423 LOC (post-migration, was 1069)
   // FC126 F1/F2 — fleetRoutes.ts migrated to Route->Service->Repository (I1-I3
   // clean, zero-SQL, 43 call-sites moved to 3 repository files); 390 LOC
   // (ESLint skipBlankLines/skipComments) stays over the 250 LOC route budget
