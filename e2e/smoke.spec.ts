@@ -35,15 +35,15 @@ async function loginAsGrayMan(page: Page): Promise<void> {
 test('should login to live site with GrayMan credentials', async ({ page }) => {
   await loginAsGrayMan(page);
 
-  // Verify Sidebar items
-  await expect(page.getByText(/Unidades/i)).toBeVisible();
+  // Verify Sidebar items — data-testid, no ambiguous text match (el dashboard
+  // real hoy tiene 4 coincidencias de "Unidades": el link del sidebar + 3
+  // tarjetas KPI "Unidades listas/en tránsito/fuera de servicio" — hallazgo
+  // real de terreno corrido contra PROD, no un defecto de login).
+  await expect(page.getByTestId('nav-item-unidades')).toBeVisible();
   await expect(page.getByText(/Personal/i)).toBeVisible();
 
   // Navigate to Units
-  await page
-    .getByText(/Unidades/i)
-    .first()
-    .click();
+  await page.getByTestId('nav-item-unidades').click();
   await expect(page.getByText(/Administrar Unidades/i)).toBeVisible({ timeout: 10000 });
 });
 
