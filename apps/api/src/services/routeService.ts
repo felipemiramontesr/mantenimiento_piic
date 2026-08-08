@@ -9,7 +9,7 @@ import { resolveCatalogId } from './catalogMapper';
 import * as RouteMovementsRepository from './routeMovements.repository';
 import * as RouteIncidentsRepository from './routeIncidents.repository';
 import * as RouteRoutesRepository from './routeRoutes.repository';
-import FleetService from './fleetService';
+import { resolveOwnerScope } from './ownerScopeResolver';
 
 /**
  * 🔱 Archon RouteService — CTI Architecture (V2)
@@ -591,23 +591,17 @@ export default class RouteService {
     }
   }
 
-  // ─── FC126 F1 (Cond.R-126-S1) — ownership scope, centralized here instead of
-  // ad-hoc in routes/fleetRoutes.ts. T2 prescrita (127_AN Bravo): Ω sees
-  // everything (null); `fleet:scoped` carriers keep the pre-existing
-  // multi-owner mechanism (empty array ⇒ deny, unchanged); everyone else is
-  // restricted to their own tenant_id — never unrestricted by default.
-  static async resolveOwnerScope(user: {
+  // FC126 F1 (Cond.R-126-S1) — ownership scope, centralized here instead of
+  // ad-hoc in routes/fleetRoutes.ts. FC138 F1 (Cond.R-138-H3) — delegates to
+  // the shared SSOT in `ownerScopeResolver.ts` (same T2 prescrita, 127_AN
+  // Bravo) so this stops being a second copy of the same security-critical
+  // logic; `finance.service.ts` (H2) uses the same helper directly.
+  static resolveOwnerScope(user: {
     id: number;
     permissions?: string[];
     tenant_id?: number | null;
   }): Promise<number[] | null> {
-    const { id, permissions, tenant_id: tenantId } = user;
-    if (permissions?.includes('*')) return null;
-    if (permissions?.includes('fleet:scoped')) {
-      return FleetService.getUserOwnerIds(id);
-    }
-    if (tenantId == null) return [];
-    return [tenantId];
+    return resolveOwnerScope(user);
   }
 
   static async checkRouteScope(uuid: string, ownerScope: number[] | null): Promise<boolean> {

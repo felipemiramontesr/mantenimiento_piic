@@ -55,7 +55,8 @@ export const LEGACY_DB_IMPORT_ALLOWLIST = [
   // zero-SQL confirmed (I1). cosmonautMiddleware.ts also zero-SQL (Cond.R-130-E2), never
   // needed to be in this list (it's middleware, not a route).
   'apps/api/src/routes/catalogs.ts',
-  'apps/api/src/routes/finance.ts',
+  // finance.ts REMOVED FC138 F1 (Cond.R-138-B4) — migrated to Route->Service->Repository,
+  // zero-SQL confirmed (I1).
   'apps/api/src/routes/fleet.ts',
   'apps/api/src/routes/fleetMaintenance.ts',
   'apps/api/src/routes/fleetRecalls.ts',
@@ -88,7 +89,10 @@ export const LEGACY_GODFILES = [
   // APPROVED this as a standing size exception rather than forcing a further
   // mechanical split; RR2 still applies whenever it does get split.
   'apps/api/src/routes/fleetRoutes.ts', // 390 LOC (post-migration, was 789)
-  'apps/api/src/routes/finance.ts', // 717 LOC
+  // FC138 F1 — finance.ts migrated to Route->Service->Repository (I1-I3 clean,
+  // zero-SQL, 11 call-sites moved to finance.repository.ts); 4 endpoints.
+  // LOC vs 250 route budget evaluated at F2 close (Scenario 6), not here.
+  'apps/api/src/routes/finance.ts', // 284 LOC (post-migration, was 717)
   // alerts.ts REMOVED FC094 F5 (RR2/Inv-C) — migrated to Route->Service->Repository
   // in F3 (653 -> 53 LOC), well under the 250 LOC route budget; no longer needs the
   // size exemption. Allowlist only shrinks, never grows without a signed FC.
