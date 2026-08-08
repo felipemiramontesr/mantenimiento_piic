@@ -37,10 +37,12 @@ test('should login to live site with GrayMan credentials', async ({ page }) => {
 
   // Verify Sidebar items — data-testid, no ambiguous text match (el dashboard
   // real hoy tiene 4 coincidencias de "Unidades": el link del sidebar + 3
-  // tarjetas KPI "Unidades listas/en tránsito/fuera de servicio" — hallazgo
-  // real de terreno corrido contra PROD, no un defecto de login).
+  // tarjetas KPI "Unidades listas/en tránsito/fuera de servicio"; y 2 de
+  // "Personal": el link del sidebar + la tarjeta KPI "Personal habilitado en
+  // sitio" — hallazgos reales de terreno corridos contra PROD, no defectos
+  // de login).
   await expect(page.getByTestId('nav-item-unidades')).toBeVisible();
-  await expect(page.getByText(/Personal/i)).toBeVisible();
+  await expect(page.getByTestId('nav-item-personal')).toBeVisible();
 
   // Navigate to Units
   await page.getByTestId('nav-item-unidades').click();
