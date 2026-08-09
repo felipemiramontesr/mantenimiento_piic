@@ -175,6 +175,21 @@ describe('GET /v1/fleet-units/:unitId/co2 (FC-6 Fase 6D)', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('CO2-INT-10 (FC144 Inv-F): 403 cuando actor no-scoped con tenant_id accede a unidad de otro tenant (BOLA regression)', async () => {
+    const tenantToken = app.jwt.sign({
+      id: 3,
+      permissions: ['intelligence:co2:view'],
+      tenant_id: 500,
+    });
+    vi.mocked(Co2Service.compute).mockResolvedValue({ ...CO2_DIESEL, ownerId: 9100 });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/UNIT-FOREIGN/co2',
+      headers: { authorization: `Bearer ${tenantToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
   it('CO2-INT-6: 404 cuando la unidad no existe', async () => {
     vi.mocked(Co2Service.compute).mockResolvedValue(null);
     const res = await app.inject({

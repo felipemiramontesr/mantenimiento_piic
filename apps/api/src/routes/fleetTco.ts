@@ -2,13 +2,20 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { RowDataPacket } from 'mysql2';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
-import FleetService from '../services/fleetService';
+import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
 
-const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
-  const { id, permissions } = request.user as { id: number; permissions?: string[] };
-  if (!permissions || permissions.includes('*') || !permissions.includes('fleet:scoped'))
-    return null;
-  return FleetService.getUserOwnerIds(id);
+// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
+const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
+  const {
+    id,
+    permissions,
+    tenant_id: tenantId,
+  } = request.user as {
+    id: number;
+    permissions?: string[];
+    tenant_id?: number | null;
+  };
+  return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
 export type TcoRow = {

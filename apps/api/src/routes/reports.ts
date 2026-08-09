@@ -3,7 +3,7 @@ import { RowDataPacket } from 'mysql2';
 import PDFDocument from 'pdfkit';
 import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
-import FleetService from '../services/fleetService';
+import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
 
 /**
  * 🔱 Archon Routes: reports (FC 041 Fase E)
@@ -17,10 +17,18 @@ import FleetService from '../services/fleetService';
  * - Mismo owner-scoping fail-closed que el módulo fuente (fleet:scoped).
  */
 
-const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
-  const { id, permissions } = request.user as { id: number; permissions: string[] };
-  if (permissions.includes('*') || !permissions.includes('fleet:scoped')) return null;
-  return FleetService.getUserOwnerIds(id);
+// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
+const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
+  const {
+    id,
+    permissions,
+    tenant_id: tenantId,
+  } = request.user as {
+    id: number;
+    permissions?: string[];
+    tenant_id?: number | null;
+  };
+  return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
 const LABELS: Record<string, string> = {

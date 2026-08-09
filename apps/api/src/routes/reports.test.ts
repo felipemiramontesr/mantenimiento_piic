@@ -124,4 +124,28 @@ describe('Reports Routes — GET /v1/reports/maintenance/:uuid/pdf', () => {
     });
     expect(res.statusCode).toBe(404);
   });
+
+  it("FC144 Inv-F: 404 fail-closed for a non-scoped actor with tenant_id accessing another tenant's order (BOLA regression)", async (): Promise<void> => {
+    const tenantToken = app.jwt.sign({
+      id: 4,
+      username: 'tenant-user',
+      roleId: 1,
+      roleName: 'Operador General',
+      permissions: ['maint:record:view:any'],
+      tenant_id: 500,
+    });
+    // Orden existe pero pertenece a otro owner/tenant → owned-check query devuelve vacío
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[MOVEMENT_ROW], undefined]) // movimiento
+      .mockResolvedValueOnce([[], undefined]); // owned-check: unit no pertenece al tenant 500
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/reports/maintenance/uuid-pdf-1/pdf',
+      headers: { Authorization: `Bearer ${tenantToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    const { calls } = (db.execute as Mock).mock;
+    expect(calls[1][0]).toContain('ownerId IN');
+    expect(calls[1][1]).toEqual([MOVEMENT_ROW.unit_id, 500]);
+  });
 });

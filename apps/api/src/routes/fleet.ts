@@ -4,6 +4,7 @@ import { RowDataPacket } from 'mysql2';
 import FleetService from '../services/fleetService';
 import requirePermission from '../middleware/requirePermission';
 import db from '../services/db';
+import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
 
 /**
  * 🔱 Archon Fleet Routes — Plan Omega
@@ -129,10 +130,18 @@ const updateFleetSchema = z.preprocess((raw) => {
  * FLEET_OWNER ids linked to the user for fleet:scoped carriers.
  * An empty array means deny-by-default: the user sees nothing.
  */
-const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
-  const { id, permissions } = request.user as { id: number; permissions: string[] };
-  if (permissions.includes('*') || !permissions.includes('fleet:scoped')) return null;
-  return FleetService.getUserOwnerIds(id);
+// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
+const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
+  const {
+    id,
+    permissions,
+    tenant_id: tenantId,
+  } = request.user as {
+    id: number;
+    permissions?: string[];
+    tenant_id?: number | null;
+  };
+  return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
 export default async function fleetRoutes(fastify: FastifyInstance): Promise<void> {

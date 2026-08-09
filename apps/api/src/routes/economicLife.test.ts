@@ -153,6 +153,24 @@ describe('GET /v1/fleet-units/:unitId/economic-life (FC-6 Fase 6A)', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('EL-INT-10 (FC144 Inv-F): 403 cuando actor no-scoped con tenant_id accede a unidad de otro tenant (BOLA regression)', async () => {
+    const tenantToken = app.jwt.sign({
+      id: 3,
+      permissions: ['intelligence:economic-life:view'],
+      tenant_id: 500,
+    });
+    vi.mocked(EconomicLifeService.compute).mockResolvedValue({
+      ...EL_FULL,
+      ownerId: 9100,
+    });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/UNIT-FOREIGN/economic-life',
+      headers: { authorization: `Bearer ${tenantToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
   it('EL-INT-5: 404 cuando la unidad no existe', async () => {
     vi.mocked(EconomicLifeService.compute).mockResolvedValue(null);
     const res = await app.inject({

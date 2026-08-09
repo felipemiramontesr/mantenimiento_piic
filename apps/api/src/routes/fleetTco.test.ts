@@ -181,6 +181,24 @@ describe('FT-TCO-ROUTE: GET /v1/fleet-units/:unitId/tco', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('FT-TCO-ROUTE-7 (FC144 Inv-F): usuario no-scoped con tenant_id, unit.owner_id≠tenant_id → 403 (BOLA regression)', async () => {
+    const { jwt } = app as any;
+    const tenantToken = jwt.sign({
+      id: 3,
+      username: 'tenant-user',
+      roleId: 1,
+      permissions: ['intelligence:tco:view'],
+      tenant_id: 500,
+    });
+    (db.query as Mock).mockResolvedValueOnce([[tcoRow]]); // tcoRow.owner_id = 9100 ≠ 500
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/fleet-units/PIIC-101/tco',
+      headers: { authorization: `Bearer ${tenantToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
   it('FT-TCO-ROUTE-6: db.query lanza error → 500 (B81-83 catch block)', async () => {
     (db.query as Mock).mockRejectedValueOnce(new Error('DB connection timeout'));
     const res = await app.inject({

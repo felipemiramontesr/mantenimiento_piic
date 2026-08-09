@@ -36,6 +36,7 @@ vi.mock('../services/encryption', () => ({
 
 const OWNER_AS = 711;
 const CLIENT_USER_ID = 42;
+const STAFF_TENANT_ID = 500;
 
 const scopedUnit = {
   id: 'ASM-001',
@@ -78,12 +79,15 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
       roleName: 'Propietario Privado',
       permissions: ['fleet:view', 'fleet:scoped', 'fleet:write:scoped'],
     });
+    // FC144 (Cond.R-144-T1) — todo JWT real de login lleva tenant_id (routes/auth.ts);
+    // un actor no-Ω sin fleet:scoped debe resolver a [tenant_id], nunca a null/unscoped.
     staffToken = jwt.sign({
       id: 7,
       username: 'staff',
       roleId: 1,
       roleName: 'Operador General',
       permissions: ['fleet:view'],
+      tenant_id: STAFF_TENANT_ID,
     });
     fullWriteToken = jwt.sign({
       id: 3,
@@ -319,10 +323,13 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
     });
   });
 
-  describe('Zero regression for non-scoped carriers (S4)', () => {
-    it('staff with plain fleet:view keeps full unscoped access', async (): Promise<void> => {
+  // FC144 (Cond.R-144-T1) — was "Zero regression for non-scoped carriers (S4)": that title
+  // pinned ownerScope=null (unrestricted) for any non-Ω, non-fleet:scoped actor, which is the
+  // exact BOLA pattern FC138/FC144 remediate. Renamed to reflect the T2 behavior it now verifies.
+  describe('Tenant-scoped access for non-privileged carriers (T2, formerly S4)', () => {
+    it('staff with plain fleet:view and a real tenant_id is scoped to that tenant, never unrestricted', async (): Promise<void> => {
       (db.execute as Mock)
-        .mockResolvedValueOnce([[scopedUnit], undefined]) // fleet query (first call — no owners lookup)
+        .mockResolvedValueOnce([[scopedUnit], undefined]) // fleet query, filtered by tenant_id (no owners lookup — SSOT resolves [tenant_id] directly)
         .mockResolvedValueOnce([[], undefined]) // KPI MTTR
         .mockResolvedValueOnce([[], undefined]) // KPI MTBF
         .mockResolvedValueOnce([[], undefined]); // KPI BCK
@@ -335,8 +342,34 @@ describe('Owner-Scoped Fleet Access (fleet:scoped)', () => {
 
       expect(response.statusCode).toBe(200);
       const { calls } = (db.execute as Mock).mock;
+      // No owners-membership lookup: the SSOT resolves [tenant_id] without a DB round-trip.
       expect(calls[0][0]).not.toContain('user_owner_membership');
-      expect(calls[0][0]).not.toContain('f.ownerId IN');
+      // The fleet query IS filtered — by the actor's own tenant_id, never unrestricted.
+      expect(calls[0][0]).toContain('f.ownerId IN');
+      expect(calls[0][1]).toEqual([STAFF_TENANT_ID]);
+    });
+
+    it('non-Ω, non-scoped carrier without a tenant_id is denied (fail-closed, never unscoped)', async (): Promise<void> => {
+      const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+      const noTenantToken = jwt.sign({
+        id: 8,
+        username: 'orphan',
+        roleId: 1,
+        roleName: 'Operador General',
+        permissions: ['fleet:view'],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/fleet',
+        headers: authHeader(noTenantToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.count).toBe(0);
+      expect(body.data).toEqual([]);
+      expect(db.execute as Mock).not.toHaveBeenCalled();
     });
 
     it('omnipotent (*) bypasses scoping even if fleet:scoped were present', async (): Promise<void> => {

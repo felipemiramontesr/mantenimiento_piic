@@ -1281,6 +1281,28 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
     expect(res.statusCode).toBe(404);
   });
 
+  it("FC144 Inv-F: GET /maintenance/template/:unitId — returns 404 for non-scoped actor with tenant_id accessing another tenant's unit (BOLA regression)", async () => {
+    const tenantToken = app.jwt.sign({
+      id: 43,
+      username: 'tenant.user',
+      roleId: 1,
+      permissions: ['maint:view'],
+      tenant_id: 500,
+    });
+    // No owners lookup for the tenant-only branch — straight to the owned-check query.
+    vi.mocked(db.execute).mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-FOREIGN',
+      headers: { authorization: `Bearer ${tenantToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(vi.mocked(FleetService.getUserOwnerIds)).not.toHaveBeenCalled();
+    const call = vi.mocked(db.execute).mock.calls[0];
+    expect(call[0]).toContain('ownerId IN');
+    expect(call[1]).toEqual(['ASM-FOREIGN', 500]);
+  });
+
   it('GET /maintenance/:uuid — returns 404 when movement found but user has no owned units', async () => {
     vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
     vi.mocked(db.execute).mockResolvedValueOnce([

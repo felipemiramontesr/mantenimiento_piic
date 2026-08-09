@@ -231,6 +231,26 @@ describe('FR-ROUTE: POST + PATCH /v1/fleet-units/:unitId/recalls', () => {
     expect(JSON.parse(res.body).error).toBe('Access denied');
   });
 
+  it('FR-POST-7 (FC144 Inv-F): POST no-scoped con tenant_id, unit de otro tenant → 403 (BOLA regression)', async () => {
+    const { jwt } = app as any;
+    const tenantToken = jwt.sign({
+      id: 4,
+      username: 'tenant.manage',
+      roleId: 1,
+      permissions: ['intelligence:recall:manage'],
+      tenant_id: 500,
+    });
+    (db.execute as Mock).mockResolvedValueOnce([[{ ownerId: 99 }], undefined]); // unit.ownerId ≠ 500
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/fleet-units/PIIC-101/recalls',
+      headers: { authorization: `Bearer ${tenantToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ recallId: 5 }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.body).error).toBe('Access denied');
+  });
+
   it('FR-PATCH-5: PATCH status=NOT_APPLICABLE → resolvedAt=null (line 147 falsy ternary branch)', async () => {
     // adminToken → scope=null → access=true; status≠COMPLETED → resolvedAt=null
     (db.execute as Mock).mockResolvedValueOnce([{ affectedRows: 1 }]);

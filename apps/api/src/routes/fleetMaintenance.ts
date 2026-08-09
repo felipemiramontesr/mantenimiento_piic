@@ -12,8 +12,8 @@ import NotificationService, {
 } from '../services/notification.service';
 import { createWorkOrder } from '../services/workOrderService';
 import { purgeOutboxForOrder } from '../services/notificationsOutboxService';
-import FleetService from '../services/fleetService';
 import { resolveCatalogId, CatalogMappingError } from '../services/catalogMapper';
+import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -283,10 +283,18 @@ function appendPredictiveAlerts(
  * Returns null for full-access carriers, or the FLEET_OWNER id list for fleet:scoped.
  * Empty array = deny-by-default (user has no linked owners).
  */
-const resolveOwnerScope = async (request: FastifyRequest): Promise<number[] | null> => {
-  const { id, permissions } = request.user as { id: number; permissions: string[] };
-  if (permissions.includes('*') || !permissions.includes('fleet:scoped')) return null;
-  return FleetService.getUserOwnerIds(id);
+// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
+const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
+  const {
+    id,
+    permissions,
+    tenant_id: tenantId,
+  } = request.user as {
+    id: number;
+    permissions?: string[];
+    tenant_id?: number | null;
+  };
+  return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
