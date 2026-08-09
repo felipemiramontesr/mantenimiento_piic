@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import api from '../api/client';
+import { searchNhtsaRecalls, importNhtsaRecall } from '../api/nhtsaRecalls';
 
 export type NhtsaRecall = {
   campaignNumber: string;
@@ -37,12 +37,8 @@ export function useNhtsaRecalls(): UseNhtsaRecallsResult {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<{ success: boolean; count: number; data: NhtsaRecall[] }>(
-        `/recalls/nhtsa?make=${encodeURIComponent(make)}&model=${encodeURIComponent(
-          model
-        )}&year=${year}`
-      );
-      setResults(res.data.data);
+      const data = await searchNhtsaRecalls(make, model, year);
+      setResults(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al consultar NHTSA');
       setResults([]);
@@ -51,13 +47,10 @@ export function useNhtsaRecalls(): UseNhtsaRecallsResult {
     }
   }, []);
 
-  const importRecall = useCallback(async (params: ImportParams): Promise<{ recall_id: number }> => {
-    const res = await api.post<{ success: boolean; recall_id: number; imported: boolean }>(
-      '/recalls/nhtsa/import',
-      params
-    );
-    return { recall_id: res.data.recall_id };
-  }, []);
+  const importRecall = useCallback(
+    (params: ImportParams): Promise<{ recall_id: number }> => importNhtsaRecall(params),
+    []
+  );
 
   return { results, loading, error, search, importRecall };
 }

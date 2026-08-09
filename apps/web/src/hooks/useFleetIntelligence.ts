@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../api/client';
+import { getFleetIntelligence } from '../api/fleetIntelligence';
 
 export type FleetIntelligenceData = {
   oee: number | null;
@@ -25,12 +25,9 @@ export function useFleetIntelligence(unitId: string | null): UseFleetIntelligenc
     if (unitId) {
       setLoading(true);
       setError(null);
-      api
-        .get<{ success: boolean; data: FleetIntelligenceData }>(
-          `/fleet-units/${unitId}/intelligence`
-        )
-        .then((res) => {
-          if (!cancelled) setData(res.data.data);
+      getFleetIntelligence(unitId)
+        .then((result) => {
+          if (!cancelled) setData(result);
         })
         .catch((err: Error) => {
           if (!cancelled) setError(err.message);

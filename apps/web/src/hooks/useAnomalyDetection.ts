@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../api/client';
+import { getAnomalyDetection } from '../api/anomalyDetection';
 
 export type AnomalyDetectionData = {
   fleet_size: number | null;
@@ -27,10 +27,9 @@ export function useAnomalyDetection(unitId: string | null): UseAnomalyDetectionR
     if (unitId) {
       setLoading(true);
       setError(null);
-      api
-        .get<{ success: boolean; data: AnomalyDetectionData }>(`/fleet-units/${unitId}/anomalies`)
-        .then((res) => {
-          if (!cancelled) setData(res.data.data);
+      getAnomalyDetection(unitId)
+        .then((result) => {
+          if (!cancelled) setData(result);
         })
         .catch((err: Error) => {
           if (!cancelled) setError(err.message);

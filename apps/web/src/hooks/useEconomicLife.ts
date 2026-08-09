@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../api/client';
+import { getEconomicLife } from '../api/economicLife';
 
 export type EconomicLifeData = {
   residual_value_mxn: number | null;
@@ -24,10 +24,9 @@ export function useEconomicLife(unitId: string | null): UseEconomicLifeResult {
     if (unitId) {
       setLoading(true);
       setError(null);
-      api
-        .get<{ success: boolean; data: EconomicLifeData }>(`/fleet-units/${unitId}/economic-life`)
-        .then((res) => {
-          if (!cancelled) setData(res.data.data);
+      getEconomicLife(unitId)
+        .then((result) => {
+          if (!cancelled) setData(result);
         })
         .catch((err: Error) => {
           if (!cancelled) setError(err.message);

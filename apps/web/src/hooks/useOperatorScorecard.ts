@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../api/client';
+import { getOperatorScorecard } from '../api/operatorScorecard';
 
 export type OperatorScorecardData = {
   driver_id: number | null;
@@ -26,12 +26,9 @@ export function useOperatorScorecard(unitId: string | null): UseOperatorScorecar
     if (unitId) {
       setLoading(true);
       setError(null);
-      api
-        .get<{ success: boolean; data: OperatorScorecardData }>(
-          `/fleet-units/${unitId}/operator-score`
-        )
-        .then((res) => {
-          if (!cancelled) setData(res.data.data);
+      getOperatorScorecard(unitId)
+        .then((result) => {
+          if (!cancelled) setData(result);
         })
         .catch((err: Error) => {
           if (!cancelled) setError(err.message);

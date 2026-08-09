@@ -111,9 +111,12 @@ export const LEGACY_GODFILES = [
   'apps/api/src/services/routeService.ts', // 643 LOC (post-migration, was 705)
   'apps/api/src/services/fleetService.ts', // 486 LOC
   'apps/api/src/services/workOrderService.ts', // 448 LOC
-  // Web components/pages/context (18) — presupuesto normal 400 LOC
+  // Web components/pages/context (17) — presupuesto normal 400 LOC
   'apps/web/src/components/Fleet/FleetRegistrationForm.tsx', // 1218 LOC
-  'apps/web/src/pages/Dashboard/FleetUnitNode.tsx', // 1199 LOC
+  // FC142 F1 — FleetUnitNode.tsx REMOVED (RR2/Inv-C): 12 sub-components
+  // extracted to pages/Dashboard/FleetUnitNode/ (move-only, Cond.R-142-H2);
+  // orchestrator now 303 LOC, under the 400 LOC budget (Cond.R-142-S6). F2
+  // (FleetRegistrationForm.tsx, still listed above) is separately scoped.
   'apps/web/src/components/Fleet/FleetGridView.tsx', // 1094 LOC
   'apps/web/src/components/Routes/RouteLogTable.tsx', // 745 LOC
   'apps/web/src/pages/Upa/UpaWorkspace.tsx', // 716 LOC

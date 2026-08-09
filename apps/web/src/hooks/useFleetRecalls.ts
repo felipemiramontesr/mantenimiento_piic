@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../api/client';
+import { getFleetRecalls, linkFleetRecall, updateFleetRecallStatus } from '../api/fleetRecalls';
 
 export type RecallStatus = 'PENDING' | 'COMPLETED' | 'NOT_APPLICABLE';
 
@@ -38,10 +38,9 @@ export function useFleetRecalls(unitId: string | null): UseFleetRecallsResult {
     if (unitId) {
       setLoading(true);
       setError(null);
-      api
-        .get<{ success: boolean; data: RecallItem[] }>(`/fleet-units/${unitId}/recalls`)
-        .then((res) => {
-          if (!cancelled) setRecalls(res.data.data);
+      getFleetRecalls(unitId)
+        .then((result) => {
+          if (!cancelled) setRecalls(result);
         })
         .catch((err: Error) => {
           if (!cancelled) setError(err.message);
@@ -57,7 +56,7 @@ export function useFleetRecalls(unitId: string | null): UseFleetRecallsResult {
 
   const linkRecall = useCallback(
     async (recallId: number): Promise<void> => {
-      await api.post(`/fleet-units/${unitId}/recalls`, { recallId });
+      await linkFleetRecall(unitId as string, recallId);
       refresh();
     },
     [unitId, refresh]
@@ -65,7 +64,7 @@ export function useFleetRecalls(unitId: string | null): UseFleetRecallsResult {
 
   const updateStatus = useCallback(
     async (recallId: number, status: RecallStatus): Promise<void> => {
-      await api.patch(`/fleet-units/${unitId}/recalls/${recallId}`, { status });
+      await updateFleetRecallStatus(unitId as string, recallId, status);
       refresh();
     },
     [unitId, refresh]

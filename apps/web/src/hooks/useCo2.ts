@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../api/client';
+import { getCo2 } from '../api/co2';
 
 export type Co2Data = {
   fuel_code: string | null;
@@ -26,10 +26,9 @@ export function useCo2(unitId: string | null): UseCo2Result {
     if (unitId) {
       setLoading(true);
       setError(null);
-      api
-        .get<{ success: boolean; data: Co2Data }>(`/fleet-units/${unitId}/co2`)
-        .then((res) => {
-          if (!cancelled) setData(res.data.data);
+      getCo2(unitId)
+        .then((result) => {
+          if (!cancelled) setData(result);
         })
         .catch((err: Error) => {
           if (!cancelled) setError(err.message);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../api/client';
+import { getAssetTypesWithFields } from '../api/assetTypeFields';
 
 export type FieldVisibility = Record<string, boolean>;
 
@@ -11,14 +11,6 @@ export const DEFAULT_FIELD_VISIBILITY: FieldVisibility = {
   insuranceExpiryDate: true,
   vencimientoVerificacion: true,
   warrantyExpiry: true,
-};
-
-type AssetTypeEntry = {
-  id: number;
-  code: string;
-  label: string;
-  icon_name: string;
-  fields: FieldVisibility;
 };
 
 type UseAssetTypeFieldsResult = {
@@ -35,11 +27,10 @@ export function useAssetTypeFields(
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    api
-      .get<{ success: boolean; data: AssetTypeEntry[] }>('/catalogs/asset-types')
-      .then((res) => {
+    getAssetTypesWithFields()
+      .then((data) => {
         if (!cancelled) {
-          const entry = res.data.data.find((t) => t.id === assetTypeId);
+          const entry = data.find((t) => t.id === assetTypeId);
           setFields(entry?.fields ?? DEFAULT_FIELD_VISIBILITY);
         }
       })
