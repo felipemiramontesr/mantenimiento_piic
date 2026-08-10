@@ -112,11 +112,15 @@ export const LEGACY_GODFILES = [
   'apps/api/src/services/fleetService.ts', // 486 LOC
   'apps/api/src/services/workOrderService.ts', // 448 LOC
   // Web components/pages/context (17) — presupuesto normal 400 LOC
-  'apps/web/src/components/Fleet/FleetRegistrationForm.tsx', // 1218 LOC
+  // FC142 F2 — FleetRegistrationForm.tsx REMOVED (RR2/Inv-C): 6 named sections
+  // extracted to FleetRegistrationForm/ + 2 local hooks (useFormComputed.ts,
+  // useAuditModalFlow.ts) split out from the orchestrator itself (moved after
+  // an initial pass landed at 464 raw/405 effective LOC — genuinely over
+  // budget, not a formatting artifact); orchestrator now 255 LOC, clean
+  // relint with max-lines:400 isolated from the ratchet (Cond.R-142-S6).
   // FC142 F1 — FleetUnitNode.tsx REMOVED (RR2/Inv-C): 12 sub-components
   // extracted to pages/Dashboard/FleetUnitNode/ (move-only, Cond.R-142-H2);
-  // orchestrator now 303 LOC, under the 400 LOC budget (Cond.R-142-S6). F2
-  // (FleetRegistrationForm.tsx, still listed above) is separately scoped.
+  // orchestrator now 303 LOC, under the 400 LOC budget (Cond.R-142-S6).
   'apps/web/src/components/Fleet/FleetGridView.tsx', // 1094 LOC
   'apps/web/src/components/Routes/RouteLogTable.tsx', // 745 LOC
   'apps/web/src/pages/Upa/UpaWorkspace.tsx', // 716 LOC
