@@ -115,10 +115,10 @@ export const ALLOWLIST: AllowlistEntry[] = [
     reason: 'Mismo patrón SET dinámico seguro — setClauses[] son fragmentos fijos `col = ?`.',
   },
   {
-    file: 'apps/api/src/routes/fleetMaintenance.ts',
+    file: 'apps/api/src/services/fleetMaintenanceWrites.repository.ts',
     snippetIncludes: 'UPDATE fleet_units SET',
     reason:
-      'Mismo patrón SET dinámico seguro — setClause construido de fragmentos fijos `col = ?`.',
+      'FC156 F1 — reubicado desde routes/fleetMaintenance.ts (mismo query literal, byte-idéntico). setClause construido en fleetMaintenanceWrites.service.ts::applyMaintenanceCompletionToUnit (fragmentos fijos `col = ?`, un push condicional por campo conocido), valores reales parametrizados en values[].',
   },
   {
     file: 'apps/api/src/services/fleetService.ts',

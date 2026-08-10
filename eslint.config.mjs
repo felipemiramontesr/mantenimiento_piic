@@ -58,7 +58,8 @@ export const LEGACY_DB_IMPORT_ALLOWLIST = [
   // finance.ts REMOVED FC138 F1 (Cond.R-138-B4) — migrated to Route->Service->Repository,
   // zero-SQL confirmed (I1).
   'apps/api/src/routes/fleet.ts',
-  'apps/api/src/routes/fleetMaintenance.ts',
+  // fleetMaintenance.ts REMOVED FC156 F1 (Cond.R-156-M3) — migrated to
+  // Route->Service->Repository, zero-SQL confirmed (I1).
   'apps/api/src/routes/fleetRecalls.ts',
   'apps/api/src/routes/fleetTco.ts',
   'apps/api/src/routes/geolocation.ts',
@@ -75,7 +76,17 @@ export const LEGACY_DB_IMPORT_ALLOWLIST = [
 
 export const LEGACY_GODFILES = [
   // Backend routes (8) — presupuesto normal 250 LOC
-  'apps/api/src/routes/fleetMaintenance.ts', // 1338 LOC
+  // FC156 F1 — fleetMaintenance.ts migrated to Route->Service->Repository
+  // (I1-I3 clean, zero-SQL confirmed — no-restricted-imports passes with the
+  // allowlist entry removed; 38 SQL call-sites moved to 2 repository files).
+  // 261 LOC (ESLint skipBlankLines/skipComments) stays 11 over the 250 route
+  // budget purely from endpoint count (9 endpoints — POST intake +
+  // accept/reject/complete lifecycle transitions each carry their own
+  // schema/error-mapping, same shape as fleetRoutes.ts's 15-endpoint
+  // exception below). Retained here as a documented size exception
+  // (Cond.R-156-M9) pending Alfa/Bravo review at closure — not a SQL-coupling
+  // problem, RR2 still applies if it gets split further later.
+  'apps/api/src/routes/fleetMaintenance.ts', // 261 LOC (post-migration, was 1346)
   // FC130 F1 — auth.ts migrated to Route->Service->Repository (I1-I3 clean,
   // zero-SQL, ~29 call-sites moved to authSession/authUserManagement
   // repositories); 12 endpoints post-migration (incl. POST /switch-tenant).

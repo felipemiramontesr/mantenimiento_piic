@@ -7,7 +7,7 @@ import {
   buildCascadeServiceTypes,
   MINOR_AGENCY_EQUIV,
   MINOR_FRESHNESS_THRESHOLD,
-} from './fleetMaintenance';
+} from '../services/fleetMaintenance.service';
 
 // ─── computeServiceType ───────────────────────────────────────────────────────
 
