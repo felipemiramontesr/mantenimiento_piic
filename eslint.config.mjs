@@ -68,7 +68,8 @@ export const LEGACY_DB_IMPORT_ALLOWLIST = [
   'apps/api/src/routes/realtimeTelemetry.ts',
   'apps/api/src/routes/recallsNhtsa.ts',
   'apps/api/src/routes/recallsVim.ts',
-  'apps/api/src/routes/reports.ts',
+  // reports.ts REMOVED FC157 F1 (Cond.R-157-R1) — migrated to
+  // Route->Service->Repository, zero-SQL confirmed (I1).
   'apps/api/src/routes/security.ts',
   'apps/api/src/routes/social.ts',
   'apps/api/src/routes/users.ts',

@@ -1,11 +1,14 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { RowDataPacket } from 'mysql2';
-import PDFDocument from 'pdfkit';
-import db from '../services/db';
 import requirePermission from '../middleware/requirePermission';
-import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolver';
+import * as ReportsService from '../services/reports.service';
+import type { ReportsUser } from '../services/reports.service';
 
 /**
+ * FC157 F1 — Route→Service→Repository. Zero SQL (I1): auth/permission
+ * guards + HTTP status codes stay here; business logic (owner-scoping, PDF
+ * render) lives in `services/reports.service.ts`, all SQL in
+ * `services/reports.repository.ts` (I3).
+ *
  * 🔱 Archon Routes: reports (FC 041 Fase E)
  * GET /v1/reports/maintenance/:uuid/pdf — PDF de una orden de mantenimiento.
  *
@@ -17,60 +20,8 @@ import { resolveOwnerScope as resolveScope } from '../services/ownerScopeResolve
  * - Mismo owner-scoping fail-closed que el módulo fuente (fleet:scoped).
  */
 
-// FC144 (Cond.R-144-B2) — delegación al SSOT ownerScopeResolver.ts, cero copia local.
-const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> => {
-  const {
-    id,
-    permissions,
-    tenant_id: tenantId,
-  } = request.user as {
-    id: number;
-    permissions?: string[];
-    tenant_id?: number | null;
-  };
-  return resolveScope({ id, permissions, tenant_id: tenantId });
-};
-
-const LABELS: Record<string, string> = {
-  unit_id: 'Unidad',
-  service_date: 'Fecha de servicio',
-  service_type: 'Tipo de servicio',
-  service_mode: 'Modalidad',
-  movement_status: 'Estatus',
-  odometer_at_service: 'Odómetro inicial',
-  odometer_at_close: 'Odómetro al cierre',
-  cost: 'Costo',
-  technician: 'Técnico',
-};
-
-function renderPdf(movement: RowDataPacket, details: RowDataPacket[]): Promise<Buffer> {
-  const doc = new PDFDocument({ margin: 40 });
-  const chunks: Buffer[] = [];
-  doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-  const done = new Promise<Buffer>((resolve) => {
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-  });
-
-  doc.fontSize(16).text('ARCHON — Orden de Mantenimiento', { align: 'center' });
-  doc.moveDown();
-  Object.entries(LABELS).forEach(([key, label]) => {
-    const value = movement[key];
-    doc.fontSize(10).text(`${label}: ${value ?? '—'}`);
-  });
-  doc.moveDown();
-  doc.fontSize(12).text('Tareas del servicio');
-  if (details.length === 0) {
-    doc.fontSize(10).text('Sin tareas registradas.');
-  }
-  details.forEach((task) => {
-    doc.fontSize(10).text(`• ${task.label ?? task.taskCode}: ${task.statusLabel ?? task.status}`);
-  });
-  doc.moveDown();
-  doc
-    .fontSize(8)
-    .text('Documento generado por Archon. Datos sensibles enmascarados conforme a política §8.1.');
-  doc.end();
-  return done;
+function requestUser(request: FastifyRequest): ReportsUser {
+  return request.user as ReportsUser;
 }
 
 export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
@@ -86,50 +37,10 @@ export async function reportsRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/reports/maintenance/:uuid/pdf', async (request, reply) => {
     try {
       const { uuid } = request.params as { uuid: string };
-      // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado).
-      const [movements] = await db.execute<RowDataPacket[]>(
-        `SELECT fm.id, fm.uuid, fm.unit_id, fm.status AS movement_status,
-                fme.service_date,
-                fm.start_reading AS odometer_at_service,
-                fm.end_reading AS odometer_at_close,
-                cc_st.code AS service_type, fme.service_mode,
-                fme.cost, fme.technician, fm.created_at
-         FROM fleet_movements fm
-         JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
-         LEFT JOIN common_catalogs cc_st ON cc_st.id = fme.service_type_id
-         WHERE fm.uuid = ? AND fm.movement_type = 'MAINTENANCE'`,
-        [uuid]
-      );
-      if (movements.length === 0)
+      const pdf = await ReportsService.getMaintenanceOrderPdf(requestUser(request), uuid);
+      if (pdf === null) {
         return reply.code(404).send({ success: false, message: 'Order not found' });
-      const movement = movements[0];
-
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null) {
-        if (ownerScope.length === 0)
-          return reply.code(404).send({ success: false, message: 'Order not found' });
-        const [owned] = await db.execute<RowDataPacket[]>(
-          `SELECT id FROM fleet_units WHERE id = ? AND ownerId IN (${ownerScope
-            .map(() => '?')
-            .join(',')})`,
-          [movement.unit_id, ...ownerScope]
-        );
-        if (owned.length === 0)
-          return reply.code(404).send({ success: false, message: 'Order not found' });
       }
-
-      const [details] = await db.execute<RowDataPacket[]>(
-        `SELECT fmd.task_code AS taskCode, fmd.status_code AS status,
-                mt.label, mts.label AS statusLabel
-         FROM fleet_maintenance_details fmd
-         JOIN maintenance_tasks mt ON fmd.task_code = mt.code
-         JOIN maintenance_task_statuses mts ON fmd.status_code = mts.code
-         WHERE fmd.maintenance_id = ?
-         ORDER BY mt.is_critical DESC, fmd.task_code`,
-        [movement.id]
-      );
-
-      const pdf = await renderPdf(movement, details);
       return reply
         .type('application/pdf')
         .header('Content-Disposition', `attachment; filename="orden_${uuid}.pdf"`)
