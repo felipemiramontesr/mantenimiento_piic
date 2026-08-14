@@ -318,12 +318,46 @@ export default async function setupApiMocks(page: Page): Promise<void> {
 
   // 🚗 Fleet: inventory
   await page.route(
-    (url) => isApi(url) && url.pathname.startsWith('/v1/fleet') && !url.pathname.includes('/node'),
+    (url) =>
+      isApi(url) &&
+      url.pathname.startsWith('/v1/fleet') &&
+      !url.pathname.includes('/node') &&
+      !url.pathname.includes('/tco'),
     async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ success: true, count: FLEET_FIXTURE.length, data: FLEET_FIXTURE }),
+      });
+    }
+  );
+
+  // 🚗 Fleet: TCO (FC158 T3 — TcoKpiCluster ungated for all units; the generic
+  // /v1/fleet catch-all above would otherwise wrongly intercept /fleet-units/:id/tco
+  // since 'fleet-units' starts with 'fleet', returning the array shape instead
+  // of a single TcoData object and crashing TcoKpiCluster's render).
+  await page.route(
+    (url) => isApi(url) && url.pathname.includes('/fleet-units/') && url.pathname.endsWith('/tco'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            fleet_unit_id: 'ASM-E2E',
+            tco_total: 12500.5,
+            tco_maintenance: 8000,
+            tco_insurance: 2000,
+            tco_lease: 0,
+            tco_tenencia: 1500,
+            tco_verificacion: 500,
+            tco_fuel: 500.5,
+            tco_other: 0,
+            total_records: 6,
+            last_record_at: '2026-07-01',
+          },
+        }),
       });
     }
   );
