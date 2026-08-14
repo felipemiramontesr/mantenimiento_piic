@@ -872,8 +872,8 @@ describe('FleetUnitNode', () => {
     expect(screen.getByText('Vencimiento seguro')).toBeInTheDocument();
   });
 
-  it('VIM-F-5: Tab "Patrones VIM" activa y muestra ≥1 fila de patrón', async () => {
-    const VIM_ROW = {
+  it('PATTERNS-F-5: Tab "Patrones de Falla" activa y muestra ≥1 fila de patrón', async () => {
+    const PATTERN_ROW = {
       failure_category: 'MAINTENANCE',
       occurrence_count: 4,
       affected_units: 2,
@@ -884,8 +884,8 @@ describe('FleetUnitNode', () => {
     };
 
     vi.mocked(api.get).mockImplementation((url: string) => {
-      if (String(url).includes('vim-patterns')) {
-        return Promise.resolve({ data: { success: true, count: 1, data: [VIM_ROW] } });
+      if (String(url).includes('internal-patterns')) {
+        return Promise.resolve({ data: { success: true, count: 1, data: [PATTERN_ROW] } });
       }
       return Promise.resolve({ data: { success: true, data: NODE_FIXTURE } });
     });
@@ -897,8 +897,8 @@ describe('FleetUnitNode', () => {
       expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
     );
 
-    const vimTab = screen.getByText('Patrones VIM');
-    fireEvent.click(vimTab);
+    const patternsTab = screen.getByText('Patrones de Falla');
+    fireEvent.click(patternsTab);
 
     await waitFor(() => expect(screen.getByText('MAINTENANCE')).toBeInTheDocument());
     expect(screen.getByText(/2 unidades/)).toBeInTheDocument();

@@ -189,7 +189,7 @@ export const PIIC303_TRANSACTIONS: FinancialEntry[] = [
 
 export const PIIC303_INCIDENTS: IncidentSpec[] = [];
 
-// ─── PIIC-304/305 — VIM FaseF ────────────────────────────────────────────────
+// ─── PIIC-304/305 — Failure Patterns FaseF ────────────────────────────────────
 // TCO: 54,000+24,000+5,000 = 83,000 → EVALUATE (score 0.92)
 export const PIIC304_TRANSACTIONS: FinancialEntry[] = [
   ...lease(MONTHS_12, 4_500),

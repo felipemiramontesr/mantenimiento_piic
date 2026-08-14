@@ -68,24 +68,10 @@ vi.mock('../../components/Common/AreasSelect', () => ({
   ),
 }));
 
-vi.mock('../../components/Common/SpecialtiesSelect', () => ({
-  default: ({
-    value,
-    onChange,
-  }: {
-    value: string[];
-    onChange: (s: string[]) => void;
-  }): React.ReactElement => (
-    <div
-      data-testid="specialties-select"
-      data-specialties={JSON.stringify(value)}
-      onClick={(): void => onChange([...value, 'MOTOR'])}
-    />
-  ),
-}));
-
 // FC 082 F0c — la puerta VIM Centro (isSuiteVIM) murió con el eje suite; el
 // formulario de clientes queda inalcanzable hasta el chasis Arc (F3).
+// FC158 T2 (2026-08-13) — purgado en firme: ClientForm/vimCentro/tab VIM ya
+// no existen en el componente (código muerto eliminado, no solo apagado).
 const mockPerms = (opts: { omnipotent?: boolean } = {}): void => {
   vi.mocked(usePermissions).mockReturnValue({
     hasPermission: (): boolean => false,
@@ -118,14 +104,16 @@ describe('OnboardingModule', () => {
     expect(screen.queryByTestId('client-form')).not.toBeInTheDocument();
   });
 
-  it('F0c-OM-1: el formulario de clientes ya no se muestra ni para omnipotente (puerta VIM muerta)', async () => {
+  it('F0c-OM-1 (FC158 T2): sin selector de tabs — el flujo VIM/Centro fue purgado, no solo apagado', async () => {
     mockPerms({ omnipotent: true });
     render(<OnboardingModule />);
     await waitFor(() => expect(screen.getByTestId('universe-form')).toBeInTheDocument());
+    expect(screen.queryByTestId('tab-erp')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tab-vim')).not.toBeInTheDocument();
     expect(screen.queryByTestId('client-form')).not.toBeInTheDocument();
   });
 
-  it('shows no-access message when neither omnipotent nor vimCentro', async () => {
+  it('shows no-access message when not omnipotent', async () => {
     mockPerms();
     render(<OnboardingModule />);
     await waitFor(() => expect(screen.getByText(/sin acceso/i)).toBeInTheDocument());
@@ -139,26 +127,18 @@ describe('OnboardingModule', () => {
     );
   });
 
-  // ─── Universe form — tabs ───────────────────────────────────────────────────
+  // ─── Universe form — single ERP flow (FC158 T2: tab VIM purgado) ───────────
 
-  it('universe form defaults to ERP tab', async () => {
+  it('universe form renders the ERP flow directly, no tab selector', async () => {
     mockPerms({ omnipotent: true });
     render(<OnboardingModule />);
-    await waitFor(() => expect(screen.getByTestId('tab-erp')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('universe-form')).toBeInTheDocument());
     expect(screen.getByText(/Propietario de Flotilla/i)).toBeInTheDocument();
-  });
-
-  it('universe form switches to VIM tab on click', async () => {
-    mockPerms({ omnipotent: true });
-    render(<OnboardingModule />);
-    await screen.findByTestId('tab-vim');
-    fireEvent.click(screen.getByTestId('tab-vim'));
-    expect(screen.getByText(/Centro Especializado/i)).toBeInTheDocument();
   });
 
   // ─── Universe form — submission ─────────────────────────────────────────────
 
-  it('submits /onboarding/universe with roleId 1 for ERP tab', async () => {
+  it('submits /onboarding/universe with roleId 1', async () => {
     mockPerms({ omnipotent: true });
     vi.mocked(api.post).mockImplementation(async (url: string) => {
       if (url === '/auth/refresh') throw new Error('no session');
@@ -168,7 +148,6 @@ describe('OnboardingModule', () => {
     render(<OnboardingModule />);
     await screen.findByTestId('universe-form');
 
-    // ERP tab is default
     fillField(/^Usuario/i, 'flotilla.one');
     fillField(/^Correo/i, 'f@empresa.mx');
     fillField(/^Contraseña/i, 'Archon@1234!');
@@ -183,33 +162,6 @@ describe('OnboardingModule', () => {
       )
     );
     await waitFor(() => expect(screen.getByTestId('onboarding-status')).toHaveTextContent(/ERP/i));
-  });
-
-  it('submits /onboarding/universe with roleId 3 for VIM tab', async () => {
-    mockPerms({ omnipotent: true });
-    vi.mocked(api.post).mockImplementation(async (url: string) => {
-      if (url === '/auth/refresh') throw new Error('no session');
-      return { data: { success: true } };
-    });
-
-    render(<OnboardingModule />);
-    await screen.findByTestId('tab-vim');
-    fireEvent.click(screen.getByTestId('tab-vim'));
-
-    fillField(/^Usuario/i, 'centro.vim');
-    fillField(/^Correo/i, 'c@vim.mx');
-    fillField(/^Contraseña/i, 'Archon@1234!');
-    fillField(/^RFC/i, 'RFC002');
-
-    fireEvent.click(screen.getByTestId('btn-create-universe'));
-
-    await waitFor(() =>
-      expect(vi.mocked(api.post)).toHaveBeenCalledWith(
-        '/onboarding/universe',
-        expect.objectContaining({ roleId: 3 })
-      )
-    );
-    await waitFor(() => expect(screen.getByTestId('onboarding-status')).toHaveTextContent(/VIM/i));
   });
 
   it('shows error message from API on universe creation failure', async () => {
@@ -255,22 +207,11 @@ describe('OnboardingModule', () => {
     expect(screen.getByTestId('archon-address-field')).toBeInTheDocument();
   });
 
-  it('universe form renders AreasSelect on ERP tab', async () => {
+  it('universe form renders AreasSelect', async () => {
     mockPerms({ omnipotent: true });
     render(<OnboardingModule />);
     await screen.findByTestId('uni-areas-section');
     expect(screen.getByTestId('areas-select')).toBeInTheDocument();
-    expect(screen.queryByTestId('specialties-select')).not.toBeInTheDocument();
-  });
-
-  it('universe form renders SpecialtiesSelect on VIM tab and not AreasSelect', async () => {
-    mockPerms({ omnipotent: true });
-    render(<OnboardingModule />);
-    await screen.findByTestId('tab-vim');
-    fireEvent.click(screen.getByTestId('tab-vim'));
-    await screen.findByTestId('uni-especialidades-section');
-    expect(screen.getByTestId('specialties-select')).toBeInTheDocument();
-    expect(screen.queryByTestId('areas-select')).not.toBeInTheDocument();
   });
 
   it('submits razon_social and telefono in profile for ERP universe', async () => {
@@ -329,38 +270,6 @@ describe('OnboardingModule', () => {
       expect(vi.mocked(api.post)).toHaveBeenCalledWith(
         '/onboarding/universe',
         expect.objectContaining({ areas: ['Administración'] })
-      )
-    );
-  });
-
-  it('submits especialidades in profile when specialties selected on VIM tab', async () => {
-    mockPerms({ omnipotent: true });
-    vi.mocked(api.post).mockImplementation(async (url: string) => {
-      if (url === '/auth/refresh') throw new Error('no session');
-      return { data: { success: true } };
-    });
-
-    render(<OnboardingModule />);
-    await screen.findByTestId('tab-vim');
-    fireEvent.click(screen.getByTestId('tab-vim'));
-    await screen.findByTestId('uni-especialidades-section');
-
-    fillField(/^Usuario/i, 'centro.specs');
-    fillField(/^Correo/i, 'cs@vim.mx');
-    fillField(/^Contraseña/i, 'Archon@1234!');
-    fillField(/^RFC/i, 'RFC003');
-    fillField(/Razón Social/i, 'VIM Centro');
-
-    fireEvent.click(screen.getByTestId('specialties-select'));
-
-    fireEvent.click(screen.getByTestId('btn-create-universe'));
-
-    await waitFor(() =>
-      expect(vi.mocked(api.post)).toHaveBeenCalledWith(
-        '/onboarding/universe',
-        expect.objectContaining({
-          profile: expect.objectContaining({ especialidades: ['MOTOR'] }),
-        })
       )
     );
   });

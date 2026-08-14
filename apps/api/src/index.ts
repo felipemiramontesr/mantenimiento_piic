@@ -31,7 +31,7 @@ import anomalyDetectionRoutes from './routes/anomalyDetection';
 import operatorScorecardRoutes from './routes/operatorScorecard';
 import co2Routes from './routes/co2';
 import recallsNhtsaRoutes from './routes/recallsNhtsa';
-import recallsVimRoutes from './routes/recallsVim';
+import recallsInternalRoutes from './routes/recallsInternal';
 import notificationsRoutes from './routes/notifications';
 import areasRoutes from './routes/areas';
 // FC 082 F0c — purga 084_AN v3.1: serviceCenters, crm* (5) y portal
@@ -59,10 +59,6 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: '../../.env' });
 
-/**
- * 🔱 Archon API Factory: buildApp
- * Implementation: Silicon Valley Testable Architecture (v.17.0.0)
- */
 // Fail-fast: critical secrets must be present in production
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var is required in production');
@@ -78,13 +74,14 @@ const buildAllowedOrigins = (): Array<string | RegExp> =>
     ? [process.env.FRONTEND_URL ?? 'https://mantenimiento.piic.com.mx']
     : [/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
 
-const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
-  const fastify = Fastify({
-    logger: true,
-    bodyLimit: 10 * 1024 * 1024, // 10MB — allows up to 4 base64 JPEG images in fleet payload
-    ...opts,
-  });
-
+/**
+ * Core security/infra plugins — order matters: cookie before jwt (cookie-based
+ * token extraction), helmet before cors (security headers first).
+ * FC158 — extracted from buildApp() (Gate 2 max-lines-per-function), triggered
+ * by the recallsVim->recallsInternal rename touching a registration line inside
+ * the pre-existing 174-line function. Cero cambio de comportamiento/orden.
+ */
+function registerCorePlugins(fastify: FastifyInstance): void {
   // Cookie plugin — must register before jwt for cookie-based token extraction
   fastify.register(cookie as unknown as FastifyPluginCallback<FastifyCookieOptions>);
 
@@ -143,7 +140,10 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     root: path.join(__dirname, '../uploads'),
     prefix: '/uploads/', // URL prefix
   });
+}
 
+/** Response-observability hook + /metrics + the production-safe error handler. FC158 extraction. */
+function registerObservabilityHooks(fastify: FastifyInstance): void {
   // FC 062 F3 (A09) — global security observability: every response feeds the
   // /metrics counters; 401/403/429 emit a structured security event without
   // touching individual routes (route pattern preferred over raw URL — no params/PII).
@@ -186,11 +186,10 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
     }
     return reply.code(statusCode).send(error);
   });
+}
 
-  // FC-18 FaseC-1 — UniverseContext: global tenancy middleware (registered at root, before routes)
-  fastify.register(universeContextPlugin);
-
-  // Routes
+/** `/v1/*` route registrations (original aliases). FC158 extraction, same order. */
+function registerV1Routes(fastify: FastifyInstance): void {
   fastify.register(authRoutes, { prefix: '/v1/auth' });
   fastify.register(telemetryRoutes, { prefix: '/v1/archon' });
   fastify.register(fleetRoutes, { prefix: '/v1' });
@@ -217,11 +216,16 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(operatorScorecardRoutes, { prefix: '/v1' });
   fastify.register(co2Routes, { prefix: '/v1' });
   fastify.register(recallsNhtsaRoutes, { prefix: '/v1' });
-  fastify.register(recallsVimRoutes, { prefix: '/v1' });
+  fastify.register(recallsInternalRoutes, { prefix: '/v1' });
   fastify.register(socialRoutes, { prefix: '/v1' });
+}
 
-  // Universe Namespace Routes — FC-18 FaseC-2 (Archon_Universe_Routing_Restructure)
-  // Registers all domain routes under /v1/mantenimiento/ — original /v1/ aliases remain active.
+/**
+ * Universe Namespace Routes — FC-18 FaseC-2 (Archon_Universe_Routing_Restructure).
+ * Registers all domain routes under /v1/mantenimiento/ — original /v1/ aliases
+ * (`registerV1Routes`) remain active. FC158 extraction, same order.
+ */
+function registerUniverseRoutes(fastify: FastifyInstance): void {
   const universePrefix = '/v1/mantenimiento';
   fastify.register(fleetRoutes, { prefix: universePrefix });
   fastify.register(journeyRoutes, { prefix: universePrefix });
@@ -244,15 +248,20 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   fastify.register(operatorScorecardRoutes, { prefix: universePrefix });
   fastify.register(co2Routes, { prefix: universePrefix });
   fastify.register(recallsNhtsaRoutes, { prefix: universePrefix });
-  fastify.register(recallsVimRoutes, { prefix: universePrefix });
+  fastify.register(recallsInternalRoutes, { prefix: universePrefix });
   fastify.register(socialRoutes, { prefix: universePrefix });
   fastify.register(catalogRoutes, { prefix: `${universePrefix}/catalogs` });
   fastify.register(geolocationRoutes, { prefix: `${universePrefix}/geolocation` });
+}
 
-  // FC24 FaseC — Cosmonaut routes (global; not duplicated under universePrefix)
+/** FC24 FaseC — Cosmonaut routes (global; not duplicated under universePrefix). FC158 extraction. */
+function registerCosmonautRoutes(fastify: FastifyInstance): void {
   fastify.register(cosmonautRolesRoutes, { prefix: '/v1' });
   fastify.register(cosmonautAssignmentsRoutes, { prefix: '/v1' });
+}
 
+/** Diagnostic root, liveness `/health`, and the DB-aware `/health/db` probe. FC158 extraction. */
+function registerDiagnosticRoutes(fastify: FastifyInstance): void {
   // Diagnostic Root V2 (Secure)
   fastify.get(
     '/',
@@ -290,6 +299,31 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
       return reply.code(503).send({ status: 'down', latencyMs: Date.now() - startedAt });
     }
   });
+}
+
+/**
+ * 🔱 Archon API Factory: buildApp
+ * Implementation: Silicon Valley Testable Architecture (v.17.0.0)
+ * FC158 — bootstrap split into named registration steps (Gate 2 max-lines-per-
+ * function); each step preserves its original relative order exactly.
+ */
+const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
+  const fastify = Fastify({
+    logger: true,
+    bodyLimit: 10 * 1024 * 1024, // 10MB — allows up to 4 base64 JPEG images in fleet payload
+    ...opts,
+  });
+
+  registerCorePlugins(fastify);
+  registerObservabilityHooks(fastify);
+
+  // FC-18 FaseC-1 — UniverseContext: global tenancy middleware (registered at root, before routes)
+  fastify.register(universeContextPlugin);
+
+  registerV1Routes(fastify);
+  registerUniverseRoutes(fastify);
+  registerCosmonautRoutes(fastify);
+  registerDiagnosticRoutes(fastify);
 
   return fastify;
 };

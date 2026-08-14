@@ -62,7 +62,7 @@ vi.mock('../services/notification.service', () => ({
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
-const VIM_PATTERN_FIXTURE = {
+const PATTERN_FIXTURE = {
   brand_id: 12,
   model_id: 34,
   make: 'NISSAN',
@@ -78,14 +78,14 @@ const VIM_PATTERN_FIXTURE = {
   confidence_score: '0.6667',
 };
 
-const VIM_REPAIR_FIXTURE = {
-  ...VIM_PATTERN_FIXTURE,
+const REPAIR_FIXTURE = {
+  ...PATTERN_FIXTURE,
   failure_category: 'REPAIR',
   affected_units: 2,
   confidence_score: '0.6667',
 };
 
-// ── Tests: VIM-F-1..4 ─────────────────────────────────────────────────────────
+// ── Tests: PATTERNS-F-1..4 ────────────────────────────────────────────────────
 
 // FC 082 F3c Cond.1 (Bravo) — enum scope 'suite'/'global' retirado (090_AN/093_AN):
 // view_fleet_model_failure_patterns es inteligencia cross-tenant por diseño (sin
@@ -93,7 +93,8 @@ const VIM_REPAIR_FIXTURE = {
 // sin exigir el permiso — se cierra exigiendo fleet:global siempre. globalToken
 // (intelligence:recall:view + fleet:global) es el token del camino feliz ahora;
 // viewToken (solo intelligence:recall:view) queda para probar el 403.
-describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
+// FC158 T1 — renombrado desde recallsVim.test.ts (2026-08-13).
+describe('GET /v1/recalls/internal-patterns (FC DataResilience FaseF)', () => {
   const app = buildApp();
   let adminToken: string;
   let viewToken: string;
@@ -113,23 +114,23 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     vi.clearAllMocks();
   });
 
-  it('VIM-F-0: 401 sin token JWT', async () => {
+  it('PATTERNS-F-0: 401 sin token JWT', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
     });
     expect(res.statusCode).toBe(401);
   });
 
-  it('VIM-F-1: 200 con ≥1 patrón MAINTENANCE (fleet:global)', async () => {
+  it('PATTERNS-F-1: 200 con ≥1 patrón MAINTENANCE (fleet:global)', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined]) // view query
+      .mockResolvedValueOnce([[PATTERN_FIXTURE], undefined]) // view query
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]); // nhtsa check
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
@@ -140,15 +141,15 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     expect(maintenance).toBeDefined();
   });
 
-  it('VIM-F-2: confidence_score = 0.6667 cuando 2 de 3 unidades mismo modelo con falla', async () => {
+  it('PATTERNS-F-2: confidence_score = 0.6667 cuando 2 de 3 unidades mismo modelo con falla', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[VIM_REPAIR_FIXTURE], undefined])
+      .mockResolvedValueOnce([[REPAIR_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
@@ -158,53 +159,53 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     expect(pattern.affected_units).toBe(2);
   });
 
-  it('VIM-F-3: 403 sin permiso fleet:global (solo intelligence:recall:view)', async () => {
+  it('PATTERNS-F-3: 403 sin permiso fleet:global (solo intelligence:recall:view)', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${viewToken}` },
     });
     expect(res.statusCode).toBe(403);
     expect(res.json()).toHaveProperty('error');
   });
 
-  it('VIM-F-3b: 200 con permiso fleet:global', async () => {
+  it('PATTERNS-F-3b: 200 con permiso fleet:global', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined])
+      .mockResolvedValueOnce([[PATTERN_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
   });
 
-  it('VIM-F-3c: 200 con permiso wildcard (*)', async () => {
+  it('PATTERNS-F-3c: 200 con permiso wildcard (*)', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined])
+      .mockResolvedValueOnce([[PATTERN_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${adminToken}` },
     });
     expect(res.statusCode).toBe(200);
   });
 
-  it('VIM-F-4: nhtsa_covered = true cuando recall existe en catalog_recalls', async () => {
+  it('PATTERNS-F-4: nhtsa_covered = true cuando recall existe en catalog_recalls', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined])
+      .mockResolvedValueOnce([[PATTERN_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 3 }], undefined]); // 3 NHTSA recalls found
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
@@ -212,61 +213,61 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     expect(body.data[0].nhtsa_covered).toBe(true);
   });
 
-  it('VIM-F-4b: nhtsa_covered = false cuando no hay recall en catalog_recalls', async () => {
+  it('PATTERNS-F-4b: nhtsa_covered = false cuando no hay recall en catalog_recalls', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined])
+      .mockResolvedValueOnce([[PATTERN_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().data[0].nhtsa_covered).toBe(false);
   });
 
-  it('VIM-F-5: signal_level SEÑAL cuando confidence_score >= 0.6', async () => {
+  it('PATTERNS-F-5: signal_level SEÑAL cuando confidence_score >= 0.6', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ ...VIM_PATTERN_FIXTURE, confidence_score: '0.7500' }], undefined])
+      .mockResolvedValueOnce([[{ ...PATTERN_FIXTURE, confidence_score: '0.7500' }], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().data[0].signal_level).toBe('SEÑAL');
   });
 
-  it('VIM-F-6: signal_level INVESTIGAR cuando 0.3 <= confidence_score < 0.6', async () => {
+  it('PATTERNS-F-6: signal_level INVESTIGAR cuando 0.3 <= confidence_score < 0.6', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ ...VIM_PATTERN_FIXTURE, confidence_score: '0.4000' }], undefined])
+      .mockResolvedValueOnce([[{ ...PATTERN_FIXTURE, confidence_score: '0.4000' }], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().data[0].signal_level).toBe('INVESTIGAR');
   });
 
-  it('VIM-F-7: 400 si falta make, model o year', async () => {
+  it('PATTERNS-F-7: 400 si falta make, model o year', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN',
+      url: '/v1/recalls/internal-patterns?make=NISSAN',
       headers: { authorization: `Bearer ${adminToken}` },
     });
     expect(res.statusCode).toBe(400);
   });
 
-  it('VIM-F-8: lista vacía cuando vista no retorna filas', async () => {
+  it('PATTERNS-F-8: lista vacía cuando vista no retorna filas', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
       .mockResolvedValueOnce([[], undefined])
@@ -274,7 +275,7 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=TOYOTA&model=HILUX&year=2020',
+      url: '/v1/recalls/internal-patterns?make=TOYOTA&model=HILUX&year=2020',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
@@ -282,30 +283,30 @@ describe('GET /v1/recalls/vim-patterns (FC DataResilience FaseF)', () => {
     expect(res.json().count).toBe(0);
   });
 
-  it('VIM-F-9: signal_level DATOS_INSUFICIENTES cuando confidence_score < 0.3 (lines 19-20)', async () => {
+  it('PATTERNS-F-9: signal_level DATOS_INSUFICIENTES cuando confidence_score < 0.3 (lines 19-20)', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[{ ...VIM_PATTERN_FIXTURE, confidence_score: '0.2000' }], undefined])
+      .mockResolvedValueOnce([[{ ...PATTERN_FIXTURE, confidence_score: '0.2000' }], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().data[0].signal_level).toBe('DATOS_INSUFICIENTES');
   });
 
-  it('VIM-F-10: query ignora un parámetro scope residual del cliente (compat transicional)', async () => {
+  it('PATTERNS-F-10: query ignora un parámetro scope residual del cliente (compat transicional)', async () => {
     const { default: db } = await import('../services/db');
     vi.mocked(db.execute)
-      .mockResolvedValueOnce([[VIM_PATTERN_FIXTURE], undefined])
+      .mockResolvedValueOnce([[PATTERN_FIXTURE], undefined])
       .mockResolvedValueOnce([[{ cnt: 0 }], undefined]);
 
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/recalls/vim-patterns?make=NISSAN&model=NP300&year=2021&scope=suite',
+      url: '/v1/recalls/internal-patterns?make=NISSAN&model=NP300&year=2021&scope=suite',
       headers: { authorization: `Bearer ${globalToken}` },
     });
     expect(res.statusCode).toBe(200);

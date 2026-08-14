@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../../api/client';
 
-export type VimPattern = {
+export type FailurePattern = {
   failure_category: string;
   occurrence_count: number;
   affected_units: number;
@@ -11,50 +11,54 @@ export type VimPattern = {
   signal_level: 'SEÑAL' | 'INVESTIGAR' | 'DATOS_INSUFICIENTES';
 };
 
-const VIM_SIGNAL_STYLES: Record<VimPattern['signal_level'], string> = {
+const SIGNAL_STYLES: Record<FailurePattern['signal_level'], string> = {
   SEÑAL: 'bg-amber-500/20 text-amber-300 border border-amber-500/40',
   INVESTIGAR: 'bg-blue-500/20 text-blue-300 border border-blue-500/40',
   DATOS_INSUFICIENTES: 'bg-white/5 text-gray-500 border border-white/10',
 };
 
 /**
- * Fetches VIM-derived failure patterns for the "Patrones VIM" tab.
+ * Fetches internal fleet failure patterns for the "Patrones de Falla" tab.
  * FC142 F1 evidence note — inline HTTP call, not behind a hook: NOT part of
  * the 8 confirmed hooks migrated to the Zod-validated F4 client pattern in
  * this phase (Cond.R-142-H1 scopes hooks explicitly). Moved verbatim
  * (Cond.R-142-H2, no logic rewrite); flagged in 142_evidence/f1/ as a
  * residual candidate for a future pass, not silently fixed nor hidden.
+ * FC158 T1 — renamed from VimPatternsList.tsx/useVimPatterns (2026-08-13):
+ * this is fleet-internal failure-pattern intelligence, unrelated to the
+ * universe/cosmology concept "VIM" was named after (already purged in
+ * FC082 F0c). Cero cambio de comportamiento.
  */
-export function useVimPatterns(
+export function useFailurePatterns(
   isOpen: boolean,
-  activeTab: 'nhtsa' | 'vim',
+  activeTab: 'nhtsa' | 'patterns',
   make: string,
   model: string,
   year: number
-): { vimResults: VimPattern[]; vimLoading: boolean; vimError: string | null } {
-  const [vimResults, setVimResults] = useState<VimPattern[]>([]);
-  const [vimLoading, setVimLoading] = useState(false);
-  const [vimError, setVimError] = useState<string | null>(null);
+): { results: FailurePattern[]; loading: boolean; error: string | null } {
+  const [results, setResults] = useState<FailurePattern[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isOpen || activeTab !== 'vim') return;
-    setVimLoading(true);
-    setVimError(null);
+    if (!isOpen || activeTab !== 'patterns') return;
+    setLoading(true);
+    setError(null);
     api
-      .get<{ success: boolean; data: VimPattern[] }>(
-        `/recalls/vim-patterns?make=${encodeURIComponent(make)}&model=${encodeURIComponent(
+      .get<{ success: boolean; data: FailurePattern[] }>(
+        `/recalls/internal-patterns?make=${encodeURIComponent(make)}&model=${encodeURIComponent(
           model
         )}&year=${year}`
       )
-      .then((res) => setVimResults(res.data.data))
-      .catch(() => setVimError('No se pudieron cargar los patrones VIM.'))
-      .finally(() => setVimLoading(false));
+      .then((res) => setResults(res.data.data))
+      .catch(() => setError('No se pudieron cargar los patrones de falla.'))
+      .finally(() => setLoading(false));
   }, [isOpen, activeTab, make, model, year]);
 
-  return { vimResults, vimLoading, vimError };
+  return { results, loading, error };
 }
 
-function VimPatternRow({ p }: { p: VimPattern }): React.JSX.Element {
+function FailurePatternRow({ p }: { p: FailurePattern }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-[4px]">
       <div className="flex-1 min-w-0">
@@ -79,7 +83,7 @@ function VimPatternRow({ p }: { p: VimPattern }): React.JSX.Element {
         )}
         <span
           className={`text-xs font-black uppercase tracking-widest rounded-[2px] px-2 py-0.5 ${
-            VIM_SIGNAL_STYLES[p.signal_level]
+            SIGNAL_STYLES[p.signal_level]
           }`}
         >
           {p.signal_level === 'DATOS_INSUFICIENTES' ? 'DATOS INSUF.' : p.signal_level}
@@ -89,20 +93,20 @@ function VimPatternRow({ p }: { p: VimPattern }): React.JSX.Element {
   );
 }
 
-/** VIM-derived failure-pattern list for the "Patrones VIM" tab of the NHTSA modal. */
-export function VimPatternsList({
+/** Fleet-internal failure-pattern list for the "Patrones de Falla" tab of the NHTSA modal. */
+export function FailurePatternsList({
   loading,
   error,
   results,
 }: {
   loading: boolean;
   error: string | null;
-  results: VimPattern[];
+  results: FailurePattern[];
 }): React.JSX.Element {
   return (
     <div>
       {loading && (
-        <p className="text-gray-400 text-sm text-center py-4">Analizando patrones VIM…</p>
+        <p className="text-gray-400 text-sm text-center py-4">Analizando patrones de falla…</p>
       )}
       {error && <p className="text-red-400 text-sm text-center py-4">{error}</p>}
       {!loading && !error && results.length === 0 && (
@@ -113,7 +117,7 @@ export function VimPatternsList({
       {!loading && results.length > 0 && (
         <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
           {results.map((p, i) => (
-            <VimPatternRow key={`${p.failure_category}-${i}`} p={p} />
+            <FailurePatternRow key={`${p.failure_category}-${i}`} p={p} />
           ))}
         </div>
       )}
@@ -121,4 +125,4 @@ export function VimPatternsList({
   );
 }
 
-export default VimPatternsList;
+export default FailurePatternsList;

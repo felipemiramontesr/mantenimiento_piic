@@ -12,7 +12,6 @@ import {
   Eye,
   EyeOff,
   MapPin,
-  Wrench,
   LayoutGrid,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -24,11 +23,7 @@ import ArchonAddressField, {
   EMPTY_ADDRESS,
 } from '../../components/Common/ArchonAddressField';
 import AreasSelect from '../../components/Common/AreasSelect';
-import SpecialtiesSelect from '../../components/Common/SpecialtiesSelect';
 import UniversesDirectory from './UniversesDirectory';
-
-type UniverseTab = 'ERP' | 'VIM';
-type ClientTab = 'PRIVATE' | 'FAMILIAR';
 
 interface FormState {
   username: string;
@@ -54,11 +49,6 @@ const EMPTY_FORM: FormState = {
 
 const LABEL_CLS =
   'text-archon-base font-black uppercase tracking-[0.15em] text-[#0f2a44]/50 flex items-center gap-2 mb-1';
-
-const tabBase =
-  'flex-1 h-11 flex items-center justify-center text-xs font-black uppercase tracking-widest rounded-[4px] transition-all duration-150 cursor-pointer';
-const tabActive = `${tabBase} bg-pinnacle-navy text-pinnacle-yellow`;
-const tabInactive = `${tabBase} text-pinnacle-navy/50 hover:bg-pinnacle-navy/5`;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -184,13 +174,65 @@ function StatusBanner({
   );
 }
 
-// ─── Archon Section: creates top-level universes ─────────────────────────────
+// ─── Archon Section: creates top-level universes (FC158 T2 — solo ERP, ─────────
+// la pestaña "Universo VIM"/Especialidades fue purgada: código muerto desde
+// FC082 F0c, único universo vivo es FMS) ────────────────────────────────────────
 
-const UniverseForm: React.FC = (): React.ReactElement => {
-  const [tab, setTab] = useState<UniverseTab>('ERP');
+function buildUniversePayload(
+  form: FormState,
+  addressValue: AddressValue,
+  areas: string[]
+): Record<string, unknown> {
+  const profile: Record<string, unknown> = { rfc: form.rfc };
+  if (form.razonSocial) profile.razon_social = form.razonSocial;
+  if (form.telefono) profile.telefono = form.telefono;
+
+  const address = addressValue.neighborhoodId
+    ? {
+        neighborhoodId: parseInt(addressValue.neighborhoodId, 10),
+        calle: addressValue.calle,
+        numeroExt: addressValue.numeroExt,
+        numeroInt: addressValue.numeroInt || undefined,
+      }
+    : undefined;
+
+  return {
+    username: form.username,
+    email: form.email,
+    password: form.password,
+    fullName: form.fullName || undefined,
+    roleId: 1,
+    profile,
+    ...(address ? { address } : {}),
+    ...(areas.length > 0 ? { areas } : {}),
+  };
+}
+
+function extractErrorMessage(err: unknown): string {
+  return (
+    (err as { response?: { data?: { message?: string; code?: string } } })?.response?.data
+      ?.message ??
+    (err as { response?: { data?: { code?: string } } })?.response?.data?.code ??
+    'Error al crear el universo.'
+  );
+}
+
+/** FC158 — extracted from UniverseForm (Gate 2 max-lines-per-function): all state + handlers. */
+interface UseUniverseFormResult {
+  form: FormState;
+  addressValue: AddressValue;
+  areas: string[];
+  loading: boolean;
+  status: { ok: boolean; message: string } | null;
+  set: (field: keyof FormState) => (value: string) => void;
+  setAddressValue: (v: AddressValue) => void;
+  setAreas: (a: string[]) => void;
+  handleSubmit: (e: React.FormEvent) => Promise<void>;
+}
+
+function useUniverseForm(): UseUniverseFormResult {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [addressValue, setAddressValue] = useState<AddressValue>(EMPTY_ADDRESS);
-  const [especialidades, setEspecialidades] = useState<string[]>([]);
   const [areas, setAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null);
@@ -203,7 +245,6 @@ const UniverseForm: React.FC = (): React.ReactElement => {
   const resetFields = (): void => {
     setForm(EMPTY_FORM);
     setAddressValue(EMPTY_ADDRESS);
-    setEspecialidades([]);
     setAreas([]);
   };
 
@@ -212,182 +253,168 @@ const UniverseForm: React.FC = (): React.ReactElement => {
     setLoading(true);
     setStatus(null);
     try {
-      const roleId = tab === 'ERP' ? 1 : 3;
-
-      const profile: Record<string, unknown> = { rfc: form.rfc };
-      if (form.razonSocial) profile.razon_social = form.razonSocial;
-      if (form.telefono) profile.telefono = form.telefono;
-      if (tab === 'VIM' && especialidades.length > 0) profile.especialidades = especialidades;
-
-      const address = addressValue.neighborhoodId
-        ? {
-            neighborhoodId: parseInt(addressValue.neighborhoodId, 10),
-            calle: addressValue.calle,
-            numeroExt: addressValue.numeroExt,
-            numeroInt: addressValue.numeroInt || undefined,
-          }
-        : undefined;
-
-      await api.post('/onboarding/universe', {
-        username: form.username,
-        email: form.email,
-        password: form.password,
-        fullName: form.fullName || undefined,
-        roleId,
-        profile,
-        ...(address ? { address } : {}),
-        ...(tab === 'ERP' && areas.length > 0 ? { areas } : {}),
-      });
-      setStatus({ ok: true, message: `Universo ${tab} creado exitosamente.` });
+      await api.post('/onboarding/universe', buildUniversePayload(form, addressValue, areas));
+      setStatus({ ok: true, message: 'Universo ERP creado exitosamente.' });
       resetFields();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string; code?: string } } })?.response?.data
-          ?.message ??
-        (err as { response?: { data?: { code?: string } } })?.response?.data?.code ??
-        'Error al crear el universo.';
-      setStatus({ ok: false, message: msg });
+      setStatus({ ok: false, message: extractErrorMessage(err) });
     } finally {
       setLoading(false);
     }
   };
 
+  return {
+    form,
+    addressValue,
+    areas,
+    loading,
+    status,
+    set,
+    setAddressValue,
+    setAreas,
+    handleSubmit,
+  };
+}
+
+function CredencialesSection({
+  form,
+  set,
+}: {
+  form: FormState;
+  set: (field: keyof FormState) => (value: string) => void;
+}): React.ReactElement {
+  return (
+    <div className="space-y-4">
+      <SectionHeader icon={User}>Credenciales de Acceso</SectionHeader>
+      <div className="archon-grid-2-sovereign">
+        <FieldGroup
+          label="Usuario"
+          id="uni-username"
+          value={form.username}
+          onChange={set('username')}
+          hint="nombre.usuario"
+          required
+          icon={User}
+        />
+        <FieldGroup
+          label="Correo"
+          id="uni-email"
+          type="email"
+          value={form.email}
+          onChange={set('email')}
+          hint="correo@empresa.mx"
+          required
+          icon={Mail}
+        />
+        <PasswordField
+          label="Contraseña"
+          id="uni-password"
+          value={form.password}
+          onChange={set('password')}
+          required
+        />
+        <FieldGroup
+          label="Nombre Completo"
+          id="uni-fullname"
+          value={form.fullName}
+          onChange={set('fullName')}
+          hint="Opcional"
+          icon={Contact}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PerfilSection({
+  form,
+  set,
+}: {
+  form: FormState;
+  set: (field: keyof FormState) => (value: string) => void;
+}): React.ReactElement {
+  return (
+    <div className="space-y-4">
+      <SectionHeader icon={Briefcase}>Perfil Empresarial</SectionHeader>
+      <div className="archon-grid-2-sovereign">
+        <FieldGroup
+          label="RFC"
+          id="uni-rfc"
+          value={form.rfc}
+          onChange={set('rfc')}
+          hint="RFC de la empresa"
+          required
+          icon={Hash}
+        />
+        <FieldGroup
+          label="Razón Social"
+          id="uni-razon-social"
+          value={form.razonSocial}
+          onChange={set('razonSocial')}
+          hint="Nombre legal de la empresa"
+          required
+          icon={Briefcase}
+        />
+        <FieldGroup
+          label="Teléfono"
+          id="uni-telefono"
+          type="tel"
+          value={form.telefono}
+          onChange={set('telefono')}
+          hint="Teléfono de contacto"
+          icon={Phone}
+        />
+      </div>
+    </div>
+  );
+}
+
+function DireccionSection({
+  addressValue,
+  setAddressValue,
+}: {
+  addressValue: AddressValue;
+  setAddressValue: (v: AddressValue) => void;
+}): React.ReactElement {
+  return (
+    <div className="space-y-4">
+      <SectionHeader icon={MapPin}>Dirección</SectionHeader>
+      <ArchonAddressField value={addressValue} onChange={setAddressValue} />
+    </div>
+  );
+}
+
+const UniverseForm: React.FC = (): React.ReactElement => {
+  const {
+    form,
+    addressValue,
+    areas,
+    loading,
+    status,
+    set,
+    setAddressValue,
+    setAreas,
+    handleSubmit,
+  } = useUniverseForm();
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6" data-testid="universe-form">
-      <div className="flex gap-2 bg-slate-100 p-1 rounded-[4px]">
-        <button
-          type="button"
-          className={tab === 'ERP' ? tabActive : tabInactive}
-          onClick={(): void => {
-            setTab('ERP');
-            resetFields();
-            setStatus(null);
-          }}
-          data-testid="tab-erp"
-        >
-          Universo ERP
-        </button>
-        <button
-          type="button"
-          className={tab === 'VIM' ? tabActive : tabInactive}
-          onClick={(): void => {
-            setTab('VIM');
-            resetFields();
-            setStatus(null);
-          }}
-          data-testid="tab-vim"
-        >
-          Universo VIM
-        </button>
-      </div>
-
       <p className="text-xs text-pinnacle-navy/50">
-        {tab === 'ERP'
-          ? 'Crea un Propietario de Flotilla — raíz de un universo ERP industrial.'
-          : 'Crea un Centro Especializado — raíz de un universo VIM de atención al cliente.'}
+        Crea un Propietario de Flotilla — raíz de un universo ERP industrial.
       </p>
 
-      {/* Credenciales */}
-      <div className="space-y-4">
-        <SectionHeader icon={User}>Credenciales de Acceso</SectionHeader>
-        <div className="archon-grid-2-sovereign">
-          <FieldGroup
-            label="Usuario"
-            id="uni-username"
-            value={form.username}
-            onChange={set('username')}
-            hint="nombre.usuario"
-            required
-            icon={User}
-          />
-          <FieldGroup
-            label="Correo"
-            id="uni-email"
-            type="email"
-            value={form.email}
-            onChange={set('email')}
-            hint="correo@empresa.mx"
-            required
-            icon={Mail}
-          />
-          <PasswordField
-            label="Contraseña"
-            id="uni-password"
-            value={form.password}
-            onChange={set('password')}
-            required
-          />
-          <FieldGroup
-            label="Nombre Completo"
-            id="uni-fullname"
-            value={form.fullName}
-            onChange={set('fullName')}
-            hint="Opcional"
-            icon={Contact}
-          />
-        </div>
+      <CredencialesSection form={form} set={set} />
+      <PerfilSection form={form} set={set} />
+      <DireccionSection addressValue={addressValue} setAddressValue={setAddressValue} />
+
+      {/* Áreas Iniciales */}
+      <div className="space-y-3" data-testid="uni-areas-section">
+        <SectionHeader icon={LayoutGrid}>Áreas Iniciales</SectionHeader>
+        <AreasSelect value={areas} onChange={setAreas} />
+        <p className="text-xs text-pinnacle-navy/40 uppercase tracking-widest">
+          Estas áreas se crearán al registrar. Pueden gestionarse después.
+        </p>
       </div>
-
-      {/* Perfil */}
-      <div className="space-y-4">
-        <SectionHeader icon={Briefcase}>
-          {tab === 'ERP' ? 'Perfil Empresarial' : 'Datos del Centro'}
-        </SectionHeader>
-        <div className="archon-grid-2-sovereign">
-          <FieldGroup
-            label="RFC"
-            id="uni-rfc"
-            value={form.rfc}
-            onChange={set('rfc')}
-            hint="RFC de la empresa"
-            required
-            icon={Hash}
-          />
-          <FieldGroup
-            label="Razón Social"
-            id="uni-razon-social"
-            value={form.razonSocial}
-            onChange={set('razonSocial')}
-            hint="Nombre legal de la empresa"
-            required
-            icon={Briefcase}
-          />
-          <FieldGroup
-            label="Teléfono"
-            id="uni-telefono"
-            type="tel"
-            value={form.telefono}
-            onChange={set('telefono')}
-            hint="Teléfono de contacto"
-            icon={Phone}
-          />
-        </div>
-      </div>
-
-      {/* Dirección */}
-      <div className="space-y-4">
-        <SectionHeader icon={MapPin}>Dirección</SectionHeader>
-        <ArchonAddressField value={addressValue} onChange={setAddressValue} />
-      </div>
-
-      {/* Especialidades — solo VIM, al final */}
-      {tab === 'VIM' && (
-        <div className="space-y-3" data-testid="uni-especialidades-section">
-          <SectionHeader icon={Wrench}>Especialidades</SectionHeader>
-          <SpecialtiesSelect value={especialidades} onChange={setEspecialidades} />
-        </div>
-      )}
-
-      {/* Áreas Iniciales — solo ERP, al final */}
-      {tab === 'ERP' && (
-        <div className="space-y-3" data-testid="uni-areas-section">
-          <SectionHeader icon={LayoutGrid}>Áreas Iniciales</SectionHeader>
-          <AreasSelect value={areas} onChange={setAreas} />
-          <p className="text-xs text-pinnacle-navy/40 uppercase tracking-widest">
-            Estas áreas se crearán al registrar. Pueden gestionarse después.
-          </p>
-        </div>
-      )}
 
       <StatusBanner status={status} />
 
@@ -397,158 +424,7 @@ const UniverseForm: React.FC = (): React.ReactElement => {
         className="w-full h-11 flex items-center justify-center rounded-[4px] bg-pinnacle-navy text-pinnacle-yellow text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         data-testid="btn-create-universe"
       >
-        {loading ? 'Creando...' : `Crear Universo ${tab}`}
-      </button>
-    </form>
-  );
-};
-
-// ─── Centro Section: creates VIM clients ─────────────────────────────────────
-
-const ClientForm: React.FC = (): React.ReactElement => {
-  const [tab, setTab] = useState<ClientTab>('PRIVATE');
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null);
-
-  const set =
-    (field: keyof FormState) =>
-    (value: string): void =>
-      setForm((f) => ({ ...f, [field]: value }));
-
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-    e.preventDefault();
-    setLoading(true);
-    setStatus(null);
-    try {
-      const roleId = tab === 'PRIVATE' ? 4 : 5;
-      const payload: Record<string, unknown> = {
-        username: form.username,
-        email: form.email,
-        password: form.password,
-        fullName: form.fullName || undefined,
-        roleId,
-      };
-      if (tab === 'FAMILIAR') {
-        payload.targetOwnerId = Number(form.targetOwnerId);
-      }
-      await api.post('/onboarding/client', payload);
-      setStatus({
-        ok: true,
-        message: tab === 'PRIVATE' ? 'Propietario Privado registrado.' : 'Familiar agregado.',
-      });
-      setForm(EMPTY_FORM);
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string; code?: string } } })?.response?.data
-          ?.message ??
-        (err as { response?: { data?: { code?: string } } })?.response?.data?.code ??
-        'Error al registrar el cliente.';
-      setStatus({ ok: false, message: msg });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clientBtnLabel = tab === 'PRIVATE' ? 'Registrar Propietario Privado' : 'Agregar Familiar';
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4" data-testid="client-form">
-      <div className="flex gap-2 bg-slate-100 p-1 rounded-[4px]">
-        <button
-          type="button"
-          className={tab === 'PRIVATE' ? tabActive : tabInactive}
-          onClick={(): void => {
-            setTab('PRIVATE');
-            setForm(EMPTY_FORM);
-            setStatus(null);
-          }}
-          data-testid="tab-private"
-        >
-          P. Privado
-        </button>
-        <button
-          type="button"
-          className={tab === 'FAMILIAR' ? tabActive : tabInactive}
-          onClick={(): void => {
-            setTab('FAMILIAR');
-            setForm(EMPTY_FORM);
-            setStatus(null);
-          }}
-          data-testid="tab-familiar"
-        >
-          Familiar
-        </button>
-      </div>
-
-      <p className="text-xs text-pinnacle-navy/50">
-        {tab === 'PRIVATE'
-          ? 'Registra un nuevo Propietario Privado — abre su propia cuenta en tu universo VIM.'
-          : 'Agrega un Familiar a un Propietario Privado existente en tu universo.'}
-      </p>
-
-      {/* Credenciales */}
-      <div className="space-y-4">
-        <SectionHeader icon={User}>Credenciales de Acceso</SectionHeader>
-        <div className="archon-grid-2-sovereign">
-          <FieldGroup
-            label="Usuario"
-            id="cli-username"
-            value={form.username}
-            onChange={set('username')}
-            hint="nombre.usuario"
-            required
-            icon={User}
-          />
-          <FieldGroup
-            label="Correo"
-            id="cli-email"
-            type="email"
-            value={form.email}
-            onChange={set('email')}
-            hint="correo@cliente.mx"
-            required
-            icon={Mail}
-          />
-          <PasswordField
-            label="Contraseña"
-            id="cli-password"
-            value={form.password}
-            onChange={set('password')}
-            required
-          />
-          <FieldGroup
-            label="Nombre Completo"
-            id="cli-fullname"
-            value={form.fullName}
-            onChange={set('fullName')}
-            hint="Opcional"
-            icon={Contact}
-          />
-          {tab === 'FAMILIAR' && (
-            <FieldGroup
-              label="ID del Propietario Privado"
-              id="cli-target"
-              type="number"
-              value={form.targetOwnerId}
-              onChange={set('targetOwnerId')}
-              hint="ID numérico del owner"
-              required
-              icon={Hash}
-            />
-          )}
-        </div>
-      </div>
-
-      <StatusBanner status={status} />
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full h-11 flex items-center justify-center rounded-[4px] bg-pinnacle-navy text-pinnacle-yellow text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-        data-testid="btn-create-client"
-      >
-        {loading ? 'Registrando...' : clientBtnLabel}
+        {loading ? 'Creando...' : 'Crear Universo ERP'}
       </button>
     </form>
   );
@@ -558,15 +434,34 @@ const ClientForm: React.FC = (): React.ReactElement => {
 
 type OnboardingView = 'FORM' | 'DIRECTORY';
 
+/** FC158 — extracted from OnboardingModule (Gate 2 max-lines-per-function). */
+function UniverseFormCard(): React.ReactElement {
+  return (
+    <div className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
+        <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
+          <Globe size={16} className="text-pinnacle-navy" />
+        </div>
+        <div>
+          <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
+            Crear Universo
+          </h2>
+          <p className="text-archon-base text-pinnacle-navy/50 font-medium">
+            Archon — Orquestador soberano del Multiverso
+          </p>
+        </div>
+      </div>
+      <UniverseForm />
+    </div>
+  );
+}
+
 const OnboardingModule: React.FC = (): React.ReactElement => {
   const { setSectionData } = useSovereignLayout();
   const { isOmnipotent } = usePermissions();
   const [view, setView] = useState<OnboardingView>('FORM');
 
   const omnipotent = isOmnipotent();
-  // FC 082 F0c — eje suite muerto (084_AN §1a): la puerta de onboarding VIM
-  // Centro queda apagada; F3 la re-ancla al chasis Arc.
-  const vimCentro = false;
 
   useEffect((): void => {
     setSectionData(
@@ -594,45 +489,9 @@ const OnboardingModule: React.FC = (): React.ReactElement => {
         <div className="archon-axial-container space-y-6">
           {omnipotent && view === 'DIRECTORY' && <UniversesDirectory />}
 
-          {view === 'FORM' && omnipotent && (
-            <div className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
-                <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
-                  <Globe size={16} className="text-pinnacle-navy" />
-                </div>
-                <div>
-                  <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
-                    Crear Universo
-                  </h2>
-                  <p className="text-archon-base text-pinnacle-navy/50 font-medium">
-                    Archon — Orquestador soberano del Multiverso
-                  </p>
-                </div>
-              </div>
-              <UniverseForm />
-            </div>
-          )}
+          {view === 'FORM' && omnipotent && <UniverseFormCard />}
 
-          {view === 'FORM' && vimCentro && (
-            <div className="card-archon-sovereign space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
-                <div className="w-8 h-8 rounded-[4px] bg-pinnacle-navy/10 flex items-center justify-center">
-                  <UserPlus size={16} className="text-pinnacle-navy" />
-                </div>
-                <div>
-                  <h2 className="text-archon-lg font-black text-pinnacle-navy uppercase tracking-widest">
-                    Registrar Cliente
-                  </h2>
-                  <p className="text-archon-base text-pinnacle-navy/50 font-medium">
-                    Centro Especializado — Incorporar propietarios al universo VIM
-                  </p>
-                </div>
-              </div>
-              <ClientForm />
-            </div>
-          )}
-
-          {view === 'FORM' && !omnipotent && !vimCentro && (
+          {view === 'FORM' && !omnipotent && (
             <div className="card-archon-sovereign text-center py-12 text-pinnacle-navy/40 text-sm font-medium">
               Sin acceso a funciones de onboarding para este perfil.
             </div>

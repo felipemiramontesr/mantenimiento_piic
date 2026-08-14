@@ -67,7 +67,9 @@ export const LEGACY_DB_IMPORT_ALLOWLIST = [
   'apps/api/src/routes/ownerProfile.ts',
   'apps/api/src/routes/realtimeTelemetry.ts',
   'apps/api/src/routes/recallsNhtsa.ts',
-  'apps/api/src/routes/recallsVim.ts',
+  // recallsVim.ts RENAMED FC158 T1 (Cond.R-158-R1) — rename ≠ Route->Service->Repository
+  // migration, stays in allowlist under its new name (I1 residual soft, post-158).
+  'apps/api/src/routes/recallsInternal.ts',
   // reports.ts REMOVED FC157 F1 (Cond.R-157-R1) — migrated to
   // Route->Service->Repository, zero-SQL confirmed (I1).
   'apps/api/src/routes/security.ts',
@@ -133,11 +135,19 @@ export const LEGACY_GODFILES = [
   // FC142 F1 — FleetUnitNode.tsx REMOVED (RR2/Inv-C): 12 sub-components
   // extracted to pages/Dashboard/FleetUnitNode/ (move-only, Cond.R-142-H2);
   // orchestrator now 303 LOC, under the 400 LOC budget (Cond.R-142-S6).
-  'apps/web/src/components/Fleet/FleetGridView.tsx', // 1094 LOC
+  // FC158 T3 — isVIM dead flag removed (TCO/Garantía un-gated for all units,
+  // per Ω decision); 1094→1068 LOC, still over budget from grid density, not
+  // from this change — no new exception needed, comment kept current (RR2).
+  'apps/web/src/components/Fleet/FleetGridView.tsx', // 1068 LOC
   'apps/web/src/components/Routes/RouteLogTable.tsx', // 745 LOC
   'apps/web/src/pages/Upa/UpaWorkspace.tsx', // 716 LOC
   'apps/web/src/components/Maintenance/MaintenanceRegistrationForm.tsx', // 689 LOC
-  'apps/web/src/pages/Dashboard/OnboardingModule.tsx', // 646 LOC
+  // FC158 T2 — ClientForm/vimCentro/tab VIM purged (dead onboarding UI); split
+  // into useUniverseForm hook + CredencialesSection/PerfilSection/
+  // DireccionSection/UniverseFormCard (Gate 2 max-lines-per-function); 646→505
+  // LOC, still over budget from the directory/universe-form breadth, not from
+  // this cleanup — no new exception needed, comment kept current (RR2).
+  'apps/web/src/pages/Dashboard/OnboardingModule.tsx', // 505 LOC
   'apps/web/src/components/Routes/ForensicJournalTable.tsx', // 608 LOC
   'apps/web/src/components/Routes/RouteAssignment/ArchonGeoSelector.tsx', // 508 LOC
   'apps/web/src/components/Maintenance/MaintenanceGridView.tsx', // 498 LOC

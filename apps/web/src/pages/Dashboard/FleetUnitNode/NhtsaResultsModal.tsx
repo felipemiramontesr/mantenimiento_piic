@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Globe, XCircle } from 'lucide-react';
 import ArchonModal from '../../../components/UI/ArchonModal';
 import { useNhtsaRecalls, NhtsaRecall } from '../../../hooks/useNhtsaRecalls';
-import { useVimPatterns, VimPatternsList, VimPattern } from './VimPatternsList';
+import { useFailurePatterns, FailurePatternsList, FailurePattern } from './FailurePatternsList';
 
 type NhtsaResultsModalProps = {
   isOpen: boolean;
@@ -46,12 +46,12 @@ function NhtsaModalTabs({
   activeTab,
   onTabChange,
 }: {
-  activeTab: 'nhtsa' | 'vim';
-  onTabChange(tab: 'nhtsa' | 'vim'): void;
+  activeTab: 'nhtsa' | 'patterns';
+  onTabChange(tab: 'nhtsa' | 'patterns'): void;
 }): React.JSX.Element {
   return (
     <div className="flex gap-1 border-b border-white/10">
-      {(['nhtsa', 'vim'] as const).map((tab) => (
+      {(['nhtsa', 'patterns'] as const).map((tab) => (
         <button
           key={tab}
           onClick={(): void => onTabChange(tab)}
@@ -61,7 +61,7 @@ function NhtsaModalTabs({
               : 'text-gray-500 hover:text-gray-300'
           }`}
         >
-          {tab === 'nhtsa' ? 'NHTSA Oficial' : 'Patrones VIM'}
+          {tab === 'nhtsa' ? 'NHTSA Oficial' : 'Patrones de Falla'}
         </button>
       ))}
     </div>
@@ -215,22 +215,28 @@ function NhtsaTabContent({
   results,
   importingCode,
   onImport,
-  vimLoading,
-  vimError,
-  vimResults,
+  patternsLoading,
+  patternsError,
+  patternsResults,
 }: {
-  activeTab: 'nhtsa' | 'vim';
+  activeTab: 'nhtsa' | 'patterns';
   loading: boolean;
   error: string | null;
   results: NhtsaRecall[];
   importingCode: string | null;
   onImport(r: NhtsaRecall): void;
-  vimLoading: boolean;
-  vimError: string | null;
-  vimResults: VimPattern[];
+  patternsLoading: boolean;
+  patternsError: string | null;
+  patternsResults: FailurePattern[];
 }): React.JSX.Element {
-  if (activeTab === 'vim') {
-    return <VimPatternsList loading={vimLoading} error={vimError} results={vimResults} />;
+  if (activeTab === 'patterns') {
+    return (
+      <FailurePatternsList
+        loading={patternsLoading}
+        error={patternsError}
+        results={patternsResults}
+      />
+    );
   }
   return (
     <NhtsaResultsList
@@ -243,17 +249,21 @@ function NhtsaTabContent({
   );
 }
 
-/** Modal for searching/importing NHTSA recalls and reviewing VIM failure patterns. */
+/** Modal for searching/importing NHTSA recalls and reviewing internal failure patterns. */
 export function NhtsaResultsModal(props: NhtsaResultsModalProps): React.JSX.Element | null {
   const { isOpen, make, model, year, onClose, onImported, linkRecall } = props;
-  const [activeTab, setActiveTab] = useState<'nhtsa' | 'vim'>('nhtsa');
+  const [activeTab, setActiveTab] = useState<'nhtsa' | 'patterns'>('nhtsa');
   const { results, loading, error, importRecall } = useNhtsaSearchResults({
     isOpen,
     make,
     model,
     year,
   });
-  const { vimResults, vimLoading, vimError } = useVimPatterns(isOpen, activeTab, make, model, year);
+  const {
+    results: patternsResults,
+    loading: patternsLoading,
+    error: patternsError,
+  } = useFailurePatterns(isOpen, activeTab, make, model, year);
   const { importingCode, handleImport } = useNhtsaImportHandler({
     make,
     model,
@@ -281,9 +291,9 @@ export function NhtsaResultsModal(props: NhtsaResultsModalProps): React.JSX.Elem
           results={results}
           importingCode={importingCode}
           onImport={handleImport}
-          vimLoading={vimLoading}
-          vimError={vimError}
-          vimResults={vimResults}
+          patternsLoading={patternsLoading}
+          patternsError={patternsError}
+          patternsResults={patternsResults}
         />
       </div>
     </ArchonModal>
