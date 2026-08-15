@@ -6,6 +6,7 @@ import requirePermission from '../middleware/requirePermission';
 import { MultiMembershipHaltError } from '../middleware/cosmonautMiddleware';
 import * as SessionService from '../services/authSession.service';
 import * as UserManagementService from '../services/authUserManagement.service';
+import { ScopedUser } from '../services/ownerScopeResolver';
 
 /**
  * 🔱 Archon Auth Engine (v.8.7.0) - THE NUCLEUS
@@ -211,12 +212,9 @@ async function handleLogout(_request: FastifyRequest, reply: FastifyReply): Prom
 }
 
 async function handleGetUsers(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
-  await request.jwtVerify();
   const { role } = request.query as { role?: string };
   try {
-    const ownerScope = await UserManagementService.resolveOwnerScope(
-      request.user as { id: number; permissions?: string[] }
-    );
+    const ownerScope = await UserManagementService.resolveOwnerScope(request.user as ScopedUser);
     const data = await UserManagementService.listUsers(ownerScope, role);
     return reply.send({ success: true, data });
   } catch (e) {
@@ -237,8 +235,7 @@ async function handlePatchUser(
     return reply.code(400).send({ error: 'U1', details: body.error.format() });
   }
   const { data: updates, reason } = body.data;
-  await request.jwtVerify();
-  const admin = request.user as { id: number; roleId?: number; permissions?: string[] };
+  const admin = request.user as ScopedUser & { roleId?: number };
   const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
   const roleIdError = UserManagementService.validateRoleIdUpdate(updates.roleId, adminIsOmega);
   if (roleIdError) {
@@ -269,7 +266,16 @@ async function handleDeleteUser(
   }
   const { reason } = parse.data;
   await request.jwtVerify();
-  const admin = request.user as { id: number };
+  const admin = request.user as ScopedUser & { roleId?: number };
+  // FC159 R3b — enmienda de Ω: borrar usuarios es exclusivo de Ω en este estado del
+  // sistema, no delegable vía `user:admin` (mismo idioma que handlePatchUser/
+  // validateRoleIdUpdate para roleId=0, no un tercer criterio nuevo).
+  const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
+  if (!adminIsOmega) {
+    return reply
+      .code(403)
+      .send({ success: false, code: 'FORBIDDEN', message: 'Solo Ω puede eliminar usuarios' });
+  }
   try {
     const result = await UserManagementService.deleteUser(id, reason, admin);
     if (!result.ok) {
@@ -297,15 +303,24 @@ const ownersGuard = {
   preHandler: [requirePermission('admin:role:edit')],
 };
 
+/** FC159 T5b — `GET /users`/`PATCH /users/:id` exigían solo JWT válido, sin guard de
+ *  permiso (a diferencia de `GET /users/:uuid/node` y los endpoints de owners). onRequest
+ *  sin try/catch preserva el 401 idéntico al que hoy produce `request.jwtVerify()` llamado
+ *  directo en el handler. */
+const userAdminGuard = {
+  onRequest: async (request: FastifyRequest): Promise<void> => {
+    await request.jwtVerify();
+  },
+  preHandler: [requirePermission('user:admin')],
+};
+
 async function handleGetUserOwners(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<FastifyReply> {
   const { id } = request.params as { id: string };
   try {
-    const ownerScope = await UserManagementService.resolveOwnerScope(
-      request.user as { id: number; permissions?: string[] }
-    );
+    const ownerScope = await UserManagementService.resolveOwnerScope(request.user as ScopedUser);
     const result = await UserManagementService.getUserOwners(id, ownerScope);
     if (!result.ok) {
       return reply
@@ -333,7 +348,7 @@ async function handlePutUserOwners(
   }
   const { id } = request.params as { id: string };
   const { ownerIds, reason } = parsed.data;
-  const admin = request.user as { id: number; permissions?: string[] };
+  const admin = request.user as ScopedUser;
   try {
     const result = await UserManagementService.updateUserOwners(id, ownerIds, reason, admin);
     if (!result.ok) {
@@ -408,9 +423,7 @@ async function handleGetUserNode(
         .send({ success: false, code: 'FORBIDDEN', message: 'Permission required: user:admin' });
     }
     const { uuid } = request.params as { uuid: string };
-    const ownerScope = await UserManagementService.resolveOwnerScope(
-      request.user as { id: number; permissions?: string[] }
-    );
+    const ownerScope = await UserManagementService.resolveOwnerScope(request.user as ScopedUser);
     const result = await UserManagementService.getUserNode(uuid, ownerScope);
     if (!result.ok) {
       return reply.code(result.status).send({
@@ -447,8 +460,8 @@ export default async function authRoutes(fastify: FastifyInstance): Promise<void
   fastify.post<{ Body: { tenantId?: number } }>('/switch-tenant', handleSwitchTenant);
   fastify.post('/logout', handleLogout);
   // FC 082 F0c — POST /register eliminado (bandas {1,3,4} muertas — 084_AN §1a).
-  fastify.get('/users', handleGetUsers);
-  fastify.patch('/users/:id', handlePatchUser);
+  fastify.get('/users', userAdminGuard, handleGetUsers);
+  fastify.patch('/users/:id', userAdminGuard, handlePatchUser);
   fastify.delete('/users/:id', handleDeleteUser);
   fastify.get('/users/:id/owners', ownersGuard, handleGetUserOwners);
   fastify.put('/users/:id/owners', ownersGuard, handlePutUserOwners);

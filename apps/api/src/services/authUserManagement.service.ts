@@ -6,7 +6,7 @@ import { userUpdateSchema } from '@mantenimiento/contracts';
 import db from './db';
 import EncryptionService from './encryption';
 import { recordAuditLog } from './auditService';
-import FleetService from './fleetService';
+import { resolveOwnerScope as resolveOwnerScopeSsot, ScopedUser } from './ownerScopeResolver';
 import withConnection from '../utils/withConnection';
 import * as UserRepository from './authUserManagement.repository';
 import { antiEscalationGuard, resolvePrimaryTenant } from '../middleware/cosmonautMiddleware';
@@ -20,16 +20,12 @@ import { mapUserResponse, MappedUser } from './authSession.service';
  * touches FastifyReply (Cond.R-130-E4).
  */
 
-/** BOLA scope: `null` = unrestricted (Ω or non-scoped actor); array = restricted to those owner IDs. */
-export const resolveOwnerScope = async (user: {
-  id: number;
-  permissions?: string[];
-}): Promise<number[] | null> => {
-  const { id, permissions } = user;
-  if (!permissions || permissions.includes('*') || !permissions.includes('fleet:scoped'))
-    return null;
-  return FleetService.getUserOwnerIds(id);
-};
+/** BOLA scope: `null` = unrestricted (Ω); array = restricted to those owner/tenant IDs.
+ *  FC159 T5a — delega 100% a la SSOT (`services/ownerScopeResolver.ts`, FC138/FC144); cero
+ *  copia local de T2. Antes no leía `tenant_id`, cayendo a `null` (sin restricción) para
+ *  cualquier actor tenant-only sin `fleet:scoped` — BOLA real, remediado aquí. */
+export const resolveOwnerScope = (user: ScopedUser): Promise<number[] | null> =>
+  resolveOwnerScopeSsot(user);
 
 /** True if targetUserId belongs to at least one owner in ownerScope. */
 export async function isUserInOwnerScope(
@@ -266,7 +262,7 @@ export async function updateUser(
   id: string,
   updates: z.infer<typeof userUpdateSchema>['data'],
   reason: string,
-  admin: { id: number; permissions?: string[] }
+  admin: ScopedUser
 ): Promise<UpdateUserResult> {
   const connection = await db.getConnection();
   try {
@@ -321,7 +317,7 @@ export type DeleteUserResult =
 export async function deleteUser(
   id: string,
   reason: string,
-  admin: { id: number; permissions?: string[] }
+  admin: ScopedUser
 ): Promise<DeleteUserResult> {
   const connection = await db.getConnection();
   try {
@@ -410,7 +406,7 @@ export async function updateUserOwners(
   id: string,
   ownerIds: number[],
   reason: string,
-  admin: { id: number; permissions?: string[] }
+  admin: ScopedUser
 ): Promise<UpdateUserOwnersResult> {
   return withConnection(async (connection) => {
     await connection.beginTransaction();

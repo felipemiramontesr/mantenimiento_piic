@@ -84,9 +84,15 @@ describe('authIntegration.test', () => {
 
   beforeAll(async () => {
     await app.ready();
+    // FC159 T5b — GET/PATCH /users ahora exigen `user:admin` (userAdminGuard).
+    // mockToken se usa en tests genéricos que no ejercitan el estado Ω/scope en
+    // sí (resiliencia, validación, PATCH identity) — permissions:['*'] lo hace
+    // pasar el guard nuevo y preserva `resolveOwnerScope → null` (mismo footprint
+    // de llamadas a DB que antes de FC159, cuando el resolver local siempre caía
+    // a null para un actor sin `fleet:scoped`).
     mockToken = await (
       app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
-    ).jwt.sign({ id: 1, email: 'admin@piic.mx' });
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx', permissions: ['*'] });
     // FC 082 F3c Cond.1 (Bravo) — R4 exige que el caller sea Ω (roleId=0) para
     // asignar role_id=0; mockToken no lleva roleId, así que las pruebas de esa
     // rama necesitan un token propio con el claim real.
@@ -252,13 +258,23 @@ describe('authIntegration.test', () => {
     expect(r3.statusCode).toBe(200);
   });
 
+  // FC159 — mockToken ahora es Ω-equivalente (permissions:['*']) para simplificar
+  // los tests genéricos; estos 2 casos exigen específicamente un actor NO-Ω que
+  // sí tenga `user:admin` (pasa userAdminGuard, pero no adminIsOmega).
+  const nonOmegaAdminHeader = async (): Promise<Record<string, string>> => {
+    const t = await (app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }).jwt.sign(
+      { id: 1, email: 'admin@piic.mx', permissions: ['user:admin'] }
+    );
+    return { Authorization: `Bearer ${t}` };
+  };
+
   // FC 082 F3c Cond.1 (Bravo) — R4: roles solo conserva la fila 0 desde mig.164;
   // cualquier roleId != 0 se rechaza explícito (400) antes de tocar la DB.
   it('PATCH roleId != 0 — 400 ROLE_ID_UNSUPPORTED (roles legacy purgada salvo id=0)', async () => {
     const r = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/1',
-      headers: authHeader(),
+      headers: await nonOmegaAdminHeader(),
       payload: { data: { roleId: 2 }, reason: 'Attempt legacy role' },
     });
     expect(r.statusCode).toBe(400);
@@ -269,7 +285,7 @@ describe('authIntegration.test', () => {
     const r = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/5',
-      headers: authHeader(), // mockToken sin claim roleId (no-Ω)
+      headers: await nonOmegaAdminHeader(), // user:admin, sin roleId/'*' (no-Ω)
       payload: { data: { roleId: 0 }, reason: 'Attempt Archon grant as non-Ω' },
     });
     expect(r.statusCode).toBe(403);
@@ -391,9 +407,12 @@ describe('authIntegration.test', () => {
     expect(JSON.parse(rFailPass.body)).toEqual({ error: 'L4' });
 
     // Validation rejection paths (FC 082 F0c: /register murió — fuera del edge)
+    // FC159 — requiere headers ahora que userAdminGuard corre antes que el
+    // parseo del handler (antes la validación del body corría sin auth previa).
     const rV2 = await app.inject({
       method: 'PATCH',
       url: '/v1/auth/users/1',
+      headers: authHeader(),
       payload: { data: { email: 'not-an-email' }, reason: 'VALIDATION_FAIL' },
     });
     expect(rV2.statusCode).toBe(400);
@@ -1237,9 +1256,10 @@ describe('authIntegration.test', () => {
   });
 
   it('AUTH-GET-USERS-SCOPE-1: GET /users — scoped user with empty owners → 200 data:[] (lines 522-524)', async () => {
+    // FC159 T5b — GET /users ahora exige `user:admin` además de `fleet:scoped`.
     const scopedToken = await (
       app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
-    ).jwt.sign({ id: 5, email: 'scoped@piic.mx', permissions: ['fleet:scoped'] });
+    ).jwt.sign({ id: 5, email: 'scoped@piic.mx', permissions: ['user:admin', 'fleet:scoped'] });
     vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
     const res = await app.inject({
       method: 'GET',
@@ -1248,6 +1268,98 @@ describe('authIntegration.test', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.payload).data).toEqual([]);
+  });
+
+  // ─── FC159 T5a+T5b — AuthUserManagement BOLA + guard remediation ─────────────
+
+  it('AUTH-BOLA-T5-1: GET /users — tenant-only (user:admin, sin fleet:scoped) → scope propio, no cross-tenant', async () => {
+    const tenantOnlyToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'tenant@piic.mx', permissions: ['user:admin'], tenant_id: 500 });
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 5, email: 'e', role_id: 1 }], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users',
+      headers: { Authorization: `Bearer ${tenantOnlyToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const [sql, params] = (db.execute as Mock).mock.calls[0];
+    expect(sql).toContain('user_owner_membership');
+    expect(params).toEqual([500]);
+  });
+
+  it('AUTH-BOLA-T5-2: DELETE /users/:id — actor con user:admin pero NO Ω → 403 (enmienda de Ω, R3b)', async () => {
+    const adminNotOmegaToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'admin@piic.mx', permissions: ['user:admin'] });
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/auth/users/9',
+      headers: { Authorization: `Bearer ${adminNotOmegaToken}` },
+      payload: { reason: 'Attempt delete as non-Omega admin' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).code).toBe('FORBIDDEN');
+  });
+
+  it('AUTH-BOLA-T5-3: PATCH /users/:id — sin user:admin → 403 (T5b, guard nuevo)', async () => {
+    const noAdminToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'x@piic.mx', permissions: ['fleet:view'] });
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      headers: { Authorization: `Bearer ${noAdminToken}` },
+      payload: { data: { fullName: 'X' }, reason: 'Attempt without permission' },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('AUTH-BOLA-T5-4: GET /users — sin user:admin → 403 (T5b, guard nuevo, antes no exigía nada)', async () => {
+    const noAdminToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'x@piic.mx', permissions: ['fleet:view'] });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users',
+      headers: { Authorization: `Bearer ${noAdminToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('AUTH-BOLA-T5-5: Ω — GET y DELETE /users sin regresión (bypass total, incl. borrar)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 1, email: 'e', role_id: 1 }], undefined]);
+    const rGet = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users',
+      headers: { Authorization: `Bearer ${omegaToken}` },
+    });
+    expect(rGet.statusCode).toBe(200);
+
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 9 }], undefined]) // snapshot before
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // delete
+    const rDelete = await app.inject({
+      method: 'DELETE',
+      url: '/v1/auth/users/9',
+      headers: { Authorization: `Bearer ${omegaToken}` },
+      payload: { reason: 'Omega cleanup' },
+    });
+    expect(rDelete.statusCode).toBe(200);
+  });
+
+  it('AUTH-BOLA-T5-6: fleet:scoped actor — GET /users sin regresión (T2 ya correcto, sin cambio)', async () => {
+    const scopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 5, email: 'scoped@piic.mx', permissions: ['user:admin', 'fleet:scoped'] });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([7, 8]);
+    (db.execute as Mock).mockResolvedValueOnce([[{ id: 5, email: 'e', role_id: 1 }], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/users',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
   });
 
   it('AUTH-LOGIN-DECRYPT-CATCH: POST /login — decrypt throws → catch false → L3 (lines 179-181)', async () => {

@@ -52,12 +52,16 @@ describe('User Fleet-Owner Links (A3)', () => {
   beforeAll(async () => {
     await app.ready();
     const { jwt } = app as unknown as { jwt: { sign: (_p: object) => string } };
+    // FC159 T5a — resolveOwnerScope ahora delega a la SSOT y lee `tenant_id`;
+    // este fixture no declara tenant (representa un admin RRHH sin scope de
+    // flotilla), así que sin '*' caería al DENY fail-closed ([]) de la SSOT.
+    // '*' preserva el `null` (irrestricto) que este suite siempre asumió.
     adminToken = jwt.sign({
       id: 1,
       username: 'rrhh',
       roleId: 7,
       roleName: 'Administrador de RRHH',
-      permissions: ['user:admin'],
+      permissions: ['user:admin', '*'],
     });
     staffToken = jwt.sign({
       id: 7,
