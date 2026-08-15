@@ -51,6 +51,7 @@ import {
 } from './services/securityLog';
 import cosmonautRolesRoutes from './routes/cosmonauts/rolesRoutes';
 import cosmonautAssignmentsRoutes from './routes/cosmonauts/assignmentsRoutes';
+import cosmologyRoutes from './routes/cosmology';
 
 /* eslint-disable no-underscore-dangle */
 const __filename = fileURLToPath(import.meta.url);
@@ -260,6 +261,11 @@ function registerCosmonautRoutes(fastify: FastifyInstance): void {
   fastify.register(cosmonautAssignmentsRoutes, { prefix: '/v1' });
 }
 
+/** FC160 F1 — Cosmology admin routes (global, Ω-exclusive; not duplicated under universePrefix). */
+function registerCosmologyRoutes(fastify: FastifyInstance): void {
+  fastify.register(cosmologyRoutes, { prefix: '/v1/cosmology' });
+}
+
 /** Diagnostic root, liveness `/health`, and the DB-aware `/health/db` probe. FC158 extraction. */
 function registerDiagnosticRoutes(fastify: FastifyInstance): void {
   // Diagnostic Root V2 (Secure)
@@ -323,6 +329,7 @@ const buildApp = (opts: Record<string, unknown> = {}): FastifyInstance => {
   registerV1Routes(fastify);
   registerUniverseRoutes(fastify);
   registerCosmonautRoutes(fastify);
+  registerCosmologyRoutes(fastify);
   registerDiagnosticRoutes(fastify);
 
   return fastify;
