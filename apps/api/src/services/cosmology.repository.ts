@@ -339,16 +339,17 @@ export async function countZeroStateBuckets(
        (SELECT COUNT(*) FROM social_posts WHERE owner_id = ?) AS social_posts,
        (SELECT COUNT(*) FROM social_reviews WHERE taller_owner_id = ?) AS social_reviews`,
     [
-      tenantId,
-      tenantId,
-      tenantId,
-      tenantId,
-      tenantId,
-      tenantId,
-      tenantId,
-      tenantId,
-      tenantId,
-      tenantId,
+      tenantId, // fleet_units
+      tenantId, // memberships
+      tenantId, // role_assignments
+      tenantId, // custom_roles
+      tenantId, // areas
+      tenantId, // service_links.privado_owner_id
+      tenantId, // service_links.centro_owner_id
+      tenantId, // lattices.u1_tenant_id
+      tenantId, // lattices.u2_tenant_id
+      tenantId, // social_posts
+      tenantId, // social_reviews
     ]
   );
   return rows[0];

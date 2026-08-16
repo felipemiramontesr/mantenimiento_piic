@@ -309,6 +309,20 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
+  it('COSMOLOGY-DESTROY-ARITY-1 (F2-I4-P1): countZeroStateBuckets binds one param per `?` placeholder', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5, label: 'Poblado' }]]) // findTenantById
+      .mockResolvedValueOnce([[zeroCounts]]); // countZeroStateBuckets
+    await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/5',
+      headers: omegaHeader(),
+    });
+    const [sql, params] = (db.execute as Mock).mock.calls[1];
+    const placeholderCount = (sql.match(/\?/g) ?? []).length;
+    expect(params).toHaveLength(placeholderCount);
+  });
+
   it.each([
     ['memberships', 1],
     ['role_assignments', 2],
