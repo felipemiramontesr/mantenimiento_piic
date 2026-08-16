@@ -222,4 +222,161 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).data).toHaveLength(1);
   });
+
+  // ─── Fase 2 — Universe_Create_And_Destroy (Cond.R-160-F2-Impl) ────────────
+
+  const zeroCounts = {
+    fleet_units: 0,
+    memberships: 0,
+    role_assignments: 0,
+    custom_roles: 0,
+    areas: 0,
+    service_links: 0,
+    lattices: 0,
+    social_posts: 0,
+    social_reviews: 0,
+  };
+
+  const f2NonOmegaCases: Array<{ method: 'GET' | 'POST' | 'DELETE'; url: string }> = [
+    { method: 'POST', url: '/v1/cosmology/universes' },
+    { method: 'DELETE', url: '/v1/cosmology/universes/5' },
+    { method: 'GET', url: '/v1/cosmology/universes' },
+  ];
+
+  it.each(f2NonOmegaCases)(
+    'COSMOLOGY-DESTROY-OMEGA: $method $url — 403 for non-Ω actor',
+    async ({ method, url }) => {
+      const res = await app.inject({
+        method,
+        url,
+        headers: arcHeader(),
+        payload:
+          method === 'POST'
+            ? { label: 'X', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' }
+            : undefined,
+      });
+      expect(res.statusCode).toBe(403);
+    }
+  );
+
+  it('COSMOLOGY-CREATE-1: Ω creates a Universe — 201, single TX (mint + tenant + SC + Cúmulo blueprint)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 900, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: 'Nuevo Universo', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(JSON.parse(res.body).data.tenantId).toBe(900);
+    expect(mockConnection.commit).toHaveBeenCalled();
+    expect(mockConnection.execute).toHaveBeenCalledTimes(4);
+  });
+
+  it('COSMOLOGY-CREATE-2: unknown universeTypeCode — 404 UNIVERSE_TYPE_NOT_FOUND, no TX opened', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // findUniverseTypeByCode → not found
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: 'X', universeTypeCode: 'BOGUS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('UNIVERSE_TYPE_NOT_FOUND');
+    expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+  });
+
+  it('COSMOLOGY-DESTROY-FLEET-1: T6 409 UNIVERSE_NOT_ZERO_STATE with fleet_units populated (critical finding)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5, label: 'Poblado' }]]) // findTenantById
+      .mockResolvedValueOnce([[{ ...zeroCounts, fleet_units: 3 }]]); // countZeroStateBuckets
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/5',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(409);
+    const body = JSON.parse(res.body);
+    expect(body.code).toBe('UNIVERSE_NOT_ZERO_STATE');
+    expect(body.details).toEqual({ fleet_units: 3 });
+    expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['memberships', 1],
+    ['role_assignments', 2],
+    ['custom_roles', 1],
+    ['areas', 4],
+    ['service_links', 1],
+    ['lattices', 1],
+    ['social_posts', 7],
+    ['social_reviews', 2],
+  ])('COSMOLOGY-DESTROY-BUCKET: 409 when %s bucket is populated', async (bucket, count) => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5, label: 'Poblado' }]]) // findTenantById
+      .mockResolvedValueOnce([[{ ...zeroCounts, [bucket]: count }]]); // countZeroStateBuckets
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/5',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(409);
+    expect(JSON.parse(res.body).details).toEqual({ [bucket]: count });
+  });
+
+  it('COSMOLOGY-DESTROY-ZEROSTATE-1: T6 200 with all 10 buckets at zero — tenant + catalog row deleted', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 900, label: 'Vacío' }]]) // findTenantById
+      .mockResolvedValueOnce([[zeroCounts]]); // countZeroStateBuckets
+    mockConnection.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // DELETE tenants
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // DELETE common_catalogs
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/900',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(mockConnection.commit).toHaveBeenCalled();
+    expect(mockConnection.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('T6: unknown tenant — 404 TENANT_NOT_FOUND, no zero-state check run', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // findTenantById → not found
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/999',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('TENANT_NOT_FOUND');
+  });
+
+  it('T7: GET /universes lists every Universo with type + active SC/Cúmulo census', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([
+      [
+        {
+          id: 1,
+          label: 'FMS Base',
+          universeTypeCode: 'FMS',
+          activeSuperclusters: 5,
+          activeClusters: 1,
+        },
+      ],
+    ]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).data).toHaveLength(1);
+  });
 });

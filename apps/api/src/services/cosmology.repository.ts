@@ -32,6 +32,22 @@ export async function tenantExists(tenantId: number, executor: Executor = db): P
   return rows.length > 0;
 }
 
+export interface TenantRow extends RowDataPacket {
+  id: number;
+  label: string;
+}
+
+/** Minimal tenant snapshot for audit — used before DESTROY_UNIVERSE physically deletes the row. */
+export async function findTenantById(
+  tenantId: number,
+  executor: Executor = db
+): Promise<TenantRow | null> {
+  const [rows] = await executor.execute<TenantRow[]>('SELECT id, label FROM tenants WHERE id = ?', [
+    tenantId,
+  ]);
+  return rows.length > 0 ? rows[0] : null;
+}
+
 /** Catalog lookup — one of the 5 fixed Supercúmulos, or null if the code is invalid. */
 export async function findSuperclusterByCode(
   code: string,
@@ -199,5 +215,174 @@ export async function listClustersForTenant(
   }
   q += ' ORDER BY cc.id';
   const [rows] = await executor.execute<ClusterListRow[]>(q, params);
+  return rows;
+}
+
+// ─── Fase 2 — Universe_Create_And_Destroy (Cond.R-160-F2-Impl) ─────────────────
+
+/** Catalog lookup — a Universo type (today only `FMS` live, migración 164 clean-slate). */
+export async function findUniverseTypeByCode(
+  code: string,
+  executor: Executor = db
+): Promise<CatalogRow | null> {
+  const [rows] = await executor.execute<CatalogRow[]>(
+    'SELECT id, code, name FROM universe_types WHERE code = ?',
+    [code]
+  );
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/** Catalog lookup — an Owner type (FLOTILLA/PRIVATE/CENTER/ARCHONAUT, migración 159). */
+export async function findOwnerTypeByCode(
+  code: string,
+  executor: Executor = db
+): Promise<CatalogRow | null> {
+  const [rows] = await executor.execute<CatalogRow[]>(
+    'SELECT id, code, name FROM owner_types_catalog WHERE code = ?',
+    [code]
+  );
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/** F2-I3(a) — mints a fresh `tenants.id` (no AUTO_INCREMENT there since migración 107) via the
+ *  still-live `common_catalogs` pattern (migración 166 uses it for other categories); category
+ *  `UNIVERSE_TENANT` is new, does not reopen the retired `FLEET_OWNER`. */
+export async function mintUniverseTenantId(
+  code: string,
+  label: string,
+  executor: Executor = db
+): Promise<number> {
+  const [result] = await executor.execute<ResultSetHeader>(
+    "INSERT INTO common_catalogs (category, code, label) VALUES ('UNIVERSE_TENANT', ?, ?)",
+    [code, label]
+  );
+  return result.insertId;
+}
+
+/** F2-I3(b) — `tenants.id` set explicitly to the minted id (not auto-generated here). */
+export async function insertTenant(
+  tenantId: number,
+  label: string,
+  universeTypeId: number,
+  ownerTypeId: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    'INSERT INTO tenants (id, label, universe_type_id, owner_type_id) VALUES (?, ?, ?, ?)',
+    [tenantId, label, universeTypeId, ownerTypeId]
+  );
+}
+
+/** F2-I3(c) — seeds the default Supercúmulo blueprint (same pattern as migración 152's backfill). */
+export async function seedSuperclusterBlueprint(
+  tenantId: number,
+  universeTypeId: number,
+  callerId: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    `INSERT INTO universe_superclusters (tenant_id, supercluster_id, state, added_by_user_id)
+     SELECT ?, uts.supercluster_id, 'ACTIVE', ?
+     FROM universe_type_superclusters uts
+     WHERE uts.universe_type_id = ?`,
+    [tenantId, callerId, universeTypeId]
+  );
+}
+
+/** F2-I3(c) / Cond.R-F2-R1b — seeds the default Cúmulo blueprint for whatever SCs were just
+ *  activated (same pattern as migración 161's backfill: every cluster whose parent SC is ACTIVE). */
+export async function seedClusterBlueprint(
+  tenantId: number,
+  callerId: number,
+  executor: Executor = db
+): Promise<void> {
+  await executor.execute<ResultSetHeader>(
+    `INSERT INTO universe_clusters (tenant_id, cluster_id, state, added_by_user_id)
+     SELECT us.tenant_id, cc.id, 'ACTIVE', ?
+     FROM universe_superclusters us
+     JOIN clusters_catalog cc ON cc.supercluster_id = us.supercluster_id
+     WHERE us.tenant_id = ? AND us.state = 'ACTIVE'`,
+    [callerId, tenantId]
+  );
+}
+
+export interface ZeroStateCounts extends RowDataPacket {
+  fleet_units: number;
+  memberships: number;
+  role_assignments: number;
+  custom_roles: number;
+  areas: number;
+  service_links: number;
+  lattices: number;
+  social_posts: number;
+  social_reviews: number;
+}
+
+/** F2-I4 — the 10-bucket zero-state check (Cond.R-160-F2-R3), single round trip. Bucket 10 from
+ *  the dictamen (`user_owner_membership`) is not a separate query — it is a read/write-compatible
+ *  VIEW over `tenant_user_memberships` (migración 149), already covered by `memberships`. */
+export async function countZeroStateBuckets(
+  tenantId: number,
+  executor: Executor = db
+): Promise<ZeroStateCounts> {
+  const [rows] = await executor.execute<ZeroStateCounts[]>(
+    `SELECT
+       (SELECT COUNT(*) FROM fleet_units WHERE ownerId = ?) AS fleet_units,
+       (SELECT COUNT(*) FROM tenant_user_memberships WHERE owner_id = ?) AS memberships,
+       (SELECT COUNT(*) FROM cosmonaut_role_assignments WHERE tenant_id = ?) AS role_assignments,
+       (SELECT COUNT(*) FROM cosmonaut_roles WHERE tenant_id = ?) AS custom_roles,
+       (SELECT COUNT(*) FROM areas WHERE owner_id = ?) AS areas,
+       (SELECT COUNT(*) FROM tenant_service_links
+          WHERE privado_owner_id = ? OR centro_owner_id = ?) AS service_links,
+       (SELECT COUNT(*) FROM universe_lattices
+          WHERE u1_tenant_id = ? OR u2_tenant_id = ?) AS lattices,
+       (SELECT COUNT(*) FROM social_posts WHERE owner_id = ?) AS social_posts,
+       (SELECT COUNT(*) FROM social_reviews WHERE taller_owner_id = ?) AS social_reviews`,
+    [
+      tenantId,
+      tenantId,
+      tenantId,
+      tenantId,
+      tenantId,
+      tenantId,
+      tenantId,
+      tenantId,
+      tenantId,
+      tenantId,
+    ]
+  );
+  return rows[0];
+}
+
+/** F2-I5 — physical DELETE of the Universo (cascades SC/Cúmulo blueprint via existing FK) and
+ *  cleanup of the `common_catalogs` row minted for it (scope-guarded to `UNIVERSE_TENANT`, F2-I7). */
+export async function destroyUniverseRow(tenantId: number, executor: Executor = db): Promise<void> {
+  await executor.execute<ResultSetHeader>('DELETE FROM tenants WHERE id = ?', [tenantId]);
+  await executor.execute<ResultSetHeader>(
+    "DELETE FROM common_catalogs WHERE id = ? AND category = 'UNIVERSE_TENANT'",
+    [tenantId]
+  );
+}
+
+export interface UniverseListRow extends RowDataPacket {
+  id: number;
+  label: string;
+  universeTypeCode: string;
+  activeSuperclusters: number;
+  activeClusters: number;
+}
+
+/** T7 — every Universo with its type and a quick census of active SC/Cúmulo counts. */
+export async function listUniverses(executor: Executor = db): Promise<UniverseListRow[]> {
+  const [rows] = await executor.execute<UniverseListRow[]>(
+    `SELECT t.id, t.label, ut.code AS universeTypeCode,
+       (SELECT COUNT(*) FROM universe_superclusters us
+          WHERE us.tenant_id = t.id AND us.state = 'ACTIVE') AS activeSuperclusters,
+       (SELECT COUNT(*) FROM universe_clusters uc
+          WHERE uc.tenant_id = t.id AND uc.state = 'ACTIVE') AS activeClusters
+     FROM tenants t
+     JOIN universe_types ut ON ut.id = t.universe_type_id
+     ORDER BY t.id`
+  );
   return rows;
 }

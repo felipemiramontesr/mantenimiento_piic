@@ -2,7 +2,11 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { requireOmega } from '../middleware/cosmonautMiddleware';
 import * as CosmologyService from '../services/cosmology.service';
-import type { MutationResult, ListResult } from '../services/cosmology.service';
+import type {
+  MutationResult,
+  ListResult,
+  CreateUniverseResult,
+} from '../services/cosmology.service';
 
 /**
  * FC160 F1 — Cosmology Core Admin Endpoints (§24.5 `AUTORIDAD_Ω`).
@@ -22,9 +26,12 @@ const omegaGuard = {
 
 function sendMutationResult(reply: FastifyReply, result: MutationResult): FastifyReply {
   if (!result.ok) {
-    return reply
-      .code(result.status)
-      .send({ success: false, code: result.code, message: result.message });
+    return reply.code(result.status).send({
+      success: false,
+      code: result.code,
+      message: result.message,
+      ...(result.details ? { details: result.details } : {}),
+    });
   }
   return reply.send({ success: true });
 }
@@ -43,6 +50,11 @@ const superclusterParamSchema = tenantIdParamSchema.extend({ superclusterCode: z
 const clusterParamSchema = tenantIdParamSchema.extend({ clusterCode: z.string().min(1) });
 const addSuperclusterBodySchema = z.object({ superclusterCode: z.string().min(1) });
 const addClusterBodySchema = z.object({ clusterCode: z.string().min(1) });
+const createUniverseBodySchema = z.object({
+  label: z.string().min(1).max(255),
+  universeTypeCode: z.string().min(1),
+  ownerTypeCode: z.string().min(1),
+});
 
 function callerId(request: FastifyRequest): number {
   return (request.user as { id: number }).id;
@@ -139,7 +151,53 @@ async function handleListClusters(
   return sendListResult(reply, result);
 }
 
-/** Registers the 6 Fase-1 cosmology mutability endpoints, all Ω-exclusive. */
+function sendCreateUniverseResult(reply: FastifyReply, result: CreateUniverseResult): FastifyReply {
+  if (!result.ok) {
+    return reply
+      .code(result.status)
+      .send({ success: false, code: result.code, message: result.message });
+  }
+  return reply.code(201).send({ success: true, data: { tenantId: result.tenantId } });
+}
+
+async function handleCreateUniverse(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const body = createUniverseBodySchema.safeParse(request.body);
+  if (!body.success) {
+    return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
+  }
+  const result = await CosmologyService.createUniverse(
+    body.data.label,
+    body.data.universeTypeCode,
+    body.data.ownerTypeCode,
+    callerId(request)
+  );
+  return sendCreateUniverseResult(reply, result);
+}
+
+async function handleDestroyUniverse(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const params = tenantIdParamSchema.safeParse(request.params);
+  if (!params.success) {
+    return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
+  }
+  const result = await CosmologyService.destroyUniverse(params.data.tenantId, callerId(request));
+  return sendMutationResult(reply, result);
+}
+
+async function handleListUniverses(
+  _request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const result = await CosmologyService.listUniverses();
+  return sendListResult(reply, result);
+}
+
+/** Registers the 9 cosmology admin endpoints (6 Fase 1 + 3 Fase 2), all Ω-exclusive. */
 export default async function cosmologyRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/universes/:tenantId/superclusters', omegaGuard, handleAddSupercluster);
   fastify.delete(
@@ -151,4 +209,7 @@ export default async function cosmologyRoutes(fastify: FastifyInstance): Promise
   fastify.post('/universes/:tenantId/clusters', omegaGuard, handleAddCluster);
   fastify.delete('/universes/:tenantId/clusters/:clusterCode', omegaGuard, handleRemoveCluster);
   fastify.get('/universes/:tenantId/clusters', omegaGuard, handleListClusters);
+  fastify.post('/universes', omegaGuard, handleCreateUniverse);
+  fastify.delete('/universes/:tenantId', omegaGuard, handleDestroyUniverse);
+  fastify.get('/universes', omegaGuard, handleListUniverses);
 }

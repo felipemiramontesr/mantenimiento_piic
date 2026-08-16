@@ -3,7 +3,14 @@ import { randomUUID } from 'node:crypto';
 import db from './db';
 
 export interface AuditLogEntry {
-  entity_type: 'route_log' | 'user' | 'fleet_unit' | 'catalog' | 'supercluster' | 'cluster';
+  entity_type:
+    | 'route_log'
+    | 'user'
+    | 'fleet_unit'
+    | 'catalog'
+    | 'supercluster'
+    | 'cluster'
+    | 'universe';
   entity_id: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE';
   snapshot_before?: Record<string, unknown>;
