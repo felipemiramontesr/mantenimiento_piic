@@ -122,6 +122,24 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.execute).toHaveBeenCalledTimes(2);
   });
 
+  it('COSMOLOGY-CASCADE-ROLLBACK-1 (FC162 F1-T6): T2 rolls back if suspendClustersUnderSupercluster fails mid-TX', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([[{ id: 4, code: 'FINANZAS', name: 'Finanzas y TCO' }]]); // findSuperclusterByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // suspendSupercluster
+      .mockRejectedValueOnce(new Error('DB connection lost mid-cascade')); // suspendClustersUnderSupercluster
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/5/superclusters/FINANZAS',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(mockConnection.commit).not.toHaveBeenCalled();
+    expect(mockConnection.release).toHaveBeenCalled();
+  });
+
   // ─── T3 add cluster — COSMOLOGY-PRECOND-1 ────────────────────────────────
 
   it("COSMOLOGY-PRECOND-1: T3 409 SUPERCLUSTER_NOT_ACTIVE when parent SC isn't active", async () => {
@@ -293,6 +311,26 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
+  it('COSMOLOGY-CREATE-ROLLBACK-1 (FC162 F1-T6): T5 rolls back the whole TX if the blueprint seed fails', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 901, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockRejectedValueOnce(new Error('DB connection lost mid-seed')); // seedSuperclusterBlueprint
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: 'Nuevo Universo', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(mockConnection.commit).not.toHaveBeenCalled();
+    expect(mockConnection.release).toHaveBeenCalled();
+  });
+
   it('COSMOLOGY-DESTROY-FLEET-1: T6 409 UNIVERSE_NOT_ZERO_STATE with fleet_units populated (critical finding)', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ id: 5, label: 'Poblado' }]]) // findTenantById
@@ -360,6 +398,24 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(200);
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('COSMOLOGY-DESTROY-ROLLBACK-1 (FC162 F1-T6): T6 rolls back if the common_catalogs cleanup fails', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 900, label: 'Vacío' }]]) // findTenantById
+      .mockResolvedValueOnce([[zeroCounts]]); // countZeroStateBuckets
+    mockConnection.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // DELETE tenants
+      .mockRejectedValueOnce(new Error('DB connection lost mid-cleanup')); // DELETE common_catalogs
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/900',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(500);
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(mockConnection.commit).not.toHaveBeenCalled();
+    expect(mockConnection.release).toHaveBeenCalled();
   });
 
   it('COSMOLOGY-DESTROY-REASON-1 (FC161 R4): optional reason is passed to the audit log', async () => {

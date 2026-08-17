@@ -268,6 +268,12 @@ jobs:
           --coverage.reporter=lcov --coverage.reporter=text
           --coverage.thresholds.lines=0 --coverage.thresholds.functions=0
           --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
+      - name: Generate coverage (Contracts)
+        working-directory: packages/contracts
+        # FC162 F1-T3 — antes de este FC, packages/contracts no tenía config de
+        # test/coverage propia y aportaba 0.0% real a Sonar pese a ejecutarse
+        # vía alias en apps/api.
+        run: bunx vitest run --coverage --coverage.reporter=lcov --coverage.reporter=text
       - name: SonarQube Cloud Scan
         uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # v8.2.0 (Node 24 — mata warning deprecación Node 20)
         env:

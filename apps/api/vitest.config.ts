@@ -29,7 +29,14 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       reporter: ['text', 'json', 'html'],
       exclude: [
-        'src/index.ts' /* Bootstrap puro, inaccesible unitariamente sin lanzar puerto */,
+        // FC162 F1-T7 (Cond.R-162-F1, dictamen Alfa 194_AN / Bravo 195_AN):
+        // 'src/index.ts' salió del exclude completo -- solo tenía bootstrap
+        // puro (auto-start listen()/cron) en el tramo ya guardado con
+        // `// v8 ignore start/stop` a nivel de código (línea 338+); el resto
+        // (registerCorePlugins/registerObservabilityHooks/registerV1Routes/...)
+        // es lógica real de seguridad (CORS/CSP/rate-limit/error-handler) que
+        // TODO test de ruta existente ya ejecuta indirectamente vía
+        // `buildApp()` -- excluirlo entero ocultaba esa cobertura real.
         'src/scripts/**' /* Scripts de utilidad CLI que se prueban mediante bash */,
         'src/types/**' /* Declaraciones de tipado */,
         '**/*.test.ts',
@@ -39,11 +46,17 @@ export default defineConfig({
         'dist/**',
         'coverage/**',
       ],
+      // FC162 F1-T8 (Cond.R-162-F1): ratchet desde 30/30/20/30 (piso histórico
+      // sin relación con la cobertura real) tras F1-T2..T7 (repos de rutas/
+      // cosmology testeados, index.ts fuera del exclude ciego). Medido:
+      // Statements 98.71% / Branches 96.95% / Functions 99.02% / Lines 99.1%.
+      // Piso con margen de seguridad, no clavado al techo medido — solo puede
+      // subir desde aquí (Scenario 4, 162_FC).
       thresholds: {
-        lines: 30,
-        functions: 30,
-        branches: 20,
-        statements: 30,
+        lines: 95,
+        functions: 95,
+        branches: 90,
+        statements: 95,
       },
     },
   },

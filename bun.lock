@@ -114,6 +114,10 @@
       "dependencies": {
         "zod": "^3.22.0",
       },
+      "devDependencies": {
+        "@vitest/coverage-v8": "^4.1.10",
+        "vitest": "^4.1.10",
+      },
     },
   },
   "overrides": {
