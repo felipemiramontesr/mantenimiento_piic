@@ -41,6 +41,7 @@ const defaultPermissions = {
   hasPermission: (): boolean => true,
   hasAnyPermission: (): boolean => true,
   isOmnipotent: (): boolean => true,
+  isOmegaStrict: (): boolean => true,
 };
 
 const defaultAuth = {
@@ -82,7 +83,7 @@ describe('Sidebar Component (Archon Core)', () => {
     expect(screen.getByText('Incidencias')).toBeDefined();
     expect(screen.getByText('Seguridad')).toBeDefined();
     expect(screen.getByText('Personal')).toBeDefined();
-    expect(screen.getByText('Onboarding')).toBeDefined();
+    expect(screen.getByText('Cosmología')).toBeDefined();
     // FC 082 F3c2 — "Panel de Control" (RolesManager) retirado
     expect(screen.queryByText('Panel de Control')).toBeNull();
     // FC 067 F3 — L_social adoptado como "Arcsial" (§24.11), no "Red Social"/"SOCIAL"
@@ -98,6 +99,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (): boolean => false,
       hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
+      isOmegaStrict: (): boolean => false,
     });
 
     render(
@@ -123,6 +125,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (p: string): boolean => directorPerms.includes(p),
       hasAnyPermission: (ps: string[]): boolean => ps.some((p) => directorPerms.includes(p)),
       isOmnipotent: (): boolean => false,
+      isOmegaStrict: (): boolean => false,
     });
 
     render(
@@ -273,6 +276,7 @@ describe('Sidebar Component (Archon Core)', () => {
       hasPermission: (): boolean => false,
       hasAnyPermission: (): boolean => false,
       isOmnipotent: (): boolean => false,
+      isOmegaStrict: (): boolean => false,
     });
 
     render(
@@ -416,6 +420,7 @@ describe('Sidebar Component (Archon Core)', () => {
           hasPermission: (): boolean => perms.hasPermission,
           hasAnyPermission: (): boolean => perms.hasPermission,
           isOmnipotent: (): boolean => perms.isOmnipotent,
+          isOmegaStrict: (): boolean => perms.isOmnipotent,
         });
 
         render(
@@ -444,6 +449,7 @@ describe('Sidebar Component (Archon Core)', () => {
         hasPermission: (p: string): boolean => p === 'alert:view:any',
         hasAnyPermission: (ps: string[]): boolean => ps.includes('alert:view:any'),
         isOmnipotent: (): boolean => false,
+        isOmegaStrict: (): boolean => false,
       });
       render(
         <BrowserRouter>
@@ -460,6 +466,7 @@ describe('Sidebar Component (Archon Core)', () => {
         hasAnyPermission: (ps: string[]): boolean =>
           ps.some((p) => ['users:collaborator:view', 'security:audit:view'].includes(p)),
         isOmnipotent: (): boolean => false,
+        isOmegaStrict: (): boolean => false,
       });
       render(
         <BrowserRouter>
@@ -475,6 +482,7 @@ describe('Sidebar Component (Archon Core)', () => {
         hasPermission: (p: string): boolean => p === 'user:admin',
         hasAnyPermission: (ps: string[]): boolean => ps.includes('user:admin'),
         isOmnipotent: (): boolean => false,
+        isOmegaStrict: (): boolean => false,
       });
       render(
         <BrowserRouter>

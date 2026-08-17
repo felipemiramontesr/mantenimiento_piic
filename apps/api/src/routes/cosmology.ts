@@ -55,6 +55,8 @@ const createUniverseBodySchema = z.object({
   universeTypeCode: z.string().min(1),
   ownerTypeCode: z.string().min(1),
 });
+/** FC161 R4 — optional, backward-compatible: absent body / no `reason` keeps prior behavior. */
+const destroyUniverseBodySchema = z.object({ reason: z.string().min(5).optional() }).optional();
 
 function callerId(request: FastifyRequest): number {
   return (request.user as { id: number }).id;
@@ -182,10 +184,15 @@ async function handleDestroyUniverse(
   reply: FastifyReply
 ): Promise<FastifyReply> {
   const params = tenantIdParamSchema.safeParse(request.params);
-  if (!params.success) {
+  const body = destroyUniverseBodySchema.safeParse(request.body);
+  if (!params.success || !body.success) {
     return reply.code(400).send({ success: false, code: 'VALIDATION_ERROR' });
   }
-  const result = await CosmologyService.destroyUniverse(params.data.tenantId, callerId(request));
+  const result = await CosmologyService.destroyUniverse(
+    params.data.tenantId,
+    callerId(request),
+    body.data?.reason
+  );
   return sendMutationResult(reply, result);
 }
 

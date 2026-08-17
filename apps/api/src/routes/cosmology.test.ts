@@ -362,6 +362,51 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.execute).toHaveBeenCalledTimes(2);
   });
 
+  it('COSMOLOGY-DESTROY-REASON-1 (FC161 R4): optional reason is passed to the audit log', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 900, label: 'Vacío' }]]) // findTenantById
+      .mockResolvedValueOnce([[zeroCounts]]); // countZeroStateBuckets
+    mockConnection.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // DELETE tenants
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // DELETE common_catalogs
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/900',
+      headers: omegaHeader(),
+      payload: { reason: 'Universo de prueba, ya no se usa' },
+    });
+    expect(res.statusCode).toBe(200);
+    const [, params] = (db.query as Mock).mock.calls[0];
+    expect(params[6]).toBe('Universo de prueba, ya no se usa');
+  });
+
+  it('COSMOLOGY-DESTROY-REASON-2: reason omitted falls back to the fixed audit reason', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 900, label: 'Vacío' }]]) // findTenantById
+      .mockResolvedValueOnce([[zeroCounts]]); // countZeroStateBuckets
+    mockConnection.execute
+      .mockResolvedValueOnce([{ affectedRows: 1 }])
+      .mockResolvedValueOnce([{ affectedRows: 1 }]);
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/900',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    const [, params] = (db.query as Mock).mock.calls[0];
+    expect(params[6]).toBe('DESTROY_UNIVERSE (§24.5, zero-state)');
+  });
+
+  it('COSMOLOGY-DESTROY-REASON-3: reason shorter than 5 chars — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/900',
+      headers: omegaHeader(),
+      payload: { reason: 'no' },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
   it('T6: unknown tenant — 404 TENANT_NOT_FOUND, no zero-state check run', async () => {
     (db.execute as Mock).mockResolvedValueOnce([[]]); // findTenantById → not found
     const res = await app.inject({

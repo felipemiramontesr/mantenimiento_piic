@@ -314,8 +314,14 @@ function blockingBuckets(counts: CosmologyRepository.ZeroStateCounts): Record<st
   ) as Record<string, number>;
 }
 
-/** T6 — DESTROY_UNIVERSE. Fail-closed on 10-bucket zero-state (Cond.R-160-F2-R3) before any write. */
-export async function destroyUniverse(tenantId: number, callerId: number): Promise<MutationResult> {
+/** T6 — DESTROY_UNIVERSE. Fail-closed on 10-bucket zero-state (Cond.R-160-F2-R3) before any write.
+ *  FC161 R4 — `reason` is optional/backward-compatible: callers that omit it keep the original
+ *  fixed audit reason; the UI's type-to-confirm flow can supply one for a richer audit trail. */
+export async function destroyUniverse(
+  tenantId: number,
+  callerId: number,
+  reason?: string
+): Promise<MutationResult> {
   const tenant = await CosmologyRepository.findTenantById(tenantId);
   if (!tenant) return NOT_FOUND_TENANT;
   const counts = await CosmologyRepository.countZeroStateBuckets(tenantId);
@@ -346,7 +352,7 @@ export async function destroyUniverse(tenantId: number, callerId: number): Promi
     entity_id: String(tenantId),
     action: 'DELETE',
     snapshot_before: { label: tenant.label },
-    reason: 'DESTROY_UNIVERSE (§24.5, zero-state)',
+    reason: reason ?? 'DESTROY_UNIVERSE (§24.5, zero-state)',
     user_id: callerId,
   });
   return { ok: true };

@@ -31,6 +31,7 @@ export default function usePermissions(): {
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
   isOmnipotent: () => boolean;
+  isOmegaStrict: () => boolean;
 } {
   const { currentUser, effectiveUser } = useAuth();
 
@@ -56,9 +57,21 @@ export default function usePermissions(): {
     return currentUser.permissions?.includes('admin:role:edit') ?? false;
   };
 
+  // FC161 Cond.R-161-R2 — matches backend requireOmega() exactly (roleId===0
+  // OR permissions includes '*'). Unlike isOmnipotent(), does NOT accept
+  // admin:role:edit/system:manage_roles alone — those pass isOmnipotent()
+  // but still 403 against Ω-exclusive endpoints like /v1/cosmology/*. Use
+  // this (not isOmnipotent()) to gate any UI whose backend is requireOmega().
+  const isOmegaStrict = (): boolean => {
+    if (!currentUser) return false;
+    if (currentUser.roleId === 0) return true;
+    return currentUser.permissions?.includes('*') ?? false;
+  };
+
   return {
     hasPermission,
     hasAnyPermission,
     isOmnipotent,
+    isOmegaStrict,
   };
 }

@@ -10,7 +10,7 @@ import FinancialHealthModule from './pages/Dashboard/FinancialHealthModule';
 import LogsModule from './pages/Dashboard/LogsModule';
 import SettingsModule from './pages/Dashboard/SettingsModule';
 import AlertsModule from './pages/Dashboard/AlertsModule';
-import OnboardingModule from './pages/Dashboard/OnboardingModule';
+import CosmologyModule from './pages/Dashboard/CosmologyModule';
 import IncidentsModule from './pages/Dashboard/IncidentsModule';
 import MaintenanceModule from './pages/Dashboard/MaintenanceModule';
 import FleetUnitNode from './pages/Dashboard/FleetUnitNode';
@@ -42,70 +42,83 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const ROUTER_FUTURE_FLAGS = { v7_startTransition: true, v7_relativeSplatPath: true };
+
+const DASHBOARD_ELEMENT = (
+  <ProtectedRoute>
+    <UserProvider>
+      <DashboardLayout />
+    </UserProvider>
+  </ProtectedRoute>
+);
+
+// FC 071 F2: contiene errores de render de cualquier módulo — sin esto, un
+// throw en el outlet desmontaba el root completo (pantalla blanca, 071_AN E3).
+const ERROR_BOUNDARY_ELEMENT = (
+  <ArchonErrorBoundary>
+    <Outlet />
+  </ArchonErrorBoundary>
+);
+
+/** Los módulos hijos de `/dashboard` — extraído como VALOR de `element=`, no
+ *  como lista de `<Route>` (react-router v6 exige que los `<Route>` de una
+ *  `<Routes>` sean hijos directos/Fragment, nunca detrás de un componente). */
+function DashboardChildRoutes(): React.ReactElement {
+  return (
+    <Route element={ERROR_BOUNDARY_ELEMENT}>
+      <Route index element={<ArchonCenter />} />
+      <Route path="fleet" element={<FleetModule />} />
+      <Route path="fleet/:unitId" element={<FleetUnitNode />} />
+      <Route path="maintenance" element={<MaintenanceModule />} />
+      <Route path="maintenance/:uuid" element={<MaintenanceNode />} />
+      <Route path="routes" element={<RoutesModule />} />
+      <Route path="routes/:uuid" element={<RouteNode />} />
+      <Route path="financial" element={<FinancialHealthModule />} />
+      <Route path="logs" element={<LogsModule />} />
+      <Route path="settings" element={<SettingsModule />} />
+      <Route path="alerts" element={<AlertsModule />} />
+      {/* FC 082 F3c2 — /admin (RolesManager/RolePermissionsMatrix)
+          retirado: roles reales se gobiernan vía /v1/cosmonauts/roles */}
+      {/* FC161 F1 — /onboarding (OnboardingModule, llamaba a /onboarding/*
+          retirado 501 desde FC082 F3c3) reemplazado por /cosmology
+          (CosmologyModule, API /v1/cosmology/* viva). Redirect para
+          cualquier bookmark/navegación antigua. */}
+      <Route path="cosmology" element={<CosmologyModule />} />
+      <Route path="onboarding" element={<Navigate to="/dashboard/cosmology" replace />} />
+      <Route path="incidents" element={<IncidentsModule />} />
+      <Route path="incidents/:uuid" element={<IncidentNode />} />
+      <Route path="users" element={<UsersModule />} />
+      <Route path="users/:uuid" element={<UserNode />} />
+      <Route path="tracking" element={<RealtimeTrackingModule />} />
+      <Route path="social" element={<ProfileView />} />
+      <Route path="talleres" element={<TalleresDirectory />} />
+    </Route>
+  );
+}
+
+/** Rutas autenticadas — extraído del `element=` del `<Route path="*">` raíz
+ *  (VALOR opaco para react-router, no lista de `<Route>` — extracción segura). */
+function AuthenticatedRoutes(): React.ReactElement {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={DASHBOARD_ELEMENT}>
+          {DashboardChildRoutes()}
+        </Route>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </AuthProvider>
+  );
+}
+
+/** 🔱 Archon Root — Sovereign Identity Orchestration (In-Memory Auth Guard, httpOnly cookie flow). */
 const App: React.FC = () => (
-  <BrowserRouter
-    future={{
-      v7_startTransition: true,
-      v7_relativeSplatPath: true,
-    }}
-  >
+  <BrowserRouter future={ROUTER_FUTURE_FLAGS}>
     <Routes>
       {/* 🛡️ Protected Sovereign Grid */}
-      <Route
-        path="*"
-        element={
-          <AuthProvider>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <UserProvider>
-                      <DashboardLayout />
-                    </UserProvider>
-                  </ProtectedRoute>
-                }
-              >
-                <Route
-                  element={
-                    /* FC 071 F2: contiene errores de render de cualquier módulo —
-                       sin esto, un throw en el outlet desmontaba el root completo
-                       (pantalla blanca, 071_AN E3) */
-                    <ArchonErrorBoundary>
-                      <Outlet />
-                    </ArchonErrorBoundary>
-                  }
-                >
-                  <Route index element={<ArchonCenter />} />
-                  <Route path="fleet" element={<FleetModule />} />
-                  <Route path="fleet/:unitId" element={<FleetUnitNode />} />
-                  <Route path="maintenance" element={<MaintenanceModule />} />
-                  <Route path="maintenance/:uuid" element={<MaintenanceNode />} />
-                  <Route path="routes" element={<RoutesModule />} />
-                  <Route path="routes/:uuid" element={<RouteNode />} />
-                  <Route path="financial" element={<FinancialHealthModule />} />
-                  <Route path="logs" element={<LogsModule />} />
-                  <Route path="settings" element={<SettingsModule />} />
-                  <Route path="alerts" element={<AlertsModule />} />
-                  {/* FC 082 F3c2 — /admin (RolesManager/RolePermissionsMatrix)
-                      retirado: roles reales se gobiernan vía /v1/cosmonauts/roles */}
-                  <Route path="onboarding" element={<OnboardingModule />} />
-                  <Route path="incidents" element={<IncidentsModule />} />
-                  <Route path="incidents/:uuid" element={<IncidentNode />} />
-                  <Route path="users" element={<UsersModule />} />
-                  <Route path="users/:uuid" element={<UserNode />} />
-                  <Route path="tracking" element={<RealtimeTrackingModule />} />
-                  <Route path="social" element={<ProfileView />} />
-                  <Route path="talleres" element={<TalleresDirectory />} />
-                </Route>
-              </Route>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-          </AuthProvider>
-        }
-      />
+      <Route path="*" element={<AuthenticatedRoutes />} />
     </Routes>
   </BrowserRouter>
 );
