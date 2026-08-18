@@ -258,6 +258,21 @@ describe('authIntegration.test', () => {
     expect(r3.statusCode).toBe(200);
   });
 
+  it('PATCH /users/:id — data vacío no genera ningún UPDATE (fields.length===0 rama falsa, 100% mandatorio FC162 R2)', async () => {
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]) // Snapshot Before
+      .mockResolvedValueOnce([[{ id: 1 }], undefined]); // Snapshot After (sin UPDATE de por medio)
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/1',
+      headers: authHeader(),
+      payload: { data: {}, reason: 'No-op reconciliation' },
+    });
+    expect(r.statusCode).toBe(200);
+    const calls = mockConnection.execute.mock.calls.map((c) => String(c[0]));
+    expect(calls.some((sql) => sql.startsWith('UPDATE users SET'))).toBe(false);
+  });
+
   // FC159 — mockToken ahora es Ω-equivalente (permissions:['*']) para simplificar
   // los tests genéricos; estos 2 casos exigen específicamente un actor NO-Ω que
   // sí tenga `user:admin` (pasa userAdminGuard, pero no adminIsOmega).
@@ -345,6 +360,49 @@ describe('authIntegration.test', () => {
     expect(insertSql).toBeDefined();
     expect(insertSql).toContain('WHERE NOT EXISTS');
     expect(insertSql).not.toContain('INSERT IGNORE');
+  });
+
+  it('PATCH roleId=0 — 200 auto-bypass cuando el role GrayMan no existe en cosmonaut_roles (line 216 rama verdadera, 100% mandatorio FC162 R2)', async () => {
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 5 }], undefined]) // Snapshot Before
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE users SET role_id=0
+      .mockResolvedValueOnce([[], undefined]) // SELECT cosmonaut_roles WHERE name='GrayMan' -> no existe
+      .mockResolvedValueOnce([[{ id: 5, role_id: 0 }], undefined]); // Snapshot After
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/5',
+      headers: { Authorization: `Bearer ${omegaToken}` },
+      payload: { data: { roleId: 0 }, reason: 'GrayMan cosmonaut role not seeded yet' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(JSON.parse(r.payload).success).toBe(true);
+    // sin fila de GrayMan no hay revoke/insert de cosmonaut_role_assignments que hacer
+    const calls = mockConnection.execute.mock.calls.map((c) => String(c[0]));
+    expect(calls.some((sql) => sql.includes('cosmonaut_role_assignments'))).toBe(false);
+  });
+
+  it('PATCH roleId=0 — 403 PRIVILEGE_ESCALATION cuando el chequeo I8 en DB deniega (adminIsOmega por JWT, no por DB, 100% mandatorio FC162 R2)', async () => {
+    const wildcardNoRoleIdToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx', permissions: ['*'] });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ slug: 'some:safe:perm' }], undefined]) // antiEscalationGuard -> resolveEffectivePermissions (real, ...actual no usa el mock de módulo)
+      .mockResolvedValueOnce([[], undefined]) // antiEscalationGuard -> isOmegaUser DB check -> NOT omega en DB
+      .mockResolvedValueOnce([[{ slug: 'admin:everything' }], undefined]); // antiEscalationGuard -> findRolePermissionSlugs(GrayMan) -> escalación
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 5 }], undefined]) // Snapshot Before
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE users SET role_id=0
+      .mockResolvedValueOnce([[{ id: 8 }], undefined]); // SELECT cosmonaut_roles WHERE name='GrayMan'
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/5',
+      headers: { Authorization: `Bearer ${wildcardNoRoleIdToken}` },
+      payload: { data: { roleId: 0 }, reason: 'Escalation attempt via JWT-only omega' },
+    });
+    expect(r.statusCode).toBe(403);
+    expect(JSON.parse(r.payload).error).toBe('PRIVILEGE_ESCALATION');
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(mockConnection.release).toHaveBeenCalled();
   });
 
   it('Resilience: Catch Block Nucleus (Aggressive Rejection)', async () => {
@@ -1310,6 +1368,24 @@ describe('authIntegration.test', () => {
     const [sql, params] = (db.execute as Mock).mock.calls[0];
     expect(sql).toContain('user_owner_membership');
     expect(params).toEqual([500]);
+  });
+
+  it('DELETE /users/:id — 403 FORBIDDEN cuando Ω (roleId=0) también tiene fleet:scoped y el target está fuera de su scope (100% mandatorio FC162 R2)', async () => {
+    const omegaScopedToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'omega-scoped@piic.mx', roleId: 0, permissions: ['fleet:scoped'] });
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]); // ownerScope=[] -> nadie en scope
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 9 }], undefined]) // findUserForUpdateById (snapshot before)
+      .mockResolvedValueOnce([[{ owner_id: 42 }], undefined]); // findOwnerMembershipIdsByUserId -> target pertenece a owner 42, fuera del scope []
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/auth/users/9',
+      headers: { Authorization: `Bearer ${omegaScopedToken}` },
+      payload: { reason: 'Delete outside owner scope' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).error).toBe('FORBIDDEN');
   });
 
   it('DELETE /users/:id — 403 cuando permissions es undefined en el token (?? [] rama falsa, 100% mandatorio FC162 F3)', async () => {

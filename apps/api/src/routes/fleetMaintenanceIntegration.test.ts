@@ -230,6 +230,34 @@ describe('FleetMaintenance — UPA Bridge (PATCH accept)', () => {
     expect(executeMock).toHaveBeenCalledTimes(5);
   });
 
+  it('skips the accept notification when created_by_user_id is null (100% mandatorio, FC162 R2)', async () => {
+    const executeMock = vi
+      .fn()
+      .mockResolvedValueOnce([[{ ...openMovement, created_by_user_id: null }], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined])
+      .mockResolvedValueOnce([[], undefined]); // bridge SELECT returns empty
+
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: executeMock,
+      commit: vi.fn(),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+    vi.mocked(NotificationService.dispatch).mockClear();
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/open-uuid/accept',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(vi.mocked(NotificationService.dispatch)).not.toHaveBeenCalled();
+  });
+
   it('Bridge — N_A tasks present → UPDATE N_A_STRUCTURAL issued', async () => {
     const executeMock = vi
       .fn()

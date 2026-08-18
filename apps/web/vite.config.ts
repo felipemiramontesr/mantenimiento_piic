@@ -154,7 +154,8 @@ export default defineConfig({
            AccessControlSlideOver.test.tsx (documenta un hallazgo real: su panel
            "Registrar Personal" está roto en PROD, POST /v1/auth/register
            retirado desde FC082 F0c). */
-        'src/components/Fleet/FleetRegistrationForm.tsx' /* Formulario complejo (test via E2E) */,
+        // FC162 R2 (100% mandatorio) — hallazgo de Bravo (199_AN): FleetRegistrationForm.tsx
+        // seguía aquí pese a tener test real dedicado (10 tests) desde antes — removido.
         // FC162 F3 — FleetKpiMatrix.tsx/ArchonDatePicker.tsx/ArchonManagementCard.tsx/
         // CategoryAnalyticsCard.tsx/AuditJustificationModal.tsx removidos de este exclude,
         // cada uno con test propio nuevo.
@@ -165,11 +166,9 @@ export default defineConfig({
            Los 3 restantes (ArchonGeoSelector/RouteIdentityPanel/RouteMissionPanel)
            recibieron test propio en F2. RouteManagementCards.tsx (exclude previo)
            ya no existe en el árbol — entrada muerta, eliminada en F1. */
-        /* === Formularios complejos (wizard state + 400+ lines, test via E2E) === */
-        'src/components/Maintenance/MaintenanceRegistrationForm.tsx' /* Formulario 655 líneas (test via E2E) */,
-        'src/components/Maintenance/MaintenanceCompletionPanel.tsx' /* Panel de cierre complejo (test via E2E) */,
-        /* === Vistas de grilla y pronóstico de mantenimiento === */
-        'src/components/Maintenance/MaintenanceForecastView.tsx' /* Vista de pronósticos 372 líneas (test via E2E) */,
+        // FC162 R2 (100% mandatorio) — mismo hallazgo de Bravo (199_AN): MaintenanceRegistrationForm.tsx
+        // (45 tests), MaintenanceCompletionPanel.tsx (9 tests) y MaintenanceForecastView.tsx (22 tests)
+        // ya tenían test real dedicado desde antes — removidos.
         /* === Build artifacts y directorios de trabajo === */
         '**/*.cjs' /* Archivos CommonJS generados por herramientas de build */,
         '**/scratch/**' /* Directorio de trabajo temporal */,
@@ -178,8 +177,8 @@ export default defineConfig({
         'src/test/globalTeardown.ts' /* Limpieza global de test (infraestructura) */,
         'src/test/polyfills.ts' /* Polyfills de browser (infraestructura) */,
         'src/scripts/**' /* Scripts de utilidad (no forman parte del runtime) */,
-        /* === Herramientas de diagnóstico y admin === */
-        'src/ArchonDoctor.tsx' /* Tool de diagnóstico de admin (test via E2E) */,
+        // FC162 R2 (100% mandatorio) — mismo hallazgo de Bravo (199_AN): ArchonDoctor.tsx
+        // ya tenía test real dedicado (1 test, touch-target FC074 F2) — removido.
         // FC162 F3 (100% mandatorio, Ω) — 'api/navigation.ts' removido: test
         // propio nuevo (1 test) con stub de window.location (jsdom no navega
         // de verdad, lanza "Not implemented" — patrón estándar de Vitest).

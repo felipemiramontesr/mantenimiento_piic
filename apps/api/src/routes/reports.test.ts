@@ -105,6 +105,19 @@ describe('Reports Routes — GET /v1/reports/maintenance/:uuid/pdf', () => {
     });
   });
 
+  it('renders "Sin tareas registradas" when the order has zero task details (100% mandatorio, FC162 R2)', async (): Promise<void> => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[MOVEMENT_ROW], undefined])
+      .mockResolvedValueOnce([[], undefined]);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/reports/maintenance/uuid-pdf-1/pdf',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+  });
+
   it('applies fail-closed owner scoping for fleet:scoped users', async (): Promise<void> => {
     const scopedToken = app.jwt.sign({
       id: 3,
@@ -123,6 +136,39 @@ describe('Reports Routes — GET /v1/reports/maintenance/:uuid/pdf', () => {
       headers: { Authorization: `Bearer ${scopedToken}` },
     });
     expect(res.statusCode).toBe(404);
+  });
+
+  it('404 fail-closed for a fleet:scoped user whose owners do not include the unit (100% mandatorio, FC162 R2)', async (): Promise<void> => {
+    const scopedToken = app.jwt.sign({
+      id: 3,
+      username: 'scoped2',
+      roleId: 4,
+      roleName: 'Gestor',
+      permissions: ['maint:record:view:any', 'fleet:scoped'],
+    });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[MOVEMENT_ROW], undefined]) // movimiento
+      .mockResolvedValueOnce([[{ ownerId: 5 }], undefined]) // getUserOwnerIds → tiene owners
+      .mockResolvedValueOnce([[], undefined]); // isUnitOwned → la unidad no pertenece a esos owners
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/reports/maintenance/uuid-pdf-1/pdf',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('renders fallback dashes/codes when optional movement/task labels are missing (100% mandatorio, FC162 R2)', async (): Promise<void> => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ ...MOVEMENT_ROW, technician: null }], undefined])
+      .mockResolvedValueOnce([[{ taskCode: 'OIL', status: 'DONE' }], undefined]); // sin label/statusLabel
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/reports/maintenance/uuid-pdf-1/pdf',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
   });
 
   it("FC144 Inv-F: 404 fail-closed for a non-scoped actor with tenant_id accessing another tenant's order (BOLA regression)", async (): Promise<void> => {
