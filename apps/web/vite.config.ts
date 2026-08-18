@@ -140,9 +140,11 @@ export default defineConfig({
         /* FC162 F1-T2 (Cond.R-162-F1): 'Identity/**' era un glob de directorio
            completo — auditado archivo por archivo (162_evidence/f1/inventory.md).
            4 de los 5 archivos ya tenían test real (AlertsPanel/ArchonProfilePanel/
-           AreasPanel/OwnerProfilePanel), atrapado por el exclude. Reducido a lista
-           explícita del único archivo sin test real. */
-        'src/components/Identity/AccessControlSlideOver.tsx' /* Sin test dedicado — gap genuino, Fase 2 */,
+           AreasPanel/OwnerProfilePanel), atrapado por el exclude. El 5º
+           (AccessControlSlideOver.tsx) recibió test propio en F2 — ver
+           AccessControlSlideOver.test.tsx (documenta un hallazgo real: su panel
+           "Registrar Personal" está roto en PROD, POST /v1/auth/register
+           retirado desde FC082 F0c). */
         'src/components/Fleet/FleetKpiMatrix.tsx' /* Dashboard KPI (test via E2E) */,
         'src/components/Fleet/FleetRegistrationForm.tsx' /* Formulario complejo (test via E2E) */,
         'src/components/ArchonDatePicker.tsx' /* Calendario visual (test via E2E) */,
@@ -150,11 +152,9 @@ export default defineConfig({
            auditado archivo por archivo. 4 de 7 archivos ya tenían test real
            (RouteClosurePanel/RouteTelemetryPanel/useRouteAssignmentControl +
            hydrationCertification); types.ts es solo tipos, sin lógica ejecutable.
-           Reducido a lista explícita de los 3 sin test real. RouteManagementCards.tsx
-           (exclude previo) ya no existe en el árbol — entrada muerta, eliminada. */
-        'src/components/Routes/RouteAssignment/ArchonGeoSelector.tsx' /* Sin test dedicado — gap genuino, Fase 2 */,
-        'src/components/Routes/RouteAssignment/RouteIdentityPanel.tsx' /* Sin test dedicado — gap genuino, Fase 2 */,
-        'src/components/Routes/RouteAssignment/RouteMissionPanel.tsx' /* Sin test dedicado — gap genuino, Fase 2 */,
+           Los 3 restantes (ArchonGeoSelector/RouteIdentityPanel/RouteMissionPanel)
+           recibieron test propio en F2. RouteManagementCards.tsx (exclude previo)
+           ya no existe en el árbol — entrada muerta, eliminada en F1. */
         /* === Formularios complejos (wizard state + 400+ lines, test via E2E) === */
         'src/components/Maintenance/MaintenanceRegistrationForm.tsx' /* Formulario 655 líneas (test via E2E) */,
         'src/components/Maintenance/MaintenanceCompletionPanel.tsx' /* Panel de cierre complejo (test via E2E) */,
@@ -177,10 +177,8 @@ export default defineConfig({
         /* === Módulo financiero (módulo padre ya excluido) === */
         /* FC162 F1-T2: 'Finance/**' era un glob de directorio completo — auditado
            archivo por archivo. 2 de 4 archivos ya tenían test real (EgressTable/
-           PeriodRangePicker), atrapado por el exclude. Reducido a lista explícita
-           de los 2 sin test real. */
-        'src/components/Finance/EgressRegistrationModal.tsx' /* Sin test dedicado — gap genuino, Fase 2 */,
-        'src/components/Finance/FinancialDashboard.tsx' /* Sin test dedicado — gap genuino, Fase 2 */,
+           PeriodRangePicker); los otros 2 (EgressRegistrationModal/
+           FinancialDashboard) recibieron test propio en F2. */
         /* === Branding y logos (JSX estático sin lógica) === */
         'src/components/Logo/**' /* Componentes SVG de identidad visual */,
         /* === Shells de navegación adicionales === */
@@ -193,22 +191,24 @@ export default defineConfig({
       ],
       // FC162 F1-T2 (Cond.R-162-F1, dictamen Alfa 194_AN / Bravo 195_AN):
       // recalibrado tras remover 3 globs de directorio completo del exclude
-      // (Finance/**, Identity/**, RouteAssignment/**) — 8 de los archivos que
-      // quedaron destapados YA tienen test real pero cobertura parcial
-      // (FleetGridView ~60%, RouteLogTable ~62%, ForensicJournalTable ~58%,
-      // useRouteAssignmentControl ~49%, CommentThread ~48%, ReviewsPanel ~48%,
-      // ProfileView ~38%, entre otros) — no es una regresión de código, es una
-      // expansión honesta de la superficie medida (antes invisible para Vitest
-      // Y para Sonar). Piso recalibrado al valor real medido −2pp (mismo
-      // patrón que la nota de FC083 H5 arriba). Fase 2 de FC162 cierra estos
-      // gaps con tests nuevos — el piso solo puede subir desde aquí, nunca
-      // bajar más. Medido post-F1-T2: Statements 74.02% / Branches 66.44% /
-      // Functions 68.5% / Lines 75.59%.
+      // (Finance/**, Identity/**, RouteAssignment/**) — no es una regresión de
+      // código, es una expansión honesta de la superficie medida (antes
+      // invisible para Vitest Y para Sonar). Bravo (197_AN, cláusula F2-R0/
+      // R7-web): esta recalibración a la baja se acepta como desviación
+      // documentada ÚNICA de F1 — desde Fase 2 en adelante es un RATCHET, el
+      // piso solo puede subir, nunca volver a bajar.
+      // FC162 F2 — 6 gaps genuinos cerrados con test propio
+      // (ArchonGeoSelector, EgressRegistrationModal, FinancialDashboard,
+      // AccessControlSlideOver, RouteIdentityPanel, RouteMissionPanel) +
+      // useAuditModalFlow/useFormComputed/CommentThread + ForensicJournalTable
+      // ampliado (3→13 tests). Piso subido al valor real medido −2pp (mismo
+      // patrón F1/FC083 H5). Medido post-F2: Statements 82.21% / Branches
+      // 75.12% / Functions 77.4% / Lines 84.18%.
       thresholds: {
-        lines: 73,
-        functions: 66,
-        branches: 64,
-        statements: 72,
+        lines: 82,
+        functions: 75,
+        branches: 73,
+        statements: 80,
       },
     },
   },
