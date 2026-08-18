@@ -292,6 +292,30 @@ describe('authIntegration.test', () => {
     expect(JSON.parse(r.payload).code).toBe('FORBIDDEN');
   });
 
+  it("PATCH roleId=0 — 200 cuando adminIsOmega deriva de permissions:['*'] sin roleId=0 (100% mandatorio, FC162 F3)", async () => {
+    const wildcardNoRoleIdToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx', permissions: ['*'] });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[], undefined]) // antiEscalationGuard -> resolveEffectivePermissions
+      .mockResolvedValueOnce([[{ role_id: 0 }], undefined]); // antiEscalationGuard -> omegaCheck bypass
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 5 }], undefined]) // Snapshot Before
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE users SET role_id=0
+      .mockResolvedValueOnce([[{ id: 8 }], undefined]) // SELECT cosmonaut_roles WHERE name='GrayMan'
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE cosmonaut_role_assignments revoke
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // INSERT cosmonaut_role_assignments
+      .mockResolvedValueOnce([[{ id: 5, role_id: 0 }], undefined]); // Snapshot After
+    const r = await app.inject({
+      method: 'PATCH',
+      url: '/v1/auth/users/5',
+      headers: { Authorization: `Bearer ${wildcardNoRoleIdToken}` },
+      payload: { data: { roleId: 0 }, reason: 'Grant via wildcard permission, not roleId claim' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(JSON.parse(r.payload).success).toBe(true);
+  });
+
   it('PATCH — roleId=0 by Ω persists role change via cosmonaut_role_assignments (no user_roles)', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[], undefined]) // antiEscalationGuard -> resolveEffectivePermissions(admin.id, null)
@@ -1288,6 +1312,20 @@ describe('authIntegration.test', () => {
     expect(params).toEqual([500]);
   });
 
+  it('DELETE /users/:id — 403 cuando permissions es undefined en el token (?? [] rama falsa, 100% mandatorio FC162 F3)', async () => {
+    const noPermissionsFieldToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'nobody@piic.mx' });
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/auth/users/9',
+      headers: { Authorization: `Bearer ${noPermissionsFieldToken}` },
+      payload: { reason: 'No permissions claim at all in the token' },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).code).toBe('FORBIDDEN');
+  });
+
   it('AUTH-BOLA-T5-2: DELETE /users/:id — actor con user:admin pero NO Ω → 403 (enmienda de Ω, R3b)', async () => {
     const adminNotOmegaToken = await (
       app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
@@ -1300,6 +1338,23 @@ describe('authIntegration.test', () => {
     });
     expect(res.statusCode).toBe(403);
     expect(JSON.parse(res.payload).code).toBe('FORBIDDEN');
+  });
+
+  it("DELETE /users/:id — 200 cuando adminIsOmega deriva de permissions:['*'] sin roleId=0 (100% mandatorio, FC162 F3)", async () => {
+    const wildcardNoRoleIdToken = await (
+      app as unknown as { jwt: { sign: (_p: object) => Promise<string> } }
+    ).jwt.sign({ id: 1, email: 'admin@piic.mx', permissions: ['*'] });
+    mockConnection.execute
+      .mockResolvedValueOnce([[{ id: 9 }], undefined]) // snapshot before
+      .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]); // delete
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/auth/users/9',
+      headers: { Authorization: `Bearer ${wildcardNoRoleIdToken}` },
+      payload: { reason: 'Delete via wildcard permission, not roleId claim' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.payload).success).toBe(true);
   });
 
   it('AUTH-BOLA-T5-3: PATCH /users/:id — sin user:admin → 403 (T5b, guard nuevo)', async () => {

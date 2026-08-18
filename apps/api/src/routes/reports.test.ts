@@ -148,4 +148,18 @@ describe('Reports Routes — GET /v1/reports/maintenance/:uuid/pdf', () => {
     expect(calls[1][0]).toContain('ownerId IN');
     expect(calls[1][1]).toEqual([MOVEMENT_ROW.unit_id, 500]);
   });
+
+  it('returns 500 when PDF generation throws (unexpected DB/render failure)', async (): Promise<void> => {
+    (db.execute as Mock).mockRejectedValueOnce(new Error('DB_DOWN'));
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/reports/maintenance/uuid-pdf-1/pdf',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.payload)).toEqual({
+      success: false,
+      message: 'Error generating PDF report',
+    });
+  });
 });

@@ -102,6 +102,72 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(JSON.parse(res.body).code).toBe('TENANT_NOT_FOUND');
   });
 
+  it('T1: unknown superclusterCode, valid tenant — 404 SUPERCLUSTER_NOT_FOUND (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([[]]); // findSuperclusterByCode → not found
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/5/superclusters',
+      headers: omegaHeader(),
+      payload: { superclusterCode: 'GHOST' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('SUPERCLUSTER_NOT_FOUND');
+  });
+
+  it('T2: unknown superclusterCode, valid tenant — 404 SUPERCLUSTER_NOT_FOUND (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([[]]); // findSuperclusterByCode → not found
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/5/superclusters/GHOST',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('SUPERCLUSTER_NOT_FOUND');
+  });
+
+  it('T3: unknown tenant, addCluster — 404 TENANT_NOT_FOUND (findValidCluster propio, 100% mandatorio FC162 F3)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // tenantExists → empty
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/999/clusters',
+      headers: omegaHeader(),
+      payload: { clusterCode: 'GASTOS_EGRESOS' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('TENANT_NOT_FOUND');
+  });
+
+  it('T3: unknown clusterCode, valid tenant — 404 CLUSTER_NOT_FOUND (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([[]]); // findClusterByCode → not found
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/5/clusters',
+      headers: omegaHeader(),
+      payload: { clusterCode: 'GHOST' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('CLUSTER_NOT_FOUND');
+  });
+
+  it('T3b: unknown clusterCode, valid tenant — 404 CLUSTER_NOT_FOUND on remove (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([[]]); // findClusterByCode → not found
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/5/clusters/GHOST',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('CLUSTER_NOT_FOUND');
+  });
+
   // ─── T2 REMOVE_SUPERCLUSTER — COSMOLOGY-CASCADE-1 ────────────────────────
 
   it('COSMOLOGY-CASCADE-1: T2 suspends the SC and its clusters in the same transaction', async () => {
@@ -219,6 +285,17 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     ]);
   });
 
+  it('COSMOLOGY-LIST-2: GET superclusters — unknown tenant → 404 TENANT_NOT_FOUND (sendListResult !ok branch, 100% mandatorio FC162 F3)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // tenantExists → false
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/universes/999/superclusters',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('TENANT_NOT_FOUND');
+  });
+
   it('T4: GET clusters accepts ?superclusterCode= filter — 200', async () => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
@@ -239,6 +316,39 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).data).toHaveLength(1);
+  });
+
+  it('T4: GET clusters — unknown tenant → 404 TENANT_NOT_FOUND (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // tenantExists → empty
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/universes/999/clusters',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('TENANT_NOT_FOUND');
+  });
+
+  it('T4: GET clusters — never-activated cluster surfaces NEVER_ACTIVATED (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 5 }]]) // tenantExists
+      .mockResolvedValueOnce([
+        [
+          {
+            code: 'GASTOS_EGRESOS',
+            name: 'Gastos y Egresos',
+            superclusterCode: 'FINANZAS',
+            state: null,
+          },
+        ],
+      ]); // listClustersForTenant
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/universes/5/clusters',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).data[0].state).toBe('NEVER_ACTIVATED');
   });
 
   // ─── Fase 2 — Universe_Create_And_Destroy (Cond.R-160-F2-Impl) ────────────
@@ -308,6 +418,21 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     });
     expect(res.statusCode).toBe(404);
     expect(JSON.parse(res.body).code).toBe('UNIVERSE_TYPE_NOT_FOUND');
+    expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
+  });
+
+  it('COSMOLOGY-CREATE-2b: unknown ownerTypeCode — 404 OWNER_TYPE_NOT_FOUND, no TX opened (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
+      .mockResolvedValueOnce([[]]); // findOwnerTypeByCode → not found
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: 'X', universeTypeCode: 'FMS', ownerTypeCode: 'BOGUS' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(JSON.parse(res.body).code).toBe('OWNER_TYPE_NOT_FOUND');
     expect(mockConnection.beginTransaction).not.toHaveBeenCalled();
   });
 
@@ -493,5 +618,90 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).data).toHaveLength(1);
+  });
+
+  // ─── VALIDATION_ERROR — Zod safeParse failure branches (100% mandatorio, FC162 F3) ──
+
+  it('COSMOLOGY-VALIDATION-1: POST add supercluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/not-a-number/superclusters',
+      headers: omegaHeader(),
+      payload: { superclusterCode: 'FINANZAS' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('COSMOLOGY-VALIDATION-2: DELETE remove supercluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/not-a-number/superclusters/FINANZAS',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('COSMOLOGY-VALIDATION-3: GET list superclusters with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/universes/not-a-number/superclusters',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('COSMOLOGY-VALIDATION-4: POST add cluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/not-a-number/clusters',
+      headers: omegaHeader(),
+      payload: { clusterCode: 'GASTOS' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('COSMOLOGY-VALIDATION-5: DELETE remove cluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/not-a-number/clusters/GASTOS',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('COSMOLOGY-VALIDATION-6: GET list clusters with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/cosmology/universes/not-a-number/clusters',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('COSMOLOGY-VALIDATION-7: POST create universe with empty label — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: '', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('COSMOLOGY-VALIDATION-8: DELETE destroy universe with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/cosmology/universes/not-a-number',
+      headers: omegaHeader(),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
   });
 });

@@ -4,6 +4,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RouteService from './routeService';
 import db from './db';
+import * as RouteRoutesRepository from './routeRoutes.repository';
+
+vi.mock('./routeRoutes.repository', () => ({
+  findRouteOwnerByUuid: vi.fn(),
+  findIncidentOwnerByUuid: vi.fn(),
+  findUnitOwner: vi.fn(),
+  listRoutesForOwnerScope: vi.fn(),
+  listUnitActivityLogsForOwnerScope: vi.fn(),
+  findRouteNodeByUuid: vi.fn(),
+  findRouteNodeIncidents: vi.fn(),
+  findIncidentNodeByUuid: vi.fn(),
+}));
 
 // 🔱 Mock Database and Connection
 const mockConnection = {
@@ -138,6 +150,31 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       );
 
       expect(uuid).toBeDefined();
+    });
+
+    it('keeps the raw destination when destinationNeighborhoodId does not resolve (line 113 rama falsa, 100% mandatorio FC162 F3)', async () => {
+      mockConnection.execute
+        .mockResolvedValueOnce([[{ status: 'Disponible', odometer: 1000 }]]) // unit check
+        .mockResolvedValueOnce([[]]) // findNeighborhoodLabel → not found
+        .mockResolvedValueOnce([{ insertId: 1, affectedRows: 1 }]) // INSERT fleet_movements
+        .mockResolvedValueOnce([{ affectedRows: 1 }]) // INSERT fleet_route_extensions
+        .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE fleet_units
+        .mockResolvedValueOnce([{ affectedRows: 1 }]); // INSERT unit_activity_logs
+
+      const uuid = await RouteService.startRoute(
+        'UNIT-001',
+        1,
+        1000,
+        100,
+        'Destino Original',
+        undefined,
+        undefined,
+        77
+      );
+
+      expect(uuid).toBeDefined();
+      const insertExtensionCall = mockConnection.execute.mock.calls[3];
+      expect(insertExtensionCall[1]).toEqual(expect.arrayContaining(['Destino Original']));
     });
 
     it('should throw error if unit is already in transit', async () => {
@@ -768,6 +805,99 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
         ['UUID-DEL']
       );
       expect(mockConnection.commit).toHaveBeenCalled();
+    });
+  });
+
+  describe('scope checks & scoped list/node accessors', () => {
+    describe('checkRouteScope', () => {
+      it('returns true when ownerScope is null (unrestricted)', async () => {
+        await expect(RouteService.checkRouteScope('UUID-1', null)).resolves.toBe(true);
+        expect(RouteRoutesRepository.findRouteOwnerByUuid).not.toHaveBeenCalled();
+      });
+
+      it('returns false when the route owner cannot be resolved', async () => {
+        (RouteRoutesRepository.findRouteOwnerByUuid as any).mockResolvedValueOnce(null);
+        await expect(RouteService.checkRouteScope('UUID-MISSING', [1, 2])).resolves.toBe(false);
+      });
+
+      it('returns whether ownerScope includes the resolved owner', async () => {
+        (RouteRoutesRepository.findRouteOwnerByUuid as any).mockResolvedValueOnce(5);
+        await expect(RouteService.checkRouteScope('UUID-1', [1, 5])).resolves.toBe(true);
+        await expect(RouteService.checkRouteScope('UUID-1', [1, 2])).resolves.toBe(false);
+      });
+    });
+
+    describe('checkIncidentScope', () => {
+      it('returns true when ownerScope is null (unrestricted)', async () => {
+        await expect(RouteService.checkIncidentScope('UUID-1', null)).resolves.toBe(true);
+        expect(RouteRoutesRepository.findIncidentOwnerByUuid).not.toHaveBeenCalled();
+      });
+
+      it('returns false when the incident owner cannot be resolved', async () => {
+        (RouteRoutesRepository.findIncidentOwnerByUuid as any).mockResolvedValueOnce(null);
+        await expect(RouteService.checkIncidentScope('UUID-MISSING', [1])).resolves.toBe(false);
+      });
+
+      it('returns whether ownerScope includes the resolved owner', async () => {
+        (RouteRoutesRepository.findIncidentOwnerByUuid as any).mockResolvedValueOnce(7);
+        await expect(RouteService.checkIncidentScope('UUID-1', [7])).resolves.toBe(true);
+        await expect(RouteService.checkIncidentScope('UUID-1', [1])).resolves.toBe(false);
+      });
+    });
+
+    describe('checkUnitScope', () => {
+      it('returns true when ownerScope is null (unrestricted)', async () => {
+        await expect(RouteService.checkUnitScope('UNIT-1', null)).resolves.toBe(true);
+        expect(RouteRoutesRepository.findUnitOwner).not.toHaveBeenCalled();
+      });
+
+      it('returns false when the unit owner cannot be resolved', async () => {
+        (RouteRoutesRepository.findUnitOwner as any).mockResolvedValueOnce(null);
+        await expect(RouteService.checkUnitScope('UNIT-MISSING', [1])).resolves.toBe(false);
+      });
+
+      it('returns whether ownerScope includes the resolved owner', async () => {
+        (RouteRoutesRepository.findUnitOwner as any).mockResolvedValueOnce(3);
+        await expect(RouteService.checkUnitScope('UNIT-1', [3])).resolves.toBe(true);
+        await expect(RouteService.checkUnitScope('UNIT-1', [1])).resolves.toBe(false);
+      });
+    });
+
+    it('listRoutes delegates to the repository with ownerScope', async () => {
+      (RouteRoutesRepository.listRoutesForOwnerScope as any).mockResolvedValueOnce([{ id: 1 }]);
+      const result = await RouteService.listRoutes([1, 2]);
+      expect(result).toEqual([{ id: 1 }]);
+      expect(RouteRoutesRepository.listRoutesForOwnerScope).toHaveBeenCalledWith([1, 2]);
+    });
+
+    it('listUnitActivityLogs delegates to the repository with ownerScope', async () => {
+      (RouteRoutesRepository.listUnitActivityLogsForOwnerScope as any).mockResolvedValueOnce([
+        { id: 2 },
+      ]);
+      const result = await RouteService.listUnitActivityLogs(null);
+      expect(result).toEqual([{ id: 2 }]);
+      expect(RouteRoutesRepository.listUnitActivityLogsForOwnerScope).toHaveBeenCalledWith(null);
+    });
+
+    describe('getRouteNode', () => {
+      it('returns null when the route cannot be found', async () => {
+        (RouteRoutesRepository.findRouteNodeByUuid as any).mockResolvedValueOnce(null);
+        await expect(RouteService.getRouteNode('UUID-MISSING')).resolves.toBeNull();
+        expect(RouteRoutesRepository.findRouteNodeIncidents).not.toHaveBeenCalled();
+      });
+
+      it('returns the route paired with its incidents when found', async () => {
+        const route = { uuid: 'UUID-1' };
+        const incidents = [{ id: 1 }];
+        (RouteRoutesRepository.findRouteNodeByUuid as any).mockResolvedValueOnce(route);
+        (RouteRoutesRepository.findRouteNodeIncidents as any).mockResolvedValueOnce(incidents);
+        await expect(RouteService.getRouteNode('UUID-1')).resolves.toEqual({ route, incidents });
+      });
+    });
+
+    it('getIncidentNode delegates to the repository', async () => {
+      (RouteRoutesRepository.findIncidentNodeByUuid as any).mockResolvedValueOnce({ id: 9 });
+      await expect(RouteService.getIncidentNode('UUID-1')).resolves.toEqual({ id: 9 });
     });
   });
 });

@@ -447,6 +447,23 @@ describe('GET|POST|DELETE /v1/social/posts — FC-9 SocialNetwork FaseA', () => 
     expect(JSON.parse(res.payload).verified).toBe(1);
   });
 
+  it('AT-SOC9-C-5b: POST /social/reviews → 403 NO_VERIFIED_LINK when linkId does not resolve (100% mandatorio, FC162 F3)', async () => {
+    (db.execute as any).mockResolvedValueOnce([[]]); // owner_service_links → sin coincidencia
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/social/reviews',
+      headers: { authorization: `Bearer ${userToken}`, 'content-type': 'application/json' },
+      payload: JSON.stringify({
+        tallerOwnerId: 3,
+        rating: 2,
+        bodyText: 'Link inexistente.',
+        linkId: 999,
+      }),
+    });
+    expect(res.statusCode).toBe(403);
+    expect(JSON.parse(res.payload).error).toBe('NO_VERIFIED_LINK');
+  });
+
   it('AT-SOC9-C-6: GET /social/reviews → 401 sin JWT', async () => {
     const res = await app.inject({ method: 'GET', url: '/v1/social/reviews' });
     expect(res.statusCode).toBe(401);

@@ -236,6 +236,8 @@ async function handlePatchUser(
   }
   const { data: updates, reason } = body.data;
   const admin = request.user as ScopedUser & { roleId?: number };
+  // ?? [] inalcanzable: userAdminGuard exige permissions array antes de llegar aquí (lanzaría 500 si no).
+  /* v8 ignore next */
   const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
   const roleIdError = UserManagementService.validateRoleIdUpdate(updates.roleId, adminIsOmega);
   if (roleIdError) {

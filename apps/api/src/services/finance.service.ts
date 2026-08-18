@@ -74,6 +74,11 @@ async function resolveCategoryFilterIds(
   if (rows.length !== categoryFilter.length) {
     const foundCodes = new Set(rows.map((r) => r.code));
     const missing = categoryFilter.find((code) => !foundCodes.has(code));
+    // FC162 F3 (100% mandatorio) — `categoryFilter` solo llega aquí como `null`
+    // o como la constante fija `FINANCE_PERSONAL_CATEGORIES` (clusterAccess.ts),
+    // que no tiene códigos duplicados. Con longitudes distintas, `find` siempre
+    // localiza un código real ausente — `missing` nunca es falsy en la práctica.
+    /* v8 ignore next */
     if (missing) throw new CatalogMappingError('FINANCE_CATEGORY', missing);
   }
   return rows.map((r) => r.id);

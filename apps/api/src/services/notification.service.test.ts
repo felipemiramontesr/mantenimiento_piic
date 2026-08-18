@@ -123,6 +123,19 @@ describe('NotificationService (Intelligence Orchestrator)', () => {
     expect(persistSpy).not.toHaveBeenCalled();
   });
 
+  it('returns early when no targeting field is set at all (line 107 rama falsa, 100% mandatorio FC162 F3)', async () => {
+    const persistSpy = vi.spyOn(NotificationService as any, 'persistToSystem');
+
+    await NotificationService.dispatch({
+      type: ArchonNotificationType.SYSTEM,
+      title: 'Sin destinatario',
+      message: 'ni userId, ni permission, ni roleId',
+    });
+
+    expect(persistSpy).not.toHaveBeenCalled();
+    expect(db.execute).not.toHaveBeenCalled();
+  });
+
   it('should suppress errors during dispatch to maintain zero-noise policy', async () => {
     const errorSpy = vi
       .spyOn(NotificationService as any, 'persistToSystem')
@@ -254,6 +267,26 @@ describe('NotificationService.sendPush — with FCM credentials', () => {
     expect(db.execute).toHaveBeenCalledWith('DELETE FROM user_push_tokens WHERE token = ?', [
       'dead-token-404',
     ]);
+  });
+
+  it('does not delete the token when FCM fails with a non-400/404 status (line 207 rama falsa, 100% mandatorio FC162 F3)', async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ token: 'live-token-500' }], undefined] as any);
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'mock-oauth-token' }),
+      })
+      .mockResolvedValueOnce({ ok: false, status: 500 });
+    vi.mocked(outboundFetch).mockImplementation(mockFetch);
+
+    await (NotificationService as any).sendPush([1], payload);
+
+    expect(db.execute).not.toHaveBeenCalledWith(
+      'DELETE FROM user_push_tokens WHERE token = ?',
+      expect.anything()
+    );
   });
 
   it('suppresses individual token send error (inner catch)', async () => {

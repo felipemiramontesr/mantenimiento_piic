@@ -85,6 +85,18 @@ describe('FleetIntelligenceEngine - Backend Integrity', () => {
     expect(result.healthScore).toBe(0); // Overdue because 11,000 > 10,000
   });
 
+  it('skips usage-progress calculation when maintIntervalKm is negative (line 103 false branch, 100% mandatorio FC162 F3)', () => {
+    const negativeIntervalUnit = {
+      ...mockUnit,
+      maintIntervalKm: -5, // truthy (not 0/null/undefined) so no default fallback, but <= 0
+      odometer: 5000,
+    };
+    const result = FleetIntelligenceEngine.computeHealth(negativeIntervalUnit);
+    // usageProgress stays 0 (skipped) — health driven only by time progress (fresh) → 100%
+    expect(result.healthScore).toBe(100);
+    expect(result.healthStatus).toBe('Healthy');
+  });
+
   it('converts year to Number when unit.year is truthy (line 178 truthy branch)', () => {
     const unitWithYear = {
       ...mockUnit,

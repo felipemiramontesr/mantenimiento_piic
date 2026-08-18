@@ -309,6 +309,18 @@ describe('Areas Routes (Archon Master F2)', () => {
       const body = JSON.parse(res.body);
       expect(body.data.name).toBe('Compras Actualizadas');
     });
+
+    it('returns 500 on db failure', async () => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_DOWN'));
+      const res = await app.inject({
+        method: 'PUT',
+        url: `/v1/owners/${OWNER_ID}/areas/5`,
+        headers: auth(adminToken),
+        payload: { name: 'Compras' },
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body)).toEqual({ error: 'AREA_UPDATE_FAIL' });
+    });
   });
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -362,6 +374,17 @@ describe('Areas Routes (Archon Master F2)', () => {
 
       const sqls = (db.execute as Mock).mock.calls.map((c) => c[0] as string);
       expect(sqls.some((s) => s.includes('is_active = 0'))).toBe(true);
+    });
+
+    it('returns 500 on db failure', async () => {
+      (db.execute as Mock).mockRejectedValueOnce(new Error('DB_DOWN'));
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/v1/owners/${OWNER_ID}/areas/5`,
+        headers: auth(adminToken),
+      });
+      expect(res.statusCode).toBe(500);
+      expect(JSON.parse(res.body)).toEqual({ error: 'AREA_DELETE_FAIL' });
     });
   });
 });

@@ -307,4 +307,79 @@ describe('AT-FC24-C-ROLES: /v1/cosmonauts/roles', () => {
     expect(conn.rollback).toHaveBeenCalledTimes(1);
     expect(conn.release).toHaveBeenCalledTimes(1);
   });
+
+  // ─── 100% mandatorio (FC162 F3) — ramas restantes de rolesRoutes.ts ────────
+
+  it('AT-FC24-C-ROLES-18: MU asigna permiso que SÍ posee → sin escalación, continúa (line 71 rama falsa)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ cosmonaut_type: 'MU' }]]) // requireMuOrOmega check
+      .mockResolvedValueOnce([[{ slug: 'maint:record:view:any' }]]) // resolveEffectivePermissions — MU posee el permiso
+      .mockResolvedValueOnce([[{ id: 1, slug: 'maint:record:view:any' }]]); // SELECT id FROM permissions
+    const conn = {
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: vi.fn().mockResolvedValue([{ insertId: 77 }]),
+      query: vi.fn().mockResolvedValue([[]]),
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    };
+    (db.getConnection as Mock).mockReset().mockResolvedValueOnce(conn);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${muToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: 'OwnedPermRole',
+        tenantId: 5,
+        permissions: ['maint:record:view:any'],
+      }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(conn.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('AT-FC24-C-ROLES-19: permiso desconocido en el body → 400 UNKNOWN_PERMISSIONS (lines 90-96, .map/.filter con >=1 elemento real)', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ cosmonaut_type: 'MU' }]]) // requireMuOrOmega
+      .mockResolvedValueOnce([[{ slug: 'real:permission' }, { slug: 'ghost:permission' }]]) // resolveEffectivePermissions — posee ambos, sin escalación
+      .mockResolvedValueOnce([[{ id: 1, slug: 'real:permission' }]]); // SELECT id FROM permissions → solo 1 de 2 resuelve
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${muToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: 'GhostPermRole',
+        tenantId: 5,
+        permissions: ['real:permission', 'ghost:permission'],
+      }),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('UNKNOWN_PERMISSIONS');
+    expect(JSON.parse(res.body).details).toEqual(['ghost:permission']);
+  });
+
+  it('AT-FC24-C-ROLES-20: Ω crea role SIN permissions → omite resolución/INSERT de permisos (lines 83 y 109, rama falsa)', async () => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // resolveEffectivePermissions (llamada incondicional, línea 66)
+    const conn = {
+      beginTransaction: vi.fn().mockResolvedValue(undefined),
+      execute: vi.fn().mockResolvedValue([{ insertId: 88 }]),
+      query: vi.fn().mockResolvedValue([[]]),
+      commit: vi.fn().mockResolvedValue(undefined),
+      rollback: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    };
+    (db.getConnection as Mock).mockReset().mockResolvedValueOnce(conn);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmonauts/roles',
+      headers: { authorization: `Bearer ${omegaToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'NoPermRole', tenantId: 5 }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(conn.query).not.toHaveBeenCalled();
+    expect(conn.commit).toHaveBeenCalledTimes(1);
+  });
 });

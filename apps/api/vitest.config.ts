@@ -37,7 +37,9 @@ export default defineConfig({
         // es lógica real de seguridad (CORS/CSP/rate-limit/error-handler) que
         // TODO test de ruta existente ya ejecuta indirectamente vía
         // `buildApp()` -- excluirlo entero ocultaba esa cobertura real.
-        'src/scripts/**' /* Scripts de utilidad CLI que se prueban mediante bash */,
+        // FC162 F3 (100% mandatorio, Ω): 'src/scripts/**' removido -- misclasificado,
+        // mismo patrón que apps/web F1/F3. seedAData/seedBData/seedCData.ts ya tenían
+        // test real (seedingA/B/C.test.ts, 34 tests) nunca conectado al lcov.
         'src/types/**' /* Declaraciones de tipado */,
         '**/*.test.ts',
         '**/*.config.ts',

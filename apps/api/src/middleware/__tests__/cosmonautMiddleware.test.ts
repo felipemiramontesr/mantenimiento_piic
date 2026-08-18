@@ -254,6 +254,17 @@ describe('AT-FC24-C-4: antiEscalationGuard (I8)', () => {
     const result = await antiEscalationGuard(5, 7, 3);
     expect(result).toBe(false);
   });
+
+  it('AT-FC24-C-4-6: tenantId null + escalación → false sin consultar lattice (line 106 rama falsa, 100% mandatorio FC162 F3)', async () => {
+    (db as unknown as MockDb).execute
+      .mockResolvedValueOnce([[{ slug: 'maint:record:view:any' }]]) // grantor perms
+      .mockResolvedValueOnce([[]]) // omega check → NOT Ω
+      .mockResolvedValueOnce([[{ slug: 'maint:record:edit:any' }]]); // role has edit — escalation!
+    const result = await antiEscalationGuard(5, null, 3);
+    expect(result).toBe(false);
+    // sin tenantId no debe haber una 4ª llamada a db.execute para findActiveLatticeSchema
+    expect((db as unknown as MockDb).execute).toHaveBeenCalledTimes(3);
+  });
 });
 
 // ─── FC 082 F3b (089_AN §9) — resolvePrimaryTenant / getAvailableTenants /

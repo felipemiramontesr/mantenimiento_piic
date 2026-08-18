@@ -113,7 +113,8 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}'],
       reporter: ['text', 'json', 'html'],
       exclude: [
-        'src/main.tsx' /* Bootstrap y anclaje al DOM */,
+        // FC162 F3 (100% mandatorio, Ω) — 'src/main.tsx' removido: test propio
+        // nuevo (1 test) mockea App.tsx y verifica el mount real en #root.
         'src/vite-env.d.ts' /* Tipado estandar de Vite */,
         'src/types/**' /* Declaraciones de tipado */,
         'src/App.tsx' /* Router manager (test via E2E) */,
@@ -179,14 +180,16 @@ export default defineConfig({
         'src/scripts/**' /* Scripts de utilidad (no forman parte del runtime) */,
         /* === Herramientas de diagnóstico y admin === */
         'src/ArchonDoctor.tsx' /* Tool de diagnóstico de admin (test via E2E) */,
-        'src/api/navigation.ts' /* Redirección via window.location (E2E por naturaleza) */,
+        // FC162 F3 (100% mandatorio, Ω) — 'api/navigation.ts' removido: test
+        // propio nuevo (1 test) con stub de window.location (jsdom no navega
+        // de verdad, lanza "Not implemented" — patrón estándar de Vitest).
         /* === Módulo financiero (módulo padre ya excluido) === */
         /* FC162 F1-T2: 'Finance/**' era un glob de directorio completo — auditado
            archivo por archivo. 2 de 4 archivos ya tenían test real (EgressTable/
            PeriodRangePicker); los otros 2 (EgressRegistrationModal/
            FinancialDashboard) recibieron test propio en F2. */
-        /* === Branding y logos (JSX estático sin lógica) === */
-        'src/components/Logo/**' /* Componentes SVG de identidad visual */,
+        // FC162 F3 (100% mandatorio, Ω) — 'Logo/**' removido: ArchonLogo.tsx/
+        // PiicLogo.tsx recibieron test propio nuevo (7 tests).
         /* === Shells de navegación adicionales === */
         // FC162 F3 — SovereignSubheader.tsx removido: sin test previo, se escribió
         // test propio nuevo (2 tests) contra el SovereignLayoutProvider real.
