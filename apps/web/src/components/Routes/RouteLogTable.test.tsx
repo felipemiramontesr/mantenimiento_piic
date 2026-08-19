@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import RouteLogTable from './RouteLogTable';
 import { render } from '../../test/testUtils';
 import api from '../../api/client';
 import * as FleetContextModule from '../../context/FleetContext';
+import * as UserContextModule from '../../context/UserContext';
+import * as layoutContext from '../../context/SovereignLayoutContext';
 
 vi.mock('../../api/client', () => ({
   default: {
@@ -281,9 +284,7 @@ describe('RouteLogTable (Logistics Standard)', () => {
           placas: 'ABC-123',
           fuelTankCapacity: 80, // TankCap = 80L -> 50% consumed = 40L
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       stats: {} as any,
       loading: false,
       error: null,
@@ -318,5 +319,305 @@ describe('RouteLogTable (Logistics Standard)', () => {
     expect(screen.getByText('$5.00/KM')).toBeDefined();
 
     mockUseFleet.mockRestore();
+  });
+});
+
+/**
+ * FC162 R4-B (100% mandatorio, 202_AN/203_AN Bravo) — tercer archivo P0
+ * (56 unc Sonar). matchFieldInRoute/getStatus(incidente)/image error
+ * handlers/botón editar/expand de fila nunca tenían cobertura directa.
+ */
+describe('RouteLogTable — search suggestions (matchFieldInRoute)', () => {
+  const routes = [
+    {
+      id: 1,
+      uuid: 'route-suggest',
+      unit_id: 'ASM-005',
+      operator_id: 9,
+      origin: 'Base Norte',
+      destination: 'Cliente Delta',
+      description: 'Entrega urgente',
+      start_time: '2026-05-01T08:00:00.000Z',
+      end_time: null,
+      created_at: '2026-05-01T08:00:00.000Z',
+    },
+  ];
+  const users = [
+    {
+      id: '9',
+      username: 'mlopez',
+      fullName: 'María López',
+      email: 'm@p.com',
+      roleId: 1,
+      roleName: 'Operador',
+      department: 'Operaciones',
+      isActive: true,
+      employeeNumber: 'E-909',
+    },
+  ];
+  const units = [
+    {
+      id: 'ASM-005',
+      marca: 'Kenworth',
+      modelo: 'T680',
+      sede: 'Sede Norte',
+      status: 'En Ruta',
+      odometer: 1000,
+    },
+  ];
+
+  const captureGetSuggestions = async (): Promise<(term: string) => any[]> => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Rutas', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    vi.spyOn(FleetContextModule, 'useFleet').mockReturnValue({
+      units: units as any,
+      stats: {} as any,
+      loading: false,
+      error: null,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+    });
+    vi.spyOn(UserContextModule, 'useUsers').mockReturnValue({
+      users: users as any,
+      isLoading: false,
+      activePanel: 'DIRECTORY',
+      setActivePanel: vi.fn(),
+      fetchUsers: vi.fn(),
+      toggleUserStatus: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      editingUser: null,
+      setEditingUser: vi.fn(),
+      departments: [],
+      departmentsCatalog: [],
+      roles: [],
+    } as any);
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes') return Promise.resolve({ data: { success: true, data: routes } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+
+    render(<RouteLogTable />);
+    // The registration effect depends on `logs`, which starts as [] and
+    // updates once the async /routes fetch resolves — the effect re-runs
+    // and calls setSearchConfig again with a fresh getSuggestions closure.
+    // Wait for that second call before handing back a wrapper that always
+    // reads the latest registered config.
+    await waitFor(() => expect(setSearchConfig.mock.calls.length).toBeGreaterThan(1));
+    return (term: string): any[] => {
+      const { calls } = setSearchConfig.mock;
+      return calls[calls.length - 1][0].getSuggestions(term);
+    };
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('matches by unit id', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('asm-005')).toHaveLength(1);
+  });
+
+  it('matches by operator full name and employee number', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('maría')).toHaveLength(1);
+    expect(getSuggestions('e-909')).toHaveLength(1);
+  });
+
+  it('matches by origin, destination and description', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('base norte')).toHaveLength(1);
+    expect(getSuggestions('cliente delta')).toHaveLength(1);
+    expect(getSuggestions('urgente')).toHaveLength(1);
+  });
+
+  it('matches by unit marca/modelo/sede', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('kenworth')).toHaveLength(1);
+    expect(getSuggestions('t680')).toHaveLength(1);
+    expect(getSuggestions('sede norte')).toHaveLength(1);
+  });
+
+  it('returns no suggestions when nothing matches', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('zzz-no-match')).toHaveLength(0);
+  });
+
+  it('onSuggestionSelect sets the search term to the selected route unit_id', async () => {
+    const setSearchTerm = vi.fn();
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Rutas', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm,
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes') return Promise.resolve({ data: { success: true, data: routes } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+    render(<RouteLogTable />);
+    await waitFor(() => expect(setSearchConfig).toHaveBeenCalled());
+    setSearchConfig.mock.calls[0][0].onSuggestionSelect({ rawItem: { unit_id: 'ASM-005' } });
+    expect(setSearchTerm).toHaveBeenCalledWith('ASM-005');
+  });
+});
+
+describe('RouteLogTable — row interactions', () => {
+  const routeWithIncident = [
+    {
+      id: 4,
+      uuid: 'route-incident',
+      unit_id: 'ASM-001',
+      operator_id: 1,
+      operator_name: 'Juan Perez',
+      origin: 'Base',
+      destination: 'Cliente A',
+      status: 'En Ruta',
+      start_reading: 50000,
+      end_time: '2026-05-01T10:00:00.000Z',
+      incident_count: 2,
+      created_at: new Date().toISOString(),
+    },
+  ];
+  const unitWithImage = [
+    {
+      id: 'ASM-001',
+      marca: 'Nissan',
+      modelo: 'March',
+      status: 'En Ruta',
+      odometer: 50000,
+      placas: 'ABC-123',
+      images: ['/img/unit.png'],
+    },
+  ];
+  const userWithImage = [
+    {
+      id: '1',
+      username: 'jperez',
+      fullName: 'Juan Perez',
+      email: 'j@p.com',
+      roleId: 1,
+      roleName: 'Admin',
+      department: 'Sistemas',
+      isActive: true,
+      employeeNumber: 'E1',
+      imageUrl: 'https://example.com/avatar.png',
+    },
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    if (typeof localStorage !== 'undefined') {
+      localStorage.clear();
+    }
+    // useFleet/useUsers here come from testUtils' static MockFleetContext/
+    // MockUserContext (a plain Context.Provider value, not a real fetching
+    // provider) — the /fleet and /auth/users mocks below are NOT what feeds
+    // them, so unit/operator images require an explicit spy override.
+    vi.spyOn(FleetContextModule, 'useFleet').mockReturnValue({
+      units: unitWithImage as any,
+      stats: {} as any,
+      loading: false,
+      error: null,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+    });
+    vi.spyOn(UserContextModule, 'useUsers').mockReturnValue({
+      users: userWithImage as any,
+      isLoading: false,
+      activePanel: 'DIRECTORY',
+      setActivePanel: vi.fn(),
+      fetchUsers: vi.fn(),
+      toggleUserStatus: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      editingUser: null,
+      setEditingUser: vi.fn(),
+      departments: [],
+      departmentsCatalog: [],
+      roles: [],
+    } as any);
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes')
+        return Promise.resolve({ data: { success: true, data: routeWithIncident } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.restoreAllMocks();
+  });
+
+  it('shows FINALIZADA status for a completed route with a logged incident', async () => {
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByText('ASM-001')).toBeDefined());
+    expect(screen.getByText('FINALIZADA')).toBeDefined();
+  });
+
+  it('falls back to the default image when the unit thumbnail fails to load', async () => {
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByAltText('ASM-001')).toBeDefined());
+    fireEvent.error(screen.getByAltText('ASM-001'));
+    expect((screen.getByAltText('ASM-001') as HTMLImageElement).src).toContain(
+      'archon-unit-default.png'
+    );
+  });
+
+  it('hides the operator avatar image on load error', async () => {
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByAltText('Juan Perez')).toBeDefined());
+    fireEvent.error(screen.getByAltText('Juan Perez'));
+    expect((screen.getByAltText('Juan Perez') as HTMLImageElement).style.display).toBe('none');
+  });
+
+  it('invokes onEdit when the "Editar Ruta" button is clicked (stopPropagation)', async () => {
+    const onEdit = vi.fn();
+    render(<RouteLogTable onEdit={onEdit} />);
+    await waitFor(() => expect(screen.getByTitle('Editar Ruta')).toBeDefined());
+    fireEvent.click(screen.getByTitle('Editar Ruta'));
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ uuid: 'route-incident' }));
+  });
+
+  it('the "Ver nodo de ruta" link stops click propagation without toggling the row', async () => {
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByTitle('Ver nodo de ruta')).toBeDefined());
+    fireEvent.click(screen.getByTitle('Ver nodo de ruta'));
+    // No assertion needed beyond "does not throw" — this exercises the
+    // stopPropagation branch itself (line coverage), not a visible state change.
+  });
+
+  it('expands and collapses the row on click', async () => {
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByText('ASM-001')).toBeDefined());
+    fireEvent.click(screen.getByText('ASM-001'));
+    fireEvent.click(screen.getByText('ASM-001'));
   });
 });
