@@ -580,6 +580,44 @@ describe('FleetMaintenance — Push Hooks Capa 2a (PATCH complete + POST OPEN)',
     expect(vi.mocked(purgeOutboxForOrder)).toHaveBeenCalledWith('test-uuid');
   });
 
+  it('PATCH /complete — fleet:scoped user completes a unit within their owner scope', async () => {
+    const scopedToken = app.jwt.sign({
+      id: 2,
+      username: 'owner-user',
+      roleId: 5,
+      roleName: 'Owner',
+      permissions: ['fleet:scoped', 'maint:record:view:any', 'maint:record:edit:any'],
+    });
+
+    vi.mocked(db.execute).mockResolvedValueOnce([[{ id: 711 }], undefined]); // getUserOwnerIds
+
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce([[activeMovement], undefined]) // SELECT movements
+        .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // isUnitOwned — owned
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements COMPLETED
+        .mockResolvedValueOnce([[{ maintIntervalKm: 10000 }], undefined]) // SELECT maintIntervalKm
+        .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_maintenance_extensions
+        .mockResolvedValueOnce([[{ odometer: 50000 }], undefined]) // SELECT odometer (applyCompletion)
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]), // UPDATE fleet_units (applyCompletion)
+      commit: vi.fn(),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/test-uuid/complete',
+      payload: { odometerAtService: 50000, cost: 500, details: [] },
+      headers: { authorization: `Bearer ${scopedToken}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+  });
+
   it('PATCH /reject — purgeOutboxForOrder called with correct uuid', async () => {
     vi.mocked(db.getConnection).mockResolvedValueOnce({
       beginTransaction: vi.fn(),
@@ -611,5 +649,80 @@ describe('FleetMaintenance — Push Hooks Capa 2a (PATCH complete + POST OPEN)',
     });
 
     expect(vi.mocked(purgeOutboxForOrder)).toHaveBeenCalledWith('rej-uuid');
+  });
+
+  it('PATCH /complete — HTTP 200 even if purgeOutboxForOrder rejects (zero-noise policy)', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce(buildCompleteMock() as any);
+    vi.mocked(purgeOutboxForOrder).mockRejectedValueOnce(new Error('outbox down'));
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/test-uuid/complete',
+      payload: { odometerAtService: 50000, cost: 500, details: [] },
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('PATCH /complete — falls back to defaults when unit maintInterval/odometer rows are absent (100% mandatorio, FC162 R3)', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce([[activeMovement], undefined]) // SELECT movements
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_movements COMPLETED
+        .mockResolvedValueOnce([[], undefined]) // SELECT maintIntervalKm — unit row absent → fallback
+        .mockResolvedValueOnce([[{ id: 9120 }], undefined]) // resolveCatalogId MAINT_SERVICE_TYPE
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]) // UPDATE fleet_maintenance_extensions
+        .mockResolvedValueOnce([[], undefined]) // SELECT odometer — unit row absent → currentOdometer=0
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]), // UPDATE fleet_units
+      commit: vi.fn(),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/test-uuid/complete',
+      payload: { odometerAtService: 50000, cost: 500, details: [] },
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('PATCH /reject — HTTP 200 even if purgeOutboxForOrder rejects (zero-noise policy)', async () => {
+    vi.mocked(db.getConnection).mockResolvedValueOnce({
+      beginTransaction: vi.fn(),
+      execute: vi
+        .fn()
+        .mockResolvedValueOnce([
+          [
+            {
+              id: 7,
+              uuid: 'rej-uuid',
+              status: 'OPEN',
+              technician: 'Tech B',
+              unit_id: 'ASM-002',
+              created_by_user_id: 1,
+            },
+          ],
+          undefined,
+        ])
+        .mockResolvedValueOnce([{ affectedRows: 1 }, undefined]),
+      commit: vi.fn(),
+      rollback: vi.fn(),
+      release: vi.fn(),
+    } as any);
+    vi.mocked(purgeOutboxForOrder).mockRejectedValueOnce(new Error('outbox down'));
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/maintenance/rej-uuid/reject',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
   });
 });

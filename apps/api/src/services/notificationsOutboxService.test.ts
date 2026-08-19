@@ -88,6 +88,18 @@ describe('NotificationsOutboxService', () => {
       await expect(processPendingAlerts()).resolves.not.toThrow();
     });
 
+    it('is resilient for ACTIVE orders — resolves even when dispatch rejects (100% mandatorio, FC162 R3)', async () => {
+      vi.mocked(NotificationService.dispatch).mockRejectedValue(new Error('FCM down'));
+
+      (db.execute as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([[]]) // OPEN orders (none)
+        .mockResolvedValueOnce([[{ uuid: 'ORD-002' }]]) // ACTIVE orders
+        .mockResolvedValueOnce([[]]) // outbox check: not sent
+        .mockResolvedValueOnce([[], undefined]); // INSERT IGNORE
+
+      await expect(processPendingAlerts()).resolves.not.toThrow();
+    });
+
     it('dispatches nothing when all queues are empty', async () => {
       await processPendingAlerts();
 

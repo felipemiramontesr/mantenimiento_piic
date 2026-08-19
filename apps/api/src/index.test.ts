@@ -81,6 +81,25 @@ describe('environment-dependent error handler', () => {
   });
 });
 
+describe('JWT secret fallback (100% mandatorio, FC162 R3)', () => {
+  it('boots with the dev fallback secret when JWT_SECRET is truly absent outside production', async () => {
+    vi.resetModules();
+    // dotenv.config() only fills ABSENT process.env keys — the repo-root .env
+    // always has a real JWT_SECRET, so it would silently refill a `delete`d
+    // key. Stub dotenv itself so the fallback literal in index.ts is the only
+    // thing that can supply a secret.
+    vi.doMock('dotenv', () => ({ default: { config: vi.fn() } }));
+    process.env.NODE_ENV = 'test';
+    delete process.env.JWT_SECRET;
+    const { default: buildDevApp } = await import('./index');
+    const app = buildDevApp();
+    await app.ready();
+    const token = app.jwt.sign({ id: 1, permissions: ['*'] });
+    expect(typeof token).toBe('string');
+    vi.doUnmock('dotenv');
+  });
+});
+
 describe('rate-limit ceiling by environment', () => {
   it('builds without error under NODE_ENV=development (5000 req/min branch)', async () => {
     vi.resetModules();

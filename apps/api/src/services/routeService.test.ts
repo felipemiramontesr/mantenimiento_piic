@@ -712,6 +712,34 @@ describe('RouteService - Journey Engine (Forensic Standard)', () => {
       );
     });
 
+    it('keeps raw destination unresolved when destinationNeighborhoodId does not match a catalog row (line 446 rama falsa, 100% mandatorio FC162 R3)', async () => {
+      const mockBefore = {
+        uuid: 'UUID-N3',
+        id: 12,
+        status: 'ACTIVE',
+        start_reading: 300,
+        end_reading: null,
+        unit_id: 'ASM-003',
+      };
+
+      mockConnection.execute
+        .mockResolvedValueOnce([[mockBefore]]) // SELECT snapshot before
+        .mockResolvedValueOnce([[]]) // findNeighborhoodLabel → not found
+        .mockResolvedValueOnce([{ affectedRows: 1 }]) // UPDATE fleet_route_extensions
+        .mockResolvedValueOnce([[mockBefore]]) // findRouteSnapshotByUuid → post-update audit diff
+        .mockResolvedValueOnce([[]]); // syncUnitState → no completed route
+
+      await RouteService.updateRoute(
+        'UUID-N3',
+        { destinationNeighborhoodId: 999, destination: 'Destino Sin Resolver' },
+        'Test',
+        1
+      );
+
+      const updateCall = mockConnection.execute.mock.calls[2];
+      expect(updateCall[1]).toEqual(expect.arrayContaining(['Destino Sin Resolver']));
+    });
+
     it('resolves destination to pure suffix when no input destination provided', async () => {
       const mockBefore = {
         uuid: 'UUID-N2',

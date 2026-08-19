@@ -160,6 +160,9 @@ function registerObservabilityHooks(fastify: FastifyInstance): void {
       const actor = request.user as { id?: number } | undefined;
       logSecurityEvent({
         event,
+        // Fastify populates routeOptions during routing, before any hook runs, for every
+        // matched route and its own 404 handler — fallback unreachable via app.inject().
+        /* v8 ignore next */
         route: request.routeOptions?.url ?? request.url.split('?')[0],
         method: request.method,
         actorId: actor?.id,

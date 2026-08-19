@@ -226,6 +226,38 @@ describe('FleetMaintenance GET /maintenance/template/:unitId', () => {
     expect(tasks.find((t) => t.code === 'FUEL_FILTER_MINING')).toBeDefined();
   });
 
+  it('excludes OIL_CHANGE_MINING when already covered by its agency equivalent (100% mandatorio, FC162 R3)', async () => {
+    const unitRow = {
+      brandId: 1,
+      fuelTypeId: 2,
+      maintIntervalKm: 5000, // isMineUnit = true
+      maintIntervalDays: 0,
+      odometer: 10000, // remainder=10000 → BASIC_10K window → resolvedType != MINOR_MINING
+      lastServiceReading: 5000,
+      last_chassis_inspection_odometer: 0,
+      last_distribution_change_odometer: 0,
+    };
+    const taskRow = { code: 'OIL_CHANGE', label: 'Cambio de aceite', isCritical: 1 };
+    const minorRow = {
+      code: 'OIL_CHANGE_MINING',
+      label: 'Cambio de aceite minero',
+      isCritical: 0,
+    };
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([[unitRow], undefined]) // fleet_units
+      .mockResolvedValueOnce([[taskRow], undefined]) // tasks (agency already has OIL_CHANGE)
+      .mockResolvedValueOnce([[minorRow], undefined]); // minorRows — covered by agency, must be excluded
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/template/ASM-MINOR-COVERED',
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const tasks = res.json().tasks as { code: string }[];
+    expect(tasks.find((t) => t.code === 'OIL_CHANGE_MINING')).toBeUndefined();
+    expect(tasks.find((t) => t.code === 'OIL_CHANGE')).toBeDefined();
+  });
+
   it('appends DISTRIBUTION_KIT_WATER_PUMP for mine unit with odometer>=100000 (lines 267-273)', async () => {
     const unitRow = {
       brandId: 1,

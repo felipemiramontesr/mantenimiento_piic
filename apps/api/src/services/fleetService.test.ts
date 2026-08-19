@@ -269,6 +269,16 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       ).rejects.toThrow(/SQL_INJECTION_GUARD/);
       expect(mockConn.release).toHaveBeenCalled();
     });
+
+    it('rethrows without touching connection/rollback when getConnection itself rejects (100% mandatorio, FC162 R3)', async () => {
+      (db.getConnection as any).mockRejectedValueOnce(new Error('pool exhausted'));
+
+      await expect(
+        FleetService.updateUnit('ASM-001', { maintIntervalKm: 5000 }, 'Reason', 1)
+      ).rejects.toThrow('pool exhausted');
+      expect(mockConnection.rollback).not.toHaveBeenCalled();
+      expect(mockConnection.release).not.toHaveBeenCalled();
+    });
   });
 
   describe('getAllUnits — kpi merge (line 79)', () => {
@@ -433,6 +443,16 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
         expect.stringContaining('DELETE FROM fleet_units WHERE id = ?'),
         ['ASM-001']
       );
+    });
+
+    it('rethrows without touching connection/rollback when getConnection itself rejects (100% mandatorio, FC162 R3)', async () => {
+      (db.getConnection as any).mockRejectedValueOnce(new Error('pool exhausted'));
+
+      await expect(FleetService.deleteUnit('ASM-001', 'Reason', 1)).rejects.toThrow(
+        'pool exhausted'
+      );
+      expect(mockConnection.rollback).not.toHaveBeenCalled();
+      expect(mockConnection.release).not.toHaveBeenCalled();
     });
   });
 

@@ -117,10 +117,11 @@ export default defineConfig({
         // nuevo (1 test) mockea App.tsx y verifica el mount real en #root.
         'src/vite-env.d.ts' /* Tipado estandar de Vite */,
         'src/types/**' /* Declaraciones de tipado */,
-        'src/App.tsx' /* Router manager (test via E2E) */,
-        '*.config.js' /* Archivos de configuracion como Tailwind */,
-        'dist/**' /* Build artifacts compilados */,
-        'vite.config.ts' /* Configuracion de build */,
+        // FC162 R3-B2 (100% mandatorio, 201_AN) — 'src/App.tsx' removido: el
+        // App.test.tsx preexistente solo montaba LoginPage aislado pese al
+        // nombre del archivo (nunca importaba App). Test propio nuevo monta
+        // el App real y verifica la cadena "/" → "/dashboard" → ProtectedRoute
+        // → "/login" end-to-end (sin sesión) sin mockear el árbol de rutas.
         /* === Contextos y Proveedores (lifecycle + localStorage + window = E2E) === */
         /* AuthContext.tsx removido del exclude (FC 070 v1.2): tiene suite unitaria
            propia al 100% en las 4 metricas desde el fix de la race condition. */
@@ -139,12 +140,8 @@ export default defineConfig({
         // API de browser). Mismo perfil que App.tsx (ya excluido, verificado vía smoke E2E
         // con Playwright en F1) — se mantiene excluido de unit, cobertura real vía E2E.
         'src/pages/Dashboard/Layout.tsx' /* Shell de navegacion (test via E2E) */,
-        /* === Componentes de Navegacion === */
-        // FC162 F3 — HALLAZGO: ArchonTopBar.tsx no tiene ninguna referencia de import en
-        // todo apps/web/src (verificado por grep) — componente huérfano, reemplazado en el
-        // árbol real por SovereignHeader.tsx (que sí tiene test propio). No se escribe test
-        // para código muerto; se documenta para que Alfa/Bravo decidan si se elimina.
-        'src/components/Navigation/ArchonTopBar.tsx' /* Huérfano — sin referencias en el árbol (FC162 F3) */,
+        // FC162 R3 — ArchonTopBar.tsx (huérfano, hallazgo F3) purgado físicamente del árbol:
+        // autorizado por Alfa (200_AN §2.1) y Bravo (201_AN R3-A1), cero referencias reales.
         /* === Componentes Complejos (500+ lineas, UI pura) === */
         /* FC162 F1-T2 (Cond.R-162-F1): 'Identity/**' era un glob de directorio
            completo — auditado archivo por archivo (162_evidence/f1/inventory.md).
@@ -169,14 +166,10 @@ export default defineConfig({
         // FC162 R2 (100% mandatorio) — mismo hallazgo de Bravo (199_AN): MaintenanceRegistrationForm.tsx
         // (45 tests), MaintenanceCompletionPanel.tsx (9 tests) y MaintenanceForecastView.tsx (22 tests)
         // ya tenían test real dedicado desde antes — removidos.
-        /* === Build artifacts y directorios de trabajo === */
-        '**/*.cjs' /* Archivos CommonJS generados por herramientas de build */,
-        '**/scratch/**' /* Directorio de trabajo temporal */,
         /* === Test infrastructure === */
         'src/test/handlers.ts' /* MSW handlers (infraestructura de test) */,
         'src/test/globalTeardown.ts' /* Limpieza global de test (infraestructura) */,
         'src/test/polyfills.ts' /* Polyfills de browser (infraestructura) */,
-        'src/scripts/**' /* Scripts de utilidad (no forman parte del runtime) */,
         // FC162 R2 (100% mandatorio) — mismo hallazgo de Bravo (199_AN): ArchonDoctor.tsx
         // ya tenía test real dedicado (1 test, touch-target FC074 F2) — removido.
         // FC162 F3 (100% mandatorio, Ω) — 'api/navigation.ts' removido: test
