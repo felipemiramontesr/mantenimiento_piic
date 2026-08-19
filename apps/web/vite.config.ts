@@ -134,12 +134,12 @@ export default defineConfig({
         // combinados ya existentes, todos removidos de este exclude (mismo
         // patrón de misclasificación que F1, a mayor escala).
         /* === Paginas y Layouts === */
-        // FC162 F3: Layout.tsx auditado — orquestador puro (Sidebar+SovereignHeader+
-        // SovereignSubheader+SovereignFooter+ArchonNetworkBanner+PanicButton) que monta
-        // FleetProvider/SovereignLayoutProvider reales y usePushNotifications (Notification
-        // API de browser). Mismo perfil que App.tsx (ya excluido, verificado vía smoke E2E
-        // con Playwright en F1) — se mantiene excluido de unit, cobertura real vía E2E.
-        'src/pages/Dashboard/Layout.tsx' /* Shell de navegacion (test via E2E) */,
+        // FC162 R4-A1 (100% mandatorio, 202_AN Bravo) — 'src/pages/Dashboard/Layout.tsx'
+        // removido: test propio nuevo (Layout.test.tsx) monta el orquestador real
+        // (Sidebar/SovereignHeader/SovereignSubheader/SovereignFooter/ArchonNetworkBanner/
+        // PanicButton) con FleetProvider/AuthContext/usePermissions/useAlertsCount mockeados
+        // (mismo patrón que Sidebar.test.tsx ya usa para sus propios hijos) y verifica que
+        // el Outlet enrutado renderiza — opción preferida de Bravo sobre la exclusión E2E-only.
         // FC162 R3 — ArchonTopBar.tsx (huérfano, hallazgo F3) purgado físicamente del árbol:
         // autorizado por Alfa (200_AN §2.1) y Bravo (201_AN R3-A1), cero referencias reales.
         /* === Componentes Complejos (500+ lineas, UI pura) === */
