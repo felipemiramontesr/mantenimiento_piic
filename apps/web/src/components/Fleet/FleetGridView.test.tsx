@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '../../test/testUtils';
+import { fireEvent } from '@testing-library/react';
+import { render, screen, mockGetUnitDetails } from '../../test/testUtils';
 import { FleetGridView } from './FleetGridView';
 import { FleetUnit } from '../../types/fleet';
 import * as layoutContext from '../../context/SovereignLayoutContext';
 import usePermissions from '../../hooks/usePermissions';
 import { useAssetTypeFields } from '../../hooks/useAssetTypeFields';
+import { useTco, TcoData } from '../../hooks/useTco';
 
 vi.mock('../../hooks/usePermissions', () => ({ default: vi.fn() }));
 vi.mock('../../hooks/useTco', () => ({
@@ -302,5 +304,332 @@ describe('FleetGridView Null Interval Fallbacks (FC-HardcodeIntervals Fase A)', 
   it('NULLINTERVALS-2: maintIntervalDays=null y timeFreqLabel=null muestra "—" sin fallback ERP', () => {
     render(<FleetGridView units={[nullIntervalsUnit]} onEdit={vi.fn()} />);
     expect(screen.queryByText('180 DÍAS')).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * FC162 R4-B (100% mandatorio, 202_AN/203_AN Bravo) — segundo archivo P0
+ * (77 unc Sonar). matchFieldInUnit/HologramBadge/TcoKpiCluster/gallery/edit
+ * button/sort nunca tenían cobertura directa.
+ */
+describe('FleetGridView — search suggestions (matchFieldInUnit)', () => {
+  const baseUnit = {
+    id: 'ASM-010',
+    placas: 'DEF-456',
+    marca: 'Nissan',
+    modelo: 'NP300',
+    year: 2021,
+    color: 'Blanco',
+    departamento: 'Operaciones',
+    sede: 'Sur',
+    owner: 'ARIAN SILVER',
+    complianceStatus: 'OPERATIVO',
+    status: 'Disponible',
+    assetType: 'Vehículo',
+    assetTypeId: 1,
+    fuelType: 'Diesel',
+    traccion: '4x4',
+    transmision: 'Manual',
+    numeroSerie: 'VIN12345',
+    circulationCardNumber: 'TC-100',
+    accountingAccount: '1.1.2.02',
+    insurancePolicyNumber: 'POL-100',
+    motor: '2.5L',
+    tireBrand: 'Michelin',
+    tireSpec: '265/70 R16',
+    monthlyLeasePayment: 12000,
+    odometer: 30000,
+    lastServiceReading: 20000,
+    nextServiceReading: 30000,
+    capacidadCarga: 1000,
+    fuelTankCapacity: 90,
+    maintIntervalKm: 10000,
+    maintIntervalDays: 90,
+    dailyUsageAvg: 50,
+  } as unknown as FleetUnit;
+
+  const captureGetSuggestions = (
+    units: FleetUnit[]
+  ): ((term: string) => { id: string; metaLabel: string; metaValue: string }[]) => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    render(<FleetGridView units={units} onEdit={vi.fn()} />);
+    const config = setSearchConfig.mock.calls[0][0];
+    return config.getSuggestions;
+  };
+
+  beforeEach(() => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(false),
+      hasAnyPermission: vi.fn().mockReturnValue(false),
+      isOmnipotent: vi.fn().mockReturnValue(false),
+    });
+  });
+
+  it('matches by unit id (Código)', () => {
+    const getSuggestions = captureGetSuggestions([baseUnit]);
+    const results = getSuggestions('asm-010');
+    expect(results).toHaveLength(1);
+    expect(results[0].metaLabel).toBe('Código');
+  });
+
+  it('matches by forecast remaining km (Km. Restantes)', () => {
+    const getSuggestions = captureGetSuggestions([baseUnit]);
+    // 10000 - (30000 - 20000) = 0 remaining -> "0" always present in the string
+    const results = getSuggestions('0');
+    expect(results.some((r) => r.metaLabel === 'Km. Restantes' || r.metaLabel === 'Código')).toBe(
+      true
+    );
+  });
+
+  it('matches a string field via SEARCH_CONFIGS (marca)', () => {
+    const getSuggestions = captureGetSuggestions([baseUnit]);
+    const results = getSuggestions('nissan');
+    expect(results).toHaveLength(1);
+    expect(results[0].metaLabel).toBe('Marca');
+  });
+
+  it('matches a numeric field via SEARCH_CONFIGS (odómetro)', () => {
+    const getSuggestions = captureGetSuggestions([baseUnit]);
+    const results = getSuggestions('30,000');
+    expect(results).toHaveLength(1);
+    expect(results[0].metaLabel).toBe('Odómetro');
+  });
+
+  it('matches by year when no other field matches', () => {
+    const getSuggestions = captureGetSuggestions([baseUnit]);
+    const results = getSuggestions('2021');
+    expect(results).toHaveLength(1);
+    expect(results[0].metaLabel).toBe('Año');
+  });
+
+  it('returns no suggestions when nothing matches', () => {
+    const getSuggestions = captureGetSuggestions([baseUnit]);
+    expect(getSuggestions('zzz-no-match-zzz')).toHaveLength(0);
+  });
+
+  it('onSuggestionSelect sets the search term to the selected unit id', () => {
+    const setSearchTerm = vi.fn();
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm,
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    render(<FleetGridView units={[baseUnit]} onEdit={vi.fn()} />);
+    const config = setSearchConfig.mock.calls[0][0];
+    config.onSuggestionSelect({ id: 'ASM-010' });
+    expect(setSearchTerm).toHaveBeenCalledWith('ASM-010');
+  });
+});
+
+describe('FleetGridView — HologramBadge', () => {
+  beforeEach(() => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(false),
+      hasAnyPermission: vi.fn().mockReturnValue(false),
+      isOmnipotent: vi.fn().mockReturnValue(false),
+    });
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+  });
+
+  it('renders the exempt badge (H-0) without the restricted marker', () => {
+    const unit = {
+      id: 'ASM-020',
+      placas: 'GHI-321',
+      marca: 'Ford',
+      modelo: 'F150',
+      environmentalHologram: '0',
+      status: 'Disponible',
+      odometer: 1000,
+    } as unknown as FleetUnit;
+    render(<FleetGridView units={[unit]} onEdit={vi.fn()} />);
+    expect(screen.getByText('H-0')).toBeInTheDocument();
+    expect(screen.queryByText('HOY NO CIRCULA')).not.toBeInTheDocument();
+  });
+});
+
+describe('FleetGridView — TcoKpiCluster', () => {
+  const unit = {
+    id: 'ASM-030',
+    placas: 'JKL-654',
+    marca: 'Toyota',
+    modelo: 'Hilux',
+    status: 'Disponible',
+    odometer: 50000,
+  } as unknown as FleetUnit;
+
+  beforeEach(() => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(false),
+      hasAnyPermission: vi.fn().mockReturnValue(false),
+      isOmnipotent: vi.fn().mockReturnValue(false),
+    });
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+  });
+
+  it('shows the loading state', () => {
+    vi.mocked(useTco).mockReturnValue({ data: null, loading: true, error: null });
+    render(<FleetGridView units={[unit]} onEdit={vi.fn()} />);
+    expect(screen.getByTestId('tco-kpi-loading')).toBeInTheDocument();
+  });
+
+  it('shows TCO total + cost-per-km + last record date when data is present', () => {
+    const tcoData: TcoData = {
+      fleet_unit_id: 'ASM-030',
+      tco_total: 5000,
+      tco_maintenance: 1000,
+      tco_insurance: 1000,
+      tco_lease: 1000,
+      tco_tenencia: 1000,
+      tco_verificacion: 500,
+      tco_fuel: 500,
+      tco_other: 0,
+      total_records: 6,
+      last_record_at: '2026-01-01T00:00:00Z',
+    };
+    vi.mocked(useTco).mockReturnValue({ data: tcoData, loading: false, error: null });
+    render(<FleetGridView units={[unit]} onEdit={vi.fn()} />);
+    expect(screen.getByTestId('tco-kpi-section')).toBeInTheDocument();
+    expect(screen.getByText('$5,000.00')).toBeInTheDocument();
+  });
+});
+
+describe('FleetGridView — gallery interaction', () => {
+  const unitNoImages = {
+    id: 'ASM-040',
+    placas: 'MNO-987',
+    marca: 'Isuzu',
+    modelo: 'D-Max',
+    status: 'Disponible',
+    odometer: 10000,
+    images: [],
+  } as unknown as FleetUnit;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetUnitDetails.mockReset();
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(true),
+      hasAnyPermission: vi.fn().mockReturnValue(true),
+      isOmnipotent: vi.fn().mockReturnValue(true),
+    });
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+  });
+
+  it('hydrates unit images via getUnitDetails and opens the gallery overlay', async () => {
+    mockGetUnitDetails.mockResolvedValueOnce({
+      ...unitNoImages,
+      images: ['/img/hydrated.png'],
+    });
+    render(<FleetGridView units={[unitNoImages]} onEdit={vi.fn()} />);
+
+    fireEvent.click(screen.getByAltText('Archon Unit Default'));
+
+    expect(await screen.findByAltText('ASM-040 - 1')).toBeInTheDocument();
+    expect(mockGetUnitDetails).toHaveBeenCalledWith('ASM-040');
+  });
+
+  it('falls back to the local unit when getUnitDetails rejects, and closes on Escape', async () => {
+    mockGetUnitDetails.mockRejectedValueOnce(new Error('network down'));
+    render(<FleetGridView units={[unitNoImages]} onEdit={vi.fn()} />);
+
+    fireEvent.click(screen.getByAltText('Archon Unit Default'));
+
+    expect(await screen.findByAltText('ASM-040 - 1')).toBeInTheDocument();
+    expect(mockGetUnitDetails).toHaveBeenCalled();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await vi.waitFor(() => expect(screen.queryByAltText('ASM-040 - 1')).not.toBeInTheDocument());
+  });
+
+  it('renders the edit button when the actor has fleet:write and invokes onEdit on click', () => {
+    const onEdit = vi.fn();
+    render(<FleetGridView units={[unitNoImages]} onEdit={onEdit} />);
+
+    fireEvent.click(screen.getByTitle('Editar Activo (Auditado)'));
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'ASM-040' }));
+  });
+});
+
+describe('FleetGridView — column sort', () => {
+  const units = [
+    { id: 'ASM-003', placas: 'A', marca: 'X', modelo: 'Y', status: 'Disponible', odometer: 1 },
+    { id: 'ASM-001', placas: 'B', marca: 'X', modelo: 'Y', status: 'Disponible', odometer: 2 },
+    { id: 'ASM-002', placas: 'C', marca: 'X', modelo: 'Y', status: 'Disponible', odometer: 3 },
+  ] as unknown as FleetUnit[];
+
+  beforeEach(() => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(false),
+      hasAnyPermission: vi.fn().mockReturnValue(false),
+      isOmnipotent: vi.fn().mockReturnValue(false),
+    });
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+  });
+
+  it('sorts rows ascending then descending by unit id on repeated header clicks', () => {
+    render(<FleetGridView units={units} onEdit={vi.fn()} />);
+    const table = screen.getByTestId('fleet-inventory-table');
+    const rowsOf = (): string[] =>
+      Array.from(table.querySelectorAll('[data-testid^="fleet-row-"]')).map((r) =>
+        (r as HTMLElement).getAttribute('data-testid')
+      );
+
+    fireEvent.click(screen.getByText('UNIDAD'));
+    expect(rowsOf()).toEqual(['fleet-row-asm-001', 'fleet-row-asm-002', 'fleet-row-asm-003']);
+
+    fireEvent.click(screen.getByText('UNIDAD'));
+    expect(rowsOf()).toEqual(['fleet-row-asm-003', 'fleet-row-asm-002', 'fleet-row-asm-001']);
   });
 });

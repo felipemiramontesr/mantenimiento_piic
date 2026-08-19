@@ -16,6 +16,7 @@ import { SovereignLayoutProvider, useSovereignLayout } from '../context/Sovereig
 
 export const mockStartRoute = vi.fn();
 export const mockFinishRoute = vi.fn();
+export const mockGetUnitDetails = vi.fn();
 
 const MockUserContext = {
   users: [
@@ -87,6 +88,7 @@ const MockFleetContext = {
   startRoute: mockStartRoute,
   finishRoute: mockFinishRoute,
   reportIncident: vi.fn(),
+  getUnitDetails: mockGetUnitDetails,
 };
 
 /**
