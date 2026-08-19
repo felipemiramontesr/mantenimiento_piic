@@ -1,6 +1,6 @@
 /* global NotificationPermission */
 import { useState, useEffect, useCallback } from 'react';
-import { registerPushToken } from '../api/notifications';
+import registerPushToken from '../api/notifications';
 
 interface UsePushNotificationsResult {
   permission: NotificationPermission;
