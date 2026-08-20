@@ -4,6 +4,7 @@ import React from 'react';
 import { http, HttpResponse } from 'msw';
 import useFleetForm from './useFleetForm';
 import server from '../test/server';
+import { archonCache } from '../utils/archonCache';
 
 /**
  * 🔱 Archon Test Suite: useFleetForm
@@ -216,5 +217,153 @@ describe('useFleetForm Hook', () => {
     expect(result.current.marcas).toEqual(
       expect.arrayContaining([expect.objectContaining({ label: 'Toyota (Safe Mode)' })])
     );
+  });
+});
+
+/**
+ * FC162 R4-C (100% mandatorio, 204_AN/206_AN Bravo) — `hydrateEditUnit` was
+ * never called by any existing test (a fully separate function from the
+ * create-flow hydration already covered above), the `throw` branch for a
+ * 200-status response with `success:false` was only ever exercised via a
+ * non-2xx status (which takes the axios-rejection catch path instead, a
+ * different statement), and `fetchCategory`'s own console.error sits behind
+ * a deliberate "Zero-Noise Test Shield" that only fires outside the test
+ * environment.
+ */
+describe('useFleetForm Hook — handleSubmit success:false (200 status)', () => {
+  it('throws using res.data.error when the server responds 200 with success:false', async () => {
+    server.use(
+      http.post('*/fleet', () =>
+        HttpResponse.json({ success: false, error: 'Validation rejected by server' })
+      )
+    );
+
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    await act(async () => {
+      result.current.setFormData((prev) => ({
+        ...prev,
+        id: 'UNIT-002',
+        brandId: 101,
+        modelId: 201,
+        departmentId: 228,
+        operationalUseId: 236,
+        dailyUsageAvg: 10,
+        lastServiceReading: 0,
+      }));
+    });
+
+    await act(async () => {
+      const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+      await expect(result.current.handleSubmit(e)).rejects.toThrow('Validation rejected by server');
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('Validation rejected by server');
+    });
+  });
+});
+
+describe('useFleetForm Hook — hydrateEditUnit', () => {
+  it('fetches brand+model catalogs and hydrates formData when both ids are present', async () => {
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    await act(async () => {
+      await result.current.hydrateEditUnit({
+        assetTypeId: 1,
+        brandId: 101,
+        modelId: 201,
+        id: 'EDIT-001',
+        traccionId: null,
+        transmisionId: null,
+        fuelTypeId: null,
+      });
+    });
+
+    expect(result.current.formData.id).toBe('EDIT-001');
+    await waitFor(() => {
+      expect(result.current.marcas).toContainEqual(
+        expect.objectContaining({ id: 101, label: 'Toyota' })
+      );
+    });
+    await waitFor(() => {
+      expect(result.current.modelos).toContainEqual(
+        expect.objectContaining({ id: 201, label: 'Hilux' })
+      );
+    });
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('falls back to emergency brands and empty models when assetTypeId/brandId are absent', async () => {
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    await act(async () => {
+      await result.current.hydrateEditUnit({
+        assetTypeId: null,
+        brandId: null,
+        modelId: null,
+        id: 'EDIT-002',
+        traccionId: null,
+        transmisionId: null,
+        fuelTypeId: null,
+      });
+    });
+
+    expect(result.current.formData.id).toBe('EDIT-002');
+    await waitFor(() => {
+      expect(result.current.marcas).toContainEqual(
+        expect.objectContaining({ label: 'Toyota (Safe Mode)' })
+      );
+    });
+    expect(result.current.modelos).toEqual([]);
+    expect(result.current.isLoading).toBe(false);
+  });
+});
+
+describe('useFleetForm Hook — Zero-Noise Test Shield', () => {
+  it('logs to console when a catalog fetch fails outside of the test environment', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    server.use(http.get('*/catalogs/BRAND', () => HttpResponse.error()));
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('VITEST', '');
+
+    const { result } = renderHook(() => useFleetForm(true));
+    await act(async () => {
+      await result.current.handleAssetTypeChange(1);
+    });
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[Archon Alpha] Fetch Failure'),
+      expect.anything()
+    );
+
+    vi.unstubAllEnvs();
+    consoleSpy.mockRestore();
+  });
+});
+
+describe('useFleetForm Hook — hydration critical failure', () => {
+  it('releases the hydration lock and logs when the initial catalog Promise.all rejects', async () => {
+    // getCatalog() checks archonCache first — earlier tests in this file
+    // already hydrated successfully, so ASSET_TYPE would be served from a
+    // stale cache entry and never hit the mocked failure below.
+    archonCache.clear();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    server.use(http.get('*/catalogs/ASSET_TYPE', () => HttpResponse.error()));
+
+    const { result } = renderHook(() => useFleetForm(true));
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[Archon Alpha] Critical Hydration Failure',
+        expect.anything()
+      );
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    consoleSpy.mockRestore();
   });
 });
