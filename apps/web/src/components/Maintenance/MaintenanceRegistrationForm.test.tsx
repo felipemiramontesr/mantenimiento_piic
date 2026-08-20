@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
@@ -422,5 +422,179 @@ describe('AT-FC074-F4 — mobile-first form hardening (MaintenanceRegistrationFo
     const actionBar = cancelBtn.closest('.archon-grid-2-sovereign');
     expect(actionBar?.className).toMatch(/\bsticky\b/);
     expect(actionBar?.className).toMatch(/bottom-0/);
+  });
+});
+
+/**
+ * FC162 R4-C (100% mandatorio, 204_AN/206_AN Bravo) — the top-level field
+ * onChange handlers (odómetro/fecha/técnico/costo), the FuelSection closing
+ * telemetry fields (endOdometer/litros/monto, only reachable under
+ * isInProgress=false), the UPA stage accordion toggle and handleSubmit
+ * (success + catch) had zero direct coverage — none of the existing tests
+ * ever typed into a field, selected a technician, or actually submitted.
+ */
+describe('MaintenanceRegistrationForm — top-level field edits', () => {
+  beforeEach(() => {
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] }))
+    );
+  });
+
+  it('updates odometerAtService, serviceDate, cost and selects a technician, enabling submit', async () => {
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+
+    const odometerInput = await screen.findByPlaceholderText('Ej: 125000');
+    fireEvent.change(odometerInput, { target: { value: '60000' } });
+    expect(odometerInput).toHaveValue(60000);
+
+    const todayIso = new Date().toISOString().split('T')[0];
+    const dateInput = screen.getByDisplayValue(todayIso);
+    fireEvent.change(dateInput, { target: { value: '2026-01-15' } });
+    expect(dateInput).toHaveValue('2026-01-15');
+
+    fireEvent.click(screen.getByText('Buscar técnico...'));
+    fireEvent.click(await screen.findByText('Pedro Técnico'));
+    expect(screen.getByText('Pedro Técnico')).toBeInTheDocument();
+
+    const costInput = await screen.findByPlaceholderText('Ej: 3,450.00');
+    fireEvent.change(costInput, { target: { value: '2500' } });
+    expect(costInput).toHaveValue(2500);
+  });
+});
+
+describe('MaintenanceRegistrationForm — closing telemetry fields (In Situ / isInProgress=false)', () => {
+  it('updates endOdometer, fuelLitersLoaded and fuelAmount when in In Situ mode', async () => {
+    server.use(
+      http.get('*/fleet', () =>
+        HttpResponse.json({ success: true, data: [makeUnit('U-INSITU', 22000, 5000)] })
+      ),
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: { vehicleId: 'U-INSITU', odometer: 22000, tasks: [] },
+        })
+      )
+    );
+    renderForm();
+    await selectUnit(/U-INSITU - Test Unit/);
+    await waitFor(() => {
+      expect(screen.getByText('In Situ — Registro Inmediato')).toBeInTheDocument();
+    });
+
+    const endOdometerInput = await screen.findByPlaceholderText('Ej: 125180');
+    fireEvent.change(endOdometerInput, { target: { value: '22500' } });
+    expect(endOdometerInput).toHaveValue(22500);
+
+    // Litros Cargados and Monto del Ticket share the same "0.00" placeholder —
+    // Litros renders first in DOM order.
+    const [litersInput, amountInput] = screen.getAllByPlaceholderText('0.00');
+    fireEvent.change(litersInput, { target: { value: '45.5' } });
+    expect(litersInput).toHaveValue('45.5');
+    fireEvent.change(amountInput, { target: { value: '950.75' } });
+    expect(amountInput).toHaveValue('950.75');
+  });
+});
+
+describe('MaintenanceRegistrationForm — UPA stage accordion toggle', () => {
+  it('expands a collapsed stage (Servicio Menor) on click and shows its tasks', async () => {
+    server.use(
+      withUpaPreviewTasks(UPA_PREVIEW_TASKS),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] }))
+    );
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    await waitFor(() => {
+      expect(screen.getByText('Revisión de luces')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Cambio de aceite UPA')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Servicio Menor'));
+    expect(await screen.findByText('Cambio de aceite UPA')).toBeInTheDocument();
+  });
+});
+
+describe('MaintenanceRegistrationForm — submit flow', () => {
+  const selectTechnician = async (): Promise<void> => {
+    fireEvent.click(await screen.findByText('Buscar técnico...'));
+    fireEvent.click(await screen.findByText('Pedro Técnico'));
+  };
+
+  beforeEach(() => {
+    server.use(
+      withUpaPreviewTasks(UPA_PREVIEW_TASKS),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] }))
+    );
+  });
+
+  it('posts the payload (with mapped UPA details) and calls onSuccess when the API call succeeds', async () => {
+    let capturedBody: Record<string, unknown> | null = null;
+    server.use(
+      http.post('*/maintenance', async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ success: true });
+      })
+    );
+    const onSuccess = vi.fn();
+    render(<MaintenanceRegistrationForm onSuccess={onSuccess} onCancel={noop} />);
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    await waitFor(() => expect(screen.getByText('Revisión de luces')).toBeInTheDocument());
+    await selectTechnician();
+
+    const submitBtn = screen.getByRole('button', { name: /Registrar en Taller/i });
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(capturedBody).not.toBeNull();
+    expect(capturedBody?.technician).toBe('Pedro Técnico');
+    expect(capturedBody?.is_in_progress).toBe(true);
+    // details.map() ran over the 2 seeded UPA tasks, not an empty array.
+    expect(capturedBody?.details).toEqual([
+      { taskCode: 'triage_lights', status: 'PASS' },
+      { taskCode: 'minor_oil', status: 'PASS' },
+    ]);
+  });
+
+  it('logs the error and re-enables the submit button when the API call fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    server.use(
+      http.post('*/maintenance', () => HttpResponse.json({ message: 'boom' }, { status: 500 }))
+    );
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    await waitFor(() => expect(screen.getByText('Revisión de luces')).toBeInTheDocument());
+    await selectTechnician();
+
+    const submitBtn = screen.getByRole('button', { name: /Registrar en Taller/i });
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => expect(consoleSpy).toHaveBeenCalled());
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    consoleSpy.mockRestore();
+  });
+});
+
+describe('MaintenanceRegistrationForm — UPA preview fetch failure', () => {
+  it('falls back to no preview tasks when the work-orders preview request fails', async () => {
+    server.use(
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] })),
+      http.get('*/work-orders/preview/*', () => HttpResponse.error())
+    );
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+
+    await waitFor(() => {
+      expect(screen.getByText('REVISIÓN DE TAREAS UPA')).toBeInTheDocument();
+    });
+    // catch(() => setUpaPreview(null)) leaves upaPreview at null, distinct
+    // from an empty array — neither the "sin tareas" empty-state nor any
+    // task list renders, and the loading spinner clears.
+    await waitFor(() => {
+      expect(screen.queryByText('Calculando tareas UPA...')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText('Sin tareas UPA para esta unidad.')).not.toBeInTheDocument();
   });
 });
