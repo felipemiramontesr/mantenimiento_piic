@@ -1,10 +1,13 @@
 /* eslint-disable */
 // @ts-nocheck
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
+import { render, screen, waitFor, fireEvent, cleanup } from '../../test/testUtils';
 import server from '../../test/server';
 import MaintenanceGridView from './MaintenanceGridView';
+import * as FleetContextModule from '../../context/FleetContext';
+import * as UserContextModule from '../../context/UserContext';
+import * as layoutContext from '../../context/SovereignLayoutContext';
 
 const noop = (): void => undefined;
 
@@ -188,5 +191,378 @@ describe('MaintenanceGridView', () => {
     fireEvent.click(unitHeader); // sort asc
     fireEvent.click(unitHeader); // sort desc
     expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0);
+  });
+
+  it('sorts logs by service type, odometer, service date and cost', async () => {
+    const LOG_C = {
+      ...ACTIVE_LOG,
+      id: 4,
+      uuid: 'uuid-c',
+      unit_id: 'ASM-XYZ',
+      service_type: 'MINOR_MINING',
+      odometer_at_service: 10000,
+      cost: 100,
+      movement_status: 'COMPLETED',
+      end_at: '2026-05-30T10:00:00Z',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [ACTIVE_LOG, LOG_C], nextCursor: null })
+      )
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
+
+    ['TIPO SERVICIO', 'ODÓMETRO', 'FECHAS', 'COSTO'].forEach((label) => {
+      const header = screen.getByText(label);
+      fireEvent.click(header); // asc
+      fireEvent.click(header); // desc
+    });
+
+    expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * FC162 R4-B (100% mandatorio, 202_AN/203_AN Bravo) — quinto y último archivo
+ * P0 (44 unc Sonar). matchFieldInMaintenance, getSuggestions/onSuggestionSelect,
+ * filteredLogs por searchTerm activo, fmtDateTime con formato "YYYY-MM-DD HH:MM",
+ * el catch del fetch, los onError de imagen (unidad/técnico) y el botón de
+ * aceptar orden (OPEN) nunca tenían cobertura directa.
+ */
+describe('MaintenanceGridView — search suggestions (matchFieldInMaintenance)', () => {
+  const SEARCH_LOG = {
+    id: 10,
+    uuid: 'uuid-search-010',
+    unit_id: 'ASM-050',
+    service_date: '2026-05-15',
+    odometer_at_service: 20000,
+    service_type: 'ADVANCED_50K',
+    cost: 3000,
+    technician: 'Elena Ruiz',
+    start_at: '2026-05-15T08:00:00Z',
+    end_at: '2026-05-15T10:00:00Z',
+    movement_status: 'COMPLETED',
+  };
+
+  const captureGetSuggestions = async () => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Mantenimiento', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [SEARCH_LOG], nextCursor: null })
+      )
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    // The registration effect depends on `logs`, which starts as [] and
+    // updates once the async /maintenance fetch resolves — wait for the
+    // effect to re-register before reading the latest getSuggestions closure.
+    await waitFor(() => expect(setSearchConfig.mock.calls.length).toBeGreaterThan(1));
+    return (term: string) => {
+      const { calls } = setSearchConfig.mock;
+      return calls[calls.length - 1][0].getSuggestions(term);
+    };
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('matches by unit id', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('asm-050')).toHaveLength(1);
+  });
+
+  it('matches by technician', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('elena')).toHaveLength(1);
+  });
+
+  it('matches by service type and labels it as Preventivo when not MINOR_MINING', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    const results = getSuggestions('advanced_50k');
+    expect(results).toHaveLength(1);
+    expect(results[0].metaValue).toBe('Preventivo');
+  });
+
+  it('returns no suggestions when nothing matches', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('zzz-no-match')).toHaveLength(0);
+  });
+
+  it('onSuggestionSelect sets the search term to the selected log unit_id', async () => {
+    const setSearchTerm = vi.fn();
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Mantenimiento', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm,
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [SEARCH_LOG], nextCursor: null })
+      )
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(setSearchConfig).toHaveBeenCalled());
+    setSearchConfig.mock.calls[0][0].onSuggestionSelect({ title: 'ASM-050' });
+    expect(setSearchTerm).toHaveBeenCalledWith('ASM-050');
+  });
+});
+
+describe('MaintenanceGridView — active search term filters rows', () => {
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('filters logs by the current searchTerm from the layout context', async () => {
+    const logsData = [
+      { ...ACTIVE_LOG, id: 20, uuid: 'uuid-f-1', unit_id: 'ASM-060' },
+      { ...ACTIVE_LOG, id: 21, uuid: 'uuid-f-2', unit_id: 'ASM-070' },
+    ];
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Mantenimiento', description: 'ERP' },
+      searchTerm: 'asm-060',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: logsData, nextCursor: null })
+      )
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getAllByText('ASM-060').length).toBeGreaterThan(0));
+    expect(screen.queryByText('ASM-070')).not.toBeInTheDocument();
+  });
+});
+
+describe('MaintenanceGridView — fmtDateTime space-separated datetime', () => {
+  it('parses a "YYYY-MM-DD HH:MM:SS" (non-ISO) datetime for entrada/salida', async () => {
+    const SPACE_LOG = {
+      ...COMPLETED_LOG,
+      id: 6,
+      uuid: 'uuid-space-006',
+      unit_id: 'ASM-040',
+      start_at: '2026-05-28 07:00:00',
+      end_at: '2026-05-28 16:00:00',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [SPACE_LOG], nextCursor: null })
+      )
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getAllByText('ASM-040').length).toBeGreaterThan(0));
+  });
+});
+
+describe('MaintenanceGridView — fetch failure', () => {
+  it('shows an error message when the maintenance fetch fails', async () => {
+    server.use(http.get('*/maintenance', () => HttpResponse.error()));
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/error al recuperar registros/i)).toBeInTheDocument()
+    );
+  });
+});
+
+describe('MaintenanceGridView — image error handlers', () => {
+  const unitWithImage = [
+    { id: 'ASM-001', marca: 'Nissan', modelo: 'March', images: ['/img/unit.png'] },
+  ];
+  const userWithImage = [
+    {
+      id: '1',
+      username: 'clopez',
+      fullName: 'Carlos López',
+      imageUrl: 'https://example.com/avatar.png',
+      employeeNumber: 'TEC-01',
+    },
+  ];
+
+  beforeEach(() => {
+    vi.spyOn(FleetContextModule, 'useFleet').mockReturnValue({
+      units: unitWithImage,
+      stats: {},
+      loading: false,
+      error: null,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+    });
+    vi.spyOn(UserContextModule, 'useUsers').mockReturnValue({
+      users: userWithImage,
+      isLoading: false,
+      activePanel: 'DIRECTORY',
+      setActivePanel: vi.fn(),
+      fetchUsers: vi.fn(),
+      toggleUserStatus: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      editingUser: null,
+      setEditingUser: vi.fn(),
+      departments: [],
+      departmentsCatalog: [],
+      roles: [],
+    });
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [ACTIVE_LOG], nextCursor: null })
+      )
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('falls back to the default image when the unit thumbnail fails to load', async () => {
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getByAltText('ASM-001')).toBeInTheDocument());
+    fireEvent.error(screen.getByAltText('ASM-001'));
+    expect((screen.getByAltText('ASM-001') as HTMLImageElement).src).toContain(
+      'archon-unit-default.png'
+    );
+  });
+
+  it('hides the technician avatar image on load error', async () => {
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getByAltText('Carlos López')).toBeInTheDocument());
+    fireEvent.error(screen.getByAltText('Carlos López'));
+    expect((screen.getByAltText('Carlos López') as HTMLImageElement).style.display).toBe('none');
+  });
+});
+
+describe('MaintenanceGridView — OPEN order actions', () => {
+  const OPEN_LOG = {
+    ...ACTIVE_LOG,
+    id: 5,
+    uuid: 'uuid-open-005',
+    unit_id: 'ASM-030',
+    movement_status: 'OPEN',
+    start_at: null,
+    end_at: null,
+  };
+
+  beforeEach(() => {
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [OPEN_LOG], nextCursor: null })
+      )
+    );
+  });
+
+  it('invokes onAcceptOrder when the accept button is clicked', async () => {
+    const onAccept = vi.fn();
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+        onAcceptOrder={onAccept}
+        onRejectOrder={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getByTestId('accept-btn-uuid-open-005')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('accept-btn-uuid-open-005'));
+    expect(onAccept).toHaveBeenCalledWith('uuid-open-005', 5);
+  });
+
+  it('the "Ver nodo de mantenimiento" link stops click propagation without throwing', async () => {
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onNewRequest={noop}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getByTitle('Ver nodo de mantenimiento')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Ver nodo de mantenimiento'));
   });
 });
