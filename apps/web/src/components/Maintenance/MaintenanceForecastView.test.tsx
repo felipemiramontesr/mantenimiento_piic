@@ -1,10 +1,12 @@
 /* eslint-disable */
 // @ts-nocheck
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { render, screen, waitFor } from '../../test/testUtils';
+import { render, screen, waitFor, fireEvent, cleanup } from '../../test/testUtils';
 import server from '../../test/server';
 import MaintenanceForecastView from './MaintenanceForecastView';
+import * as FleetContextModule from '../../context/FleetContext';
+import * as layoutContext from '../../context/SovereignLayoutContext';
 
 const noop = (): void => undefined;
 
@@ -369,5 +371,177 @@ describe('MaintenanceForecastView', () => {
       expect(screen.getByText('ASM-001')).toBeInTheDocument();
       expect(screen.getByText('ASM-667')).toBeInTheDocument();
     });
+  });
+});
+
+/**
+ * FC162 R4-C (100% mandatorio, 204_AN/206_AN Bravo) — matchFieldInForecast,
+ * getSuggestions/onSuggestionSelect, sort por campo string/numérico,
+ * filtered por searchTerm activo y el onError de la miniatura de unidad
+ * nunca tenían cobertura directa.
+ */
+describe('MaintenanceForecastView — search suggestions (matchFieldInForecast)', () => {
+  const captureGetSuggestions = async () => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Pronóstico', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [CRITICAL_ROW, WARNING_ROW] })
+      )
+    );
+    renderForecast();
+    // The registration effect depends on `data`, which starts as [] and
+    // updates once the async /maintenance/forecast fetch resolves — wait for
+    // the effect to re-register before reading the latest getSuggestions.
+    await waitFor(() => expect(setSearchConfig.mock.calls.length).toBeGreaterThan(1));
+    return (term: string) => {
+      const { calls } = setSearchConfig.mock;
+      return calls[calls.length - 1][0].getSuggestions(term);
+    };
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('matches by unit id', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('asm-001')).toHaveLength(1);
+  });
+
+  it('matches by departamento', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('agencia')).toHaveLength(1);
+  });
+
+  it('matches by projected service type label', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('avanzado')).toHaveLength(1);
+  });
+
+  it('returns no suggestions when nothing matches', async () => {
+    const getSuggestions = await captureGetSuggestions();
+    expect(getSuggestions('zzz-no-match')).toHaveLength(0);
+  });
+
+  it('onSuggestionSelect sets the search term to the selected row unit_id', async () => {
+    const setSearchTerm = vi.fn();
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Pronóstico', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm,
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [CRITICAL_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => expect(setSearchConfig).toHaveBeenCalled());
+    setSearchConfig.mock.calls[0][0].onSuggestionSelect({ title: 'ASM-001' });
+    expect(setSearchTerm).toHaveBeenCalledWith('ASM-001');
+  });
+});
+
+describe('MaintenanceForecastView — sorting', () => {
+  it('sorts by a string field (UNIDAD) and a numeric field (ODÓMETRO)', async () => {
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [CRITICAL_ROW, WARNING_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => expect(screen.getByText('ASM-001')).toBeInTheDocument());
+
+    const unitHeader = screen.getByText('UNIDAD');
+    fireEvent.click(unitHeader); // asc, string comparator
+    fireEvent.click(unitHeader); // desc, string comparator
+
+    const odoHeader = screen.getByText('ODÓMETRO');
+    fireEvent.click(odoHeader); // asc, numeric comparator
+    fireEvent.click(odoHeader); // desc, numeric comparator
+
+    expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0);
+  });
+});
+
+describe('MaintenanceForecastView — active search term filters rows', () => {
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('filters rows by the current searchTerm from the layout context', async () => {
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Pronóstico', description: 'ERP' },
+      searchTerm: 'asm-001',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [CRITICAL_ROW, WARNING_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => expect(screen.getByText('ASM-001')).toBeInTheDocument());
+    expect(screen.queryByText('ASM-010')).not.toBeInTheDocument();
+  });
+});
+
+describe('MaintenanceForecastView — unit thumbnail image error', () => {
+  beforeEach(() => {
+    vi.spyOn(FleetContextModule, 'useFleet').mockReturnValue({
+      units: [{ id: 'ASM-001', marca: 'Nissan', modelo: 'March', images: ['/img/unit.png'] }],
+      stats: {},
+      loading: false,
+      error: null,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [CRITICAL_ROW] })
+      )
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('falls back to the default image when the unit thumbnail fails to load', async () => {
+    renderForecast();
+    await waitFor(() => expect(screen.getByAltText('ASM-001')).toBeInTheDocument());
+    fireEvent.error(screen.getByAltText('ASM-001'));
+    expect(screen.getByAltText('ASM-001').getAttribute('src')).toBe('/img/archon-unit-default.png');
   });
 });
