@@ -1,6 +1,6 @@
 {
   "name": "mantenimiento-piic",
-  "version": "78.103.035",
+  "version": "78.103.036",
   "engines": {
     "node": ">=24.0.0"
   },
