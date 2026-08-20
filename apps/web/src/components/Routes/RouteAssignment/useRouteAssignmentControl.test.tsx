@@ -587,6 +587,135 @@ describe('useRouteAssignmentControl (MSW Certified)', () => {
     expect(result.current.submitting).toBe(false);
   });
 
+  /**
+   * FC162 R4-B (Cond.R4-B1b, 203_AN Bravo) — residual: 4 of validateTelemetry's
+   * 5 guard clauses (odometer failsafe / fuel level / fuel coherency / tire
+   * pressure) were only ever exercised as standalone pure functions, never
+   * through the handleSubmit -> validateTelemetry integration path itself
+   * (only the distance branch was, via the pre-existing tests above).
+   */
+  describe('validateTelemetry branches (via handleSubmit)', () => {
+    it('blocks submit via the odometer failsafe when editing and endReading < startReading', async () => {
+      const mockRoute = {
+        uuid: 'route-odo-failsafe',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+      await waitFor(() => {
+        act(() => {
+          result.current.updateForm({ startReading: 200, endReading: 50 });
+        });
+        expect(result.current.formData.endReading).toBe(50);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      });
+
+      expect(result.current.error).toContain('no puede ser menor a la inicial');
+      expect(STABLE_FLEET_CONTEXT.finishRoute).not.toHaveBeenCalled();
+    });
+
+    it('blocks submit via fuel level when distance is valid but arrivalFuelLevel is out of range', async () => {
+      const mockRoute = {
+        uuid: 'route-fuel-level',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+      await waitFor(() => {
+        act(() => {
+          result.current.updateForm({ startReading: 100, endReading: 200, arrivalFuelLevel: 150 });
+        });
+        expect(result.current.formData.endReading).toBe(200);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      });
+
+      expect(result.current.error).toContain('entre 0% y 100%');
+      expect(STABLE_FLEET_CONTEXT.finishRoute).not.toHaveBeenCalled();
+    });
+
+    it('blocks submit via fuel coherency when distance/fuel level are valid but liters are negative', async () => {
+      const mockRoute = {
+        uuid: 'route-fuel-coherency',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+      await waitFor(() => {
+        act(() => {
+          result.current.updateForm({
+            startReading: 100,
+            endReading: 200,
+            arrivalFuelLevel: 80,
+            fuelLitersLoaded: -1,
+          });
+        });
+        expect(result.current.formData.endReading).toBe(200);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      });
+
+      expect(result.current.error).toContain('no pueden ser negativos');
+      expect(STABLE_FLEET_CONTEXT.finishRoute).not.toHaveBeenCalled();
+    });
+
+    it('blocks submit via tire pressure when distance/fuel checks are valid but a tire reading is out of range', async () => {
+      const mockRoute = {
+        uuid: 'route-tire-pressure',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+      await waitFor(() => {
+        act(() => {
+          result.current.updateForm({
+            startReading: 100,
+            endReading: 200,
+            arrivalFuelLevel: 80,
+            fuelLitersLoaded: 0,
+            fuelAmount: 0,
+            tirePressureJson: JSON.stringify({ DI: 150 }),
+          });
+        });
+        expect(result.current.formData.endReading).toBe(200);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      });
+
+      expect(result.current.error).toContain('presión del neumático DI');
+      expect(STABLE_FLEET_CONTEXT.finishRoute).not.toHaveBeenCalled();
+    });
+  });
+
   describe('handleConfirmAudit / triggerAuditDelete', () => {
     const auditRoute = {
       uuid: 'route-audit',
