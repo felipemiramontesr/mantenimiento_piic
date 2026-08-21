@@ -1,8 +1,20 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, RenderResult } from '../../test/testUtils';
+import {
+  render,
+  renderWithRoute,
+  screen,
+  fireEvent,
+  waitFor,
+  RenderResult,
+} from '../../test/testUtils';
 import FleetModule, { mapUnitToFormData, daysUntil, deriveFleetAlert } from './FleetModule';
 import { UseFleetFormReturn, CatalogOption, FleetUnit } from '../../types/fleet';
 import useFleetForm from '../../hooks/useFleetForm';
+import api from '../../api/client';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+
+vi.mock('../../api/client', () => ({ default: { get: vi.fn(), post: vi.fn() } }));
 
 /**
  * 🔱 Archon Test Suite: FleetModule (Orchestrator)
@@ -108,6 +120,7 @@ describe('FleetModule Orchestrator', () => {
     resetError: vi.fn(),
     handleSubmit: vi.fn(),
     resetForm: vi.fn(),
+    hydrateEditUnit: vi.fn(async (): Promise<void> => Promise.resolve()),
     assetTypes: [] as CatalogOption[],
     fuelTypes: [] as CatalogOption[],
     driveTypes: [] as CatalogOption[],
@@ -140,6 +153,11 @@ describe('FleetModule Orchestrator', () => {
   } as unknown as UseFleetFormReturn;
 
   const renderModule = (): RenderResult => render(<FleetModule />);
+
+  const SearchTermProbe = (): React.ReactElement => {
+    const { searchTerm } = useSovereignLayout();
+    return <div data-testid="search-term-probe">{searchTerm}</div>;
+  };
 
   it('should start in the GRID view', async (): Promise<void> => {
     vi.mocked(useFleetForm).mockReturnValue(baseMock);
@@ -301,6 +319,162 @@ describe('FleetModule Orchestrator', () => {
       fireEvent.click(screen.getByTestId('adaptive-view-cards'));
       const badge = await screen.findByTestId('card-alert-badge');
       expect(badge).toHaveTextContent('Verificación vencida');
+    });
+  });
+
+  // ── R4-C Fc162 — Sonar unc lines 173,175,201-226,247,300-301 ──
+  describe('AT-FMOD-URLQ — URL query param → searchTerm sync (useEffect)', () => {
+    it('AT-FMOD-URLQ-1: syncs searchTerm from ?categoria= when present', async (): Promise<void> => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      renderWithRoute(
+        <>
+          <FleetModule />
+          <SearchTermProbe />
+        </>,
+        '/dashboard/fleet?categoria=Vehiculo'
+      );
+      await screen.findByText('Administrar Unidades');
+      expect(screen.getByTestId('search-term-probe')).toHaveTextContent('Vehiculo');
+    });
+
+    it('AT-FMOD-URLQ-2: syncs searchTerm from ?status= when categoria is absent', async (): Promise<void> => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      renderWithRoute(
+        <>
+          <FleetModule />
+          <SearchTermProbe />
+        </>,
+        '/dashboard/fleet?status=Disponible'
+      );
+      await screen.findByText('Administrar Unidades');
+      expect(screen.getByTestId('search-term-probe')).toHaveTextContent('Disponible');
+    });
+  });
+
+  describe('AT-FMOD-EDIT — handleEditUnit + handleReturnToGrid (editingUnit branch)', () => {
+    const editUnit: FleetUnit = {
+      id: 'VEH-EDIT',
+      uuid: 'test-uuid-edit',
+      placas: 'EDT-0001',
+      numeroSerie: null,
+      marca: 'Kenworth',
+      brandId: 1,
+      modelo: 'T680',
+      modelId: 1,
+      images: null,
+      year: 2024,
+      departamento: 'Operaciones',
+      departmentId: 1,
+      uso: null,
+      operationalUseId: null,
+      locationId: null,
+      engineTypeId: null,
+      colorId: null,
+      motor: null,
+      tireSpec: null,
+      tireBrand: null,
+      tireBrandId: null,
+      tipoTerreno: null,
+      terrainTypeId: null,
+      capacidadCarga: null,
+      fuelTankCapacity: null,
+      odometer: 1000,
+      sede: 'Monterrey',
+      centroMantenimiento: null,
+      maintenanceCenterId: null,
+      protocolStartDate: null,
+      vigenciaSeguro: null,
+      vencimientoVerificacion: null,
+      lubeType: null,
+      filterBrand: null,
+      ownerId: null,
+      complianceStatusId: null,
+      accountingAccount: null,
+      legalComplianceDate: null,
+      insuranceExpiryDate: null,
+      insurancePolicyNumber: null,
+      insuranceCompanyId: null,
+      insuranceCost: null,
+      lastEnvironmentalVerification: null,
+      lastMechanicalVerification: null,
+      environmentalHologram: null,
+      circulationCardNumber: null,
+      monthlyLeasePayment: 0,
+      status: 'ACTIVE',
+      assignedOperatorId: null,
+      updatedAt: '2026-01-01',
+      assetTypeId: 1,
+      fuelTypeId: 1,
+      traccionId: 1,
+      transmisionId: 1,
+      lastFuelLevel: 100,
+      initialFuelLevel: 100,
+    };
+
+    afterEach(() => {
+      stableUnits.length = 0;
+    });
+
+    it('AT-FMOD-EDIT-1: success — fetches full profile, hydrates controller, opens EXPANSION; "Cerrar Formulario" with editingUnit set returns to GRID', async (): Promise<void> => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      vi.mocked(api.get).mockResolvedValueOnce({ data: { data: editUnit } });
+      stableUnits.push(editUnit);
+
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      fireEvent.click(await screen.findByTestId('archon-card-item'));
+
+      expect(await screen.findByText(`Rectificación: ${editUnit.id}`)).toBeInTheDocument();
+      expect(api.get).toHaveBeenCalledWith(`/fleet/${editUnit.id}`);
+      expect(baseMock.hydrateEditUnit).toHaveBeenCalled();
+
+      fireEvent.click(screen.getByText(/Cerrar Formulario/i));
+      expect(await screen.findByText('Administrar Unidades')).toBeInTheDocument();
+    });
+
+    it('AT-FMOD-EDIT-2: failure — logs error via console.error and stays on GRID', async (): Promise<void> => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation((): void => {});
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      vi.mocked(api.get).mockRejectedValueOnce(new Error('network down'));
+      stableUnits.push(editUnit);
+
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      fireEvent.click(await screen.findByTestId('archon-card-item'));
+
+      await waitFor((): void => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Failed to load full unit profile:',
+          expect.any(Error)
+        );
+      });
+      expect(screen.getByText('Administrar Unidades')).toBeInTheDocument();
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('AT-FMOD-CREATE-SUCCESS — FleetRegistrationForm onSuccess (refreshUnits + handleReturnToGrid)', () => {
+    it('AT-FMOD-CREATE-SUCCESS-1: successful new-unit submit refreshes units and returns to GRID', async (): Promise<void> => {
+      vi.mocked(useFleetForm).mockReturnValue({
+        ...baseMock,
+        handleSubmit: vi.fn(
+          async (_e: unknown, onSuccessCb?: () => Promise<void>): Promise<void> => {
+            await onSuccessCb?.();
+          }
+        ),
+      } as unknown as UseFleetFormReturn);
+
+      const { container } = renderModule();
+      fireEvent.click(screen.getByText(/Iniciar Registro/i));
+      expect(screen.getByText('IDENTIDAD')).toBeInTheDocument();
+
+      const form = container.querySelector('form');
+      expect(form).not.toBeNull();
+      fireEvent.submit(form as HTMLFormElement);
+
+      expect(await screen.findByText('Administrar Unidades')).toBeInTheDocument();
     });
   });
 });
