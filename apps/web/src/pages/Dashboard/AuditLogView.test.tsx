@@ -141,4 +141,90 @@ describe('AuditLogView', () => {
       expect(reasonCell.getAttribute('title')).toBe('Odómetro actualizado');
     });
   });
+
+  // ── R4-C Fc162 — Sonar unc lines 79,83,85,167,168,203,219,236,247,360,361,391,399 ──
+  describe('R4-C — filtros, paginación, toggle de diff y estado vacío de snapshot', () => {
+    it('editar los 4 filtros y pulsar Aplicar Filtros reinicia a página 1 y re-consulta', async () => {
+      vi.mocked(api.get).mockResolvedValue(MOCK_RESPONSE);
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-log-table')).toBeTruthy());
+
+      fireEvent.change(screen.getByTestId('filter-entity-type'), {
+        target: { value: 'fleet_unit' },
+      });
+      fireEvent.change(screen.getByTestId('filter-action'), { target: { value: 'UPDATE' } });
+      fireEvent.change(screen.getByTestId('filter-date-from'), {
+        target: { value: '2026-06-01' },
+      });
+      fireEvent.change(screen.getByTestId('filter-date-to'), { target: { value: '2026-06-30' } });
+
+      fireEvent.click(screen.getByTestId('filter-apply'));
+
+      await waitFor(() => {
+        const lastCallUrl = vi.mocked(api.get).mock.calls.at(-1)?.[0] as string;
+        expect(lastCallUrl).toContain('page=1');
+        expect(lastCallUrl).toContain('entity_type=fleet_unit');
+        expect(lastCallUrl).toContain('action=UPDATE');
+        expect(lastCallUrl).toContain('date_from=2026-06-01');
+        expect(lastCallUrl).toContain('date_to=2026-06-30');
+      });
+    });
+
+    it('los botones de paginación cambian de página y re-consultan', async () => {
+      vi.mocked(api.get).mockResolvedValue({
+        data: { success: true, data: [MOCK_ROW], meta: { page: 1, limit: 20, total: 40 } },
+      });
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-log-table')).toBeTruthy());
+
+      fireEvent.click(screen.getByTestId('pagination-next'));
+      await waitFor(() => {
+        const lastCallUrl = vi.mocked(api.get).mock.calls.at(-1)?.[0] as string;
+        expect(lastCallUrl).toContain('page=2');
+      });
+
+      fireEvent.click(screen.getByTestId('pagination-prev'));
+      await waitFor(() => {
+        const lastCallUrl = vi.mocked(api.get).mock.calls.at(-1)?.[0] as string;
+        expect(lastCallUrl).toContain('page=1');
+      });
+    });
+
+    it('alternar "Solo diferencias" filtra el diff a solo las llaves que cambiaron', async () => {
+      const mixedRow = {
+        ...MOCK_ROW,
+        uuid: 'audit-uuid-003',
+        snapshot_before: { status: 'Disponible', unchanged: 'same' },
+        snapshot_after: { status: 'En Ruta', unchanged: 'same' },
+      };
+      vi.mocked(api.get).mockResolvedValue({
+        data: { success: true, data: [mixedRow], meta: { page: 1, limit: 20, total: 1 } },
+      });
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-row-audit-uuid-003')).toBeTruthy());
+      fireEvent.click(screen.getByTestId('audit-row-audit-uuid-003'));
+
+      expect(screen.getAllByText(/unchanged:/).length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getByTestId('toggle-only-diffs'));
+      expect(screen.getByText('Mostrar todo')).toBeTruthy();
+      expect(screen.queryAllByText(/unchanged:/).length).toBe(0);
+    });
+
+    it('expandir una fila sin datos de snapshot muestra el mensaje vacío', async () => {
+      const nullSnapshotRow = {
+        ...MOCK_ROW,
+        uuid: 'audit-uuid-002',
+        snapshot_before: null,
+        snapshot_after: null,
+      };
+      vi.mocked(api.get).mockResolvedValue({
+        data: { success: true, data: [nullSnapshotRow], meta: { page: 1, limit: 20, total: 1 } },
+      });
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-row-audit-uuid-002')).toBeTruthy());
+      fireEvent.click(screen.getByTestId('audit-row-audit-uuid-002'));
+      expect(screen.getByText('Sin datos de snapshot.')).toBeTruthy();
+    });
+  });
 });
