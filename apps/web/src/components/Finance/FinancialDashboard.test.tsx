@@ -13,10 +13,25 @@ import { FinanceDashboardData, DateRange } from '../../types/finance';
  */
 
 vi.mock('../../api/client', () => ({ default: { get: vi.fn(), post: vi.fn() } }));
-vi.mock('react-apexcharts', () => ({ default: (): null => null }));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let capturedDonutOptions: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let capturedAreaOptions: any = null;
+vi.mock('react-apexcharts', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: (props: any): null => {
+    if (props.type === 'donut') capturedDonutOptions = props.options;
+    if (props.type === 'area') capturedAreaOptions = props.options;
+    return null;
+  },
+}));
 vi.mock('./PeriodRangePicker', () => ({
   default: (): React.ReactElement => <div>Period Picker</div>,
 }));
+
+const formatMXN = (value: number): string =>
+  value.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
 
 const RANGE: DateRange = { from: '2026-01', to: '2026-06' };
 
@@ -204,5 +219,65 @@ describe('FinancialDashboard', () => {
     await waitFor(() =>
       expect(api.get).toHaveBeenCalledWith('/finance/dashboard?from=2026-02&to=2026-07')
     );
+  });
+
+  // ── R4-C Fc162 — Sonar unc lines 174,183,192,201,233-235,251,259,271-273,309,312 ──
+  it('clicking the remaining KPI actions navigates with their respective category', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: DASHBOARD_DATA } });
+    const onNavigateToEgresos = vi.fn();
+    render(
+      <FinancialDashboard
+        dateRange={RANGE}
+        onDateRangeChange={vi.fn()}
+        onNavigateToEgresos={onNavigateToEgresos}
+      />
+    );
+    await screen.findByText('Total egresos');
+
+    fireEvent.click(screen.getByText('Ver combustible'));
+    expect(onNavigateToEgresos).toHaveBeenCalledWith('FUEL');
+
+    fireEvent.click(screen.getByText('Ver seguros'));
+    expect(onNavigateToEgresos).toHaveBeenCalledWith('INSURANCE');
+
+    fireEvent.click(screen.getByText('Ver arrendamientos'));
+    expect(onNavigateToEgresos).toHaveBeenCalledWith('LEASE');
+
+    fireEvent.click(screen.getByText('Ver análisis de costos'));
+    expect(onNavigateToEgresos).toHaveBeenCalledWith();
+  });
+
+  it('the donut/area chart formatter callbacks compute the expected currency/percentage strings', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: DASHBOARD_DATA } });
+    render(
+      <FinancialDashboard
+        dateRange={RANGE}
+        onDateRangeChange={vi.fn()}
+        onNavigateToEgresos={vi.fn()}
+      />
+    );
+    await screen.findByText('Total egresos');
+
+    expect(capturedDonutOptions).not.toBeNull();
+    expect(capturedAreaOptions).not.toBeNull();
+
+    // donutTotal = 50000 (LEASE) + 35000 (MAINTENANCE) = 85000
+    const dataLabelFmt = capturedDonutOptions.dataLabels.formatter;
+    expect(dataLabelFmt(0, { seriesIndex: 0 })).toBe('58.8%');
+
+    const valueFmt = capturedDonutOptions.plotOptions.pie.donut.labels.value.formatter;
+    expect(valueFmt('50000')).toBe(formatMXN(50000));
+
+    const totalFmt = capturedDonutOptions.plotOptions.pie.donut.labels.total.formatter;
+    expect(totalFmt()).toBe(formatMXN(85000));
+
+    const tooltipFmt = capturedDonutOptions.tooltip.y.formatter;
+    expect(tooltipFmt(0, { seriesIndex: 1 })).toBe(`${formatMXN(35000)} (41.18%)`);
+
+    const yAxisFmt = capturedAreaOptions.yaxis.labels.formatter;
+    expect(yAxisFmt(12345)).toBe(formatMXN(12345));
+
+    const areaTooltipFmt = capturedAreaOptions.tooltip.y.formatter;
+    expect(areaTooltipFmt(6789)).toBe(formatMXN(6789));
   });
 });
