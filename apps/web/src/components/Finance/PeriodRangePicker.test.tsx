@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '../../test/testUtils';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, within } from '../../test/testUtils';
 import PeriodRangePicker from './PeriodRangePicker';
 
 /**
@@ -35,5 +35,98 @@ describe('PeriodRangePicker (FC 078 F3 — P1-3 responsive)', () => {
     fireEvent.click(screen.getByText(/1 de julio de 2026/));
     fireEvent.click(screen.getByText('Aplicar Rango'));
     expect(onChange).toHaveBeenCalledWith({ from: '2026-07-01', to: '2026-07-31' });
+  });
+});
+
+// ── R4-C Fc162 — Sonar unc lines 56-57,95-96,98,163,220-221,225-226,235-236,296-297,310-311 ──
+describe('PeriodRangePicker (R4-C — getDayCls branches, day selection, error, month nav)', () => {
+  const openPicker = (): void => {
+    fireEvent.click(within(screen.getByTestId('period-picker-trigger-row')).getByRole('button'));
+  };
+
+  const panelOf = (title: 'Desde' | 'Hasta'): HTMLElement =>
+    screen.getByText(title).parentElement as HTMLElement;
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('AT-PRP-DAYCLS-1: día "hoy" muestra el anillo distintivo y un día fuera de rango usa el estilo por defecto', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-05T12:00:00.000Z'));
+
+    render(
+      <PeriodRangePicker value={{ from: '2026-07-10', to: '2026-07-20' }} onChange={vi.fn()} />
+    );
+    openPicker();
+
+    const desde = panelOf('Desde');
+    const todayCell = within(desde).getByText('5');
+    expect(todayCell.className).toContain('ring-yellow-400');
+
+    const plainCell = within(desde).getByText('3');
+    expect(plainCell.className).toContain('hover:bg-slate-100');
+    expect(plainCell.className).not.toContain('ring-yellow-400');
+  });
+
+  it('AT-PRP-DAYSEL-1: clic en un día del panel "Desde" invoca handleFromSelect y actualiza la fecha mostrada', () => {
+    render(
+      <PeriodRangePicker value={{ from: '2026-07-10', to: '2026-07-20' }} onChange={vi.fn()} />
+    );
+    openPicker();
+
+    fireEvent.click(within(panelOf('Desde')).getByText('12'));
+    expect(within(panelOf('Desde')).getByText(/12 de julio de 2026/)).toBeInTheDocument();
+  });
+
+  it('AT-PRP-DAYSEL-2: clic en un día del panel "Hasta" invoca handleToSelect y actualiza la fecha mostrada', () => {
+    render(
+      <PeriodRangePicker value={{ from: '2026-07-10', to: '2026-07-20' }} onChange={vi.fn()} />
+    );
+    openPicker();
+
+    fireEvent.click(within(panelOf('Hasta')).getByText('18'));
+    expect(within(panelOf('Hasta')).getByText(/18 de julio de 2026/)).toBeInTheDocument();
+  });
+
+  it('AT-PRP-ERR-1: si la fecha "Desde" queda después de "Hasta", muestra el error y no llama onChange', () => {
+    const onChange = vi.fn();
+    render(
+      <PeriodRangePicker value={{ from: '2026-07-05', to: '2026-07-10' }} onChange={onChange} />
+    );
+    openPicker();
+
+    fireEvent.click(within(panelOf('Desde')).getByText('20'));
+    fireEvent.click(screen.getByText('Aplicar Rango'));
+
+    expect(
+      screen.getByText('La fecha de inicio debe ser anterior o igual a la fecha de fin.')
+    ).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('AT-PRP-NAV-1: los botones Mes anterior/Mes siguiente de ambos paneles navegan el mes visible', () => {
+    render(
+      <PeriodRangePicker value={{ from: '2026-06-15', to: '2026-08-15' }} onChange={vi.fn()} />
+    );
+    openPicker();
+
+    const desde = panelOf('Desde');
+    const hasta = panelOf('Hasta');
+
+    expect(within(desde).getByText('Junio 2026')).toBeInTheDocument();
+    expect(within(hasta).getByText('Agosto 2026')).toBeInTheDocument();
+
+    fireEvent.click(within(desde).getByTitle('Mes anterior'));
+    expect(within(desde).getByText('Mayo 2026')).toBeInTheDocument();
+
+    fireEvent.click(within(desde).getByTitle('Mes siguiente'));
+    expect(within(desde).getByText('Junio 2026')).toBeInTheDocument();
+
+    fireEvent.click(within(hasta).getByTitle('Mes anterior'));
+    expect(within(hasta).getByText('Julio 2026')).toBeInTheDocument();
+
+    fireEvent.click(within(hasta).getByTitle('Mes siguiente'));
+    expect(within(hasta).getByText('Agosto 2026')).toBeInTheDocument();
   });
 });
