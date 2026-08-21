@@ -151,4 +151,64 @@ describe('MaintenanceCompletionPanel', () => {
       expect(actionBar?.className).toMatch(/bottom-0/);
     });
   });
+
+  // ── R4-C Fc162 — Sonar unc lines 113-115,145,156,226,247,264,282,299,345,361,417,425 ──
+  describe('R4-C — form field onChange handlers, handleDetailChange, catch de handleSubmit', () => {
+    it('editing odómetros, fecha, costo y litros/monto de combustible actualiza sus valores', async () => {
+      render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+      await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+
+      const entryOdometer = screen.getByPlaceholderText('Ej: 126500');
+      fireEvent.change(entryOdometer, { target: { value: '51000' } });
+      expect(entryOdometer).toHaveValue(51000);
+
+      const exitOdometer = screen.getByPlaceholderText('Ej: 126680');
+      fireEvent.change(exitOdometer, { target: { value: '51200' } });
+      expect(exitOdometer).toHaveValue(51200);
+
+      const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+      fireEvent.change(dateInput, { target: { value: '2026-05-30' } });
+      expect(dateInput).toHaveValue('2026-05-30');
+
+      const costInput = screen.getByPlaceholderText('Ej: 3,450.00');
+      fireEvent.change(costInput, { target: { value: '5000' } });
+      expect(costInput).toHaveValue(5000);
+
+      const [litersInput, amountInput] = screen.getAllByPlaceholderText('0.00');
+      fireEvent.change(litersInput, { target: { value: '20.5abc' } });
+      expect(litersInput).toHaveValue('20.5');
+
+      fireEvent.change(amountInput, { target: { value: '99xyz' } });
+      expect(amountInput).toHaveValue('99');
+    });
+
+    it('seleccionar un técnico y editar el estatus/notas de una tarea actualiza sus valores', async () => {
+      render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+      await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+
+      fireEvent.click(screen.getByText('Carlos López'));
+      fireEvent.click(await screen.findByText('Pedro Técnico'));
+      expect(screen.getByText('Pedro Técnico')).toBeInTheDocument();
+
+      const statusTriggers = screen.getAllByText('Correcto');
+      fireEvent.click(statusTriggers[0]);
+      fireEvent.click(await screen.findByText('Reemplazado'));
+
+      const notesInputs = screen.getAllByPlaceholderText('Notas...');
+      fireEvent.change(notesInputs[0], { target: { value: 'Se cambió sin problema' } });
+      expect(notesInputs[0]).toHaveValue('Se cambió sin problema');
+    });
+
+    it('muestra el mensaje de error específico del backend cuando el PATCH falla', async () => {
+      server.use(
+        http.patch('*/maintenance/:uuid/complete', () =>
+          HttpResponse.json({ error: 'Servicio ya cerrado' }, { status: 400 })
+        )
+      );
+      render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+      await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: /finalizar/i }));
+      expect(await screen.findByText('Servicio ya cerrado')).toBeInTheDocument();
+    });
+  });
 });
