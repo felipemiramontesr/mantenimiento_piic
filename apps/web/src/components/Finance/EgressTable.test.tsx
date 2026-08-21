@@ -85,6 +85,14 @@ describe('EgressTable (FC 078 F3 — migración a primitiva)', () => {
     );
   });
 
+  it('falls back to an empty row list when the fetch rejects (207_AN Bravo reopen)', async () => {
+    vi.mocked(api.get).mockRejectedValue(new Error('network down'));
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() =>
+      expect(screen.getByText('Sin egresos registrados en este período')).toBeInTheDocument()
+    );
+  });
+
   it('AT-FC078-F3-EG-1: la tabla vive en SovereignScrollArea con minWidth derivado (6×96)', async () => {
     mockGet([ROW]);
     render(<EgressTable from="2026-07-01" to="2026-07-31" />);

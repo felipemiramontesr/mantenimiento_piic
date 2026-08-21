@@ -383,12 +383,24 @@ describe('FleetGridView — search suggestions (matchFieldInUnit)', () => {
   });
 
   it('matches by forecast remaining km (Km. Restantes)', () => {
-    const getSuggestions = captureGetSuggestions([baseUnit]);
-    // 10000 - (30000 - 20000) = 0 remaining -> "0" always present in the string
-    const results = getSuggestions('0');
-    expect(results.some((r) => r.metaLabel === 'Km. Restantes' || r.metaLabel === 'Código')).toBe(
-      true
-    );
+    // 207_AN Bravo reopen: the previous assertion accepted a match on
+    // 'Código' as a pass too — baseUnit's id ('ASM-010') itself contains
+    // '0', so matchFieldInUnit's id-check (checked first) always won before
+    // ever reaching the forecast branch. A dedicated unit whose forecast
+    // value shares no digits with its id isolates the real target line.
+    const forecastUnit = {
+      id: 'UNIT-X',
+      maintIntervalKm: 10000,
+      maintIntervalDays: 90,
+      dailyUsageAvg: 50,
+      odometer: 20000,
+      lastServiceReading: 15000,
+    } as unknown as FleetUnit;
+    // remaining = 10000 - (20000 - 15000) = 5000
+    const getSuggestions = captureGetSuggestions([forecastUnit]);
+    const results = getSuggestions('5000');
+    expect(results).toHaveLength(1);
+    expect(results[0].metaLabel).toBe('Km. Restantes');
   });
 
   it('matches a string field via SEARCH_CONFIGS (marca)', () => {
@@ -590,6 +602,71 @@ describe('FleetGridView — gallery interaction', () => {
 
     fireEvent.click(screen.getByTitle('Editar Activo (Auditado)'));
     expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'ASM-040' }));
+  });
+
+  // 207_AN Bravo reopen: a unit that already has images in fleet data takes
+  // the with-images branch of the row thumbnail (own onClick + onError),
+  // never exercised by unitNoImages above.
+  it('opens the gallery directly (no getUnitDetails call) when the unit already has images, and falls back on image error', async () => {
+    const unitWithImages = {
+      id: 'ASM-050',
+      placas: 'PQR-321',
+      marca: 'Kenworth',
+      modelo: 'T680',
+      status: 'Disponible',
+      odometer: 5000,
+      images: ['/img/existing.png'],
+    } as unknown as FleetUnit;
+
+    render(<FleetGridView units={[unitWithImages]} onEdit={vi.fn()} />);
+
+    const rowThumbnail = screen.getByAltText('ASM-050');
+    fireEvent.click(rowThumbnail);
+
+    expect(await screen.findByAltText('ASM-050 - 1')).toBeInTheDocument();
+    expect(mockGetUnitDetails).not.toHaveBeenCalled();
+
+    fireEvent.error(rowThumbnail);
+    expect((rowThumbnail as HTMLImageElement).src).toContain('archon-unit-default.png');
+  });
+});
+
+describe('FleetGridView — sorting by KM RESTANTES and PRONÓSTICO (207_AN Bravo reopen)', () => {
+  const units = [
+    { id: 'ASM-060', placas: 'A', marca: 'X', modelo: 'Y', status: 'Disponible', odometer: 1 },
+    { id: 'ASM-061', placas: 'B', marca: 'X', modelo: 'Y', status: 'Disponible', odometer: 2 },
+  ] as unknown as FleetUnit[];
+
+  beforeEach(() => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(false),
+      hasAnyPermission: vi.fn().mockReturnValue(false),
+      isOmnipotent: vi.fn().mockReturnValue(false),
+    });
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+  });
+
+  it('sorts by KM RESTANTES (programacion) and PRONÓSTICO (pronostico) without throwing', () => {
+    render(<FleetGridView units={units} onEdit={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('KM RESTANTES'));
+    fireEvent.click(screen.getByText('KM RESTANTES'));
+    // 'PRONÓSTICO' also appears as a per-row badge fallback label (no
+    // forecast data) — the column header is the first DOM occurrence.
+    const pronosticoHeader = screen.getAllByText('PRONÓSTICO')[0];
+    fireEvent.click(pronosticoHeader);
+    fireEvent.click(pronosticoHeader);
+
+    expect(screen.getAllByText(/ASM-06/).length).toBeGreaterThan(0);
   });
 });
 

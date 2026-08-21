@@ -575,6 +575,53 @@ describe('MaintenanceRegistrationForm — submit flow', () => {
     await waitFor(() => expect(submitBtn).not.toBeDisabled());
     consoleSpy.mockRestore();
   });
+
+  // 207_AN Bravo reopen: the two submit tests above always used TOYOTA_UNIT,
+  // which is always isInProgress=true (Taller) — the payload's `!isInProgress`
+  // object-spread branch (fuelLevelEnd/fuelLitersLoaded/fuelAmount/
+  // endOdometer) never actually ran on a successful submit.
+  it('includes the closing telemetry fields in the payload when submitting in In Situ mode', async () => {
+    let capturedBody: Record<string, unknown> | null = null;
+    server.use(
+      http.get('*/fleet', () =>
+        HttpResponse.json({ success: true, data: [makeUnit('U-INSITU-SUBMIT', 22000, 5000)] })
+      ),
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: { vehicleId: 'U-INSITU-SUBMIT', odometer: 22000, tasks: [] },
+        })
+      ),
+      http.post('*/maintenance', async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ success: true });
+      })
+    );
+    const onSuccess = vi.fn();
+    render(<MaintenanceRegistrationForm onSuccess={onSuccess} onCancel={noop} />);
+    await selectUnit(/U-INSITU-SUBMIT - Test Unit/);
+    await waitFor(() =>
+      expect(screen.getByText('In Situ — Registro Inmediato')).toBeInTheDocument()
+    );
+
+    const endOdometerInput = await screen.findByPlaceholderText('Ej: 125180');
+    fireEvent.change(endOdometerInput, { target: { value: '22500' } });
+    const [litersInput, amountInput] = screen.getAllByPlaceholderText('0.00');
+    fireEvent.change(litersInput, { target: { value: '45.5' } });
+    fireEvent.change(amountInput, { target: { value: '950.75' } });
+
+    await selectTechnician();
+
+    const submitBtn = screen.getByRole('button', { name: /Asentar Servicio/i });
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(capturedBody?.is_in_progress).toBe(false);
+    expect(capturedBody?.fuelLitersLoaded).toBe(45.5);
+    expect(capturedBody?.fuelAmount).toBe(950.75);
+    expect(capturedBody?.endOdometer).toBe(22500);
+  });
 });
 
 describe('MaintenanceRegistrationForm — UPA preview fetch failure', () => {

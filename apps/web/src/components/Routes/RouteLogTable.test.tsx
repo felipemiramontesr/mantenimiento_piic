@@ -621,3 +621,169 @@ describe('RouteLogTable — row interactions', () => {
     fireEvent.click(screen.getByText('ASM-001'));
   });
 });
+
+/**
+ * 207_AN Bravo (auditoría R independiente) — reopen: estas líneas seguían
+ * sin cobertura pese al reporte anterior de "saldado". filteredLogs's
+ * active-searchTerm branch (match por uuid directo Y por matchFieldInRoute)
+ * y el onSuccess real de IncidentReportForm (cierra el formulario Y
+ * refresca la lista) nunca se ejercitaban.
+ */
+describe('RouteLogTable — active searchTerm filters rows (207_AN Bravo reopen)', () => {
+  const usersFixture = [
+    {
+      id: 1,
+      username: 'jperez',
+      fullName: 'Juan Perez',
+      email: 'j@p.com',
+      roleId: 1,
+      roleName: 'Admin',
+      department: 'Sistemas',
+      isActive: true,
+      employeeNumber: 'E1',
+    },
+  ];
+  const unitsFixture = [
+    { id: 'ASM-100', marca: 'Nissan', modelo: 'March', status: 'En Ruta', odometer: 1000 },
+    { id: 'ASM-200', marca: 'Ford', modelo: 'Ranger', status: 'En Ruta', odometer: 2000 },
+  ];
+  const routeAlpha = {
+    id: 1,
+    uuid: 'route-alpha',
+    unit_id: 'ASM-100',
+    operator_id: 1,
+    origin: 'Base',
+    destination: 'Cliente A',
+    status: 'En Ruta',
+    start_reading: 1000,
+    created_at: new Date().toISOString(),
+  };
+  const routeBeta = {
+    id: 2,
+    uuid: 'route-beta',
+    unit_id: 'ASM-200',
+    operator_id: 1,
+    origin: 'Base',
+    destination: 'Cliente B',
+    status: 'En Ruta',
+    start_reading: 2000,
+    created_at: new Date().toISOString(),
+  };
+
+  const mockRoutesRequest = (): void => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes')
+        return Promise.resolve({ data: { success: true, data: [routeAlpha, routeBeta] } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: usersFixture } });
+      if (url === '/fleet') return Promise.resolve({ data: { success: true, data: unitsFixture } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+  };
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('filters rows by matching the uuid directly (case-insensitive)', async () => {
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Rutas', description: 'ERP' },
+      searchTerm: 'ROUTE-ALPHA',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    mockRoutesRequest();
+
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByText('ASM-100')).toBeDefined());
+    expect(screen.queryByText('ASM-200')).toBeNull();
+  });
+
+  it('filters rows via matchFieldInRoute when the term is not a uuid', async () => {
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Rutas', description: 'ERP' },
+      searchTerm: 'ASM-200',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    mockRoutesRequest();
+
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByText('ASM-200')).toBeDefined());
+    expect(screen.queryByText('ASM-100')).toBeNull();
+  });
+});
+
+describe('RouteLogTable — incident report success flow (207_AN Bravo reopen)', () => {
+  const mockRoutes = [
+    {
+      id: 1,
+      uuid: 'route-1',
+      unit_id: 'ASM-001',
+      operator_id: 1,
+      operator_name: 'Juan Perez',
+      origin: 'Base',
+      destination: 'Cliente A',
+      status: 'En Ruta',
+      start_reading: 50000,
+      created_at: new Date().toISOString(),
+    },
+  ];
+  const mockUsers = [
+    {
+      id: 1,
+      username: 'jperez',
+      fullName: 'Juan Perez',
+      email: 'j@p.com',
+      roleId: 1,
+      roleName: 'Admin',
+      department: 'Sistemas',
+      isActive: true,
+      employeeNumber: 'E1',
+    },
+  ];
+  const mockUnits = [
+    { id: 'ASM-001', marca: 'Nissan', modelo: 'March', status: 'En Ruta', odometer: 50000 },
+  ];
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('closes the incident form and refreshes the log list once the report succeeds', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes') return Promise.resolve({ data: { success: true, data: mockRoutes } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
+      if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByTitle(/Reportar Incidencia/i)).toBeDefined());
+
+    fireEvent.click(screen.getByTitle(/Reportar Incidencia/i));
+    expect(screen.getByText(/Protocolo Sentinel/i)).toBeDefined();
+
+    fireEvent.change(screen.getByPlaceholderText(/Describe la incidencia/i), {
+      target: { value: 'Falla de frenos detectada en ruta.' },
+    });
+
+    const callsBefore = vi.mocked(api.get).mock.calls.length;
+    fireEvent.click(screen.getByText(/Emitir Alerta Sentinel/i));
+
+    // onSuccess (setReportingRoute(null)) removes the form and restores the
+    // table; refresh() triggers an additional /routes GET beyond mount.
+    await waitFor(() => expect(screen.getByTestId('archon-route-log-table')).toBeDefined());
+    await waitFor(() => expect(vi.mocked(api.get).mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+});
