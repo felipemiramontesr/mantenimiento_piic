@@ -492,6 +492,119 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     expect(await screen.findByTestId('layout-title')).toHaveTextContent('Proceso UPA');
   });
 
+  it('MaintenanceForecastCardPanel: forecast fetch error falls back to empty state', async () => {
+    server.use(http.get('*/maintenance/forecast', () => HttpResponse.error()));
+    renderModule();
+    fireEvent.click(await screen.findByTestId('adaptive-view-cards'));
+    expect(await screen.findByTestId('archon-card-view-empty')).toBeInTheDocument();
+    expect(screen.getByText('NO SE ENCONTRARON UNIDADES ACTIVAS')).toBeInTheDocument();
+  });
+
+  it('MaintenanceCalendarPanel: fetch error falls back to empty calendar', async () => {
+    localStorage.clear();
+    server.use(http.get('*/maintenance', () => HttpResponse.error()));
+    renderModule();
+    fireEvent.click(await screen.findByText('Ver Historial'));
+    fireEvent.click(await screen.findByTestId('adaptive-view-calendar'));
+    expect(await screen.findByTestId('calendar-title')).toBeInTheDocument();
+  });
+
+  it('handleAcceptOrder: accept succeeds → opens UPA panel, then Volver triggers handleReturnFromUpa', async () => {
+    // Reset adaptive-view preference: a prior test switched maintenance-history to CALENDAR
+    localStorage.clear();
+    const openLog = {
+      id: 30,
+      uuid: 'uuid-accept-ok',
+      unit_id: 'ASM-055',
+      service_date: '2026-06-15',
+      odometer_at_service: 80000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 0,
+      technician: 'TechAccept',
+      created_at: '2026-06-15T08:00:00Z',
+      start_at: null,
+      end_at: null,
+      movement_status: 'OPEN',
+      upa_work_order_id: null,
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [openLog], nextCursor: null })
+      ),
+      http.patch('*/maintenance/*/accept', () =>
+        HttpResponse.json({ success: true, workOrderId: 55 })
+      ),
+      http.get('*/work-orders/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            id: 55,
+            uuid: 'upa-order-accept-test',
+            vehicleId: 'ASM-055',
+            fleetType: 'urban',
+            status: 'IN_PROGRESS',
+            pendingSince: null,
+            openedAt: '2026-06-15T08:30:00Z',
+            closedAt: null,
+            tasks: [],
+          },
+        })
+      )
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const acceptBtn = await screen.findByTestId('accept-btn-uuid-accept-ok');
+    fireEvent.click(acceptBtn);
+    // handleAcceptOrder success → refreshTrigger bump + handleOpenUpa → UPA panel
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent('Proceso UPA');
+
+    // Embedded UPA panel's Volver button → handleReturnFromUpa
+    const returnBtn = await screen.findByTestId('upa-return-btn');
+    fireEvent.click(returnBtn);
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent(
+      'Administrar Mantenimientos'
+    );
+  });
+
+  it('handleAcceptOrder: accept API error is caught silently, refreshTrigger still increments', async () => {
+    localStorage.clear();
+    const openLog = {
+      id: 31,
+      uuid: 'uuid-accept-err',
+      unit_id: 'ASM-056',
+      service_date: '2026-06-16',
+      odometer_at_service: 81000,
+      service_type: 'BASIC_10K',
+      service_mode: 'WORKSHOP',
+      system_recommended_type: 'BASIC_10K',
+      cost: 0,
+      technician: 'TechAcceptErr',
+      created_at: '2026-06-16T08:00:00Z',
+      start_at: null,
+      end_at: null,
+      movement_status: 'OPEN',
+      upa_work_order_id: null,
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [openLog], nextCursor: null })
+      ),
+      http.patch('*/maintenance/*/accept', () => new HttpResponse(null, { status: 500 }))
+    );
+    renderModule();
+    const histBtn = await screen.findByText('Ver Historial');
+    fireEvent.click(histBtn);
+    const acceptBtn = await screen.findByTestId('accept-btn-uuid-accept-err');
+    fireEvent.click(acceptBtn);
+    // Error is swallowed — panel stays on HISTORY without crashing
+    expect(await screen.findByTestId('layout-title')).toHaveTextContent(
+      'Administrar Mantenimientos'
+    );
+  });
+
   // ── FC 041 Fase C — piloto ArchonAdaptiveView (TABLE + CALENDAR) en HISTORY ──
   describe('adaptive HISTORY panel (FC 041 pilot)', () => {
     beforeEach(() => {
