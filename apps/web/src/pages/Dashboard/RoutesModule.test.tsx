@@ -121,5 +121,39 @@ describe('RoutesModule Orchestrator', () => {
       expect(await screen.findByTestId('archon-card-view')).toBeInTheDocument();
       expect(screen.getByText('0 (en curso)')).toBeInTheDocument();
     });
+
+    it('AT-FC078-F2a-RT-5: CARDS view shows the KM range for a finished route with end_km set', async () => {
+      server.use(
+        http.get('*/routes', () =>
+          HttpResponse.json({
+            success: true,
+            data: [{ ...routeLog, end_time: '2026-06-01T12:00:00.000Z', end_km: 50300 }],
+          })
+        )
+      );
+      renderModule();
+      await screen.findByTestId('adaptive-view-cards');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByTestId('archon-card-view')).toBeInTheDocument();
+      expect(screen.getByText('50,000 → 50,300')).toBeInTheDocument();
+    });
+
+    it('header "Cerrar Formulario" while editing a route returns to LOGS and clears editingRoute', async () => {
+      renderModule();
+      await screen.findByTestId('adaptive-view-cards');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      const editBtn = await screen.findByRole('button', { name: /Editar Ruta/i });
+      fireEvent.click(editBtn);
+      await screen.findByText('Cerrar Formulario');
+      fireEvent.click(screen.getByText('Cerrar Formulario'));
+      expect(await screen.findByTestId('adaptive-view-table')).toBeInTheDocument();
+    });
+
+    it('header "Iniciar Despacho" opens DISPATCH for a brand-new route (no editingRoute)', async () => {
+      renderModule();
+      await screen.findByTestId('adaptive-view-table');
+      fireEvent.click(screen.getByText('Iniciar Despacho'));
+      expect(await screen.findByText('Cerrar Formulario')).toBeInTheDocument();
+    });
   });
 });
