@@ -66,4 +66,25 @@ describe('ArchonCropModal', () => {
     // Offset changed — image is still rendered (no crash)
     expect(screen.getByAltText('crop-preview')).toBeInTheDocument();
   });
+
+  // ── R4-C Fc162 — Sonar unc lines 65-72,89-92 ──
+  it('computes natural size and centers the offset when the preview image loads', () => {
+    render(<ArchonCropModal {...defaultProps} />);
+    const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+    fireEvent.load(img);
+    // naturalWidth/naturalHeight mocked to 800x600 — scale/offset must reflect them.
+    expect(parseFloat(img.style.width)).toBeGreaterThan(100);
+    expect(parseFloat(img.style.height)).toBeGreaterThan(100);
+  });
+
+  it('scrolling the mouse wheel over the viewport adjusts the zoom', () => {
+    render(<ArchonCropModal {...defaultProps} />);
+    const viewport = screen.getByTestId('crop-viewport');
+    const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+    fireEvent.load(img);
+    const widthBeforeZoom = parseFloat(img.style.width);
+
+    fireEvent.wheel(viewport, { deltaY: -100 });
+    expect(parseFloat(img.style.width)).toBeGreaterThan(widthBeforeZoom);
+  });
 });
