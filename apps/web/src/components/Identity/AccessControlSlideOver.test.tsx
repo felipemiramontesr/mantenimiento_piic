@@ -119,6 +119,76 @@ describe('AccessControlSlideOver', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('renders the remaining role badges (roleId 1,2,4,5,6 — getRoleBadge switch cases)', async () => {
+    mockFetchOnce(200, {
+      success: true,
+      data: [
+        { id: 10, username: 'gerente', email: 'g@piic.com', roleId: 1 },
+        { id: 11, username: 'superintendente', email: 's@piic.com', roleId: 2 },
+        { id: 12, username: 'planeador', email: 'p@piic.com', roleId: 4 },
+        { id: 13, username: 'tecnico', email: 't@piic.com', roleId: 5 },
+        { id: 14, username: 'operador', email: 'o@piic.com', roleId: 6 },
+      ],
+    });
+    render(<AccessControlSlideOver isOpen onClose={vi.fn()} />);
+    expect(await screen.findByText('GERENTE GENERAL')).toBeInTheDocument();
+    expect(screen.getByText('SUPERINTENDENTE DE MINA')).toBeInTheDocument();
+    expect(screen.getByText('PLANEADOR SR')).toBeInTheDocument();
+    expect(screen.getByText('TÉCNICO ESPECIALISTA (MECÁNICO/ELÉCTRICO)')).toBeInTheDocument();
+    expect(screen.getByText('OPERADOR DE UNIDAD')).toBeInTheDocument();
+  });
+
+  it('"Plantilla Activa" tab switches back to the roster view from the registration form', async () => {
+    mockFetchOnce(200, { success: true, data: [] });
+    render(<AccessControlSlideOver isOpen onClose={vi.fn()} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    fireEvent.click(screen.getByText('Registrar Personal'));
+    expect(screen.getByPlaceholderText('Ej. juan.perez')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Plantilla Activa'));
+    expect(screen.queryByPlaceholderText('Ej. juan.perez')).not.toBeInTheDocument();
+    expect(screen.getByText('Sin personal registrado.')).toBeInTheDocument();
+  });
+
+  it('selecting a role option in the registration form updates formData.roleId', async () => {
+    mockFetchOnce(200, { success: true, data: [] });
+    render(<AccessControlSlideOver isOpen onClose={vi.fn()} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    fireEvent.click(screen.getByText('Registrar Personal'));
+
+    const supervisorOption = screen.getByText('SUPERINTENDENTE DE MINA');
+    fireEvent.click(supervisorOption);
+    expect(supervisorOption.className).toContain('bg-[#0f2a44]');
+  });
+
+  it('coverage: handleRegister success path resets the form and returns to the roster view (mocked 200 — /v1/auth/register is retired in the real API today, see HALLAZGO REAL above; this only exercises the existing success branch in case the endpoint is ever restored, it does not claim it works in prod)', async () => {
+    mockFetchOnce(200, { success: true, data: [] }); // initial roster load
+    render(<AccessControlSlideOver isOpen onClose={vi.fn()} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByText('Registrar Personal'));
+    fireEvent.change(screen.getByPlaceholderText('Ej. juan.perez'), {
+      target: { value: 'nuevo.usuario' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('email@piic.com.mx'), {
+      target: { value: 'nuevo@piic.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'Archon@1234!' },
+    });
+
+    mockFetchOnce(200, { success: true, data: { id: 99, username: 'nuevo.usuario' } }); // register
+    mockFetchOnce(200, { success: true, data: [] }); // fetchUsers() re-run on success
+    fireEvent.click(screen.getByText('Guardar Identidad'));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(3));
+    expect(screen.getByText('Sin personal registrado.')).toBeInTheDocument();
+
+    // formData reset confirmed by re-entering create view with a blank username
+    fireEvent.click(screen.getByText('Registrar Personal'));
+    expect(screen.getByPlaceholderText('Ej. juan.perez')).toHaveValue('');
+  });
+
   it('calls onClose when the backdrop or the X button is clicked', async () => {
     mockFetchOnce(200, { success: true, data: [] });
     const onClose = vi.fn();
