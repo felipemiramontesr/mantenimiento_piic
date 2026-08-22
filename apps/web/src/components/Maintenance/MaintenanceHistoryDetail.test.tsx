@@ -1,9 +1,10 @@
 /* eslint-disable */
 // @ts-nocheck
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
+import api from '../../api/client';
 import MaintenanceHistoryDetail from './MaintenanceHistoryDetail';
 
 const noop = (): void => undefined;
@@ -173,5 +174,40 @@ describe('MaintenanceHistoryDetail', () => {
     expect(btn).toBeDisabled();
     expect(btn.title).toContain('Acción no disponible en modo sin conexión');
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+  });
+
+  it('clicking Descargar PDF fetches the report and triggers an anchor download', async () => {
+    // MSW's blob-responseType XHR path is broken in this test runtime (undici
+    // "object.stream is not a function"), unrelated to the response body —
+    // spy on api.get directly instead of going through the network layer.
+    const fakeBlob = new Blob(['fake-pdf-bytes'], { type: 'application/pdf' });
+    const apiGetSpy = vi.spyOn(api, 'get').mockImplementation((url: string) => {
+      if (url.includes('/pdf')) return Promise.resolve({ data: fakeBlob });
+      return Promise.resolve({ data: { success: true, data: DETAIL_RESPONSE } });
+    });
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+    const revokeObjectURL = vi.fn();
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL;
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+
+    try {
+      render(<MaintenanceHistoryDetail log={BASE_LOG} onBack={noop} />);
+      const btn = await screen.findByTestId('download-pdf-btn');
+      fireEvent.click(btn);
+
+      await waitFor(() => expect(createObjectURL).toHaveBeenCalled());
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+      expect(clickSpy).toHaveBeenCalled();
+    } finally {
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+      clickSpy.mockRestore();
+      apiGetSpy.mockRestore();
+    }
   });
 });
