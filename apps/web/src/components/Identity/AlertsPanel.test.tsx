@@ -204,4 +204,45 @@ describe('AlertsPanel — role-scoped guard (Feature Contract Alerts_Role_Scoped
     expect(screen.getByText('Seguro vencido hace 5 días')).toBeInTheDocument();
     expect(screen.getByText('ASM-104')).toBeInTheDocument();
   });
+
+  it('search config: getSuggestions filters by unitId/type/severity/description, onSuggestionSelect sets the search term', () => {
+    grantAccess(true);
+    renderPanel();
+
+    const lastConfigCall =
+      setSearchConfigMock.mock.calls[setSearchConfigMock.mock.calls.length - 1];
+    const config = lastConfigCall[0];
+    const suggestions = config.getSuggestions('asm-001');
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]).toMatchObject({
+      id: sampleAlert.id,
+      title: 'ASM-001',
+      metaLabel: 'Severidad',
+    });
+
+    config.onSuggestionSelect(suggestions[0]);
+    expect(setSearchTermMock).toHaveBeenCalledWith('ASM-001');
+  });
+
+  it('filters the alerts table when a global search term is active', () => {
+    grantAccess(true);
+    useAlertsMock.mockReturnValue({
+      alerts: [
+        sampleAlert,
+        { ...sampleAlert, id: 'OTHER', unitId: 'ASM-999', description: 'Otra alerta distinta' },
+      ],
+      isSyncing: false,
+      refresh: vi.fn(),
+    });
+    useSovereignLayoutMock.mockReturnValue({
+      searchTerm: 'asm-001',
+      setSearchTerm: setSearchTermMock,
+      setSearchConfig: setSearchConfigMock,
+      setSectionData: setSectionDataMock,
+    });
+    renderPanel();
+
+    expect(screen.getByText('ASM-001')).toBeInTheDocument();
+    expect(screen.queryByText('ASM-999')).not.toBeInTheDocument();
+  });
 });
