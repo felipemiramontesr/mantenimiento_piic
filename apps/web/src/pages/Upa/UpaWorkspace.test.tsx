@@ -555,4 +555,50 @@ describe('UpaWorkspace', () => {
       expect(completeTask).not.toHaveBeenCalled();
     });
   });
+
+  // ─── Non-pending statuses: getStatusLabel/getBadgeCls/checkboxCls branches ──
+
+  describe('DEFERRED_FINANCIAL and N_A_STRUCTURAL task statuses', () => {
+    it('renders the "Dif. Financiero" label and red checkbox styling for a DEFERRED_FINANCIAL task', () => {
+      const deferredTask = { ...mockTask, status: 'DEFERRED_FINANCIAL' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [deferredTask] },
+      });
+      render(<UpaWorkspace />);
+      expect(screen.getByText('Dif. Financiero')).toBeDefined();
+      const btn = screen.getByTestId('complete-btn-triage_dashboard_lights') as HTMLButtonElement;
+      expect(btn.className).toContain('bg-red-100');
+    });
+
+    it('renders the "No Aplica" label and amber checkbox styling for an N_A_STRUCTURAL task', () => {
+      const naTask = { ...mockTask, status: 'N_A_STRUCTURAL' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [naTask] },
+      });
+      render(<UpaWorkspace />);
+      expect(screen.getByText('No Aplica')).toBeDefined();
+      const btn = screen.getByTestId('complete-btn-triage_dashboard_lights') as HTMLButtonElement;
+      expect(btn.className).toContain('bg-amber-100');
+    });
+  });
+
+  // ─── EvidenceInput removeUrl ────────────────────────────────────────────────
+
+  describe('Evidence URL removal', () => {
+    it('removes a URL input when its "Eliminar URL" button is clicked', () => {
+      const closureTask = { ...mockTask, taskId: 'closure_check_final', stage: 'closure' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [closureTask] },
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
+      fireEvent.click(screen.getByTestId('add-evidence-url-btn'));
+      expect(screen.getByTestId('evidence-url-input-0')).toBeDefined();
+      fireEvent.click(screen.getByLabelText('Eliminar URL'));
+      expect(screen.queryByTestId('evidence-url-input-0')).toBeNull();
+    });
+  });
 });
