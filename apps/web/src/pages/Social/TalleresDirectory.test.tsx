@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '../../test/testUtils';
+import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import TalleresDirectory from './TalleresDirectory';
 import api from '../../api/client';
 
@@ -63,5 +63,32 @@ describe('TalleresDirectory — FC-9 SocialNetwork FaseD', () => {
     await waitFor(() => {
       expect(screen.getByTestId('directory-error')).toBeInTheDocument();
     });
+  });
+
+  it('AT-SOC9-D-WEB-5: actualiza el input y busca al enviar el formulario', async () => {
+    mockGet.mockResolvedValueOnce({ data: { talleres: [] } });
+    render(<TalleresDirectory />);
+    await waitFor(() => expect(mockGet).toHaveBeenCalledWith('/social/directory'));
+
+    mockGet.mockResolvedValueOnce({ data: { talleres: MOCK_TALLERES } });
+    const input = screen.getByTestId('directory-search-input');
+    fireEvent.change(input, { target: { value: 'Arco' } });
+    expect(input).toHaveValue('Arco');
+
+    fireEvent.submit(screen.getByTestId('directory-search-form'));
+
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('/social/directory?q=Arco');
+    });
+  });
+
+  it('AT-SOC9-D-WEB-6: el botón Ver Perfil no lanza al hacer clic', async () => {
+    mockGet.mockResolvedValueOnce({ data: { talleres: MOCK_TALLERES } });
+    render(<TalleresDirectory />);
+    await waitFor(() => expect(screen.getByTestId('taller-card-3')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('taller-view-btn-3'));
+
+    expect(screen.getByTestId('taller-card-3')).toBeInTheDocument();
   });
 });
