@@ -222,4 +222,110 @@ describe('ArchonAddressField', () => {
       expect(screen.getByTestId('address-numero-int')).toHaveValue('3B');
     });
   });
+
+  // ── Error-path coverage — .catch() handlers on each geolocation fetch ─────
+
+  it('clears estados when the states fetch fails', async () => {
+    (api.get as Mock).mockRejectedValueOnce(new Error('network error'));
+
+    render(<Wrapper />);
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/geolocation/states');
+    });
+
+    await waitFor(() => {
+      const stateSelect = screen.getByTestId('address-state-select').querySelector('select')!;
+      expect(stateSelect.querySelectorAll('option').length).toBe(1);
+    });
+  });
+
+  it('clears municipios when the municipalities fetch fails', async () => {
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 14, name: 'Jalisco' }] } })
+      .mockRejectedValueOnce(new Error('network error'));
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('Jalisco')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('address-state-select').querySelector('select')!, {
+      target: { value: '14' },
+    });
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/geolocation/states/14/municipalities');
+    });
+
+    await waitFor(() => {
+      const muniSelect = screen.getByTestId('address-municipality-select').querySelector('select')!;
+      expect(muniSelect.querySelectorAll('option').length).toBe(1);
+    });
+  });
+
+  it('clears colonias when the neighborhoods fetch fails', async () => {
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 14, name: 'Jalisco' }] } })
+      .mockResolvedValueOnce({
+        data: { success: true, data: [{ id: 120, name: 'Guadalajara' }] },
+      })
+      .mockRejectedValueOnce(new Error('network error'));
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('Jalisco')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-state-select').querySelector('select')!, {
+      target: { value: '14' },
+    });
+
+    await waitFor(() => expect(screen.getByText('Guadalajara')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-municipality-select').querySelector('select')!, {
+      target: { value: '120' },
+    });
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/geolocation/municipalities/120/neighborhoods');
+    });
+
+    await waitFor(() => {
+      const neighSelect = screen
+        .getByTestId('address-neighborhood-select')
+        .querySelector('select')!;
+      expect(neighSelect.querySelectorAll('option').length).toBe(1);
+    });
+  });
+
+  it('does not update postalCode when the postal-code fetch fails', async () => {
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 14, name: 'Jalisco' }] } })
+      .mockResolvedValueOnce({
+        data: { success: true, data: [{ id: 120, name: 'Guadalajara' }] },
+      })
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 300, name: 'Chapalita' }] } })
+      .mockRejectedValueOnce(new Error('network error'));
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('Jalisco')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-state-select').querySelector('select')!, {
+      target: { value: '14' },
+    });
+
+    await waitFor(() => expect(screen.getByText('Guadalajara')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-municipality-select').querySelector('select')!, {
+      target: { value: '120' },
+    });
+
+    await waitFor(() => expect(screen.getByText('Chapalita')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-neighborhood-select').querySelector('select')!, {
+      target: { value: '300' },
+    });
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/geolocation/neighborhoods/300');
+    });
+
+    expect(screen.getByTestId('current-neighborhood').textContent).toBe('300');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('current-postal').textContent).toBe('');
+    });
+  });
 });
