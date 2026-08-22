@@ -305,4 +305,174 @@ describe('ForensicJournalTable (Apex Standard)', () => {
     expect(await screen.findByText('ASM-001')).toBeInTheDocument();
     resolveNetwork({ data: { success: true, data: mockLogs } });
   });
+
+  it('cache-first (routeUuid mode) filters and sorts cached logs before the network settles', async () => {
+    const cachedRouteLogs = [
+      {
+        id: 'c1',
+        unit_id: 'ASM-020',
+        event_type: 'ADMIN_EDIT',
+        reference_id: 'route-cache-1',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'c2',
+        unit_id: 'ASM-021',
+        event_type: 'ROUTE_INCIDENT',
+        reference_id: 'route-cache-1',
+        created_at: '2026-01-02T00:00:00Z',
+      },
+      {
+        id: 'c3',
+        unit_id: 'ASM-022',
+        event_type: 'ROUTE_START',
+        reference_id: 'route-cache-1',
+        created_at: '2026-01-03T00:00:00Z',
+      },
+      {
+        id: 'c4',
+        unit_id: 'ASM-023',
+        event_type: 'ADMIN_EDIT',
+        reference_id: 'other-route',
+        created_at: '2026-01-04T00:00:00Z',
+      },
+    ];
+    archonCache.set('forensic_journal_logs', cachedRouteLogs);
+    let resolveNetwork: (v: unknown) => void = () => undefined;
+    vi.mocked(api.get).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveNetwork = resolve;
+      }) as never
+    );
+    render(<ForensicJournalTable routeUuid="route-cache-1" />);
+    expect(await screen.findByText('ASM-020')).toBeInTheDocument();
+    expect(screen.getByText('ASM-021')).toBeInTheDocument();
+    expect(screen.queryByText('ASM-022')).not.toBeInTheDocument();
+    expect(screen.queryByText('ASM-023')).not.toBeInTheDocument();
+    resolveNetwork({ data: { success: true, data: cachedRouteLogs } });
+  });
+
+  it('cache-first (unitId mode) filters cached logs to that unit before the network settles', async () => {
+    const cachedUnitLogs = [
+      {
+        id: 'u1',
+        unit_id: 'ASM-030',
+        event_type: 'ADMIN_EDIT',
+        description: 'Log Uno',
+        created_at: '2026-01-01T00:00:00Z',
+      },
+      {
+        id: 'u2',
+        unit_id: 'ASM-030',
+        event_type: 'ADMIN_EDIT',
+        description: 'Log Dos',
+        created_at: '2026-01-02T00:00:00Z',
+      },
+      {
+        id: 'u3',
+        unit_id: 'ASM-031',
+        event_type: 'ADMIN_EDIT',
+        description: 'Log Tres',
+        created_at: '2026-01-03T00:00:00Z',
+      },
+    ];
+    archonCache.set('forensic_journal_logs', cachedUnitLogs);
+    let resolveNetwork: (v: unknown) => void = () => undefined;
+    vi.mocked(api.get).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveNetwork = resolve;
+      }) as never
+    );
+    render(<ForensicJournalTable unitId="ASM-030" />);
+    expect(await screen.findByText('Log Uno')).toBeInTheDocument();
+    expect(screen.getByText('Log Dos')).toBeInTheDocument();
+    expect(screen.queryByText('Log Tres')).not.toBeInTheDocument();
+    resolveNetwork({ data: { success: true, data: cachedUnitLogs } });
+  });
+
+  it('learns the observed fuel-tank ceiling from a 100%-fill log and flags a later refill above it', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'e1',
+            unit_id: 'ASM-040',
+            event_type: 'ADMIN_EDIT',
+            fuel_level_after: 100,
+            fuel_after: 20,
+            created_at: '2026-01-01T00:00:00Z',
+          },
+          {
+            id: 'e2',
+            unit_id: 'ASM-040',
+            event_type: 'ADMIN_EDIT',
+            fuel_level_after: 50,
+            fuel_after: 25,
+            created_at: '2026-01-02T00:00:00Z',
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    // e1 establishes the observed 20L ceiling for this unit; e2 refills to 25L (>20L+0.1)
+    // without tripping the raw >100% check — only the observed-ceiling heuristic flags it.
+    expect(
+      screen.getByText(/Posible desviación de consumo o robo de combustible/i)
+    ).toBeInTheDocument();
+  });
+
+  it('does not crash when a snapshot payload is malformed JSON', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-badjson-1',
+            unit_id: 'ASM-050',
+            event_type: 'ADMIN_EDIT',
+            snapshot_before: '{not valid json',
+            snapshot_after: { destination: 'Mina Norte' },
+            description: 'Snapshot corrupto',
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    // Malformed snapshot_before short-circuits the diff engine's safe-parse catch — the row
+    // still renders without the "Destino" diff chip, and without crashing the table.
+    expect(screen.getByText('Snapshot corrupto')).toBeInTheDocument();
+    expect(screen.queryByText('Mina Norte')).not.toBeInTheDocument();
+  });
+
+  it('formats a numeric whitelisted snapshot value with one decimal place', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-numsnap-1',
+            unit_id: 'ASM-051',
+            event_type: 'ADMIN_EDIT',
+            snapshot_before: { status: '10' },
+            snapshot_after: { status: '25' },
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    expect(screen.getByText('10.0')).toBeInTheDocument();
+    expect(screen.getByText('25.0')).toBeInTheDocument();
+  });
 });
