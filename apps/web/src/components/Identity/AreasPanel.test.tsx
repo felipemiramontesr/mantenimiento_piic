@@ -234,4 +234,81 @@ describe('AreasPanel', () => {
     expect(screen.getByTestId('edit-btn-1')).toBeInTheDocument();
     expect(screen.getByTestId('deactivate-btn-1')).toBeInTheDocument();
   });
+
+  it('shows error when saving an edit fails', async () => {
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento')]);
+    mockApiPut.mockRejectedValueOnce(new Error('Server error'));
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('area-name-1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('edit-btn-1'));
+    fireEvent.click(screen.getByTestId('save-edit-1'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('areas-error')).toHaveTextContent('Error al actualizar el área');
+    });
+  });
+
+  it('shows error when deactivating an area fails', async () => {
+    setupOwnerAndAreas([makeArea(1, 'Finanzas')]);
+    mockApiDelete.mockRejectedValueOnce(new Error('Server error'));
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('deactivate-btn-1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('deactivate-btn-1'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('areas-error')).toHaveTextContent('Error al desactivar el área');
+    });
+  });
+
+  it('pressing Enter in the new-area input creates the area', async () => {
+    const newArea = makeArea(11, 'Compras');
+    setupOwnerAndAreas([]);
+    mockApiPost.mockResolvedValueOnce({ data: { success: true, data: newArea } });
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('areas-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('new-area-input'), { target: { value: 'Compras' } });
+    fireEvent.keyDown(screen.getByTestId('new-area-input'), { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockApiPost).toHaveBeenCalledWith(`/owners/${OWNER_ID}/areas`, { name: 'Compras' });
+    });
+  });
+
+  it('pressing Enter in the edit input saves the edit', async () => {
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento')]);
+    mockApiPut.mockResolvedValueOnce({ data: { success: true } });
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('area-name-1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('edit-btn-1'));
+    const editInput = screen.getByTestId('edit-input-1');
+    fireEvent.change(editInput, { target: { value: 'Mantenimiento Nuevo' } });
+    fireEvent.keyDown(editInput, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockApiPut).toHaveBeenCalledWith(`/owners/${OWNER_ID}/areas/1`, {
+        name: 'Mantenimiento Nuevo',
+      });
+    });
+  });
+
+  it('pressing Escape in the edit input cancels the edit', async () => {
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento')]);
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('area-name-1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('edit-btn-1'));
+    const editInput = screen.getByTestId('edit-input-1');
+    fireEvent.keyDown(editInput, { key: 'Escape' });
+
+    expect(screen.queryByTestId('edit-input-1')).not.toBeInTheDocument();
+  });
 });
