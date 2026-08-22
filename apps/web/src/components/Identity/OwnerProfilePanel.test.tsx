@@ -278,4 +278,78 @@ describe('OwnerProfilePanel', () => {
       );
     });
   });
+
+  it('falls back to EMPTY_ADDRESS when the neighborhood lookup rejects', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: PROFILE_DATA } })
+      .mockRejectedValueOnce(new Error('geo lookup down'));
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('address-field-mock')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('address-field-mock').getAttribute('data-neighborhood')).toBe('');
+  });
+
+  it('includes the hydrated address fields in the save payload when neighborhoodId is set', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: PROFILE_DATA } })
+      .mockResolvedValueOnce({
+        data: { success: true, data: { stateId: 14, municipalityId: 120, postalCode: '44500' } },
+      });
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('address-field-mock').getAttribute('data-neighborhood')).toBe(
+        '300'
+      );
+    });
+
+    fireEvent.click(screen.getByTestId('owner-profile-save'));
+
+    await waitFor((): void => {
+      expect(api.patch).toHaveBeenCalledWith(
+        '/owners/me/profile',
+        expect.objectContaining({
+          neighborhoodId: 300,
+          calle: 'Av. Reforma',
+          numeroExt: '10',
+        })
+      );
+    });
+  });
+
+  it('updates rfc, razonSocial and telefono via their input onChange handlers', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock).mockResolvedValueOnce({
+      data: { success: true, data: { ...PROFILE_DATA, neighborhoodId: null } },
+    });
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('owner-profile-panel')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByTestId('owner-rfc-input'), { target: { value: 'NEW010101AAA' } });
+    expect((screen.getByTestId('owner-rfc-input') as HTMLInputElement).value).toBe('NEW010101AAA');
+
+    fireEvent.change(screen.getByTestId('owner-razon-social-input'), {
+      target: { value: 'Nueva Razón Social' },
+    });
+    expect((screen.getByTestId('owner-razon-social-input') as HTMLInputElement).value).toBe(
+      'Nueva Razón Social'
+    );
+
+    fireEvent.change(screen.getByTestId('owner-telefono-input'), {
+      target: { value: '5500001111' },
+    });
+    expect((screen.getByTestId('owner-telefono-input') as HTMLInputElement).value).toBe(
+      '5500001111'
+    );
+  });
 });
