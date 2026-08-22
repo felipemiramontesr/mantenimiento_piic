@@ -128,4 +128,26 @@ describe('AreasSelect', () => {
     await waitFor(() => expect(screen.getByTestId('areas-select')).toBeInTheDocument());
     expect(screen.queryByTestId('areas-dropdown-trigger')).not.toBeInTheDocument();
   });
+
+  it('closes the dropdown when clicking outside the container', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
+    render(<AreasSelect value={[]} onChange={onChange} />);
+    await waitFor(() => expect(screen.getByTestId('areas-dropdown-trigger')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('areas-dropdown-trigger'));
+    await waitFor(() => expect(screen.getByTestId('areas-dropdown')).toBeInTheDocument());
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByTestId('areas-dropdown')).not.toBeInTheDocument();
+  });
+
+  it('pressing Enter in the Otro input adds the custom area', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
+    render(<AreasSelect value={[]} onChange={onChange} />);
+    await waitFor(() => expect(screen.getByTestId('areas-dropdown-trigger')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('areas-dropdown-trigger'));
+    await waitFor(() => expect(screen.getByTestId('area-option-otro')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('area-option-otro'));
+    fireEvent.change(screen.getByTestId('areas-otro-input'), { target: { value: 'Zona Sur' } });
+    fireEvent.keyDown(screen.getByTestId('areas-otro-input'), { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith(['Zona Sur']);
+  });
 });
