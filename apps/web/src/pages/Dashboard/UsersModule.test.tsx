@@ -1,6 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, RenderResult } from '../../test/testUtils';
+import { render, screen, fireEvent, waitFor, RenderResult } from '../../test/testUtils';
+import { UserContext } from '../../context/UserContext';
 import UsersModule from './UsersModule';
+
+/**
+ * testUtils' UserContext mock is a static, non-reactive value (activePanel
+ * is fixed at 'DIRECTORY' — setActivePanel/setEditingUser are vi.fn() that
+ * never actually flip it). Reaching the SIGNUP-gated lines needs a local
+ * UserContext.Provider override nested inside the shared wrapper.
+ */
+const buildUserContextOverride = (
+  overrides: Partial<{
+    activePanel: 'DIRECTORY' | 'SIGNUP';
+    users: unknown[];
+    setActivePanel: ReturnType<typeof vi.fn>;
+    setEditingUser: ReturnType<typeof vi.fn>;
+  }>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any => ({
+  users: overrides.users ?? [],
+  isLoading: false,
+  activePanel: overrides.activePanel ?? 'DIRECTORY',
+  setActivePanel: overrides.setActivePanel ?? vi.fn(),
+  fetchUsers: vi.fn(),
+  toggleUserStatus: vi.fn(),
+  updateUser: vi.fn(),
+  deleteUser: vi.fn(),
+  editingUser: null,
+  setEditingUser: overrides.setEditingUser ?? vi.fn(),
+  departments: [],
+});
 
 /**
  * 🔱 Archon Test Suite: UsersModule (v.28.25.2)
@@ -60,5 +89,54 @@ describe('UsersModule Component', () => {
       expect(screen.getByText('EMP-001')).toBeInTheDocument();
       expect(screen.getByText('juan.perez@piic.com.mx')).toBeInTheDocument();
     });
+
+    it('clicking a card requests SIGNUP for that user, and the header "Iniciar Registro" action requests it too', async () => {
+      const setActivePanel = vi.fn();
+      const setEditingUser = vi.fn();
+      const user = { id: '1', fullName: 'Juan Perez', username: 'juan.perez' };
+      const contextValue = buildUserContextOverride({
+        users: [user],
+        setActivePanel,
+        setEditingUser,
+      });
+      render(
+        <UserContext.Provider value={contextValue}>
+          <UsersModule />
+        </UserContext.Provider>
+      );
+      await screen.findByText(/Administrar Personal/i);
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      const cards = await screen.findAllByTestId('archon-card-item');
+      fireEvent.click(cards[0]);
+      expect(setEditingUser).toHaveBeenCalledWith(user);
+      expect(setActivePanel).toHaveBeenCalledWith('SIGNUP');
+
+      fireEvent.click(screen.getByText('Iniciar Registro'));
+      expect(setEditingUser).toHaveBeenCalledWith(null);
+    });
+  });
+
+  it('mounted directly into SIGNUP: triggers the axial scroll sync, and "Cerrar Formulario" cancels back to DIRECTORY', async () => {
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    const setActivePanel = vi.fn();
+    const setEditingUser = vi.fn();
+    const contextValue = buildUserContextOverride({
+      activePanel: 'SIGNUP',
+      setActivePanel,
+      setEditingUser,
+    });
+    render(
+      <UserContext.Provider value={contextValue}>
+        <UsersModule />
+      </UserContext.Provider>
+    );
+    expect(await screen.findByTestId('registration-form')).toBeInTheDocument();
+    await waitFor(() => expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled(), {
+      timeout: 500,
+    });
+
+    fireEvent.click(screen.getByText('Cerrar Formulario'));
+    expect(setEditingUser).toHaveBeenCalledWith(null);
+    expect(setActivePanel).toHaveBeenCalledWith('DIRECTORY');
   });
 });
