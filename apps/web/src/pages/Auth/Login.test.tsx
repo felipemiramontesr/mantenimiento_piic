@@ -101,6 +101,24 @@ describe('LoginPage Component (ARCHON CORE)', () => {
     });
   });
 
+  it('shows a protocol error when the server response has no token', async () => {
+    (api.post as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      data: { user: { id: 1, username: 'admin' } },
+    });
+
+    renderComponent();
+    fireEvent.click(screen.getByRole('button', { name: /acceder al sistema/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          /Error de protocolo: El servidor no devolvió una clave de acceso válida\./i
+        )
+      ).toBeInTheDocument();
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard');
+  });
+
   it('displays generic error on 401 Unauthorized', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockRejectedValueOnce({
       response: { status: 401 },
