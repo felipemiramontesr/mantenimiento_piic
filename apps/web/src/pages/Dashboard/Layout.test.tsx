@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode } from 'react';
@@ -75,5 +75,26 @@ describe('DashboardLayout (composition smoke)', () => {
 
     expect(screen.getByTestId('outlet-child')).toBeInTheDocument();
     expect(screen.getByText('Soberano')).toBeInTheDocument();
+  });
+
+  it('toggles the sidebar collapsed state when the collapse trigger is clicked', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Routes>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<div data-testid="outlet-child">Módulo activo</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const collapseTrigger = container
+      .querySelector('svg.lucide-chevron-right')
+      ?.closest('button') as HTMLElement;
+    expect(collapseTrigger).toBeTruthy();
+
+    fireEvent.click(collapseTrigger);
+
+    expect(container.querySelector('svg.lucide-chevron-left')).toBeTruthy();
   });
 });
