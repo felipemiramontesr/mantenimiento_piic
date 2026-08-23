@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ArchonCalendarView, { buildMonthMatrix } from './ArchonCalendarView';
+import ArchonCalendarView, { buildMonthMatrix, toIsoDay } from './ArchonCalendarView';
 
 /**
  * 🔱 FC 041 Fase C — Vista_Calendario_Temporal
@@ -106,5 +106,27 @@ describe('ArchonCalendarView (FC 041 Fase C)', () => {
     renderCalendar();
     fireEvent.click(screen.getByTestId('calendar-next')); // agosto
     expect(screen.queryByText('Servicio PIIC-101')).not.toBeInTheDocument();
+  });
+});
+
+describe('toIsoDay', () => {
+  it('formats a valid Date instance as YYYY-MM-DD', () => {
+    expect(toIsoDay(new Date(2026, 6, 5))).toBe('2026-07-05');
+  });
+
+  it('extracts the date portion from an ISO string', () => {
+    expect(toIsoDay('2026-07-05T12:00:00.000Z')).toBe('2026-07-05');
+  });
+
+  it('returns null for an invalid Date instance', () => {
+    expect(toIsoDay(new Date('invalid'))).toBeNull();
+  });
+
+  it('returns null for a non-ISO string', () => {
+    expect(toIsoDay('not-a-date')).toBeNull();
+  });
+
+  it('returns null for null', () => {
+    expect(toIsoDay(null)).toBeNull();
   });
 });
