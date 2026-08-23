@@ -95,6 +95,50 @@ describe('CosmologyModule', () => {
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
   });
 
+  it('changing the owner-type select sends the newly selected value on submit', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    vi.mocked(api.post).mockResolvedValueOnce({ data: { success: true, data: { tenantId: 2 } } });
+    fireEvent.change(screen.getByTestId('create-universe-label'), {
+      target: { value: 'Nuevo Universo' },
+    });
+    fireEvent.change(screen.getByTestId('create-universe-owner-type'), {
+      target: { value: 'PRIVATE' },
+    });
+    fireEvent.click(screen.getByTestId('create-universe-submit'));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/cosmology/universes', {
+        label: 'Nuevo Universo',
+        universeTypeCode: 'FMS',
+        ownerTypeCode: 'PRIVATE',
+      });
+    });
+  });
+
+  it('shows an error message and re-enables the form when creation fails', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() =>
+      expect(screen.getByTestId('cosmology-universes-table')).toBeInTheDocument()
+    );
+
+    vi.mocked(api.post).mockRejectedValueOnce(new Error('server error'));
+    fireEvent.change(screen.getByTestId('create-universe-label'), {
+      target: { value: 'Universo Fallido' },
+    });
+    fireEvent.click(screen.getByTestId('create-universe-submit'));
+
+    expect(
+      await screen.findByText('No se pudo crear el Universo. Intenta de nuevo.')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('create-universe-submit')).not.toBeDisabled();
+  });
+
   it('Scenario 4 — blocked destroy (409 UNIVERSE_NOT_ZERO_STATE) shows readable es-MX blockers, no removal', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
