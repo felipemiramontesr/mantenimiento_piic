@@ -1,13 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '../../../test/testUtils';
+import { render, screen, waitFor, fireEvent, within } from '../../../test/testUtils';
 import api from '../../../api/client';
 import MaintenanceNode from './MaintenanceNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
 const mockParams = vi.hoisted(() => ({ uuid: 'maint-uuid-0001' as string | undefined }));
+const mockNavigate = vi.hoisted(() => vi.fn());
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
+  return {
+    ...actual,
+    useParams: () => ({ uuid: mockParams.uuid }),
+    useNavigate: () => mockNavigate,
+  };
 });
 
 const TASK_PASS = {
@@ -231,6 +236,14 @@ describe('MaintenanceNode', () => {
     });
     render(<MaintenanceNode />);
     await waitFor(() => expect(screen.getAllByText('SPECIAL_OVERHAUL').length).toBeGreaterThan(0));
+  });
+
+  it('BACK-NAV-1: header action navigates back to /dashboard/maintenance', async () => {
+    render(<MaintenanceNode />);
+    await waitFor(() => expect(screen.getAllByText('Carlos López').length).toBeGreaterThan(0));
+    const headerAction = screen.getByTestId('sovereign-layout-header-action');
+    fireEvent.click(within(headerAction).getByRole('button', { name: 'Mantenimiento' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/maintenance');
   });
 
   it('renders task with unknown status using fallback color', async () => {
