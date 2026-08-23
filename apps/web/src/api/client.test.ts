@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
 import api from './client';
 import { redirectUserToLogin } from './navigation';
@@ -92,5 +92,52 @@ describe('Axios API Client (ARCHON CORE)', () => {
 
     expect(clearToken).not.toHaveBeenCalled();
     expect(redirectUserToLogin).not.toHaveBeenCalled();
+  });
+
+  // 🛡️ Zero-Noise Test Shield — this console statement is gated behind `!isTest`
+  // and only runs outside Vitest. It still executes for real users in
+  // production, so we force the non-test path to genuinely exercise it. The
+  // sibling module-load-time log (line 30, "Active Gateway") is NOT forced
+  // here: doing so via vi.resetModules() + dynamic re-import destabilized v8's
+  // coverage attribution for the rest of this file (lines 51-57/63/67 flipped
+  // to "uncovered" in isolation, confirmed by reverting and re-measuring) —
+  // documented as a residual rather than risking a flaky suite.
+  describe('Zero-Noise Test Shield (forced non-test path)', () => {
+    const originalVitest = process.env.VITEST;
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    afterEach(() => {
+      process.env.VITEST = originalVitest;
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it('logs the Security Breach message on 401 redirect outside the test env', async () => {
+      vi.mocked(getToken).mockReturnValue('some-token');
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const error = {
+        response: { status: 401 },
+        config: { url: '/dashboard/fleet', method: 'get' },
+      };
+
+      delete process.env.VITEST;
+      process.env.NODE_ENV = 'production';
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const responseInterceptorError = (api.interceptors.response as any).handlers[0].rejected;
+        await expect(responseInterceptorError(error)).rejects.toEqual(error);
+      } finally {
+        process.env.VITEST = originalVitest;
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        '🔱 [Archon Centinel] Security Breach (401). Redirecting to Login.',
+        expect.objectContaining({ url: '/dashboard/fleet' })
+      );
+      expect(clearToken).toHaveBeenCalled();
+      expect(redirectUserToLogin).toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
   });
 });
