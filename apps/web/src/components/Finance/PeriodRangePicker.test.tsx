@@ -153,6 +153,17 @@ describe('PeriodRangePicker (FC164 F1 — parseYMFromDate empty/invalid fallback
     expect(screen.getAllByText('Septiembre 2026').length).toBe(2);
   });
 
+  it('FC164-R1-3: aplicar sin seleccionar fecha (tras abrir con rango vacío) muestra el error de campos requeridos', () => {
+    const onChange = vi.fn();
+    render(<PeriodRangePicker value={{ from: '', to: '' }} onChange={onChange} />);
+
+    openPicker();
+    fireEvent.click(screen.getByText('Aplicar Rango'));
+
+    expect(screen.getByText('Selecciona una fecha de inicio y fin.')).toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('FC164-R1-2: rango previamente aplicado sigue mostrando su propio mes (regresión)', () => {
     render(
       <PeriodRangePicker value={{ from: '2026-05-01', to: '2026-05-31' }} onChange={vi.fn()} />

@@ -13,7 +13,6 @@ import AT from '../../styles/archonTypography';
 
 interface MaintenanceGridViewProps {
   refreshTrigger: number;
-  onNewRequest: () => void;
   onCompleteRequest?: (log: MaintenanceLog) => void;
   onDetailRequest?: (log: MaintenanceLog) => void;
   onAcceptOrder?: (uuid: string, logId: number) => void;
@@ -68,7 +67,6 @@ const matchFieldInMaintenance = (
 
 const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
   refreshTrigger,
-  onNewRequest: _onNewRequest,
   onCompleteRequest,
   onDetailRequest,
   onAcceptOrder,

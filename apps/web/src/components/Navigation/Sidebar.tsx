@@ -48,21 +48,9 @@ interface NavItemProps {
 
 const ScrollContainerCtx = React.createContext<React.RefObject<HTMLElement> | undefined>(undefined);
 
-const NavItem: React.FC<NavItemProps> = ({
-  icon,
-  label,
-  path,
-  active,
-  isCollapsed,
-  badgeCount,
-}) => {
-  const navigate = useNavigate();
-  const { setIsMobileMenuOpen } = useSovereignLayout();
-  const showBadge = badgeCount != null && badgeCount > 0;
-  const badgeLabel = badgeCount != null && badgeCount > 99 ? '99+' : String(badgeCount ?? 0);
-
+/** Fade de opacidad por scroll-intersection para NavItem (FC164 Adenda G2, split Alfa 211_AN). */
+function useScrollFade(itemRef: React.RefObject<HTMLDivElement>, active?: boolean): number {
   const scrollCtx = React.useContext(ScrollContainerCtx);
-  const itemRef = useRef<HTMLDivElement>(null);
   const [opacity, setOpacity] = useState(1);
   const activeRef = useRef(active);
   useEffect((): void => {
@@ -87,8 +75,100 @@ const NavItem: React.FC<NavItemProps> = ({
         observer.disconnect();
       };
     }
+    // Guard defensivo: React adjunta todos los refs durante el commit, antes de que corra
+    // cualquier efecto pasivo, por lo que el && anterior está garantizado ⊤ (FC164/R4-C)
+    /* v8 ignore start */
     return undefined;
-  }, [scrollCtx]);
+    /* v8 ignore stop */
+  }, [itemRef, scrollCtx]);
+  return opacity;
+}
+
+interface NavBadgeProps {
+  badgeLabel: string;
+  compact?: boolean;
+}
+
+/** Badge numérico de alertas, compartido entre modo colapsado/expandido (FC164 Adenda G2, split Alfa 211_AN). */
+const NavBadge: React.FC<NavBadgeProps> = ({ badgeLabel, compact }) => (
+  <span
+    data-testid="alerts-badge"
+    className={
+      compact
+        ? 'min-w-[16px] h-4 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center leading-none'
+        : 'ml-auto min-w-[20px] h-5 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center'
+    }
+  >
+    {badgeLabel}
+  </span>
+);
+
+interface NavItemIconProps {
+  icon: React.ReactNode;
+  active?: boolean;
+  showBadge: boolean;
+  isCollapsed: boolean;
+  badgeLabel: string;
+}
+
+/** Ícono + badge compacto en modo colapsado (FC164 Adenda G2, split Alfa 211_AN — sub-split de NavItem). */
+const NavItemIcon: React.FC<NavItemIconProps> = ({
+  icon,
+  active,
+  showBadge,
+  isCollapsed,
+  badgeLabel,
+}) => (
+  <div className="flex flex-col items-center gap-0.5">
+    <div
+      className={`${
+        active
+          ? 'text-pinnacle-yellow'
+          : 'text-white/40 group-hover:text-white/70 transition-colors'
+      }`}
+    >
+      {icon}
+    </div>
+    {showBadge && isCollapsed && <NavBadge badgeLabel={badgeLabel} compact />}
+  </div>
+);
+
+interface NavItemLabelProps {
+  label: string;
+  isCollapsed: boolean;
+  active?: boolean;
+}
+
+/** Etiqueta de texto del ítem de navegación (FC164 Adenda G2, split Alfa 211_AN — sub-split de NavItem). */
+const NavItemLabel: React.FC<NavItemLabelProps> = ({ label, isCollapsed, active }) => (
+  <span
+    aria-hidden={isCollapsed}
+    className={`
+      text-archon-lg font-medium tracking-tight whitespace-nowrap
+      overflow-hidden transition-[color,opacity] duration-200 ease-in-out
+      will-change-[opacity]
+      ${isCollapsed ? 'w-0 opacity-0 pointer-events-none select-none' : 'opacity-100'}
+      ${active ? 'text-white' : 'text-white/70 group-hover:text-white'}
+    `}
+  >
+    {label}
+  </span>
+);
+
+const NavItem: React.FC<NavItemProps> = ({
+  icon,
+  label,
+  path,
+  active,
+  isCollapsed,
+  badgeCount,
+}) => {
+  const navigate = useNavigate();
+  const { setIsMobileMenuOpen } = useSovereignLayout();
+  const showBadge = badgeCount != null && badgeCount > 0;
+  const badgeLabel = badgeCount != null && badgeCount > 99 ? '99+' : String(badgeCount ?? 0);
+  const itemRef = useRef<HTMLDivElement>(null);
+  const opacity = useScrollFade(itemRef, active);
 
   return (
     <div
@@ -112,45 +192,15 @@ const NavItem: React.FC<NavItemProps> = ({
       title={isCollapsed ? label : ''}
       data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <div className="flex flex-col items-center gap-0.5">
-        <div
-          className={`${
-            active
-              ? 'text-pinnacle-yellow'
-              : 'text-white/40 group-hover:text-white/70 transition-colors'
-          }`}
-        >
-          {icon}
-        </div>
-        {showBadge && isCollapsed && (
-          <span
-            data-testid="alerts-badge"
-            className="min-w-[16px] h-4 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center leading-none"
-          >
-            {badgeLabel}
-          </span>
-        )}
-      </div>
-      <span
-        aria-hidden={isCollapsed}
-        className={`
-          text-archon-lg font-medium tracking-tight whitespace-nowrap
-          overflow-hidden transition-[color,opacity] duration-200 ease-in-out
-          will-change-[opacity]
-          ${isCollapsed ? 'w-0 opacity-0 pointer-events-none select-none' : 'opacity-100'}
-          ${active ? 'text-white' : 'text-white/70 group-hover:text-white'}
-        `}
-      >
-        {label}
-      </span>
-      {showBadge && !isCollapsed && (
-        <span
-          data-testid="alerts-badge"
-          className="ml-auto min-w-[20px] h-5 px-1 rounded-full bg-[#C12020] text-white text-[10px] font-bold flex items-center justify-center"
-        >
-          {badgeLabel}
-        </span>
-      )}
+      <NavItemIcon
+        icon={icon}
+        active={active}
+        showBadge={showBadge}
+        isCollapsed={isCollapsed}
+        badgeLabel={badgeLabel}
+      />
+      <NavItemLabel label={label} isCollapsed={isCollapsed} active={active} />
+      {showBadge && !isCollapsed && <NavBadge badgeLabel={badgeLabel} />}
     </div>
   );
 };

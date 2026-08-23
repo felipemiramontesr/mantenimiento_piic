@@ -57,24 +57,14 @@ describe('MaintenanceGridView', () => {
 
   it('shows loading state initially', () => {
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     expect(screen.getByText(/sincronizando/i)).toBeInTheDocument();
   });
 
   it('renders maintenance logs after fetch', async () => {
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
     expect(screen.getAllByText('ASM-010').length).toBeGreaterThan(0);
@@ -87,12 +77,7 @@ describe('MaintenanceGridView', () => {
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() =>
       expect(screen.getByText(/no se encontraron registros/i)).toBeInTheDocument()
@@ -107,7 +92,6 @@ describe('MaintenanceGridView', () => {
     render(
       <MaintenanceGridView
         refreshTrigger={0}
-        onNewRequest={noop}
         onCompleteRequest={handleComplete}
         onDetailRequest={noop}
       />
@@ -126,7 +110,6 @@ describe('MaintenanceGridView', () => {
     render(
       <MaintenanceGridView
         refreshTrigger={0}
-        onNewRequest={noop}
         onCompleteRequest={noop}
         onDetailRequest={handleDetail}
       />
@@ -154,12 +137,7 @@ describe('MaintenanceGridView', () => {
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     expect(await screen.findByText('Servicio Menor')).toBeInTheDocument();
   });
@@ -179,12 +157,7 @@ describe('MaintenanceGridView', () => {
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
     const unitHeader = screen.getByText('UNIDAD');
@@ -211,12 +184,7 @@ describe('MaintenanceGridView', () => {
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
 
@@ -270,12 +238,7 @@ describe('MaintenanceGridView — search suggestions (matchFieldInMaintenance)',
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     // The registration effect depends on `logs`, which starts as [] and
     // updates once the async /maintenance fetch resolves — wait for the
@@ -337,12 +300,7 @@ describe('MaintenanceGridView — search suggestions (matchFieldInMaintenance)',
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(setSearchConfig).toHaveBeenCalled());
     setSearchConfig.mock.calls[0][0].onSuggestionSelect({ title: 'ASM-050' });
@@ -377,12 +335,7 @@ describe('MaintenanceGridView — active search term filters rows', () => {
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getAllByText('ASM-060').length).toBeGreaterThan(0));
     expect(screen.queryByText('ASM-070')).not.toBeInTheDocument();
@@ -405,12 +358,7 @@ describe('MaintenanceGridView — fmtDateTime space-separated datetime', () => {
       )
     );
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getAllByText('ASM-040').length).toBeGreaterThan(0));
   });
@@ -420,12 +368,7 @@ describe('MaintenanceGridView — fetch failure', () => {
   it('shows an error message when the maintenance fetch fails', async () => {
     server.use(http.get('*/maintenance', () => HttpResponse.error()));
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() =>
       expect(screen.getByText(/error al recuperar registros/i)).toBeInTheDocument()
@@ -488,12 +431,7 @@ describe('MaintenanceGridView — image error handlers', () => {
 
   it('falls back to the default image when the unit thumbnail fails to load', async () => {
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getByAltText('ASM-001')).toBeInTheDocument());
     fireEvent.error(screen.getByAltText('ASM-001'));
@@ -504,12 +442,7 @@ describe('MaintenanceGridView — image error handlers', () => {
 
   it('hides the technician avatar image on load error', async () => {
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getByAltText('Carlos López')).toBeInTheDocument());
     fireEvent.error(screen.getByAltText('Carlos López'));
@@ -541,7 +474,6 @@ describe('MaintenanceGridView — OPEN order actions', () => {
     render(
       <MaintenanceGridView
         refreshTrigger={0}
-        onNewRequest={noop}
         onCompleteRequest={noop}
         onDetailRequest={noop}
         onAcceptOrder={onAccept}
@@ -555,12 +487,7 @@ describe('MaintenanceGridView — OPEN order actions', () => {
 
   it('the "Ver nodo de mantenimiento" link stops click propagation without throwing', async () => {
     render(
-      <MaintenanceGridView
-        refreshTrigger={0}
-        onNewRequest={noop}
-        onCompleteRequest={noop}
-        onDetailRequest={noop}
-      />
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
     );
     await waitFor(() => expect(screen.getByTitle('Ver nodo de mantenimiento')).toBeInTheDocument());
     fireEvent.click(screen.getByTitle('Ver nodo de mantenimiento'));

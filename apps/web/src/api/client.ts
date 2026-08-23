@@ -25,9 +25,12 @@ const api = axios.create({
 });
 
 // 🛡️ Zero-Noise Test Shield
-/* istanbul ignore next */
 if (typeof process === 'undefined' || (process.env.NODE_ENV !== 'test' && !process.env.VITEST)) {
+  // Diagnostic log real en runtime; forzar cobertura vía vi.resetModules() desestabiliza la
+  // atribución v8 del resto del archivo (confirmado empíricamente, FC164/R4-C)
+  /* v8 ignore start */
   console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
+  /* v8 ignore stop */
 }
 
 // Request Interceptor for JWT & Telemetry

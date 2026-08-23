@@ -129,7 +129,8 @@ function getStatusIcon(status: UpaTaskStatus): LucideIcon {
   return Clock;
 }
 
-function getStatusLabel(status: UpaTaskStatus): string {
+/** Etiqueta es-MX para el estado de una tarea UPA. Exportada para test directo (FC164 Cond.R4-164). */
+export function getStatusLabel(status: UpaTaskStatus): string {
   if (status === 'completed') return 'Completada';
   if (status === 'DEFERRED_FINANCIAL') return 'Dif. Financiero';
   if (status === 'N_A_STRUCTURAL') return 'No Aplica';

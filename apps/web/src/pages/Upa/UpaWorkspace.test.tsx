@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import UpaWorkspace from './UpaWorkspace';
+import UpaWorkspace, { getStatusLabel } from './UpaWorkspace';
 import { useUpaOrder } from '../../hooks/useUpaOrder';
 import type { UseUpaOrderReturn } from '../../hooks/useUpaOrder';
 import type { UpaWorkOrderDetail } from '../../types/upa';
@@ -599,6 +599,13 @@ describe('UpaWorkspace', () => {
       expect(screen.getByTestId('evidence-url-input-0')).toBeDefined();
       fireEvent.click(screen.getByLabelText('Eliminar URL'));
       expect(screen.queryByTestId('evidence-url-input-0')).toBeNull();
+    });
+  });
+
+  // ─── FC164 F2 R4 (Cond.R4-164) — getStatusLabel('pending') es rama viva ────
+  describe('getStatusLabel', () => {
+    it("FC164-R4-1: retorna 'Pendiente' para status='pending' (Bravo 210_AN: rama alcanzable, no N/A)", () => {
+      expect(getStatusLabel('pending')).toBe('Pendiente');
     });
   });
 });

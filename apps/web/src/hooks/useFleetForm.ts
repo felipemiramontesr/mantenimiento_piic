@@ -380,8 +380,6 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
           modelos: models,
         })
       );
-    } catch (err) {
-      console.error('[Archon Alpha] Edit Unit Hydration Cascade Failure:', err);
     } finally {
       setIsLoading(false);
     }

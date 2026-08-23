@@ -408,7 +408,6 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
                     TABLE: (
                       <MaintenanceGridView
                         refreshTrigger={refreshTrigger}
-                        onNewRequest={(): void => setActivePanel('SCHEDULE')}
                         onCompleteRequest={handleCompleteRequest}
                         onDetailRequest={handleDetailRequest}
                         onAcceptOrder={handleAcceptOrder}
