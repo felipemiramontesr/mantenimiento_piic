@@ -303,6 +303,23 @@ describe('useUpaOrder', () => {
 
       expect(upaApi.updateTask).not.toHaveBeenCalled();
     });
+
+    it('sets error when updateTask fails', async () => {
+      vi.mocked(upaApi.getOrderById).mockResolvedValue(mockWorkOrder);
+      vi.mocked(upaApi.updateTask).mockRejectedValue(new Error('server error'));
+
+      const { result } = renderHook(() => useUpaOrder());
+
+      await act(async () => {
+        await result.current.loadOrder(1);
+      });
+
+      await act(async () => {
+        await result.current.deferTask('triage_dashboard_lights', 'DEFERRED_FINANCIAL');
+      });
+
+      expect(result.current.error).toBe('Error al diferir la tarea');
+    });
   });
 
   describe('closeCurrentOrder', () => {
