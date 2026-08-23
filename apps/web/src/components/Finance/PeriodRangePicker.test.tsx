@@ -130,3 +130,36 @@ describe('PeriodRangePicker (R4-C — getDayCls branches, day selection, error, 
     expect(within(hasta).getByText('Agosto 2026')).toBeInTheDocument();
   });
 });
+
+// ── FC164 F1 — parseYMFromDate NaN fix (rango vacío no crashea) ──
+describe('PeriodRangePicker (FC164 F1 — parseYMFromDate empty/invalid fallback)', () => {
+  const openPicker = (): void => {
+    fireEvent.click(within(screen.getByTestId('period-picker-trigger-row')).getByRole('button'));
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('FC164-R1-1: value={from:"",to:""} abre sin crashear y muestra el mes actual en ambos paneles', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-15T12:00:00.000Z'));
+
+    render(<PeriodRangePicker value={{ from: '', to: '' }} onChange={vi.fn()} />);
+
+    expect(() => openPicker()).not.toThrow();
+    expect(screen.getByText('Desde')).toBeInTheDocument();
+    expect(screen.getByText('Hasta')).toBeInTheDocument();
+    expect(screen.getAllByText('Septiembre 2026').length).toBe(2);
+  });
+
+  it('FC164-R1-2: rango previamente aplicado sigue mostrando su propio mes (regresión)', () => {
+    render(
+      <PeriodRangePicker value={{ from: '2026-05-01', to: '2026-05-31' }} onChange={vi.fn()} />
+    );
+
+    openPicker();
+
+    expect(screen.getAllByText('Mayo 2026').length).toBe(2);
+  });
+});

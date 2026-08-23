@@ -49,7 +49,13 @@ function formatLabel(date: string): string {
 
 function parseYMFromDate(date: string): { year: number; month: number } {
   const parts = date.split('-');
-  return { year: Number(parts[0]), month: Number(parts[1]) - 1 };
+  const year = Number(parts[0]);
+  const month = Number(parts[1]) - 1;
+  if (!date || Number.isNaN(year) || Number.isNaN(month)) {
+    const n = new Date();
+    return { year: n.getFullYear(), month: n.getMonth() };
+  }
+  return { year, month };
 }
 
 function shiftMonth(year: number, month: number, delta: number): { year: number; month: number } {
