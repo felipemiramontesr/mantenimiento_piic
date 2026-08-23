@@ -84,6 +84,23 @@ describe('SpecialtiesSelect', () => {
     expect(onChange).toHaveBeenCalledWith(['FRENOS']);
   });
 
+  it('closes the dropdown when clicking outside the container', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
+    render(<SpecialtiesSelect value={[]} onChange={vi.fn()} />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('specialties-dropdown-trigger')).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByTestId('specialties-dropdown-trigger'));
+    await waitFor(() => expect(screen.getByTestId('specialty-option-MOTOR')).toBeInTheDocument());
+
+    fireEvent.mouseDown(document.body);
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('specialty-option-MOTOR')).not.toBeInTheDocument()
+    );
+  });
+
   it('renders without crash when API fails — Scenario SS-6', async () => {
     (api.get as Mock).mockRejectedValueOnce(new Error('network error'));
     render(<SpecialtiesSelect value={[]} onChange={vi.fn()} />);
