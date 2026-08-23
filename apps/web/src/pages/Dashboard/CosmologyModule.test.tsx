@@ -164,6 +164,22 @@ describe('CosmologyModule', () => {
     expect(screen.getByTestId('cosmology-universe-row-1')).toBeInTheDocument();
   });
 
+  it('closes the destroy modal without deleting when Cancelar is clicked', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() => {
+      expect(screen.getByTestId('cosmology-universe-row-1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('cosmology-universe-destroy-1'));
+    expect(screen.getByTestId('destroy-universe-confirm-label')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Cancelar'));
+
+    expect(screen.queryByTestId('destroy-universe-confirm-label')).not.toBeInTheDocument();
+    expect(api.delete).not.toHaveBeenCalled();
+  });
+
   it('Scenario 5 — successful destroy (zero-state) removes the Universe from the list', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
