@@ -1,17 +1,27 @@
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import LoginPage from './pages/Auth/Login';
 import { AuthProvider } from './context/AuthContext';
+import api from './api/client';
 import App from './App';
 
 vi.mock('./api/client', () => ({
   default: {
     post: vi.fn(),
+    get: vi.fn().mockResolvedValue({ data: { success: true, data: [] } }),
     defaults: {
       baseURL: 'https://apiv1.piic.com.mx/v1',
     },
   },
+}));
+
+// Stubs the full Sidebar/FleetProvider/PanicButton dashboard shell — this
+// suite only needs to prove ProtectedRoute renders its children once
+// authenticated, not exercise the dashboard chrome itself.
+vi.mock('./pages/Dashboard/Layout', () => ({
+  default: (): React.ReactElement => <div data-testid="dashboard-shell" />,
 }));
 
 describe('PIIC ARCHON - Authentication Interface', () => {
@@ -67,5 +77,36 @@ describe('PIIC ARCHON - App (root composition)', () => {
       expect(screen.getByText(/Acceso Archon/i)).toBeInTheDocument();
     });
     expect(window.location.pathname).toBe('/login');
+  });
+
+  it('renders the protected dashboard shell for an authenticated session', async () => {
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
+      if (url === '/auth/refresh') {
+        return {
+          data: {
+            success: true,
+            token: 'mock-token',
+            user: {
+              id: '1',
+              username: 'archon',
+              fullName: 'Archon Master',
+              email: 'archon@piic.com.mx',
+              roleId: 0,
+              roleName: 'Master (Archon)',
+              department: 'IT',
+              employeeNumber: 'EMP-001',
+              is_active: true,
+              permissions: ['*'],
+            },
+          },
+        };
+      }
+      throw new Error(`unmocked: ${url}`);
+    });
+
+    window.history.pushState({}, '', '/dashboard');
+    render(<App />);
+
+    expect(await screen.findByTestId('dashboard-shell')).toBeInTheDocument();
   });
 });
