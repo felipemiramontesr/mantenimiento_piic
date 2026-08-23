@@ -110,4 +110,33 @@ describe('usePushNotifications', () => {
       expect.objectContaining({ deviceType: 'web' })
     );
   });
+
+  it('requestPermission returns early when Notification is not in window', async () => {
+    delete (global as any).Notification;
+
+    const { result } = renderHook(() => usePushNotifications(true));
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    expect(result.current.permission).toBe('default');
+    expect(api.post).not.toHaveBeenCalledWith('/notifications/push-token', expect.anything());
+  });
+
+  it('generates and saves a new token on mount when permission is already granted with no saved token', async () => {
+    (global as any).Notification = {
+      permission: 'granted',
+      requestPermission: vi.fn(),
+    };
+
+    renderHook(() => usePushNotifications(true));
+    await flushAsync();
+
+    expect(mockLocalStorage.archon_push_token).toContain('web_push_');
+    expect(api.post).toHaveBeenCalledWith(
+      '/notifications/push-token',
+      expect.objectContaining({ deviceType: 'web', token: mockLocalStorage.archon_push_token })
+    );
+  });
 });
