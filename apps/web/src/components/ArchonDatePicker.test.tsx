@@ -50,6 +50,22 @@ describe('ArchonDatePicker', () => {
     expect(screen.getByText('Enero 2027')).toBeInTheDocument();
   });
 
+  it('navigating to the previous month within the same year does not change the year', () => {
+    const { container } = render(<ArchonDatePicker value="2026-03-05" onChange={vi.fn()} />);
+    fireEvent.click(screen.getByText('05 / 03 / 2026'));
+    expect(screen.getByText('Marzo 2026')).toBeInTheDocument();
+    fireEvent.click(prevMonthButton(container));
+    expect(screen.getByText('Febrero 2026')).toBeInTheDocument();
+  });
+
+  it('navigating to the next month within the same year does not change the year', () => {
+    const { container } = render(<ArchonDatePicker value="2026-03-05" onChange={vi.fn()} />);
+    fireEvent.click(screen.getByText('05 / 03 / 2026'));
+    expect(screen.getByText('Marzo 2026')).toBeInTheDocument();
+    fireEvent.click(nextMonthButton(container));
+    expect(screen.getByText('Abril 2026')).toBeInTheDocument();
+  });
+
   it('selecting a day calls onChange with the ISO date and closes the popup', () => {
     const onChange = vi.fn();
     render(<ArchonDatePicker value="2026-03-05" onChange={onChange} />);
