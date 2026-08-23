@@ -90,6 +90,22 @@ describe('FC-10 VIM_SubUniverse_FamiliarScope FaseB — useRealtimeTelemetry', (
     unmount();
   });
 
+  it('R4-C: sets an error message when /telemetry/units rejects', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/telemetry/units') return Promise.reject(new Error('Network error'));
+      return Promise.resolve({ data: {} });
+    });
+
+    const { result, unmount } = renderHook(() => useRealtimeTelemetry());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(result.current.error).toBe('Error al obtener posiciones en tiempo real');
+    expect(result.current.isLoading).toBe(false);
+    unmount();
+  });
+
   it('AT-FC10-B-WEB-4: limpia ambos intervalos en unmount', async () => {
     const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
     const { unmount } = renderHook(() => useRealtimeTelemetry());
