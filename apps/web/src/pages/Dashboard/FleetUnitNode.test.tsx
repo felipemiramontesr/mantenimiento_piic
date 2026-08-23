@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
+import { render, screen, waitFor, fireEvent, within } from '../../test/testUtils';
 import api from '../../api/client';
 import { useFleetIntelligence } from '../../hooks/useFleetIntelligence';
 import { useEconomicLife } from '../../hooks/useEconomicLife';
@@ -72,10 +72,15 @@ vi.mock('../../hooks/useAssetTypeFields', () => ({
   })),
 }));
 const mockParams = vi.hoisted(() => ({ unitId: 'ASM-001' as string | undefined }));
+const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ unitId: mockParams.unitId }) };
+  return {
+    ...actual,
+    useParams: () => ({ unitId: mockParams.unitId }),
+    useNavigate: () => mockNavigate,
+  };
 });
 
 const UNIT_FIXTURE = {
@@ -925,5 +930,20 @@ describe('FleetUnitNode', () => {
     await waitFor(() =>
       expect(screen.getByText('No se pudieron cargar los patrones de falla.')).toBeInTheDocument()
     );
+  });
+
+  it('BACK-NAV-1: clicking the sovereign header back action navigates to the default backTo', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: NODE_FIXTURE } });
+
+    render(<FleetUnitNode />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('sovereign-layout-header-action')).toBeInTheDocument()
+    );
+    fireEvent.click(
+      within(screen.getByTestId('sovereign-layout-header-action')).getByText('Flota')
+    );
+
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/fleet');
   });
 });
