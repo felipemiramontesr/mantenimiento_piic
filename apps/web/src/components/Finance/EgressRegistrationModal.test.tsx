@@ -56,6 +56,17 @@ describe('EgressRegistrationModal', () => {
     expect(api.post).not.toHaveBeenCalledWith('/finance/transactions', expect.anything());
   });
 
+  it('blocks submit and shows a field error when no category is selected', async () => {
+    render(<EgressRegistrationModal onClose={vi.fn()} onSuccess={vi.fn()} />);
+    await waitFor(() => expect(api.get).toHaveBeenCalled());
+    fireEvent.change(screen.getByDisplayValue('Seleccionar unidad...'), {
+      target: { value: 'ASM-001' },
+    });
+    fireEvent.click(submitButton());
+    expect(await screen.findByText('Selecciona una categoría')).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalledWith('/finance/transactions', expect.anything());
+  });
+
   it('blocks submit and shows a field error when the amount is zero or invalid', async () => {
     render(<EgressRegistrationModal onClose={vi.fn()} onSuccess={vi.fn()} />);
     await waitFor(() => expect(api.get).toHaveBeenCalled());
