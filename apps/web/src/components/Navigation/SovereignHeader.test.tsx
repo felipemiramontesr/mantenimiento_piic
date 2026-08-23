@@ -543,4 +543,25 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
     expect(screen.queryByText('ASM-002 (Modelo: Aveo)')).not.toBeInTheDocument();
   });
+
+  it('renders headerSlot when provided, taking priority over headerAction', () => {
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: {
+        ...mockLayoutData,
+        headerSlot: <div data-testid="custom-header-slot">Severity Summary</div>,
+      } as any,
+      searchTerm: '',
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(<SovereignHeader />);
+
+    expect(screen.getByTestId('custom-header-slot')).toBeInTheDocument();
+    expect(screen.queryByText('Incidencia Rápida')).not.toBeInTheDocument();
+  });
 });
