@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '../../../test/testUtils';
+import { render, screen, waitFor, fireEvent, within } from '../../../test/testUtils';
 import api from '../../../api/client';
 import { useCheckpoints } from '../../../hooks/useCheckpoints';
 import RouteNode from './RouteNode';
@@ -9,10 +9,15 @@ vi.mock('../../../hooks/useCheckpoints', () => ({
   useCheckpoints: vi.fn(() => ({ data: [], loading: false, error: null })),
 }));
 const mockParams = vi.hoisted(() => ({ uuid: 'route-uuid-001' as string | undefined }));
+const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
+  return {
+    ...actual,
+    useParams: () => ({ uuid: mockParams.uuid }),
+    useNavigate: () => mockNavigate,
+  };
 });
 
 const ROUTE_FIXTURE = {
@@ -376,5 +381,13 @@ describe('RouteNode', () => {
     await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
     expect(screen.getAllByText('CATASTROPHIC').length).toBeGreaterThan(0);
     expect(screen.getAllByText('DESCONOCIDO').length).toBeGreaterThan(0);
+  });
+
+  it('BACK-NAV-1: header action navigates back to /dashboard/routes', async () => {
+    render(<RouteNode />);
+    await waitFor(() => expect(screen.getAllByText('Mina Norte').length).toBeGreaterThan(0));
+    const headerAction = screen.getByTestId('sovereign-layout-header-action');
+    fireEvent.click(within(headerAction).getByRole('button', { name: 'Rutas' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/routes');
   });
 });
