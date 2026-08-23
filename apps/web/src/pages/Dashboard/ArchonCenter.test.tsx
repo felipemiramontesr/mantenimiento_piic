@@ -1,5 +1,6 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '../../test/testUtils';
+import { render, screen, act, fireEvent } from '../../test/testUtils';
 import ArchonCenter from './ArchonCenter';
 
 vi.mock('../../api/client', () => ({
@@ -7,6 +8,20 @@ vi.mock('../../api/client', () => ({
     get: vi.fn().mockResolvedValue({ data: { success: true, data: [] } }),
     post: vi.fn(),
   },
+}));
+
+const mockNavigate = vi.hoisted(() => vi.fn());
+vi.mock('react-router-dom', async (): Promise<unknown> => {
+  const actual = await vi.importActual('react-router-dom');
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
+vi.mock('../../components/Identity/AccessControlSlideOver', () => ({
+  default: ({ onClose }: { isOpen: boolean; onClose: () => void }): React.JSX.Element => (
+    <button data-testid="mock-access-control-close" onClick={onClose}>
+      close
+    </button>
+  ),
 }));
 
 describe('ArchonCenter Component (Apex Standard)', () => {
@@ -48,5 +63,31 @@ describe('ArchonCenter Component (Apex Standard)', () => {
     expect(screen.getByText('Herramienta Menor')).toBeDefined();
 
     expect(screen.getAllByText(/Segmento Operativo/i).length).toBe(3);
+  });
+
+  it('navigates to the KPI path when a "VER REPORTE" button is clicked', async () => {
+    await renderModule();
+
+    const detailButtons = screen.getAllByRole('button', { name: /VER REPORTE/i });
+    fireEvent.click(detailButtons[0]);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/users');
+  });
+
+  it('navigates to the category path when "VER DETALLES" is clicked', async () => {
+    await renderModule();
+
+    const viewDetailsButtons = screen.getAllByRole('button', { name: /VER DETALLES/i });
+    fireEvent.click(viewDetailsButtons[0]);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/fleet?categoria=vehiculo');
+  });
+
+  it('closes the access control slide-over without throwing', async () => {
+    await renderModule();
+
+    fireEvent.click(screen.getByTestId('mock-access-control-close'));
+
+    expect(screen.getByTestId('mock-access-control-close')).toBeInTheDocument();
   });
 });
