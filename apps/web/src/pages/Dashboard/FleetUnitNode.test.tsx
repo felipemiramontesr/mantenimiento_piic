@@ -904,4 +904,26 @@ describe('FleetUnitNode', () => {
     expect(screen.getByText(/2 unidades/)).toBeInTheDocument();
     expect(screen.getByText('SEÑAL')).toBeInTheDocument();
   });
+
+  it('PATTERNS-F-6: Tab "Patrones de Falla" muestra un mensaje de error si la carga falla', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (String(url).includes('internal-patterns')) {
+        return Promise.reject(new Error('network error'));
+      }
+      return Promise.resolve({ data: { success: true, data: NODE_FIXTURE } });
+    });
+
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByText('Patrones de Falla'));
+
+    await waitFor(() =>
+      expect(screen.getByText('No se pudieron cargar los patrones de falla.')).toBeInTheDocument()
+    );
+  });
 });
