@@ -257,4 +257,49 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     const { result } = renderHook(() => usePermissions());
     expect(result.current.isOmnipotent()).toBe(true);
   });
+
+  describe('isOmegaStrict — FC161 Cond.R-161-R2', () => {
+    it('returns false when no currentUser', () => {
+      mockAuth(null);
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isOmegaStrict()).toBe(false);
+    });
+
+    it('returns true for roleId 0, even without wildcard permissions', () => {
+      mockAuth({ id: '1', username: 'archon', roleId: 0, roleName: 'Master (Archon)' });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isOmegaStrict()).toBe(true);
+    });
+
+    it('returns true for wildcard permissions, even with a non-zero roleId', () => {
+      mockAuth({
+        id: '9',
+        username: 'wildcard-role',
+        roleId: 8,
+        roleName: 'Administrador de TI',
+        permissions: ['*'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isOmegaStrict()).toBe(true);
+    });
+
+    it('returns false for admin:role:edit alone — unlike isOmnipotent, does not accept it', () => {
+      mockAuth({
+        id: '8',
+        username: 'admin.ti',
+        roleId: 8,
+        roleName: 'Administrador de TI',
+        permissions: ['admin:role:edit'],
+      });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isOmnipotent()).toBe(true);
+      expect(result.current.isOmegaStrict()).toBe(false);
+    });
+
+    it('returns false for a regular user with no permissions array', () => {
+      mockAuth({ id: '4', username: 'operator', roleId: 3, roleName: 'Operador' });
+      const { result } = renderHook(() => usePermissions());
+      expect(result.current.isOmegaStrict()).toBe(false);
+    });
+  });
 });
