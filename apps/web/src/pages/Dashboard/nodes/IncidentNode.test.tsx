@@ -1,14 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '../../../test/testUtils';
+import { render, screen, waitFor, fireEvent, within } from '../../../test/testUtils';
 import api from '../../../api/client';
 import IncidentNode from './IncidentNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
 const mockParams = vi.hoisted(() => ({ uuid: 'aaaa-1111-bbbb-2222' as string | undefined }));
+const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
+  return {
+    ...actual,
+    useParams: () => ({ uuid: mockParams.uuid }),
+    useNavigate: () => mockNavigate,
+  };
 });
 
 const INCIDENT_FIXTURE = {
@@ -165,5 +170,20 @@ describe('IncidentNode', () => {
     render(<IncidentNode />);
     expect(screen.getByText('Cargando…')).toBeInTheDocument();
     expect(vi.mocked(api.get)).not.toHaveBeenCalled();
+  });
+
+  it('BACK-NAV-1: clicking the sovereign header back action navigates to /dashboard/incidents', async () => {
+    render(<IncidentNode />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('sovereign-layout-header-action')).toBeInTheDocument()
+    );
+    fireEvent.click(
+      within(screen.getByTestId('sovereign-layout-header-action')).getByRole('button', {
+        name: 'Incidentes',
+      })
+    );
+
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/incidents');
   });
 });
