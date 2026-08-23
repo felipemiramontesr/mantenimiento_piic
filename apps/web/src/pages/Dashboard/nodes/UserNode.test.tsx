@@ -1,14 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '../../../test/testUtils';
+import { render, screen, waitFor, fireEvent, within } from '../../../test/testUtils';
 import api from '../../../api/client';
 import UserNode from './UserNode';
 
 vi.mock('../../../api/client', () => ({ default: { get: vi.fn() } }));
 const mockParams = vi.hoisted(() => ({ uuid: 'uuid-admin-0001' as string | undefined }));
+const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router-dom', async (): Promise<unknown> => {
   const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useParams: () => ({ uuid: mockParams.uuid }) };
+  return {
+    ...actual,
+    useParams: () => ({ uuid: mockParams.uuid }),
+    useNavigate: () => mockNavigate,
+  };
 });
 
 const USER_FIXTURE = {
@@ -179,5 +184,13 @@ describe('UserNode', () => {
     render(<UserNode />);
     expect(screen.getByText('Cargando…')).toBeInTheDocument();
     expect(vi.mocked(api.get)).not.toHaveBeenCalled();
+  });
+
+  it('BACK-NAV-1: header action navigates back to /dashboard/users', async () => {
+    render(<UserNode />);
+    await waitFor(() => expect(screen.getAllByText('Felipe Miramontes').length).toBeGreaterThan(0));
+    const headerAction = screen.getByTestId('sovereign-layout-header-action');
+    fireEvent.click(within(headerAction).getByRole('button', { name: 'Personal' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/users');
   });
 });
