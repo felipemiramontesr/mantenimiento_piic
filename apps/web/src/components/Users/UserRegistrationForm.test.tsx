@@ -97,6 +97,21 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(screen.getByText(/Departamento/i)).toBeInTheDocument();
   });
 
+  it('updates employeeNumber as the No. de Empleado input is edited', () => {
+    render(<UserRegistrationForm />);
+    const input = screen.getByPlaceholderText('EMP-XXX');
+    fireEvent.change(input, { target: { value: 'EMP-042' } });
+    expect(input).toHaveValue('EMP-042');
+  });
+
+  it('updates department via the ArchonSelect dropdown', async () => {
+    render(<UserRegistrationForm />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    fireEvent.click(await screen.findByText('IT'));
+    expect(await screen.findByText('IT')).toBeInTheDocument();
+    expect(screen.queryByText('Seleccionar...')).not.toBeInTheDocument();
+  });
+
   it('handles validation errors with partial data', async () => {
     render(<UserRegistrationForm />);
     const form = screen.getByTestId('registration-form');
