@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor, act, render, mockStartRoute } from '../../test/testUtils';
 import RouteAssignmentForm from './RouteAssignmentForm';
 import api from '../../api/client';
+import { RouteLog } from './RouteLogTable';
 
 // 🔱 Mock API Client (Sovereign Infrastructure)
 vi.mock('../../api/client', () => ({
@@ -108,6 +109,33 @@ describe('RouteAssignmentForm (Apex Refactor)', () => {
           destination: 'Base Norte',
         })
       );
+    });
+  });
+
+  it('closes the audit justification modal via Cancelar without confirming the deletion', async () => {
+    const routeToEdit = {
+      id: 'route-1',
+      uuid: 'route-1',
+      unit_id: 'ASM-001',
+      operator_id: '1',
+      origin: 'Base',
+      destination: 'Mina',
+      start_time: '2026-05-01T08:00:00.000Z',
+      end_time: null,
+      start_km: 50000,
+      end_km: null,
+    } as unknown as RouteLog;
+
+    render(<RouteAssignmentForm onClose={vi.fn()} routeToEdit={routeToEdit} />);
+
+    const deleteBtn = await screen.findByRole('button', { name: /Eliminar Registro/i });
+    fireEvent.click(deleteBtn);
+
+    const cancelBtn = await screen.findByRole('button', { name: /Cancelar/i });
+    fireEvent.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /Cancelar/i })).not.toBeInTheDocument();
     });
   });
 });
