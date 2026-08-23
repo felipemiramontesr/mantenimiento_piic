@@ -138,6 +138,17 @@ describe('ArchonSelect', () => {
     });
   });
 
+  it('clicking the search input does not close the dropdown', async () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    await waitFor(() => expect(screen.getByText('ASM-01')).toBeInTheDocument());
+
+    const searchInput = screen.getByPlaceholderText('Buscar...');
+    fireEvent.click(searchInput);
+
+    expect(screen.getByText('ASM-01')).toBeInTheDocument();
+  });
+
   it('does not close dropdown when mousedown fires inside the portal root', async () => {
     render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
     fireEvent.click(screen.getByText('Seleccionar...'));
