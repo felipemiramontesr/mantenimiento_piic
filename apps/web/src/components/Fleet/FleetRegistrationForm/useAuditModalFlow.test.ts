@@ -176,4 +176,37 @@ describe('useAuditModalFlow', () => {
       expect(params.setError).toHaveBeenCalledWith('La unidad tiene rutas activas')
     );
   });
+
+  it('falls back to the Error message on a failed PATCH with no server error field', async () => {
+    const params = makeParams();
+    const { result } = renderHook(() => useAuditModalFlow(params));
+    await act(async () => {
+      await result.current.handleFormSubmit({ preventDefault: vi.fn() } as never);
+    });
+    await act(async () => {
+      await result.current.confirmModal('reason');
+    });
+
+    vi.mocked(api.patch).mockRejectedValueOnce(new Error('network down'));
+    await act(async () => {
+      await result.current.handleFormSubmit({ preventDefault: vi.fn() } as never);
+    });
+
+    await waitFor(() => expect(params.setError).toHaveBeenCalledWith('network down'));
+  });
+
+  it('falls back to a generic message on a failed DELETE with no server error field', async () => {
+    const params = makeParams();
+    const { result } = renderHook(() => useAuditModalFlow(params));
+    act(() => result.current.requestDelete());
+
+    vi.mocked(api.delete).mockRejectedValueOnce('not an Error instance');
+    await act(async () => {
+      await result.current.confirmModal('reason');
+    });
+
+    await waitFor(() =>
+      expect(params.setError).toHaveBeenCalledWith('Error al eliminar la unidad')
+    );
+  });
 });
