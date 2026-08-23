@@ -2,11 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ArchonImageUploader from './ArchonImageUploader';
 
-// Auto-confirm crop modal so uploader unit tests focus on file-handling logic,
-// not on the crop UI interaction (covered in ArchonCropModal.test.tsx)
+// Auto-confirm (or auto-cancel, per cropModalBehavior) the crop modal so uploader
+// unit tests focus on file-handling logic, not on the crop UI interaction (covered
+// in ArchonCropModal.test.tsx).
+const cropModalBehavior = vi.hoisted(() => ({
+  action: 'confirm' as 'confirm' | 'cancel',
+  renderCount: 0,
+}));
 vi.mock('./ArchonCropModal', () => ({
-  default: ({ onConfirm }: { onConfirm: (url: string) => void }): null => {
-    onConfirm('data:image/jpeg;base64,mock-cropped');
+  default: ({
+    onConfirm,
+    onCancel,
+  }: {
+    onConfirm: (url: string) => void;
+    onCancel: () => void;
+  }): null => {
+    cropModalBehavior.renderCount += 1;
+    if (cropModalBehavior.action === 'cancel') {
+      onCancel();
+    } else {
+      onConfirm('data:image/jpeg;base64,mock-cropped');
+    }
     return null;
   },
 }));
@@ -32,6 +48,8 @@ describe('ArchonImageUploader Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('FileReader', MockFileReader);
+    cropModalBehavior.action = 'confirm';
+    cropModalBehavior.renderCount = 0;
   });
 
   it('should render the drop zone correctly', () => {
@@ -218,6 +236,39 @@ describe('ArchonImageUploader Component', () => {
     fireEvent.click(dropZone);
     expect(clickSpy).toHaveBeenCalled();
     clickSpy.mockRestore();
+  });
+
+  it('catches errors silently when onFileChange returns a Promise with maxImages=1', async () => {
+    const onFileChange = vi.fn().mockReturnValue(Promise.reject(new Error('upload failed')));
+    const file = new File(['x'], 'fail.png', { type: 'image/png' });
+
+    render(
+      <ArchonImageUploader
+        images={[]}
+        onChange={mockOnChange}
+        onFileChange={onFileChange}
+        maxImages={1}
+      />
+    );
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(onFileChange).toHaveBeenCalledWith([file]);
+    await waitFor(() => expect(mockOnChange).toHaveBeenCalled());
+  });
+
+  it('removes the crop entry from the queue when the crop modal is cancelled', async () => {
+    cropModalBehavior.action = 'cancel';
+    const file = new File(['image-content'], 'test.png', { type: 'image/png' });
+
+    render(<ArchonImageUploader images={[]} onChange={mockOnChange} />);
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(cropModalBehavior.renderCount).toBeGreaterThan(0));
+    expect(mockOnChange).not.toHaveBeenCalled();
   });
 
   it('preview grid uses gap-2 when compact=true', () => {
