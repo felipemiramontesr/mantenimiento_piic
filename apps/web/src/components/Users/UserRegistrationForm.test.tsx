@@ -325,7 +325,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
 
   it('toggles password visibility', async () => {
     render(<UserRegistrationForm />);
-    const toggleBtn = screen.getByRole('button', { name: 'Mostrar contraseña' });
+    const toggleBtn = await screen.findByRole('button', { name: 'Mostrar contraseña' });
     const passwordInput = screen.getByPlaceholderText(/Auto-generada/i);
     expect(passwordInput).toHaveAttribute('type', 'password');
     fireEvent.click(toggleBtn);
@@ -469,7 +469,7 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     });
     const confirmInput = screen.getByPlaceholderText(/Repita la clave/i);
     expect(confirmInput).toHaveAttribute('type', 'password');
-    const toggleBtn = screen.getByRole('button', { name: 'Mostrar contraseña' });
+    const toggleBtn = await screen.findByRole('button', { name: 'Mostrar contraseña' });
     fireEvent.click(toggleBtn);
     await waitFor(() => {
       expect(confirmInput).toHaveAttribute('type', 'text');
