@@ -1,12 +1,10 @@
 import { RowDataPacket } from 'mysql2';
+import { randomInt } from 'node:crypto';
 
 const HANDLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 function randomSuffix(): string {
-  return Array.from(
-    { length: 3 },
-    () => HANDLE_CHARS[Math.floor(Math.random() * HANDLE_CHARS.length)]
-  ).join('');
+  return Array.from({ length: 3 }, () => HANDLE_CHARS[randomInt(0, HANDLE_CHARS.length)]).join('');
 }
 
 /**
