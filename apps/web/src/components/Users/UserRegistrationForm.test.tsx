@@ -323,14 +323,15 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     ).toBeInTheDocument();
   });
 
-  it('toggles password visibility', () => {
+  it('toggles password visibility', async () => {
     render(<UserRegistrationForm />);
-    const toggleButtons = screen.getAllByRole('button').filter((b) => b.querySelector('svg'));
-    const toggleBtn = toggleButtons[0];
+    const toggleBtn = screen.getByRole('button', { name: 'Mostrar contraseña' });
     const passwordInput = screen.getByPlaceholderText(/Auto-generada/i);
     expect(passwordInput).toHaveAttribute('type', 'password');
     fireEvent.click(toggleBtn);
-    expect(passwordInput).toHaveAttribute('type', 'text');
+    await waitFor(() => {
+      expect(passwordInput).toHaveAttribute('type', 'text');
+    });
   });
 
   it('allows canceling audit modal', async () => {
@@ -461,15 +462,17 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     expect(screen.getByRole('button', { name: /Confirmar Alta/i })).toBeDisabled();
   });
 
-  it('confirm password input type follows showPassword toggle', () => {
+  it('confirm password input type follows showPassword toggle', async () => {
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), {
       target: { value: 'mypassword' },
     });
     const confirmInput = screen.getByPlaceholderText(/Repita la clave/i);
     expect(confirmInput).toHaveAttribute('type', 'password');
-    const toggleBtn = screen.getAllByRole('button').filter((b) => b.querySelector('svg'))[0];
+    const toggleBtn = screen.getByRole('button', { name: 'Mostrar contraseña' });
     fireEvent.click(toggleBtn);
-    expect(confirmInput).toHaveAttribute('type', 'text');
+    await waitFor(() => {
+      expect(confirmInput).toHaveAttribute('type', 'text');
+    });
   });
 });
