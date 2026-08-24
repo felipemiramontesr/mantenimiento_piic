@@ -41,6 +41,199 @@ const getVariantClasses = (variant: ArchonCardVariant): string => {
   return mapping[variant] || mapping.navy;
 };
 
+/** className del contenedor de la tarjeta (FC163 F1B-1, split Alfa 219_AN). */
+function cardWrapperClassName(
+  isActive: boolean,
+  isHorizontal: boolean,
+  variantStyles: string
+): string {
+  return `
+    card-archon-sovereign cursor-pointer animate-in fade-in duration-500 group flex-1
+    ${isActive ? 'border-x-slate-300 border-b-slate-300' : ''}
+    ${variantStyles}
+    ${isHorizontal ? '!flex-row !items-center !p-4 !h-auto gap-6' : 'flex-col p-6 h-full'}
+  `;
+}
+
+interface ClickableCardWrapperProps {
+  onClick: (e: React.MouseEvent) => void;
+  className: string;
+  children: React.ReactNode;
+}
+
+/** Envoltura click+teclado de la tarjeta completa (FC163 F1B-1, split Alfa 219_AN). */
+const ClickableCardWrapper: React.FC<ClickableCardWrapperProps> = ({
+  onClick,
+  className,
+  children,
+}) => (
+  <div
+    onClick={onClick}
+    onKeyDown={(e: React.KeyboardEvent): void => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick(e as unknown as React.MouseEvent);
+      }
+    }}
+    role="button"
+    tabIndex={0}
+    className={className}
+  >
+    {children}
+  </div>
+);
+
+interface CardActionButtonProps {
+  testId?: string;
+  isActive: boolean;
+  isYellow: boolean;
+  reverseArrow: boolean;
+  buttonText: string;
+  arrowSize: number;
+  extraClassName?: string;
+}
+
+/** Botón de acción (flecha + texto) compartido por ambos layouts (FC163 F1B-1, split Alfa 219_AN). */
+const CardActionButton: React.FC<CardActionButtonProps> = ({
+  testId,
+  isActive,
+  isYellow,
+  reverseArrow,
+  buttonText,
+  arrowSize,
+  extraClassName,
+}) => (
+  <button
+    data-testid={testId}
+    className={`
+      btn-archon-card-action ${extraClassName ?? ''}
+      ${isActive ? 'brightness-110 ring-1 ring-white/20' : ''}
+      ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
+    `}
+  >
+    {reverseArrow ? (
+      <>
+        <ArrowLeft size={arrowSize} className="transition-transform group-hover:-translate-x-1" />
+        <span className="ml-2">{buttonText}</span>
+      </>
+    ) : (
+      <>
+        <span className="mr-2">{buttonText}</span>
+        <ArrowRight size={arrowSize} className="transition-transform group-hover:translate-x-1" />
+      </>
+    )}
+  </button>
+);
+
+interface CardHorizontalContentProps {
+  headerTitle: string;
+  HeaderIcon: LucideIcon;
+  PayloadIcon: LucideIcon;
+  testId?: string;
+  isActive: boolean;
+  isYellow: boolean;
+  reverseArrow: boolean;
+  buttonText: string;
+}
+
+/** Contenido del layout horizontal (FC163 F1B-1, split Alfa 219_AN). */
+const CardHorizontalContent: React.FC<CardHorizontalContentProps> = ({
+  headerTitle,
+  HeaderIcon,
+  PayloadIcon,
+  testId,
+  isActive,
+  isYellow,
+  reverseArrow,
+  buttonText,
+}) => (
+  <>
+    {/* 🔱 LEFT: PAYLOAD ICON (AXIAL FOCUS) */}
+    <div className="w-20 h-20 flex-shrink-0 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300 bg-[var(--card-accent-soft)] border-[var(--card-accent-border)]">
+      <PayloadIcon size={32} className="text-[var(--card-accent)]" />
+    </div>
+
+    {/* 🔱 RIGHT: MULTI-LEVEL CONTENT */}
+    <div className="flex-1 flex flex-col justify-between h-20 py-1">
+      <div className="flex items-center gap-2">
+        <HeaderIcon size={14} className="text-[var(--card-accent)]" />
+        <span className="card-sovereign-title !mb-0">{headerTitle}</span>
+      </div>
+
+      <CardActionButton
+        testId={testId}
+        isActive={isActive}
+        isYellow={isYellow}
+        reverseArrow={reverseArrow}
+        buttonText={buttonText}
+        arrowSize={10}
+        extraClassName="!h-11 !text-archon-base"
+      />
+    </div>
+  </>
+);
+
+interface CardVerticalContentProps {
+  headerTitle: string;
+  HeaderIcon: LucideIcon;
+  actionTitle: string;
+  description: string;
+  PayloadIcon: LucideIcon;
+  testId?: string;
+  isActive: boolean;
+  isYellow: boolean;
+  reverseArrow: boolean;
+  buttonText: string;
+}
+
+/** Contenido del layout vertical (FC163 F1B-1, split Alfa 219_AN). */
+const CardVerticalContent: React.FC<CardVerticalContentProps> = ({
+  headerTitle,
+  HeaderIcon,
+  actionTitle,
+  description,
+  PayloadIcon,
+  testId,
+  isActive,
+  isYellow,
+  reverseArrow,
+  buttonText,
+}) => (
+  <>
+    {/* 🔱 HEADER */}
+    <div className="card-sovereign-header">
+      <HeaderIcon size={18} className="transition-colors text-[var(--card-accent)]" />
+      <span className="card-sovereign-title">{headerTitle}</span>
+    </div>
+
+    {/* 📦 PAYLOAD */}
+    <div className="flex-1 flex flex-col items-center justify-center space-y-6 pb-8">
+      <div className="w-20 h-20 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300 bg-[var(--card-accent-soft)] border-[var(--card-accent-border)]">
+        <PayloadIcon size={32} className="text-[var(--card-accent)]" />
+      </div>
+
+      <div className="flex flex-col items-center space-y-1 text-center">
+        <h3 className="text-pinnacle-navy font-black uppercase tracking-[0.15em] text-archon-lg">
+          {actionTitle}
+        </h3>
+        <p className="text-archon-sm font-bold opacity-40 uppercase tracking-[0.25em] text-pinnacle-navy">
+          {description}
+        </p>
+      </div>
+    </div>
+
+    {/* 🔘 ACTION */}
+    <CardActionButton
+      testId={testId}
+      isActive={isActive}
+      isYellow={isYellow}
+      reverseArrow={reverseArrow}
+      buttonText={buttonText}
+      arrowSize={12}
+    />
+  </>
+);
+
 const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
   variant,
   headerTitle,
@@ -60,105 +253,36 @@ const ArchonManagementCard: React.FC<ArchonManagementCardProps> = ({
   const isHorizontal = layout === 'horizontal';
 
   return (
-    <div
+    <ClickableCardWrapper
       onClick={onClick}
-      className={`
-        card-archon-sovereign cursor-pointer animate-in fade-in duration-500 group flex-1
-        ${isActive ? 'border-x-slate-300 border-b-slate-300' : ''}
-        ${variantStyles}
-        ${isHorizontal ? '!flex-row !items-center !p-4 !h-auto gap-6' : 'flex-col p-6 h-full'}
-      `}
+      className={cardWrapperClassName(isActive, isHorizontal, variantStyles)}
     >
       {isHorizontal ? (
-        <>
-          {/* 🔱 LEFT: PAYLOAD ICON (AXIAL FOCUS) */}
-          <div className="w-20 h-20 flex-shrink-0 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300 bg-[var(--card-accent-soft)] border-[var(--card-accent-border)]">
-            <PayloadIcon size={32} className="text-[var(--card-accent)]" />
-          </div>
-
-          {/* 🔱 RIGHT: MULTI-LEVEL CONTENT */}
-          <div className="flex-1 flex flex-col justify-between h-20 py-1">
-            <div className="flex items-center gap-2">
-              <HeaderIcon size={14} className="text-[var(--card-accent)]" />
-              <span className="card-sovereign-title !mb-0">{headerTitle}</span>
-            </div>
-
-            <button
-              data-testid={testId}
-              className={`
-                btn-archon-card-action !h-11 !text-archon-base
-                ${isActive ? 'brightness-110 ring-1 ring-white/20' : ''}
-                ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
-              `}
-            >
-              {reverseArrow ? (
-                <>
-                  <ArrowLeft
-                    size={10}
-                    className="transition-transform group-hover:-translate-x-1"
-                  />
-                  <span className="ml-2">{buttonText}</span>
-                </>
-              ) : (
-                <>
-                  <span className="mr-2">{buttonText}</span>
-                  <ArrowRight
-                    size={10}
-                    className="transition-transform group-hover:translate-x-1"
-                  />
-                </>
-              )}
-            </button>
-          </div>
-        </>
+        <CardHorizontalContent
+          headerTitle={headerTitle}
+          HeaderIcon={HeaderIcon}
+          PayloadIcon={PayloadIcon}
+          testId={testId}
+          isActive={isActive}
+          isYellow={isYellow}
+          reverseArrow={reverseArrow}
+          buttonText={buttonText}
+        />
       ) : (
-        <>
-          {/* 🔱 HEADER */}
-          <div className="card-sovereign-header">
-            <HeaderIcon size={18} className="transition-colors text-[var(--card-accent)]" />
-            <span className="card-sovereign-title">{headerTitle}</span>
-          </div>
-
-          {/* 📦 PAYLOAD */}
-          <div className="flex-1 flex flex-col items-center justify-center space-y-6 pb-8">
-            <div className="w-20 h-20 rounded-[4px] flex items-center justify-center border-2 transition-all duration-300 bg-[var(--card-accent-soft)] border-[var(--card-accent-border)]">
-              <PayloadIcon size={32} className="text-[var(--card-accent)]" />
-            </div>
-
-            <div className="flex flex-col items-center space-y-1 text-center">
-              <h3 className="text-pinnacle-navy font-black uppercase tracking-[0.15em] text-archon-lg">
-                {actionTitle}
-              </h3>
-              <p className="text-archon-sm font-bold opacity-40 uppercase tracking-[0.25em] text-pinnacle-navy">
-                {description}
-              </p>
-            </div>
-          </div>
-
-          {/* 🔘 ACTION */}
-          <button
-            data-testid={testId}
-            className={`
-              btn-archon-card-action
-              ${isActive ? 'brightness-110 ring-1 ring-white/20' : ''}
-              ${isYellow ? 'text-pinnacle-navy' : 'text-white'}
-            `}
-          >
-            {reverseArrow ? (
-              <>
-                <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
-                <span className="ml-2">{buttonText}</span>
-              </>
-            ) : (
-              <>
-                <span className="mr-2">{buttonText}</span>
-                <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
-              </>
-            )}
-          </button>
-        </>
+        <CardVerticalContent
+          headerTitle={headerTitle}
+          HeaderIcon={HeaderIcon}
+          actionTitle={actionTitle}
+          description={description}
+          PayloadIcon={PayloadIcon}
+          testId={testId}
+          isActive={isActive}
+          isYellow={isYellow}
+          reverseArrow={reverseArrow}
+          buttonText={buttonText}
+        />
       )}
-    </div>
+    </ClickableCardWrapper>
   );
 };
 

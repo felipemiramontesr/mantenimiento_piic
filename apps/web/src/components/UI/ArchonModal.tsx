@@ -31,6 +31,9 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
       aria-modal="true"
       aria-label={ariaLabel}
       onClick={handleBackdropClick}
+      onKeyDown={(e: React.KeyboardEvent): void => {
+        if (e.key === 'Escape') onClose();
+      }}
     >
       <div className={containerClassName ?? `archon-modal-container ${maxWidth}`}>{children}</div>
     </div>,

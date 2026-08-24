@@ -155,6 +155,19 @@ const NavItemLabel: React.FC<NavItemLabelProps> = ({ label, isCollapsed, active 
   </span>
 );
 
+/** className del contenedor de NavItem (FC163 F1B-1, split Alfa 219_AN — mantiene NavItem bajo presupuesto). */
+function navItemClassName(isCollapsed: boolean, active?: boolean): string {
+  return `
+    nav-item-pro cursor-pointer group flex items-center transition-all duration-200 rounded-[4px] my-1
+    ${isCollapsed ? 'justify-center py-3' : 'justify-start py-3 px-4 gap-3'}
+    ${
+      active
+        ? 'border-l-[3px] border-pinnacle-yellow bg-pinnacle-yellow/5'
+        : 'border-l-[3px] border-transparent bg-transparent hover:bg-white/5'
+    }
+  `;
+}
+
 const NavItem: React.FC<NavItemProps> = ({
   icon,
   label,
@@ -169,26 +182,25 @@ const NavItem: React.FC<NavItemProps> = ({
   const badgeLabel = badgeCount != null && badgeCount > 99 ? '99+' : String(badgeCount ?? 0);
   const itemRef = useRef<HTMLDivElement>(null);
   const opacity = useScrollFade(itemRef, active);
+  const activate = (): void => {
+    navigate(path);
+    setIsMobileMenuOpen(false); // Cierra menú al navegar en móvil
+  };
 
   return (
     <div
       ref={itemRef}
       style={{ opacity, transition: 'opacity 300ms ease-in-out' }}
-      onClick={(): void => {
-        navigate(path);
-        setIsMobileMenuOpen(false); // Cierra menú al navegar en móvil
+      onClick={activate}
+      onKeyDown={(e: React.KeyboardEvent): void => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activate();
+        }
       }}
       role="button"
       tabIndex={0}
-      className={`
-        nav-item-pro cursor-pointer group flex items-center transition-all duration-200 rounded-[4px] my-1
-        ${isCollapsed ? 'justify-center py-3' : 'justify-start py-3 px-4 gap-3'}
-        ${
-          active
-            ? 'border-l-[3px] border-pinnacle-yellow bg-pinnacle-yellow/5'
-            : 'border-l-[3px] border-transparent bg-transparent hover:bg-white/5'
-        }
-      `}
+      className={navItemClassName(isCollapsed, active)}
       title={isCollapsed ? label : ''}
       data-testid={`nav-item-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
@@ -245,6 +257,10 @@ function MobileOverlay({ isOpen, onClose }: MobileOverlayProps): React.ReactElem
     <div
       className="fixed inset-0 bg-black/60 z-[55] md:hidden backdrop-blur-sm transition-opacity"
       onClick={onClose}
+      onKeyDown={(e: React.KeyboardEvent): void => {
+        if (e.key === 'Escape') onClose();
+      }}
+      role="presentation"
     />
   );
 }
