@@ -1,7 +1,11 @@
-/* eslint-disable sonarjs/cognitive-complexity */
 import React, { useState, useRef, useEffect } from 'react';
-import { Image as ImageIcon, X, UploadCloud } from 'lucide-react';
 import ArchonCropModal from './ArchonCropModal';
+import { ImagePreviewGrid } from './ArchonImageUploader/ImagePreviewGrid';
+import {
+  DropzoneTrigger,
+  type DropzoneVisualState,
+  type DropzoneHandlers,
+} from './ArchonImageUploader/DropzoneTrigger';
 
 interface CropQueueItem {
   id: number;
@@ -22,20 +26,105 @@ interface ArchonImageUploaderProps {
   disabled?: boolean;
 }
 
-const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
+/** Lee un File como data URL y entrega el resultado (FC163 F1B-2, split Alfa 219_AN). */
+function readFileAsDataUrl(file: File, onLoaded: (dataUrl: string) => void): void {
+  const reader = new FileReader();
+  reader.onload = (e: ProgressEvent<FileReader>): void => {
+    const dataUrl = e.target?.result as string;
+    if (dataUrl) onLoaded(dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+/** Notifica onFileChange (soporta retorno async) sin dejar promesas colgadas (FC163 F1B-2, split Alfa 219_AN). */
+function notifyFileChange(
+  onFileChange: ((files: File[]) => void | Promise<void>) | undefined,
+  files: File[]
+): void {
+  if (!onFileChange || files.length === 0) return;
+  const result = onFileChange(files);
+  if (result instanceof Promise) {
+    result.catch((): void => undefined);
+  }
+}
+
+/** className del contenedor según modo compact/reducedHeight (FC163 F1B-2, split Alfa 219_AN). */
+function getContainerSpacingClasses(compact: boolean, reducedHeight: boolean): string {
+  if (compact) return 'flex-row items-center justify-center gap-4 p-3 h-14';
+  if (reducedHeight) return 'flex-col items-center justify-center gap-2 p-6';
+  return 'flex-col items-center justify-center gap-12 p-24';
+}
+
+/** className del padding del ícono según modo compact/reducedHeight (FC163 F1B-2, split Alfa 219_AN). */
+function getIconPaddingClasses(compact: boolean, reducedHeight: boolean): string {
+  if (compact) return 'p-2';
+  if (reducedHeight) return 'p-3';
+  return 'p-12';
+}
+
+interface ProcessFilesArgs {
+  maxImages: number;
+  images: string[];
+  cropQueue: CropQueueItem[];
+  onFileChange: ((files: File[]) => void | Promise<void>) | undefined;
+  cropIdRef: React.MutableRefObject<number>;
+  setCropQueue: React.Dispatch<React.SetStateAction<CropQueueItem[]>>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+}
+
+/** Filtra, notifica y encola para recorte los archivos seleccionados (FC163 F1B-2, split Alfa 219_AN — sub-split de useImageUploaderState). */
+function processSelectedFiles(files: FileList | File[], args: ProcessFilesArgs): void {
+  const { maxImages, images, cropQueue, onFileChange, cropIdRef, setCropQueue, fileInputRef } =
+    args;
+  const filesArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
+  if (maxImages === 1) {
+    if (filesArray.length === 0) return;
+    const [file] = filesArray;
+    notifyFileChange(onFileChange, [file]);
+    readFileAsDataUrl(file, (dataUrl) => {
+      cropIdRef.current += 1;
+      setCropQueue([{ id: cropIdRef.current, dataUrl }]);
+    });
+  } else {
+    const available = maxImages - images.length - cropQueue.length;
+    const toProcess = filesArray.slice(0, Math.max(0, available));
+    notifyFileChange(onFileChange, toProcess);
+    toProcess.forEach((file): void => {
+      readFileAsDataUrl(file, (dataUrl) => {
+        cropIdRef.current += 1;
+        setCropQueue((prev) => [...prev, { id: cropIdRef.current, dataUrl }]);
+      });
+    });
+  }
+  if (fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
+}
+
+interface UseImageUploaderStateArgs {
+  images: string[];
+  onChange: (images: string[]) => void;
+  maxImages: number;
+  onFileChange?: (files: File[]) => void | Promise<void>;
+}
+
+interface UseImageUploaderStateResult {
+  cropQueue: CropQueueItem[];
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  atCapacity: boolean;
+  handleFiles: (files: FileList | File[]) => void;
+  handleCropConfirm: (croppedUrl: string) => void;
+  handleCropCancel: () => void;
+  removeImage: (index: number) => void;
+}
+
+/** Estado y handlers de carga/recorte/eliminación de imágenes (FC163 F1B-2, split Alfa 219_AN). */
+function useImageUploaderState({
   images,
   onChange,
-  maxImages = 4,
+  maxImages,
   onFileChange,
-  title = 'Arrastra imágenes de la unidad',
-  allowedFormats = 'JPG, PNG, WEBP',
-  accept = 'image/*',
-  variant = 'square',
-  disabled = false,
-  compact = false,
-  reducedHeight = false,
-}) => {
-  const [isDragging, setIsDragging] = useState<boolean>(false);
+}: UseImageUploaderStateArgs): UseImageUploaderStateResult {
   const [cropQueue, setCropQueue] = useState<CropQueueItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cropIdRef = useRef<number>(0);
@@ -46,72 +135,17 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
 
   // maxImages=1 is a "replace" variant — no capacity lock
   const atCapacity = maxImages > 1 && images.length + cropQueue.length >= maxImages;
-  const isDisabled = disabled || atCapacity;
 
-  // ⚡ ARCHON LINT COMPLIANT CLASS RESOLUTION
-  let containerSpacingClasses = 'flex-col items-center justify-center gap-12 p-24';
-  if (compact) {
-    containerSpacingClasses = 'flex-row items-center justify-center gap-4 p-3 h-14';
-  } else if (reducedHeight) {
-    containerSpacingClasses = 'flex-col items-center justify-center gap-2 p-6';
-  }
-
-  let iconPaddingClasses = 'p-12';
-  if (compact) {
-    iconPaddingClasses = 'p-2';
-  } else if (reducedHeight) {
-    iconPaddingClasses = 'p-3';
-  }
-
-  const handleFiles = (files: FileList | File[]): void => {
-    let filesArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
-
-    if (maxImages === 1) {
-      if (filesArray.length === 0) return;
-      filesArray = [filesArray[0]];
-      if (onFileChange) {
-        const result = onFileChange([filesArray[0]]);
-        if (result instanceof Promise) {
-          result.catch((): void => undefined);
-        }
-      }
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>): void => {
-        const dataUrl = e.target?.result as string;
-        if (dataUrl) {
-          cropIdRef.current += 1;
-          const id = cropIdRef.current;
-          setCropQueue([{ id, dataUrl }]);
-        }
-      };
-      reader.readAsDataURL(filesArray[0]);
-    } else {
-      const available = maxImages - images.length - cropQueue.length;
-      const toProcess = filesArray.slice(0, Math.max(0, available));
-      if (onFileChange && toProcess.length > 0) {
-        const result = onFileChange(toProcess);
-        if (result instanceof Promise) {
-          result.catch((): void => undefined);
-        }
-      }
-      toProcess.forEach((file): void => {
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>): void => {
-          const dataUrl = e.target?.result as string;
-          if (dataUrl) {
-            cropIdRef.current += 1;
-            const id = cropIdRef.current;
-            setCropQueue((prev) => [...prev, { id, dataUrl }]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+  const handleFiles = (files: FileList | File[]): void =>
+    processSelectedFiles(files, {
+      maxImages,
+      images,
+      cropQueue,
+      onFileChange,
+      cropIdRef,
+      setCropQueue,
+      fileInputRef,
+    });
 
   const handleCropConfirm = (croppedUrl: string): void => {
     const { current } = imagesRef;
@@ -119,14 +153,33 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
     setCropQueue((prev) => prev.slice(1));
   };
 
-  const handleCropCancel = (): void => {
-    setCropQueue((prev) => prev.slice(1));
-  };
+  const handleCropCancel = (): void => setCropQueue((prev) => prev.slice(1));
 
   const removeImage = (index: number): void => {
-    const updated = images.filter((_, i) => i !== index);
-    onChange(updated);
+    onChange(images.filter((_, i) => i !== index));
   };
+
+  return {
+    cropQueue,
+    fileInputRef,
+    atCapacity,
+    handleFiles,
+    handleCropConfirm,
+    handleCropCancel,
+    removeImage,
+  };
+}
+
+interface UseDragHandlersResult {
+  isDragging: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+}
+
+/** Estado y handlers de drag-and-drop de archivos (FC163 F1B-2, split Alfa 219_AN). */
+function useDragHandlers(onDropFiles: (files: FileList) => void): UseDragHandlersResult {
+  const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const onDragOver = (e: React.DragEvent): void => {
     e.preventDefault();
@@ -144,144 +197,177 @@ const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    if (e.dataTransfer.files) {
-      handleFiles(e.dataTransfer.files);
-    }
+    if (e.dataTransfer.files) onDropFiles(e.dataTransfer.files);
   };
 
+  return { isDragging, onDragOver, onDragLeave, onDrop };
+}
+
+/** Construye el estado visual de la dropzone (FC163 F1B-2, split Alfa 219_AN). */
+function buildDropzoneVisual(
+  isDisabled: boolean,
+  isDragging: boolean,
+  compact: boolean,
+  reducedHeight: boolean
+): DropzoneVisualState {
+  return {
+    isDisabled,
+    isDragging,
+    containerSpacingClasses: getContainerSpacingClasses(compact, reducedHeight),
+    iconPaddingClasses: getIconPaddingClasses(compact, reducedHeight),
+  };
+}
+
+interface CropModalGateProps {
+  item?: CropQueueItem;
+  onConfirm: (url: string) => void;
+  onCancel: () => void;
+}
+
+/** Construye el bundle de handlers de la dropzone (FC163 F1B-2, split Alfa 219_AN — sub-split del orquestador). */
+function buildDropzoneHandlers(
+  fileInputRef: React.RefObject<HTMLInputElement>,
+  dragHandlers: Omit<UseDragHandlersResult, 'isDragging'>,
+  onFilesSelected: (files: FileList) => void
+): DropzoneHandlers {
+  return {
+    ...dragHandlers,
+    onOpenFileDialog: (): void => fileInputRef.current?.click(),
+    onFilesSelected,
+  };
+}
+
+/** Renderiza el modal de recorte solo si hay un ítem pendiente en la cola (FC163 F1B-2, split Alfa 219_AN). */
+function CropModalGate({ item, onConfirm, onCancel }: CropModalGateProps): React.ReactNode {
+  if (!item) return null;
+  return (
+    <ArchonCropModal
+      key={item.id}
+      imageSrc={item.dataUrl}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
+  );
+}
+
+interface ImageUploaderViewProps {
+  cropItem?: CropQueueItem;
+  onCropConfirm: (url: string) => void;
+  onCropCancel: () => void;
+  compact: boolean;
+  isDisabled: boolean;
+  isDragging: boolean;
+  reducedHeight: boolean;
+  title: string;
+  atCapacity: boolean;
+  maxImages: number;
+  allowedFormats: string;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  accept: string;
+  dragHandlers: Omit<UseDragHandlersResult, 'isDragging'>;
+  onFilesSelected: (files: FileList) => void;
+  images: string[];
+  variant: 'square' | 'circle';
+  disabled: boolean;
+  onRemoveImage: (idx: number) => void;
+}
+
+/** Ensambla la vista completa (modal de recorte + dropzone + grilla) (FC163 F1B-2, split Alfa 219_AN — sub-split del orquestador). */
+function ImageUploaderView({
+  cropItem,
+  onCropConfirm,
+  onCropCancel,
+  compact,
+  isDisabled,
+  isDragging,
+  reducedHeight,
+  title,
+  atCapacity,
+  maxImages,
+  allowedFormats,
+  fileInputRef,
+  accept,
+  dragHandlers,
+  onFilesSelected,
+  images,
+  variant,
+  disabled,
+  onRemoveImage,
+}: ImageUploaderViewProps): React.JSX.Element {
   return (
     <>
-      {cropQueue[0] && (
-        <ArchonCropModal
-          key={cropQueue[0].id}
-          imageSrc={cropQueue[0].dataUrl}
-          onConfirm={handleCropConfirm}
-          onCancel={handleCropCancel}
-        />
-      )}
-
+      <CropModalGate item={cropItem} onConfirm={onCropConfirm} onCancel={onCropCancel} />
       <div className={compact ? 'space-y-2' : 'space-y-4'}>
-        {/* Drag & Drop Zone */}
-        <div
-          onDragOver={isDisabled ? undefined : onDragOver}
-          onDragLeave={isDisabled ? undefined : onDragLeave}
-          onDrop={isDisabled ? undefined : onDrop}
-          onClick={isDisabled ? undefined : (): void => fileInputRef.current?.click()}
-          className={`
-          relative border-2 border-dashed rounded-[4px] transition-all duration-300
-          ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-          flex ${containerSpacingClasses} group
-          ${
-            isDragging
-              ? 'border-[#f2b705] bg-[#f2b705]/5 shadow-[0_0_20px_rgba(242,183,5,0.1)]'
-              : 'border-[#0f2a44]/10 hover:border-[#f2b705]/40 bg-gray-50/50'
-          }
-        `}
-        >
-          <input
-            type="file"
-            multiple={maxImages > 1}
-            accept={accept}
-            className="hidden"
-            ref={fileInputRef}
-            disabled={isDisabled}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-              if (e.target.files) handleFiles(e.target.files);
-            }}
-          />
-
-          <div
-            className={`
-          rounded-[4px] transition-transform duration-500
-          ${iconPaddingClasses}
-          ${
-            isDragging
-              ? 'bg-[#f2b705] text-[#0f2a44] scale-110'
-              : 'bg-[#0f2a44]/5 text-[#0f2a44]/40 group-hover:scale-110'
-          }
-        `}
-          >
-            <UploadCloud size={compact ? 16 : 24} />
-          </div>
-
-          <div className={compact ? 'flex items-center gap-2' : 'text-center'}>
-            <p className="text-[#0f2a44] font-bold text-archon-lg">
-              {isDragging ? '¡Suelta para capturar!' : title}
-            </p>
-            {!compact && (
-              <p
-                className={`text-archon-base uppercase tracking-widest opacity-40 ${
-                  reducedHeight ? 'mt-1' : 'mt-4'
-                }`}
-              >
-                {atCapacity
-                  ? `Máximo ${maxImages} fotos alcanzado`
-                  : `Máximo ${maxImages} fotos • ${allowedFormats}`}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Preview Grid */}
+        <DropzoneTrigger
+          visual={buildDropzoneVisual(isDisabled, isDragging, compact, reducedHeight)}
+          copy={{ compact, title, atCapacity, maxImages, allowedFormats, reducedHeight }}
+          handlers={buildDropzoneHandlers(fileInputRef, dragHandlers, onFilesSelected)}
+          fileInputRef={fileInputRef}
+          accept={accept}
+        />
         {images.length > 0 && (
-          <div className={`grid grid-cols-4 ${compact ? 'gap-2' : 'gap-12'}`}>
-            {images.map(
-              (src, idx): React.ReactElement => (
-                <div
-                  key={idx}
-                  className={`relative group animate-in fade-in zoom-in duration-300 ${
-                    variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
-                  }`}
-                >
-                  <div className="w-full h-full overflow-hidden border border-[#0f2a44]/10 rounded-[4px]">
-                    <img
-                      src={src}
-                      alt={`Vista ${idx + 1}`}
-                      className="w-full h-full object-contain bg-slate-100"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  {!disabled && (
-                    <button
-                      type="button"
-                      onClick={(e: React.MouseEvent): void => {
-                        e.stopPropagation();
-                        removeImage(idx);
-                      }}
-                      className="absolute top-[5px] right-[5px] text-[#f2b705] opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 border-0 bg-transparent outline-none focus:outline-none"
-                    >
-                      <X size={18} strokeWidth={1} />
-                    </button>
-                  )}
-                  {variant === 'square' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-4 pointer-events-none">
-                      <span className="text-archon-xs text-white font-black uppercase tracking-tighter shadow-sm">
-                        Slot 0{idx + 1}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )
-            )}
-
-            {/* Empty slots — dashed fill to reinforce grid capacity */}
-            {Array.from({ length: maxImages - images.length }).map(
-              (_, i): React.ReactElement => (
-                <div
-                  key={`empty-${i}`}
-                  className={`${
-                    variant === 'circle' ? 'w-48 h-48 mx-auto' : 'aspect-square'
-                  } rounded-[4px] border border-dashed border-[#0f2a44]/5 bg-gray-50/30 flex items-center justify-center text-[#0f2a44]/10`}
-                >
-                  <ImageIcon size={16} />
-                </div>
-              )
-            )}
-          </div>
+          <ImagePreviewGrid
+            images={images}
+            maxImages={maxImages}
+            compact={compact}
+            variant={variant}
+            disabled={disabled}
+            onRemove={onRemoveImage}
+          />
         )}
       </div>
     </>
+  );
+}
+
+/** Selector de imágenes con drag-and-drop, recorte y grilla de previsualización (FC163 F1B-2, split Alfa 219_AN). */
+const ArchonImageUploader: React.FC<ArchonImageUploaderProps> = ({
+  images,
+  onChange,
+  maxImages = 4,
+  onFileChange,
+  title = 'Arrastra imágenes de la unidad',
+  allowedFormats = 'JPG, PNG, WEBP',
+  accept = 'image/*',
+  variant = 'square',
+  disabled = false,
+  compact = false,
+  reducedHeight = false,
+}) => {
+  const {
+    cropQueue,
+    fileInputRef,
+    atCapacity,
+    handleFiles,
+    handleCropConfirm,
+    handleCropCancel,
+    removeImage,
+  } = useImageUploaderState({ images, onChange, maxImages, onFileChange });
+  const { isDragging, onDragOver, onDragLeave, onDrop } = useDragHandlers(handleFiles);
+  const isDisabled = disabled || atCapacity;
+
+  return (
+    <ImageUploaderView
+      cropItem={cropQueue[0]}
+      onCropConfirm={handleCropConfirm}
+      onCropCancel={handleCropCancel}
+      compact={compact}
+      isDisabled={isDisabled}
+      isDragging={isDragging}
+      reducedHeight={reducedHeight}
+      title={title}
+      atCapacity={atCapacity}
+      maxImages={maxImages}
+      allowedFormats={allowedFormats}
+      fileInputRef={fileInputRef}
+      accept={accept}
+      dragHandlers={{ onDragOver, onDragLeave, onDrop }}
+      onFilesSelected={handleFiles}
+      images={images}
+      variant={variant}
+      disabled={disabled}
+      onRemoveImage={removeImage}
+    />
   );
 };
 

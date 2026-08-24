@@ -149,7 +149,13 @@ export const LEGACY_GODFILES = [
   // this cleanup — no new exception needed, comment kept current (RR2).
   'apps/web/src/pages/Dashboard/OnboardingModule.tsx', // 505 LOC
   'apps/web/src/components/Routes/ForensicJournalTable.tsx', // 608 LOC
-  'apps/web/src/components/Routes/RouteAssignment/ArchonGeoSelector.tsx', // 508 LOC
+  // FC163 F1B-2 (Alfa 219_AN) — Combobox generico descompuesto en
+  // useComboboxToggle/useComboboxData/useCombobox/useClickOutside +
+  // ComboboxTrigger/ComboboxOptionItem/ComboboxDropdownPanel (Gate 2
+  // max-lines-per-function); 508->652 LOC, crece por el overhead de
+  // interfaces/hooks nombrados, no por deuda nueva — cada funcion queda
+  // <=50 LOC (checkDiffQuality exit 0).
+  'apps/web/src/components/Routes/RouteAssignment/ArchonGeoSelector.tsx', // 652 LOC
   'apps/web/src/components/Maintenance/MaintenanceGridView.tsx', // 498 LOC
   'apps/web/src/pages/Dashboard/MaintenanceModule.tsx', // 467 LOC
   'apps/web/src/components/Users/UserRegistrationForm.tsx', // 463 LOC

@@ -100,7 +100,7 @@ describe('ArchonSelect', () => {
 
     await waitFor(() => expect(screen.getByText('ASM-02')).toBeInTheDocument());
 
-    const clearBtn = screen.getByRole('button');
+    const clearBtn = screen.getByRole('button', { name: 'Limpiar búsqueda' });
     fireEvent.click(clearBtn);
 
     await waitFor(() => {
