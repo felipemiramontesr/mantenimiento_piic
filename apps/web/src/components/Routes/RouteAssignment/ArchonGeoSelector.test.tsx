@@ -139,6 +139,38 @@ describe('ArchonGeoSelector', () => {
 });
 
 /**
+ * FC163 F1-REG Gate3 (222_AN/Sonar 34-line audit) — ComboboxTrigger and
+ * ComboboxOptionItem's onKeyDown (Enter/Space) had no dedicated coverage;
+ * only their onClick twins were ever exercised.
+ */
+describe('ArchonGeoSelector — keyboard activation (FC163 F1-REG Gate3)', () => {
+  it('Enter on the Estado trigger opens the dropdown (keyboard parity with click)', async () => {
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.keyDown(screen.getByText('Buscar Estado...'), { key: 'Enter' });
+    expect(screen.getByPlaceholderText('Buscar...')).toBeInTheDocument();
+  });
+
+  it('Space on the Estado trigger opens the dropdown', async () => {
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.keyDown(screen.getByText('Buscar Estado...'), { key: ' ' });
+    expect(screen.getByPlaceholderText('Buscar...')).toBeInTheDocument();
+  });
+
+  it('Enter on an open option selects it (ComboboxOptionItem keyboard path)', async () => {
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    const option = await screen.findByText('Zacatecas');
+    fireEvent.keyDown(option, { key: 'Enter' });
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/geolocation/states/1/municipalities')
+    );
+  });
+});
+
+/**
  * FC162 R4-C (100% mandatorio, 204_AN/206_AN Bravo) — the outside-click
  * close handler, the search input's own stopPropagation click, the three
  * network-failure catch blocks (municipalities load, neighborhood hydration,

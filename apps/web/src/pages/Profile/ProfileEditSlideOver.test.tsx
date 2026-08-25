@@ -77,4 +77,11 @@ describe('ProfileEditSlideOver — contrato PATCH /auth/users/:id (FC 076 R6)', 
 
     expect(await screen.findByTestId('profile-edit-error')).toBeInTheDocument();
   });
+
+  it('Escape en el backdrop llama a onClose (keyboard path, FC163 F1-REG Gate3)', () => {
+    const onClose = vi.fn();
+    render(<ProfileEditSlideOver isOpen onClose={onClose} />);
+    fireEvent.keyDown(screen.getByTestId('profile-edit-overlay'), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
+  });
 });

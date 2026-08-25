@@ -198,6 +198,15 @@ describe('AccessControlSlideOver', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('Escape on the backdrop calls onClose (SlideOverBackdrop keyboard path, FC163 F1-REG Gate3)', async () => {
+    mockFetchOnce(200, { success: true, data: [] });
+    const onClose = vi.fn();
+    const { container } = render(<AccessControlSlideOver isOpen onClose={onClose} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    fireEvent.keyDown(container.querySelector('.absolute.inset-0') as Element, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('silently keeps loading=false and an empty roster when the fetch itself throws', async () => {
     vi.mocked(fetch).mockRejectedValueOnce(new Error('network down'));
     render(<AccessControlSlideOver isOpen onClose={vi.fn()} />);

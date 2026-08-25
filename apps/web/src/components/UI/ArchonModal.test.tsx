@@ -64,6 +64,18 @@ describe('ArchonModal — FC-2 UIUX FaseA', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('AT-UI-8: Escape on the backdrop calls onClose (keyboard path, FC163 F1-REG Gate3)', () => {
+    const onEscapeClose = vi.fn();
+    const { baseElement } = render(
+      <ArchonModal isOpen={true} onClose={onEscapeClose}>
+        <div>Body</div>
+      </ArchonModal>
+    );
+    const backdrop = baseElement.querySelector('.archon-modal-backdrop') as HTMLElement;
+    fireEvent.keyDown(backdrop, { key: 'Escape' });
+    expect(onEscapeClose).toHaveBeenCalled();
+  });
+
   it('AT-UI-7: role=dialog and aria-modal attributes are set', () => {
     render(
       <ArchonModal isOpen={true} onClose={onClose} ariaLabel="Aria Test">

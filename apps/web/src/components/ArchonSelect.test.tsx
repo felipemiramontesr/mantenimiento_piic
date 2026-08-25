@@ -161,4 +161,28 @@ describe('ArchonSelect', () => {
 
     await waitFor(() => expect(screen.getByText('ASM-01')).toBeInTheDocument());
   });
+
+  /**
+   * FC163 F1-REG Gate3 (222_AN/Sonar 34-line audit) — the trigger's and
+   * ArchonSelectOptionItem's onKeyDown (Enter/Space) had no dedicated
+   * coverage; only their onClick twins were ever exercised.
+   */
+  it('Enter key on the trigger opens the dropdown (keyboard parity with click)', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.keyDown(screen.getByText('Seleccionar...'), { key: 'Enter' });
+    expect(screen.getByText('ASM-01')).toBeInTheDocument();
+  });
+
+  it('Space key on the trigger opens the dropdown', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.keyDown(screen.getByText('Seleccionar...'), { key: ' ' });
+    expect(screen.getByText('ASM-01')).toBeInTheDocument();
+  });
+
+  it('Enter key on an option selects it (ArchonSelectOptionItem keyboard path)', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    fireEvent.keyDown(screen.getByText('ASM-01'), { key: 'Enter' });
+    expect(mockOnChange).toHaveBeenCalledWith('ASM-01');
+  });
 });

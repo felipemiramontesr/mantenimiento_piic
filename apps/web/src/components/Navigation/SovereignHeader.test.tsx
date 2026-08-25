@@ -544,6 +544,32 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     expect(screen.queryByText('ASM-002 (Modelo: Aveo)')).not.toBeInTheDocument();
   });
 
+  it('Enter key on a suggestion selects it (SearchSuggestionItem keyboard path, FC163 F1-REG Gate3)', () => {
+    mockSearchTerm = 'aveo';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: mockSearchTerm,
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(<SovereignHeader />);
+
+    const input = screen.getByPlaceholderText(
+      'Buscar por placas, marca, modelo, sede o departamento...'
+    );
+    fireEvent.focus(input);
+
+    const suggestion = screen.getByText('ASM-002 (Modelo: Aveo)');
+    fireEvent.keyDown(suggestion, { key: 'Enter' });
+
+    expect(mockSearchConfig.onSuggestionSelect).toHaveBeenCalled();
+  });
+
   it('renders headerSlot when provided, taking priority over headerAction', () => {
     vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
       layoutData: {

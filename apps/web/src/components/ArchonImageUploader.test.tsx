@@ -282,4 +282,13 @@ describe('ArchonImageUploader Component', () => {
     const grid = container.querySelector('.grid-cols-4');
     expect(grid?.className).toContain('gap-2');
   });
+
+  it('pressing Enter on the dropzone triggers file input click (DropzoneTrigger keyboard path, FC163 F1-REG Gate3)', () => {
+    const { container } = render(<ArchonImageUploader images={[]} onChange={mockOnChange} />);
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+    const dropZone = container.querySelector('.border-dashed') as HTMLElement;
+    fireEvent.keyDown(dropZone, { key: 'Enter' });
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
 });

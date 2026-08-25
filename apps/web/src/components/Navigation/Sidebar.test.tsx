@@ -1113,4 +1113,47 @@ describe('Sidebar Component (Archon Core)', () => {
       expect(document.activeElement).toBe(firstNavItem);
     });
   });
+
+  /**
+   * FC163 F1-REG Gate3 (222_AN/Sonar 34-line audit) — NavItem's onKeyDown
+   * (Enter/Space) and MobileOverlay's own onKeyDown (Escape, distinct from
+   * the document-level listener already covered by AT-FC074-F2-SB-6/7) had
+   * no dedicated coverage; only their onClick twins were ever exercised.
+   */
+  describe('FC163 F1-REG Gate3 — keyboard activation', () => {
+    it('Enter on a NavItem navigates, same as click', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.keyDown(screen.getByText('Comando'), { key: 'Enter' });
+      expect(navigateMock).toHaveBeenCalledWith('/dashboard');
+    });
+
+    it('Space on a NavItem navigates, same as click', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.keyDown(screen.getByText('Unidades'), { key: ' ' });
+      expect(navigateMock).toHaveBeenCalledWith('/dashboard/fleet');
+    });
+
+    it('Escape on the mobile overlay itself calls setIsMobileMenuOpen(false)', () => {
+      useSovereignLayoutMock.mockReturnValue({
+        isMobileMenuOpen: true,
+        setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+      });
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const overlay = container.querySelector('.bg-black\\/60') as HTMLElement;
+      fireEvent.keyDown(overlay, { key: 'Escape' });
+      expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
+    });
+  });
 });

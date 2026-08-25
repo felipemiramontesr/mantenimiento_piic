@@ -190,6 +190,21 @@ describe('EgressTable — unit autocomplete', () => {
     expect(input.value).toBe('');
   });
 
+  it('Enter key on a suggestion selects it (UnitSuggestionItem keyboard path, FC163 F1-REG Gate3)', async () => {
+    mockGet([ROW, { ...ROW, id: 2, uuid: 'tx-002', unit_name: 'ASM-020' }]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+
+    const input = screen.getByPlaceholderText('Buscar unidad...') as HTMLInputElement;
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'asm' } });
+
+    const matches = screen.getAllByText('ASM-007');
+    expect(matches.length).toBeGreaterThan(1);
+    fireEvent.keyDown(matches[0], { key: 'Enter' });
+    expect(input.value).toBe('ASM-007');
+  });
+
   it('closes the suggestions dropdown on an outside click', async () => {
     mockGet([ROW]);
     render(<EgressTable from="2026-07-01" to="2026-07-31" />);

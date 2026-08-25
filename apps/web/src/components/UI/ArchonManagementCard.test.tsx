@@ -82,4 +82,13 @@ describe('ArchonManagementCard', () => {
     fireEvent.click(container.firstElementChild as Element);
     expect(onClick).toHaveBeenCalled();
   });
+
+  it('Enter key on the card calls onClick (ClickableCardWrapper keyboard path, FC163 F1-REG Gate3)', () => {
+    const onClick = vi.fn();
+    const { container } = render(
+      <ArchonManagementCard {...BASE_PROPS} variant="navy" onClick={onClick} />
+    );
+    fireEvent.keyDown(container.firstElementChild as Element, { key: 'Enter' });
+    expect(onClick).toHaveBeenCalled();
+  });
 });
