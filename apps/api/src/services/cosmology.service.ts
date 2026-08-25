@@ -211,7 +211,7 @@ function generateUniverseTenantCode(label: string): string {
   const slug = label
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
+    .replace(/^_|_$/g, '')
     .slice(0, 30);
   const suffix = randomBytes(3).toString('hex').toUpperCase();
   return `UNIV_${slug || 'X'}_${suffix}`;

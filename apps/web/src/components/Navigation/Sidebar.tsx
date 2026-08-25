@@ -221,7 +221,7 @@ const NavItem: React.FC<NavItemProps> = ({
 function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith('http') || url.startsWith('data:')) return url;
-  const baseUrl = (api.defaults.baseURL || '').replace(/\/+$/, '');
+  const baseUrl = (api.defaults.baseURL || '').replace(/\/{1,20}$/, '');
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 

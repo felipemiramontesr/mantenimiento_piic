@@ -50,7 +50,7 @@ export const compressImage = (
 export const resolveProfileImageUrl = (url: string | null | undefined, userId?: number): string => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-  const baseUrl = (api.defaults.baseURL || '').replace(/\/+$/, '');
+  const baseUrl = (api.defaults.baseURL || '').replace(/\/{1,20}$/, '');
   if (userId) return `${baseUrl}/users/${userId}/profile-image`;
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };

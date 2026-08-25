@@ -27,7 +27,7 @@ export function cleanConcept(row: FinancialTransaction): string {
   }
   if (!row.notes) return '—';
   return row.notes
-    .replace(/\s*\(backfill\)/gi, '')
+    .replace(/\s{0,10}\(backfill\)/gi, '')
     .replace(/:\s*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '')
     .replace(/:\s*[0-9a-f]{32,}/gi, '')
     .trim();

@@ -42,19 +42,19 @@ export const parseAddress = (destinationStr: string): ParsedAddress => {
 
   if (parts.length >= 4) {
     const streetPart = parts[0];
-    const intMatch = streetPart.match(/[\s,]+(?:Int\.?|int\.?|INT\.?)\s*([^\s]+.*)$/i);
+    const intMatch = streetPart.match(/[\s,]+Int\.?\s*(.+)$/i);
     let mainStreet = streetPart;
     if (intMatch) {
       parsedNumeroInterior = intMatch[1].trim();
       mainStreet = streetPart.substring(0, intMatch.index).trim();
     }
 
-    const numMatch = mainStreet.match(/[\s,]+#(No\.?|N°|N\.?)?\s*([^\s]+)$/i);
+    const numMatch = mainStreet.match(/[\s,]+#(No\.?|N[°.]?)?\s*(\S+)$/i);
     if (numMatch) {
       parsedNumero = numMatch[2].trim();
       parsedCalle = mainStreet.substring(0, numMatch.index).trim();
     } else {
-      const numEndMatch = mainStreet.match(/[\s,]+([0-9]+[a-zA-Z]?)$/);
+      const numEndMatch = mainStreet.match(/[\s,]+(\d+[a-zA-Z]?)$/);
       if (numEndMatch) {
         parsedNumero = numEndMatch[1].trim();
         parsedCalle = mainStreet.substring(0, numEndMatch.index).trim();
