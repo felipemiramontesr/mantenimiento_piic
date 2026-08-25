@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from '@testing-library/react';
-import { render, screen, fireEvent, waitFor } from '../../test/testUtils';
+import { render, screen, fireEvent, waitFor, within } from '../../test/testUtils';
 import LogsModule from './LogsModule';
 
 describe('LogsModule Forensics', () => {
@@ -35,7 +35,7 @@ describe('LogsModule Forensics', () => {
   it('toggles to INCIDENTS panel on header action click', async () => {
     render(<LogsModule />);
     await waitFor(() => screen.getByTestId('sovereign-layout-header-action'));
-    const btn = screen.getByRole('button');
+    const btn = within(screen.getByTestId('sovereign-layout-header-action')).getByRole('button');
     fireEvent.click(btn);
     await waitFor(() => {
       const actionDiv = screen.getByTestId('sovereign-layout-header-action');
@@ -46,7 +46,7 @@ describe('LogsModule Forensics', () => {
   it('toggles back to FORENSIC panel on second click', async () => {
     render(<LogsModule />);
     await waitFor(() => screen.getByTestId('sovereign-layout-header-action'));
-    const btn = screen.getByRole('button');
+    const btn = within(screen.getByTestId('sovereign-layout-header-action')).getByRole('button');
     fireEvent.click(btn); // → INCIDENTS
     fireEvent.click(btn); // → FORENSIC
     await waitFor(() => {
@@ -59,7 +59,7 @@ describe('LogsModule Forensics', () => {
     render(<LogsModule />);
     // Wait with real timers until the button is in the DOM
     await screen.findByTestId('sovereign-layout-header-action');
-    const btn = screen.getByRole('button');
+    const btn = within(screen.getByTestId('sovereign-layout-header-action')).getByRole('button');
 
     // Switch to fake timers AFTER async DOM is ready
     vi.useFakeTimers();
