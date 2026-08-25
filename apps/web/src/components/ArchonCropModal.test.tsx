@@ -87,4 +87,68 @@ describe('ArchonCropModal', () => {
     fireEvent.wheel(viewport, { deltaY: -100 });
     expect(parseFloat(img.style.width)).toBeGreaterThan(widthBeforeZoom);
   });
+
+  /**
+   * FC163 F2B2 (S6848 — el viewport de encuadre no es un elemento nativo) — role/aria-label/
+   * tabIndex y el equivalente de teclado (flechas para pan, +/- para zoom) del arrastre/rueda
+   * con mouse.
+   */
+  describe('keyboard equivalent of drag-to-pan and wheel-to-zoom (FC163 F2B2, S6848)', () => {
+    it('the viewport exposes role, aria-label and tabIndex for keyboard/AT users', () => {
+      render(<ArchonCropModal {...defaultProps} />);
+      const viewport = screen.getByTestId('crop-viewport');
+      expect(viewport).toHaveAttribute('role', 'group');
+      expect(viewport).toHaveAttribute('aria-label');
+      expect(viewport).toHaveAttribute('tabindex', '0');
+    });
+
+    it('ArrowRight pans the image (same direction as dragging right)', () => {
+      render(<ArchonCropModal {...defaultProps} />);
+      const viewport = screen.getByTestId('crop-viewport');
+      const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+      fireEvent.load(img);
+      const leftBefore = parseFloat(img.style.left);
+
+      fireEvent.keyDown(viewport, { key: 'ArrowRight' });
+      expect(parseFloat(img.style.left)).toBeGreaterThan(leftBefore);
+    });
+
+    it('ArrowLeft/Up/Down also pan the image without throwing', () => {
+      render(<ArchonCropModal {...defaultProps} />);
+      const viewport = screen.getByTestId('crop-viewport');
+      const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+      fireEvent.load(img);
+
+      fireEvent.keyDown(viewport, { key: 'ArrowLeft' });
+      fireEvent.keyDown(viewport, { key: 'ArrowUp' });
+      fireEvent.keyDown(viewport, { key: 'ArrowDown' });
+      expect(screen.getByAltText('crop-preview')).toBeInTheDocument();
+    });
+
+    it('+ and = zoom in, - zooms out', () => {
+      render(<ArchonCropModal {...defaultProps} />);
+      const viewport = screen.getByTestId('crop-viewport');
+      const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+      fireEvent.load(img);
+      const widthBeforeZoom = parseFloat(img.style.width);
+
+      fireEvent.keyDown(viewport, { key: '+' });
+      expect(parseFloat(img.style.width)).toBeGreaterThan(widthBeforeZoom);
+
+      const widthAfterPlus = parseFloat(img.style.width);
+      fireEvent.keyDown(viewport, { key: '-' });
+      expect(parseFloat(img.style.width)).toBeLessThan(widthAfterPlus);
+    });
+
+    it('an unrelated key is a no-op', () => {
+      render(<ArchonCropModal {...defaultProps} />);
+      const viewport = screen.getByTestId('crop-viewport');
+      const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+      fireEvent.load(img);
+      const leftBefore = img.style.left;
+
+      fireEvent.keyDown(viewport, { key: 'a' });
+      expect(img.style.left).toBe(leftBefore);
+    });
+  });
 });

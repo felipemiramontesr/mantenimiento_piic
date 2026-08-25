@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, RenderOptions, renderHook, RenderHookOptions } from '@testing-library/react';
 import { vi } from 'vitest';
-import { type ReactElement, type ReactNode, type KeyboardEvent } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 import { FleetContext } from '../context/FleetContext';
@@ -106,16 +106,7 @@ const LayoutMetadataObserver = (): ReactElement => {
       <p data-testid="layout-description">{layoutData.description}</p>
       {layoutData.subheaderActions}
       {layoutData.headerAction && (
-        <div
-          data-testid="sovereign-layout-header-action"
-          onClick={layoutData.headerAction.onClick}
-          onKeyDown={(e: KeyboardEvent): void => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              layoutData.headerAction?.onClick();
-            }
-          }}
-        >
+        <div data-testid="sovereign-layout-header-action">
           <span>{layoutData.headerAction.headerTitle}</span>
           <button onClick={layoutData.headerAction.onClick}>
             {layoutData.headerAction.buttonText}
