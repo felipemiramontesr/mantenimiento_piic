@@ -29,7 +29,7 @@ export const checkHoyNoCircula = (
   // Clean plate to get last digit
   const lastDigitMatch = placas.match(/\d(?=[^\d]*$)/);
   if (!lastDigitMatch) return { isRestricted: false, reason: '', color: '' };
-  const lastDigit = parseInt(lastDigitMatch[0], 10);
+  const lastDigit = Number.parseInt(lastDigitMatch[0], 10);
 
   // 1. Weekly Restrictions (Monday to Friday)
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
@@ -97,30 +97,26 @@ export const calcularVencimientoVerificacion = (
   const monthsToAdd = hologram === '0' ? 12 : 6;
   const parts = lastVerification.slice(0, 10).split('-');
   if (parts.length !== 3) return undefined;
-  const y = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10) - 1;
-  const d = parseInt(parts[2], 10);
+  const y = Number.parseInt(parts[0], 10);
+  const m = Number.parseInt(parts[1], 10) - 1;
+  const d = Number.parseInt(parts[2], 10);
   if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return undefined;
 
   return new Date(Date.UTC(y, m + monthsToAdd, d)).toISOString().slice(0, 10);
 };
 
-export const predecirHologramaYEngomado = (
-  placas: string | null,
-  year: number | null,
+interface PlacaPrediction {
+  hologramaSugerido: string;
+  engomadoColor: string;
+  mesesVerificacion: string;
+}
+
+// 1-2. Detección de Eléctricos/Híbridos (Ecológicos) y Foráneos — ambos casos no
+// dependen del año/calendario, se resuelven antes de consultar el resto (FC163 F2B3, split Alfa 227_AN).
+function predictEcologicoOrForaneo(
+  cleanPlaca: string,
   assetTypeCode: string | null
-): { hologramaSugerido: string; engomadoColor: string; mesesVerificacion: string } => {
-  if (!placas) {
-    return {
-      hologramaSugerido: '0',
-      engomadoColor: 'Gris',
-      mesesVerificacion: 'Captura placas...',
-    };
-  }
-
-  const cleanPlaca = placas.toUpperCase().trim();
-
-  // 1. Detección de Eléctricos / Híbridos (Ecológicos)
+): PlacaPrediction | null {
   const esEcologico =
     cleanPlaca.startsWith('E') || assetTypeCode === 'AT_ELEC' || cleanPlaca.includes('ECOL');
   if (esEcologico) {
@@ -131,7 +127,6 @@ export const predecirHologramaYEngomado = (
     };
   }
 
-  // 2. Detección de Foráneos
   const esForaneo =
     cleanPlaca.includes('FOR') ||
     cleanPlaca.startsWith('F') ||
@@ -144,39 +139,64 @@ export const predecirHologramaYEngomado = (
     };
   }
 
-  // 3. Obtener el último dígito para deducir Engomado y Calendario
+  return null;
+}
+
+const CALENDARIO_ENGOMADO: Record<number, { color: string; meses: string }> = {
+  5: { color: 'Amarillo', meses: 'Julio / Agosto' },
+  6: { color: 'Amarillo', meses: 'Julio / Agosto' },
+  7: { color: 'Rosa', meses: 'Agosto / Septiembre' },
+  8: { color: 'Rosa', meses: 'Agosto / Septiembre' },
+  3: { color: 'Rojo', meses: 'Septiembre / Octubre' },
+  4: { color: 'Rojo', meses: 'Septiembre / Octubre' },
+  1: { color: 'Verde', meses: 'Octubre / Noviembre' },
+  2: { color: 'Verde', meses: 'Octubre / Noviembre' },
+  9: { color: 'Azul', meses: 'Noviembre / Diciembre' },
+  0: { color: 'Azul', meses: 'Noviembre / Diciembre' },
+};
+
+// 3. Deduce el Engomado/Calendario a partir del último dígito de la placa (FC163 F2B3, split Alfa 227_AN).
+function deriveEngomadoInfo(cleanPlaca: string): { color: string; meses: string } {
   const lastDigitMatch = cleanPlaca.match(/\d(?=[^\d]*$)/);
   let lastDigit = 9; // Fallback
   if (lastDigitMatch) {
-    lastDigit = parseInt(lastDigitMatch[0], 10);
+    lastDigit = Number.parseInt(lastDigitMatch[0], 10);
+  }
+  return CALENDARIO_ENGOMADO[lastDigit] || { color: 'Gris', meses: 'No determinado' };
+}
+
+// 4. Pre-selección heurística del Holograma basada en el Año (FC163 F2B3, split Alfa 227_AN).
+function deriveHologramaSugerido(year: number | null): string {
+  if (!year) return '0';
+  if (year >= 2023) return '00';
+  if (year >= 2018) return '0';
+  if (year >= 2016) return '1';
+  return '2';
+}
+
+/** Predice Holograma/Engomado/calendario de verificación a partir de placa, año y tipo de activo. */
+export const predecirHologramaYEngomado = (
+  placas: string | null,
+  year: number | null,
+  assetTypeCode: string | null
+): PlacaPrediction => {
+  if (!placas) {
+    return {
+      hologramaSugerido: '0',
+      engomadoColor: 'Gris',
+      mesesVerificacion: 'Captura placas...',
+    };
   }
 
-  const calendarioEngomado: Record<number, { color: string; meses: string }> = {
-    5: { color: 'Amarillo', meses: 'Julio / Agosto' },
-    6: { color: 'Amarillo', meses: 'Julio / Agosto' },
-    7: { color: 'Rosa', meses: 'Agosto / Septiembre' },
-    8: { color: 'Rosa', meses: 'Agosto / Septiembre' },
-    3: { color: 'Rojo', meses: 'Septiembre / Octubre' },
-    4: { color: 'Rojo', meses: 'Septiembre / Octubre' },
-    1: { color: 'Verde', meses: 'Octubre / Noviembre' },
-    2: { color: 'Verde', meses: 'Octubre / Noviembre' },
-    9: { color: 'Azul', meses: 'Noviembre / Diciembre' },
-    0: { color: 'Azul', meses: 'Noviembre / Diciembre' },
-  };
+  const cleanPlaca = placas.toUpperCase().trim();
 
-  const infoPlaca = calendarioEngomado[lastDigit] || { color: 'Gris', meses: 'No determinado' };
+  const special = predictEcologicoOrForaneo(cleanPlaca, assetTypeCode);
+  if (special) return special;
 
-  // 4. Pre-selección heurística del Holograma basada en el Año
-  let hologramaSugerido = '0';
-  if (year) {
-    if (year >= 2023) hologramaSugerido = '00';
-    else if (year >= 2018) hologramaSugerido = '0';
-    else if (year >= 2016) hologramaSugerido = '1';
-    else hologramaSugerido = '2';
-  }
+  const infoPlaca = deriveEngomadoInfo(cleanPlaca);
 
   return {
-    hologramaSugerido,
+    hologramaSugerido: deriveHologramaSugerido(year),
     engomadoColor: infoPlaca.color,
     mesesVerificacion: infoPlaca.meses,
   };
