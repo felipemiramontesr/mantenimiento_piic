@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { render, renderWithRoute, screen, fireEvent } from '../../test/testUtils';
+import { render, renderWithRoute, screen, fireEvent, within } from '../../test/testUtils';
 import server from '../../test/server';
 import MaintenanceModule from './MaintenanceModule';
 
@@ -50,8 +50,13 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     const historyBtn = await screen.findByText('Ver Historial');
     fireEvent.click(historyBtn);
     await screen.findByText('NO SE ENCONTRARON REGISTROS');
-    // Click header action button — LayoutMetadataObserver renders it
-    const forecastBtn = screen.getAllByText('Ver Pronósticos')[0];
+    // Click header action button — LayoutMetadataObserver renders it. headerTitle and
+    // buttonText are both 'Ver Pronósticos' here, so target the real <button> explicitly
+    // instead of a plain text query (which would match the non-interactive title span first).
+    const forecastBtn = within(screen.getByTestId('sovereign-layout-header-action')).getByRole(
+      'button',
+      { name: 'Ver Pronósticos' }
+    );
     fireEvent.click(forecastBtn);
     expect(await screen.findByText('NO SE ENCONTRARON UNIDADES ACTIVAS')).toBeInTheDocument();
   });
