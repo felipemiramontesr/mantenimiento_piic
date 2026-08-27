@@ -177,7 +177,7 @@ function buildMaintenanceHistoryQuery(
   if (cursor) {
     const [cursorDate, cursorId] = Buffer.from(cursor, 'base64').toString('ascii').split('|');
     query += ` AND ((fm.created_at < ?) OR (fm.created_at = ? AND fm.id < ?)) `;
-    params.push(cursorDate, cursorDate, parseInt(cursorId, 10));
+    params.push(cursorDate, cursorDate, Number.parseInt(cursorId, 10));
   }
   query += ` ORDER BY fm.created_at DESC, fm.id DESC LIMIT ? `;
   params.push(parsedLimit + 1);
@@ -189,7 +189,7 @@ export async function listMaintenanceHistory(
   user: MaintenanceUser,
   params: MaintenanceHistoryParams
 ): Promise<MaintenanceHistoryResult> {
-  const parsedLimit = parseInt(params.limit ?? '50', 10);
+  const parsedLimit = Number.parseInt(params.limit ?? '50', 10);
   const ownerScope = await resolveOwnerScope(user);
   if (ownerScope !== null && ownerScope.length === 0) {
     return { data: [], nextCursor: null };

@@ -278,7 +278,9 @@ function FinancialFields({
               onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
                 setFormData((prev) => ({
                   ...prev,
-                  monthlyLeasePayment: e.target.value ? parseFloat(e.target.value) : undefined,
+                  monthlyLeasePayment: e.target.value
+                    ? Number.parseFloat(e.target.value)
+                    : undefined,
                 }))
               }
             />

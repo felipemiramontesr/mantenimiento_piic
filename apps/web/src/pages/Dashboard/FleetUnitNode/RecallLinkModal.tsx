@@ -30,7 +30,7 @@ function RecallLinkModalFooter({
       </button>
       <button
         onClick={onSubmit}
-        disabled={submitting || !recallId || parseInt(recallId, 10) <= 0}
+        disabled={submitting || !recallId || Number.parseInt(recallId, 10) <= 0}
         className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-sm font-black uppercase tracking-widest"
       >
         Vincular
@@ -49,7 +49,7 @@ export function RecallLinkModal({
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (): Promise<void> => {
-    const id = parseInt(recallId, 10);
+    const id = Number.parseInt(recallId, 10);
     if (!id || id <= 0) return;
     setSubmitting(true);
     try {

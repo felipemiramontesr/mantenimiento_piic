@@ -31,7 +31,7 @@ export function deriveMinTableWidth(headers: ArchonTableHeader[], minTableWidth?
   // rem u otras unidades caen al derivado por conteo (parseFloat('10%')=10
   // sería un falso positivo — de ahí el regex estricto).
   const parsed = headers.map((h) =>
-    h.width && /^\d+(\.\d+)?px$/.test(h.width.trim()) ? Number.parseFloat(h.width) : NaN
+    h.width && /^\d+(\.\d+)?px$/.test(h.width.trim()) ? Number.parseFloat(h.width) : Number.NaN
   );
   const allPx = headers.length > 0 && parsed.every((n) => Number.isFinite(n) && n > 0);
   if (allPx) return parsed.reduce((a, b) => a + b, 0);

@@ -63,7 +63,7 @@ function HierarchyFields({
             label: t.label,
           }))}
           value={formData.assetTypeId?.toString() || ''}
-          onChange={(val: string): void => handleAssetTypeChange(parseInt(val, 10))}
+          onChange={(val: string): void => handleAssetTypeChange(Number.parseInt(val, 10))}
         />
       </ArchonField>
 
@@ -76,7 +76,7 @@ function HierarchyFields({
           }))}
           placeholder={isLoading ? 'Sincronizando...' : 'Seleccionar marca...'}
           value={formData.brandId?.toString() || ''}
-          onChange={(val: string): void => handleMarcaChange(parseInt(val, 10))}
+          onChange={(val: string): void => handleMarcaChange(Number.parseInt(val, 10))}
         />
       </ArchonField>
 
@@ -89,7 +89,7 @@ function HierarchyFields({
           }))}
           placeholder={isLoading ? 'Sincronizando...' : 'Seleccionar modelo...'}
           value={formData.modelId?.toString() || ''}
-          onChange={(val: string): void => handleModeloChange(parseInt(val, 10))}
+          onChange={(val: string): void => handleModeloChange(Number.parseInt(val, 10))}
         />
       </ArchonField>
     </>
@@ -128,7 +128,7 @@ function IdAndOwnerFields({
           }))}
           value={formData.ownerId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, ownerId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, ownerId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -215,7 +215,7 @@ function UsageAndPhotoFields({
             }))}
             value={formData.operationalUseId?.toString() ?? ''}
             onChange={(val: string): void =>
-              setFormData((prev) => ({ ...prev, operationalUseId: parseInt(val, 10) }))
+              setFormData((prev) => ({ ...prev, operationalUseId: Number.parseInt(val, 10) }))
             }
           />
         </ArchonField>
@@ -228,7 +228,7 @@ function UsageAndPhotoFields({
               }))}
               value={formData.departmentId?.toString() ?? ''}
               onChange={(val: string): void =>
-                setFormData((prev) => ({ ...prev, departmentId: parseInt(val, 10) }))
+                setFormData((prev) => ({ ...prev, departmentId: Number.parseInt(val, 10) }))
               }
             />
           </ArchonField>

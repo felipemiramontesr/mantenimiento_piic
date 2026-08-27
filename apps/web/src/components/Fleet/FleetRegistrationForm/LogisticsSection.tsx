@@ -36,7 +36,7 @@ function LocationOdometerFields({
           options={locations.map((l) => ({ value: l.id.toString(), label: l.label }))}
           value={formData.locationId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, locationId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, locationId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -53,7 +53,7 @@ function LocationOdometerFields({
             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
               setFormData((prev) => ({
                 ...prev,
-                odometer: e.target.value ? parseFloat(e.target.value) : undefined,
+                odometer: e.target.value ? Number.parseFloat(e.target.value) : undefined,
               }));
             }}
           />
@@ -89,7 +89,7 @@ function MaintenanceCycleGrid({
             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
               setFormData((prev) => ({
                 ...prev,
-                maintIntervalDays: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                maintIntervalDays: e.target.value ? Number.parseInt(e.target.value, 10) : undefined,
               }));
             }}
           />
@@ -109,7 +109,7 @@ function MaintenanceCycleGrid({
             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
               setFormData((prev) => ({
                 ...prev,
-                maintIntervalKm: e.target.value ? parseFloat(e.target.value) : undefined,
+                maintIntervalKm: e.target.value ? Number.parseFloat(e.target.value) : undefined,
               }));
             }}
           />
@@ -200,7 +200,7 @@ function LastServiceFields({
             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
               setFormData((prev) => ({
                 ...prev,
-                lastServiceReading: e.target.value ? parseFloat(e.target.value) : undefined,
+                lastServiceReading: e.target.value ? Number.parseFloat(e.target.value) : undefined,
               }))
             }
           />
@@ -235,7 +235,7 @@ function MaintenanceCenterUsageFields({
           }))}
           value={formData.maintenanceCenterId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, maintenanceCenterId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, maintenanceCenterId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -251,7 +251,7 @@ function MaintenanceCenterUsageFields({
             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
               setFormData((prev) => ({
                 ...prev,
-                dailyUsageAvg: e.target.value ? parseFloat(e.target.value) : undefined,
+                dailyUsageAvg: e.target.value ? Number.parseFloat(e.target.value) : undefined,
               }))
             }
           />

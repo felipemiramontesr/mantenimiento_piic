@@ -26,7 +26,7 @@ function ComplianceStatusField({
         }))}
         value={formData.complianceStatusId?.toString() || ''}
         onChange={(val: string): void =>
-          setFormData((prev) => ({ ...prev, complianceStatusId: parseInt(val, 10) }))
+          setFormData((prev) => ({ ...prev, complianceStatusId: Number.parseInt(val, 10) }))
         }
       />
     </ArchonField>
@@ -64,7 +64,7 @@ function PolicyAndCompanyFields({
           }))}
           value={formData.insuranceCompanyId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, insuranceCompanyId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, insuranceCompanyId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -107,7 +107,7 @@ function InsuranceExpiryAndCostFields({
                 : ''
             }
             onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
-              const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
+              const val = e.target.value === '' ? undefined : Number.parseFloat(e.target.value);
               setFormData((prev) => ({ ...prev, insuranceCost: val }));
             }}
           />

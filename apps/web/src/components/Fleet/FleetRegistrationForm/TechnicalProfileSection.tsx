@@ -30,7 +30,7 @@ function YearColorFields({
           onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
             setFormData((prev) => ({
               ...prev,
-              year: e.target.value ? parseInt(e.target.value, 10) : undefined,
+              year: e.target.value ? Number.parseInt(e.target.value, 10) : undefined,
             }))
           }
         />
@@ -43,7 +43,7 @@ function YearColorFields({
           }))}
           value={formData.colorId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, colorId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, colorId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -72,7 +72,7 @@ function DrivetrainFields({
           }))}
           value={formData.traccionId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, traccionId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, traccionId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -84,7 +84,7 @@ function DrivetrainFields({
           }))}
           value={formData.transmisionId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, transmisionId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, transmisionId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -113,7 +113,7 @@ function EngineFuelTypeFields({
           }))}
           value={formData.engineTypeId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, engineTypeId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, engineTypeId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -125,7 +125,7 @@ function EngineFuelTypeFields({
           }))}
           value={formData.fuelTypeId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, fuelTypeId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, fuelTypeId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -152,7 +152,7 @@ function CapacityFields({ formData, setFormData }: CapacityFieldsProps): React.J
             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
               setFormData((prev) => ({
                 ...prev,
-                capacidadCarga: e.target.value ? parseFloat(e.target.value) : undefined,
+                capacidadCarga: e.target.value ? Number.parseFloat(e.target.value) : undefined,
               }))
             }
           />
@@ -173,7 +173,7 @@ function CapacityFields({ formData, setFormData }: CapacityFieldsProps): React.J
             onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void =>
               setFormData((prev) => ({
                 ...prev,
-                fuelTankCapacity: e.target.value ? parseFloat(e.target.value) : undefined,
+                fuelTankCapacity: e.target.value ? Number.parseFloat(e.target.value) : undefined,
               }))
             }
           />
@@ -211,7 +211,7 @@ function FuelLevelField({ formData, setFormData, isEdit }: FuelLevelFieldProps):
           className="w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus:border-b-[#f2b705] focus:bg-white focus:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 pr-14 rounded-[4px] text-archon-lg font-bold text-[#f2b705] transition-all duration-300 placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal outline-none font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-bold"
           value={isEdit ? formData.lastFuelLevel ?? '' : formData.initialFuelLevel ?? ''}
           onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
-            const val = e.target.value ? parseFloat(e.target.value) : undefined;
+            const val = e.target.value ? Number.parseFloat(e.target.value) : undefined;
             if (isEdit) {
               setFormData((prev) => ({ ...prev, lastFuelLevel: val }));
             } else {
@@ -258,7 +258,7 @@ function TireSpecFields({
           }))}
           value={formData.tireBrandId?.toString() || ''}
           onChange={(val: string): void =>
-            setFormData((prev) => ({ ...prev, tireBrandId: parseInt(val, 10) }))
+            setFormData((prev) => ({ ...prev, tireBrandId: Number.parseInt(val, 10) }))
           }
         />
       </ArchonField>
@@ -285,7 +285,7 @@ function TerrainField({
         }))}
         value={formData.terrainTypeId?.toString() || ''}
         onChange={(val: string): void =>
-          setFormData((prev) => ({ ...prev, terrainTypeId: parseInt(val, 10) }))
+          setFormData((prev) => ({ ...prev, terrainTypeId: Number.parseInt(val, 10) }))
         }
       />
     </ArchonField>
