@@ -192,12 +192,12 @@ function LoginSubmitButton({ loading }: { loading: boolean }): React.JSX.Element
         {loading ? 'Autenticando Archon...' : 'Acceder al Sistema'}
       </button>
       <div className="text-left mt-[5px]">
-        <a
-          href="#"
+        <button
+          type="button"
           className="text-pinnacle-yellow font-display font-bold text-xs hover:opacity-80 transition-all"
         >
           ¿Olvidaste tu contraseña?
-        </a>
+        </button>
       </div>
     </div>
   );

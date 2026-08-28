@@ -27,15 +27,20 @@ const ArchonModal: React.FC<ArchonModalProps> = ({
   return createPortal(
     <div
       className="archon-modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-label={ariaLabel}
+      role="presentation"
       onClick={handleBackdropClick}
       onKeyDown={(e: React.KeyboardEvent): void => {
         if (e.key === 'Escape') onClose();
       }}
     >
-      <div className={containerClassName ?? `archon-modal-container ${maxWidth}`}>{children}</div>
+      <div
+        className={containerClassName ?? `archon-modal-container ${maxWidth}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel}
+      >
+        {children}
+      </div>
     </div>,
     document.body
   );

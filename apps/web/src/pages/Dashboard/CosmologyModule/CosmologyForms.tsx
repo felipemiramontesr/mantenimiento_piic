@@ -104,7 +104,7 @@ function CreateUniverseFields({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <label className={FIELD_LABEL_CLASS}>
-        Nombre
+        {'Nombre'}
         <input
           required
           value={label}

@@ -79,7 +79,7 @@ export function DayGrid({
 }: DayGridProps): React.ReactElement {
   const firstWeekday = getFirstWeekday(year, month);
   const daysInMonth = getDaysInMonth(year, month);
-  const emptyCells = Array<null>(firstWeekday).fill(null);
+  const emptyCells = new Array<null>(firstWeekday).fill(null);
   const dayCells = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (

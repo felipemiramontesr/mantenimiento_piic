@@ -114,7 +114,7 @@ function FuelAmountField({ value, onChange }: FuelAmountFieldProps): React.JSX.E
         htmlFor="route-fuel-amount"
         className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 flex items-center justify-between"
       >
-        Monto Total del Ticket
+        {'Monto Total del Ticket'}
         <span className="text-amber-600 font-black">$</span>
       </label>
       <div className="relative">
