@@ -94,12 +94,37 @@ describe('ArchonCropModal', () => {
    * con mouse.
    */
   describe('keyboard equivalent of drag-to-pan and wheel-to-zoom (FC163 F2B2, S6848)', () => {
-    it('the viewport exposes role, aria-label and tabIndex for keyboard/AT users', () => {
+    it('the viewport exposes role, aria-label, tabIndex and aria-value* for keyboard/AT users', () => {
       render(<ArchonCropModal {...defaultProps} />);
       const viewport = screen.getByTestId('crop-viewport');
-      expect(viewport).toHaveAttribute('role', 'application');
+      const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+      fireEvent.load(img);
+      // role=slider (FC163 F2B5, S6845/235_AN+236_AN) -- "application" no desciende de
+      // "widget" en aria-query y nunca satisface no-noninteractive-tabindex; "slider" sí.
+      expect(viewport).toHaveAttribute('role', 'slider');
       expect(viewport).toHaveAttribute('aria-label');
       expect(viewport).toHaveAttribute('tabindex', '0');
+      // Justo tras cargar, scale === minScale -> 100% del rango real [minScale, minScale*4].
+      expect(viewport).toHaveAttribute('aria-valuenow', '100');
+      expect(viewport).toHaveAttribute('aria-valuemin', '100');
+      expect(viewport).toHaveAttribute('aria-valuemax', '400');
+    });
+
+    it('aria-valuenow tracks the zoom level as it changes', () => {
+      render(<ArchonCropModal {...defaultProps} />);
+      const viewport = screen.getByTestId('crop-viewport');
+      const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+      fireEvent.load(img);
+      expect(viewport).toHaveAttribute('aria-valuenow', '100');
+
+      fireEvent.keyDown(viewport, { key: '+' });
+      const valueAfterZoomIn = Number(viewport.getAttribute('aria-valuenow'));
+      expect(valueAfterZoomIn).toBeGreaterThan(100);
+
+      fireEvent.keyDown(viewport, { key: '-' });
+      fireEvent.keyDown(viewport, { key: '-' });
+      const valueAfterZoomOut = Number(viewport.getAttribute('aria-valuenow'));
+      expect(valueAfterZoomOut).toBeLessThan(valueAfterZoomIn);
     });
 
     it('ArrowRight pans the image (same direction as dragging right)', () => {
