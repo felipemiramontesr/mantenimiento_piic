@@ -13,7 +13,11 @@ export function SlideOverHeader({ onClose }: SlideOverHeaderProps): React.JSX.El
         <ShieldCheck size={20} className="text-[#f2b705]" />
         <h2 className="text-lg font-black uppercase tracking-widest">Control de Acceso</h2>
       </div>
-      <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-[4px] transition-colors">
+      <button
+        type="button"
+        onClick={onClose}
+        className="p-2 hover:bg-white/10 rounded-[4px] transition-colors"
+      >
         <X size={20} />
       </button>
     </div>
@@ -30,6 +34,7 @@ export function SlideOverTabs({ view, onSelectView }: SlideOverTabsProps): React
   return (
     <div className="flex border-b border-gray-100">
       <button
+        type="button"
         onClick={(): void => onSelectView('list')}
         className={`flex-1 py-4 text-archon-base font-black uppercase tracking-widest transition-all ${
           view === 'list'
@@ -40,6 +45,7 @@ export function SlideOverTabs({ view, onSelectView }: SlideOverTabsProps): React
         Plantilla Activa
       </button>
       <button
+        type="button"
         onClick={(): void => onSelectView('create')}
         className={`flex-1 py-4 text-archon-base font-black uppercase tracking-widest transition-all ${
           view === 'create'

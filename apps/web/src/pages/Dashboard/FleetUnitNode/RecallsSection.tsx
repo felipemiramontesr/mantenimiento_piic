@@ -44,6 +44,7 @@ function RecallsToolbar({
   return (
     <div className="flex justify-end mb-3 gap-2">
       <button
+        type="button"
         title="Buscar recalls en NHTSA"
         onClick={onSearchClick}
         className="flex items-center justify-center w-10 h-10 text-slate-600 bg-slate-50 hover:bg-slate-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
@@ -51,6 +52,7 @@ function RecallsToolbar({
         <Globe size={18} />
       </button>
       <button
+        type="button"
         title="Vincular recall del catálogo"
         onClick={onLinkClick}
         className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
@@ -74,6 +76,7 @@ function RecallRowActions({
     <div className="flex items-center justify-center gap-2">
       {r.status !== 'COMPLETED' && (
         <button
+          type="button"
           title="Marcar como completado"
           onClick={(): void => onComplete(r.recall_id)}
           className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
@@ -83,6 +86,7 @@ function RecallRowActions({
       )}
       {r.status === 'PENDING' && (
         <button
+          type="button"
           title="Marcar como no aplica"
           onClick={(): void => onNotApplicable(r.recall_id)}
           className="flex items-center justify-center w-10 h-10 text-slate-500 bg-slate-50 hover:bg-slate-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"

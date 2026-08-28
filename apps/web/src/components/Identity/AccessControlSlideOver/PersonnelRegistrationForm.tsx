@@ -108,6 +108,7 @@ function RegistrationSubmitButton({ isLoading }: RegistrationSubmitButtonProps):
   return (
     <div className="pt-8">
       <button
+        type="submit"
         disabled={isLoading}
         className="btn-sentinel-emerald flex items-center justify-center gap-2 disabled:opacity-50"
       >

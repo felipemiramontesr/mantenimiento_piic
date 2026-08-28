@@ -32,6 +32,7 @@ function NhtsaModalHeader({
         Recalls NHTSA — {make} {model} {year}
       </h3>
       <button
+        type="button"
         onClick={onClose}
         aria-label="Cerrar"
         className="text-gray-400 hover:text-white transition-colors"
@@ -53,6 +54,7 @@ function NhtsaModalTabs({
     <div className="flex gap-1 border-b border-white/10">
       {(['nhtsa', 'patterns'] as const).map((tab) => (
         <button
+          type="button"
           key={tab}
           onClick={(): void => onTabChange(tab)}
           className={`px-4 py-2 text-archon-sm font-black uppercase tracking-widest transition-colors rounded-t-[4px] ${
@@ -87,6 +89,7 @@ function NhtsaResultRow({
         <p className="text-xs text-gray-400 mt-0.5">{r.component}</p>
       </div>
       <button
+        type="button"
         title={`Importar recall ${r.campaignNumber}`}
         onClick={(): void => onImport(r)}
         disabled={importingCode === r.campaignNumber}

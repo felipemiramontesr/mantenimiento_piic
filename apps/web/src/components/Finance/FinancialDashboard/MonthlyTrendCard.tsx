@@ -56,6 +56,7 @@ export const MonthlyTrendCard: React.FC<MonthlyTrendCardProps> = ({
         <div className="flex items-center gap-1 flex-wrap justify-end">
           {CHART_WINDOWS.map((w) => (
             <button
+              type="button"
               key={w.label}
               onClick={(): void => onChartLabelChange(w.label)}
               className={`px-2 py-0.5 rounded-[4px] text-archon-sm font-black uppercase tracking-wider transition-all duration-200 border-none outline-none cursor-pointer ${

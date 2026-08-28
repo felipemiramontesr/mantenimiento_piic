@@ -28,6 +28,7 @@ const ReactionBar: React.FC<ReactionBarProps> = ({ postId, onReact }) => (
   <div data-testid="reaction-bar" className="flex items-center gap-3">
     {REACTIONS.map(({ type, Icon, label, color }) => (
       <button
+        type="button"
         key={type}
         data-testid={`reaction-btn-${type.toLowerCase()}`}
         onClick={(): void => onReact(postId, type)}

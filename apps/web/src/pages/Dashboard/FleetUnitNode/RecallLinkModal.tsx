@@ -22,6 +22,7 @@ function RecallLinkModalFooter({
   return (
     <div className="flex gap-3 justify-end">
       <button
+        type="button"
         onClick={onCancel}
         disabled={submitting}
         className="flex items-center justify-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors rounded-[4px] text-archon-sm font-black uppercase tracking-widest"
@@ -29,6 +30,7 @@ function RecallLinkModalFooter({
         Cancelar
       </button>
       <button
+        type="button"
         onClick={onSubmit}
         disabled={submitting || !recallId || Number.parseInt(recallId, 10) <= 0}
         className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 transition-colors rounded-[4px] text-white text-archon-sm font-black uppercase tracking-widest"

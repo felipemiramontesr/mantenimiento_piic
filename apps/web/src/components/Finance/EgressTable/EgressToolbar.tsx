@@ -72,6 +72,7 @@ function UnitSearchBox({
       />
       {unitSearch && (
         <button
+          type="button"
           onClick={onClear}
           className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sentinel-red border-none bg-transparent cursor-pointer transition-colors duration-200 active:scale-95"
         >
@@ -138,6 +139,7 @@ function ToolbarActions({
         {total} registro{total !== 1 ? 's' : ''}
       </span>
       <button
+        type="button"
         onClick={onExport}
         disabled={exporting}
         title="Exportar CSV"
@@ -146,6 +148,7 @@ function ToolbarActions({
         <Download size={18} className="transition-transform duration-300" />
       </button>
       <button
+        type="button"
         onClick={onRegister}
         title="Registrar egreso"
         className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"

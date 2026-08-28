@@ -39,6 +39,7 @@ const ProfileSlideOverHeader: React.FC<ProfileSlideOverHeaderProps> = ({ onClose
       </span>
     </div>
     <button
+      type="button"
       onClick={onClose}
       data-testid="profile-edit-close"
       className="text-slate-400 hover:text-[#0f2a44] transition-colors"

@@ -274,6 +274,7 @@ interface CollapseTriggerProps {
 function CollapseTrigger({ isCollapsed, onToggle }: CollapseTriggerProps): React.ReactElement {
   return (
     <button
+      type="button"
       onClick={onToggle}
       className="hidden md:flex absolute -right-7 top-1/2 -translate-y-1/2 w-7 h-12 bg-pinnacle-yellow text-pinnacle-navy rounded-r-[4px] items-center justify-center shadow-lg z-[100] cursor-pointer hover:brightness-110 transition-all duration-200"
     >
@@ -296,6 +297,7 @@ function SidebarAvatarButton({
 }: SidebarAvatarButtonProps): React.ReactElement {
   return (
     <button
+      type="button"
       ref={firstFocusableRef}
       onClick={onProfileClick}
       title="Mi perfil"
@@ -618,6 +620,7 @@ function SidebarFooter({ isCollapsed, onLogout }: SidebarFooterProps): React.Rea
   return (
     <footer className="shrink-0 flex flex-col items-center justify-center py-3 px-3 gap-2 border-t border-white/5 pb-[env(safe-area-inset-bottom)]">
       <button
+        type="button"
         onClick={onLogout}
         className={`
           flex items-center justify-center rounded-[4px] font-bold text-archon-md uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-md border-none outline-none overflow-hidden

@@ -15,6 +15,7 @@ export const EgressModalHeader: React.FC<EgressModalHeaderProps> = ({ onClose })
       </h2>
     </div>
     <button
+      type="button"
       onClick={onClose}
       className="flex items-center justify-center w-8 h-8 text-pinnacle-navy/40 hover:text-sentinel-red hover:bg-red-50 transition-all duration-200 rounded-[4px]"
     >

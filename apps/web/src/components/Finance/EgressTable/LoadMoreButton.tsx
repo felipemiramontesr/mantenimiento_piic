@@ -11,6 +11,7 @@ export function LoadMoreButton({ onClick, loading }: LoadMoreButtonProps): React
   return (
     <div className="flex justify-center">
       <button
+        type="button"
         onClick={onClick}
         disabled={loading}
         className="text-archon-base font-black uppercase tracking-widest text-pinnacle-navy/50 hover:text-pinnacle-navy transition-colors duration-300 flex items-center gap-2"

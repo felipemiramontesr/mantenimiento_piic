@@ -45,7 +45,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
         <p className="card-sovereign-kpi-label">{description}</p>
       </div>
     </div>
-    <button onClick={onAction} className="btn-archon-card-action">
+    <button type="button" onClick={onAction} className="btn-archon-card-action">
       {actionLabel} <ArrowRight size={12} className="ml-2" />
     </button>
   </div>

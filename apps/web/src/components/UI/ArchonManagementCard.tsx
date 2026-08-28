@@ -104,6 +104,7 @@ const CardActionButton: React.FC<CardActionButtonProps> = ({
   extraClassName,
 }) => (
   <button
+    type="button"
     data-testid={testId}
     className={`
       btn-archon-card-action ${extraClassName ?? ''}
