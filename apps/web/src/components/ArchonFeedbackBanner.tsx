@@ -15,6 +15,44 @@ interface ArchonFeedbackBannerProps {
   onClear: () => void;
 }
 
+const FEEDBACK_STYLES: Record<
+  FeedbackType,
+  { bg: string; border: string; icon: React.JSX.Element; text: string }
+> = {
+  error: {
+    bg: 'bg-red-50',
+    border: 'border-red-500',
+    icon: <AlertCircle className="text-red-500" size={20} />,
+    text: 'text-red-900',
+  },
+  success: {
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-500',
+    icon: <CheckCircle className="text-emerald-500" size={20} />,
+    text: 'text-emerald-900',
+  },
+  info: {
+    bg: 'bg-blue-50',
+    border: 'border-blue-500',
+    icon: <Info className="text-blue-500" size={20} />,
+    text: 'text-blue-900',
+  },
+};
+
+/** Botón de cierre del banner de notificación (FC163 F2B4 Sub-Batch 4B-1). */
+function BannerCloseButton({ onClear }: { onClear: () => void }): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      className="p-2 hover:bg-black/5 rounded-[4px] transition-colors group"
+      aria-label="Cerrar notificación"
+    >
+      <X size={18} className="opacity-40 group-hover:opacity-100 transition-opacity" />
+    </button>
+  );
+}
+
 const ArchonFeedbackBanner: React.FC<ArchonFeedbackBannerProps> = ({
   message,
   type = 'error',
@@ -22,33 +60,12 @@ const ArchonFeedbackBanner: React.FC<ArchonFeedbackBannerProps> = ({
 }: ArchonFeedbackBannerProps): React.JSX.Element | null => {
   if (!message) return null;
 
-  const styles = {
-    error: {
-      bg: 'bg-red-50',
-      border: 'border-red-500',
-      icon: <AlertCircle className="text-red-500" size={20} />,
-      text: 'text-red-900',
-    },
-    success: {
-      bg: 'bg-emerald-50',
-      border: 'border-emerald-500',
-      icon: <CheckCircle className="text-emerald-500" size={20} />,
-      text: 'text-emerald-900',
-    },
-    info: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-500',
-      icon: <Info className="text-blue-500" size={20} />,
-      text: 'text-blue-900',
-    },
-  };
-
-  const currentStyle = styles[type];
+  const currentStyle = FEEDBACK_STYLES[type];
 
   return (
     <div
       className={`
-        flex items-center justify-between p-5 mb-8 rounded-[4px] border-l-4 shadow-md 
+        flex items-center justify-between p-5 mb-8 rounded-[4px] border-l-4 shadow-md
         animate-in slide-in-from-top-4 duration-300
         ${currentStyle.bg} ${currentStyle.border}
       `}
@@ -65,13 +82,7 @@ const ArchonFeedbackBanner: React.FC<ArchonFeedbackBannerProps> = ({
         </div>
       </div>
 
-      <button
-        onClick={onClear}
-        className="p-2 hover:bg-black/5 rounded-[4px] transition-colors group"
-        aria-label="Cerrar notificación"
-      >
-        <X size={18} className="opacity-40 group-hover:opacity-100 transition-opacity" />
-      </button>
+      <BannerCloseButton onClear={onClear} />
     </div>
   );
 };

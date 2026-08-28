@@ -13,6 +13,52 @@ interface PostCardProps {
   addComment: (postId: number, text: string, parentId?: number) => Promise<void>;
 }
 
+interface DeleteButtonProps {
+  postId: number;
+  onDelete: (id: number) => void;
+}
+
+/** Botón de eliminación de publicación propia (FC163 F2B4 Sub-Batch 4B-1). */
+function DeleteButton({ postId, onDelete }: DeleteButtonProps): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid={`post-delete-${postId}`}
+      onClick={(): void => onDelete(postId)}
+      className="text-slate-300 hover:text-red-400 transition-colors shrink-0"
+      title="Eliminar publicación"
+    >
+      <Trash2 className="w-3.5 h-3.5" />
+    </button>
+  );
+}
+
+interface CommentsToggleButtonProps {
+  postId: number;
+  showComments: boolean;
+  onToggle: () => void;
+}
+
+/** Botón que expande/colapsa el hilo de comentarios (FC163 F2B4 Sub-Batch 4B-1). */
+function CommentsToggleButton({
+  postId,
+  showComments,
+  onToggle,
+}: CommentsToggleButtonProps): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      data-testid={`post-comments-toggle-${postId}`}
+      onClick={onToggle}
+      className="flex items-center gap-1.5 text-archon-xs font-black uppercase tracking-widest text-slate-400 hover:text-[#0f2a44] transition-colors self-start"
+    >
+      <MessageSquare className="w-3.5 h-3.5" />
+      Comentarios
+      {showComments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+    </button>
+  );
+}
+
 const PostCard: React.FC<PostCardProps> = ({
   post,
   isOwner,
@@ -31,16 +77,7 @@ const PostCard: React.FC<PostCardProps> = ({
       {/* Content row */}
       <div className="flex items-start justify-between gap-3">
         <p className="text-archon-md text-[#0f2a44] leading-relaxed flex-1">{post.contentText}</p>
-        {isOwner && (
-          <button
-            data-testid={`post-delete-${post.id}`}
-            onClick={(): void => onDelete(post.id)}
-            className="text-slate-300 hover:text-red-400 transition-colors shrink-0"
-            title="Eliminar publicación"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        )}
+        {isOwner && <DeleteButton postId={post.id} onDelete={onDelete} />}
       </div>
 
       {/* Date */}
@@ -56,15 +93,11 @@ const PostCard: React.FC<PostCardProps> = ({
       <ReactionBar postId={post.id} onReact={onReact} />
 
       {/* Toggle comments */}
-      <button
-        data-testid={`post-comments-toggle-${post.id}`}
-        onClick={(): void => setShowComments((v) => !v)}
-        className="flex items-center gap-1.5 text-archon-xs font-black uppercase tracking-widest text-slate-400 hover:text-[#0f2a44] transition-colors self-start"
-      >
-        <MessageSquare className="w-3.5 h-3.5" />
-        Comentarios
-        {showComments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
+      <CommentsToggleButton
+        postId={post.id}
+        showComments={showComments}
+        onToggle={(): void => setShowComments((v) => !v)}
+      />
 
       {showComments && (
         <CommentThread postId={post.id} fetchComments={fetchComments} addComment={addComment} />

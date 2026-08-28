@@ -35,6 +35,89 @@ const getAvailabilityDot = (percent: number): string => {
   return 'bg-red-500 animate-pulse';
 };
 
+interface CardHeaderSlotProps {
+  Icon: React.ElementType;
+  accentColor: string;
+  title: string;
+  count: number;
+}
+
+/** Encabezado de icono + título + conteo de activos (FC163 F2B4 Sub-Batch 4B-1). */
+function CardHeaderSlot({
+  Icon,
+  accentColor,
+  title,
+  count,
+}: CardHeaderSlotProps): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-4 mb-6">
+      <div
+        className="w-14 h-14 rounded-[4px] flex items-center justify-center border-2"
+        style={{ backgroundColor: `${accentColor}10`, borderColor: `${accentColor}30` }}
+      >
+        <Icon size={24} style={{ color: accentColor }} />
+      </div>
+      <div className="flex flex-col">
+        <span className="text-archon-sm font-black uppercase tracking-[0.2em] text-pinnacle-navy opacity-40">
+          Segmento Operativo
+        </span>
+        <h3 className="text-lg font-black text-pinnacle-navy tracking-tight">{title}</h3>
+      </div>
+      <div className="ml-auto flex flex-col items-end">
+        <span className="text-2xl font-black text-pinnacle-navy">{count}</span>
+        <span className="text-archon-xs font-black uppercase opacity-30">Activos</span>
+      </div>
+    </div>
+  );
+}
+
+/** Grid de 4 métricas operativas (disponibilidad/critico/MTBF/MTTR) (FC163 F2B4 Sub-Batch 4B-1). */
+function CardMetricsGrid({ data }: { data: CategoryData }): React.JSX.Element {
+  const dotColor = getAvailabilityDot(data.availablePercent);
+
+  return (
+    <div className="card-sovereign-quadrant-grid">
+      <div className="card-sovereign-quadrant-item">
+        <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
+          Disponibilidad
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-black text-pinnacle-navy">{data.availablePercent}%</span>
+          <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+        </div>
+      </div>
+      <div className="card-sovereign-quadrant-item">
+        <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
+          Estado Crítico
+        </span>
+        <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
+      </div>
+      <div className="card-sovereign-quadrant-item">
+        <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
+          MTBF Promedio
+        </span>
+        <div className="flex items-center gap-1">
+          <Activity size={10} className="text-sky-500" />
+          <span className="text-base font-black text-pinnacle-navy">
+            {formatTimeMetric(data.avgMtbf)}
+          </span>
+        </div>
+      </div>
+      <div className="card-sovereign-quadrant-item">
+        <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
+          MTTR Táctico
+        </span>
+        <div className="flex items-center gap-1">
+          <History size={10} className="text-amber-500" />
+          <span className="text-base font-black text-pinnacle-navy">
+            {formatTimeMetric(data.avgMttr)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const CategoryAnalyticsCard: React.FC<CategoryAnalyticsCardProps> = ({
   title,
   categoryKey,
@@ -43,73 +126,19 @@ const CategoryAnalyticsCard: React.FC<CategoryAnalyticsCardProps> = ({
   onViewDetails,
 }): React.JSX.Element => {
   const Icon = CATEGORY_ICONS[categoryKey];
-  const dotColor = getAvailabilityDot(data.availablePercent);
 
   return (
     <div
       className="card-archon-sovereign animate-in fade-in duration-700"
       style={{ '--card-accent': accentColor } as React.CSSProperties}
     >
-      <div className="flex items-center gap-4 mb-6">
-        <div
-          className="w-14 h-14 rounded-[4px] flex items-center justify-center border-2"
-          style={{ backgroundColor: `${accentColor}10`, borderColor: `${accentColor}30` }}
-        >
-          <Icon size={24} style={{ color: accentColor }} />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-archon-sm font-black uppercase tracking-[0.2em] text-pinnacle-navy opacity-40">
-            Segmento Operativo
-          </span>
-          <h3 className="text-lg font-black text-pinnacle-navy tracking-tight">{title}</h3>
-        </div>
-        <div className="ml-auto flex flex-col items-end">
-          <span className="text-2xl font-black text-pinnacle-navy">{data.count}</span>
-          <span className="text-archon-xs font-black uppercase opacity-30">Activos</span>
-        </div>
-      </div>
-
-      <div className="card-sovereign-quadrant-grid">
-        <div className="card-sovereign-quadrant-item">
-          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
-            Disponibilidad
-          </span>
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-black text-pinnacle-navy">{data.availablePercent}%</span>
-            <div className={`w-2 h-2 rounded-full ${dotColor}`} />
-          </div>
-        </div>
-        <div className="card-sovereign-quadrant-item">
-          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
-            Estado Crítico
-          </span>
-          <span className="text-xl font-black text-red-500">{data.maintenanceCount}</span>
-        </div>
-        <div className="card-sovereign-quadrant-item">
-          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
-            MTBF Promedio
-          </span>
-          <div className="flex items-center gap-1">
-            <Activity size={10} className="text-sky-500" />
-            <span className="text-base font-black text-pinnacle-navy">
-              {formatTimeMetric(data.avgMtbf)}
-            </span>
-          </div>
-        </div>
-        <div className="card-sovereign-quadrant-item">
-          <span className="text-archon-sm font-black uppercase tracking-widest opacity-40 mb-2">
-            MTTR Táctico
-          </span>
-          <div className="flex items-center gap-1">
-            <History size={10} className="text-amber-500" />
-            <span className="text-base font-black text-pinnacle-navy">
-              {formatTimeMetric(data.avgMttr)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <button onClick={(): void => onViewDetails(categoryKey)} className="btn-archon-card-action">
+      <CardHeaderSlot Icon={Icon} accentColor={accentColor} title={title} count={data.count} />
+      <CardMetricsGrid data={data} />
+      <button
+        type="button"
+        onClick={(): void => onViewDetails(categoryKey)}
+        className="btn-archon-card-action"
+      >
         VER DETALLES <ArrowRight size={12} className="ml-2" />
       </button>
     </div>

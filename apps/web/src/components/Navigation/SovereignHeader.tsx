@@ -135,6 +135,58 @@ interface HeaderSearchBarProps {
   onSuggestionSelect: (suggestion: SearchSuggestion) => void;
 }
 
+interface SearchInputFieldProps {
+  placeholder: string;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  onOpen: () => void;
+  onCloseOnEnter: () => void;
+  onClear: () => void;
+}
+
+/** Input de búsqueda con icono + botón de limpiar (FC163 F2B4 Sub-Batch 4B-1). */
+function SearchInputField({
+  placeholder: fieldPlaceholder,
+  searchTerm,
+  onSearchChange,
+  onOpen,
+  onCloseOnEnter,
+  onClear,
+}: SearchInputFieldProps): React.JSX.Element {
+  return (
+    <>
+      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+        <Search
+          size={13}
+          className="text-slate-400 group-focus-within:text-[#0f2a44] transition-colors duration-300"
+        />
+      </span>
+      <input
+        type="text"
+        placeholder={fieldPlaceholder}
+        value={searchTerm}
+        onChange={(e): void => onSearchChange(e.target.value)}
+        onFocus={onOpen}
+        onKeyDown={(e): void => {
+          if (e.key === 'Enter') onCloseOnEnter();
+        }}
+        style={{ border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '4px' }}
+        className="w-full pl-9 pr-9 py-3 text-archon-md font-bold text-[#0f2a44] bg-white focus:outline-none placeholder:text-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
+      />
+      {searchTerm && (
+        <button
+          type="button"
+          data-testid="clear-search-btn"
+          onClick={onClear}
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors duration-200 active:scale-95"
+        >
+          <X size={13} className="transition-transform duration-200 hover:rotate-90" />
+        </button>
+      )}
+    </>
+  );
+}
+
 /** Barra de búsqueda predictiva universal (input + limpiar + sugerencias) (FC163 F1B-2, split Alfa 219_AN). */
 function HeaderSearchBar({
   containerRef,
@@ -153,34 +205,14 @@ function HeaderSearchBar({
       ref={containerRef}
       className="group relative w-full mt-3 animate-in fade-in slide-in-from-top-1 duration-500 z-[999]"
     >
-      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-        <Search
-          size={13}
-          className="text-slate-400 group-focus-within:text-[#0f2a44] transition-colors duration-300"
-        />
-      </span>
-      <input
-        type="text"
+      <SearchInputField
         placeholder={searchPlaceholder}
-        value={searchTerm}
-        onChange={(e): void => onSearchChange(e.target.value)}
-        onFocus={onOpen}
-        onKeyDown={(e): void => {
-          if (e.key === 'Enter') onCloseOnEnter();
-        }}
-        style={{ border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '4px' }}
-        className="w-full pl-9 pr-9 py-3 text-archon-md font-bold text-[#0f2a44] bg-white focus:outline-none placeholder:text-slate-400/80 tracking-[0.02em] shadow-sm shadow-slate-100/50"
+        searchTerm={searchTerm}
+        onSearchChange={onSearchChange}
+        onOpen={onOpen}
+        onCloseOnEnter={onCloseOnEnter}
+        onClear={onClear}
       />
-      {searchTerm && (
-        <button
-          data-testid="clear-search-btn"
-          onClick={onClear}
-          className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors duration-200 active:scale-95"
-        >
-          <X size={13} className="transition-transform duration-200 hover:rotate-90" />
-        </button>
-      )}
-
       {isOpen && searchTerm.trim() && suggestions.length > 0 && (
         <SearchSuggestionsList suggestions={suggestions} onSelect={onSuggestionSelect} />
       )}
@@ -210,6 +242,7 @@ function HeaderTitleBlock({
     <div>
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={onToggleMobileMenu}
           className="md:hidden flex items-center justify-center p-2.5 -ml-2.5 rounded hover:bg-slate-100 text-pinnacle-navy"
           aria-label="Toggle Menu"
