@@ -97,7 +97,7 @@ describe('ArchonCropModal', () => {
     it('the viewport exposes role, aria-label and tabIndex for keyboard/AT users', () => {
       render(<ArchonCropModal {...defaultProps} />);
       const viewport = screen.getByTestId('crop-viewport');
-      expect(viewport).toHaveAttribute('role', 'group');
+      expect(viewport).toHaveAttribute('role', 'application');
       expect(viewport).toHaveAttribute('aria-label');
       expect(viewport).toHaveAttribute('tabindex', '0');
     });

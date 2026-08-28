@@ -144,10 +144,14 @@ function LoginCredentialFields({
   return (
     <>
       <div className="flex flex-col gap-1 relative mb-4">
-        <label className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
+        <label
+          htmlFor="login-username"
+          className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
+        >
           Usuario o Correo
         </label>
         <input
+          id="login-username"
           type="text"
           placeholder="usuario o correo@empresa.com"
           value={username}
@@ -159,10 +163,14 @@ function LoginCredentialFields({
       </div>
 
       <div className="flex flex-col gap-1 relative mb-6">
-        <label className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70">
+        <label
+          htmlFor="login-password"
+          className="font-sans text-archon-base font-black text-pinnacle-navy uppercase tracking-[0.18em] opacity-70"
+        >
           Clave de Seguridad
         </label>
         <input
+          id="login-password"
           type="password"
           placeholder="••••••••"
           value={password}

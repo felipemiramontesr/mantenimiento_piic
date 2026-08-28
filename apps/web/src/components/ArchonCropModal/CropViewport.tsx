@@ -31,7 +31,7 @@ export const CropViewport: React.FC<CropViewportProps> = ({
   <div
     ref={containerRef}
     data-testid="crop-viewport"
-    role="group"
+    role="application"
     aria-label="Área de encuadre de imagen — flechas para mover, + y - para zoom"
     tabIndex={0}
     className="relative overflow-hidden rounded-[4px] cursor-grab active:cursor-grabbing select-none bg-slate-900"

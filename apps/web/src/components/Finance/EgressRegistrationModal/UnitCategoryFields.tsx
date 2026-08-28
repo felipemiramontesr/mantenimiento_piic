@@ -24,10 +24,19 @@ const UnitField: React.FC<UnitFieldProps> = ({
   inputCls,
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+    <label
+      htmlFor="egress-unit-id"
+      className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
+    >
       Unidad *
     </label>
-    <select name="unitId" value={unitId} onChange={handleChange} className={inputCls('unitId')}>
+    <select
+      id="egress-unit-id"
+      name="unitId"
+      value={unitId}
+      onChange={handleChange}
+      className={inputCls('unitId')}
+    >
       <option value="">Seleccionar unidad...</option>
       {units.map((u) => (
         <option key={u.id} value={u.id}>
@@ -56,10 +65,14 @@ const CategoryField: React.FC<CategoryFieldProps> = ({
   inputCls,
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+    <label
+      htmlFor="egress-category"
+      className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
+    >
       Categoría *
     </label>
     <select
+      id="egress-category"
       name="category"
       value={category}
       onChange={handleChange}

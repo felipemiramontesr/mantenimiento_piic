@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
 
+/** Encabezado del formulario de inicio de orden UPA (FC163 F2B5). */
+function InitFormHeader(): React.JSX.Element {
+  return (
+    <div>
+      <h2 className="text-[#0f2a44] font-black text-2xl tracking-tight uppercase">
+        Nueva Orden UPA
+      </h2>
+      <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0f2a44]/50 mt-1">
+        Proceso Universal Archon — Iniciar Pipeline
+      </p>
+    </div>
+  );
+}
+
 interface InitFormProps {
   onSubmit: (vehicleId: string) => void;
   loading: boolean;
@@ -18,21 +32,18 @@ const InitForm: React.FC<InitFormProps> = ({ onSubmit, loading, error }) => {
   return (
     <div className="animate-in fade-in duration-700 flex items-center justify-center min-h-[55vh]">
       <div className="w-full max-w-md space-y-6">
-        <div>
-          <h2 className="text-[#0f2a44] font-black text-2xl tracking-tight uppercase">
-            Nueva Orden UPA
-          </h2>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#0f2a44]/50 mt-1">
-            Proceso Universal Archon — Iniciar Pipeline
-          </p>
-        </div>
+        <InitFormHeader />
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f2a44]/60">
+            <label
+              htmlFor="vehicle-id-input"
+              className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f2a44]/60"
+            >
               ID de Unidad
             </label>
             <input
+              id="vehicle-id-input"
               type="text"
               value={vehicleId}
               onChange={(e): void => setVehicleId(e.target.value)}

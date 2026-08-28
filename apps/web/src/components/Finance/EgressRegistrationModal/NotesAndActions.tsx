@@ -23,10 +23,14 @@ export const NotesAndActions: React.FC<NotesAndActionsProps> = ({
 }) => (
   <>
     <div className="flex flex-col gap-1.5">
-      <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+      <label
+        htmlFor="egress-notes"
+        className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
+      >
         Notas
       </label>
       <textarea
+        id="egress-notes"
         name="notes"
         value={form.notes}
         onChange={handleChange}

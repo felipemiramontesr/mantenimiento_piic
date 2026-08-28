@@ -3,6 +3,117 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, Truck, User, AlertCircle } from 'lucide-react';
 import ArchonSelect from '../../ArchonSelect';
 import { RouteIdentityPanelProps } from './types';
+import type { FleetUnit } from '../../../types/fleet';
+
+/** Encabezado de fase I: identidad del servicio (FC163 F2B5). */
+function IdentityPanelHeader(): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="bg-[#f2b705] p-2 rounded-[4px]">
+        <ShieldCheck size={20} className="text-[#0f2a44]" />
+      </div>
+      <div>
+        <span className="text-archon-base font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
+          Fase I
+        </span>
+        <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
+          Identidad del Servicio
+        </h3>
+      </div>
+    </div>
+  );
+}
+
+interface UnitPreviewCardProps {
+  unit: FleetUnit;
+  isEdit: boolean;
+}
+
+/** Tarjeta de previsualización de la unidad seleccionada (FC163 F2B5). */
+function UnitPreviewCard({ unit, isEdit }: UnitPreviewCardProps): React.JSX.Element {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="bg-[#0f2a44]/5 p-2 rounded-[4px] border-l-4 border-emerald-500 flex items-center gap-4"
+    >
+      <div className="w-20 h-20 bg-white rounded-[4px] border-2 border-[#0f2a44]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+        {unit.images?.[0] ? (
+          <img src={unit.images[0]} alt="Unit" className="w-full h-full object-cover" />
+        ) : (
+          <div className="flex flex-col items-center justify-center opacity-20">
+            <Truck size={32} className="text-[#0f2a44]" />
+            <span className="text-[7px] font-black uppercase tracking-tighter mt-1">No Media</span>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-archon-xl font-black text-[#0f2a44] truncate leading-tight">
+          {unit.marca} {unit.modelo}
+        </p>
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+          <span className="text-archon-base font-bold text-emerald-700 bg-emerald-100/50 px-1.5 rounded uppercase">
+            {unit.id}
+          </span>
+          <span className="text-archon-base font-bold opacity-60 text-[#0f2a44]">
+            {unit.placas}
+          </span>
+          {unit.lastFuelLevel !== undefined && !isEdit && (
+            <span className="text-archon-base font-bold text-sky-700 bg-sky-100/50 px-1.5 rounded uppercase">
+              Telemetría Heredada: {unit.lastFuelLevel}%
+            </span>
+          )}
+        </div>
+        <p className="text-archon-sm font-bold opacity-40 uppercase tracking-widest mt-1">
+          {unit.departamento}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+interface ValidationHintProps {
+  isEdit: boolean;
+  endReading: string | number;
+}
+
+/** Aviso de validación de kilometraje/estatus al confirmar la ruta (FC163 F2B5). */
+function ValidationHint({ isEdit, endReading }: ValidationHintProps): React.JSX.Element {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex gap-3 p-2.5 rounded-[4px] border ${
+        isEdit ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'
+      }`}
+    >
+      <AlertCircle
+        size={14}
+        className={`${isEdit ? 'text-amber-600' : 'text-emerald-600'} shrink-0 mt-0.5`}
+      />
+      <p
+        className={`text-archon-sm font-bold ${
+          isEdit ? 'text-amber-800' : 'text-emerald-800'
+        } leading-relaxed`}
+      >
+        {isEdit ? (
+          <>
+            Al finalizar, el kilometraje de la unidad se actualizará a{' '}
+            <span className="font-black text-amber-900">
+              {Number(endReading).toLocaleString()} KM
+            </span>{' '}
+            y quedará disponible para despacho.
+          </>
+        ) : (
+          <>
+            Al confirmar el despacho, el estatus de la unidad cambiará automáticamente a{' '}
+            <span className="font-black underline text-emerald-900">EN RUTA</span>.
+          </>
+        )}
+      </p>
+    </motion.div>
+  );
+}
 
 /**
  * 🔱 Archon Panel: Route Identity (Fase I)
@@ -18,26 +129,12 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
   selectedUnitData,
 }) => (
   <div className="space-y-4">
-    {/* Header */}
-    <div className="flex items-center gap-3">
-      <div className="bg-[#f2b705] p-2 rounded-[4px]">
-        <ShieldCheck size={20} className="text-[#0f2a44]" />
-      </div>
-      <div>
-        <span className="text-archon-base font-black uppercase tracking-[0.2em] text-[#0f2a44] opacity-50">
-          Fase I
-        </span>
-        <h3 className="text-archon-xl font-black uppercase tracking-tight text-[#0f2a44]">
-          Identidad del Servicio
-        </h3>
-      </div>
-    </div>
+    <IdentityPanelHeader />
 
-    {/* Unit Selection */}
     <div className="space-y-2">
-      <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+      <span className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
         Seleccionar Unidad
-      </label>
+      </span>
       <ArchonSelect
         options={availableUnits}
         value={formData.unitId}
@@ -45,58 +142,13 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
         icon={Truck}
         placeholder="Clave o modelo..."
       />
-      {selectedUnitData && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#0f2a44]/5 p-2 rounded-[4px] border-l-4 border-emerald-500 flex items-center gap-4"
-        >
-          <div className="w-20 h-20 bg-white rounded-[4px] border-2 border-[#0f2a44]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-            {selectedUnitData.images?.[0] ? (
-              <img
-                src={selectedUnitData.images[0]}
-                alt="Unit"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center opacity-20">
-                <Truck size={32} className="text-[#0f2a44]" />
-                <span className="text-[7px] font-black uppercase tracking-tighter mt-1">
-                  No Media
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-archon-xl font-black text-[#0f2a44] truncate leading-tight">
-              {selectedUnitData.marca} {selectedUnitData.modelo}
-            </p>
-            <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
-              <span className="text-archon-base font-bold text-emerald-700 bg-emerald-100/50 px-1.5 rounded uppercase">
-                {selectedUnitData.id}
-              </span>
-              <span className="text-archon-base font-bold opacity-60 text-[#0f2a44]">
-                {selectedUnitData.placas}
-              </span>
-              {selectedUnitData.lastFuelLevel !== undefined && !isEdit && (
-                <span className="text-archon-base font-bold text-sky-700 bg-sky-100/50 px-1.5 rounded uppercase">
-                  Telemetría Heredada: {selectedUnitData.lastFuelLevel}%
-                </span>
-              )}
-            </div>
-            <p className="text-archon-sm font-bold opacity-40 uppercase tracking-widest mt-1">
-              {selectedUnitData.departamento}
-            </p>
-          </div>
-        </motion.div>
-      )}
+      {selectedUnitData && <UnitPreviewCard unit={selectedUnitData} isEdit={isEdit} />}
     </div>
 
-    {/* Operator Selection */}
     <div className="space-y-2">
-      <label className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
+      <span className="text-archon-base font-black uppercase tracking-widest text-[#0f2a44] opacity-50 block h-4">
         Operador Asignado
-      </label>
+      </span>
       <ArchonSelect
         options={operatorOptions}
         value={formData.operatorId}
@@ -106,41 +158,7 @@ const RouteIdentityPanel: React.FC<RouteIdentityPanelProps> = ({
       />
     </div>
 
-    {/* Validation Hint */}
-    {!isFinished && (
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`flex gap-3 p-2.5 rounded-[4px] border ${
-          isEdit ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'
-        }`}
-      >
-        <AlertCircle
-          size={14}
-          className={`${isEdit ? 'text-amber-600' : 'text-emerald-600'} shrink-0 mt-0.5`}
-        />
-        <p
-          className={`text-archon-sm font-bold ${
-            isEdit ? 'text-amber-800' : 'text-emerald-800'
-          } leading-relaxed`}
-        >
-          {isEdit ? (
-            <>
-              Al finalizar, el kilometraje de la unidad se actualizará a{' '}
-              <span className="font-black text-amber-900">
-                {Number(formData.endReading).toLocaleString()} KM
-              </span>{' '}
-              y quedará disponible para despacho.
-            </>
-          ) : (
-            <>
-              Al confirmar el despacho, el estatus de la unidad cambiará automáticamente a{' '}
-              <span className="font-black underline text-emerald-900">EN RUTA</span>.
-            </>
-          )}
-        </p>
-      </motion.div>
-    )}
+    {!isFinished && <ValidationHint isEdit={isEdit} endReading={formData.endReading} />}
   </div>
 );
 

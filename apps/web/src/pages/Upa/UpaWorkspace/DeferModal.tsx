@@ -13,10 +13,14 @@ function DeferTypeSelect({
 }: DeferTypeSelectProps): React.ReactElement {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f2a44]/50">
+      <label
+        htmlFor="defer-type-select"
+        className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f2a44]/50"
+      >
         Tipo de diferimiento
       </label>
       <select
+        id="defer-type-select"
         value={deferType}
         onChange={(e): void => onDeferTypeChange(e.target.value as UpaDeferredType)}
         data-testid="defer-type-select"

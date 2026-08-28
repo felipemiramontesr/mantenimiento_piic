@@ -27,10 +27,14 @@ const AmountField: React.FC<AmountFieldProps> = ({
   inputCls,
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+    <label
+      htmlFor="egress-amount"
+      className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
+    >
       Monto (MXN) *
     </label>
     <input
+      id="egress-amount"
       type="number"
       name="amount"
       value={amount}
@@ -62,10 +66,14 @@ const VendorInvoiceFields: React.FC<VendorInvoiceFieldsProps> = ({
 }) => (
   <div className="grid grid-cols-2 gap-3">
     <div className="flex flex-col gap-1.5">
-      <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+      <label
+        htmlFor="egress-vendor"
+        className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
+      >
         Proveedor
       </label>
       <input
+        id="egress-vendor"
         type="text"
         name="vendor"
         value={vendor}
@@ -76,10 +84,14 @@ const VendorInvoiceFields: React.FC<VendorInvoiceFieldsProps> = ({
       />
     </div>
     <div className="flex flex-col gap-1.5">
-      <label className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50">
+      <label
+        htmlFor="egress-invoice-ref"
+        className="text-archon-base font-black uppercase tracking-[0.15em] text-pinnacle-navy/50"
+      >
         No. Factura
       </label>
       <input
+        id="egress-invoice-ref"
         type="text"
         name="invoiceRef"
         value={invoiceRef}

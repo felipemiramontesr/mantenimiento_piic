@@ -103,9 +103,9 @@ interface CategorySelectorProps {
 function CategorySelector({ selected, onSelect }: CategorySelectorProps): React.JSX.Element {
   return (
     <div className="space-y-4">
-      <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+      <span className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
         Clasificación del Evento
-      </label>
+      </span>
       <div className="grid grid-cols-1 gap-2.5">
         {CATEGORIES.map((cat) => (
           <button
@@ -151,9 +151,9 @@ interface SeveritySelectorProps {
 function SeveritySelector({ selected, onSelect }: SeveritySelectorProps): React.JSX.Element {
   return (
     <div className="space-y-4">
-      <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+      <span className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
         Grado de Severidad Operativa
-      </label>
+      </span>
       <div className="grid grid-cols-2 gap-3">
         {SEVERITIES.map((sev) => (
           <button
@@ -186,7 +186,10 @@ interface DescriptionFieldProps {
 function DescriptionField({ value, onChange }: DescriptionFieldProps): React.JSX.Element {
   return (
     <div className="space-y-4">
-      <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+      <label
+        htmlFor="incident-description"
+        className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40"
+      >
         Relato de los Hechos
       </label>
       <div className="relative">
@@ -196,6 +199,7 @@ function DescriptionField({ value, onChange }: DescriptionFieldProps): React.JSX
             descriptivo y efectivo. Límite SOLO front-end — el
             schema del API queda intacto (Cond.2 Bravo). */}
         <textarea
+          id="incident-description"
           required
           rows={6}
           maxLength={280}
@@ -282,9 +286,9 @@ function IncidentFormBody({
         onChange={(description): void => setFormData({ ...formData, description })}
       />
       <div className="space-y-4 flex-grow">
-        <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+        <span className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
           Evidencia Visual (Mandatorio)
-        </label>
+        </span>
         <div className="h-[210px]">
           <ArchonImageUploader
             images={formData.evidenceImage ? [formData.evidenceImage] : []}
