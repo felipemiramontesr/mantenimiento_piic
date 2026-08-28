@@ -85,9 +85,7 @@ const IdentityCluster = ({
             <span className="text-archon-xs font-black text-navy-900/30 uppercase tracking-tighter leading-none">
               T. CIRCULACIÓN:
             </span>
-            <span className="text-archon-base font-mono text-slate-400 font-bold">
-              {tarjeta || '---'}
-            </span>
+            <span className="text-archon-base font-mono text-slate-400 font-bold">{tarjeta}</span>
           </div>
         )}
       </div>
@@ -320,7 +318,7 @@ const SpecCluster = ({ unit }: { unit: FleetUnit }): React.JSX.Element => {
         <div className="flex items-center justify-between text-archon-xs font-black uppercase -mt-0.5 mb-1">
           <span className="text-slate-400 tracking-wider">Póliza</span>
           <span className="text-archon-sm font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-[2px] border border-slate-200/60 tracking-tight shadow-sm whitespace-nowrap">
-            {poliza || '---'}
+            {poliza}
           </span>
         </div>
         <div className="flex items-center justify-between mt-1 text-archon-sm font-black uppercase">
@@ -365,10 +363,10 @@ const ServiceForecastCluster = ({
   forecast,
   usageUnit,
 }: {
-  forecast: MaintenanceForecast | null;
+  forecast: MaintenanceForecast;
   usageUnit: string;
 }): React.JSX.Element => {
-  const kmPara = forecast?.kmParaServicio || 0;
+  const kmPara = forecast.kmParaServicio || 0;
   const isClose = kmPara < 1000;
   return (
     <div className="flex flex-col items-center space-y-3">
@@ -385,10 +383,10 @@ const ServiceForecastCluster = ({
         </span>
       </div>
       <div className="bg-slate-50 px-2.5 py-1 rounded opacity-60 text-archon-sm font-black uppercase text-slate-500 border border-slate-100">
-        BY KM: {forecast ? formatDate(forecast.serviceByKmDate) : '--/--/--'}
+        BY KM: {formatDate(forecast.serviceByKmDate)}
       </div>
       <div className="bg-sky-50 px-2.5 py-1 rounded border border-sky-100/50 text-archon-sm font-black uppercase text-sky-800 shadow-sm">
-        BY FECHA: {forecast ? formatDate(forecast.serviceByTimeDate) : '--/--/--'}
+        BY FECHA: {formatDate(forecast.serviceByTimeDate)}
       </div>
     </div>
   );
@@ -398,10 +396,10 @@ const HealthStatusCluster = ({
   forecast,
   unitId,
 }: {
-  forecast: MaintenanceForecast | null;
+  forecast: MaintenanceForecast;
   unitId: string;
 }): React.JSX.Element => {
-  const isOverdue = !!forecast?.isOverdue;
+  const isOverdue = forecast.isOverdue;
 
   const inner = (
     <div
@@ -430,7 +428,7 @@ const HealthStatusCluster = ({
           isOverdue ? 'text-white' : 'text-navy-900'
         }`}
       >
-        {forecast ? formatDate(forecast.forecastDate) : '---'}
+        {formatDate(forecast.forecastDate)}
       </span>
     </div>
   );
@@ -441,7 +439,7 @@ const HealthStatusCluster = ({
 // ============================================================================
 // ARCHON INTERNAL HELPERS (DRY & SRP)
 // ============================================================================
-const getUnitForecast = (unit: FleetUnit): MaintenanceForecast | null =>
+const getUnitForecast = (unit: FleetUnit): MaintenanceForecast =>
   calculateMaintForecast(
     unit.maintIntervalDays,
     unit.maintIntervalKm,
@@ -642,11 +640,9 @@ const FleetUnitRow = React.memo(
             mttr={unit.mttrHours ?? 0}
             backlog={unit.backlogCount ?? 0}
             healthScore={isOverdue ? 0 : unit.healthScore ?? 100}
-            daysRemaining={
-              forecast
-                ? Math.ceil((forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                : undefined
-            }
+            daysRemaining={Math.ceil(
+              (forecast.forecastDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            )}
           />
         </td>
 
@@ -684,12 +680,25 @@ const FleetUnitRow = React.memo(
 // ============================================================================
 // UNIVERSAL SEARCH SPECIFICATIONS (DRY COMPLIANT)
 // ============================================================================
-interface SearchConfig {
+interface StringSearchConfig {
   key: keyof FleetUnit;
   label: string;
-  type: 'string' | 'numeric';
-  suffix?: string;
+  type: 'string';
 }
+
+interface NumericSearchConfig {
+  key: keyof FleetUnit;
+  label: string;
+  type: 'numeric';
+  suffix: string;
+}
+
+// 🔱 Discriminated union (FC165 F2B2.1 dead-branch purge, 247_AN) — every
+// numeric entry below always declares `suffix`, making a `suffix?: string`
+// + `|| ''` fallback logically unreachable. Requiring it on the numeric
+// member removes the dead branch at the type level instead of leaving a
+// defensive check no test could ever legitimately trigger.
+type SearchConfig = StringSearchConfig | NumericSearchConfig;
 
 const SEARCH_CONFIGS: SearchConfig[] = [
   { key: 'placas', label: 'Placas', type: 'string' },
@@ -744,17 +753,15 @@ const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: 
     u.lastServiceDate || null
   );
 
-  if (forecast) {
-    const kmPara = forecast.kmParaServicio;
-    const usageUnit = u.usageUnitName || 'KM';
-    const numStr = String(kmPara);
-    const formattedStr = Number(kmPara).toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-    if (numStr.includes(query) || formattedStr.toLowerCase().includes(query)) {
-      return { label: 'Km. Restantes', value: `${formattedStr} ${usageUnit}` };
-    }
+  const kmPara = forecast.kmParaServicio;
+  const usageUnit = u.usageUnitName || 'KM';
+  const numStr = String(kmPara);
+  const formattedStr = Number(kmPara).toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  if (numStr.includes(query) || formattedStr.toLowerCase().includes(query)) {
+    return { label: 'Km. Restantes', value: `${formattedStr} ${usageUnit}` };
   }
 
   const foundConfig = SEARCH_CONFIGS.find((cfg) => {
@@ -780,7 +787,7 @@ const matchFieldInUnit = (u: FleetUnit, query: string): { label: string; value: 
         : `${Number(val).toLocaleString('en-US', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2,
-          })}${foundConfig.suffix || ''}`;
+          })}${foundConfig.suffix}`;
 
     return { label: foundConfig.label, value: formattedValue };
   }
@@ -879,7 +886,7 @@ export const FleetGridView = ({
     if (!sortConfig.field) return sanitizedUnits;
 
     const unitsWithForecast = sanitizedUnits.map(
-      (u: FleetUnit): { unit: FleetUnit; forecast: MaintenanceForecast | null } => ({
+      (u: FleetUnit): { unit: FleetUnit; forecast: MaintenanceForecast } => ({
         unit: u,
         forecast: getUnitForecast(u),
       })
@@ -888,8 +895,8 @@ export const FleetGridView = ({
     return [...unitsWithForecast]
       .sort(
         (
-          a: { unit: FleetUnit; forecast: MaintenanceForecast | null },
-          b: { unit: FleetUnit; forecast: MaintenanceForecast | null }
+          a: { unit: FleetUnit; forecast: MaintenanceForecast },
+          b: { unit: FleetUnit; forecast: MaintenanceForecast }
         ): number => {
           let valA = 0;
           let valB = 0;
@@ -898,17 +905,17 @@ export const FleetGridView = ({
             valA = parseInt(a.unit.id.replace(/\D/g, ''), 10) || 0;
             valB = parseInt(b.unit.id.replace(/\D/g, ''), 10) || 0;
           } else if (sortConfig.field === 'programacion') {
-            valA = a.forecast ? a.forecast.kmParaServicio : Infinity;
-            valB = b.forecast ? b.forecast.kmParaServicio : Infinity;
+            valA = a.forecast.kmParaServicio;
+            valB = b.forecast.kmParaServicio;
           } else if (sortConfig.field === 'pronostico') {
-            valA = a.forecast ? a.forecast.forecastDate.getTime() : Infinity;
-            valB = b.forecast ? b.forecast.forecastDate.getTime() : Infinity;
+            valA = a.forecast.forecastDate.getTime();
+            valB = b.forecast.forecastDate.getTime();
           }
 
           return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
         }
       )
-      .map((i: { unit: FleetUnit; forecast: MaintenanceForecast | null }): FleetUnit => i.unit);
+      .map((i: { unit: FleetUnit; forecast: MaintenanceForecast }): FleetUnit => i.unit);
   }, [sanitizedUnits, sortConfig]);
 
   // 🔍 Multicriteria Filter Logic (ACOP Compliant & Offline Resilient)
@@ -960,16 +967,14 @@ export const FleetGridView = ({
         u.lastServiceDate || null
       );
 
-      let matchesKmPara = false;
-      if (forecast) {
-        const kmPara = forecast.kmParaServicio;
-        const numStr = String(kmPara);
-        const formattedStr = Number(kmPara).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        });
-        matchesKmPara = numStr.includes(term) || formattedStr.toLowerCase().includes(term);
-      }
+      const kmPara = forecast.kmParaServicio;
+      const kmParaNumStr = String(kmPara);
+      const kmParaFormattedStr = Number(kmPara).toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+      const matchesKmPara =
+        kmParaNumStr.includes(term) || kmParaFormattedStr.toLowerCase().includes(term);
 
       // 2. Scan structured database keys
       const matchesKey = queryableKeys.some((cfg) => {

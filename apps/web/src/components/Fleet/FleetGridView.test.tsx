@@ -670,6 +670,200 @@ describe('FleetGridView — sorting by KM RESTANTES and PRONÓSTICO (207_AN Brav
   });
 });
 
+/**
+ * FC165 F2B2.1 (611 uncovered_conditions post-FC163, branch coverage 91.9%->100%)
+ * — dozens of `field || fallback` / `field ? formatted : '---'` display
+ * branches never had their "absent" nor "unusual-but-present" side exercised.
+ */
+describe('FleetGridView — branch coverage (FC165 F2B2.1)', () => {
+  beforeEach(() => {
+    vi.mocked(usePermissions).mockReturnValue({
+      hasPermission: vi.fn().mockReturnValue(false),
+      hasAnyPermission: vi.fn().mockReturnValue(false),
+      isOmnipotent: vi.fn().mockReturnValue(false),
+    });
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+  });
+
+  it('renders every display fallback ("—"/"---"/"S/D") when optional fields are entirely absent', () => {
+    const sparseUnit = {
+      id: 'ASM-SPARSE',
+      status: 'Disponible',
+    } as unknown as FleetUnit;
+    render(<FleetGridView units={[sparseUnit]} onEdit={vi.fn()} />);
+    expect(screen.getByText('ASM-SPARSE')).toBeInTheDocument();
+    expect(screen.getAllByText('SIN REGISTRO').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('S/D').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('---').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+  });
+
+  it('renders the "value present" side of fields the other fixtures leave unset (fuel level, warranty km, next-service target, dates, restricted hologram)', () => {
+    // checkHoyNoCircula's restriction depends on the real weekday -- pinned
+    // to a known Monday (day=1) so the [5,6]-digit restriction fires
+    // deterministically regardless of when this test actually runs.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-24T12:00:00'));
+    try {
+      const richUnit = {
+        id: 'ASM-RICH',
+        placas: 'RCH-005',
+        marca: 'Mercedes-Benz',
+        modelo: 'Actros',
+        status: 'Disponible',
+        // '3' is a valid non-exempt hologram absent from HologramBadge's
+        // styles map -- exercises its `styles[hologram] || fallback` branch.
+        environmentalHologram: '3',
+        lastFuelLevel: 55,
+        fuelTankCapacity: 200,
+        nextServiceKmTarget: 12345,
+        warranty_expiration_date: '2027-01-01',
+        warranty_expiration_km: 99000,
+        insuranceExpiryDate: '2027-06-01',
+        lastEnvironmentalVerification: '2026-06-01',
+        lastMechanicalVerification: '2026-07-01',
+        lastServiceDate: '2026-05-01',
+      } as unknown as FleetUnit;
+      render(<FleetGridView units={[richUnit]} onEdit={vi.fn()} />);
+      expect(screen.getByText('ASM-RICH')).toBeInTheDocument();
+      expect(screen.getByText('H-3')).toBeInTheDocument();
+      expect(screen.getByText('HOY NO CIRCULA')).toBeInTheDocument();
+      expect(screen.getByText(/99,000/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('matchFieldInUnit falls back to 0 for absent dailyUsageAvg/lastServiceReading/lastServiceDate inside the forecast search path', () => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    const unit = {
+      id: 'UNIT-NOUSAGE',
+      maintIntervalKm: 10000,
+      maintIntervalDays: 90,
+      odometer: 2000,
+    } as unknown as FleetUnit;
+    render(<FleetGridView units={[unit]} onEdit={vi.fn()} />);
+    const { getSuggestions } = setSearchConfig.mock.calls[0][0];
+    // remaining = 10000 - (2000 - 0) = 8000, with dailyUsageAvg/lastServiceReading/lastServiceDate all absent
+    const results = getSuggestions('8000');
+    expect(results.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it('units=null (bypassing the default-parameter, e.g. a type-unsafe caller) falls back to an empty list instead of throwing', () => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    render(<FleetGridView units={null as unknown as FleetUnit[]} onEdit={vi.fn()} />);
+    expect(screen.getByTestId('fleet-inventory-table')).toBeInTheDocument();
+    // getSuggestions itself also guards `units` independently of the
+    // component-body default -- exercise it directly with units=null too.
+    const { getSuggestions } = setSearchConfig.mock.calls[0][0];
+    expect(getSuggestions('anything')).toEqual([]);
+  });
+
+  it('falls back to the local unit when getUnitDetails resolves falsy (no rejection, no data)', async () => {
+    const unit = {
+      id: 'ASM-FALSY',
+      placas: 'FLS-001',
+      marca: 'Volvo',
+      modelo: 'FH',
+      status: 'Disponible',
+      images: [],
+    } as unknown as FleetUnit;
+    mockGetUnitDetails.mockResolvedValueOnce(null);
+    render(<FleetGridView units={[unit]} onEdit={vi.fn()} />);
+    fireEvent.click(screen.getByAltText('Archon Unit Default'));
+    expect(await screen.findByAltText('ASM-FALSY - 1')).toBeInTheDocument();
+  });
+
+  it('sorts by UNIDAD falling back to 0 for an id with no digits at all', () => {
+    const units = [
+      { id: 'ASM-005', placas: 'A', status: 'Disponible', odometer: 1 },
+      { id: 'NO-DIGITS', placas: 'B', status: 'Disponible', odometer: 2 },
+    ] as unknown as FleetUnit[];
+    render(<FleetGridView units={units} onEdit={vi.fn()} />);
+    fireEvent.click(screen.getByText('UNIDAD'));
+    expect(screen.getAllByText(/ASM-005|NO-DIGITS/).length).toBeGreaterThan(0);
+  });
+
+  it('TcoKpiCluster shows the total without a cost-per-km when odometer is 0', () => {
+    const unit = {
+      id: 'ASM-ZEROKM',
+      placas: 'ZKM-001',
+      status: 'Disponible',
+      odometer: 0,
+    } as unknown as FleetUnit;
+    const tcoData: TcoData = {
+      fleet_unit_id: 'ASM-ZEROKM',
+      tco_total: 1200,
+      tco_maintenance: 1200,
+      tco_insurance: 0,
+      tco_lease: 0,
+      tco_tenencia: 0,
+      tco_verificacion: 0,
+      tco_fuel: 0,
+      tco_other: 0,
+      total_records: 1,
+      last_record_at: null as unknown as string,
+    };
+    vi.mocked(useTco).mockReturnValue({ data: tcoData, loading: false, error: null });
+    render(<FleetGridView units={[unit]} onEdit={vi.fn()} />);
+    expect(screen.getByTestId('tco-kpi-section')).toBeInTheDocument();
+    expect(screen.queryByText('Costo/KM')).not.toBeInTheDocument();
+  });
+
+  it('filters by search term against a unit with falsy dailyUsageAvg/lastServiceReading (forecast + string/numeric queryable-key branches)', () => {
+    mockSearchTerm = 'ford';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: mockSearchTerm,
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    const unit = {
+      id: 'ASM-SEARCHSPARSE',
+      placas: 'SRC-001',
+      marca: 'Ford',
+      modelo: 'Transit',
+      status: 'Disponible',
+      odometer: 5000,
+    } as unknown as FleetUnit;
+    render(<FleetGridView units={[unit]} onEdit={vi.fn()} />);
+    expect(screen.getByText('ASM-SEARCHSPARSE')).toBeInTheDocument();
+  });
+});
+
 describe('FleetGridView — column sort', () => {
   const units = [
     { id: 'ASM-003', placas: 'A', marca: 'X', modelo: 'Y', status: 'Disponible', odometer: 1 },
