@@ -90,7 +90,7 @@ describe('RouteLogTable (Logistics Standard)', () => {
     await waitFor(() => {
       expect(screen.getByText('ASM-001')).toBeDefined();
     });
-    expect(screen.getByAltText(/Archon Unit Placeholder/i)).toBeDefined();
+    expect(screen.getByAltText(/Archon Unit Avatar/i)).toBeDefined();
     expect(screen.getByTitle(/Finalizar Misión/i)).toBeDefined();
   });
 

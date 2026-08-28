@@ -27,6 +27,345 @@ interface IncidentReportFormProps {
   onSuccess?: () => void;
 }
 
+interface FormData {
+  category: IncidentCategory;
+  severity: IncidentSeverity;
+  description: string;
+  evidenceImage: string;
+}
+
+const CATEGORIES: {
+  value: IncidentCategory;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+}[] = [
+  { value: 'MECANICA', label: 'Falla Mecánica', icon: AlertTriangle, color: 'text-amber-500' },
+  { value: 'SINIESTRO', label: 'Siniestro / Accidente', icon: ShieldAlert, color: 'text-rose-600' },
+  { value: 'LEGAL', label: 'Multa / Tránsito', icon: Info, color: 'text-blue-500' },
+  { value: 'OPERATIVA', label: 'Retraso / Clima', icon: Zap, color: 'text-emerald-500' },
+  { value: 'OTRA', label: 'Otro Evento', icon: MessageSquare, color: 'text-slate-400' },
+];
+
+const SEVERITIES: { value: IncidentSeverity; label: string; color: string; bg: string }[] = [
+  { value: 'LOW', label: 'BAJA', color: 'text-blue-600', bg: 'bg-blue-50' },
+  { value: 'MEDIUM', label: 'MEDIA', color: 'text-amber-600', bg: 'bg-amber-50' },
+  { value: 'HIGH', label: 'ALTA', color: 'text-orange-600', bg: 'bg-orange-50' },
+  { value: 'CRITICAL', label: 'CRÍTICA', color: 'text-rose-600', bg: 'bg-rose-50' },
+];
+
+interface IncidentFormHeaderProps {
+  unitId: string;
+  onClose: () => void;
+}
+
+/** Encabezado forense con unidad + botón de cierre (FC163 F2B4 Sub-Batch 4B-2). */
+function IncidentFormHeader({ unitId, onClose }: IncidentFormHeaderProps): React.JSX.Element {
+  return (
+    <header className="bg-rose-700 px-6 py-4 text-white flex items-center justify-between relative overflow-hidden">
+      <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-rose-800 to-transparent opacity-50" />
+      <div className="flex items-center gap-4 relative z-10">
+        <div className="w-10 h-10 bg-white/10 rounded-[4px] flex items-center justify-center border border-white/20">
+          <ShieldAlert size={24} className="text-white animate-pulse" />
+        </div>
+        <div>
+          <h2 className="text-sm font-black uppercase tracking-[0.2em] leading-none mb-1">
+            Protocolo Sentinel: Alerta de Incidencia
+          </h2>
+          <div className="flex items-center gap-2">
+            <span className="text-archon-base font-bold text-rose-200 uppercase tracking-widest">
+              UNIDAD: {unitId}
+            </span>
+            <div className="w-1 h-1 bg-rose-400 rounded-full" />
+            <span className="text-archon-base font-bold text-rose-200 uppercase tracking-widest">
+              REPORTE FORENSE EN TIEMPO REAL
+            </span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors relative z-10"
+      >
+        <X size={20} className="text-white/70" />
+      </button>
+    </header>
+  );
+}
+
+interface CategorySelectorProps {
+  selected: IncidentCategory;
+  onSelect: (value: IncidentCategory) => void;
+}
+
+/** Selector de categoría del evento (FC163 F2B4 Sub-Batch 4B-2). */
+function CategorySelector({ selected, onSelect }: CategorySelectorProps): React.JSX.Element {
+  return (
+    <div className="space-y-4">
+      <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+        Clasificación del Evento
+      </label>
+      <div className="grid grid-cols-1 gap-2.5">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.value}
+            type="button"
+            onClick={(): void => onSelect(cat.value)}
+            className={`
+              flex items-center justify-between p-4 rounded-[4px] border transition-all text-left group
+              ${
+                selected === cat.value
+                  ? 'border-rose-600 bg-rose-50/50 shadow-sm'
+                  : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/60 hover:border-rose-200'
+              }
+            `}
+          >
+            <div className="flex items-center gap-4">
+              <cat.icon
+                size={16}
+                className={selected === cat.value ? 'text-rose-600' : 'text-[#0f2a44]/40'}
+              />
+              <span
+                className={`text-archon-md font-black uppercase tracking-widest ${
+                  selected === cat.value ? 'text-[#0f2a44]' : ''
+                }`}
+              >
+                {cat.label}
+              </span>
+            </div>
+            {selected === cat.value && <div className="w-1.5 h-1.5 bg-rose-600 rounded-full" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface SeveritySelectorProps {
+  selected: IncidentSeverity;
+  onSelect: (value: IncidentSeverity) => void;
+}
+
+/** Selector de grado de severidad (FC163 F2B4 Sub-Batch 4B-2). */
+function SeveritySelector({ selected, onSelect }: SeveritySelectorProps): React.JSX.Element {
+  return (
+    <div className="space-y-4">
+      <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+        Grado de Severidad Operativa
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        {SEVERITIES.map((sev) => (
+          <button
+            key={sev.value}
+            type="button"
+            onClick={(): void => onSelect(sev.value)}
+            className={`
+              py-4 rounded-[4px] border transition-all text-center
+              ${
+                selected === sev.value
+                  ? `border-[#0f2a44] ${sev.bg} text-[#0f2a44] shadow-sm font-black`
+                  : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/30 text-archon-base font-black'
+              }
+            `}
+          >
+            <span className="text-archon-base uppercase tracking-[0.2em]">{sev.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface DescriptionFieldProps {
+  value: string;
+  onChange: (v: string) => void;
+}
+
+/** Textarea de relato de los hechos con contador de caracteres (FC163 F2B4 Sub-Batch 4B-2). */
+function DescriptionField({ value, onChange }: DescriptionFieldProps): React.JSX.Element {
+  return (
+    <div className="space-y-4">
+      <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+        Relato de los Hechos
+      </label>
+      <div className="relative">
+        <MessageSquare size={16} className="absolute left-4 top-4 text-[#0f2a44]/20" />
+        {/* FC 081 F2 — origen corto por diseño (doctrina cascada Ω
+            nivel 2): maxLength=280 + contador guían a redactar
+            descriptivo y efectivo. Límite SOLO front-end — el
+            schema del API queda intacto (Cond.2 Bravo). */}
+        <textarea
+          required
+          rows={6}
+          maxLength={280}
+          placeholder="Describe la incidencia de forma breve y precisa: evento, ubicación y estado de la unidad..."
+          value={value}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void => onChange(e.target.value)}
+          className="w-full bg-[#0f2a44]/2 border-2 border-[#0f2a44]/5 focus:border-rose-500 p-4 pl-12 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] h-[160px]"
+        />
+        <span className="absolute bottom-2 right-3 text-archon-xs font-bold text-[#0f2a44]/30 tracking-widest pointer-events-none">
+          {value.length}/280
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface IncidentFormActionsProps {
+  onClose: () => void;
+  submitting: boolean;
+  hasDescription: boolean;
+}
+
+/** Acciones de cancelar/emitir del reporte (FC163 F2B4 Sub-Batch 4B-2). */
+function IncidentFormActions({
+  onClose,
+  submitting,
+  hasDescription,
+}: IncidentFormActionsProps): React.JSX.Element {
+  const disabled = submitting || !hasDescription;
+  return (
+    <div className="flex items-center justify-end gap-6 pt-8 mt-auto">
+      <button
+        type="button"
+        onClick={onClose}
+        className="text-archon-base font-black uppercase tracking-[0.3em] text-[#0f2a44]/40 hover:text-rose-600 transition-colors border-b-2 border-transparent hover:border-rose-600 pb-1"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        disabled={disabled}
+        className={`
+          flex items-center gap-4 px-10 py-5 rounded-[4px] text-archon-base font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group
+          ${
+            disabled
+              ? 'bg-[#0f2a44]/5 text-[#0f2a44]/20 cursor-not-allowed'
+              : 'bg-[#0f2a44] text-white shadow-2xl shadow-[#0f2a44]/20 hover:-translate-y-1'
+          }
+        `}
+      >
+        <span className="relative z-10">
+          {submitting ? 'Transmitiendo...' : 'Emitir Alerta Sentinel'}
+        </span>
+        <ChevronRight
+          size={16}
+          className="relative z-10 group-hover:translate-x-1 transition-transform"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+      </button>
+    </div>
+  );
+}
+
+interface IncidentFormBodyProps {
+  formData: FormData;
+  setFormData: (f: FormData) => void;
+  error: string | null;
+  submitting: boolean;
+  onClose: () => void;
+}
+
+/** Cuerpo del formulario: descripción, evidencia, error, acciones (FC163 F2B4 Sub-Batch 4B-2). */
+function IncidentFormBody({
+  formData,
+  setFormData,
+  error,
+  submitting,
+  onClose,
+}: IncidentFormBodyProps): React.JSX.Element {
+  return (
+    <div className="space-y-10 flex flex-col h-full">
+      <DescriptionField
+        value={formData.description}
+        onChange={(description): void => setFormData({ ...formData, description })}
+      />
+      <div className="space-y-4 flex-grow">
+        <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
+          Evidencia Visual (Mandatorio)
+        </label>
+        <div className="h-[210px]">
+          <ArchonImageUploader
+            images={formData.evidenceImage ? [formData.evidenceImage] : []}
+            onChange={(imgs: string[]): void =>
+              setFormData({ ...formData, evidenceImage: imgs[0] || '' })
+            }
+            title="Capturar Escena"
+            maxImages={1}
+          />
+        </div>
+      </div>
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="p-4 bg-rose-50 text-rose-800 text-archon-base font-black border-l-4 border-rose-600 flex items-center gap-3 rounded-r-[4px]"
+        >
+          <AlertTriangle size={18} /> {error}
+        </motion.div>
+      )}
+      <IncidentFormActions
+        onClose={onClose}
+        submitting={submitting}
+        hasDescription={!!formData.description}
+      />
+    </div>
+  );
+}
+
+function useIncidentSubmit(
+  routeUuid: string,
+  onClose: () => void,
+  onSuccess?: () => void
+): {
+  formData: FormData;
+  setFormData: (f: FormData) => void;
+  submitting: boolean;
+  error: string | null;
+  handleSubmit: (e: React.FormEvent) => Promise<void>;
+} {
+  const { reportIncident } = useFleet();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    category: 'MECANICA',
+    severity: 'MEDIUM',
+    description: '',
+    evidenceImage: '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (!formData.description || submitting) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await reportIncident(routeUuid, {
+        category: formData.category,
+        description: formData.description,
+        severity: formData.severity,
+        evidenceImage: formData.evidenceImage || undefined,
+      });
+
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : 'Error en la transmisión del protocolo Sentinel.';
+      setError(msg);
+      // eslint-disable-next-line no-console
+      console.error('Archon Sentinel Fault:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return { formData, setFormData, submitting, error, handleSubmit };
+}
+
 /**
  * 🔱 ARCHON INCIDENT REPORT FORM (v.76.5.0 - Sentinel Console)
  * Architecture: Sovereign Emergency Protocol (Full-Width Command Center)
@@ -37,10 +376,6 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
     const internalRef = useRef<HTMLDivElement>(null);
     useImperativeHandle(ref, () => internalRef.current as HTMLDivElement);
 
-    const { reportIncident } = useFleet();
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
     /**
      * 🔱 SENTINEL AUTO-SCROLL (v.76.6.0)
      * Ensures the operator's focus is locked on the forensic unit upon mounting.
@@ -49,65 +384,11 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
       internalRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, []);
 
-    const [formData, setFormData] = useState({
-      category: 'MECANICA' as IncidentCategory,
-      severity: 'MEDIUM' as IncidentSeverity,
-      description: '',
-      evidenceImage: '',
-    });
-
-    const categories: {
-      value: IncidentCategory;
-      label: string;
-      icon: React.ElementType;
-      color: string;
-    }[] = [
-      { value: 'MECANICA', label: 'Falla Mecánica', icon: AlertTriangle, color: 'text-amber-500' },
-      {
-        value: 'SINIESTRO',
-        label: 'Siniestro / Accidente',
-        icon: ShieldAlert,
-        color: 'text-rose-600',
-      },
-      { value: 'LEGAL', label: 'Multa / Tránsito', icon: Info, color: 'text-blue-500' },
-      { value: 'OPERATIVA', label: 'Retraso / Clima', icon: Zap, color: 'text-emerald-500' },
-      { value: 'OTRA', label: 'Otro Evento', icon: MessageSquare, color: 'text-slate-400' },
-    ];
-
-    const severities: { value: IncidentSeverity; label: string; color: string; bg: string }[] = [
-      { value: 'LOW', label: 'BAJA', color: 'text-blue-600', bg: 'bg-blue-50' },
-      { value: 'MEDIUM', label: 'MEDIA', color: 'text-amber-600', bg: 'bg-amber-50' },
-      { value: 'HIGH', label: 'ALTA', color: 'text-orange-600', bg: 'bg-orange-50' },
-      { value: 'CRITICAL', label: 'CRÍTICA', color: 'text-rose-600', bg: 'bg-rose-50' },
-    ];
-
-    const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-      e.preventDefault();
-      if (!formData.description || submitting) return;
-
-      setSubmitting(true);
-      setError(null);
-
-      try {
-        await reportIncident(routeUuid, {
-          category: formData.category,
-          description: formData.description,
-          severity: formData.severity,
-          evidenceImage: formData.evidenceImage || undefined,
-        });
-
-        if (onSuccess) onSuccess();
-        onClose();
-      } catch (err: unknown) {
-        const msg =
-          err instanceof Error ? err.message : 'Error en la transmisión del protocolo Sentinel.';
-        setError(msg);
-        // eslint-disable-next-line no-console
-        console.error('Archon Sentinel Fault:', err);
-      } finally {
-        setSubmitting(false);
-      }
-    };
+    const { formData, setFormData, submitting, error, handleSubmit } = useIncidentSubmit(
+      routeUuid,
+      onClose,
+      onSuccess
+    );
 
     return (
       <motion.div
@@ -116,193 +397,26 @@ const IncidentReportForm = forwardRef<HTMLDivElement, IncidentReportFormProps>(
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-[4px] border border-rose-100 overflow-hidden w-full"
       >
-        <header className="bg-rose-700 px-6 py-4 text-white flex items-center justify-between relative overflow-hidden">
-          <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-rose-800 to-transparent opacity-50" />
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-10 h-10 bg-white/10 rounded-[4px] flex items-center justify-center border border-white/20">
-              <ShieldAlert size={24} className="text-white animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] leading-none mb-1">
-                Protocolo Sentinel: Alerta de Incidencia
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-archon-base font-bold text-rose-200 uppercase tracking-widest">
-                  UNIDAD: {unitId}
-                </span>
-                <div className="w-1 h-1 bg-rose-400 rounded-full" />
-                <span className="text-archon-base font-bold text-rose-200 uppercase tracking-widest">
-                  REPORTE FORENSE EN TIEMPO REAL
-                </span>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors relative z-10"
-          >
-            <X size={20} className="text-white/70" />
-          </button>
-        </header>
-
+        <IncidentFormHeader unitId={unitId} onClose={onClose} />
         <form onSubmit={handleSubmit} className="p-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="space-y-10">
-              <div className="space-y-4">
-                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
-                  Clasificación del Evento
-                </label>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.value}
-                      type="button"
-                      onClick={(): void => setFormData({ ...formData, category: cat.value })}
-                      className={`
-                        flex items-center justify-between p-4 rounded-[4px] border transition-all text-left group
-                        ${
-                          formData.category === cat.value
-                            ? 'border-rose-600 bg-rose-50/50 shadow-sm'
-                            : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/60 hover:border-rose-200'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center gap-4">
-                        <cat.icon
-                          size={16}
-                          className={
-                            formData.category === cat.value ? 'text-rose-600' : 'text-[#0f2a44]/40'
-                          }
-                        />
-                        <span
-                          className={`text-archon-md font-black uppercase tracking-widest ${
-                            formData.category === cat.value ? 'text-[#0f2a44]' : ''
-                          }`}
-                        >
-                          {cat.label}
-                        </span>
-                      </div>
-                      {formData.category === cat.value && (
-                        <div className="w-1.5 h-1.5 bg-rose-600 rounded-full" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
-                  Grado de Severidad Operativa
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {severities.map((sev) => (
-                    <button
-                      key={sev.value}
-                      type="button"
-                      onClick={(): void => setFormData({ ...formData, severity: sev.value })}
-                      className={`
-                        py-4 rounded-[4px] border transition-all text-center
-                        ${
-                          formData.severity === sev.value
-                            ? `border-[#0f2a44] ${sev.bg} text-[#0f2a44] shadow-sm font-black`
-                            : 'border-[#0f2a44]/5 bg-[#0f2a44]/2 text-[#0f2a44]/30 text-archon-base font-black'
-                        }
-                      `}
-                    >
-                      <span className="text-archon-base uppercase tracking-[0.2em]">
-                        {sev.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <CategorySelector
+                selected={formData.category}
+                onSelect={(category): void => setFormData({ ...formData, category })}
+              />
+              <SeveritySelector
+                selected={formData.severity}
+                onSelect={(severity): void => setFormData({ ...formData, severity })}
+              />
             </div>
-
-            <div className="space-y-10 flex flex-col h-full">
-              <div className="space-y-4">
-                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
-                  Relato de los Hechos
-                </label>
-                <div className="relative">
-                  <MessageSquare size={16} className="absolute left-4 top-4 text-[#0f2a44]/20" />
-                  {/* FC 081 F2 — origen corto por diseño (doctrina cascada Ω
-                      nivel 2): maxLength=280 + contador guían a redactar
-                      descriptivo y efectivo. Límite SOLO front-end — el
-                      schema del API queda intacto (Cond.2 Bravo). */}
-                  <textarea
-                    required
-                    rows={6}
-                    maxLength={280}
-                    placeholder="Describe la incidencia de forma breve y precisa: evento, ubicación y estado de la unidad..."
-                    value={formData.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>): void =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="w-full bg-[#0f2a44]/2 border-2 border-[#0f2a44]/5 focus:border-rose-500 p-4 pl-12 text-xs font-bold text-[#0f2a44] outline-none transition-colors resize-none rounded-[4px] h-[160px]"
-                  />
-                  <span className="absolute bottom-2 right-3 text-archon-xs font-bold text-[#0f2a44]/30 tracking-widest pointer-events-none">
-                    {formData.description.length}/280
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-4 flex-grow">
-                <label className="text-archon-base font-black uppercase tracking-[0.25em] text-[#0f2a44] opacity-40">
-                  Evidencia Visual (Mandatorio)
-                </label>
-                <div className="h-[210px]">
-                  <ArchonImageUploader
-                    images={formData.evidenceImage ? [formData.evidenceImage] : []}
-                    onChange={(imgs: string[]): void =>
-                      setFormData({ ...formData, evidenceImage: imgs[0] || '' })
-                    }
-                    title="Capturar Escena"
-                    maxImages={1}
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="p-4 bg-rose-50 text-rose-800 text-archon-base font-black border-l-4 border-rose-600 flex items-center gap-3 rounded-r-[4px]"
-                >
-                  <AlertTriangle size={18} /> {error}
-                </motion.div>
-              )}
-
-              <div className="flex items-center justify-end gap-6 pt-8 mt-auto">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="text-archon-base font-black uppercase tracking-[0.3em] text-[#0f2a44]/40 hover:text-rose-600 transition-colors border-b-2 border-transparent hover:border-rose-600 pb-1"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || !formData.description}
-                  className={`
-                    flex items-center gap-4 px-10 py-5 rounded-[4px] text-archon-base font-black uppercase tracking-[0.3em] transition-all relative overflow-hidden group
-                    ${
-                      submitting || !formData.description
-                        ? 'bg-[#0f2a44]/5 text-[#0f2a44]/20 cursor-not-allowed'
-                        : 'bg-[#0f2a44] text-white shadow-2xl shadow-[#0f2a44]/20 hover:-translate-y-1'
-                    }
-                  `}
-                >
-                  <span className="relative z-10">
-                    {submitting ? 'Transmitiendo...' : 'Emitir Alerta Sentinel'}
-                  </span>
-                  <ChevronRight
-                    size={16}
-                    className="relative z-10 group-hover:translate-x-1 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                </button>
-              </div>
-            </div>
+            <IncidentFormBody
+              formData={formData}
+              setFormData={setFormData}
+              error={error}
+              submitting={submitting}
+              onClose={onClose}
+            />
           </div>
         </form>
       </motion.div>
