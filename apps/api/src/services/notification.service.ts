@@ -50,7 +50,7 @@ function generateJWT(clientEmail: string, privateKey: string): string {
   });
   const encodedClaim = Buffer.from(claim).toString('base64url');
 
-  const formattedKey = privateKey.replaceAll(/\\n/g, '\n');
+  const formattedKey = privateKey.replaceAll('\\n', '\n');
   const sign = crypto.createSign('RSA-SHA256');
   sign.update(`${encodedHeader}.${encodedClaim}`);
   const signature = sign.sign(formattedKey, 'base64url');

@@ -6,4 +6,4 @@
  */
 export const SYSTEM_VERSION = __ARCHON_VERSION__;
 export const BRANDING_NAME = `Archon Fleet System | V.${SYSTEM_VERSION}`;
-export const CACHE_PREFIX = `archon_v${SYSTEM_VERSION.replaceAll(/\./g, '_')}_hardened`;
+export const CACHE_PREFIX = `archon_v${SYSTEM_VERSION.replaceAll('.', '_')}_hardened`;
