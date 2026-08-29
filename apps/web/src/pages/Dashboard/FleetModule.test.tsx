@@ -35,12 +35,13 @@ vi.mock('../../context/FleetContext', async () => {
   };
 });
 
+const mockHasPermission = vi.hoisted(() => vi.fn((): boolean => true));
 vi.mock('../../hooks/usePermissions', () => ({
   default: (): {
     hasPermission: (permission: string) => boolean;
     hasAnyPermission: (permissions: string[]) => boolean;
   } => ({
-    hasPermission: (): boolean => true,
+    hasPermission: mockHasPermission,
     hasAnyPermission: (): boolean => true,
   }),
 }));
@@ -477,6 +478,153 @@ describe('FleetModule Orchestrator', () => {
       expect(await screen.findByText('Administrar Unidades')).toBeInTheDocument();
     });
   });
+
+  describe('branch coverage (FC165 F2 Slice 2.1C)', () => {
+    const cardUnit: FleetUnit = {
+      id: 'VEH-888',
+      uuid: 'test-uuid-888',
+      placas: null,
+      numeroSerie: null,
+      marca: 'Kenworth',
+      brandId: 1,
+      modelo: 'T680',
+      modelId: 1,
+      images: null,
+      year: 2024,
+      departamento: null,
+      departmentId: 1,
+      uso: null,
+      operationalUseId: null,
+      locationId: null,
+      engineTypeId: null,
+      colorId: null,
+      motor: null,
+      tireSpec: null,
+      tireBrand: null,
+      tireBrandId: null,
+      tipoTerreno: null,
+      terrainTypeId: null,
+      capacidadCarga: null,
+      fuelTankCapacity: null,
+      odometer: 5000,
+      sede: null,
+      centroMantenimiento: null,
+      maintenanceCenterId: null,
+      protocolStartDate: null,
+      vigenciaSeguro: null,
+      vencimientoVerificacion: null,
+      lubeType: null,
+      filterBrand: null,
+      ownerId: null,
+      complianceStatusId: null,
+      accountingAccount: null,
+      legalComplianceDate: null,
+      insuranceExpiryDate: null,
+      insurancePolicyNumber: null,
+      insuranceCompanyId: null,
+      insuranceCost: null,
+      lastEnvironmentalVerification: null,
+      lastMechanicalVerification: null,
+      environmentalHologram: null,
+      circulationCardNumber: null,
+      monthlyLeasePayment: 0,
+      status: 'ACTIVE',
+      assignedOperatorId: null,
+      updatedAt: '2026-01-01',
+      assetTypeId: 1,
+      fuelTypeId: 1,
+      traccionId: 1,
+      transmisionId: 1,
+      lastFuelLevel: 100,
+      initialFuelLevel: 100,
+    };
+
+    afterEach(() => {
+      stableUnits.length = 0;
+    });
+
+    it('renders "Sin placas" and falls back to departamento when placas/sede are absent', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      stableUnits.push({ ...cardUnit, departamento: 'Operaciones' });
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByText('Sin placas')).toBeInTheDocument();
+      expect(screen.getByText('Operaciones')).toBeInTheDocument();
+    });
+
+    it('renders the em-dash when both sede and departamento are absent', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      stableUnits.push(cardUnit);
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      await screen.findByText('Sin placas');
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+
+    it('calls scrollIntoView (guarded optional chain) when opening the registration panel and after editing a unit', async () => {
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      // Uses the fully-populated shape (non-null placas/sede/departamento/
+      // odometer) proven safe in AT-FC078-F2b/AT-FMOD-EDIT above — this test
+      // only cares about scrollIntoView, not the null-field fallbacks, and a
+      // sparser unit was observed to crash TcoKpiCluster's TCO calculation in
+      // the default TABLE view (a pre-existing engine concern, out of scope
+      // here).
+      const scrollTestUnit: FleetUnit = {
+        ...cardUnit,
+        placas: 'SCR-0001',
+        departamento: 'Operaciones',
+        sede: 'Monterrey',
+        odometer: 50000,
+      };
+      vi.mocked(api.get).mockResolvedValueOnce({ data: { data: scrollTestUnit } });
+      // src/test/setup.ts polyfills HTMLElement.prototype.scrollIntoView once
+      // globally — spy on that same prototype (not Element.prototype, which
+      // would be shadowed by it) to exercise the truthy side of the `?.` guard.
+      const scrollSpy = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
+      stableUnits.push(scrollTestUnit);
+
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+
+      // handlePanelChange path
+      fireEvent.click(screen.getByText(/Iniciar Registro/i));
+      await waitFor(() => expect(scrollSpy).toHaveBeenCalled());
+      fireEvent.click(screen.getByText(/Cerrar Formulario/i));
+
+      // handleEditUnit path
+      scrollSpy.mockClear();
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      fireEvent.click(await screen.findByTestId('archon-card-item'));
+      await waitFor(() => expect(scrollSpy).toHaveBeenCalled());
+
+      scrollSpy.mockRestore();
+    });
+
+    it('a scoped-write (non-creator) user gets no action button on the grid, but gets one once editing a unit (canScopedWrite && isExpanding)', async () => {
+      mockHasPermission.mockImplementation((p: string): boolean => p === 'fleet:write:scoped');
+      vi.mocked(useFleetForm).mockReturnValue(baseMock);
+      vi.mocked(api.get).mockResolvedValueOnce({ data: { data: cardUnit } });
+      stableUnits.push(cardUnit);
+
+      renderModule();
+      await screen.findByText('Administrar Unidades');
+      // canCreate=false, canScopedWrite=true, isExpanding=false (no editingUnit
+      // yet) -> showActionButton=false -> setSectionData's actionButton arg is
+      // undefined, LayoutMetadataObserver renders no header-action at all.
+      expect(screen.queryByTestId('sovereign-layout-header-action')).not.toBeInTheDocument();
+
+      // Editing a unit sets editingUnit -> isExpanding=true regardless of
+      // activePanel -> showActionButton flips true via the scoped-write branch.
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      fireEvent.click(await screen.findByTestId('archon-card-item'));
+      const headerAction = await screen.findByTestId('sovereign-layout-header-action');
+      expect(headerAction).toHaveTextContent('Cerrar Formulario');
+
+      mockHasPermission.mockReturnValue(true);
+    });
+  });
 });
 
 describe('daysUntil / deriveFleetAlert (FC 078 F2b — pure logic)', () => {
@@ -602,5 +750,34 @@ describe('mapUnitToFormData — legal data parity (Fase 1 fix)', () => {
     const unit = { ...baseUnit, description: 'Hilux Medio Ambiente' };
     const result = mapUnitToFormData(unit);
     expect(result.description).toBe('Hilux Medio Ambiente');
+  });
+
+  // FC165 F2 Slice 2.1C — branch coverage: assetTypeId/brandId/modelId/
+  // traccionId/transmisionId/fuelTypeId/year all default their `|| 0`/
+  // `|| 2024` fallback, initialFuelLevel/lastFuelLevel their `?? 100`
+  // fallback — baseUnit above always supplies truthy values for these.
+  it('falls back to 0/2024/100 defaults when assetTypeId/brandId/modelId/traccionId/transmisionId/fuelTypeId/year/initialFuelLevel/lastFuelLevel are falsy or absent', (): void => {
+    const unit = {
+      ...baseUnit,
+      assetTypeId: 0,
+      brandId: 0,
+      modelId: 0,
+      traccionId: 0,
+      transmisionId: 0,
+      fuelTypeId: 0,
+      year: 0,
+      initialFuelLevel: undefined,
+      lastFuelLevel: undefined,
+    } as unknown as FleetUnit;
+    const result = mapUnitToFormData(unit);
+    expect(result.assetTypeId).toBe(0);
+    expect(result.brandId).toBe(0);
+    expect(result.modelId).toBe(0);
+    expect(result.traccionId).toBe(0);
+    expect(result.transmisionId).toBe(0);
+    expect(result.fuelTypeId).toBe(0);
+    expect(result.year).toBe(2024);
+    expect(result.initialFuelLevel).toBe(100);
+    expect(result.lastFuelLevel).toBe(100);
   });
 });
