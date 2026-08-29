@@ -1,7 +1,7 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse, delay } from 'msw';
 import useFleetForm from './useFleetForm';
 import server from '../test/server';
 import { archonCache } from '../utils/archonCache';
@@ -365,5 +365,221 @@ describe('useFleetForm Hook — hydration critical failure', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     consoleSpy.mockRestore();
+  });
+});
+
+/**
+ * FC165 F2 Slice 2.1A (3/3) — branch coverage completion. useFleetForm.ts had
+ * 12/12 uncovered conditions (Sonar) before this block; 1 was a genuine
+ * Dead-Branch Purge (hydrate()'s internal EAGER LOCK guard, see source
+ * comment), the remaining 11 are covered below with real assertions —
+ * 0 v8-ignore. (One extra test — the err.message network-error fallback —
+ * targets a `||` that turned out to already be covered by the pre-existing
+ * success:false test; kept anyway since it exercises a genuinely distinct
+ * real scenario, not padding for the metric.)
+ */
+describe('useFleetForm Hook — branch coverage (FC165 F2 Slice 2.1A)', () => {
+  it('falls back to [] when a catalog response body has neither .data nor an array (extractCatalogData 3rd fallback)', async () => {
+    archonCache.clear();
+    server.use(http.get('*/catalogs/ASSET_TYPE', () => HttpResponse.json(null)));
+
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    // assetTypes stays [] (the `|| []` fallback), which ripples into:
+    // - `if (assetList.length > 0)` false branch (setFormData.assetTypeId skipped)
+    // - `fetchCategory('BRAND', assetList[0]?.id)` called with parentId=undefined
+    //   (the `pid ? ... : null` / url-ternary false branches)
+    expect(result.current.assetTypes).toEqual([]);
+    expect(result.current.formData.assetTypeId).toBeNull();
+    // BRAND fetched without a parentId still resolves via the un-scoped
+    // default handler (bare array), proving the pid=null request path ran.
+    expect(result.current.marcas).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 101, label: 'Toyota' })])
+    );
+  });
+
+  it('falls back to [] when a catalog response has a truthy non-array .data (extractCatalogData Array.isArray guard)', async () => {
+    archonCache.clear();
+    server.use(
+      http.get('*/catalogs/FUEL', () => HttpResponse.json({ data: { notAnArray: true } }))
+    );
+
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    expect(result.current.fuelTypes).toEqual([]);
+  });
+
+  it('skips every state write when the component unmounts before hydrate resolves (isMountedRef guards)', async () => {
+    archonCache.clear();
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
+    server.use(
+      http.get('*/catalogs/ASSET_TYPE', async (): Promise<Response> => {
+        await delay(50);
+        return HttpResponse.json([{ id: 1, label: 'Vehículo', code: 'AT_VEH' }]);
+      })
+    );
+
+    const { unmount } = renderHook(() => useFleetForm(true));
+    unmount();
+
+    // Let hydrate's in-flight Promise.all settle past the delay — the
+    // isMountedRef checks (setCatalogs/setFormData branch + finally's
+    // setIsLoading branch) must skip every write here without erroring.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 150);
+    });
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('never triggers hydration when shouldHydrate is false', async () => {
+    archonCache.clear();
+    const { result } = renderHook(() => useFleetForm(false));
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.assetTypes).toEqual([]);
+  });
+
+  it('ignores a second handleSubmit call while the first is still in-flight (isSubmitting guard)', async () => {
+    let postCallCount = 0;
+    server.use(
+      http.post('*/fleet', async (): Promise<Response> => {
+        postCallCount += 1;
+        await delay(50);
+        return HttpResponse.json({ success: true, id: 'GUARD-001' });
+      })
+    );
+
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    await act(async () => {
+      result.current.setFormData((prev) => ({
+        ...prev,
+        id: 'GUARD-001',
+        brandId: 101,
+        modelId: 201,
+        departmentId: 228,
+        operationalUseId: 236,
+        dailyUsageAvg: 10,
+        lastServiceReading: 0,
+      }));
+    });
+
+    const e1 = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+    const e2 = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+
+    let firstSubmit: Promise<void> = Promise.resolve();
+    act(() => {
+      firstSubmit = result.current.handleSubmit(e1);
+    });
+
+    await waitFor(() => expect(result.current.isSubmitting).toBe(true));
+
+    // Fired while the first submission is still pending — must return
+    // immediately (no 2nd POST, no throw) via the `if (isSubmitting) return`
+    // guard.
+    await act(async () => {
+      await result.current.handleSubmit(e2);
+    });
+    expect(e2.preventDefault).toHaveBeenCalled();
+
+    await act(async () => {
+      await firstSubmit;
+    });
+
+    expect(postCallCount).toBe(1);
+    expect(result.current.registrationSuccess).toBe(true);
+  });
+
+  it('succeeds without calling onSuccess when none is provided', async () => {
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    await act(async () => {
+      result.current.setFormData((prev) => ({
+        ...prev,
+        id: 'NOCB-001',
+        brandId: 101,
+        modelId: 201,
+        departmentId: 228,
+        operationalUseId: 236,
+        dailyUsageAvg: 10,
+        lastServiceReading: 0,
+      }));
+    });
+
+    await act(async () => {
+      const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+      await result.current.handleSubmit(e);
+    });
+
+    expect(result.current.registrationSuccess).toBe(true);
+  });
+
+  it('falls back to the literal "Server Internal Error" when success:false has no error field', async () => {
+    server.use(http.post('*/fleet', () => HttpResponse.json({ success: false })));
+
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    await act(async () => {
+      result.current.setFormData((prev) => ({
+        ...prev,
+        id: 'NOERRFIELD-001',
+        brandId: 101,
+        modelId: 201,
+        departmentId: 228,
+        operationalUseId: 236,
+        dailyUsageAvg: 10,
+        lastServiceReading: 0,
+      }));
+    });
+
+    await act(async () => {
+      const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+      await expect(result.current.handleSubmit(e)).rejects.toThrow('Server Internal Error');
+    });
+
+    expect(result.current.error).toBe('Server Internal Error');
+  });
+
+  it('falls back to err.message when the submission error has no response.data.error', async () => {
+    server.use(http.post('*/fleet', () => HttpResponse.error()));
+
+    const { result } = renderHook(() => useFleetForm(true));
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
+
+    await act(async () => {
+      result.current.setFormData((prev) => ({
+        ...prev,
+        id: 'NETERR-001',
+        brandId: 101,
+        modelId: 201,
+        departmentId: 228,
+        operationalUseId: 236,
+        dailyUsageAvg: 10,
+        lastServiceReading: 0,
+      }));
+    });
+
+    await act(async () => {
+      const e = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+      await expect(result.current.handleSubmit(e)).rejects.toThrow();
+    });
+
+    // A network error has no `err.response`, so handleSubmit's fallback
+    // uses `(err as Error).message` (e.g. axios' "Network Error"), never
+    // the JSON-body-derived message from the success:false test above.
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.error).not.toBe('DB Connection Error');
+    expect(result.current.error).not.toBe('Validation rejected by server');
   });
 });

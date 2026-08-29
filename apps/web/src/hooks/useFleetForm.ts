@@ -140,8 +140,11 @@ export default function useFleetForm(shouldHydrate: boolean = false): UseFleetFo
    * 🏗️ Foundation Hydration
    */
   const hydrate = useCallback(async (): Promise<void> => {
-    // 🛡️ EAGER LOCK: Prevent overlapping hydration attempts immediately
-    if (hasHydratedRef.current || isLoading) return;
+    // 🛡️ EAGER LOCK: set synchronously (before any await) so the caller
+    // effect's own !hasHydratedRef.current guard (below) can never let a
+    // second hydrate() through — hydrate is a private closure, this useEffect
+    // is its only call site, so a redundant internal guard here was dead code
+    // (FC165 F2 Dead-Branch Purge, verified exhaustively before removal).
     hasHydratedRef.current = true;
 
     setIsLoading(true);
