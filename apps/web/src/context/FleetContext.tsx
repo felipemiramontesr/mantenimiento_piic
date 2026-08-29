@@ -275,12 +275,15 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             backlog: 0,
           };
 
+        // FC165 F2 Boundary Sanitization Pattern (Bravo 249_AN): `status` llega
+        // ya saneado por transformUnits (`String(x || 'Disponible')`) y `FleetUnit.status`
+        // es no-opcional en el tipo -- `u?.` y el fallback `|| ''` eran redundantes.
         const maintenanceCount = subset.filter((u) =>
-          ['Mantenimiento', 'En Mantenimiento'].includes(String(u?.status || '').trim())
+          ['Mantenimiento', 'En Mantenimiento'].includes(u.status.trim())
         ).length;
 
         const availableCount = subset.filter((u) => {
-          const s = String(u?.status || '').trim();
+          const s = u.status.trim();
           return s === 'Disponible' || s === 'Asignada' || s === '';
         }).length;
 
@@ -289,10 +292,13 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const validMTBF = subset.filter((u) => (Number(u?.mtbfHours) || 0) > 0);
         const validMTTR = subset.filter((u) => (Number(u?.mttrHours) || 0) > 0);
 
+        // Dead-Branch Purge: dentro de este reduce, `u` viene ya filtrado por
+        // `validMTBF`/`validMTTR` arriba -- `Number(u.mtbfHours) > 0` (resp. mttrHours)
+        // ya esta garantizado por esa misma funcion, el fallback `|| 0` era inalcanzable.
         const avgMtbf =
           validMTBF.length > 0
             ? Math.round(
-                validMTBF.reduce((acc, u) => acc + (Number(u.mtbfHours) || 0), 0) / validMTBF.length
+                validMTBF.reduce((acc, u) => acc + Number(u.mtbfHours), 0) / validMTBF.length
               )
             : 0;
 
@@ -300,8 +306,7 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           validMTTR.length > 0
             ? Number(
                 (
-                  validMTTR.reduce((acc, u) => acc + (Number(u.mttrHours) || 0), 0) /
-                  validMTTR.length
+                  validMTTR.reduce((acc, u) => acc + Number(u.mttrHours), 0) / validMTTR.length
                 ).toFixed(1)
               )
             : 0;
@@ -313,15 +318,13 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const globalMetrics = computeAverages(units);
       const available = units.filter((u) =>
-        ['Disponible', 'Asignada', ''].includes(String(u?.status || '').trim())
+        ['Disponible', 'Asignada', ''].includes(u.status.trim())
       ).length;
-      const inRoute = units.filter((u) => String(u?.status || '').trim() === 'En Ruta').length;
+      const inRoute = units.filter((u) => u.status.trim() === 'En Ruta').length;
       const maintenance = units.filter((u) =>
-        ['Mantenimiento', 'En Mantenimiento'].includes(String(u?.status || '').trim())
+        ['Mantenimiento', 'En Mantenimiento'].includes(u.status.trim())
       ).length;
-      const discontinued = units.filter(
-        (u) => String(u?.status || '').trim() === 'Descontinuada'
-      ).length;
+      const discontinued = units.filter((u) => u.status.trim() === 'Descontinuada').length;
 
       return {
         total,
