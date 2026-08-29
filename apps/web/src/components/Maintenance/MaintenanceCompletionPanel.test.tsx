@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
 import MaintenanceCompletionPanel from './MaintenanceCompletionPanel';
+import { UserContext } from '../../context/UserContext';
 
 const noop = (): void => undefined;
 
@@ -210,5 +211,234 @@ describe('MaintenanceCompletionPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: /finalizar/i }));
       expect(await screen.findByText('Servicio ya cerrado')).toBeInTheDocument();
     });
+  });
+});
+
+/**
+ * FC165 F2 Slice 2.1B (2/3) — branch coverage completion. 28 uncovered
+ * conditions (live count; Alfa's census had 25). 1 residual left
+ * undocumented-but-untested: `details[idx]?.status || 'PASS'` (line 416) —
+ * `details` is always built from the exact same `template` response in the
+ * same `.then()`, same length/order, so `details[idx]` can never genuinely
+ * be undefined for a rendered `idx` through the real data flow; no
+ * artificial test written for it (0 v8-ignore either way — just documented
+ * here, matching the FleetGridView.tsx 3-residual precedent from Slice 2.1A,
+ * pasada posterior per Bravo 249_AN's criterion). The other 27 are covered
+ * below with real assertions.
+ */
+describe('MaintenanceCompletionPanel — branch coverage (FC165 F2 Slice 2.1B)', () => {
+  beforeEach(() => {
+    server.use(
+      http.get('*/maintenance/template/*', () =>
+        HttpResponse.json({
+          success: true,
+          tasks: [
+            {
+              code: 'OIL_CHANGE',
+              label: 'Cambio de aceite',
+              isCritical: true,
+              isDeferredCarry: false,
+            },
+          ],
+        })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+  });
+
+  it('falls back to 0/blank defaults for a log missing odometer/cost/technician/fuel data, and blocks submit while canSubmit is false', async () => {
+    const SPARSE_LOG = {
+      ...ACTIVE_LOG,
+      odometer_at_service: 0,
+      cost: 0,
+      technician: null,
+      fuel_level_start: null,
+    };
+    let patchCalled = false;
+    server.use(
+      http.patch('*/maintenance/:uuid/complete', () => {
+        patchCalled = true;
+        return HttpResponse.json({ success: true });
+      })
+    );
+    const { container } = render(
+      <MaintenanceCompletionPanel log={SPARSE_LOG} onSuccess={noop} onCancel={noop} />
+    );
+    await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+
+    expect(screen.getByPlaceholderText('Ej: 126500')).toHaveValue(null);
+    expect(screen.getByPlaceholderText('Ej: 126680')).toHaveValue(null);
+    expect(screen.getByPlaceholderText('Ej: 3,450.00')).toHaveValue(null);
+
+    // canSubmit=false (odometerAtService=0) — fireEvent.submit bypasses the
+    // disabled submit button to exercise the `if (!canSubmit) return;` guard
+    // directly, the same way a stray Enter-key form submission would.
+    const form = container.querySelector('form');
+    fireEvent.submit(form);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(patchCalled).toBe(false);
+  });
+
+  it('omits technician from the payload when the log has none and it is never selected', async () => {
+    const NO_TECH_LOG = { ...ACTIVE_LOG, technician: null };
+    let capturedBody = null;
+    server.use(
+      http.patch('*/maintenance/:uuid/complete', async ({ request }) => {
+        capturedBody = await request.json();
+        return HttpResponse.json({ success: true });
+      })
+    );
+    render(<MaintenanceCompletionPanel log={NO_TECH_LOG} onSuccess={noop} onCancel={noop} />);
+    await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /finalizar/i }));
+    await waitFor(() => expect(capturedBody).not.toBeNull());
+    expect(capturedBody.technician).toBeUndefined();
+  });
+
+  it('leaves template/details empty when GET /maintenance/template responds success:false', async () => {
+    server.use(http.get('*/maintenance/template/*', () => HttpResponse.json({ success: false })));
+    render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+    await waitFor(() => {
+      expect(screen.getByText('No se encontraron tareas para este servicio.')).toBeInTheDocument();
+    });
+  });
+
+  it('technicianOptions falls back to [] when users is null', async () => {
+    render(
+      <UserContext.Provider value={{ users: null } as any}>
+        <MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />
+      </UserContext.Provider>
+    );
+    await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Carlos López'));
+    expect(screen.queryByText('Pedro Técnico')).not.toBeInTheDocument();
+  });
+
+  it('technicianOptions falls back to username/S-N/GENERAL for sparse técnico records', async () => {
+    const sparseUsers = [
+      { id: '9', username: 'sparse.tech', roleName: 'Técnico Especialista', is_active: true },
+      {
+        id: '10',
+        fullName: 'Ana SinUsername',
+        roleName: 'Técnico Especialista',
+        is_active: true,
+        employeeNumber: 'EMP-010',
+        department: 'Taller',
+      },
+    ];
+    render(
+      <UserContext.Provider value={{ users: sparseUsers } as any}>
+        <MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />
+      </UserContext.Provider>
+    );
+    await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Carlos López'));
+
+    expect(await screen.findByText('sparse.tech')).toBeInTheDocument();
+    expect(screen.getByText('NÓMINA: S/N | GENERAL')).toBeInTheDocument();
+    expect(screen.getByText('Ana SinUsername')).toBeInTheDocument();
+  });
+
+  it('includes fuelLitersLoaded/fuelAmount/endOdometer in the payload when they are filled in', async () => {
+    let capturedBody = null;
+    server.use(
+      http.patch('*/maintenance/:uuid/complete', async ({ request }) => {
+        capturedBody = await request.json();
+        return HttpResponse.json({ success: true });
+      })
+    );
+    render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+    await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+
+    const exitOdometer = screen.getByPlaceholderText('Ej: 126680');
+    fireEvent.change(exitOdometer, { target: { value: '51500' } });
+
+    const [litersInput, amountInput] = screen.getAllByPlaceholderText('0.00');
+    fireEvent.change(litersInput, { target: { value: '18.2' } });
+    fireEvent.change(amountInput, { target: { value: '450' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /finalizar/i }));
+    await waitFor(() => expect(capturedBody).not.toBeNull());
+    expect(capturedBody.fuelLitersLoaded).toBe(18.2);
+    expect(capturedBody.fuelAmount).toBe(450);
+    expect(capturedBody.endOdometer).toBe(51500);
+  });
+
+  it('does not call onSuccess when the PATCH responds 200 with success:false', async () => {
+    server.use(
+      http.patch('*/maintenance/:uuid/complete', () =>
+        HttpResponse.json({ success: false, error: 'Rejected' })
+      )
+    );
+    let succeeded = false;
+    render(
+      <MaintenanceCompletionPanel
+        log={ACTIVE_LOG}
+        onSuccess={(): void => {
+          succeeded = true;
+        }}
+        onCancel={noop}
+      />
+    );
+    await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+    const submitBtn = screen.getByRole('button', { name: /finalizar/i });
+    fireEvent.click(submitBtn);
+    // `finally { setSubmitting(false) }` runs regardless of success:false —
+    // re-enabling is the observable signal handleSubmit settled without
+    // throwing (success:false is not caught, it just skips onSuccess()).
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    expect(succeeded).toBe(false);
+  });
+
+  it('falls back to the generic error message when the PATCH fails with no response body (network error)', async () => {
+    server.use(http.patch('*/maintenance/:uuid/complete', () => HttpResponse.error()));
+    render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+    await waitFor(() => expect(screen.getByText('Cambio de aceite')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /finalizar/i }));
+    expect(
+      await screen.findByText('Error al cerrar el servicio. Intente de nuevo.')
+    ).toBeInTheDocument();
+  });
+
+  it('colors the service-mode badge amber for PARTIAL_EXECUTION (not the default emerald)', async () => {
+    const PARTIAL_LOG = { ...ACTIVE_LOG, service_mode: 'PARTIAL_EXECUTION' };
+    render(<MaintenanceCompletionPanel log={PARTIAL_LOG} onSuccess={noop} onCancel={noop} />);
+    const badge = await screen.findByText('Ejecución Parcial');
+    expect(badge.className).toMatch(/text-amber-700/);
+  });
+
+  it('renders the ShieldCheck compliance icon for FULL_COMPLIANCE service mode', async () => {
+    const FULL_COMPLIANCE_LOG = { ...ACTIVE_LOG, service_mode: 'FULL_COMPLIANCE' };
+    const { container } = render(
+      <MaintenanceCompletionPanel log={FULL_COMPLIANCE_LOG} onSuccess={noop} onCancel={noop} />
+    );
+    await waitFor(() => expect(screen.getByText(/cumplimiento total/i)).toBeInTheDocument());
+    // this lucide-react build replaces (not appends) the default `lucide-*`
+    // class when a custom className is passed — matching on the JSX's own
+    // `text-emerald-500` className is the reliable selector here.
+    expect(container.querySelector('svg.text-emerald-500')).toBeTruthy();
+  });
+
+  it('shows the "Diferido" badge for a task carried over as isDeferredCarry', async () => {
+    server.use(
+      http.get('*/maintenance/template/*', () =>
+        HttpResponse.json({
+          success: true,
+          tasks: [
+            {
+              code: 'BRAKE_CHECK',
+              label: 'Revisión de frenos',
+              isCritical: false,
+              isDeferredCarry: true,
+            },
+          ],
+        })
+      )
+    );
+    render(<MaintenanceCompletionPanel log={ACTIVE_LOG} onSuccess={noop} onCancel={noop} />);
+    await waitFor(() => expect(screen.getByText('Revisión de frenos')).toBeInTheDocument());
+    expect(screen.getByText('↩ Diferido')).toBeInTheDocument();
   });
 });
