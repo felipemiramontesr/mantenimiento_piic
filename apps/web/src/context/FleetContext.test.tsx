@@ -491,6 +491,286 @@ describe('FleetContext — action methods (startRoute/finishRoute/reportIncident
   });
 });
 
+/**
+ * FC165 F2B2.1, Slice 2.1A — 26 uncovered_conditions never had direct
+ * coverage: the transformUnits `[]` fallback, several optional numeric
+ * fields (capacidadCarga/fuelTankCapacity/initial+lastFuelLevel), the
+ * MICHELIN tireBrandId fallback, hasPermission('route:view')=false,
+ * the mid-fetch `unitsSyncing` loading branch, status-absent aggregation
+ * paths, and getUnitDetails' setUnits merge on a unit already in state.
+ */
+describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(archonCache.get).mockReturnValue([]);
+  });
+
+  it('transformUnits falls back to [] when the raw payload is neither an array nor an object with a .data array', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: 'not-an-object-or-array' });
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    expect(screen.getByTestId('total').textContent).toBe('0');
+  });
+
+  it('normalizes capacidadCarga/fuelTankCapacity/initialFuelLevel/lastFuelLevel when present, and the MICHELIN tireBrandId fallback when tireBrand is absent', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 'U-RICH',
+            assetTypeId: 1,
+            status: 'Disponible',
+            capacidad_carga: 1200,
+            fuel_tank_capacity: 80,
+            initial_fuel_level: 90,
+            last_fuel_level: 40,
+            tireBrandId: 243,
+          },
+        ],
+      },
+    });
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('total').textContent).toBe('1');
+    });
+  });
+
+  it('does not fetch incidents when the actor lacks route:view, and openIncidents/aggregation still resolve', async () => {
+    vi.doMock('../hooks/usePermissions', () => ({
+      default: (): object => ({
+        hasPermission: (perm: string): boolean => perm !== 'route:view',
+        hasAnyPermission: (): boolean => true,
+        isOmnipotent: (): boolean => false,
+      }),
+    }));
+    vi.resetModules();
+    const { FleetProvider: IsolatedProvider, useFleet: useIsolatedFleet } = await import(
+      './FleetContext'
+    );
+    const Probe = (): React.JSX.Element => {
+      const { stats, loading } = useIsolatedFleet();
+      return (
+        <div>
+          <div data-testid="loading">{loading.toString()}</div>
+          <div data-testid="open">{stats.openIncidents}</div>
+        </div>
+      );
+    };
+    vi.mocked(api.get).mockResolvedValue({ data: { data: [] } });
+
+    await act(async () => {
+      render(
+        <IsolatedProvider>
+          <Probe />
+        </IsolatedProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    expect(screen.getByTestId('open').textContent).toBe('0');
+    expect(api.get).not.toHaveBeenCalledWith('/incidents');
+    vi.doUnmock('../hooks/usePermissions');
+  });
+
+  it('reports loading=true synchronously while the initial fetch is still in flight', async () => {
+    // sync() only shows loading when !isSilent && prev.length===0 -- and
+    // isSilent comes from `!!archonCache.get(key)`, so an empty-array cache
+    // (truthy, per the default beforeEach mock) triggers a SILENT sync.
+    // A falsy cache (no prior data at all) is required for the real
+    // loading-spinner path.
+    vi.mocked(archonCache.get).mockReturnValue(undefined);
+    let resolveFetch: (v: unknown) => void = () => {};
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
+
+    // The sync-triggering effect flips isSyncing before the fetch itself
+    // resolves -- wait for React to flush that state update rather than
+    // asserting synchronously right after render().
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('true');
+    });
+
+    await act(async () => {
+      resolveFetch({ data: { data: [] } });
+    });
+  });
+
+  it('treats a unit with no status field as "available" (empty-string fallback) inside both the top-level and per-category aggregation', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        data: [{ id: 'U-NOSTATUS', assetTypeId: 2 }],
+      },
+    });
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('total').textContent).toBe('1');
+    });
+  });
+
+  it('getUnitDetails returns null without touching state when the API response has no .data payload', async () => {
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/fleet/U-EMPTY') return Promise.resolve({ data: {} });
+      return Promise.resolve({ data: { data: [] } });
+    });
+
+    render(
+      <FleetProvider>
+        <ActionsTestComponent />
+      </FleetProvider>
+    );
+    await waitFor(() => expect(api.get).toHaveBeenCalled());
+
+    const EmptyDetailButton = (): React.JSX.Element => {
+      const { getUnitDetails } = useFleet();
+      const [detail, setDetail] = React.useState('none');
+      return (
+        <div>
+          <div data-testid="empty-detail">{detail}</div>
+          <button
+            onClick={async (): Promise<void> => {
+              const u = await getUnitDetails('U-EMPTY');
+              setDetail(u ? u.id : 'null');
+            }}
+          >
+            fetch-empty
+          </button>
+        </div>
+      );
+    };
+    render(
+      <FleetProvider>
+        <EmptyDetailButton />
+      </FleetProvider>
+    );
+    await waitFor(() => expect(api.get).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByText('fetch-empty'));
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('empty-detail').textContent).toBe('null');
+    });
+  });
+
+  it('getUnitDetails merges hydrated images into the matching unit already in state, leaving other units untouched', async () => {
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/fleet')
+        return Promise.resolve({
+          data: {
+            data: [
+              { id: 'U-1', assetTypeId: 1, status: 'Disponible' },
+              { id: 'U-2', assetTypeId: 1, status: 'Disponible' },
+            ],
+          },
+        });
+      if (url === '/fleet/U-1')
+        return Promise.resolve({
+          data: { data: { id: 'U-1', assetTypeId: 1, images: ['/hydrated.png'] } },
+        });
+      return Promise.resolve({ data: { data: [] } });
+    });
+
+    render(
+      <FleetProvider>
+        <ActionsTestComponent />
+      </FleetProvider>
+    );
+    await waitFor(() => expect(screen.getByTestId('units-count').textContent).toBe('2'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('details'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('detail').textContent).toBe('U-1');
+    });
+  });
+
+  it('falls back to [] when a JSON-string images field parses to a non-array value', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { data: [{ id: 'U-IMG-OBJ', assetTypeId: 1, images: '{"not":"an-array"}' }] },
+    });
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('total').textContent).toBe('1');
+    });
+  });
+
+  it('falls back to S/D or General for every label field when the id is absent from its map', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 'U-UNMAPPED',
+            status: 'Disponible',
+            assetTypeId: 999,
+            fuelTypeId: 999,
+            departmentId: 999,
+            engineTypeId: 999,
+          },
+        ],
+      },
+    });
+
+    await act(async () => {
+      render(
+        <FleetProvider>
+          <TestComponent />
+        </FleetProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('total').textContent).toBe('1');
+    });
+  });
+});
+
 describe('FleetContext — useFleet without a provider', () => {
   it('throws when used outside of a FleetProvider', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());

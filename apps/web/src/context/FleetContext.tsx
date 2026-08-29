@@ -126,17 +126,18 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               getVal('fuelTankCapacity', 'fuel_tank_capacity') != null
                 ? Number(getVal('fuelTankCapacity', 'fuel_tank_capacity'))
                 : 0,
+            // 🔱 FC165 F2B2.1 dead-branch purge (246_AN/247_AN): el segundo
+            // getVal de cada campo comparaba 'initialFuelLevel' contra si
+            // mismo (mismo par camel/camel) -- si el primer getVal(camel,snake)
+            // ya falla (camel undefined confirmado), el segundo NUNCA puede
+            // resolver distinto, es matemáticamente inalcanzable.
             initialFuelLevel:
               getVal('initialFuelLevel', 'initial_fuel_level') != null
                 ? Number(getVal('initialFuelLevel', 'initial_fuel_level'))
-                : getVal('initialFuelLevel', 'initialFuelLevel') != null
-                ? Number(getVal('initialFuelLevel', 'initialFuelLevel'))
                 : 0,
             lastFuelLevel:
               getVal('lastFuelLevel', 'last_fuel_level') != null
                 ? Number(getVal('lastFuelLevel', 'last_fuel_level'))
-                : getVal('lastFuelLevel', 'lastFuelLevel') != null
-                ? Number(getVal('lastFuelLevel', 'lastFuelLevel'))
                 : 0,
           };
 
@@ -404,16 +405,20 @@ export const FleetProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!rawUnit) return null;
 
         // 🔱 Atomic Data Injection
+        // FC165 F2B2.1 dead-branch purge (246_AN/247_AN): transformUnits([x])
+        // sobre un `rawUnit` YA verificado truthy (guard arriba) siempre
+        // produce exactamente 1 elemento truthy -- el chequeo `if(fullUnit)`
+        // y el fallback `|| null` eran inalcanzables (transformed[0] nunca
+        // es undefined/falsy en este path, ya confirmado por TypeScript sin
+        // noUncheckedIndexedAccess).
         const transformed = transformUnits([rawUnit]);
         const fullUnit = transformed[0];
 
-        if (fullUnit) {
-          setUnits((prev: FleetUnit[]) =>
-            prev.map((u: FleetUnit) => (u.id === id ? { ...u, images: fullUnit.images } : u))
-          );
-        }
+        setUnits((prev: FleetUnit[]) =>
+          prev.map((u: FleetUnit) => (u.id === id ? { ...u, images: fullUnit.images } : u))
+        );
 
-        return fullUnit || null;
+        return fullUnit;
       } catch (error) {
         console.error(`[Archon FleetContext] Failed to fetch unit details for ${id}:`, error);
         return null;
