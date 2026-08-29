@@ -243,4 +243,139 @@ describe('ArchonProfilePanel — contrato PATCH /auth/users/:id (FC 076 R1)', ()
       ).toBeInTheDocument();
     });
   });
+
+  /**
+   * FC165 F2 Slice 2.1C (3/5) — branch coverage completion. 18 uncovered
+   * conditions (matches Alfa's census exactly). All test-only, 0 source
+   * edits.
+   */
+  describe('branch coverage (FC165 F2 Slice 2.1C)', () => {
+    it('renders and no-ops safely (guards both the hydration effect and handleFormSubmit) when currentUser is null', async () => {
+      mockUseAuth.mockReturnValue({ currentUser: null, updateCurrentUser });
+      render(<ArchonProfilePanel />);
+
+      // currentUser?.username / ?.roleName fallbacks
+      expect(screen.getByText('Actualizar Perfil')).toBeInTheDocument();
+      expect(screen.getByText('Usuario')).toBeInTheDocument();
+
+      // fill the HTML5-required fields so the browser lets the submit event
+      // through at all — otherwise native validation blocks it before
+      // handleFormSubmit's own `if (!currentUser) return;` guard ever runs.
+      const [nameInput, emailInput] = document.querySelectorAll('input[required]');
+      fireEvent.change(nameInput, { target: { value: 'Alguien' } });
+      fireEvent.change(emailInput, { target: { value: 'alguien@test.mx' } });
+
+      submitForm();
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      expect(mockPatch).not.toHaveBeenCalled();
+    });
+
+    it('hydrates from snake_case fields when the camelCase ones are absent', async () => {
+      mockUseAuth.mockReturnValue({
+        currentUser: {
+          id: 30,
+          username: 'snake.case',
+          full_name: 'Snake Case Name',
+          employee_number: 'EMP-SNAKE',
+          email: 'snake@test.mx',
+        },
+        updateCurrentUser,
+      });
+      render(<ArchonProfilePanel />);
+
+      await waitFor(() => expect(screen.getByDisplayValue('Snake Case Name')).toBeInTheDocument());
+      expect(screen.getByDisplayValue('EMP-SNAKE')).toBeInTheDocument();
+    });
+
+    it('hydrates to empty strings when fullName/employeeNumber/email are all absent (both fallback levels)', async () => {
+      mockUseAuth.mockReturnValue({
+        currentUser: { id: 31, username: 'bare.user' },
+        updateCurrentUser,
+      });
+      render(<ArchonProfilePanel />);
+
+      await waitFor(() => expect(screen.getByDisplayValue('bare.user')).toBeInTheDocument());
+      // fullName/employeeNumber/email all resolved to '' — no crash, the
+      // required-field inputs render empty rather than "undefined".
+      expect(document.querySelectorAll('input[required]')).not.toHaveLength(0);
+    });
+
+    it('does not call updateCurrentUser when the PATCH resolves with success:false and a non-200 status', async () => {
+      mockPatch.mockResolvedValue({ status: 400, data: { success: false } });
+      render(<ArchonProfilePanel />);
+      submitForm();
+
+      await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      expect(updateCurrentUser).not.toHaveBeenCalled();
+      expect(screen.queryByText(/perfil actualizado con éxito/i)).not.toBeInTheDocument();
+    });
+
+    it('does not call updateCurrentUser with a new imageUrl when the upload response has neither success nor url', async () => {
+      mockCompressImage.mockResolvedValueOnce({
+        base64: 'data:image/jpeg;base64,zzz',
+        mime: 'image/jpeg',
+      });
+      mockPost.mockResolvedValue({ data: { success: false } });
+
+      const { container } = render(<ArchonProfilePanel />);
+      const file = new File(['(⌐□_□)'], 'photo.png', { type: 'image/png' });
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(fileInput, { target: { files: [file] } });
+
+      submitForm();
+
+      await waitFor(() => expect(mockPost).toHaveBeenCalled());
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      expect(updateCurrentUser).not.toHaveBeenCalledWith(
+        expect.objectContaining({ imageUrl: expect.anything() })
+      );
+    });
+
+    it("removing the current profile photo calls onChange([]) and falls back imageUrl to ''", async () => {
+      mockUseAuth.mockReturnValue({
+        currentUser: { ...CURRENT_USER, imageUrl: 'http://cdn.test/photo.jpg' },
+        updateCurrentUser,
+      });
+      render(<ArchonProfilePanel />);
+
+      const thumb = await screen.findByAltText('Vista 1');
+      const removeBtn = thumb.parentElement!.parentElement!.querySelector(
+        'button'
+      ) as HTMLButtonElement;
+      fireEvent.click(removeBtn);
+
+      await waitFor(() => expect(screen.queryByAltText('Vista 1')).not.toBeInTheDocument());
+    });
+
+    it('shows the mismatch styling, "No coincide" label, and reveals the confirm field as plain text when showPassword is toggled', async () => {
+      render(<ArchonProfilePanel />);
+
+      const pwdInput = screen.getByPlaceholderText('Dejar vacío para mantener actual');
+      fireEvent.change(pwdInput, { target: { value: 'ClaveNueva123' } });
+
+      const confirmLabel = await screen.findByText(/confirmar nueva contraseña/i);
+      expect(confirmLabel).toBeInTheDocument();
+      const passwordInputs = document.querySelectorAll('input[type="password"]');
+      const confirmInput = passwordInputs[1] as HTMLInputElement;
+      fireEvent.change(confirmInput, { target: { value: 'NoCoincide456' } });
+
+      expect(screen.getByText('No coincide')).toBeInTheDocument();
+      expect(confirmInput.className).toContain('border-red-200');
+
+      const toggleBtn = pwdInput.parentElement!.querySelector('button') as HTMLButtonElement;
+      fireEvent.click(toggleBtn);
+
+      const revealedInputs = document.querySelectorAll('input[type="text"]');
+      expect(
+        Array.from(revealedInputs).some((el) => (el as HTMLInputElement).value === 'NoCoincide456')
+      ).toBe(true);
+    });
+  });
 });
