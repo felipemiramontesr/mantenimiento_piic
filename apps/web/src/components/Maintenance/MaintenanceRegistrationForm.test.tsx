@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { render, screen, waitFor, fireEvent } from '../../test/testUtils';
 import server from '../../test/server';
 import MaintenanceRegistrationForm from './MaintenanceRegistrationForm';
+import { UserContext } from '../../context/UserContext';
 
 const TOYOTA_UNIT = {
   id: 'ASM-021',
@@ -643,5 +644,229 @@ describe('MaintenanceRegistrationForm — UPA preview fetch failure', () => {
       expect(screen.queryByText('Calculando tareas UPA...')).not.toBeInTheDocument();
     });
     expect(screen.queryByText('Sin tareas UPA para esta unidad.')).not.toBeInTheDocument();
+  });
+
+  it('leaves upaPreview null (not caught, just skipped) when the preview responds success:false', async () => {
+    server.use(
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] })),
+      http.get('*/work-orders/preview/*', () => HttpResponse.json({ success: false }))
+    );
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Calculando tareas UPA...')).not.toBeInTheDocument();
+    });
+    expect(screen.queryByText('Sin tareas UPA para esta unidad.')).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * FC165 F2 Slice 2.1B (1/3) — branch coverage completion. 27 uncovered
+ * conditions (live count; Alfa's census had 26) before this block; 1 was a
+ * genuine Dead-Branch Purge (openPreviewStages[stage] ?? false, see source
+ * comment), the remaining 26 are covered below with real assertions —
+ * 0 v8-ignore (1 more test — the preview success:false case — lives in the
+ * "UPA preview fetch failure" describe block above, alongside its sibling
+ * catch-path test).
+ */
+describe('MaintenanceRegistrationForm — branch coverage (FC165 F2 Slice 2.1B)', () => {
+  it('units stays empty when GET /fleet responds success:false', async () => {
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: false }))
+    );
+    renderForm();
+    const trigger = await screen.findByText('Buscar unidad...');
+    fireEvent.click(trigger);
+    await waitFor(() => {
+      expect(screen.queryByText(/ASM-021/)).not.toBeInTheDocument();
+    });
+  });
+
+  it('falls back to 0/empty when the selected unit has no odometer (FuelMetricsSummary + odometerAtService/endOdometer effect)', async () => {
+    const unitNoOdometer: Record<string, unknown> = { ...TOYOTA_UNIT };
+    delete unitNoOdometer.odometer;
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [unitNoOdometer] }))
+    );
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+
+    // FuelMetricsSummary renders only in Taller mode (TOYOTA_UNIT is
+    // isInProgress=true by default) — `Number(unit?.odometer ?? 0)` falls
+    // back to 0.
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          (_content, el) => el?.tagName.toLowerCase() === 'span' && el?.textContent === '0 km'
+        )
+      ).toBeInTheDocument();
+    });
+
+    // The odometerAtService/endOdometer effect's `unit.odometer || 0`
+    // fallback leaves both at 0 — the "Odómetro al Servicio" input renders
+    // its `value={odometerAtService || ''}` as empty (jsdom reports `null`
+    // for an empty number input).
+    const odometerInput = await screen.findByPlaceholderText('Ej: 125000');
+    expect(odometerInput).toHaveValue(null);
+  });
+
+  it('leaves details empty (not a full task list) when unitOptions renders a sparse unit missing marca/modelo/placas/departamento', async () => {
+    const sparseUnit = {
+      id: 'SPR-001',
+      status: 'Disponible',
+      maintIntervalKm: 10000,
+      fuelTypeId: 11,
+    };
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [sparseUnit] }))
+    );
+    renderForm();
+    const trigger = await screen.findByText('Buscar unidad...');
+    fireEvent.click(trigger);
+
+    // label: `${id} - ${marca||''} ${modelo||''}`.trim() → "SPR-001 -"
+    expect(await screen.findByText('SPR-001 -')).toBeInTheDocument();
+    // secondaryLabel: `ODO: ${Number(odometer||0)...} KM | ${placas||'Sin placas'}`
+    expect(screen.getByText('ODO: 0 KM | Sin placas')).toBeInTheDocument();
+  });
+
+  it('technicianOptions falls back to [] when users is null', async () => {
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] }))
+    );
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ users: null } as any}>
+        <MaintenanceRegistrationForm onSuccess={noop} onCancel={noop} />
+      </UserContext.Provider>
+    );
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    fireEvent.click(await screen.findByText('Buscar técnico...'));
+    expect(screen.queryByText('Pedro Técnico')).not.toBeInTheDocument();
+  });
+
+  it('technicianOptions falls back to username/S-N/GENERAL for sparse técnico records', async () => {
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] }))
+    );
+    const sparseUsers = [
+      { id: '9', username: 'sparse.tech', roleName: 'Técnico Especialista', is_active: true },
+      {
+        id: '10',
+        fullName: 'Ana SinUsername',
+        roleName: 'Técnico Especialista',
+        is_active: true,
+        employeeNumber: 'EMP-010',
+        department: 'Taller',
+      },
+    ];
+    render(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      <UserContext.Provider value={{ users: sparseUsers } as any}>
+        <MaintenanceRegistrationForm onSuccess={noop} onCancel={noop} />
+      </UserContext.Provider>
+    );
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    fireEvent.click(await screen.findByText('Buscar técnico...'));
+
+    // fullName-less technician: value/label fall back to username
+    expect(await screen.findByText('sparse.tech')).toBeInTheDocument();
+    expect(screen.getByText('NÓMINA: S/N | GENERAL')).toBeInTheDocument();
+    // username-less technician still renders via fullName
+    expect(screen.getByText('Ana SinUsername')).toBeInTheDocument();
+  });
+
+  it('leaves the other task detail unchanged when only one detail status changes (multi-task)', async () => {
+    server.use(
+      withUpaPreviewTasks(UPA_PREVIEW_TASKS),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] }))
+    );
+    renderForm();
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    await waitFor(() => expect(screen.getByText('Revisión de luces')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Tarea Aprobada'));
+    fireEvent.click(await screen.findByText('No Aplica'));
+    await waitFor(() => expect(screen.getByText('No Aplica')).toBeInTheDocument());
+
+    // minor_oil's own detail entry never matched taskId === 'triage_lights' —
+    // the `: d` else-branch must have passed it through untouched (still PASS).
+    fireEvent.click(screen.getByText('Servicio Menor'));
+    expect(await screen.findByText('Cambio de aceite UPA')).toBeInTheDocument();
+    expect(screen.getAllByText('Tarea Aprobada')).toHaveLength(1);
+  });
+
+  it('omits the closing telemetry fields from the payload when left at their defaults (In Situ mode)', async () => {
+    let capturedBody: Record<string, unknown> | null = null;
+    server.use(
+      http.get('*/fleet', () =>
+        HttpResponse.json({ success: true, data: [makeUnit('U-INSITU-DEFAULT', 22000, 5000)] })
+      ),
+      http.get('*/work-orders/preview/*', () =>
+        HttpResponse.json({
+          success: true,
+          data: { vehicleId: 'U-INSITU-DEFAULT', odometer: 22000, tasks: [] },
+        })
+      ),
+      http.post('*/maintenance', async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ success: true });
+      })
+    );
+    const onSuccess = vi.fn();
+    render(<MaintenanceRegistrationForm onSuccess={onSuccess} onCancel={noop} />);
+    await selectUnit(/U-INSITU-DEFAULT - Test Unit/);
+    await waitFor(() =>
+      expect(screen.getByText('In Situ — Registro Inmediato')).toBeInTheDocument()
+    );
+
+    fireEvent.click(await screen.findByText('Buscar técnico...'));
+    fireEvent.click(await screen.findByText('Pedro Técnico'));
+
+    const submitBtn = screen.getByRole('button', { name: /Asentar Servicio/i });
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(capturedBody?.is_in_progress).toBe(false);
+    expect(capturedBody?.fuelLitersLoaded).toBeUndefined();
+    expect(capturedBody?.fuelAmount).toBeUndefined();
+    // endOdometer defaults to unit.odometer === odometerAtService, so the
+    // `endOdometer > odometerAtService` guard is false.
+    expect(capturedBody?.endOdometer).toBeUndefined();
+  });
+
+  it('does not call onSuccess when the API responds 200 with success:false', async () => {
+    server.use(
+      withUpaPreviewTasks([]),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [TOYOTA_UNIT] })),
+      http.post('*/maintenance', () =>
+        HttpResponse.json({ success: false, error: 'Rejected by server' })
+      )
+    );
+    const onSuccess = vi.fn();
+    render(<MaintenanceRegistrationForm onSuccess={onSuccess} onCancel={noop} />);
+    await selectUnit(/ASM-021 - Toyota Hilux/);
+    await waitFor(() => expect(screen.getByText('REVISIÓN DE TAREAS UPA')).toBeInTheDocument());
+
+    fireEvent.click(await screen.findByText('Buscar técnico...'));
+    fireEvent.click(await screen.findByText('Pedro Técnico'));
+
+    const submitBtn = screen.getByRole('button', { name: /Registrar en Taller/i });
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    fireEvent.click(submitBtn);
+
+    // `finally { setSubmitting(false) }` runs regardless of success:false —
+    // the button re-enabling is the observable signal that handleSubmit
+    // settled without throwing (success:false skips onSuccess() silently,
+    // it does not reach the catch block).
+    await waitFor(() => expect(submitBtn).not.toBeDisabled());
+    expect(onSuccess).not.toHaveBeenCalled();
   });
 });
