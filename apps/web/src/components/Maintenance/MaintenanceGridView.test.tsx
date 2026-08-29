@@ -493,3 +493,237 @@ describe('MaintenanceGridView — OPEN order actions', () => {
     fireEvent.click(screen.getByTitle('Ver nodo de mantenimiento'));
   });
 });
+
+/**
+ * FC165 F2 Slice 2.1B (3/3) — branch coverage completion. Same god-function
+ * shape as RegistrationForm/CompletionPanel (renderRow callback alone is
+ * ~270 LOC) — 0 source edits attempted, test-only, matching the lesson from
+ * V.78.103.136/137.
+ */
+describe('MaintenanceGridView — branch coverage (FC165 F2 Slice 2.1B)', () => {
+  it('shows "0d" and "Staff No Identificado" for a log with empty service_date/start_at/technician (malformed/legacy data)', async () => {
+    const MALFORMED_LOG = {
+      ...ACTIVE_LOG,
+      id: 30,
+      uuid: 'uuid-malformed-030',
+      unit_id: 'ASM-090',
+      service_date: '',
+      start_at: null,
+      technician: '',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: [MALFORMED_LOG], nextCursor: null })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
+    );
+    await waitFor(() => expect(screen.getAllByText('ASM-090').length).toBeGreaterThan(0));
+    // daysBetween(from='', to) returns 0 when `from` is falsy
+    expect(screen.getByText('0d')).toBeInTheDocument();
+    // no user matches technician='' by fullName/username, and log.technician
+    // itself is falsy — falls through both `||` fallbacks
+    expect(screen.getByText('Staff No Identificado')).toBeInTheDocument();
+  });
+
+  it('matches and labels a MINOR_MINING log via the service_type search field (both matchFieldInMaintenance and getSuggestions ternaries)', async () => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Mantenimiento', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({
+          success: true,
+          data: [{ ...ACTIVE_LOG, id: 31, uuid: 'uuid-minor-031', service_type: 'MINOR_MINING' }],
+          nextCursor: null,
+        })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
+    );
+    await waitFor(() => expect(setSearchConfig.mock.calls.length).toBeGreaterThan(1));
+    const { calls } = setSearchConfig.mock;
+    const results = calls[calls.length - 1][0].getSuggestions('mining');
+    expect(results).toHaveLength(1);
+    // matchFieldInMaintenance's own ternary (label:'Tipo') AND getSuggestions'
+    // subtitle ternary both resolve to the MINOR_MINING branch here.
+    expect(results[0].metaValue).toBe('Servicio Menor');
+    expect(results[0].subtitle).toBe('Servicio Menor');
+  });
+
+  // NOTE (FC165 F2 Slice 2.1B): `(logs || [])` at line 94 (getSuggestions)
+  // stays untested here on purpose. Attempting the natural trigger — GET
+  // /maintenance responding `{success:true, data:null}` — surfaced a REAL,
+  // pre-existing production bug: `sortedLogs`'s `const data = [...logs];`
+  // (no equivalent `|| []` guard) throws "logs is not iterable" and crashes
+  // the whole component on the render that follows `setLogs(null)`, before
+  // getSuggestions is ever reached. This is a genuine defect, not a test
+  // artifact — reported to Alfa/Bravo via H/F rather than patched
+  // unilaterally (outside the authorized branch-coverage scope of this
+  // slice). Residual documented, no artificial/crashing test added.
+
+  it('leaves logs empty (empty-state) when GET /maintenance responds success:false', async () => {
+    server.use(
+      http.get('*/maintenance', () => HttpResponse.json({ success: false })),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/no se encontraron registros/i)).toBeInTheDocument()
+    );
+  });
+
+  it('sorts by ODÓMETRO and COSTO with a log that has falsy (0) values for both', async () => {
+    const ZERO_LOG = {
+      ...ACTIVE_LOG,
+      id: 32,
+      uuid: 'uuid-zero-032',
+      unit_id: 'ASM-095',
+      odometer_at_service: 0,
+      cost: 0,
+      movement_status: 'COMPLETED',
+      end_at: '2026-05-29T16:00:00Z',
+    };
+    const ZERO_LOG_2 = {
+      ...ACTIVE_LOG,
+      id: 36,
+      uuid: 'uuid-zero-036',
+      unit_id: 'ASM-096',
+      odometer_at_service: 0,
+      cost: 0,
+      movement_status: 'COMPLETED',
+      end_at: '2026-05-29T16:00:00Z',
+    };
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({
+          success: true,
+          // ZERO_LOG both before and after ACTIVE_LOG so the falsy value
+          // lands in both the "a" and "b" comparator positions regardless
+          // of the sort algorithm's pairing order for this input size.
+          data: [ZERO_LOG, ACTIVE_LOG, ZERO_LOG_2],
+          nextCursor: null,
+        })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
+    );
+    await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
+
+    const odometerHeader = screen.getByText('ODÓMETRO');
+    fireEvent.click(odometerHeader);
+    await waitFor(() => expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0));
+    fireEvent.click(odometerHeader);
+    await waitFor(() => expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0));
+
+    const costHeader = screen.getByText('COSTO');
+    fireEvent.click(costHeader);
+    await waitFor(() => expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0));
+    fireEvent.click(costHeader);
+    await waitFor(() => expect(screen.getAllByText('ASM-095').length).toBeGreaterThan(0));
+  });
+
+  it('falls back to "Técnico" alt text when the matched technician has an avatar but no fullName', async () => {
+    vi.spyOn(UserContextModule, 'useUsers').mockReturnValue({
+      users: [
+        {
+          id: '1',
+          username: 'no.fullname.tech',
+          fullName: '',
+          imageUrl: 'https://example.com/avatar.png',
+          employeeNumber: 'TEC-02',
+        },
+      ],
+      isLoading: false,
+      activePanel: 'DIRECTORY',
+      setActivePanel: vi.fn(),
+      fetchUsers: vi.fn(),
+      toggleUserStatus: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      editingUser: null,
+      setEditingUser: vi.fn(),
+      departments: [],
+      departmentsCatalog: [],
+      roles: [],
+    });
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            { ...ACTIVE_LOG, id: 33, uuid: 'uuid-notech-033', technician: 'no.fullname.tech' },
+          ],
+          nextCursor: null,
+        })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
+    );
+    expect(await screen.findByAltText('Técnico')).toBeInTheDocument();
+  });
+
+  it('does not render the UPA button when hasUpa is true but onOpenUpa is not provided', async () => {
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({
+          success: true,
+          data: [{ ...ACTIVE_LOG, id: 34, uuid: 'uuid-noupa-034', upa_work_order_id: 77 }],
+          nextCursor: null,
+        })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      // onOpenUpa intentionally omitted — hasUpa is true (isActive + upa_work_order_id set)
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
+    );
+    await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
+    expect(screen.queryByTestId('open-upa-btn-uuid-noupa-034')).not.toBeInTheDocument();
+  });
+
+  it('invokes onOpenUpa with the work order id when the UPA button is clicked', async () => {
+    const onOpenUpa = vi.fn();
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({
+          success: true,
+          data: [{ ...ACTIVE_LOG, id: 35, uuid: 'uuid-upa-035', upa_work_order_id: 88 }],
+          nextCursor: null,
+        })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      <MaintenanceGridView
+        refreshTrigger={0}
+        onCompleteRequest={noop}
+        onDetailRequest={noop}
+        onOpenUpa={onOpenUpa}
+      />
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('open-upa-btn-uuid-upa-035')).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByTestId('open-upa-btn-uuid-upa-035'));
+    expect(onOpenUpa).toHaveBeenCalledWith(88);
+  });
+});
