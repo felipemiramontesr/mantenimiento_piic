@@ -563,16 +563,23 @@ describe('MaintenanceGridView — branch coverage (FC165 F2 Slice 2.1B)', () => 
     expect(results[0].subtitle).toBe('Servicio Menor');
   });
 
-  // NOTE (FC165 F2 Slice 2.1B): `(logs || [])` at line 94 (getSuggestions)
-  // stays untested here on purpose. Attempting the natural trigger — GET
-  // /maintenance responding `{success:true, data:null}` — surfaced a REAL,
-  // pre-existing production bug: `sortedLogs`'s `const data = [...logs];`
-  // (no equivalent `|| []` guard) throws "logs is not iterable" and crashes
-  // the whole component on the render that follows `setLogs(null)`, before
-  // getSuggestions is ever reached. This is a genuine defect, not a test
-  // artifact — reported to Alfa/Bravo via H/F rather than patched
-  // unilaterally (outside the authorized branch-coverage scope of this
-  // slice). Residual documented, no artificial/crashing test added.
+  it('sanitizes a non-array (data:null) /maintenance response to [] instead of crashing (bug fix verification)', async () => {
+    // Previously: sortedLogs' `[...logs]` spread threw "logs is not
+    // iterable" as soon as setLogs(null) landed. Fixed at the fetch
+    // boundary (useMaintenanceLogsFetch) via Array.isArray(...) ? ... : [].
+    server.use(
+      http.get('*/maintenance', () =>
+        HttpResponse.json({ success: true, data: null, nextCursor: null })
+      ),
+      http.get('*/fleet', () => HttpResponse.json({ success: true, data: [] }))
+    );
+    render(
+      <MaintenanceGridView refreshTrigger={0} onCompleteRequest={noop} onDetailRequest={noop} />
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/no se encontraron registros/i)).toBeInTheDocument()
+    );
+  });
 
   it('leaves logs empty (empty-state) when GET /maintenance responds success:false', async () => {
     server.use(

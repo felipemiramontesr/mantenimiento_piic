@@ -1,70 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, User, Wrench, ExternalLink, CheckCircle2, XCircle, Cpu } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
+import React from 'react';
 import { MaintenanceLog } from '../../types/maintenance';
-import api from '../../api/client';
-import { useFleet } from '../../context/FleetContext';
-import { useUsers } from '../../context/UserContext';
 import ArchonDataTable, { ArchonTableHeader } from '../UI/ArchonDataTable';
-import { useSovereignLayout, SearchSuggestion } from '../../context/SovereignLayoutContext';
-import AT from '../../styles/archonTypography';
+import { useSovereignLayout } from '../../context/SovereignLayoutContext';
+import { MaintenanceGridViewProps } from './MaintenanceGridView/types';
+import { useMaintenanceLogsFetch } from './MaintenanceGridView/useMaintenanceLogsFetch';
+import { useMaintenanceLogSort } from './MaintenanceGridView/useMaintenanceLogSort';
+import { useMaintenanceLogSearch } from './MaintenanceGridView/useMaintenanceLogSearch';
+import MaintenanceLogRow from './MaintenanceGridView/MaintenanceLogRow';
 
-interface MaintenanceGridViewProps {
-  refreshTrigger: number;
-  onCompleteRequest?: (log: MaintenanceLog) => void;
-  onDetailRequest?: (log: MaintenanceLog) => void;
-  onAcceptOrder?: (uuid: string, logId: number) => void;
-  onRejectOrder?: (uuid: string) => void;
-  onOpenUpa?: (workOrderId: number) => void;
-}
+export type { MaintenanceLog };
 
-const fmtDateTime = (dt: string | null | undefined): { date: string; time: string } => {
-  if (!dt) return { date: '—', time: '' };
-  let datePart: string;
-  let timePart = '';
-  if (dt.includes('T')) {
-    [datePart, timePart] = dt.split('T');
-    timePart = timePart.substring(0, 5);
-  } else if (dt.includes(' ')) {
-    [datePart, timePart] = dt.split(' ');
-    timePart = timePart.substring(0, 5);
-  } else {
-    datePart = dt;
-  }
-  const [y, m, day] = datePart.split('-');
-  return { date: `${day}/${m}/${y}`, time: timePart };
-};
+const HEADERS: ArchonTableHeader[] = [
+  { key: 'activo', label: 'UNIDAD', sortable: true, align: 'center', width: '17%' },
+  { key: 'tecnico', label: 'TÉCNICO', sortable: false, align: 'center', width: '16%' },
+  { key: 'service_type', label: 'TIPO SERVICIO', sortable: true, align: 'center', width: '12%' },
+  {
+    key: 'odometer_at_service',
+    label: 'ODÓMETRO',
+    sortable: true,
+    align: 'center',
+    width: '11%',
+  },
+  { key: 'service_date', label: 'FECHAS', sortable: true, align: 'center', width: '22%' },
+  { key: 'cost', label: 'COSTO', sortable: true, align: 'center', width: '11%' },
+  { key: 'accion', label: 'ACCIONES', sortable: false, align: 'center', width: '11%' },
+];
 
-const daysBetween = (from: string | null | undefined, to: string | null | undefined): number => {
-  if (!from) return 0;
-  const start = new Date(from);
-  const end = to ? new Date(to) : new Date();
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
-};
-
-const matchFieldInMaintenance = (
-  log: MaintenanceLog,
-  query: string
-): { label: string; value: string } | null => {
-  if (log.unit_id.toLowerCase().includes(query)) {
-    return { label: 'Unidad', value: log.unit_id };
-  }
-  if (log.technician.toLowerCase().includes(query)) {
-    return { label: 'Técnico', value: log.technician };
-  }
-  if (log.service_type.toLowerCase().includes(query)) {
-    return {
-      label: 'Tipo',
-      value: log.service_type === 'MINOR_MINING' ? 'Servicio Menor' : 'Preventivo',
-    };
-  }
-  return null;
-};
-
+/** Grid de mantenimiento: orquesta fetch, orden/filtro y búsqueda (FC165 F2 Slice 2.1B). */
 const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
   refreshTrigger,
   onCompleteRequest,
@@ -73,140 +35,12 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
   onRejectOrder,
   onOpenUpa,
 }) => {
-  const { units } = useFleet();
-  const { users } = useUsers();
-  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const { searchTerm, setSearchTerm, setSearchConfig } = useSovereignLayout();
-  const [sortConfig, setSortConfig] = useState<{
-    field: 'activo' | 'service_type' | 'odometer_at_service' | 'service_date' | 'cost' | null;
-    direction: 'asc' | 'desc';
-  }>({ field: null, direction: 'asc' });
-
-  // 🛡️ Dynamic Register for Universal Search Protocol (DRY Compliant)
-  useEffect(() => {
-    setSearchConfig({
-      placeholder: 'Buscar por unidad, placas o tipo de servicio...',
-      getSuggestions: (term: string): SearchSuggestion[] => {
-        const query = term.toLowerCase().trim();
-        return (logs || [])
-          .map((log): SearchSuggestion | null => {
-            const match = matchFieldInMaintenance(log, query);
-            if (!match) return null;
-            return {
-              id: log.id.toString(),
-              title: log.unit_id,
-              subtitle: log.service_type === 'MINOR_MINING' ? 'Servicio Menor' : 'Preventivo',
-              metaLabel: match.label,
-              metaValue: match.value,
-              rawItem: log,
-            };
-          })
-          .filter((s): s is SearchSuggestion => s !== null);
-      },
-      onSuggestionSelect: (suggestion) => {
-        setSearchTerm(suggestion.title);
-      },
-    });
-
-    return (): void => {
-      setSearchConfig(null);
-    };
-  }, [logs, setSearchConfig, setSearchTerm]);
-
-  // 🛡️ Auto-cleanup Search Term on Unmount (Resilience Protocol)
-  useEffect(() => (): void => setSearchTerm(''), [setSearchTerm]);
-
-  useEffect(() => {
-    const fetchLogs = async (): Promise<void> => {
-      setLoading(true);
-      try {
-        const response = await api.get('/maintenance?limit=50');
-        if (response.data.success) {
-          setLogs(response.data.data);
-        }
-      } catch {
-        setError('Error al recuperar registros de mantenimiento.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLogs();
-  }, [refreshTrigger]);
-
-  const handleSort = (key: string): void => {
-    const field = key as
-      | 'activo'
-      | 'service_type'
-      | 'odometer_at_service'
-      | 'service_date'
-      | 'cost';
-    setSortConfig((prev) => ({
-      field,
-      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
-    }));
-  };
-
-  const sortedLogs = React.useMemo(() => {
-    const data = [...logs];
-    if (!sortConfig.field) return data;
-
-    return data.sort((a, b) => {
-      let valA: string | number = '';
-      let valB: string | number = '';
-
-      if (sortConfig.field === 'activo') {
-        valA = a.id;
-        valB = b.id;
-      } else if (sortConfig.field === 'service_type') {
-        valA = a.service_type;
-        valB = b.service_type;
-      } else if (sortConfig.field === 'odometer_at_service') {
-        valA = Number(a.odometer_at_service || 0);
-        valB = Number(b.odometer_at_service || 0);
-      } else if (sortConfig.field === 'service_date') {
-        valA = new Date(a.service_date).getTime();
-        valB = new Date(b.service_date).getTime();
-      } else if (sortConfig.field === 'cost') {
-        valA = Number(a.cost || 0);
-        valB = Number(b.cost || 0);
-      }
-
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-      }
-
-      const strA = String(valA);
-      const strB = String(valB);
-      return sortConfig.direction === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
-    });
-  }, [logs, sortConfig]);
-
-  const filteredLogs = React.useMemo(() => {
-    if (!searchTerm.trim()) return sortedLogs;
-    const query = searchTerm.toLowerCase().trim();
-    return sortedLogs.filter((log) => matchFieldInMaintenance(log, query) !== null);
-  }, [sortedLogs, searchTerm]);
+  const { searchTerm } = useSovereignLayout();
+  const { logs, loading, error } = useMaintenanceLogsFetch(refreshTrigger);
+  useMaintenanceLogSearch(logs);
+  const { sortConfig, handleSort, filteredLogs } = useMaintenanceLogSort(logs, searchTerm);
 
   if (error) return <div className="p-4 text-[#C12020] font-mono text-sm">{error}</div>;
-
-  const headers: ArchonTableHeader[] = [
-    { key: 'activo', label: 'UNIDAD', sortable: true, align: 'center', width: '17%' },
-    { key: 'tecnico', label: 'TÉCNICO', sortable: false, align: 'center', width: '16%' },
-    { key: 'service_type', label: 'TIPO SERVICIO', sortable: true, align: 'center', width: '12%' },
-    {
-      key: 'odometer_at_service',
-      label: 'ODÓMETRO',
-      sortable: true,
-      align: 'center',
-      width: '11%',
-    },
-    { key: 'service_date', label: 'FECHAS', sortable: true, align: 'center', width: '22%' },
-    { key: 'cost', label: 'COSTO', sortable: true, align: 'center', width: '11%' },
-    { key: 'accion', label: 'ACCIONES', sortable: false, align: 'center', width: '11%' },
-  ];
 
   return (
     <div className="w-full text-pinnacle-navy">
@@ -215,279 +49,21 @@ const MaintenanceGridView: React.FC<MaintenanceGridViewProps> = ({
         loadingMessage="Sincronizando Mantenimientos..."
         emptyMessage="NO SE ENCONTRARON REGISTROS"
         data={filteredLogs}
-        headers={headers}
+        headers={HEADERS}
         onSort={handleSort}
         sortConfig={sortConfig}
-        renderRow={(log: MaintenanceLog, index): React.JSX.Element => {
-          const unit = units.find((u) => u.id === log.unit_id);
-          const technician = users.find(
-            (u) => u.fullName === log.technician || u.username === log.technician
-          );
-          const isOpen = log.movement_status === 'OPEN';
-          const isActive = log.movement_status === 'ACTIVE';
-          const isCompleted = log.movement_status === 'COMPLETED';
-          const hasUpa = isActive && log.upa_work_order_id != null;
-          return (
-            <motion.tr
-              key={log.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.04 }}
-              onClick={
-                isCompleted && onDetailRequest ? (): void => onDetailRequest(log) : undefined
-              }
-              className={`border-y border-solid transition-colors ${
-                isActive
-                  ? 'bg-amber-50/50 hover:bg-amber-50/80 border-amber-200/50'
-                  : `bg-transparent hover:bg-pinnacle-navy/[0.015] border-slate-200/50 ${
-                      isCompleted && onDetailRequest ? 'cursor-pointer' : ''
-                    }`
-              }`}
-            >
-              <td className="py-4 px-3 text-center">
-                <div className="flex flex-col items-center">
-                  {unit?.images?.[0] ? (
-                    <img
-                      src={unit.images[0]}
-                      className="w-20 h-20 block mx-auto rounded-[4px] shadow-sm object-cover mb-2"
-                      alt={log.unit_id}
-                      onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
-                        const img = e.currentTarget;
-                        img.src = '/img/archon-unit-default.png';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-20 h-20 mx-auto rounded-[4px] bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-2 overflow-hidden">
-                      <img
-                        src="/img/archon-unit-default.png"
-                        alt="Archon Unit Placeholder"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <span className="text-archon-base font-black text-[#0f2a44] bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px]">
-                    {log.unit_id}
-                  </span>
-                  <span className={`${AT.idBadge} mt-1`}>
-                    MNT-{String(log.id).padStart(5, '0')}
-                  </span>
-                  {isActive && (
-                    <span
-                      className={`${AT.statusBadge} bg-amber-500/10 text-amber-700 border-amber-500/20 mt-0.5`}
-                    >
-                      EN TALLER
-                    </span>
-                  )}
-                  <span className={AT.cellMeta}>
-                    {unit?.marca} {unit?.modelo}
-                  </span>
-                </div>
-              </td>
-              <td className="py-4 px-3 text-center">
-                <div className="flex flex-col items-center">
-                  <div className="relative mb-2">
-                    <div className="w-10 h-10 rounded-full bg-[#0f2a44]/5 flex items-center justify-center border border-[#0f2a44]/10 overflow-hidden relative">
-                      <User size={18} className="text-[#0f2a44]" />
-                      {technician?.imageUrl && (
-                        <img
-                          src={technician.imageUrl}
-                          className="absolute inset-0 w-full h-full rounded-full object-cover"
-                          alt={technician.fullName || 'Técnico'}
-                          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
-                            const img = e.currentTarget;
-                            img.style.display = 'none';
-                          }}
-                        />
-                      )}
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center">
-                      <span className="text-[6px] text-white font-black">A</span>
-                    </div>
-                  </div>
-                  <span
-                    className="text-archon-base font-black text-[#0f2a44] bg-[#0f2a44]/5 px-2 py-0.5 rounded-[4px] text-center"
-                    title={technician?.fullName || log.technician || 'Staff No Identificado'}
-                  >
-                    {technician?.fullName || log.technician || 'Staff No Identificado'}
-                  </span>
-                  <span className={AT.cellMeta}>ID: {technician?.employeeNumber || 'TEC-000'}</span>
-                </div>
-              </td>
-              <td className="py-4 px-3 text-center">
-                {log.service_type === 'MINOR_MINING' ? (
-                  <span
-                    className={`${AT.statusBadge} bg-emerald-500/10 text-emerald-700 border-emerald-500/20`}
-                  >
-                    Servicio Menor
-                  </span>
-                ) : (
-                  <span
-                    className={`${AT.statusBadge} bg-pinnacle-navy/10 text-pinnacle-navy border-pinnacle-navy/20`}
-                  >
-                    Preventivo
-                  </span>
-                )}
-              </td>
-              <td className={`py-4 px-3 text-center ${AT.cellMono}`}>
-                {Number(log.odometer_at_service).toLocaleString()} km
-              </td>
-              {/* FECHAS */}
-              <td className="py-4 px-3 text-center">
-                <div className="flex flex-col gap-3 w-full items-center">
-                  <div className="grid grid-cols-2 items-center gap-2">
-                    <span className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
-                      Entrada
-                    </span>
-                    {((): React.ReactElement => {
-                      const { date, time } = fmtDateTime(log.start_at ?? log.service_date);
-                      return (
-                        <div className="flex items-center gap-1">
-                          <Calendar size={9} className="text-[#0f2a44]/30 shrink-0" />
-                          <span className={AT.cellValue}>{date}</span>
-                          {time && (
-                            <span className="text-archon-sm font-mono text-[#0f2a44]/40">
-                              {time}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  <div className="grid grid-cols-2 items-center gap-2">
-                    <span className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
-                      Salida
-                    </span>
-                    {isActive ? (
-                      <span
-                        className={`${AT.statusBadge} bg-amber-500/10 text-amber-700 border-amber-400/30 justify-self-start`}
-                      >
-                        En curso
-                      </span>
-                    ) : (
-                      ((): React.ReactElement => {
-                        const { date, time } = fmtDateTime(log.end_at);
-                        return (
-                          <div className="flex items-center gap-1">
-                            <Calendar size={9} className="text-emerald-500/60 shrink-0" />
-                            <span className={AT.cellValue}>{date}</span>
-                            {time && (
-                              <span className="text-archon-sm font-mono text-emerald-600/50">
-                                {time}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 items-center gap-2">
-                    <span className="text-archon-sm font-black text-[#0f2a44]/40 uppercase tracking-[0.1em] text-right">
-                      Días
-                    </span>
-                    <span
-                      className={`${AT.statusBadge} justify-self-start ${
-                        isActive
-                          ? 'bg-amber-500/10 text-amber-700 border-amber-400/30'
-                          : 'bg-[#0f2a44]/5 text-[#0f2a44] border-[#0f2a44]/10'
-                      }`}
-                    >
-                      {daysBetween(log.start_at ?? log.service_date, log.end_at)}d
-                    </span>
-                  </div>
-                </div>
-              </td>
-
-              {/* COSTO */}
-              <td className={`py-4 px-3 text-center ${AT.cellMono} text-emerald-700`}>
-                {`$${Number(log.cost).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`}
-              </td>
-
-              {/* ACCIONES */}
-              <td className="py-4 px-3 text-center">
-                <div className="flex flex-col items-center gap-2">
-                  <Link
-                    to={`/dashboard/maintenance/${log.uuid}`}
-                    title="Ver nodo de mantenimiento"
-                    className="flex items-center justify-center w-10 h-10 text-[#0f2a44] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] group"
-                    onClick={(e): void => e.stopPropagation()}
-                  >
-                    <ExternalLink
-                      size={16}
-                      className="transition-transform duration-300 group-hover:scale-110"
-                    />
-                  </Link>
-
-                  {/* OPEN: Accept / Reject buttons for assigned technician */}
-                  {isOpen && onAcceptOrder && (
-                    <button
-                      type="button"
-                      data-testid={`accept-btn-${log.uuid}`}
-                      title="Aceptar Orden"
-                      onClick={(e): void => {
-                        e.stopPropagation();
-                        onAcceptOrder(log.uuid, log.id);
-                      }}
-                      className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
-                    >
-                      <CheckCircle2 size={18} />
-                    </button>
-                  )}
-                  {isOpen && onRejectOrder && (
-                    <button
-                      type="button"
-                      data-testid={`reject-btn-${log.uuid}`}
-                      title="Rechazar Orden"
-                      onClick={(e): void => {
-                        e.stopPropagation();
-                        onRejectOrder(log.uuid);
-                      }}
-                      className="flex items-center justify-center w-10 h-10 text-red-500 bg-red-50 hover:bg-red-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
-                    >
-                      <XCircle size={18} />
-                    </button>
-                  )}
-
-                  {/* ACTIVE + UPA: open UPA panel */}
-                  {hasUpa && onOpenUpa && (
-                    <button
-                      type="button"
-                      data-testid={`open-upa-btn-${log.uuid}`}
-                      title="Ver Proceso UPA"
-                      onClick={(e): void => {
-                        e.stopPropagation();
-                        onOpenUpa(log.upa_work_order_id!);
-                      }}
-                      className="flex items-center justify-center w-10 h-10 text-sky-600 bg-sky-50 hover:bg-sky-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none"
-                    >
-                      <Cpu size={16} />
-                    </button>
-                  )}
-
-                  {/* ACTIVE without UPA: legacy Finalizar Servicio */}
-                  {isActive && !hasUpa && onCompleteRequest && (
-                    <button
-                      type="button"
-                      title="Finalizar Servicio"
-                      onClick={(e): void => {
-                        e.stopPropagation();
-                        onCompleteRequest(log);
-                      }}
-                      className="flex items-center justify-center w-10 h-10 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:-translate-y-0.5 hover:scale-105 hover:shadow-sm transition-all duration-300 rounded-[4px] border-none outline-none group/complete"
-                    >
-                      <Wrench
-                        size={18}
-                        className="transition-transform duration-300 group-hover/complete:rotate-12"
-                      />
-                    </button>
-                  )}
-                </div>
-              </td>
-            </motion.tr>
-          );
-        }}
+        renderRow={(log: MaintenanceLog, index): React.ReactNode => (
+          <MaintenanceLogRow
+            key={log.id}
+            log={log}
+            index={index}
+            onCompleteRequest={onCompleteRequest}
+            onDetailRequest={onDetailRequest}
+            onAcceptOrder={onAcceptOrder}
+            onRejectOrder={onRejectOrder}
+            onOpenUpa={onOpenUpa}
+          />
+        )}
       />
     </div>
   );
