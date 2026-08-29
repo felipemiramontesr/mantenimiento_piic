@@ -3,6 +3,7 @@ import { screen, waitFor, render } from '../../test/testUtils';
 import ForensicJournalTable from './ForensicJournalTable';
 import api from '../../api/client';
 import { archonCache } from '../../utils/archonCache';
+import { FleetContext } from '../../context/FleetContext';
 
 vi.mock('../../api/client', () => ({
   default: {
@@ -474,5 +475,211 @@ describe('ForensicJournalTable (Apex Standard)', () => {
     );
     expect(screen.getByText('10.0')).toBeInTheDocument();
     expect(screen.getByText('25.0')).toBeInTheDocument();
+  });
+
+  /**
+   * FC165 F2 Slice 2.1C (2/5) — branch coverage completion. 22 uncovered
+   * conditions (matches Alfa's census exactly). All test-only, 0 source
+   * edits: sessionEvidence's normId fallbacks, the unitMap label/uuid
+   * lookup keys, the theoretical-capacity anomaly check, the snapshot
+   * diff engine's remaining branches, and the "no impact" chain's
+   * present-but-equal fuel_level/fuel_amount cases. 5 residuals
+   * documented, NOT purged: the whitelist object only carries
+   * destination/status/additives_check, so the amount/fuel_liters_
+   * loaded/reading/level prefix-suffix branches in formatVal (designed
+   * for a broader whitelist) are structurally dead given the CURRENT
+   * whitelist — but that whitelist lives inside a private render
+   * closure, editing it would touch the god-component and trip Gate2
+   * for no real behavior change.
+   */
+  it('treats a falsy unit_id as empty and skips it from sessionEvidence without throwing', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-nounit-1',
+            unit_id: '',
+            event_type: 'ADMIN_EDIT',
+            description: 'Sin unidad resuelta',
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    expect(screen.getByText('Sin unidad resuelta')).toBeInTheDocument();
+  });
+
+  it('treats a missing /unit-logs data field as [] (no crash, empty state)', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true } });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    expect(screen.getByText(/Sin registros forenses/i)).toBeInTheDocument();
+  });
+
+  it('resolves a unit via its uuid key (id normalizes to empty) and flags a theoretical-capacity anomaly', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-uuidkey-1',
+            unit_id: 'REAL-UUID-123',
+            event_type: 'ADMIN_EDIT',
+            fuel_after: 90,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+
+    const customFleet = {
+      units: [{ id: 'ASM-', uuid: 'REAL-UUID-123', marca: 'X', modelo: 'Y', fuelTankCapacity: 80 }],
+      loading: false,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    render(
+      <FleetContext.Provider value={customFleet}>
+        <ForensicJournalTable />
+      </FleetContext.Provider>
+    );
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    // fuel_after=90 > fuelTankCapacity=80 -> isTheoreticalAnomaly, only reachable
+    // once the unit is resolved via its uuid key (id 'ASM-' normalizes to '').
+    expect(
+      screen.getByText(/Posible desviación de consumo o robo de combustible/i)
+    ).toBeInTheDocument();
+  });
+
+  it('renders only the changed whitelisted fields, skipping an unchanged one and a non-whitelisted one', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-diffmix-1',
+            unit_id: 'ASM-060',
+            event_type: 'ADMIN_EDIT',
+            snapshot_before: {
+              destination: 'Same Place',
+              status: 'X',
+              additives_check: false,
+              extra_field: 'ignored-before',
+            },
+            snapshot_after: {
+              destination: 'Same Place',
+              status: 'Y',
+              additives_check: true,
+              extra_field: 'ignored-after',
+            },
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    // 'Estado' changed (X->Y) and 'Aditivos' changed (false->true) render;
+    // 'Destino' (unchanged) and 'extra_field' (not whitelisted) do not.
+    expect(screen.getByText('X')).toBeInTheDocument();
+    expect(screen.getByText('Y')).toBeInTheDocument();
+    expect(screen.getByText('NO')).toBeInTheDocument();
+    expect(screen.getByText('SI')).toBeInTheDocument();
+    expect(screen.queryByText('Same Place')).not.toBeInTheDocument();
+    expect(screen.queryByText(/ignored-/)).not.toBeInTheDocument();
+  });
+
+  it('renders no diff chips when only non-whitelisted fields changed (whitelistedChanges is empty)', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-nowhitelist-1',
+            unit_id: 'ASM-061',
+            event_type: 'ADMIN_EDIT',
+            description: 'Sin cambios relevantes',
+            snapshot_before: { destination: 'Same', other: 1 },
+            snapshot_after: { destination: 'Same', other: 2 },
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    expect(screen.getByText('Sin cambios relevantes')).toBeInTheDocument();
+    expect(screen.queryByText('Same')).not.toBeInTheDocument();
+  });
+
+  it('parses a stringified snapshot_after and renders "—" for a null whitelisted before-value', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-strafter-1',
+            unit_id: 'ASM-062',
+            event_type: 'ADMIN_EDIT',
+            description: 'Direccion corregida',
+            snapshot_before: { destination: null },
+            snapshot_after: JSON.stringify({ destination: 'Real Address' }),
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    expect(screen.getByText('Real Address')).toBeInTheDocument();
+    // the diff chip's "before" value renders the null-fallback dash
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+  });
+
+  it('shows the no-impact dash for a log where fuel_level and fuel_amount are present but unchanged', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-flatline-1',
+            unit_id: 'ASM-063',
+            event_type: 'ADMIN_EDIT',
+            description: 'Verificación de rutina',
+            fuel_level_before: 50,
+            fuel_level_after: 50,
+            fuel_amount_before: 100,
+            fuel_amount_after: 100,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    expect(screen.getByText('Verificación de rutina')).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 });
