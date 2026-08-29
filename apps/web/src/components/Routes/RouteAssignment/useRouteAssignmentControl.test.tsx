@@ -19,6 +19,7 @@ import { useUsers } from '../../../context/UserContext';
 import { RouteLog } from '../RouteLogTable';
 import { RouteAssignmentFormData } from './types';
 import server from '../../../test/server';
+import api from '../../../api/client';
 
 // 🔱 Mock Context Hooks
 vi.mock('../../../context/FleetContext');
@@ -143,6 +144,15 @@ describe('getFinalDestination', () => {
     const result = getFinalDestination({ ...baseFormData, destination: 'Mina Sur' });
     expect(result).toBe('Mina Sur');
   });
+
+  it('falls back to the full destination as suffix when it has fewer than 3 comma-separated parts', () => {
+    const result = getFinalDestination({
+      ...baseFormData,
+      calle: 'Calle Falsa',
+      destination: 'SoloUnaParte',
+    });
+    expect(result).toBe('Calle Falsa, SoloUnaParte');
+  });
 });
 
 describe('roundToTwo', () => {
@@ -184,6 +194,16 @@ describe('validateReadingFailsafe', () => {
     const result = validateReadingFailsafe(
       { ...baseFormData, startReading: 500 },
       { odometer: 500 } as unknown as import('../../../types/fleet').FleetUnit,
+      false,
+      null
+    );
+    expect(result).toBeNull();
+  });
+
+  it('treats a missing unit odometer as 0 (falls back via the || 0 guard)', () => {
+    const result = validateReadingFailsafe(
+      { ...baseFormData, startReading: 0 },
+      {} as unknown as import('../../../types/fleet').FleetUnit,
       false,
       null
     );
@@ -829,6 +849,371 @@ describe('useRouteAssignmentControl (MSW Certified)', () => {
 
       expect(result.current.error).toBeTruthy();
       expect(result.current.submitting).toBe(false);
+    });
+  });
+
+  /**
+   * FC165 F2 Slice 2.1C — branch coverage completion (51 live vs Alfa's
+   * census of 29). All test-only, 0 source edits: hydrateRouteData's
+   * remaining || fallbacks, the atomic-reset else-if's own false path
+   * (routeToEdit truthy but units still empty), the Selection Sync
+   * effect's !isEdit branch, operatorOptions' filter/sort/fallbacks
+   * (never exercised at all — the default mock users array is empty),
+   * getForensicPayload's remaining ternaries, and the 3 submit-path
+   * handlers' own ternaries/catch fallbacks.
+   */
+  describe('branch coverage (FC165 F2 Slice 2.1C)', () => {
+    it('hydrates a route with unit_id/destination/operator_id absent and destination_neighborhood_id present', async () => {
+      const SPARSE_ROUTE = {
+        uuid: 'route-sparse',
+        unit_id: undefined,
+        operator_id: undefined,
+        destination: undefined,
+        destination_neighborhood_id: 42,
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), SPARSE_ROUTE));
+      await waitFor(() => expect(result.current.formData.destinationNeighborhoodId).toBe(42));
+
+      expect(result.current.formData.unitId).toBe('');
+      expect(result.current.formData.operatorId).toBe('');
+      expect(result.current.formData.destination).toBe('');
+    });
+
+    it('does not hydrate (stays on the atomic-reset branch) while units have not loaded yet, even with a routeToEdit', async () => {
+      vi.mocked(useFleet).mockReturnValue({ ...STABLE_FLEET_CONTEXT, units: [] } as any);
+      const mockRoute = {
+        uuid: 'route-no-units',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.origins).toEqual([]));
+
+      // Neither the hydrate path nor the atomic-reset path ran (routeToEdit
+      // is truthy so the reset's `!routeToEdit` is false too) — formData
+      // stays at its initial default.
+      expect(result.current.formData.unitId).toBe('');
+    });
+
+    it('resolves selectedUnitData to null when formData.unitId does not match any unit', async () => {
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await waitFor(() => expect(result.current.origins).toBeDefined());
+
+      act(() => {
+        result.current.updateForm({ unitId: 'NO-SUCH-UNIT' });
+      });
+
+      await waitFor(() => expect(result.current.selectedUnitData).toBeNull());
+    });
+
+    it('inherits telemetry from the unit when a new (non-edit) unit is selected, falling back to 0/100 when the unit has no odometer/lastFuelLevel', async () => {
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await waitFor(() => expect(result.current.origins).toBeDefined());
+
+      act(() => {
+        // STABLE_FLEET_CONTEXT's unit has neither `odometer` nor
+        // `lastFuelLevel` — exercises the `|| 0` / `?? 100` fallbacks.
+        result.current.updateForm({ unitId: 'ASM-001' });
+      });
+
+      await waitFor(() => expect(result.current.selectedUnitData).not.toBeNull());
+      expect(result.current.formData.startReading).toBe(0);
+      expect(result.current.formData.fuelLevel).toBe(100);
+      expect(result.current.formData.arrivalFuelLevel).toBe(100);
+    });
+
+    it('inherits a real (truthy) odometer/lastFuelLevel from the selected unit', async () => {
+      vi.mocked(useFleet).mockReturnValue({
+        ...STABLE_FLEET_CONTEXT,
+        units: [{ id: 'ASM-009', fuelTankCapacity: 80, odometer: 12345, lastFuelLevel: 60 }],
+      } as any);
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await waitFor(() => expect(result.current.origins).toBeDefined());
+
+      act(() => {
+        result.current.updateForm({ unitId: 'ASM-009' });
+      });
+
+      await waitFor(() => expect(result.current.formData.startReading).toBe(12345));
+      expect(result.current.formData.fuelLevel).toBe(60);
+      expect(result.current.formData.arrivalFuelLevel).toBe(60);
+    });
+
+    it('keeps existing cached origins when the ROUTE_ORIGIN fetch fails (does not overwrite with the fallback)', async () => {
+      localStorage.clear();
+      const { archonCache } = await import('../../../utils/archonCache');
+      archonCache.set('route_origins', [{ id: 99, label: 'Cached Origin' }]);
+      server.use(http.get('*/catalogs/ROUTE_ORIGIN', () => HttpResponse.error()));
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+
+      await waitFor(() =>
+        expect(result.current.origins).toEqual([{ id: 99, label: 'Cached Origin' }])
+      );
+    });
+
+    it('resolves origins from a bare-array ROUTE_ORIGIN response (no .data wrapper)', async () => {
+      server.use(
+        http.get('*/catalogs/ROUTE_ORIGIN', () =>
+          HttpResponse.json([{ id: 11, label: 'Bare Array Origin' }])
+        )
+      );
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await waitFor(() =>
+        expect(result.current.origins).toEqual([{ id: 11, label: 'Bare Array Origin' }])
+      );
+    });
+
+    it('resolves origins to [] from a null ROUTE_ORIGIN response body', async () => {
+      server.use(http.get('*/catalogs/ROUTE_ORIGIN', () => HttpResponse.json(null)));
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await waitFor(() => expect(result.current.origins).toEqual([]));
+    });
+
+    it('excludes a busy operator from operatorOptions unless they are the route currently being edited, and covers the sort/label/secondaryLabel/searchTerms fallbacks', async () => {
+      const mockRoute = {
+        uuid: 'route-op-options',
+        unit_id: 'ASM-001',
+        operator_id: 2,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      server.use(
+        http.get('*/routes', () =>
+          HttpResponse.json({
+            success: true,
+            data: [{ uuid: 'r-active', operator_id: 2, end_time: null }],
+          })
+        )
+      );
+
+      vi.mocked(useUsers).mockReturnValue({
+        ...STABLE_USER_CONTEXT,
+        users: [
+          {
+            id: 2,
+            fullName: 'Zeta Operador',
+            roleName: undefined,
+            employeeNumber: undefined,
+            email: undefined,
+          },
+          {
+            id: 3,
+            fullName: 'Alpha Operador',
+            roleName: 'operador',
+            employeeNumber: 'EMP-3',
+            email: 'a@x.com',
+          },
+          { id: 4, fullName: 'Mid Operador' },
+        ],
+      } as any);
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+      await waitFor(() => expect(result.current.operatorOptions.length).toBeGreaterThan(0));
+
+      // id=2 is "busy" (active route) but IS the route being edited -> kept.
+      const values = result.current.operatorOptions.map((o) => o.value);
+      expect(values).toContain('2');
+      const zeta = result.current.operatorOptions.find((o) => o.value === '2')!;
+      expect(zeta.secondaryLabel).toContain('USUARIO');
+      expect(zeta.secondaryLabel).toContain('S/N');
+    });
+
+    it('sends fuelLevel=arrivalFuelLevel + operatorId=undefined + resolved originId/destinationNeighborhoodId/additivesCheck via handleConfirmAudit on a finished route', async () => {
+      let capturedBody: Record<string, unknown> | null = null;
+      server.use(
+        http.get('*/catalogs/ROUTE_ORIGIN', () =>
+          HttpResponse.json({ success: true, data: [{ id: 21, label: 'Arian Silver Zacatecas' }] })
+        ),
+        http.put('*/routes/route-finished-audit', async ({ request }) => {
+          const body = (await request.json()) as { data: Record<string, unknown> };
+          capturedBody = body.data;
+          return HttpResponse.json({ success: true });
+        })
+      );
+
+      const mockRoute = {
+        uuid: 'route-finished-audit',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: '2026-01-01T00:00:00Z',
+        fuel_level_end: 77,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.origins[0]?.id).toBe(21));
+
+      await waitFor(() => {
+        act(() => {
+          result.current.updateForm({
+            operatorId: '',
+            destinationNeighborhoodId: 55,
+            additivesCheck: true,
+            startReading: 100,
+            endReading: 200,
+          });
+        });
+        expect(result.current.formData.destinationNeighborhoodId).toBe(55);
+      });
+
+      await act(async () => {
+        await result.current.handleConfirmAudit('Justificación válida de 5+');
+      });
+
+      await waitFor(() => expect(capturedBody).not.toBeNull());
+      const body = capturedBody as unknown as Record<string, unknown>;
+      expect(body.fuelLevel).toBe(77);
+      expect(body.operatorId).toBeUndefined();
+      expect(body.originId).toBe(21);
+      expect(body.destinationNeighborhoodId).toBe(55);
+      expect(body.additivesCheck).toBe(1);
+    });
+
+    it('falls back to err.message when an audit PUT fails with no server message (network error)', async () => {
+      server.use(http.put('*/routes/route-audit-neterr', () => HttpResponse.error()));
+
+      const mockRoute = {
+        uuid: 'route-audit-neterr',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+      await act(async () => {
+        await result.current.handleConfirmAudit('Justificación válida de 5+');
+      });
+
+      expect(result.current.error).toBeTruthy();
+      expect(result.current.error).not.toBe('Auditoría rechazada');
+    });
+
+    it('sends destinationNeighborhoodId + operatorId=undefined when correcting an active mission', async () => {
+      let capturedBody: Record<string, unknown> | null = null;
+      server.use(
+        http.put('*/routes/route-correct-neighborhood', async ({ request }) => {
+          const body = (await request.json()) as { data: Record<string, unknown> };
+          capturedBody = body.data;
+          return HttpResponse.json({ success: true });
+        })
+      );
+
+      const mockRoute = {
+        uuid: 'route-correct-neighborhood',
+        unit_id: 'ASM-001',
+        operator_id: undefined,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const onClose = vi.fn();
+      const { result } = renderHook(() => useRouteAssignmentControl(onClose, mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+      await waitFor(() => {
+        act(() => {
+          result.current.updateForm({ destinationNeighborhoodId: 33 });
+        });
+        expect(result.current.formData.destinationNeighborhoodId).toBe(33);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      });
+
+      await waitFor(() => expect(capturedBody).not.toBeNull());
+      const body = capturedBody as unknown as Record<string, unknown>;
+      expect(body.destinationNeighborhoodId).toBe(33);
+      expect(body.operatorId).toBeUndefined();
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it('sends destinationNeighborhoodId when dispatching a new mission', async () => {
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await waitFor(() => expect(result.current.origins).toBeDefined());
+
+      act(() => {
+        result.current.updateForm({ destinationNeighborhoodId: 44 });
+      });
+      await waitFor(() => expect(result.current.formData.destinationNeighborhoodId).toBe(44));
+
+      await act(async () => {
+        await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      });
+
+      expect(STABLE_FLEET_CONTEXT.startRoute).toHaveBeenCalledWith(
+        expect.objectContaining({ destinationNeighborhoodId: 44 })
+      );
+    });
+
+    it('falls back to the generic operation-error message when a rejected dispatch throws a non-Error value', async () => {
+      vi.mocked(useFleet).mockReturnValue({
+        ...STABLE_FLEET_CONTEXT,
+
+        startRoute: vi.fn().mockRejectedValue('plain string rejection'),
+      } as any);
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await act(async () => {
+        await new Promise((resolve) => {
+          setTimeout(resolve, 0);
+        });
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as FormEvent);
+      });
+
+      expect(result.current.error).toBe('Error en la operación');
+    });
+
+    it('treats a missing /routes data field as [] (activeRoutes stays empty)', async () => {
+      server.use(http.get('*/routes', () => HttpResponse.json({ success: true })));
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn()));
+      await waitFor(() => expect(result.current.origins).toBeDefined());
+
+      // operatorOptions derives busyUserIds from activeRoutes — with no crash
+      // and no exclusions, every user (none, by default) is kept; the real
+      // assertion is that render/hydration completed without throwing on the
+      // `(res.data?.data || [])` fallback.
+      expect(result.current.operatorOptions).toEqual([]);
+    });
+
+    it('falls back to the generic audit-protocol message when the PUT rejects with a non-Error value', async () => {
+      const putSpy = vi.spyOn(api, 'put').mockRejectedValueOnce('plain string rejection');
+
+      const mockRoute = {
+        uuid: 'route-audit-nonerror',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        destination: 'Mina',
+        end_time: null,
+      } as unknown as RouteLog;
+
+      const { result } = renderHook(() => useRouteAssignmentControl(vi.fn(), mockRoute));
+      await waitFor(() => expect(result.current.formData.unitId).toBe('ASM-001'));
+
+      await act(async () => {
+        await result.current.handleConfirmAudit('Justificación válida de 5+');
+      });
+
+      expect(result.current.error).toBe('Error en el protocolo de auditoría');
+      putSpy.mockRestore();
     });
   });
 });
