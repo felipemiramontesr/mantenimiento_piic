@@ -359,6 +359,23 @@ describe('RouteNode', () => {
       expect(visitedBadge.className).toContain('emerald');
       expect(pendingBadge.className).toContain('slate');
     });
+
+    it('CHK-VIEW-4: an unknown checkpoint status falls back to the raw value with no badge class', async () => {
+      vi.mocked(useCheckpoints).mockReturnValue({
+        data: [
+          {
+            ...CHECKPOINTS_FIXTURE[0],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            status: 'REROUTED' as any,
+          },
+        ],
+        loading: false,
+        error: null,
+      });
+      render(<RouteNode />);
+      await waitFor(() => expect(screen.getByText('Waypoints (0/1)')).toBeInTheDocument());
+      expect(screen.getByText('REROUTED')).toBeInTheDocument();
+    });
   });
 
   it('renders unknown incident severity and category as raw values in incident list', async () => {

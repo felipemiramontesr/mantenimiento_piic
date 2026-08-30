@@ -90,6 +90,36 @@ describe('UsersModule Component', () => {
       expect(screen.getByText('juan.perez@piic.com.mx')).toBeInTheDocument();
     });
 
+    it('CARDS view falls back to username when fullName is empty', async () => {
+      render(
+        <UserContext.Provider
+          value={buildUserContextOverride({
+            users: [
+              {
+                id: '9',
+                username: 'sin.nombre',
+                fullName: '',
+                email: 'sin.nombre@piic.com.mx',
+                roleId: 1,
+                roleName: 'Operador',
+                department: 'Operaciones',
+                employeeNumber: 'EMP-009',
+                is_active: true,
+              },
+            ],
+          })}
+        >
+          <UsersModule />
+        </UserContext.Provider>
+      );
+      await screen.findByText(/Administrar Personal/i);
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      await screen.findByTestId('archon-card-view');
+      // el nombre (fallback fullName||username) y el subtitulo de username
+      // coinciden en texto, ambos muestran 'sin.nombre'
+      expect(screen.getAllByText('sin.nombre')).toHaveLength(2);
+    });
+
     it('clicking a card requests SIGNUP for that user, and the header "Iniciar Registro" action requests it too', async () => {
       const setActivePanel = vi.fn();
       const setEditingUser = vi.fn();

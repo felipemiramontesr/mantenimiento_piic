@@ -70,4 +70,22 @@ describe('LogsModule Forensics', () => {
 
     expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled();
   });
+
+  it('does not schedule a scroll when scrollIntoView is unsupported in the environment', async () => {
+    const original = HTMLElement.prototype.scrollIntoView;
+    // @ts-expect-error simulating an environment without scrollIntoView support
+    delete HTMLElement.prototype.scrollIntoView;
+    try {
+      render(<LogsModule />);
+      await waitFor(() => screen.getByTestId('sovereign-layout-header-action'));
+      const btn = within(screen.getByTestId('sovereign-layout-header-action')).getByRole('button');
+      fireEvent.click(btn);
+      await waitFor(() => {
+        const actionDiv = screen.getByTestId('sovereign-layout-header-action');
+        expect(actionDiv.textContent).toContain('Incidencias');
+      });
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original;
+    }
+  });
 });

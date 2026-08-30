@@ -94,6 +94,20 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
     });
   });
 
+  it('the header toggle also navigates back from EGRESOS to DASHBOARD', async (): Promise<void> => {
+    renderModule();
+
+    fireEvent.click(await screen.findByRole('button', { name: /ver egresos/i }));
+    const verDashboardBtn = await screen.findByRole('button', { name: /ver dashboard/i });
+
+    fireEvent.click(verDashboardBtn);
+
+    await waitFor((): void => {
+      expect(screen.getByRole('button', { name: /ver egresos/i })).toBeInTheDocument();
+    });
+    expect(await screen.findByText('Total egresos')).toBeInTheDocument();
+  });
+
   it('sets correct layout section metadata', async (): Promise<void> => {
     renderModule();
 
@@ -113,6 +127,16 @@ describe('FinancialHealthModule (Sovereign Finance)', () => {
 
   it('loadDateRange falls back to defaultDateRange when stored value is corrupt JSON', async (): Promise<void> => {
     localStorage.setItem('archon_finance_date_range', '{ NOT VALID JSON');
+    renderModule();
+    expect(await screen.findByText('Dashboard Financiero')).toBeInTheDocument();
+    localStorage.removeItem('archon_finance_date_range');
+  });
+
+  it('loadDateRange uses the stored range when both from and to are present', async (): Promise<void> => {
+    localStorage.setItem(
+      'archon_finance_date_range',
+      JSON.stringify({ from: '2026-02-01', to: '2026-02-28' })
+    );
     renderModule();
     expect(await screen.findByText('Dashboard Financiero')).toBeInTheDocument();
     localStorage.removeItem('archon_finance_date_range');

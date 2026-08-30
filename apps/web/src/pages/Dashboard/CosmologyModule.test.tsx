@@ -69,6 +69,49 @@ describe('CosmologyModule', () => {
     });
   });
 
+  it('falls back to an empty list when the response has no data array', async () => {
+    mockPerms({ omega: true });
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: null } });
+    render(<CosmologyModule />);
+    await waitFor(() => {
+      expect(screen.getByText('No hay Universos registrados.')).toBeInTheDocument();
+    });
+  });
+
+  it('does not update state after unmount once an in-flight (resolving) fetch settles', async () => {
+    mockPerms({ omega: true });
+    let resolveFetch: (v: unknown) => void = () => {};
+    vi.mocked(api.get).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+    const { unmount } = render(<CosmologyModule />);
+    unmount();
+    resolveFetch({ data: { success: true, data: MOCK_UNIVERSES } });
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
+
+  it('does not update state after unmount once an in-flight (rejecting) fetch settles', async () => {
+    mockPerms({ omega: true });
+    let rejectFetch: (e: unknown) => void = () => {};
+    vi.mocked(api.get).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectFetch = reject;
+        })
+    );
+    const { unmount } = render(<CosmologyModule />);
+    unmount();
+    rejectFetch(new Error('network error'));
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
+
   it('Scenario 3 — Ω creates a Universe, list refreshes without reload', async () => {
     mockPerms({ omega: true });
     render(<CosmologyModule />);
@@ -162,6 +205,50 @@ describe('CosmologyModule', () => {
     expect(screen.getByText(/Unidades de flotilla: 3/)).toBeInTheDocument();
     // still listed — destruction did not go through
     expect(screen.getByTestId('cosmology-universe-row-1')).toBeInTheDocument();
+  });
+
+  it('a destroy failure without the 409 zero-state shape (plain network error) shows no blockers list', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() => {
+      expect(screen.getByTestId('cosmology-universe-row-1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('cosmology-universe-destroy-1'));
+    fireEvent.change(screen.getByTestId('destroy-universe-confirm-label'), {
+      target: { value: 'FMS Base' },
+    });
+
+    vi.mocked(api.delete).mockRejectedValueOnce(new Error('network error'));
+    fireEvent.click(screen.getByTestId('destroy-universe-submit'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('destroy-universe-submit')).not.toBeDisabled();
+    });
+    expect(screen.queryByTestId('destroy-universe-blockers')).not.toBeInTheDocument();
+  });
+
+  it('an unrecognized blocker bucket key falls back to the raw key in the blockers list', async () => {
+    mockPerms({ omega: true });
+    render(<CosmologyModule />);
+    await waitFor(() => {
+      expect(screen.getByTestId('cosmology-universe-row-1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('cosmology-universe-destroy-1'));
+    fireEvent.change(screen.getByTestId('destroy-universe-confirm-label'), {
+      target: { value: 'FMS Base' },
+    });
+
+    vi.mocked(api.delete).mockRejectedValueOnce({
+      response: { data: { code: 'UNIVERSE_NOT_ZERO_STATE', details: { some_new_bucket: 4 } } },
+    });
+    fireEvent.click(screen.getByTestId('destroy-universe-submit'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('destroy-universe-blockers')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/some_new_bucket: 4/)).toBeInTheDocument();
   });
 
   it('closes the destroy modal without deleting when Cancelar is clicked', async () => {

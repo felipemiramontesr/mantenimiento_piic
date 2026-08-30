@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act, fireEvent } from '../../test/testUtils';
+import { FleetContext } from '../../context/FleetContext';
 import ArchonCenter from './ArchonCenter';
 
 vi.mock('../../api/client', () => ({
@@ -53,6 +54,46 @@ describe('ArchonCenter Component (Apex Standard)', () => {
 
     const detailButtons = screen.getAllByRole('button', { name: /VER REPORTE/i });
     expect(detailButtons.length).toBe(6);
+  });
+
+  it('renders the KPI skeleton (pulse placeholder) while fleet stats are loading', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const loadingFleet: any = {
+      units: [],
+      stats: {
+        total: 0,
+        available: 0,
+        inRoute: 0,
+        maintenance: 0,
+        discontinued: 0,
+        totalInactive: 0,
+        maintenanceIndex: 0,
+        openIncidents: 0,
+        globalMTBF: 0,
+        globalMTTR: 0,
+        globalAvailability: 100,
+        categories: {
+          vehiculo: { total: 0, active: 0, health: 0 },
+          maquinaria: { total: 0, active: 0, health: 0 },
+          herramienta: { total: 0, active: 0, health: 0 },
+        },
+      },
+      loading: true,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+    };
+    await act(async () => {
+      render(
+        <FleetContext.Provider value={loadingFleet}>
+          <ArchonCenter />
+        </FleetContext.Provider>
+      );
+    });
+    expect(screen.queryByText(/Fuerza Operativa/i)).not.toBeNull();
+    expect(screen.queryByText('0')).toBeNull();
   });
 
   it('renders the 3 main category cards with 2x2 grid', async () => {
