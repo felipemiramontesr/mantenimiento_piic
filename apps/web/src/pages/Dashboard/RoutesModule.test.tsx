@@ -155,5 +155,64 @@ describe('RoutesModule Orchestrator', () => {
       fireEvent.click(screen.getByText('Iniciar Despacho'));
       expect(await screen.findByText('Cerrar Formulario')).toBeInTheDocument();
     });
+
+    it('clicking the header toggle again (without an editingRoute) returns DISPATCH to LOGS', async () => {
+      renderModule();
+      await screen.findByTestId('adaptive-view-table');
+      fireEvent.click(screen.getByText('Iniciar Despacho'));
+      await screen.findByText('Cerrar Formulario');
+      fireEvent.click(screen.getByText('Cerrar Formulario'));
+      expect(await screen.findByTestId('adaptive-view-table')).toBeInTheDocument();
+    });
+
+    it('does not schedule a scroll when scrollIntoView is unsupported in the environment', async () => {
+      const original = HTMLElement.prototype.scrollIntoView;
+      // @ts-expect-error simulating an environment without scrollIntoView support
+      delete HTMLElement.prototype.scrollIntoView;
+      try {
+        renderModule();
+        await screen.findByTestId('adaptive-view-table');
+        fireEvent.click(screen.getByText('Iniciar Despacho'));
+        expect(await screen.findByText('Cerrar Formulario')).toBeInTheDocument();
+      } finally {
+        HTMLElement.prototype.scrollIntoView = original;
+      }
+    });
+
+    it('CARDS view falls back to "Staff No Identificado" when the operator has no match in the users directory', async () => {
+      server.use(
+        http.get('*/routes', () =>
+          HttpResponse.json({ success: true, data: [{ ...routeLog, operator_id: '999' }] })
+        )
+      );
+      renderModule();
+      await screen.findByTestId('adaptive-view-cards');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByTestId('archon-card-view')).toBeInTheDocument();
+      expect(screen.getByText('Staff No Identificado')).toBeInTheDocument();
+    });
+
+    it('CARDS view falls back start_km to "0" for a finished route missing its start reading', async () => {
+      server.use(
+        http.get('*/routes', () =>
+          HttpResponse.json({
+            success: true,
+            data: [
+              {
+                ...routeLog,
+                start_km: undefined,
+                end_time: '2026-06-01T12:00:00.000Z',
+                end_km: 50300,
+              },
+            ],
+          })
+        )
+      );
+      renderModule();
+      await screen.findByTestId('adaptive-view-cards');
+      fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+      expect(await screen.findByTestId('archon-card-view')).toBeInTheDocument();
+      expect(screen.getByText('0 → 50,300')).toBeInTheDocument();
+    });
   });
 });

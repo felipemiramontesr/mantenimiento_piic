@@ -514,6 +514,90 @@ describe('MaintenanceModule (Sovereign Maintenance)', () => {
     expect(await screen.findByTestId('calendar-title')).toBeInTheDocument();
   });
 
+  it('MaintenanceCalendarPanel: a 200 response with data:null falls back to an empty logs array', async () => {
+    localStorage.clear();
+    server.use(http.get('*/maintenance', () => HttpResponse.json({ success: true, data: null })));
+    renderModule();
+    fireEvent.click(await screen.findByText('Ver Historial'));
+    fireEvent.click(await screen.findByTestId('adaptive-view-calendar'));
+    expect(await screen.findByTestId('calendar-title')).toBeInTheDocument();
+  });
+
+  it('MaintenanceForecastCardPanel: success:false leaves the card list empty', async () => {
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: false, data: [{ unitId: 'ASM-SHOULD-NOT-RENDER' }] })
+      )
+    );
+    renderModule();
+    fireEvent.click(await screen.findByTestId('adaptive-view-cards'));
+    expect(await screen.findByTestId('archon-card-view-empty')).toBeInTheDocument();
+    expect(screen.queryByText('ASM-SHOULD-NOT-RENDER')).not.toBeInTheDocument();
+  });
+
+  it('CARDS forecast alert badge reads "Servicio vencido" when daysUntilService is 0 or negative', async () => {
+    const overdueRow = {
+      unitId: 'ASM-OVERDUE',
+      marca: 'Nissan',
+      modelo: 'March',
+      departamento: 'MINA',
+      currentOdometer: 51000,
+      dailyUsageAvg: 120,
+      nextKmReading: 50000,
+      kmRemaining: -1000,
+      nextServiceDate: '2026-05-20',
+      daysUntilService: 0,
+      triggerType: 'KM',
+      projectedOdometer: 50000,
+      projectedServiceType: 'ADVANCED_50K',
+      urgency: 'CRITICAL',
+    };
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [overdueRow] })
+      )
+    );
+    renderModule();
+    fireEvent.click(await screen.findByTestId('adaptive-view-cards'));
+    expect(await screen.findByTestId('card-alert-badge')).toHaveTextContent('Servicio vencido');
+  });
+
+  it('does not schedule a scroll when scrollIntoView is unsupported in the environment', async () => {
+    const original = HTMLElement.prototype.scrollIntoView;
+    // @ts-expect-error simulating an environment without scrollIntoView support
+    delete HTMLElement.prototype.scrollIntoView;
+    try {
+      const forecastRow = {
+        unitId: 'ASM-001',
+        marca: 'Nissan',
+        modelo: 'March',
+        departamento: 'MINA',
+        currentOdometer: 49800,
+        dailyUsageAvg: 120,
+        nextKmReading: 50000,
+        kmRemaining: 200,
+        nextServiceDate: '2026-05-30',
+        daysUntilService: 2,
+        triggerType: 'KM',
+        projectedOdometer: 50000,
+        projectedServiceType: 'ADVANCED_50K',
+        urgency: 'CRITICAL',
+      };
+      server.use(
+        http.get('*/maintenance/forecast', () =>
+          HttpResponse.json({ success: true, data: [forecastRow] })
+        ),
+        http.get('*/maintenance/template/*', () => HttpResponse.json({ success: true, tasks: [] }))
+      );
+      renderModule();
+      const programarBtn = await screen.findByRole('button', { name: /Programar/i });
+      fireEvent.click(programarBtn);
+      expect(await screen.findByText('CONFIGURACIÓN')).toBeInTheDocument();
+    } finally {
+      HTMLElement.prototype.scrollIntoView = original;
+    }
+  });
+
   it('handleAcceptOrder: accept succeeds → opens UPA panel, then Volver triggers handleReturnFromUpa', async () => {
     // Reset adaptive-view preference: a prior test switched maintenance-history to CALENDAR
     localStorage.clear();

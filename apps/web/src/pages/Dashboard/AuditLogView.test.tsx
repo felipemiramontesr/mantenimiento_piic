@@ -226,5 +226,50 @@ describe('AuditLogView', () => {
       fireEvent.click(screen.getByTestId('audit-row-audit-uuid-002'));
       expect(screen.getByText('Sin datos de snapshot.')).toBeTruthy();
     });
+
+    it('un segundo click en la fila expandida la colapsa de nuevo (toggle off)', async () => {
+      vi.mocked(api.get).mockResolvedValue(MOCK_RESPONSE);
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-row-audit-uuid-001')).toBeTruthy());
+      const row = screen.getByTestId('audit-row-audit-uuid-001');
+      fireEvent.click(row);
+      expect(screen.getByTestId('audit-diff-audit-uuid-001')).toBeTruthy();
+      fireEvent.click(row);
+      expect(screen.queryByTestId('audit-diff-audit-uuid-001')).toBeNull();
+    });
+
+    it('fila omnipotente sin universe_label/actor_username usa em-dash, y la celda de diff usa colSpan=7', async () => {
+      usePermissionsMock.mockReturnValue({
+        hasPermission: (): boolean => true,
+        hasAnyPermission: (): boolean => true,
+        isOmnipotent: (): boolean => true,
+      });
+      const barrenRow = { ...MOCK_ROW, universe_label: null, actor_username: null };
+      vi.mocked(api.get).mockResolvedValue({
+        data: { success: true, data: [barrenRow], meta: { page: 1, limit: 20, total: 1 } },
+      });
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-row-audit-uuid-001')).toBeTruthy());
+      expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2);
+
+      fireEvent.click(screen.getByTestId('audit-row-audit-uuid-001'));
+      const diffRow = screen.getByTestId('audit-diff-audit-uuid-001');
+      expect(diffRow.querySelector('td')?.colSpan).toBe(7);
+    });
+
+    it('una acción desconocida (fuera de CREATE/UPDATE/DELETE) muestra el texto crudo sin badge', async () => {
+      const unknownActionRow = {
+        ...MOCK_ROW,
+        uuid: 'audit-uuid-004',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        action: 'ARCHIVE' as any,
+      };
+      vi.mocked(api.get).mockResolvedValue({
+        data: { success: true, data: [unknownActionRow], meta: { page: 1, limit: 20, total: 1 } },
+      });
+      render(<AuditLogView />);
+      await waitFor(() => expect(screen.getByTestId('audit-row-audit-uuid-004')).toBeTruthy());
+      expect(screen.getByText('ARCHIVE')).toBeTruthy();
+    });
   });
 });
