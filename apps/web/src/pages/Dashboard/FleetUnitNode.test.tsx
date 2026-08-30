@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, within } from '../../test/testUtils';
+import { render, renderWithRoute, screen, waitFor, fireEvent, within } from '../../test/testUtils';
 import api from '../../api/client';
 import { useFleetIntelligence } from '../../hooks/useFleetIntelligence';
 import { useEconomicLife } from '../../hooks/useEconomicLife';
@@ -598,6 +598,30 @@ describe('FleetUnitNode', () => {
     expect(screen.getByText('Recomendación')).toBeInTheDocument();
   });
 
+  it('EL-NODE-3: renders "Calculando…" while economic life is loading', async () => {
+    vi.mocked(useEconomicLife).mockReturnValueOnce({ data: null, loading: true, error: null });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Vida Económica')).toBeInTheDocument());
+    expect(screen.getByText('Calculando…')).toBeInTheDocument();
+  });
+
+  it('EL-NODE-4: an unknown recommendation code falls back to the raw value with no badge class', async () => {
+    vi.mocked(useEconomicLife).mockReturnValueOnce({
+      data: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recommendation: 'MONITOR' as any,
+        residual_value_mxn: 50000,
+        accumulated_tco: 40000,
+        replacement_score: 0.5,
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Vida Económica')).toBeInTheDocument());
+    expect(screen.getByText('MONITOR')).toBeInTheDocument();
+  });
+
   it('AD-NODE-1: renders Anomalía badge when is_anomaly is true', async () => {
     vi.mocked(useAnomalyDetection).mockReturnValueOnce({
       data: {
@@ -622,6 +646,32 @@ describe('FleetUnitNode', () => {
     render(<FleetUnitNode />);
     await waitFor(() => expect(screen.getByText('Detección de Anomalías')).toBeInTheDocument());
     expect(screen.getByText('Algoritmo')).toBeInTheDocument();
+  });
+
+  it('AD-NODE-3: renders "Calculando…" while anomaly detection is loading', async () => {
+    vi.mocked(useAnomalyDetection).mockReturnValueOnce({ data: null, loading: true, error: null });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Detección de Anomalías')).toBeInTheDocument());
+    expect(screen.getByText('Calculando…')).toBeInTheDocument();
+  });
+
+  it('AD-NODE-4: renders "Normal" badge when is_anomaly is explicitly false', async () => {
+    vi.mocked(useAnomalyDetection).mockReturnValueOnce({
+      data: {
+        fleet_size: 12,
+        algorithm: 'z-score',
+        unit_km_per_liter: 10.1,
+        baseline_km_per_liter: 10.5,
+        deviation_pct: -3.8,
+        z_score: -0.4,
+        is_anomaly: false,
+      },
+      loading: false,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Detección de Anomalías')).toBeInTheDocument());
+    expect(screen.getByText('Normal')).toBeInTheDocument();
   });
 
   it('OS-NODE-1: renders composite score and route count when data is present', async () => {
@@ -654,6 +704,17 @@ describe('FleetUnitNode', () => {
     expect(screen.getByText('Score compuesto')).toBeInTheDocument();
   });
 
+  it('OS-NODE-3: renders "Calculando…" while the operator scorecard is loading', async () => {
+    vi.mocked(useOperatorScorecard).mockReturnValueOnce({
+      data: null,
+      loading: true,
+      error: null,
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Scorecard del Operador')).toBeInTheDocument());
+    expect(screen.getByText('Calculando…')).toBeInTheDocument();
+  });
+
   it('CO2-NODE-1: renders total CO2 and period when data is present', async () => {
     vi.mocked(useCo2).mockReturnValueOnce({
       data: {
@@ -682,6 +743,15 @@ describe('FleetUnitNode', () => {
       expect(screen.getByText('Huella de CO₂ (Scope 1 ESG)')).toBeInTheDocument()
     );
     expect(screen.getByText('Período analizado')).toBeInTheDocument();
+  });
+
+  it('CO2-NODE-3: renders "Calculando…" while CO2 data is loading', async () => {
+    vi.mocked(useCo2).mockReturnValueOnce({ data: null, loading: true, error: null });
+    render(<FleetUnitNode />);
+    await waitFor(() =>
+      expect(screen.getByText('Huella de CO₂ (Scope 1 ESG)')).toBeInTheDocument()
+    );
+    expect(screen.getByText('Calculando…')).toBeInTheDocument();
   });
 
   // ─── Recalls Section ──────────────────────────────────────────────────────
@@ -731,6 +801,55 @@ describe('FleetUnitNode', () => {
     expect(screen.getByText('Sin recalls registrados para esta unidad')).toBeInTheDocument();
   });
 
+  it('RECALL-NODE-4: an unknown status falls back to the raw value with no badge class', async () => {
+    vi.mocked(useFleetRecalls).mockReturnValueOnce({
+      recalls: [
+        {
+          recall_id: 2,
+          campaign_code: 'NHTSA-2024-002',
+          description: 'Estado no reconocido',
+          make: 'Nissan',
+          model: 'Frontier',
+          year: 2022,
+          published_date: '2024-04-01',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          status: 'IN_REVIEW' as any,
+          resolved_at: null,
+          work_order_id: null,
+        },
+      ],
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+      linkRecall: vi.fn(),
+      updateStatus: vi.fn(),
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('NHTSA-2024-002')).toBeInTheDocument());
+    expect(screen.getByText('IN_REVIEW')).toBeInTheDocument();
+  });
+
+  it('RECALL-NODE-5: submitting a valid recall ID via the link modal calls linkRecall', async () => {
+    const linkRecallMock = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useFleetRecalls).mockReturnValue({
+      recalls: [],
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+      linkRecall: linkRecallMock,
+      updateStatus: vi.fn(),
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Vincular recall del catálogo'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Vincular recall' })).toBeInTheDocument()
+    );
+    fireEvent.change(screen.getByLabelText('ID del recall'), { target: { value: '42' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Vincular' }));
+    await waitFor(() => expect(linkRecallMock).toHaveBeenCalledWith(42));
+  });
+
   it('NHTSA-E-1: botón "Buscar recalls en NHTSA" está visible en RecallsSection', async () => {
     render(<FleetUnitNode />);
     await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
@@ -774,6 +893,40 @@ describe('FleetUnitNode', () => {
     );
     expect(screen.getByText('19V648')).toBeInTheDocument();
     expect(screen.getByText('21V201')).toBeInTheDocument();
+  });
+
+  it('NHTSA-E-2b: shows "Consultando NHTSA…" while the search is loading', async () => {
+    vi.mocked(useNhtsaRecalls).mockReturnValue({
+      results: [],
+      loading: true,
+      error: null,
+      search: vi.fn(),
+      importRecall: vi.fn().mockResolvedValue({ recall_id: 42 }),
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+    expect(screen.getByText('Consultando NHTSA…')).toBeInTheDocument();
+  });
+
+  it('NHTSA-E-2c: shows the error message when the NHTSA search fails', async () => {
+    vi.mocked(useNhtsaRecalls).mockReturnValue({
+      results: [],
+      loading: false,
+      error: 'No se pudo conectar con NHTSA',
+      search: vi.fn(),
+      importRecall: vi.fn().mockResolvedValue({ recall_id: 42 }),
+    });
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+    expect(screen.getByText('No se pudo conectar con NHTSA')).toBeInTheDocument();
   });
 
   it('NHTSA-E-3: flujo completo — Importar llama POST, vincula recall y refresca sección', async () => {
@@ -910,6 +1063,39 @@ describe('FleetUnitNode', () => {
     expect(screen.getByText('SEÑAL')).toBeInTheDocument();
   });
 
+  it('PATTERNS-F-5b: a pattern with no avg_km_at_failure, nhtsa_covered=true and DATOS_INSUFICIENTES renders their fallback/badge/label', async () => {
+    const PATTERN_ROW = {
+      failure_category: 'ELECTRICAL',
+      occurrence_count: 1,
+      affected_units: 1,
+      avg_km_at_failure: null,
+      confidence_score: 0.2,
+      nhtsa_covered: true,
+      signal_level: 'DATOS_INSUFICIENTES' as const,
+    };
+
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (String(url).includes('internal-patterns')) {
+        return Promise.resolve({ data: { success: true, count: 1, data: [PATTERN_ROW] } });
+      }
+      return Promise.resolve({ data: { success: true, data: NODE_FIXTURE } });
+    });
+
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+
+    fireEvent.click(screen.getByText('Patrones de Falla'));
+
+    await waitFor(() => expect(screen.getByText('ELECTRICAL')).toBeInTheDocument());
+    expect(screen.getByText(/km N\/D/)).toBeInTheDocument();
+    expect(screen.getByTitle('Cubierto por recall NHTSA')).toBeInTheDocument();
+    expect(screen.getByText('DATOS INSUF.')).toBeInTheDocument();
+  });
+
   it('PATTERNS-F-6: Tab "Patrones de Falla" muestra un mensaje de error si la carga falla', async () => {
     vi.mocked(api.get).mockImplementation((url: string) => {
       if (String(url).includes('internal-patterns')) {
@@ -945,5 +1131,43 @@ describe('FleetUnitNode', () => {
     );
 
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/fleet');
+  });
+
+  it('BACK-NAV-2: header labels switch to the Alerts variant when arriving from /dashboard/alerts', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: NODE_FIXTURE } });
+
+    renderWithRoute(<FleetUnitNode />, {
+      pathname: '/dashboard/fleet/ASM-001',
+      state: { from: '/dashboard/alerts', fromLabel: 'Alertas' },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('sovereign-layout-header-action')).toBeInTheDocument()
+    );
+    expect(
+      within(screen.getByTestId('sovereign-layout-header-action')).getByText('Alertas del Sistema')
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(screen.getByTestId('sovereign-layout-header-action')).getByText('Alertas')
+    );
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/alerts');
+  });
+
+  it('RecallsSection receives empty-string make/model (not null) when the unit has neither', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: { ...NODE_FIXTURE, unit: { ...UNIT_FIXTURE, marca: null, modelo: null } },
+      },
+    });
+
+    render(<FleetUnitNode />);
+    await waitFor(() => expect(screen.getByTitle('Buscar recalls en NHTSA')).toBeInTheDocument());
+    fireEvent.click(screen.getByTitle('Buscar recalls en NHTSA'));
+    await waitFor(() =>
+      expect(screen.getByRole('dialog', { name: 'Buscar recalls en NHTSA' })).toBeInTheDocument()
+    );
+    // marca/modelo??'' -> el título del modal queda "Recalls NHTSA — 2022" (make/model vacíos)
+    expect(screen.getByText('Recalls NHTSA — 2022')).toBeInTheDocument();
   });
 });

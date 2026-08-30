@@ -138,7 +138,7 @@ const renderWithProviders = (
 ): ReturnType<typeof render> => render(ui, { wrapper: AllTheProviders, ...options });
 
 const makeWrapper = (
-  initialRoute: string
+  initialRoute: string | { pathname: string; state?: unknown }
 ): (({ children }: { children: ReactNode }) => ReactElement) => {
   const RouteWrapper = ({ children }: { children: ReactNode }): ReactElement => (
     <MemoryRouter initialEntries={[initialRoute]}>
@@ -159,7 +159,7 @@ const makeWrapper = (
 
 const renderWithRoute = (
   ui: ReactElement,
-  initialRoute: string,
+  initialRoute: string | { pathname: string; state?: unknown },
   options?: Omit<RenderOptions, 'wrapper'>
 ): ReturnType<typeof render> => render(ui, { wrapper: makeWrapper(initialRoute), ...options });
 
