@@ -83,6 +83,12 @@ describe('RouteIdentityPanel', () => {
     expect(screen.getByText('Telemetría Heredada: 80%')).toBeInTheDocument();
   });
 
+  it('renders the unit thumbnail image when the unit has at least one image', () => {
+    const unitWithImage: FleetUnit = { ...UNIT, images: ['/img/unit-front.png'] } as FleetUnit;
+    render(<RouteIdentityPanel {...BASE_PROPS} selectedUnitData={unitWithImage} />);
+    expect(screen.getByAltText('Unit')).toHaveAttribute('src', '/img/unit-front.png');
+  });
+
   it('hides the telemetry hint when editing an existing route', () => {
     render(<RouteIdentityPanel {...BASE_PROPS} selectedUnitData={UNIT} isEdit />);
     expect(screen.queryByText(/Telemetría Heredada/)).not.toBeInTheDocument();

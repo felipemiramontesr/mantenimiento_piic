@@ -1,8 +1,34 @@
-import { describe, it, expect, vi } from 'vitest';
-import { screen, render, fireEvent } from '../../../test/testUtils';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { screen, render, fireEvent, waitFor } from '../../../test/testUtils';
 import RouteClosurePanel from './RouteClosurePanel';
 
+// Auto-confirma el modal de recorte para que el flujo de "agregar imagen" no
+// dependa de la UI real de crop (misma tecnica que ArchonImageUploader.test.tsx).
+vi.mock('../../ArchonCropModal', () => ({
+  default: ({ onConfirm }: { onConfirm: (url: string) => void }): null => {
+    onConfirm('data:image/jpeg;base64,mock-cropped');
+    return null;
+  },
+}));
+
+class MockFileReader {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onload: any;
+
+  readAsDataURL(): void {
+    setTimeout(() => {
+      if (this.onload) {
+        this.onload({ target: { result: 'data:image/png;base64,mock' } });
+      }
+    }, 0);
+  }
+}
+
 describe('RouteClosurePanel (Fuel Consumption Validation)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('FileReader', MockFileReader);
+  });
+
   const defaultProps = {
     formData: {
       unitId: 'ASM-001',
@@ -164,5 +190,40 @@ describe('RouteClosurePanel (Fuel Consumption Validation)', () => {
       />
     );
     expect(screen.getByAltText('Vista 1')).toHaveAttribute('src', 'ticket-plano.jpg');
+  });
+
+  it('AT-RCP-IMG-4: agregar una imagen (sin ninguna previa) serializa el array no-vacío a JSON', async () => {
+    const updateForm = vi.fn();
+    render(<RouteClosurePanel {...defaultProps} updateForm={updateForm} />);
+
+    const file = new File(['img'], 'ticket.png', { type: 'image/png' });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() =>
+      expect(updateForm).toHaveBeenCalledWith({
+        fuelTicketImage: JSON.stringify(['data:image/jpeg;base64,mock-cropped']),
+      })
+    );
+  });
+
+  it('fuel/arrival levels and tirePressureJson falsy fallbacks: consumo se calcula igual y neumáticos quedan vacíos', () => {
+    render(
+      <RouteClosurePanel
+        {...defaultProps}
+        formData={{
+          ...defaultProps.formData,
+          fuelLevel: 0,
+          arrivalFuelLevel: 0,
+          tirePressureJson: '',
+        }}
+      />
+    );
+    // fuelLevel/arrivalFuelLevel caen a ||0 (mismo valor) -- consumo sigue siendo
+    // un numero real (0.0 L, no '--'), y tirePressureJson||'{}' deja los 4 inputs vacios.
+    expect(screen.getByText(/0.0 L/i)).toBeInTheDocument();
+    const psiInputs = screen.getAllByPlaceholderText('--');
+    expect(psiInputs).toHaveLength(4);
+    psiInputs.forEach((input) => expect(input).toHaveValue(''));
   });
 });

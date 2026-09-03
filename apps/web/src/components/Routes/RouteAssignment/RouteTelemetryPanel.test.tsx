@@ -95,5 +95,56 @@ describe('RouteTelemetryPanel (Sensor Validation)', () => {
 
     fireEvent.click(screen.getByTitle('E (0%)'));
     expect(updateForm).toHaveBeenCalledWith({ arrivalFuelLevel: 0 });
+
+    // limpiar el input de litros con isEdit=true (rama antes solo probada con isEdit=false)
+    fireEvent.change(numberInputs[2], { target: { value: '' } });
+    expect(updateForm).toHaveBeenCalledWith({ arrivalFuelLevel: 0 });
+  });
+
+  it('tankCapacity=0 with a unit assigned shows "Falta Capacidad Tanque" instead of the liters selector', () => {
+    render(<RouteTelemetryPanel {...defaultProps} tankCapacity={0} />);
+    expect(screen.getByText('Falta Capacidad Tanque')).toBeInTheDocument();
+  });
+
+  it('renders without crashing when fuelLevel/arrivalFuelLevel is undefined (litersValue falls back to blank)', () => {
+    const { container } = render(
+      <RouteTelemetryPanel
+        {...defaultProps}
+        formData={{ ...defaultProps.formData, fuelLevel: undefined as unknown as number }}
+      />
+    );
+    const litersInput = container.querySelectorAll('input[type="number"]')[1] as HTMLInputElement;
+    expect(litersInput.value).toBe('');
+  });
+
+  it('startReading falsy (0) renders the odometer input blank in both non-edit and edit modes', () => {
+    const { container, rerender } = render(
+      <RouteTelemetryPanel
+        {...defaultProps}
+        formData={{ ...defaultProps.formData, startReading: 0 }}
+      />
+    );
+    let odometerInput = container.querySelectorAll('input[type="number"]')[0] as HTMLInputElement;
+    expect(odometerInput.value).toBe('');
+
+    rerender(
+      <RouteTelemetryPanel
+        {...defaultProps}
+        formData={{ ...defaultProps.formData, startReading: 0 }}
+        isEdit
+      />
+    );
+    odometerInput = container.querySelectorAll('input[type="number"]')[0] as HTMLInputElement;
+    expect(odometerInput.value).toBe('');
+  });
+
+  it('uses the low-fuel (red) chart color when fuel level is 20% or below', () => {
+    const { container } = render(
+      <RouteTelemetryPanel
+        {...defaultProps}
+        formData={{ ...defaultProps.formData, fuelLevel: 15 }}
+      />
+    );
+    expect(container.querySelector('circle[stroke="#ef4444"]')).toBeInTheDocument();
   });
 });

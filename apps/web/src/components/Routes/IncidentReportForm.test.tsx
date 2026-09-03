@@ -152,6 +152,24 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
+  it('completes submission without crashing when onSuccess is not provided', async () => {
+    render(
+      <FleetContext.Provider value={createFleetContext()}>
+        <IncidentReportForm onClose={mockOnClose} routeUuid="test-uuid" unitId="ASM-001" />
+      </FleetContext.Provider>
+    );
+
+    const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
+    fireEvent.change(desc, { target: { value: 'Falla crítica en transmisión' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
+    });
+
+    await waitFor(() => expect(mockReportIncident).toHaveBeenCalled());
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
   it('handles transmission failures (Sentinel Fault Recovery)', async () => {
     const errorMsg = 'Error de red en Protocolo Sentinel';
     mockReportIncident.mockRejectedValue(new Error(errorMsg));
