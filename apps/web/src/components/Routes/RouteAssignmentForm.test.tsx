@@ -112,6 +112,92 @@ describe('RouteAssignmentForm (Apex Refactor)', () => {
     });
   });
 
+  it('shows an error banner when starting a new route fails', async () => {
+    render(<RouteAssignmentForm onClose={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Sincronizando/i)).toBeNull();
+    });
+
+    const unitSelectTrigger = await screen.findByText(/Clave o modelo/i, { exact: false });
+    fireEvent.click(unitSelectTrigger);
+    fireEvent.click(await screen.findByText(/ASM-001/i, { exact: false }));
+
+    const operatorSelectTrigger = await screen.findByText(/Buscar por nombre/i, { exact: false });
+    fireEvent.click(operatorSelectTrigger);
+    fireEvent.click(await screen.findByText(/Juan Perez/i, { exact: false }));
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej: Mina Nivel 400/i), {
+      target: { value: 'Base Norte' },
+    });
+
+    mockStartRoute.mockRejectedValueOnce(new Error('El servidor rechazó el despacho'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Autorizar Despacho/i }));
+    });
+
+    expect(await screen.findByText('El servidor rechazó el despacho')).toBeInTheDocument();
+  });
+
+  it('an isFinished route shows the Sincronizar button/Save icon and falls back start_km to "0,000"', async () => {
+    const finishedRoute = {
+      id: 'route-2',
+      uuid: 'route-2',
+      unit_id: 'ASM-001',
+      operator_id: '1',
+      origin: 'Base',
+      destination: 'Mina',
+      start_time: '2026-05-01T08:00:00.000Z',
+      end_time: '2026-05-01T12:00:00.000Z', // isFinished = true
+      start_km: null, // fuerza el fallback '0,000'
+      end_km: 50300,
+    } as unknown as RouteLog;
+
+    render(<RouteAssignmentForm onClose={vi.fn()} routeToEdit={finishedRoute} />);
+
+    const syncBtn = await screen.findByRole('button', { name: /Sincronizar/i });
+    expect(syncBtn).toBeInTheDocument();
+    expect(screen.getByText(/0,000/)).toBeInTheDocument();
+    // 'Sincronizar' usa el icono Save (lucide-react), no ChevronRight -- distinguible
+    // por su clase animate-pulse propia (vs. group-hover:translate-x-1 de ChevronRight).
+    expect(syncBtn.querySelector('svg.animate-pulse')).toBeInTheDocument();
+  });
+
+  it('shows Transmitiendo... on the submit button while a new-dispatch request is in flight', async () => {
+    render(<RouteAssignmentForm onClose={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Sincronizando/i)).toBeNull();
+    });
+
+    fireEvent.click(await screen.findByText(/Clave o modelo/i, { exact: false }));
+    fireEvent.click(await screen.findByText(/ASM-001/i, { exact: false }));
+
+    fireEvent.click(await screen.findByText(/Buscar por nombre/i, { exact: false }));
+    fireEvent.click(await screen.findByText(/Juan Perez/i, { exact: false }));
+
+    fireEvent.change(screen.getByPlaceholderText(/Ej: Mina Nivel 400/i), {
+      target: { value: 'Base Norte' },
+    });
+
+    let resolveStart: (v: unknown) => void = () => {};
+    mockStartRoute.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStart = resolve;
+        })
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Autorizar Despacho/i }));
+
+    expect(await screen.findByText('Transmitiendo...')).toBeInTheDocument();
+
+    await act(async () => {
+      resolveStart(undefined);
+    });
+  });
+
   it('closes the audit justification modal via Cancelar without confirming the deletion', async () => {
     const routeToEdit = {
       id: 'route-1',

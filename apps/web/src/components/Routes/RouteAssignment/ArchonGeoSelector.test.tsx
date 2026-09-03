@@ -123,6 +123,36 @@ describe('ArchonGeoSelector', () => {
     expect(screen.getByText('Durango')).toBeInTheDocument();
   });
 
+  it('clicking the trigger again closes an already-open dropdown', async () => {
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    const trigger = screen.getByText('Buscar Estado...');
+    fireEvent.click(trigger);
+    expect(screen.getByPlaceholderText('Buscar...')).toBeInTheDocument();
+    fireEvent.click(trigger);
+    expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+  });
+
+  it('a Colonia option without a postalCode renders with no secondary (CP) text', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: { data: STATES } };
+      if (url.includes('/neighborhoods')) return { data: { data: [{ id: 100, name: 'Centro' }] } };
+      if (url.includes('/municipalities')) return { data: { data: MUNICIPALITIES } };
+      throw new Error(`unmocked: ${url}`);
+    });
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    fireEvent.click(await screen.findByText('Fresnillo'));
+    fireEvent.click(screen.getByText('Buscar Colonia...'));
+
+    expect(await screen.findByText('Centro')).toBeInTheDocument();
+    expect(screen.queryByText(/CP:/)).not.toBeInTheDocument();
+  });
+
   it('the Municipio and Colonia selectors stay disabled until their parent is selected', async () => {
     render(<ArchonGeoSelector onChange={vi.fn()} />);
     await waitFor(() => expect(screen.getByText('Buscar Municipio...')).toBeInTheDocument());
@@ -168,6 +198,24 @@ describe('ArchonGeoSelector — keyboard activation (FC163 F1-REG Gate3)', () =>
       expect(api.get).toHaveBeenCalledWith('/geolocation/states/1/municipalities')
     );
   });
+
+  it('a non-activation key on the trigger does not open the dropdown', async () => {
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.keyDown(screen.getByText('Buscar Estado...'), { key: 'Tab' });
+    expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+  });
+
+  it('a non-activation key on an open option does not select it', async () => {
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    const option = await screen.findByText('Zacatecas');
+    fireEvent.keyDown(option, { key: 'Tab' });
+    // sigue abierto, sin seleccion -- el input de busqueda todavia esta ahi
+    expect(screen.getByPlaceholderText('Buscar...')).toBeInTheDocument();
+    expect(api.get).not.toHaveBeenCalledWith('/geolocation/states/1/municipalities');
+  });
 });
 
 /**
@@ -197,6 +245,16 @@ describe('ArchonGeoSelector — outside click and search input interactions', ()
     fireEvent.click(screen.getByText('Buscar Estado...'));
     const searchInput = screen.getByPlaceholderText('Buscar...');
     fireEvent.click(searchInput);
+    expect(screen.getByPlaceholderText('Buscar...')).toBeInTheDocument();
+  });
+
+  it('a mousedown inside the open container does not close it (useClickOutside)', async () => {
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    const searchInput = screen.getByPlaceholderText('Buscar...');
+    fireEvent.mouseDown(searchInput);
     expect(screen.getByPlaceholderText('Buscar...')).toBeInTheDocument();
   });
 });
@@ -485,5 +543,255 @@ describe('ArchonGeoSelector — debounced search completion', () => {
     fireEvent.click(screen.getByText('Buscar Colonia...'));
     await waitFor(() => expect(consoleSpy).toHaveBeenCalled(), { timeout: 1000 });
     consoleSpy.mockRestore();
+  });
+
+  it('resolves municipalities from a bare-array response (no .data wrapper) via the debounced search', async () => {
+    vi.mocked(api.get).mockImplementation(
+      async (url: string, config?: { params?: { search: string } }) => {
+        if (url === '/geolocation/states') return { data: { data: STATES } };
+        if (url.includes('/municipalities')) {
+          if (config?.params) return { data: MUNICIPALITIES }; // bare array, sin envoltura .data
+          return { data: { data: MUNICIPALITIES } };
+        }
+        throw new Error(`unmocked: ${url}`);
+      }
+    );
+
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/geolocation/states/1/municipalities')
+    );
+
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    await waitForDebounce();
+
+    expect(screen.getByText('Fresnillo')).toBeInTheDocument();
+  });
+
+  it('resolves an empty municipalities list when the debounced search response has no data at all', async () => {
+    vi.mocked(api.get).mockImplementation(
+      async (url: string, config?: { params?: { search: string } }) => {
+        if (url === '/geolocation/states') return { data: { data: STATES } };
+        if (url.includes('/municipalities')) {
+          if (config?.params) return { data: null };
+          return { data: { data: MUNICIPALITIES } };
+        }
+        throw new Error(`unmocked: ${url}`);
+      }
+    );
+
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/geolocation/states/1/municipalities')
+    );
+
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    await waitForDebounce();
+
+    expect(screen.queryByText('Fresnillo')).not.toBeInTheDocument();
+  });
+
+  it('resolves neighborhoods from a bare-array response (no .data wrapper) via the debounced search', async () => {
+    vi.mocked(api.get).mockImplementation(
+      async (url: string, config?: { params?: { search: string } }) => {
+        if (url === '/geolocation/states') return { data: { data: STATES } };
+        if (url.includes('/neighborhoods')) {
+          if (config?.params) return { data: NEIGHBORHOODS }; // bare array
+          return { data: { data: NEIGHBORHOODS } };
+        }
+        if (url.includes('/municipalities')) return { data: { data: MUNICIPALITIES } };
+        throw new Error(`unmocked: ${url}`);
+      }
+    );
+
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/geolocation/states/1/municipalities')
+    );
+
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    fireEvent.click(await screen.findByText('Fresnillo'));
+
+    fireEvent.click(screen.getByText('Buscar Colonia...'));
+    await waitForDebounce();
+
+    expect(screen.getByText('Centro')).toBeInTheDocument();
+  });
+
+  it('resolves an empty neighborhoods list when the debounced search response has no data at all', async () => {
+    vi.mocked(api.get).mockImplementation(
+      async (url: string, config?: { params?: { search: string } }) => {
+        if (url === '/geolocation/states') return { data: { data: STATES } };
+        if (url.includes('/neighborhoods')) {
+          if (config?.params) return { data: null };
+          return { data: { data: NEIGHBORHOODS } };
+        }
+        if (url.includes('/municipalities')) return { data: { data: MUNICIPALITIES } };
+        throw new Error(`unmocked: ${url}`);
+      }
+    );
+
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/geolocation/states/1/municipalities')
+    );
+
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    fireEvent.click(await screen.findByText('Fresnillo'));
+
+    fireEvent.click(screen.getByText('Buscar Colonia...'));
+    await waitForDebounce();
+
+    expect(screen.queryByText('Centro')).not.toBeInTheDocument();
+  });
+
+  it('handleNeighborhoodChange accepts a bare-array duplicate lookup and falls back for missing municipio/estado names', async () => {
+    const onChange = vi.fn();
+    let municipalitiesCallCount = 0;
+    const namelessStates = [{ id: 1, name: '' }];
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: { data: namelessStates } };
+      if (url.includes('/neighborhoods')) return { data: { data: NEIGHBORHOODS } };
+      if (url.includes('/municipalities')) {
+        municipalitiesCallCount += 1;
+        // 1er llamado: efecto de seleccion de estado (debe traer opciones para
+        // habilitar Municipio, con name normal). 2do llamado: la busqueda
+        // duplicada propia de handleNeighborhoodChange -- bare array SIN
+        // campo name, para forzar munObj?.name a su fallback tambien.
+        if (municipalitiesCallCount > 1) return { data: [{ id: 10 }] };
+        return { data: { data: MUNICIPALITIES } };
+      }
+      throw new Error(`unmocked: ${url}`);
+    });
+
+    render(<ArchonGeoSelector onChange={onChange} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    // El unico Estado disponible tiene name:'' -- se localiza por su rol de
+    // opcion (getStateLabel devuelve '', no hay texto visible que buscar).
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findAllByRole('option').then((opts) => opts[0]));
+    await waitFor(() => expect(municipalitiesCallCount).toBeGreaterThan(0));
+
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    fireEvent.click(await screen.findByText('Fresnillo'));
+
+    fireEvent.click(screen.getByText('Buscar Colonia...'));
+    fireEvent.click(await screen.findByText('Centro'));
+
+    // stateObj?.name||'' y munObj?.name||'' ambos vacios -> "Centro, , "
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(100, 'Centro, , '));
+  });
+
+  it('handleNeighborhoodChange falls back to [] when its duplicate lookup response has no data at all', async () => {
+    const onChange = vi.fn();
+    let municipalitiesCallCount = 0;
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: { data: STATES } };
+      if (url.includes('/neighborhoods')) return { data: { data: NEIGHBORHOODS } };
+      if (url.includes('/municipalities')) {
+        municipalitiesCallCount += 1;
+        if (municipalitiesCallCount > 1) return { data: null }; // data??[] -> []
+        return { data: { data: MUNICIPALITIES } };
+      }
+      throw new Error(`unmocked: ${url}`);
+    });
+
+    render(<ArchonGeoSelector onChange={onChange} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    await waitFor(() => expect(municipalitiesCallCount).toBeGreaterThan(0));
+
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    fireEvent.click(await screen.findByText('Fresnillo'));
+
+    fireEvent.click(screen.getByText('Buscar Colonia...'));
+    fireEvent.click(await screen.findByText('Centro'));
+
+    // munList=[] -> munObj undefined -> "Centro, , Zacatecas"
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(100, 'Centro, , Zacatecas'));
+  });
+
+  it('fetchStates accepts a bare-array response (no .data wrapper)', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: STATES }; // bare array
+      throw new Error(`unmocked: ${url}`);
+    });
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    expect(await screen.findByText('Zacatecas')).toBeInTheDocument();
+  });
+
+  it('fetchStates falls back to [] when the states response has no data at all', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: null };
+      throw new Error(`unmocked: ${url}`);
+    });
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    await waitForDebounce();
+    expect(screen.queryByText('Zacatecas')).not.toBeInTheDocument();
+  });
+
+  it('the state->municipalities cascade fetch accepts a bare-array response (no .data wrapper)', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: { data: STATES } };
+      if (url.includes('/municipalities')) return { data: MUNICIPALITIES }; // bare array
+      throw new Error(`unmocked: ${url}`);
+    });
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    expect(await screen.findByText('Fresnillo')).toBeInTheDocument();
+  });
+
+  it('the state->municipalities cascade fetch falls back to [] when the response has no data at all', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: { data: STATES } };
+      if (url.includes('/municipalities')) return { data: null };
+      throw new Error(`unmocked: ${url}`);
+    });
+    render(<ArchonGeoSelector onChange={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Buscar Estado...')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Buscar Estado...'));
+    fireEvent.click(await screen.findByText('Zacatecas'));
+    fireEvent.click(screen.getByText('Buscar Municipio...'));
+    await waitForDebounce();
+    expect(screen.queryByText('Fresnillo')).not.toBeInTheDocument();
+  });
+
+  it('neighborhood hydration does nothing when the response has no data at all', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url === '/geolocation/states') return { data: { data: STATES } };
+      if (url === '/geolocation/neighborhoods/100') return { data: null };
+      if (url.includes('/municipalities')) return { data: { data: MUNICIPALITIES } };
+      throw new Error(`unmocked: ${url}`);
+    });
+    render(<ArchonGeoSelector value={100} onChange={vi.fn()} />);
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/geolocation/neighborhoods/100'));
+    // sin datos que hidratar, el selector permanece sin seleccion
+    expect(await screen.findByText('Buscar Estado...')).toBeInTheDocument();
   });
 });

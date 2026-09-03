@@ -252,6 +252,74 @@ describe('RouteLogTable (Logistics Standard)', () => {
     expect(rows[0].textContent).toContain('ASM-002');
   });
 
+  it('sort comparators fall back correctly for falsy id/end_time/start_time and an unparseable date', async () => {
+    // 3 elementos (2 comparten el valor "trigger") para forzar que el comparador
+    // de Array.prototype.sort reciba cada ruta tanto en la posicion 'a' como 'b'
+    // (con 2 elementos el orden de argumentos queda fijo, patron ya establecido
+    // en esta sesion para MaintenanceGridView.tsx).
+    const edgeRoutes = [
+      {
+        id: 0, // id||0 -> toma el fallback (0)
+        uuid: 'route-edge-1',
+        unit_id: 'ASM-010',
+        operator_id: '1',
+        origin: 'Base',
+        destination: 'Cliente A',
+        start_reading: 10000,
+        end_reading: null,
+        start_time: null, // start_time? -> toma el fallback (0)
+        end_time: null, // end_time? -> 'EN RUTA'
+        created_at: '2026-05-20T08:00:00.000Z',
+      },
+      {
+        id: 5,
+        uuid: 'route-edge-2',
+        unit_id: 'ASM-011',
+        operator_id: '1',
+        origin: 'Mina',
+        destination: 'Cliente B',
+        start_reading: 20000,
+        end_reading: 20100,
+        start_time: 'not-a-real-date', // truthy pero Date(...).getTime() = NaN -> isNaN true
+        end_time: '2026-05-21T10:00:00.000Z', // 'FINALIZADA'
+        created_at: '2026-05-21T08:00:00.000Z',
+      },
+      {
+        id: 0, // repetido: misma condicion "trigger" en la otra posicion del par
+        uuid: 'route-edge-3',
+        unit_id: 'ASM-012',
+        operator_id: '1',
+        origin: 'Base',
+        destination: 'Cliente C',
+        start_reading: 15000,
+        end_reading: null,
+        start_time: null,
+        end_time: null,
+        created_at: '2026-05-22T08:00:00.000Z',
+      },
+    ];
+
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes') return Promise.resolve({ data: { success: true, data: edgeRoutes } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
+      if (url === '/fleet') return Promise.resolve({ data: { success: true, data: mockUnits } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getByText('ASM-010')).toBeDefined());
+
+    fireEvent.click(screen.getByText('UNIDAD'));
+    fireEvent.click(screen.getByText('ESTADO'));
+    fireEvent.click(screen.getByText('MISIÓN / TRAYECTO'));
+
+    // no crashea con id/start_time/end_time nulos + una fecha no parseable
+    expect(screen.getByText('ASM-010')).toBeInTheDocument();
+    expect(screen.getByText('ASM-011')).toBeInTheDocument();
+    expect(screen.getByText('ASM-012')).toBeInTheDocument();
+  });
+
   it('🔱 METRICS CALCULATION PROTOCOL: Should calculate and display KM/L and Precio/KM correctly', async () => {
     const routeWithMetrics = [
       {
@@ -317,6 +385,133 @@ describe('RouteLogTable (Logistics Standard)', () => {
     expect(screen.getByText('40.0')).toBeDefined(); // 40.0 L
     expect(screen.getByText('5.00 KM/L')).toBeDefined();
     expect(screen.getByText('$5.00/KM')).toBeDefined();
+
+    mockUseFleet.mockRestore();
+  });
+
+  it('telemetryCalcs edge cases: falsy fuel_level_start, doubly-null fuel levels, zero distance, and an active incident', async () => {
+    const edgeMetricsRoutes = [
+      {
+        id: 10,
+        uuid: 'route-edge-a',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        origin: 'Base',
+        destination: 'A',
+        start_km: 50000,
+        end_km: 50100,
+        start_time: '2026-05-22T08:00:00.000Z',
+        end_time: '2026-05-22T12:00:00.000Z',
+        fuel_level_start: 0, // ||0 -> toma el fallback (mismo valor, ejercita la rama)
+        fuel_level_end: null, // ??fuel_level_start -> usa 0 (no llega al ??100)
+        fuel_liters_loaded: 0,
+        fuel_amount: 100,
+        created_at: '2026-05-22T08:00:00.000Z',
+      },
+      {
+        id: 11,
+        uuid: 'route-edge-b',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        origin: 'Base',
+        destination: 'B',
+        start_km: 50100,
+        end_km: 50200,
+        start_time: '2026-05-22T08:00:00.000Z',
+        end_time: '2026-05-22T13:00:00.000Z',
+        fuel_level_start: null,
+        fuel_level_end: null, // ambos nulos -> ??100
+        fuel_liters_loaded: 50,
+        fuel_amount: 100,
+        created_at: '2026-05-22T08:00:00.000Z',
+      },
+      {
+        id: 12,
+        uuid: 'route-edge-c',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        origin: 'Base',
+        destination: 'C',
+        start_km: 50200,
+        end_km: 50200, // distance=0 -> computeKmPerLiter Y computeCostPerKm devuelven null
+        start_time: '2026-05-22T08:00:00.000Z',
+        end_time: '2026-05-22T14:00:00.000Z',
+        fuel_level_start: 100,
+        fuel_level_end: 50, // consumedLiters>0, para llegar al chequeo de distancia
+        fuel_liters_loaded: 0,
+        fuel_amount: 100,
+        created_at: '2026-05-22T08:00:00.000Z',
+      },
+      {
+        id: 13,
+        uuid: 'route-edge-d',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        origin: 'Base',
+        destination: 'D',
+        start_km: 50200,
+        end_km: null,
+        start_time: '2026-05-22T08:00:00.000Z',
+        end_time: null, // en ruta
+        incident_count: 1, // con incidencia -> getRouteLogStatus rama EN RUTA
+        created_at: '2026-05-22T08:00:00.000Z',
+      },
+      {
+        id: 14,
+        uuid: 'route-edge-e',
+        unit_id: 'ASM-001',
+        operator_id: 1,
+        origin: 'Base',
+        destination: 'E',
+        start_km: 50300,
+        end_km: 50250, // delta negativo (odometro corregido a la baja)
+        start_time: '2026-05-22T08:00:00.000Z',
+        end_time: '2026-05-22T15:00:00.000Z',
+        fuel_level_start: 80,
+        fuel_level_end: 70,
+        fuel_liters_loaded: 0,
+        fuel_amount: 50,
+        created_at: '2026-05-22T08:00:00.000Z',
+      },
+    ];
+
+    const mockUseFleet = vi.spyOn(FleetContextModule, 'useFleet').mockReturnValue({
+      units: [
+        {
+          id: 'ASM-001',
+          marca: 'Nissan',
+          modelo: 'March',
+          status: 'Disponible',
+          odometer: 50200,
+          placas: 'ABC-123',
+          fuelTankCapacity: 80,
+        },
+      ] as any,
+      stats: {} as any,
+      loading: false,
+      error: null,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+    });
+
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes')
+        return Promise.resolve({ data: { success: true, data: edgeMetricsRoutes } });
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: mockUsers } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+
+    render(<RouteLogTable />);
+    await waitFor(() => expect(screen.getAllByText('ASM-001').length).toBeGreaterThan(0));
+
+    // ruta D: con incidencia activa (end_time null) muestra EN RUTA, no FINALIZADA
+    expect(screen.getByText('EN RUTA')).toBeInTheDocument();
+    // ruta E: delta negativo -> sin prefijo '+', estilo rose (isNegative)
+    expect(screen.getByText('-50')).toBeInTheDocument();
 
     mockUseFleet.mockRestore();
   });
@@ -461,6 +656,63 @@ describe('RouteLogTable — search suggestions (matchFieldInRoute)', () => {
     expect(getSuggestions('zzz-no-match')).toHaveLength(0);
   });
 
+  it('falls back to "Operador General" when the suggestion route has no matching operator', async () => {
+    const setSearchConfig = vi.fn();
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Rutas', description: 'ERP' },
+      searchTerm: '',
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig,
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    vi.spyOn(FleetContextModule, 'useFleet').mockReturnValue({
+      units: units as any,
+      stats: {} as any,
+      loading: false,
+      error: null,
+      refreshUnits: vi.fn(),
+      startRoute: vi.fn(),
+      finishRoute: vi.fn(),
+      reportIncident: vi.fn(),
+      getUnitDetails: vi.fn(),
+    });
+    vi.spyOn(UserContextModule, 'useUsers').mockReturnValue({
+      users: users as any,
+      isLoading: false,
+      activePanel: 'DIRECTORY',
+      setActivePanel: vi.fn(),
+      fetchUsers: vi.fn(),
+      toggleUserStatus: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      editingUser: null,
+      setEditingUser: vi.fn(),
+      departments: [],
+      departmentsCatalog: [],
+      roles: [],
+    } as any);
+    const orphanRoute = [{ ...routes[0], operator_id: 999 }]; // sin match en users
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/routes') return Promise.resolve({ data: { success: true, data: orphanRoute } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+
+    render(<RouteLogTable />);
+    await waitFor(() => expect(setSearchConfig.mock.calls.length).toBeGreaterThan(1));
+    const { calls } = setSearchConfig.mock;
+    // 'base norte' (origen) en vez de 'asm-005' (unidad) -- fuerza que
+    // matchFieldInRoute pase por matchOperator(undefined, query) (operador sin
+    // match) ANTES de coincidir por origen, cubriendo su guard `if(!operator)`.
+    const suggestions = calls[calls.length - 1][0].getSuggestions('base norte');
+
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0].subtitle).toBe('Operador General');
+    expect(suggestions[0].metaLabel).toBe('Origen');
+  });
+
   it('onSuggestionSelect sets the search term to the selected route unit_id', async () => {
     const setSearchTerm = vi.fn();
     const setSearchConfig = vi.fn();
@@ -596,6 +848,26 @@ describe('RouteLogTable — row interactions', () => {
     await waitFor(() => expect(screen.getByAltText('Juan Perez')).toBeDefined());
     fireEvent.error(screen.getByAltText('Juan Perez'));
     expect((screen.getByAltText('Juan Perez') as HTMLImageElement).style.display).toBe('none');
+  });
+
+  it('the operator avatar alt text falls back to "Operator" when fullName is empty', async () => {
+    vi.spyOn(UserContextModule, 'useUsers').mockReturnValue({
+      users: [{ ...userWithImage[0], fullName: '' }] as any,
+      isLoading: false,
+      activePanel: 'DIRECTORY',
+      setActivePanel: vi.fn(),
+      fetchUsers: vi.fn(),
+      toggleUserStatus: vi.fn(),
+      updateUser: vi.fn(),
+      deleteUser: vi.fn(),
+      editingUser: null,
+      setEditingUser: vi.fn(),
+      departments: [],
+      departmentsCatalog: [],
+      roles: [],
+    } as any);
+    render(<RouteLogTable />);
+    expect(await screen.findByAltText('Operator')).toBeInTheDocument();
   });
 
   it('invokes onEdit when the "Editar Ruta" button is clicked (stopPropagation)', async () => {
