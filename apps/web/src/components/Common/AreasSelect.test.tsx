@@ -139,6 +139,51 @@ describe('AreasSelect', () => {
     expect(screen.queryByTestId('areas-dropdown')).not.toBeInTheDocument();
   });
 
+  it('a non-Enter key in the Otro input does not add the area', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
+    render(<AreasSelect value={[]} onChange={onChange} />);
+    await waitFor(() => expect(screen.getByTestId('areas-dropdown-trigger')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('areas-dropdown-trigger'));
+    await waitFor(() => expect(screen.getByTestId('area-option-otro')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('area-option-otro'));
+    fireEvent.change(screen.getByTestId('areas-otro-input'), { target: { value: 'Zona Este' } });
+    fireEvent.keyDown(screen.getByTestId('areas-otro-input'), { key: 'Tab' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('a mousedown inside the container does not close the dropdown', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
+    render(<AreasSelect value={[]} onChange={onChange} />);
+    await waitFor(() => expect(screen.getByTestId('areas-dropdown-trigger')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('areas-dropdown-trigger'));
+    await waitFor(() => expect(screen.getByTestId('areas-dropdown')).toBeInTheDocument());
+
+    fireEvent.mouseDown(screen.getByTestId('areas-dropdown-trigger'));
+    expect(screen.getByTestId('areas-dropdown')).toBeInTheDocument();
+  });
+
+  it('falls back to an empty catalog when the fetch resolves without a data array', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: undefined } });
+    render(<AreasSelect value={[]} onChange={onChange} />);
+    await waitFor(() => expect(screen.getByTestId('areas-select')).toBeInTheDocument());
+    expect(screen.queryByTestId('areas-dropdown-trigger')).not.toBeInTheDocument();
+  });
+
+  it('does not update state after unmount while the catalog fetch is still in flight', async () => {
+    let resolveGet: (v: unknown) => void = () => {};
+    (api.get as Mock).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      })
+    );
+    const { unmount } = render(<AreasSelect value={[]} onChange={onChange} />);
+    unmount();
+    resolveGet({ data: { success: true, data: CATALOG } });
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
+
   it('pressing Enter in the Otro input adds the custom area', async () => {
     (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
     render(<AreasSelect value={[]} onChange={onChange} />);

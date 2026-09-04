@@ -151,6 +151,23 @@ describe('EgressTable — cleanConcept fallbacks (manual entries)', () => {
     await waitFor(() => screen.getByTestId('egress-table'));
     expect(screen.getByText('FAC-0099')).toBeInTheDocument();
   });
+
+  it('falls back to em-dash for an AUTO entry with no notes', async () => {
+    mockGet([{ ...ROW, source: 'AUTO', notes: null }]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+  });
+
+  it('falls back to the default badge/label for a category outside the known catalog', async () => {
+    // Simulates backend data drift — CATEGORY_BADGE/CATEGORY_LABELS are
+    // Record<FinanceCategory,string> and exhaustively cover the real enum,
+    // so this can only happen via a value the frontend type doesn't expect.
+    mockGet([{ ...ROW, category: 'UNKNOWN_CAT' as FinancialTransaction['category'] }]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+    expect(screen.getByText('UNKNOWN_CAT')).toBeInTheDocument();
+  });
 });
 
 describe('EgressTable — unit autocomplete', () => {
@@ -203,6 +220,74 @@ describe('EgressTable — unit autocomplete', () => {
     expect(matches.length).toBeGreaterThan(1);
     fireEvent.keyDown(matches[0], { key: 'Enter' });
     expect(input.value).toBe('ASM-007');
+  });
+
+  it('Space key on a suggestion selects it (UnitSuggestionItem keyboard path)', async () => {
+    mockGet([ROW, { ...ROW, id: 2, uuid: 'tx-002', unit_name: 'ASM-020' }]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+
+    const input = screen.getByPlaceholderText('Buscar unidad...') as HTMLInputElement;
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'asm' } });
+
+    const matches = screen.getAllByText('ASM-007');
+    fireEvent.keyDown(matches[0], { key: ' ' });
+    expect(input.value).toBe('ASM-007');
+  });
+
+  it('a non-Enter/Space key on a suggestion does not select it', async () => {
+    mockGet([ROW, { ...ROW, id: 2, uuid: 'tx-002', unit_name: 'ASM-020' }]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+
+    const input = screen.getByPlaceholderText('Buscar unidad...') as HTMLInputElement;
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'asm' } });
+
+    const matches = screen.getAllByText('ASM-007');
+    fireEvent.keyDown(matches[0], { key: 'Tab' });
+    expect(input.value).toBe('asm');
+  });
+
+  it('a non-Escape key in the unit search input does not close the dropdown', async () => {
+    mockGet([ROW]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+
+    const input = screen.getByPlaceholderText('Buscar unidad...');
+    fireEvent.change(input, { target: { value: 'asm' } });
+    expect(screen.getAllByText('ASM-007')).toHaveLength(2);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getAllByText('ASM-007')).toHaveLength(2);
+  });
+
+  it('a mousedown inside the search box does not close the suggestions dropdown', async () => {
+    mockGet([ROW]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+
+    const input = screen.getByPlaceholderText('Buscar unidad...');
+    fireEvent.change(input, { target: { value: 'asm' } });
+    expect(screen.getAllByText('ASM-007')).toHaveLength(2);
+
+    fireEvent.mouseDown(input);
+    expect(screen.getAllByText('ASM-007')).toHaveLength(2);
+  });
+
+  it('deduplicates unit-name suggestions (case-insensitive)', async () => {
+    mockGet([ROW, { ...ROW, id: 2, uuid: 'tx-002', unit_name: 'asm-007' }]);
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+
+    const input = screen.getByPlaceholderText('Buscar unidad...');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'asm' } });
+
+    // 2 table rows share the same normalized unit name — only 1 suggestion
+    // entry (plus the table cells) should appear, not 2.
+    expect(screen.getAllByText('ASM-007')).toHaveLength(2);
   });
 
   it('closes the suggestions dropdown on an outside click', async () => {
@@ -277,6 +362,34 @@ describe('EgressTable — category filter, pagination and export', () => {
     await waitFor(() => expect(screen.getByTitle('Exportar CSV')).not.toBeDisabled());
     expect(createObjectURL).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+
+    vi.unstubAllGlobals();
+  });
+
+  it('includes the category param in the export URL when a category filter is active', async () => {
+    mockGet([ROW]);
+    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
+    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
+
+    render(<EgressTable from="2026-07-01" to="2026-07-31" />);
+    await waitFor(() => screen.getByTestId('egress-table'));
+
+    fireEvent.change(screen.getByDisplayValue('Todas las categorías'), {
+      target: { value: 'FUEL' },
+    });
+    await waitFor(() => {
+      const lastCallUrl = vi.mocked(api.get).mock.calls.at(-1)?.[0] as string;
+      expect(lastCallUrl).toContain('category=FUEL');
+    });
+
+    vi.mocked(api.get).mockResolvedValueOnce({ data: new Blob(['csv']) });
+    fireEvent.click(screen.getByTitle('Exportar CSV'));
+
+    await waitFor(() => {
+      const exportCallUrl = vi.mocked(api.get).mock.calls.at(-1)?.[0] as string;
+      expect(exportCallUrl).toContain('/finance/export?');
+      expect(exportCallUrl).toContain('category=FUEL');
+    });
 
     vi.unstubAllGlobals();
   });

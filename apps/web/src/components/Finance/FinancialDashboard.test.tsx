@@ -101,6 +101,18 @@ describe('FinancialDashboard', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the "Sin datos" fallback when the fetch resolves without a data payload and no error', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: undefined } });
+    render(
+      <FinancialDashboard
+        dateRange={RANGE}
+        onDateRangeChange={vi.fn()}
+        onNavigateToEgresos={vi.fn()}
+      />
+    );
+    expect(await screen.findByText('Sin datos')).toBeInTheDocument();
+  });
+
   it('clicking a category KPI action navigates with that category', async () => {
     vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: DASHBOARD_DATA } });
     const onNavigateToEgresos = vi.fn();
@@ -195,6 +207,42 @@ describe('FinancialDashboard', () => {
     await waitFor(() =>
       expect(screen.queryByText(/Top 5 unidades por costo/)).not.toBeInTheDocument()
     );
+  });
+
+  it('omits the second period label in the top-units heading when from equals to', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: DASHBOARD_DATA } });
+    render(
+      <FinancialDashboard
+        dateRange={{ from: '2026-06', to: '2026-06' }}
+        onDateRangeChange={vi.fn()}
+        onNavigateToEgresos={vi.fn()}
+      />
+    );
+    const heading = await screen.findByText(/Top 5 unidades por costo/);
+    // Single em-dash separating the label from the (one) period — no second
+    // "— <period>" suffix appended for the "to" date when from === to.
+    expect(heading.textContent).toBe('Top 5 unidades por costo — junio de 2026');
+  });
+
+  it('renders top-units bars at 0% width without dividing by zero when totalEgresos is 0', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          ...DASHBOARD_DATA,
+          kpis: { ...DASHBOARD_DATA.kpis, totalEgresos: 0 },
+        },
+      },
+    });
+    render(
+      <FinancialDashboard
+        dateRange={RANGE}
+        onDateRangeChange={vi.fn()}
+        onNavigateToEgresos={vi.fn()}
+      />
+    );
+    expect(await screen.findByText(/Top 5 unidades por costo/)).toBeInTheDocument();
+    expect(screen.getByText('ASM-001')).toBeInTheDocument();
   });
 
   it('re-fetches when the dateRange prop changes', async () => {

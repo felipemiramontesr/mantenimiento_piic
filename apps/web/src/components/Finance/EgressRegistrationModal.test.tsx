@@ -140,6 +140,14 @@ describe('EgressRegistrationModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('falls back to an empty unit list when the fleet fetch resolves without a data array', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, data: undefined } });
+    render(<EgressRegistrationModal onClose={vi.fn()} onSuccess={vi.fn()} />);
+    await waitFor(() => expect(api.get).toHaveBeenCalled());
+    expect(screen.getByText('Seleccionar unidad...')).toBeInTheDocument();
+    expect(screen.queryByText('ASM-001 — Toyota Hilux')).not.toBeInTheDocument();
+  });
+
   it('falls back to an empty unit list when the fleet fetch fails', async () => {
     vi.mocked(api.get).mockRejectedValueOnce(new Error('fetch failed'));
     render(<EgressRegistrationModal onClose={vi.fn()} onSuccess={vi.fn()} />);

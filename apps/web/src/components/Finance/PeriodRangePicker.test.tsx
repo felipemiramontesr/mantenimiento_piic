@@ -164,6 +164,18 @@ describe('PeriodRangePicker (FC164 F1 — parseYMFromDate empty/invalid fallback
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('R4-C Fc165 F2 2.2C: clicking the trigger again while open closes it without resetting the draft', () => {
+    render(<PeriodRangePicker value={{ from: '', to: '' }} onChange={vi.fn()} />);
+    openPicker();
+    expect(screen.getByText('Desde')).toBeInTheDocument();
+
+    // Toggling closed (isOpen was already true) takes the `if(!isOpen)` false
+    // branch — the draft-reset call is skipped, not that its effect is
+    // observable here, but the panel must actually close without crashing.
+    openPicker();
+    expect(screen.queryByText('Desde')).not.toBeInTheDocument();
+  });
+
   it('FC164-R1-2: rango previamente aplicado sigue mostrando su propio mes (regresión)', () => {
     render(
       <PeriodRangePicker value={{ from: '2026-05-01', to: '2026-05-31' }} onChange={vi.fn()} />

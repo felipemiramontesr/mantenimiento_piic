@@ -109,4 +109,43 @@ describe('SpecialtiesSelect', () => {
       expect(screen.getByTestId('owner-especialidades-input')).toBeInTheDocument()
     );
   });
+
+  // ── R4-C Fc165 F2 Slice 2.2C — unc lines 29,35,44 ──
+
+  it('falls back to an empty catalog when the fetch resolves without a data array', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: undefined } });
+    render(<SpecialtiesSelect value={[]} onChange={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('owner-especialidades-input')).toBeInTheDocument()
+    );
+    expect(screen.queryByTestId('specialties-dropdown-trigger')).not.toBeInTheDocument();
+  });
+
+  it('does not update state after unmount while the catalog fetch is still in flight', async () => {
+    let resolveGet: (v: unknown) => void = () => {};
+    (api.get as Mock).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      })
+    );
+    const { unmount } = render(<SpecialtiesSelect value={[]} onChange={vi.fn()} />);
+    unmount();
+    resolveGet({ data: { success: true, data: CATALOG } });
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
+
+  it('a mousedown inside the container does not close the dropdown', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: CATALOG } });
+    render(<SpecialtiesSelect value={[]} onChange={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('specialties-dropdown-trigger')).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByTestId('specialties-dropdown-trigger'));
+    await waitFor(() => expect(screen.getByTestId('specialties-dropdown')).toBeInTheDocument());
+
+    fireEvent.mouseDown(screen.getByTestId('specialties-dropdown-trigger'));
+    expect(screen.getByTestId('specialties-dropdown')).toBeInTheDocument();
+  });
 });

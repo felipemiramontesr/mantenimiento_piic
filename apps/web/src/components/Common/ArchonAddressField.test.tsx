@@ -328,4 +328,123 @@ describe('ArchonAddressField', () => {
       expect(screen.getByTestId('current-postal').textContent).toBe('');
     });
   });
+
+  // ── R4-C Fc165 F2 Slice 2.2C — unc lines 45,58,71,86,92 ──
+
+  it('falls back to an empty estados list when the states fetch resolves without a data array', async () => {
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: undefined } });
+    render(<Wrapper />);
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/geolocation/states'));
+    const stateSelect = screen.getByTestId('address-state-select').querySelector('select')!;
+    expect(stateSelect.querySelectorAll('option').length).toBe(1);
+  });
+
+  it('falls back to an empty municipios list when that fetch resolves without a data array', async () => {
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 14, name: 'Jalisco' }] } })
+      .mockResolvedValueOnce({ data: { success: true, data: undefined } });
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('Jalisco')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-state-select').querySelector('select')!, {
+      target: { value: '14' },
+    });
+
+    await waitFor(() => {
+      const muniSelect = screen.getByTestId('address-municipality-select').querySelector('select')!;
+      expect(muniSelect.querySelectorAll('option').length).toBe(1);
+    });
+  });
+
+  it('falls back to an empty colonias list when that fetch resolves without a data array', async () => {
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 14, name: 'Jalisco' }] } })
+      .mockResolvedValueOnce({
+        data: { success: true, data: [{ id: 120, name: 'Guadalajara' }] },
+      })
+      .mockResolvedValueOnce({ data: { success: true, data: undefined } });
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('Jalisco')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-state-select').querySelector('select')!, {
+      target: { value: '14' },
+    });
+    await waitFor(() => expect(screen.getByText('Guadalajara')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-municipality-select').querySelector('select')!, {
+      target: { value: '120' },
+    });
+
+    await waitFor(() => {
+      const neighSelect = screen
+        .getByTestId('address-neighborhood-select')
+        .querySelector('select')!;
+      expect(neighSelect.querySelectorAll('option').length).toBe(1);
+    });
+  });
+
+  it('clears the colonia and postalCode without fetching when it is unselected', async () => {
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 14, name: 'Jalisco' }] } })
+      .mockResolvedValueOnce({
+        data: { success: true, data: [{ id: 120, name: 'Guadalajara' }] },
+      })
+      .mockResolvedValueOnce({
+        data: { success: true, data: [{ id: 300, name: 'Chapalita' }] },
+      });
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('Jalisco')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-state-select').querySelector('select')!, {
+      target: { value: '14' },
+    });
+    await waitFor(() => expect(screen.getByText('Guadalajara')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-municipality-select').querySelector('select')!, {
+      target: { value: '120' },
+    });
+    await waitFor(() => expect(screen.getByText('Chapalita')).toBeInTheDocument());
+
+    const callsBefore = (api.get as Mock).mock.calls.length;
+    fireEvent.change(screen.getByTestId('address-neighborhood-select').querySelector('select')!, {
+      target: { value: '' },
+    });
+
+    expect(screen.getByTestId('current-neighborhood').textContent).toBe('');
+    expect(screen.getByTestId('current-postal').textContent).toBe('');
+    expect((api.get as Mock).mock.calls.length).toBe(callsBefore);
+  });
+
+  it('defaults postalCode to empty string when the neighborhood response omits it', async () => {
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: [{ id: 14, name: 'Jalisco' }] } })
+      .mockResolvedValueOnce({
+        data: { success: true, data: [{ id: 120, name: 'Guadalajara' }] },
+      })
+      .mockResolvedValueOnce({
+        data: { success: true, data: [{ id: 300, name: 'Chapalita' }] },
+      })
+      .mockResolvedValueOnce({
+        data: { success: true, data: { postalCode: null } },
+      });
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('Jalisco')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-state-select').querySelector('select')!, {
+      target: { value: '14' },
+    });
+    await waitFor(() => expect(screen.getByText('Guadalajara')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-municipality-select').querySelector('select')!, {
+      target: { value: '120' },
+    });
+    await waitFor(() => expect(screen.getByText('Chapalita')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('address-neighborhood-select').querySelector('select')!, {
+      target: { value: '300' },
+    });
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/geolocation/neighborhoods/300');
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('current-postal').textContent).toBe('');
+    });
+  });
 });
