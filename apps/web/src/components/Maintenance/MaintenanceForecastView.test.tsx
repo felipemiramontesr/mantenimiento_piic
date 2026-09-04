@@ -372,6 +372,32 @@ describe('MaintenanceForecastView', () => {
       expect(screen.getByText('ASM-667')).toBeInTheDocument();
     });
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 67,333 ──
+
+  it('shows the em-dash placeholder for an empty (falsy) out-of-domain urgency value', async () => {
+    const EMPTY_URGENCY_ROW = { ...WARNING_ROW, unitId: 'ASM-668', urgency: '' };
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [EMPTY_URGENCY_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => expect(screen.getByText('ASM-668')).toBeInTheDocument());
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('renders the singular "día" (no trailing s) when daysUntilService is exactly 1', async () => {
+    const ONE_DAY_ROW = { ...WARNING_ROW, unitId: 'ASM-669', daysUntilService: 1 };
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [ONE_DAY_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => expect(screen.getByText('ASM-669')).toBeInTheDocument());
+    expect(screen.getByText('1 día')).toBeInTheDocument();
+  });
 });
 
 /**
@@ -482,6 +508,49 @@ describe('MaintenanceForecastView — sorting', () => {
     fireEvent.click(odoHeader); // desc, numeric comparator
 
     expect(screen.getAllByText(/ASM-/).length).toBeGreaterThan(0);
+  });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 225,226,230,231 ──
+
+  it('sorts by TIPO PROYECTADO using the SERVICE_WEIGHT numeric lookup', async () => {
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({ success: true, data: [CRITICAL_ROW, OK_ROW] })
+      )
+    );
+    renderForecast();
+    await waitFor(() => expect(screen.getByText('ASM-001')).toBeInTheDocument());
+
+    // ADVANCED_50K (weight 5) vs BASIC_10K (weight 2) — exercises the
+    // f==='projectedServiceType' branch of the sort comparator (not the
+    // plain a[f]/b[f] path already covered by UNIDAD/ODÓMETRO).
+    fireEvent.click(screen.getByText('TIPO PROYECTADO'));
+    expect(screen.getAllByText(/ASM-/).length).toBe(2);
+  });
+
+  it('falls back to an empty string when sorting a string field with a null value', async () => {
+    // 3 rows (not 2) — Array.prototype.sort with only 2 elements can call the
+    // comparator with a fixed/skipped argument order; 3+ elements with the
+    // null-value row in the middle forces multiple pairwise comparisons so
+    // the `valA ?? ''` / `valB ?? ''` fallback actually gets exercised on
+    // both sides, not just proven not to crash.
+    server.use(
+      http.get('*/maintenance/forecast', () =>
+        HttpResponse.json({
+          success: true,
+          data: [WARNING_ROW, { ...CRITICAL_ROW, unitId: null }, OK_ROW],
+        })
+      )
+    );
+    renderForecast();
+    await waitFor(() => expect(screen.getByText('ASM-010')).toBeInTheDocument());
+
+    // UNIDAD is a sortable string field — with one row's value null, the
+    // comparator's `valA ?? ''` / `valB ?? ''` fallback must fire instead of
+    // crashing on localeCompare. The null-id row renders no visible unitId
+    // text, so only 2 (not 3) 'ASM-' matches remain after sorting.
+    expect(() => fireEvent.click(screen.getByText('UNIDAD'))).not.toThrow();
+    expect(screen.getAllByText(/ASM-/).length).toBe(2);
   });
 });
 

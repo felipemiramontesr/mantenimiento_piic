@@ -160,6 +160,52 @@ describe('useFormComputed — pronóstico de mantenimiento', () => {
     expect(result.current.isPronosticoReady).toBe(true);
     expect(result.current.pronosticoText).toContain('Tiempo');
   });
+
+  it('treats a missing dailyUsageAvg as 0, skipping the usage-based forecast', () => {
+    const { result } = renderHook(() =>
+      useFormComputed(
+        {
+          ...VALID_UNIT,
+          dailyUsageAvg: undefined,
+          lastServiceDate: '2026-01-01',
+          maintIntervalDays: 90,
+          maintIntervalKm: 10000,
+          lastServiceReading: 1000,
+        },
+        vi.fn(),
+        ASSET_TYPES,
+        false
+      )
+    );
+    expect(calculateMaintForecast).not.toHaveBeenCalled();
+    expect(result.current.isPronosticoReady).toBe(true);
+  });
+
+  it('labels the forecast "Tiempo" when the by-KM date is not before the by-time date', () => {
+    vi.mocked(calculateMaintForecast).mockReturnValue({
+      forecastDate: new Date('2026-10-01'),
+      serviceByKmDate: new Date('2026-10-15'),
+      serviceByTimeDate: new Date('2026-10-01'),
+    } as never);
+    const { result } = renderHook(() =>
+      useFormComputed(
+        {
+          ...VALID_UNIT,
+          lastServiceDate: '2026-01-01',
+          maintIntervalDays: 90,
+          maintIntervalKm: 10000,
+          dailyUsageAvg: 40,
+          odometer: 5000,
+          lastServiceReading: 1000,
+        },
+        vi.fn(),
+        ASSET_TYPES,
+        false
+      )
+    );
+    expect(result.current.pronosticoText).toContain('Tiempo');
+    expect(result.current.pronosticoText).not.toContain('Uso/KM');
+  });
 });
 
 describe('useFormComputed — predicción ambiental (Hoy No Circula)', () => {
@@ -183,6 +229,18 @@ describe('useFormComputed — predicción ambiental (Hoy No Circula)', () => {
       )
     );
     expect(setFormData).not.toHaveBeenCalled();
+  });
+
+  it('passes null year to the prediction util when year is unset', () => {
+    renderHook(() =>
+      useFormComputed(
+        { ...VALID_UNIT, placas: 'ABC-123', year: undefined },
+        vi.fn(),
+        ASSET_TYPES,
+        false
+      )
+    );
+    expect(predecirHologramaYEngomado).toHaveBeenCalledWith('ABC-123', null, 'VEHICULO');
   });
 
   it('clears the prediction when placas is empty', () => {

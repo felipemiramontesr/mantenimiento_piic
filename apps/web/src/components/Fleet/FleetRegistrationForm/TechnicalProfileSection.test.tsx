@@ -128,4 +128,44 @@ describe('TechnicalProfileSection', () => {
     fireEvent.change(fuelInput, { target: { value: '42' } });
     expect(fuelInput).toHaveValue(42);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 40,155,176,214 ──
+
+  it('clears capacidadCarga, fuelTankCapacity and the fuel level field back to undefined', () => {
+    render(<Harness />);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 1500.0'), { target: { value: '1800.5' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 1500.0'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 1500.0')).toHaveValue(null);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 80.0'), { target: { value: '95.5' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 80.0'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 80.0')).toHaveValue(null);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 100.00'), { target: { value: '50' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 100.00'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 100.00')).toHaveValue(null);
+  });
+
+  it('renders an empty Color select when colors is not provided', () => {
+    const Wrapper = (): React.JSX.Element => {
+      const [formData, setFormData] = useState<CreateFleetUnit>(baseFormData);
+      return (
+        <TechnicalProfileSection
+          formData={formData}
+          setFormData={setFormData}
+          colors={undefined as unknown as CatalogOption[]}
+          driveTypes={driveTypes}
+          transmissionTypes={transmissionTypes}
+          engineTypes={engineTypes}
+          fuelTypes={fuelTypes}
+          tireBrands={tireBrands}
+          terrainTypes={terrainTypes}
+          isEdit={false}
+        />
+      );
+    };
+    render(<Wrapper />);
+    expect(screen.getAllByText('Seleccionar...').length).toBeGreaterThan(0);
+  });
 });

@@ -116,4 +116,60 @@ describe('ComplianceSection', () => {
     fireEvent.change(screen.getByPlaceholderText('Ej: 15500.50'), { target: { value: '' } });
     expect(screen.getByPlaceholderText('Ej: 15500.50')).toHaveValue(null);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 96,178,217 ──
+
+  it('shows the "Vence:" amber banner when vencimientoVerif is set', () => {
+    render(
+      <ComplianceSection
+        formData={baseFormData}
+        setFormData={(): void => {}}
+        complianceStatuses={[]}
+        insuranceCompanies={[]}
+        environmentalHolograms={environmentalHolograms}
+        isFlotillaOrInternal
+        vencimientoVerif="2026-10-15"
+        prediction={prediction}
+      />
+    );
+    expect(screen.getByText(/Vence:/)).toBeInTheDocument();
+  });
+
+  it('uses the default swatch color for an engomadoColor outside ENGOMADO_COLORS', () => {
+    const { container } = render(
+      <ComplianceSection
+        formData={baseFormData}
+        setFormData={(): void => {}}
+        complianceStatuses={[]}
+        insuranceCompanies={[]}
+        environmentalHolograms={environmentalHolograms}
+        isFlotillaOrInternal
+        vencimientoVerif={undefined}
+        prediction={{ ...prediction, engomadoColor: 'Desconocido' }}
+      />
+    );
+    const swatch = container.querySelector('span.rounded-full') as HTMLElement;
+    expect(swatch.style.backgroundColor).toBe('rgb(148, 163, 184)'); // #94a3b8
+  });
+
+  it('falls back to an empty option value when a hologram catalog entry has no code', () => {
+    const holograms: CatalogOption[] = [{ id: 3, code: '', label: 'Sin Código' }];
+    render(
+      <ComplianceSection
+        formData={baseFormData}
+        setFormData={(): void => {}}
+        complianceStatuses={[]}
+        insuranceCompanies={[]}
+        environmentalHolograms={holograms}
+        isFlotillaOrInternal
+        vencimientoVerif={undefined}
+        prediction={null}
+      />
+    );
+    // Open the Holograma Ambiental select — the last "Seleccionar..." trigger
+    // — to reveal the option rendered from a catalog entry with code: ''.
+    const triggers = screen.getAllByText('Seleccionar...');
+    fireEvent.click(triggers[triggers.length - 1]);
+    expect(screen.getByText('Sin Código')).toBeInTheDocument();
+  });
 });

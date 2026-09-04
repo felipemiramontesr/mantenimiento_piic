@@ -126,6 +126,21 @@ describe('Fleet Compliance Engine (Hoy No Circula)', () => {
 
     expect(checkHoyNoCircula('2', 'ABC-1').isRestricted).toBe(false);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc line 59 ──
+
+  it('circulates freely on a Saturday for a hologram other than 1, 2 or an exempt one', () => {
+    const saturday = new Date('2026-03-14T12:00:00Z'); // Saturday
+    vi.setSystemTime(saturday);
+
+    // '3' is not in exemptHolograms (00/0/Exento) and not '1' or '2', so it
+    // falls through both Saturday-restriction ifs to the final open return.
+    expect(checkHoyNoCircula('3', 'ABC-1')).toEqual({
+      isRestricted: false,
+      reason: 'Circula sin restricciones',
+      color: 'emerald',
+    });
+  });
 });
 
 // ─── predecirHologramaYEngomado ───────────────────────────────────────────────
@@ -188,6 +203,15 @@ describe('predecirHologramaYEngomado', () => {
     expect(result.hologramaSugerido).toBe('0');
     expect(result.engomadoColor).toBe('Amarillo');
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc line 162 ──
+
+  it('falls back to the last-digit-9 (Azul) engomado for a short plate with no digits', () => {
+    // Length <=2 keeps esForaneo false (its no-digit branch requires length>2),
+    // so this reaches deriveEngomadoInfo with no digit match at all.
+    const result = predecirHologramaYEngomado('AB', 2020, null);
+    expect(result.engomadoColor).toBe('Azul');
+  });
 });
 
 // ─── calcularVencimientoVerificacion ─────────────────────────────────────────
@@ -227,5 +251,15 @@ describe('calcularVencimientoVerificacion', () => {
 
   it('handles full ISO string input (normalizes to date-only first)', () => {
     expect(calcularVencimientoVerificacion('2026-03-15T06:00:00.000Z', '1')).toBe('2026-09-15');
+  });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 99,103 ──
+
+  it('returns undefined when the date does not split into exactly 3 parts', () => {
+    expect(calcularVencimientoVerificacion('2026-03', '1')).toBeUndefined();
+  });
+
+  it('returns undefined when a date part is not numeric', () => {
+    expect(calcularVencimientoVerificacion('YYYY-MM-DD', '1')).toBeUndefined();
   });
 });

@@ -119,4 +119,47 @@ describe('FleetKpiMatrix', () => {
     );
     expect(critical.querySelector('.bg-rose-500')).not.toBeNull();
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 23,24,25,38,44,50,56 ──
+
+  it('defaults mtbf/mttr/backlog to 0 when omitted (?? fallback, not just falsy 0)', () => {
+    render(
+      <FleetKpiMatrix
+        availability={100}
+        mtbf={undefined as unknown as number}
+        mttr={undefined as unknown as number}
+        backlog={undefined as unknown as number}
+      />
+    );
+    expect(screen.getAllByText('0h')).toHaveLength(2); // mtbf + mttr both render '0h'
+    expect(screen.getByText('0')).toBeInTheDocument(); // backlog
+  });
+
+  it('colors MTBF amber in the 50-99 mid-range', () => {
+    const { container } = render(
+      <FleetKpiMatrix availability={100} mtbf={75} mttr={0} backlog={0} />
+    );
+    expect(container.querySelectorAll('.text-amber-500').length).toBeGreaterThan(0);
+  });
+
+  it('colors MTTR amber in the 5-12h mid-range', () => {
+    const { container } = render(
+      <FleetKpiMatrix availability={100} mtbf={0} mttr={8} backlog={0} />
+    );
+    expect(container.querySelectorAll('.text-amber-500').length).toBeGreaterThan(0);
+  });
+
+  it('colors Backlog amber in the 3-5 mid-range', () => {
+    const { container } = render(
+      <FleetKpiMatrix availability={100} mtbf={0} mttr={0} backlog={4} />
+    );
+    expect(container.querySelectorAll('.text-amber-500').length).toBeGreaterThan(0);
+  });
+
+  it('the health bar is amber in the 50-79 mid-range when not overdue', () => {
+    const { container } = render(
+      <FleetKpiMatrix availability={100} mtbf={0} mttr={0} backlog={0} healthScore={65} />
+    );
+    expect(container.querySelector('.bg-amber-500')).not.toBeNull();
+  });
 });

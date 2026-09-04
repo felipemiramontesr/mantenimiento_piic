@@ -109,4 +109,48 @@ describe('LogisticsSection', () => {
     fireEvent.change(screen.getByPlaceholderText('Ej: 50.5'), { target: { value: '75.25' } });
     expect(screen.getByPlaceholderText('Ej: 50.5')).toHaveValue(75.25);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 56,92,112,203,232,254 ──
+
+  it('clears odometer, maintIntervalDays, maintIntervalKm, lastServiceReading and dailyUsageAvg to undefined', () => {
+    render(<Harness />);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 45000'), { target: { value: '100' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 45000'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 45000')).toHaveValue(null);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 90'), { target: { value: '30' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 90'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 90')).toHaveValue(null);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 5000'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 5000'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 5000')).toHaveValue(null);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 40000'), { target: { value: '500' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 40000'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 40000')).toHaveValue(null);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej: 50.5'), { target: { value: '10' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 50.5'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 50.5')).toHaveValue(null);
+  });
+
+  it('renders an empty Centro de Gestión select when maintenanceCenters is not provided', () => {
+    const Wrapper = (): React.JSX.Element => {
+      const [formData, setFormData] = useState<CreateFleetUnit>(baseFormData);
+      return (
+        <LogisticsSection
+          formData={formData}
+          setFormData={setFormData}
+          locations={locations}
+          maintenanceCenters={undefined as unknown as CatalogOption[]}
+          assetTypes={assetTypes}
+          isEdit={false}
+        />
+      );
+    };
+    render(<Wrapper />);
+    expect(screen.getAllByText('Seleccionar...').length).toBeGreaterThan(0);
+  });
 });

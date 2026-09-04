@@ -209,4 +209,41 @@ describe('useAuditModalFlow', () => {
       expect(params.setError).toHaveBeenCalledWith('Error al eliminar la unidad')
     );
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 9,24 ──
+
+  it('falls back to a generic message on a failed PATCH rejection that is not an Error instance', async () => {
+    const params = makeParams();
+    const { result } = renderHook(() => useAuditModalFlow(params));
+    await act(async () => {
+      await result.current.handleFormSubmit({ preventDefault: vi.fn() } as never);
+    });
+    await act(async () => {
+      await result.current.confirmModal('reason');
+    });
+
+    // No `.response` wrapper and not an Error instance -- errData is
+    // undefined (skips the ?? LHS) and `err instanceof Error` is false.
+    vi.mocked(api.patch).mockRejectedValueOnce('raw rejection, not an Error');
+    await act(async () => {
+      await result.current.handleFormSubmit({ preventDefault: vi.fn() } as never);
+    });
+
+    await waitFor(() =>
+      expect(params.setError).toHaveBeenCalledWith('Error al sincronizar la unidad')
+    );
+  });
+
+  it('uses the Error message on a failed DELETE that is a plain Error with no server response', async () => {
+    const params = makeParams();
+    const { result } = renderHook(() => useAuditModalFlow(params));
+    act(() => result.current.requestDelete());
+
+    vi.mocked(api.delete).mockRejectedValueOnce(new Error('conexión perdida'));
+    await act(async () => {
+      await result.current.confirmModal('reason');
+    });
+
+    await waitFor(() => expect(params.setError).toHaveBeenCalledWith('conexión perdida'));
+  });
 });

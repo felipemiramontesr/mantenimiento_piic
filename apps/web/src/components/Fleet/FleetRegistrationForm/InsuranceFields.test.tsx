@@ -67,4 +67,31 @@ describe('InsuranceFields', () => {
     });
     expect(screen.getByPlaceholderText('Ej: 850.00')).toHaveValue(1200.5);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 23,61,110 ──
+
+  it('clears insuranceCost back to undefined when the input is emptied', () => {
+    render(<Harness />);
+    fireEvent.change(screen.getByPlaceholderText('Ej: 850.00'), {
+      target: { value: '1200.50' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Ej: 850.00'), { target: { value: '' } });
+    expect(screen.getByPlaceholderText('Ej: 850.00')).toHaveValue(null);
+  });
+
+  it('renders empty Estatus/Aseguradora selects when their catalogs are not provided', () => {
+    const Wrapper = (): React.JSX.Element => {
+      const [formData, setFormData] = useState<CreateFleetUnit>(baseFormData);
+      return (
+        <InsuranceFields
+          formData={formData}
+          setFormData={setFormData}
+          complianceStatuses={undefined as unknown as CatalogOption[]}
+          insuranceCompanies={undefined as unknown as CatalogOption[]}
+        />
+      );
+    };
+    render(<Wrapper />);
+    expect(screen.getAllByText('Seleccionar...').length).toBe(2);
+  });
 });

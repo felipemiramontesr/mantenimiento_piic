@@ -129,4 +129,70 @@ describe('IdentitySection', () => {
     fireEvent.click(screen.getByText('Depto A'));
     expect(screen.getByText('Depto A')).toBeInTheDocument();
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 65,77,78,90 ──
+
+  it('falls back to an empty value for assetTypeId/brandId selects when both are unset', () => {
+    const Wrapper = (): React.JSX.Element => {
+      const [formData, setFormData] = useState<CreateFleetUnit>({
+        ...baseFormData,
+        assetTypeId: null,
+        brandId: null,
+      });
+      return (
+        <IdentitySection
+          formData={formData}
+          setFormData={setFormData}
+          assetTypes={assetTypes}
+          marcas={marcas}
+          modelos={modelos}
+          owners={owners}
+          useTypes={useTypes}
+          departments={departments}
+          isLoading={false}
+          handleAssetTypeChange={(id): void =>
+            setFormData((prev) => ({ ...prev, assetTypeId: id }))
+          }
+          handleMarcaChange={(id): void => setFormData((prev) => ({ ...prev, brandId: id }))}
+          handleModeloChange={(id): void => setFormData((prev) => ({ ...prev, modelId: id }))}
+          isFlotillaOrInternal
+        />
+      );
+    };
+    render(<Wrapper />);
+
+    // Tipo de Activo and Marca both show the unset placeholder (empty value).
+    expect(screen.getAllByText('Seleccionar...').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('shows "Sincronizando..." placeholders for Marca/Modelo while isLoading', () => {
+    const Wrapper = (): React.JSX.Element => {
+      const [formData, setFormData] = useState<CreateFleetUnit>({
+        ...baseFormData,
+        brandId: null,
+      });
+      return (
+        <IdentitySection
+          formData={formData}
+          setFormData={setFormData}
+          assetTypes={assetTypes}
+          marcas={marcas}
+          modelos={modelos}
+          owners={owners}
+          useTypes={useTypes}
+          departments={departments}
+          isLoading
+          handleAssetTypeChange={(id): void =>
+            setFormData((prev) => ({ ...prev, assetTypeId: id }))
+          }
+          handleMarcaChange={(id): void => setFormData((prev) => ({ ...prev, brandId: id }))}
+          handleModeloChange={(id): void => setFormData((prev) => ({ ...prev, modelId: id }))}
+          isFlotillaOrInternal
+        />
+      );
+    };
+    render(<Wrapper />);
+
+    expect(screen.getAllByText('Sincronizando...').length).toBe(2);
+  });
 });

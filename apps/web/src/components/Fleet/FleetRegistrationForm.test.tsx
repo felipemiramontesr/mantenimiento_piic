@@ -186,4 +186,26 @@ describe('FleetRegistrationForm Component', () => {
       expect(container).toBeTruthy();
     });
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3A — unc lines 103,135 ──
+
+  it('after confirming the audit-justification modal, the submit button becomes "Guardar Cambios"', async (): Promise<void> => {
+    render(
+      <FleetRegistrationForm controller={mockController} {...mockProps} isEdit unitId="UNIT-TEST" />
+    );
+
+    // Edit-mode submit with no captured reason yet opens the UPDATE modal
+    // instead of submitting directly (handleSubmit not called here).
+    fireEvent.click(screen.getByText('Sincronizar Cambios'));
+    const textarea = await screen.findByPlaceholderText(/Corrección de error/i);
+    fireEvent.change(textarea, { target: { value: 'Actualización de kilometraje' } });
+    fireEvent.click(screen.getByText('Sincronizar'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Guardar Cambios')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Guardar Cambios').closest('button')?.className).toContain(
+      'btn-sentinel-sky'
+    );
+  });
 });
