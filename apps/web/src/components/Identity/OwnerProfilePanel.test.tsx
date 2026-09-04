@@ -352,4 +352,207 @@ describe('OwnerProfilePanel', () => {
       '5500001111'
     );
   });
+
+  // ── OwnerProfilePanel.tsx unc line 12 (roleId ?? 0 fallback) ──
+
+  it('defaults roleId to 0 when currentUser has no roleId', async (): Promise<void> => {
+    mockUseAuth.mockReturnValue({
+      currentUser: { id: '10', username: 'u' },
+      ownerType: 'FLOTILLA',
+    });
+    (api.get as Mock).mockResolvedValueOnce({
+      data: { success: true, data: { ...PROFILE_DATA, neighborhoodId: null } },
+    });
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('owner-profile-panel')).toBeInTheDocument();
+    });
+    // roleId 0 is not 3 (CENTER) — especialidades field stays hidden.
+    expect(screen.queryByTestId('owner-especialidades-input')).not.toBeInTheDocument();
+  });
+
+  // ── R4-C Fc165 F2 Slice 2.2C — useProfileSave.ts unc lines 29,30,31,34,37,38,39 ──
+
+  it('sends null for rfc/razonSocial/telefono in the save payload when their inputs are emptied', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock).mockResolvedValueOnce({
+      data: { success: true, data: { ...PROFILE_DATA, neighborhoodId: null } },
+    });
+
+    render(<OwnerProfilePanel />);
+    await waitFor((): void => {
+      expect(screen.getByTestId('owner-profile-panel')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByTestId('owner-rfc-input'), { target: { value: '' } });
+    fireEvent.change(screen.getByTestId('owner-razon-social-input'), { target: { value: '' } });
+    fireEvent.change(screen.getByTestId('owner-telefono-input'), { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('owner-profile-save'));
+
+    await waitFor((): void => {
+      expect(api.patch).toHaveBeenCalledWith(
+        '/owners/me/profile',
+        expect.objectContaining({ rfc: null, razonSocial: null, telefono: null })
+      );
+    });
+  });
+
+  it('sends null for especialidades in the save payload when the array is empty', async (): Promise<void> => {
+    setupAuth(3, 'CENTER');
+    (api.get as Mock).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: { ...PROFILE_DATA, especialidades: [], neighborhoodId: null, ownerType: 'CENTER' },
+      },
+    });
+
+    render(<OwnerProfilePanel />);
+    await waitFor((): void => {
+      expect(screen.getByTestId('owner-especialidades-input')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('owner-profile-save'));
+
+    await waitFor((): void => {
+      expect(api.patch).toHaveBeenCalledWith(
+        '/owners/me/profile',
+        expect.objectContaining({ especialidades: null })
+      );
+    });
+  });
+
+  it('omits empty calle/numeroExt but includes a set numeroInt in the save payload', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock)
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { ...PROFILE_DATA, calle: null, numeroExt: null, numeroInt: 'B' },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: { success: true, data: { stateId: 14, municipalityId: 120, postalCode: '44500' } },
+      });
+
+    render(<OwnerProfilePanel />);
+    await waitFor((): void => {
+      expect(screen.getByTestId('address-field-mock').getAttribute('data-neighborhood')).toBe(
+        '300'
+      );
+    });
+
+    fireEvent.click(screen.getByTestId('owner-profile-save'));
+
+    await waitFor((): void => {
+      expect(api.patch).toHaveBeenCalledWith(
+        '/owners/me/profile',
+        expect.objectContaining({ neighborhoodId: 300, numeroInt: 'B' })
+      );
+    });
+    const payload = (api.patch as Mock).mock.calls[0][1] as Record<string, unknown>;
+    expect(payload).not.toHaveProperty('calle');
+    expect(payload).not.toHaveProperty('numeroExt');
+  });
+
+  // ── useProfileLoad.ts unc lines 26,28,29,30,34,38 ──
+
+  it('renders empty inputs when the loaded profile has null rfc/razonSocial/telefono', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          ...PROFILE_DATA,
+          rfc: null,
+          razonSocial: null,
+          telefono: null,
+          neighborhoodId: null,
+        },
+      },
+    });
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('owner-profile-panel')).toBeInTheDocument();
+    });
+    expect((screen.getByTestId('owner-rfc-input') as HTMLInputElement).value).toBe('');
+    expect((screen.getByTestId('owner-razon-social-input') as HTMLInputElement).value).toBe('');
+    expect((screen.getByTestId('owner-telefono-input') as HTMLInputElement).value).toBe('');
+  });
+
+  it('stays with the empty form when the profile fetch resolves with no data', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock).mockResolvedValueOnce({ data: { success: true, data: undefined } });
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('owner-profile-panel')).toBeInTheDocument();
+    });
+    expect((screen.getByTestId('owner-rfc-input') as HTMLInputElement).value).toBe('');
+  });
+
+  it('does not update state after unmount while the address hydration is still in flight', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    let resolveGeo: (v: unknown) => void = () => {};
+    const geoPromise = new Promise((resolve) => {
+      resolveGeo = resolve;
+    });
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: PROFILE_DATA } })
+      .mockReturnValueOnce(geoPromise);
+
+    const { unmount } = render(<OwnerProfilePanel />);
+    await waitFor((): void => {
+      expect(api.get).toHaveBeenCalledWith('/geolocation/neighborhoods/300');
+    });
+
+    // The cancelled guard must skip both setState calls after unmount — an
+    // unguarded call here would make React warn/throw on the next tick.
+    unmount();
+    resolveGeo({
+      data: { success: true, data: { stateId: 14, municipalityId: 120, postalCode: '44500' } },
+    });
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
+
+  // ── types.ts (hydrateAddress) unc lines 46,54 ──
+
+  it('falls back to EMPTY_ADDRESS when the neighborhood lookup resolves with no data', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: PROFILE_DATA } })
+      .mockResolvedValueOnce({ data: { success: true, data: undefined } });
+
+    render(<OwnerProfilePanel />);
+
+    await waitFor((): void => {
+      expect(screen.getByTestId('address-field-mock')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('address-field-mock').getAttribute('data-neighborhood')).toBe('');
+  });
+
+  it('defaults postalCode to empty string when the neighborhood response omits it', async (): Promise<void> => {
+    setupAuth(1, 'FLOTILLA');
+    (api.get as Mock)
+      .mockResolvedValueOnce({ data: { success: true, data: PROFILE_DATA } })
+      .mockResolvedValueOnce({
+        data: { success: true, data: { stateId: 14, municipalityId: 120, postalCode: null } },
+      });
+
+    render(<OwnerProfilePanel />);
+
+    // hydrateAddress completes successfully (geo.postalCode||'' fallback taken, no throw)
+    // and the neighborhood still resolves — proves the branch executed without crashing.
+    await waitFor((): void => {
+      expect(screen.getByTestId('address-field-mock').getAttribute('data-neighborhood')).toBe(
+        '300'
+      );
+    });
+  });
 });

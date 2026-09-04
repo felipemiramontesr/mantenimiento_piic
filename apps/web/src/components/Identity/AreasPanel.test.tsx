@@ -311,4 +311,88 @@ describe('AreasPanel', () => {
 
     expect(screen.queryByTestId('edit-input-1')).not.toBeInTheDocument();
   });
+
+  // ── R4-C Fc165 F2 Slice 2.2C — Sonar unc lines 17,29,58,74,77,88,127 ──
+
+  it('does not create an area when Enter is pressed with an empty input (guard short-circuits)', async () => {
+    setupOwnerAndAreas([]);
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('areas-empty')).toBeInTheDocument());
+
+    fireEvent.keyDown(screen.getByTestId('new-area-input'), { key: 'Enter' });
+
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('does not save an edit when the edit input is cleared to empty', async () => {
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento')]);
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('area-name-1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('edit-btn-1'));
+    fireEvent.change(screen.getByTestId('edit-input-1'), { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('save-edit-1'));
+
+    expect(mockApiPut).not.toHaveBeenCalled();
+  });
+
+  it('editing one area leaves sibling areas unchanged in the list', async () => {
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento'), makeArea(2, 'Finanzas')]);
+    mockApiPut.mockResolvedValueOnce({ data: { success: true } });
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('area-name-2')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('edit-btn-1'));
+    fireEvent.change(screen.getByTestId('edit-input-1'), { target: { value: 'Mantenimiento V2' } });
+    fireEvent.click(screen.getByTestId('save-edit-1'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('area-name-1')).toHaveTextContent('Mantenimiento V2');
+    });
+    expect(screen.getByTestId('area-name-2')).toHaveTextContent('Finanzas');
+  });
+
+  it('deactivating one area leaves sibling areas unchanged in the list', async () => {
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento'), makeArea(2, 'Finanzas')]);
+    mockApiDelete.mockResolvedValueOnce({ data: { success: true } });
+
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('deactivate-btn-1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('deactivate-btn-1'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('area-inactive-1')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('area-name-2')).toHaveTextContent('Finanzas');
+    expect(screen.queryByTestId('area-inactive-2')).not.toBeInTheDocument();
+  });
+
+  it('pressing a non-Enter key in the new-area input does not create the area', async () => {
+    setupOwnerAndAreas([]);
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('areas-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('new-area-input'), { target: { value: 'Compras' } });
+    fireEvent.keyDown(screen.getByTestId('new-area-input'), { key: 'a' });
+
+    expect(mockApiPost).not.toHaveBeenCalled();
+  });
+
+  it('does nothing and stays loading when there is no currentUser', () => {
+    mockUseAuth.mockReturnValue({ currentUser: null });
+    render(<AreasPanel />);
+    expect(screen.getByTestId('areas-loading')).toBeInTheDocument();
+    expect(mockApiGet).not.toHaveBeenCalled();
+  });
+
+  it('treats a currentUser with no permissions field as non-admin', async () => {
+    mockUseAuth.mockReturnValue({ currentUser: { id: USER_ID } });
+    setupOwnerAndAreas([makeArea(1, 'Mantenimiento')]);
+    render(<AreasPanel />);
+    await waitFor(() => expect(screen.getByTestId('area-name-1')).toBeInTheDocument());
+    expect(screen.queryByTestId('new-area-input')).not.toBeInTheDocument();
+  });
 });

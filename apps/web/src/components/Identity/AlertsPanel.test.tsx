@@ -224,6 +224,28 @@ describe('AlertsPanel — role-scoped guard (Feature Contract Alerts_Role_Scoped
     expect(setSearchTermMock).toHaveBeenCalledWith('ASM-001');
   });
 
+  it('search config: getSuggestions falls through to the description clause when unitId/type/severity all miss', () => {
+    grantAccess(true);
+    renderPanel();
+
+    const lastConfigCall =
+      setSearchConfigMock.mock.calls[setSearchConfigMock.mock.calls.length - 1];
+    const config = lastConfigCall[0];
+    // 'pronóstico' matches none of unitId ('asm-001'), type ('mantenimiento vencido') or
+    // severity ('crítico') — forces evaluation through to the description clause.
+    const suggestions = config.getSuggestions('pronóstico');
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0].id).toBe(sampleAlert.id);
+  });
+
+  it('shows the loading state in the table while isSyncing and no alerts have loaded yet', () => {
+    grantAccess(true);
+    useAlertsMock.mockReturnValue({ alerts: [], isSyncing: true, refresh: vi.fn() });
+    renderPanel();
+
+    expect(screen.getByText('Cargando alertas...')).toBeInTheDocument();
+  });
+
   it('filters the alerts table when a global search term is active', () => {
     grantAccess(true);
     useAlertsMock.mockReturnValue({

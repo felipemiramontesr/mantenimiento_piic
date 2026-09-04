@@ -213,4 +213,47 @@ describe('AccessControlSlideOver', () => {
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(await screen.findByText('Sin personal registrado.')).toBeInTheDocument();
   });
+
+  // ── R4-C Fc165 F2 Slice 2.2C — useAccessControlState.ts unc lines 18,82 ──
+
+  it('renders an empty roster when the fetch body has success:false, even with data present', async () => {
+    mockFetchOnce(200, { success: false, data: USERS });
+    render(<AccessControlSlideOver isOpen onClose={vi.fn()} />);
+    expect(await screen.findByText('Sin personal registrado.')).toBeInTheDocument();
+  });
+
+  it('shows the generic Spanish fallback message when the register rejection is not an Error instance', async () => {
+    mockFetchOnce(200, { success: true, data: [] }); // initial roster load
+    render(<AccessControlSlideOver isOpen onClose={vi.fn()} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByText('Registrar Personal'));
+    fireEvent.change(screen.getByPlaceholderText('Ej. juan.perez'), {
+      target: { value: 'nuevo.usuario' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('email@piic.com.mx'), {
+      target: { value: 'nuevo@piic.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'Archon@1234!' },
+    });
+
+    // Non-Error rejection (e.g. a raw network-level failure) — exercises the
+    // `err instanceof Error ? ... : 'Error de identidad'` false side.
+    vi.mocked(fetch).mockRejectedValueOnce('raw rejection, not an Error');
+    fireEvent.click(screen.getByText('Guardar Identidad'));
+
+    expect(await screen.findByText('Error de identidad')).toBeInTheDocument();
+  });
+
+  // ── SlideOverChrome.tsx (SlideOverBackdrop) unc line 73 ──
+
+  it('a non-Escape key on the backdrop does not call onClose', async () => {
+    mockFetchOnce(200, { success: true, data: [] });
+    const onClose = vi.fn();
+    const { container } = render(<AccessControlSlideOver isOpen onClose={onClose} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    fireEvent.keyDown(container.querySelector('.absolute.inset-0') as Element, { key: 'Enter' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
