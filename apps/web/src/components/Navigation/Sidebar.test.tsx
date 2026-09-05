@@ -1155,5 +1155,46 @@ describe('Sidebar Component (Archon Core)', () => {
       fireEvent.keyDown(overlay, { key: 'Escape' });
       expect(setIsMobileMenuOpenMock).toHaveBeenCalledWith(false);
     });
+
+    // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc lines 196,237,261 ──
+
+    it('an unrelated key on a NavItem does not navigate', () => {
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.keyDown(screen.getByText('Comando'), { key: 'a' });
+      expect(navigateMock).not.toHaveBeenCalled();
+    });
+
+    it('an unrelated document keydown does not close the mobile drawer', () => {
+      useSovereignLayoutMock.mockReturnValue({
+        isMobileMenuOpen: true,
+        setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+      });
+      render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      fireEvent.keyDown(document, { key: 'a' });
+      expect(setIsMobileMenuOpenMock).not.toHaveBeenCalled();
+    });
+
+    it('an unrelated key on the mobile overlay itself does not close the drawer', () => {
+      useSovereignLayoutMock.mockReturnValue({
+        isMobileMenuOpen: true,
+        setIsMobileMenuOpen: setIsMobileMenuOpenMock,
+      });
+      const { container } = render(
+        <BrowserRouter>
+          <Sidebar isCollapsed={false} onToggle={vi.fn()} />
+        </BrowserRouter>
+      );
+      const overlay = container.querySelector('.bg-black\\/60') as HTMLElement;
+      fireEvent.keyDown(overlay, { key: 'a' });
+      expect(setIsMobileMenuOpenMock).not.toHaveBeenCalled();
+    });
   });
 });

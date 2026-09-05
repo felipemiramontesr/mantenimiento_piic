@@ -82,6 +82,17 @@ describe('Axios API Client (ARCHON CORE)', () => {
     expect(redirectUserToLogin).not.toHaveBeenCalled();
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc line 57 (fulfilled interceptor _startTime guard) ──
+  it('does not update lastLatency when the response config has no _startTime (fulfilled interceptor)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const responseInterceptorSuccess = (api.interceptors.response as any).handlers[0].fulfilled;
+    const fakeResponse = { status: 200, config: {} };
+
+    const result = responseInterceptorSuccess(fakeResponse);
+
+    expect(result).toBe(fakeResponse);
+  });
+
   it('should not redirect on 401 from /auth/refresh', async () => {
     vi.mocked(getToken).mockReturnValue('some-token');
     const error = { response: { status: 401 }, config: { url: '/auth/refresh' } };

@@ -185,4 +185,57 @@ describe('ArchonSelect', () => {
     fireEvent.keyDown(screen.getByText('ASM-01'), { key: 'Enter' });
     expect(mockOnChange).toHaveBeenCalledWith('ASM-01');
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — ArchonSelect family unc branches ──
+
+  it('clicking a disabled trigger does not open the dropdown (handleToggle disabled guard)', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} disabled />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+  });
+
+  it('an unrelated key on the trigger does not open the dropdown', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.keyDown(screen.getByText('Seleccionar...'), { key: 'Tab' });
+    expect(screen.queryByText('ASM-01')).not.toBeInTheDocument();
+  });
+
+  it('clicking the trigger again while open closes the dropdown (handleToggle already-open path)', async () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    await waitFor(() => expect(screen.getByText('ASM-01')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Buscar...')).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters correctly when options omit secondaryLabel/searchTerms (fallback to empty string)', async () => {
+    const sparseOptions = [{ value: 'BARE', label: 'BARE-01' }, ...options];
+    render(<ArchonSelect options={sparseOptions} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+
+    const searchInput = screen.getByPlaceholderText('Buscar...');
+    fireEvent.change(searchInput, { target: { value: 'BARE-01' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('BARE-01')).toBeInTheDocument();
+      expect(screen.queryByText('ASM-01')).not.toBeInTheDocument();
+    });
+  });
+
+  it('Space key on an option selects it (ArchonSelectOptionItem keyboard path)', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    fireEvent.keyDown(screen.getByText('ASM-01'), { key: ' ' });
+    expect(mockOnChange).toHaveBeenCalledWith('ASM-01');
+  });
+
+  it('an unrelated key on an option does not select it', () => {
+    render(<ArchonSelect options={options} value="" onChange={mockOnChange} />);
+    fireEvent.click(screen.getByText('Seleccionar...'));
+    fireEvent.keyDown(screen.getByText('ASM-01'), { key: 'a' });
+    expect(mockOnChange).not.toHaveBeenCalled();
+  });
 });

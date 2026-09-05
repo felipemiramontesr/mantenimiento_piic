@@ -176,4 +176,41 @@ describe('ArchonCropModal', () => {
       expect(img.style.left).toBe(leftBefore);
     });
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — ArchonCropModal family unc branches ──
+
+  it('wheel with deltaY>0 zooms out (useCropWheelZoom false side)', () => {
+    render(<ArchonCropModal {...defaultProps} />);
+    const viewport = screen.getByTestId('crop-viewport');
+    const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+    fireEvent.load(img);
+    fireEvent.keyDown(viewport, { key: '+' });
+    const widthAfterZoomIn = parseFloat(img.style.width);
+
+    fireEvent.wheel(viewport, { deltaY: 100 });
+    expect(parseFloat(img.style.width)).toBeLessThan(widthAfterZoomIn);
+  });
+
+  it('mousemove without a prior mousedown is a no-op (useCropDrag isDragging guard)', () => {
+    render(<ArchonCropModal {...defaultProps} />);
+    const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+    fireEvent.load(img);
+    const leftBefore = img.style.left;
+
+    fireEvent.mouseMove(window, { clientX: 999, clientY: 999 });
+    expect(img.style.left).toBe(leftBefore);
+  });
+
+  it('falls back to a natural size of 0 when the loaded image reports zero dimensions (broken image)', () => {
+    render(<ArchonCropModal {...defaultProps} />);
+    const img = screen.getByAltText('crop-preview') as HTMLImageElement;
+    Object.defineProperty(img, 'naturalWidth', { value: 0, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 0, configurable: true });
+
+    fireEvent.load(img);
+
+    // getMinScale(0,0) falls back to 1 (types.ts) instead of dividing by zero;
+    // naturalSize.w=0 * scale=1 = 0.
+    expect(img.style.width).toBe('0px');
+  });
 });

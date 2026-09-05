@@ -1,5 +1,6 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { fireEvent } from '@testing-library/react';
 import { render, screen } from '../../test/testUtils';
 import {
   ArchonDataTable,
@@ -68,6 +69,34 @@ describe('ArchonDataTable', () => {
     );
     expect(screen.getByText('Alpha')).toBeInTheDocument();
     expect(screen.getByText('Beta')).toBeInTheDocument();
+  });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc line 139 (header.sortable && onSort) ──
+  it('clicking a sortable header with onSort provided calls onSort with the header key', () => {
+    const onSort = vi.fn();
+    const sortableHeaders: ArchonTableHeader[] = [{ key: 'name', label: 'NAME', sortable: true }];
+    render(
+      <ArchonDataTable<Row>
+        data={[{ name: 'Alpha' }]}
+        headers={sortableHeaders}
+        renderRow={renderRow}
+        onSort={onSort}
+      />
+    );
+    fireEvent.click(screen.getByText('NAME'));
+    expect(onSort).toHaveBeenCalledWith('name');
+  });
+
+  it('clicking a sortable header without an onSort handler does not throw', () => {
+    const sortableHeaders: ArchonTableHeader[] = [{ key: 'name', label: 'NAME', sortable: true }];
+    render(
+      <ArchonDataTable<Row>
+        data={[{ name: 'Alpha' }]}
+        headers={sortableHeaders}
+        renderRow={renderRow}
+      />
+    );
+    expect(() => fireEvent.click(screen.getByText('NAME'))).not.toThrow();
   });
 
   it('getJustifyClass and getAlignClass cover right alignment branches', () => {

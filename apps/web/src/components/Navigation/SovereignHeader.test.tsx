@@ -570,6 +570,110 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     expect(mockSearchConfig.onSuggestionSelect).toHaveBeenCalled();
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc lines 85,171,276 ──
+
+  it('Space key on a suggestion selects it (SearchSuggestionItem keyboard path)', () => {
+    mockSearchTerm = 'aveo';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: mockSearchTerm,
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(<SovereignHeader />);
+
+    const input = screen.getByPlaceholderText(
+      'Buscar por placas, marca, modelo, sede o departamento...'
+    );
+    fireEvent.focus(input);
+
+    const suggestion = screen.getByText('ASM-002 (Modelo: Aveo)');
+    fireEvent.keyDown(suggestion, { key: ' ' });
+
+    expect(mockSearchConfig.onSuggestionSelect).toHaveBeenCalled();
+  });
+
+  it('an unrelated key on a suggestion does not select it', () => {
+    mockSearchTerm = 'aveo';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: mockSearchTerm,
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(<SovereignHeader />);
+
+    const input = screen.getByPlaceholderText(
+      'Buscar por placas, marca, modelo, sede o departamento...'
+    );
+    fireEvent.focus(input);
+
+    const suggestion = screen.getByText('ASM-002 (Modelo: Aveo)');
+    fireEvent.keyDown(suggestion, { key: 'a' });
+
+    expect(mockSearchConfig.onSuggestionSelect).not.toHaveBeenCalled();
+  });
+
+  it('an unrelated key on the search input does not close suggestions', () => {
+    mockSearchTerm = 'aveo';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: mockSearchTerm,
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(<SovereignHeader />);
+
+    const input = screen.getByPlaceholderText(
+      'Buscar por placas, marca, modelo, sede o departamento...'
+    );
+    fireEvent.focus(input);
+    expect(screen.getByText('ASM-002 (Modelo: Aveo)')).toBeInTheDocument();
+
+    fireEvent.keyDown(input, { key: 'a' });
+    expect(screen.getByText('ASM-002 (Modelo: Aveo)')).toBeInTheDocument();
+  });
+
+  it('mousedown inside the search container does not close suggestions', () => {
+    mockSearchTerm = 'aveo';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: mockLayoutData as any,
+      searchTerm: mockSearchTerm,
+      setSearchTerm: mockSetSearchTerm,
+      searchConfig: mockSearchConfig,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+
+    render(<SovereignHeader />);
+
+    const input = screen.getByPlaceholderText(
+      'Buscar por placas, marca, modelo, sede o departamento...'
+    );
+    fireEvent.focus(input);
+    expect(screen.getByText('ASM-002 (Modelo: Aveo)')).toBeInTheDocument();
+
+    fireEvent.mouseDown(input);
+    expect(screen.getByText('ASM-002 (Modelo: Aveo)')).toBeInTheDocument();
+  });
+
   it('renders headerSlot when provided, taking priority over headerAction', () => {
     vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
       layoutData: {

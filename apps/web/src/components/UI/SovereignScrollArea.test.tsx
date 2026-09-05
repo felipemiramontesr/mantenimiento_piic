@@ -111,5 +111,27 @@ describe('SovereignScrollArea — affordance de scroll (FC 078)', () => {
       expect(observed).toContain(vp.firstElementChild as Element);
       expect(observed).toHaveLength(2);
     });
+
+    // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc line 46 (no firstElementChild) ──
+    it('observes only the viewport when it has no child content yet', () => {
+      const observed: Element[] = [];
+      const mockRO = (): Pick<ResizeObserver, 'observe' | 'disconnect'> => ({
+        observe: (el: Element): void => {
+          observed.push(el);
+        },
+        disconnect: (): void => {
+          /* noop */
+        },
+      });
+      globalThis.ResizeObserver = function ResizeObserverMock(this: unknown) {
+        return mockRO();
+      } as unknown as typeof ResizeObserver;
+
+      render(<SovereignScrollArea testId="ssa-empty">{null}</SovereignScrollArea>);
+      const vp = screen.getByTestId('ssa-empty-viewport');
+
+      expect(observed).toContain(vp);
+      expect(observed).toHaveLength(1);
+    });
   });
 });

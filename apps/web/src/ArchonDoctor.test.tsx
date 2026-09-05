@@ -92,6 +92,20 @@ describe('ArchonDoctor — window.__ARCHON_FLEET_CONTEXT__ polling', () => {
     expect(screen.getByText('Stats Total:').nextElementSibling?.textContent).toBe('0');
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc line 26 (interval bridge falsy guard) ──
+  it('the polling interval is a no-op while the fleet context bridge is unset', async () => {
+    render(<ArchonDoctor />);
+    openPanel();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(screen.getByText('DETECTOR ACTIVE').className).toContain('text-yellow-400');
+    fireEvent.click(screen.getByText('DATA'));
+    expect(screen.getByText('Valid Units').nextSibling?.textContent).toBe('0');
+  });
+
   it('reflects window.__ARCHON_FLEET_CONTEXT__ once the polling interval ticks', async () => {
     render(<ArchonDoctor />);
     openPanel();

@@ -97,6 +97,25 @@ describe('ArchonDatePicker', () => {
     expect(screen.queryByText('Marzo 2026')).not.toBeInTheDocument();
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — ArchonDatePicker.tsx unc branches ──
+
+  it('treats a malformed ISO value (wrong segment count) as unset instead of crashing', () => {
+    render(<ArchonDatePicker value="2026-13" onChange={vi.fn()} />);
+    // formatDisplay falls back to '' (parseISOParts returns null) — the trigger
+    // shows neither the placeholder (value is truthy) nor a formatted date.
+    expect(screen.queryByText('dd / mm / aaaa')).not.toBeInTheDocument();
+    expect(screen.queryByText(/\d{2} \/ \d{2} \/ \d{4}/)).not.toBeInTheDocument();
+  });
+
+  it('clicking inside the open calendar does not close it (outside-click guard, contains()=true)', () => {
+    render(<ArchonDatePicker value="2026-03-05" onChange={vi.fn()} />);
+    fireEvent.click(screen.getByText('05 / 03 / 2026'));
+    expect(screen.getByText('Marzo 2026')).toBeInTheDocument();
+
+    fireEvent.mouseDown(screen.getByText('Marzo 2026'));
+    expect(screen.getByText('Marzo 2026')).toBeInTheDocument();
+  });
+
   it('falls back to the current month when value is empty and the calendar is opened', () => {
     render(<ArchonDatePicker value="" onChange={vi.fn()} />);
     fireEvent.click(screen.getByText('dd / mm / aaaa'));

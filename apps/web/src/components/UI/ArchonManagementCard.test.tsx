@@ -91,4 +91,34 @@ describe('ArchonManagementCard', () => {
     fireEvent.keyDown(container.firstElementChild as Element, { key: 'Enter' });
     expect(onClick).toHaveBeenCalled();
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc branches ──
+
+  it('falls back to the navy palette for an out-of-catalog variant (backend/type drift)', () => {
+    const { container } = render(
+      <ArchonManagementCard
+        {...BASE_PROPS}
+        variant={'chartreuse' as unknown as ArchonCardVariant}
+      />
+    );
+    expect(container.firstElementChild?.className).toContain('[--card-accent:#0f2a44]');
+  });
+
+  it('Space key on the card calls onClick (ClickableCardWrapper keyboard path)', () => {
+    const onClick = vi.fn();
+    const { container } = render(
+      <ArchonManagementCard {...BASE_PROPS} variant="navy" onClick={onClick} />
+    );
+    fireEvent.keyDown(container.firstElementChild as Element, { key: ' ' });
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  it('an unrelated key on the card does not call onClick', () => {
+    const onClick = vi.fn();
+    const { container } = render(
+      <ArchonManagementCard {...BASE_PROPS} variant="navy" onClick={onClick} />
+    );
+    fireEvent.keyDown(container.firstElementChild as Element, { key: 'a' });
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });

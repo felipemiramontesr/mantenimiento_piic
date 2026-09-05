@@ -27,7 +27,9 @@ vi.mock('./ArchonCropModal', () => ({
   },
 }));
 
-// Mock FileReader
+// Mock FileReader — mockFileReaderResult lets individual tests simulate a
+// falsy/empty result (e.g. readFileAsDataUrl's `if (dataUrl)` false side).
+let mockFileReaderResult = 'data:image/png;base64,mock';
 class MockFileReader {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onload: any;
@@ -35,7 +37,7 @@ class MockFileReader {
   readAsDataURL(): void {
     setTimeout(() => {
       if (this.onload) {
-        this.onload({ target: { result: 'data:image/png;base64,mock' } });
+        this.onload({ target: { result: mockFileReaderResult } });
       }
     }, 0);
   }
@@ -47,6 +49,7 @@ describe('ArchonImageUploader Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFileReaderResult = 'data:image/png;base64,mock';
     vi.stubGlobal('FileReader', MockFileReader);
     cropModalBehavior.action = 'confirm';
     cropModalBehavior.renderCount = 0;
@@ -289,6 +292,86 @@ describe('ArchonImageUploader Component', () => {
     const dropZone = container.querySelector('.border-dashed') as HTMLElement;
     fireEvent.keyDown(dropZone, { key: 'Enter' });
     expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — ArchonImageUploader/DropzoneTrigger unc branches ──
+
+  it('does not enqueue a crop when the FileReader result is empty (readFileAsDataUrl falsy guard)', async () => {
+    mockFileReaderResult = '';
+    const file = new File(['x'], 'x.png', { type: 'image/png' });
+    render(<ArchonImageUploader images={[]} onChange={mockOnChange} />);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await new Promise((r) => {
+      setTimeout(r, 10);
+    });
+    expect(cropModalBehavior.renderCount).toBe(0);
+    expect(mockOnChange).not.toHaveBeenCalled();
+  });
+
+  it('selecting only non-image files with maxImages=1 is a no-op (filesArray.length===0 guard)', () => {
+    const nonImageFile = new File(['x'], 'x.txt', { type: 'text/plain' });
+    render(
+      <ArchonImageUploader
+        images={[]}
+        onChange={mockOnChange}
+        onFileChange={mockOnFileChange}
+        maxImages={1}
+      />
+    );
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [nonImageFile] } });
+    expect(mockOnFileChange).not.toHaveBeenCalled();
+    expect(cropModalBehavior.renderCount).toBe(0);
+  });
+
+  it('dropping with no files on the DataTransfer is a no-op (onDrop dataTransfer.files guard)', () => {
+    render(
+      <ArchonImageUploader images={[]} onChange={mockOnChange} onFileChange={mockOnFileChange} />
+    );
+    const dropzone = screen.getByText('Arrastra imágenes de la unidad').closest('div');
+    if (!dropzone) throw new Error('Dropzone not found');
+    fireEvent.drop(dropzone, { dataTransfer: {} });
+    expect(mockOnFileChange).not.toHaveBeenCalled();
+  });
+
+  it('input change event with no FileList is a no-op (DropzoneFileInput onChange guard)', () => {
+    render(
+      <ArchonImageUploader images={[]} onChange={mockOnChange} onFileChange={mockOnFileChange} />
+    );
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: null } });
+    expect(mockOnFileChange).not.toHaveBeenCalled();
+  });
+
+  it('pressing Enter/Space while disabled does not open the file dialog (handleKeyDown disabled guard)', () => {
+    const { container } = render(
+      <ArchonImageUploader images={[]} onChange={mockOnChange} disabled />
+    );
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+    const dropZone = container.querySelector('.border-dashed') as HTMLElement;
+    fireEvent.keyDown(dropZone, { key: 'Enter' });
+    expect(clickSpy).not.toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  it('pressing Space on the dropzone triggers file input click (handleKeyDown Space path)', () => {
+    const { container } = render(<ArchonImageUploader images={[]} onChange={mockOnChange} />);
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+    const dropZone = container.querySelector('.border-dashed') as HTMLElement;
+    fireEvent.keyDown(dropZone, { key: ' ' });
+    expect(clickSpy).toHaveBeenCalled();
+    clickSpy.mockRestore();
+  });
+
+  it('pressing an unrelated key on the dropzone does not trigger the file dialog', () => {
+    const { container } = render(<ArchonImageUploader images={[]} onChange={mockOnChange} />);
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+    const dropZone = container.querySelector('.border-dashed') as HTMLElement;
+    fireEvent.keyDown(dropZone, { key: 'a' });
+    expect(clickSpy).not.toHaveBeenCalled();
     clickSpy.mockRestore();
   });
 });

@@ -73,6 +73,20 @@ const NoProviderComponent = (): React.JSX.Element => {
   return <div>never renders</div>;
 };
 
+// FC165 F2 Slice 2.3C — exposes fullName/departments so the fallback chains
+// (u.full_name || u.fullName || '', departments.length>0 ? ... : DEPARTAMENTOS)
+// are directly observable.
+const DetailComponent = (): React.JSX.Element => {
+  const { users, departments } = useUsers();
+  return (
+    <div>
+      <div data-testid="name-0">{users[0]?.fullName ?? '(none)'}</div>
+      <div data-testid="name-1">{users[1]?.fullName ?? '(none)'}</div>
+      <div data-testid="departments">{departments.join(',')}</div>
+    </div>
+  );
+};
+
 describe('UserContext (Silk Hydration Suite)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -193,6 +207,97 @@ describe('UserContext (Silk Hydration Suite)', () => {
       expect(screen.getByTestId('users-count').textContent).toBe('1');
     });
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc lines 65,110,188 ──
+
+  it('falls back to camelCase fullName, then to empty string, when full_name is missing', async () => {
+    vi.mocked(archonCache.get).mockReturnValue([]);
+    const rawUsers = [
+      {
+        id: 1,
+        username: 'a',
+        fullName: 'Camel Case Name',
+        email: 'a@a.mx',
+        roleId: 1,
+        department: 'X',
+        is_active: 1,
+        roleName: 'Op',
+      },
+      {
+        id: 2,
+        username: 'b',
+        email: 'b@b.mx',
+        roleId: 1,
+        department: 'X',
+        is_active: 1,
+        roleName: 'Op',
+      },
+    ];
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/auth/users')
+        return Promise.resolve({ data: { success: true, data: rawUsers } });
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+
+    await act(async () => {
+      render(
+        <UserProvider>
+          <DetailComponent />
+        </UserProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('name-0').textContent).toBe('Camel Case Name');
+      expect(screen.getByTestId('name-1').textContent).toBe('');
+    });
+  });
+
+  it('uses the API-derived department catalog when it resolves non-empty', async () => {
+    vi.mocked(archonCache.get).mockReturnValue([]);
+    vi.mocked(api.get).mockImplementation((url) => {
+      if (url === '/catalogs/DEPARTMENT') {
+        return Promise.resolve({
+          data: { success: true, data: [{ id: 1, label: 'Logística Real' }] },
+        });
+      }
+      return Promise.resolve({ data: { success: true, data: [] } });
+    });
+
+    await act(async () => {
+      render(
+        <UserProvider>
+          <DetailComponent />
+        </UserProvider>
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('departments').textContent).toBe('Logística Real');
+    });
+  });
+
+  it('isLoading reflects an in-flight sync with no cached users yet (usersSyncing && !users.length)', async () => {
+    // archonCache.get must return a falsy value (not []) so useSilkHydration
+    // treats this as a non-silent sync and flips isSyncing to true.
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise(() => {
+          /* never resolves within this test */
+        })
+    );
+
+    render(
+      <UserProvider>
+        <TestComponent />
+      </UserProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('true');
+    });
+  });
 });
 
 /**
@@ -237,6 +342,19 @@ describe('UserContext — toggleUserStatus', () => {
     );
     // fetchUsers() triggers a second /auth/users GET beyond the initial mount one.
     expect(vi.mocked(api.get).mock.calls.length).toBeGreaterThan(getCallsBefore);
+  });
+
+  it('does not refresh users when the server reports success:false', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ data: { success: false } });
+    await renderActions();
+
+    const getCallsBefore = vi.mocked(api.get).mock.calls.length;
+    await act(async () => {
+      fireEvent.click(screen.getByText('toggle'));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('toggled'));
+    expect(vi.mocked(api.get).mock.calls.length).toBe(getCallsBefore);
   });
 });
 

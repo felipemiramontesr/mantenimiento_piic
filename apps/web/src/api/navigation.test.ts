@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { redirectUserToLogin } from './navigation';
 
 /**
@@ -19,5 +19,12 @@ describe('redirectUserToLogin', () => {
     Object.defineProperty(window, 'location', { writable: true, value: { href: '' } });
     redirectUserToLogin();
     expect(window.location.href).toBe('/login');
+  });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 1 — unc line 4 (typeof window === 'undefined') ──
+  it('does nothing when window is undefined (SSR guard)', () => {
+    vi.stubGlobal('window', undefined);
+    expect(() => redirectUserToLogin()).not.toThrow();
+    vi.unstubAllGlobals();
   });
 });
