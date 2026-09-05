@@ -3,7 +3,6 @@ import { MapPin, ShieldAlert, User, Clock, Gauge } from 'lucide-react';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import RouteAssignmentForm from '../../components/Routes/RouteAssignmentForm';
 import RouteLogTable, { RouteLog } from '../../components/Routes/RouteLogTable';
-import ForensicJournalTable from '../../components/Routes/ForensicJournalTable';
 import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
 import ArchonCardView, { CardMetricRow } from '../../components/Common/ArchonCardView';
 import useRouteLogs from '../../hooks/useRouteLogs';
@@ -11,7 +10,13 @@ import { useUsers } from '../../context/UserContext';
 import { useFleet } from '../../context/FleetContext';
 import { formatDateTime } from '../../utils/dateUtils';
 
-export type RoutePanel = 'LOGS' | 'DISPATCH' | 'JOURNAL';
+// FC165 F3 Slice3.1 — purga: `'JOURNAL'` era un tercer valor del dominio sin
+// ningún `setActivePanel('JOURNAL')` real en el árbol (grep confirmado); el
+// detalle forense per-fila vive hoy en `RouteLogRow`'s `ForensicAccordionRow`
+// (`<ForensicJournalTable unitId routeUuid hideHeader />`), no aquí. Se
+// purga el miembro de tipo muerto y su render inalcanzable (censo vivo: 0
+// hits en el lado TRUE tras la suite completa).
+export type RoutePanel = 'LOGS' | 'DISPATCH';
 
 // FC 078 F2(a) — receta v2: header+badge de estado, operador/misión,
 // telemetría KM y hora de salida. Wrapper en el módulo (RouteLogTable.tsx
@@ -174,8 +179,6 @@ const RoutesModule: React.FC = (): React.JSX.Element => {
               {activePanel === 'DISPATCH' && (
                 <RouteAssignmentForm onClose={handleReturnToLogs} routeToEdit={editingRoute} />
               )}
-
-              {activePanel === 'JOURNAL' && <ForensicJournalTable />}
             </div>
           </div>
         </div>

@@ -150,4 +150,28 @@ describe('ArchonAdaptiveView (FC 041 Fase A)', () => {
     expect(tableBtn.className).toMatch(/\bmin-w-11\b/);
     expect(cardsBtn.className).toMatch(/\bmin-w-11\b/);
   });
+
+  // FC165 F3 Slice3.1 — el fallback `views[activeView] ?? views.TABLE` (línea
+  // 95) protege un caso real: si el anfitrión reduce dinámicamente las
+  // vistas que provee (p.ej. datos que ya no soportan CARDS) mientras
+  // `activeView` sigue apuntando a una vista que YA NO llega en `views`, el
+  // estado interno persiste (no se remonta el componente) y `views[activeView]`
+  // queda undefined. Se simula shrinking el prop `views` vía `rerender` tras
+  // seleccionar CARDS.
+  it('falls back to TABLE when the active view disappears from a shrinking views prop', () => {
+    const { rerender } = render(
+      <ArchonAdaptiveView
+        storageKey="test-module"
+        views={{ TABLE: <div>CONTENIDO TABLA</div>, CARDS: <div>CONTENIDO TARJETAS</div> }}
+      />
+    );
+    fireEvent.click(screen.getByTestId('adaptive-view-cards'));
+    expect(screen.getByText('CONTENIDO TARJETAS')).toBeInTheDocument();
+
+    rerender(
+      <ArchonAdaptiveView storageKey="test-module" views={{ TABLE: <div>CONTENIDO TABLA</div> }} />
+    );
+
+    expect(screen.getByText('CONTENIDO TABLA')).toBeInTheDocument();
+  });
 });

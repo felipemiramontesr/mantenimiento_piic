@@ -51,8 +51,11 @@ export function RecallLinkModal({
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (): Promise<void> => {
+    // FC165 F3 Slice3.1 — purga: el botón que invoca este handler ya
+    // deshabilita con la misma condición (`!recallId || parseInt(...)<=0`),
+    // así que este guard interno era redundante e inalcanzable (censo vivo:
+    // 0 hits tras la suite completa).
     const id = Number.parseInt(recallId, 10);
-    if (!id || id <= 0) return;
     setSubmitting(true);
     try {
       await onConfirm(id);

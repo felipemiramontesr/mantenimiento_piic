@@ -318,7 +318,7 @@ function DestroyUniverseActions({
 }
 
 /** Resets the modal's local form state whenever the target Universe changes. */
-function useResetOnChange(universe: UniverseRow | null): {
+function useResetOnChange(universe: UniverseRow): {
   typedLabel: string;
   setTypedLabel: (v: string) => void;
   reason: string;
@@ -340,14 +340,13 @@ function useResetOnChange(universe: UniverseRow | null): {
 /** Submit state + handler for the destroy confirm button — extracted so
  *  `DestroyUniverseModal` stays under budget. */
 function useDestroySubmission(
-  universe: UniverseRow | null,
+  universe: UniverseRow,
   reason: string,
   onDestroyed: () => void,
   setBlockers: (v: Record<string, number> | null) => void
 ): { submitting: boolean; handleConfirm: () => void } {
   const [submitting, setSubmitting] = useState(false);
   const handleConfirm = (): void => {
-    if (!universe) return;
     setSubmitting(true);
     setBlockers(null);
     submitDestroy(universe.id, reason)
@@ -361,13 +360,22 @@ function useDestroySubmission(
   return { submitting, handleConfirm };
 }
 
-/** Modal de destrucción — T6 `DELETE /v1/cosmology/universes/:id`, confirmación
- *  por escritura del `label` (Cond.R-161-R4) + razón opcional (micro-extensión). */
-export function DestroyUniverseModal({
+interface DestroyUniverseModalContentProps {
+  universe: UniverseRow;
+  onClose: () => void;
+  onDestroyed: () => void;
+}
+
+/** FC165 F3 Slice3.1 — cuerpo del modal, aislado en un componente propio para
+ *  que `universe: UniverseRow` (no-nulo) sea un invariante de TIPO, no de
+ *  runtime: purga la guardia `if (!universe) return` que Sonar marcaba como
+ *  rama inalcanzable (el gate de null vive en `DestroyUniverseModal`, que
+ *  solo monta este componente cuando `universe` ya es no-nulo). */
+function DestroyUniverseModalContent({
   universe,
   onClose,
   onDestroyed,
-}: DestroyUniverseModalProps): React.JSX.Element {
+}: DestroyUniverseModalContentProps): React.JSX.Element {
   const { typedLabel, setTypedLabel, reason, setReason, blockers, setBlockers } =
     useResetOnChange(universe);
   const { submitting, handleConfirm } = useDestroySubmission(
@@ -376,8 +384,6 @@ export function DestroyUniverseModal({
     onDestroyed,
     setBlockers
   );
-
-  if (!universe) return <></>;
 
   return (
     <ArchonModal
@@ -413,5 +419,18 @@ export function DestroyUniverseModal({
         />
       </div>
     </ArchonModal>
+  );
+}
+
+/** Modal de destrucción — T6 `DELETE /v1/cosmology/universes/:id`, confirmación
+ *  por escritura del `label` (Cond.R-161-R4) + razón opcional (micro-extensión). */
+export function DestroyUniverseModal({
+  universe,
+  onClose,
+  onDestroyed,
+}: DestroyUniverseModalProps): React.JSX.Element {
+  if (!universe) return <></>;
+  return (
+    <DestroyUniverseModalContent universe={universe} onClose={onClose} onDestroyed={onDestroyed} />
   );
 }

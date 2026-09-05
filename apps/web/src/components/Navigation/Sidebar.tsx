@@ -57,29 +57,31 @@ function useScrollFade(itemRef: React.RefObject<HTMLDivElement>, active?: boolea
     activeRef.current = active;
     if (active) setOpacity(1);
   }, [active]);
+  // FC165 F3 Slice3.1 — purga (0 v8-ignore): `NavItem` es el único
+  // consumidor de `useScrollFade` y solo se monta dentro de
+  // `<ScrollContainerCtx.Provider value={scrollRef}>` (línea ~590..606) —
+  // `scrollCtx` nunca es undefined, y React adjunta todos los refs durante
+  // el commit, antes de que corra cualquier efecto pasivo (mismo invariante
+  // ya auditado en FC164/R4-C), así que `el`/`container` están garantizados
+  // no-nulos en este efecto (censo vivo: 0 hits en ambos lados falsos tras
+  // la suite completa). Se estrechan los tipos en el punto de uso en vez de
+  // dejar un `if`+fallback que ninguna prueba real podía disparar.
   useEffect(() => {
-    const el = itemRef.current;
-    const container = scrollCtx?.current ?? null;
-    if (el && container) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setOpacity(activeRef.current ? 1 : entry.intersectionRatio);
-        },
-        {
-          root: container,
-          threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        }
-      );
-      observer.observe(el);
-      return (): void => {
-        observer.disconnect();
-      };
-    }
-    // Guard defensivo: React adjunta todos los refs durante el commit, antes de que corra
-    // cualquier efecto pasivo, por lo que el && anterior está garantizado ⊤ (FC164/R4-C)
-    /* v8 ignore start */
-    return undefined;
-    /* v8 ignore stop */
+    const el = itemRef.current as HTMLDivElement;
+    const container = scrollCtx?.current as HTMLElement;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setOpacity(activeRef.current ? 1 : entry.intersectionRatio);
+      },
+      {
+        root: container,
+        threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+      }
+    );
+    observer.observe(el);
+    return (): void => {
+      observer.disconnect();
+    };
   }, [itemRef, scrollCtx]);
   return opacity;
 }

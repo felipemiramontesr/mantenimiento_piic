@@ -31,9 +31,12 @@ function ChecklistCheckbox({
     <button
       type="button"
       data-testid={`complete-btn-${task.taskId}`}
-      onClick={(): void => {
-        if (isPending && !isUpdating) onComplete();
-      }}
+      // FC165 F3 Slice3.1 — purga: `disabled` ya aplica exactamente la
+      // negación de De Morgan de este guard (`!isPending || isUpdating`),
+      // y en jsdom/navegador un botón `disabled` nunca dispara `onClick`,
+      // así que el guard interno era inalcanzable (censo vivo: 0 hits tras
+      // la suite completa).
+      onClick={onComplete}
       disabled={!isPending || isUpdating}
       aria-label={isPending ? 'Marcar completada' : getStatusLabel(task.status)}
       className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-150 ${checklistCheckboxCls(

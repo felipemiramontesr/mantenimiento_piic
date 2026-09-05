@@ -118,10 +118,16 @@ function PanicSentBanner({
 const PanicButton: React.FC = () => {
   const [status, setStatus] = useState<PanicStatus>('idle');
   const [notifiedCount, setNotifiedCount] = useState(0);
-  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // `undefined` (no `| null`) para que `clearTimeout(resetTimer.current)` sea
+  // asignable sin cast ni rama nueva — ver purga de `dismiss` más abajo.
+  const resetTimer = useRef<ReturnType<typeof setTimeout>>();
 
+  // FC165 F3 Slice3.1 — purga: `PanicButtonTrigger` deshabilita el botón con
+  // la misma condición (`status==='loading'||status==='sent'`) y, fuera de
+  // un <form>, un botón `disabled` nunca dispara `onClick` en jsdom/
+  // navegador — el guard interno era inalcanzable (censo vivo: 0 hits tras
+  // la suite completa).
   const triggerPanic = useCallback(async () => {
-    if (status === 'loading' || status === 'sent') return;
     setStatus('loading');
 
     try {
@@ -136,10 +142,13 @@ const PanicButton: React.FC = () => {
       setStatus('error');
       resetTimer.current = setTimeout(() => setStatus('idle'), 5000);
     }
-  }, [status]);
+  }, []);
 
+  // FC165 F3 Slice3.1 — purga: `clearTimeout` es un no-op seguro con
+  // `undefined` (spec DOM), así que el guard `if (resetTimer.current)` era
+  // una rama defensiva redundante — se purga y se llama directo.
   const dismiss = useCallback((): void => {
-    if (resetTimer.current) clearTimeout(resetTimer.current);
+    clearTimeout(resetTimer.current);
     setStatus('idle');
   }, []);
 

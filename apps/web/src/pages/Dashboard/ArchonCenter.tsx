@@ -13,9 +13,9 @@ interface CenterModuleCardProps {
   Icon: React.ElementType;
   color: string;
   description: string;
-  path?: string;
+  path: string;
   loading: boolean;
-  onNavigate: (path?: string) => void;
+  onNavigate: (path: string) => void;
 }
 
 /** Tarjeta de KPI del centro de comando, con estado de carga y navegación (FC163 F2B4 Sub-Batch 4B-1). */
@@ -194,8 +194,13 @@ const ArchonCenter: React.FC = (): React.ReactElement => {
     navigate(`/dashboard/fleet?categoria=${categoryKey}`);
   };
 
-  const handleNavigate = (path?: string): void => {
-    if (path) navigate(path);
+  // FC165 F3 Slice3.1 — purga: `CenterModuleCard` solo se instancia desde
+  // `kpiModules` (`KpiModuleDef.path: string`, requerido, literales no-vacíos
+  // en `buildKpiModulesPrimary`/`Secondary`), así que `path` nunca llega
+  // undefined aquí — se estrecha el tipo en vez de dejar un fallback muerto
+  // (censo vivo: 0 hits en la rama `!path` tras la suite completa).
+  const handleNavigate = (path: string): void => {
+    navigate(path);
   };
 
   const categoryModules = buildCategoryModules(stats);
