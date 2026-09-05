@@ -144,6 +144,19 @@ describe('usePermissions (Sovereign Authorization Sensor)', () => {
     expect(result.current.isOmnipotent()).toBe(false);
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3B — unc line 57 ──
+
+  it('isOmnipotent returns false (not undefined) when currentUser has no permissions field at all', () => {
+    mockAuth({
+      id: '5',
+      username: 'ghost',
+      roleId: 3,
+      roleName: 'Operador',
+    });
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.isOmnipotent()).toBe(false);
+  });
+
   // effectiveUser tests — impersonation
   it('hasPermission uses effectiveUser when impersonating — grants only target role permissions', () => {
     const adminUser = {

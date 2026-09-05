@@ -124,6 +124,46 @@ describe('usePushNotifications', () => {
     expect(api.post).not.toHaveBeenCalledWith('/notifications/push-token', expect.anything());
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3B — unc lines 34,36 ──
+
+  it('does not register a token via requestPermission when the user denies permission', async () => {
+    const requestPermissionMock = vi.fn().mockResolvedValue('denied');
+    (global as any).Notification = {
+      permission: 'default',
+      requestPermission: requestPermissionMock,
+    };
+
+    const { result } = renderHook(() => usePushNotifications(true));
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    expect(result.current.permission).toBe('denied');
+    expect(api.post).not.toHaveBeenCalledWith('/notifications/push-token', expect.anything());
+  });
+
+  it('reuses an already-saved token via requestPermission instead of generating a new one', async () => {
+    const requestPermissionMock = vi.fn().mockResolvedValue('granted');
+    (global as any).Notification = {
+      permission: 'default',
+      requestPermission: requestPermissionMock,
+    };
+    mockLocalStorage.archon_push_token = 'existing-token-456';
+
+    const { result } = renderHook(() => usePushNotifications(true));
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    expect(mockLocalStorage.archon_push_token).toBe('existing-token-456');
+    expect(api.post).toHaveBeenCalledWith('/notifications/push-token', {
+      token: 'existing-token-456',
+      deviceType: 'web',
+    });
+  });
+
   it('generates and saves a new token on mount when permission is already granted with no saved token', async () => {
     (global as any).Notification = {
       permission: 'granted',

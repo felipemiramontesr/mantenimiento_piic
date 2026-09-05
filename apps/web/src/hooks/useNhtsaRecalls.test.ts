@@ -44,6 +44,15 @@ describe('useNhtsaRecalls', () => {
     expect(result.current.error).toBe('NHTSA API no disponible');
   });
 
+  it('uses the generic fallback message when the search rejection is not an Error instance', async () => {
+    vi.mocked(api.get).mockRejectedValueOnce('raw rejection, not an Error');
+    const { result } = renderHook(() => useNhtsaRecalls());
+    await act(async () => {
+      await result.current.search('FORD', 'F-150', 2022);
+    });
+    expect(result.current.error).toBe('Error al consultar NHTSA');
+  });
+
   it('UT-NHT-3: importRecall posts params and returns recall_id', async () => {
     vi.mocked(api.post).mockResolvedValueOnce({
       data: { success: true, recall_id: 9, imported: true },

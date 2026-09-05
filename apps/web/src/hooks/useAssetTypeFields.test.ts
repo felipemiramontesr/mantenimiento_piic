@@ -50,4 +50,21 @@ describe('useAssetTypeFields', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.fields).toEqual(DEFAULT_FIELD_VISIBILITY);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3B — unc lines 32,41 ──
+
+  it('does not update state after unmount while a resolving fetch is still in flight', async () => {
+    let resolveGet: (v: unknown) => void = () => {};
+    vi.mocked(api.get).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      })
+    );
+    const { unmount } = renderHook(() => useAssetTypeFields(1));
+    unmount();
+    resolveGet({ data: { success: true, count: 2, data: ASSET_TYPES_FIXTURE } });
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
 });

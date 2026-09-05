@@ -249,4 +249,74 @@ describe('useSilkHydration', () => {
 
     expect(vi.mocked(api.get)).toHaveBeenCalledTimes(1);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3B — unc lines 84,121 ──
+
+  it('the failsafe timer skips its reset when the component is already unmounted', async () => {
+    vi.useFakeTimers();
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise((_resolve) => {
+          /* intentionally never resolves */
+        })
+    );
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation((): void => {});
+
+    const { unmount } = renderHook(() =>
+      useSilkHydration({ key: mockKey, endpoint: mockEndpoint })
+    );
+    unmount();
+
+    // The failsafe timer is never cleared (sync never settles) — it still
+    // fires at 15s, but `isMounted.current` is now false, so its body must
+    // skip the isSyncingRef/setIsSyncing reset instead of touching state.
+    await act(async () => {
+      vi.advanceTimersByTime(16000);
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+    vi.useRealTimers();
+    warnSpy.mockRestore();
+  });
+
+  it('does not update data after unmount while a resolving fetch is still in flight', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    let resolveGet: (v: unknown) => void = () => {};
+    vi.mocked(api.get).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      })
+    );
+
+    const { unmount } = renderHook(() =>
+      useSilkHydration({ key: mockKey, endpoint: mockEndpoint })
+    );
+    unmount();
+    resolveGet({ data: { data: mockData } });
+
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
+
+  it('does not set error after unmount while a rejecting fetch is still in flight', async () => {
+    vi.mocked(archonCache.get).mockReturnValue(null);
+    let rejectGet: (e: unknown) => void = () => {};
+    vi.mocked(api.get).mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectGet = reject;
+      })
+    );
+
+    const { unmount } = renderHook(() =>
+      useSilkHydration({ key: mockKey, endpoint: mockEndpoint })
+    );
+    unmount();
+    rejectGet(new Error('network error'));
+
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
 });

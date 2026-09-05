@@ -52,6 +52,18 @@ describe('useSocialPosts', () => {
     expect(returned).toEqual(comments);
   });
 
+  it('refresh scopes the request to a specific authorId when provided', async () => {
+    (api.get as Mock).mockResolvedValue({ data: { posts: [] } });
+
+    const { result } = renderHook(() => useSocialPosts());
+
+    await act(async () => {
+      await result.current.refresh(42);
+    });
+
+    expect(api.get).toHaveBeenCalledWith('/social/posts?authorId=42');
+  });
+
   it('addComment posts contentText and parentCommentId to the comments endpoint', async () => {
     (api.post as Mock).mockResolvedValue({ data: {} });
 

@@ -61,4 +61,36 @@ describe('useCheckpoints (UT-CHK-1..3)', () => {
     expect(result.current.data).toEqual([]);
     expect(result.current.error).toBe('Network Error');
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3B — unc lines 37,40,43 ──
+
+  it('does not update state after unmount while a resolving fetch is still in flight', async () => {
+    let resolveGet: (v: unknown) => void = () => {};
+    vi.mocked(api.get).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      })
+    );
+    const { unmount } = renderHook(() => useCheckpoints('route-uuid-001'));
+    unmount();
+    resolveGet({ data: { success: true, data: [] } });
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
+
+  it('does not update state after unmount while a rejecting fetch is still in flight', async () => {
+    let rejectGet: (e: unknown) => void = () => {};
+    vi.mocked(api.get).mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectGet = reject;
+      })
+    );
+    const { unmount } = renderHook(() => useCheckpoints('route-uuid-001'));
+    unmount();
+    rejectGet(new Error('network error'));
+    await new Promise((r) => {
+      setTimeout(r, 0);
+    });
+  });
 });
