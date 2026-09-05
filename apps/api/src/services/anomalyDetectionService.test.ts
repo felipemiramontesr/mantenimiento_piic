@@ -182,4 +182,30 @@ describe('AnomalyDetectionService.compute()', () => {
     expect(result!.baseline_km_per_liter).toBeNull();
     expect(result!.is_anomaly).toBe(false);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3B Batch 2 — unc lines 76,115 ──
+
+  it('AD-SVC-8: moving_avg con baseline=0 → computeDeviationPct null, is_anomaly permanece false', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ ownerId: 5 }]]) // unitRows
+      .mockResolvedValueOnce([[{ fleet_size: 3 }]]) // countRows (<10 → moving_avg)
+      .mockResolvedValueOnce([[{ km_per_liter: 0 }]]) // baselineRows: unitKmPerLiter=0 (!== null)
+      .mockResolvedValueOnce([[{ recent_km_per_liter: 5 }]]); // recentRows: recentKmPerLiter=5
+    const result = await AnomalyDetectionService.compute('unit-8');
+    expect(result!.algorithm).toBe('moving_avg');
+    expect(result!.deviation_pct).toBeNull();
+    expect(result!.is_anomaly).toBe(false);
+  });
+
+  it('AD-SVC-9: z_score con fleet homogénea (stdDev=0) → computeZScore null, is_anomaly permanece false', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ ownerId: 5 }]]) // unitRows
+      .mockResolvedValueOnce([[{ fleet_size: 12 }]]) // >=10 → z_score
+      .mockResolvedValueOnce([[{ km_per_liter: 10.0 }]]) // baselineRows
+      .mockResolvedValueOnce([[{ km_per_liter: 10 }, { km_per_liter: 10 }]]); // fleetRows idénticos → std=0
+    const result = await AnomalyDetectionService.compute('unit-9');
+    expect(result!.algorithm).toBe('z_score');
+    expect(result!.z_score).toBeNull();
+    expect(result!.is_anomaly).toBe(false);
+  });
 });

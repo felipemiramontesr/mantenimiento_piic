@@ -1395,6 +1395,45 @@ describe('FleetMaintenance — owner-scoped guards (Rol 9)', () => {
     expect(res.statusCode).toBe(404);
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3B Batch 2 — fleetMaintenance.service.ts unc lines 331,364 ──
+
+  it('GET /maintenance/:uuid — returns 200 when scoped user owns the unit (anti-IDOR pass)', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [{ id: 10, uuid: 'order-3', unit_id: 'ASM-001', movement_status: 'COMPLETED' }],
+        undefined,
+      ]) // movement found
+      .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // owner check — owned
+      .mockResolvedValueOnce([[], undefined]); // details
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/order-3',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data.uuid).toBe('order-3');
+  });
+
+  it('GET /maintenance/:uuid/node — returns 200 when scoped user owns the unit (anti-IDOR pass)', async () => {
+    vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([711]);
+    vi.mocked(db.execute)
+      .mockResolvedValueOnce([
+        [{ id: 20, uuid: 'node-3', unit_id: 'ASM-001', movement_status: 'ACTIVE' }],
+        undefined,
+      ]) // movement found
+      .mockResolvedValueOnce([[{ id: 'ASM-001' }], undefined]) // owner check — owned
+      .mockResolvedValueOnce([[], undefined]) // details
+      .mockResolvedValueOnce([[{ id: 'ASM-001', status: 'ACTIVO' }], undefined]); // unit node info
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/maintenance/node-3/node',
+      headers: auth(),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data.order.uuid).toBe('node-3');
+  });
+
   it('POST /maintenance — returns 400 when user has no owned units', async () => {
     vi.mocked(FleetService.getUserOwnerIds).mockResolvedValueOnce([]);
     const executeMock = vi.fn().mockResolvedValueOnce([

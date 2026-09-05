@@ -408,6 +408,27 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(mockConnection.execute).toHaveBeenCalledTimes(4);
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3B Batch 2 — cosmology.service.ts unc line 217 ──
+  it('COSMOLOGY-CREATE-1b: label sin caracteres alfanuméricos → slug vacío, code cae a UNIV_X_<hex>', async () => {
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[{ id: 1, code: 'FMS', name: 'Fleet Management System' }]]) // findUniverseTypeByCode
+      .mockResolvedValueOnce([[{ id: 1, code: 'FLOTILLA', name: 'Propietario de Flotilla' }]]); // findOwnerTypeByCode
+    mockConnection.execute
+      .mockResolvedValueOnce([{ insertId: 902, affectedRows: 1 }]) // mintUniverseTenantId
+      .mockResolvedValueOnce([{ affectedRows: 1 }]) // insertTenant
+      .mockResolvedValueOnce([{ affectedRows: 5 }]) // seedSuperclusterBlueprint
+      .mockResolvedValueOnce([{ affectedRows: 1 }]); // seedClusterBlueprint
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes',
+      headers: omegaHeader(),
+      payload: { label: '!!!', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
+    });
+    expect(res.statusCode).toBe(201);
+    const mintCall = mockConnection.execute.mock.calls[0] as [string, unknown[]];
+    expect(mintCall[1][0]).toMatch(/^UNIV_X_[0-9A-F]{6}$/);
+  });
+
   it('COSMOLOGY-CREATE-2: unknown universeTypeCode — 404 UNIVERSE_TYPE_NOT_FOUND, no TX opened', async () => {
     (db.execute as Mock).mockResolvedValueOnce([[]]); // findUniverseTypeByCode → not found
     const res = await app.inject({

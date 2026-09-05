@@ -158,6 +158,29 @@ describe('Reports Routes — GET /v1/reports/maintenance/:uuid/pdf', () => {
     expect(res.statusCode).toBe(404);
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3B Batch 2 — reports.service.ts unc line 81 ──
+  it('renders the PDF for a fleet:scoped user whose owners DO include the unit (anti-IDOR pass)', async (): Promise<void> => {
+    const scopedToken = app.jwt.sign({
+      id: 3,
+      username: 'scoped3',
+      roleId: 4,
+      roleName: 'Gestor',
+      permissions: ['maint:record:view:any', 'fleet:scoped'],
+    });
+    (db.execute as Mock)
+      .mockResolvedValueOnce([[MOVEMENT_ROW], undefined]) // movimiento
+      .mockResolvedValueOnce([[{ ownerId: 5 }], undefined]) // getUserOwnerIds → tiene owners
+      .mockResolvedValueOnce([[{ id: MOVEMENT_ROW.unit_id }], undefined]) // isUnitOwned → sí pertenece
+      .mockResolvedValueOnce([[], undefined]); // task details
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/reports/maintenance/uuid-pdf-1/pdf',
+      headers: { Authorization: `Bearer ${scopedToken}` },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+  });
+
   it('renders fallback dashes/codes when optional movement/task labels are missing (100% mandatorio, FC162 R2)', async (): Promise<void> => {
     (db.execute as Mock)
       .mockResolvedValueOnce([[{ ...MOVEMENT_ROW, technician: null }], undefined])

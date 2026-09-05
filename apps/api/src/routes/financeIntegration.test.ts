@@ -777,6 +777,37 @@ describe('Finance Routes — JWT Auth (Integration)', () => {
       expect(params).not.toContain(9105); // FINE
     });
 
+    // ── R4-C Fc165 F2 Slice 2.3B Batch 2 — finance.service.ts unc line 82 (FALSE side) ──
+    it('Scenario 2b — common_catalogs con un código duplicado (longitudes distintas pero nada ausente) → 200, sin throw', async () => {
+      (db.execute as Mock)
+        .mockResolvedValueOnce([[{ id: 7 }], undefined]) // getUserOwnerIds → [7]
+        .mockResolvedValueOnce([
+          [{ ownerId: 7, ownerType: 'ARCHONAUT', clusterActive: 1 }],
+          undefined,
+        ])
+        .mockResolvedValueOnce([
+          [
+            { id: 9102, code: 'MAINTENANCE' },
+            { id: 9103, code: 'FUEL' },
+            { id: 9104, code: 'TIRE' },
+            { id: 9106, code: 'REPAIR' },
+            { id: 9107, code: 'TENENCIA' },
+            { id: 9108, code: 'VERIFICACION' },
+            { id: 9109, code: 'OTHER' },
+            { id: 9109, code: 'OTHER' }, // fila duplicada — drift en common_catalogs
+          ],
+          undefined,
+        ]) // resolveCategoryFilterIds — 8 filas vs 7 códigos, pero ninguno ausente
+        .mockResolvedValueOnce([[], undefined]) // main query
+        .mockResolvedValueOnce([[{ total: 0 }], undefined]); // count query
+      const res = await app.inject({
+        method: 'GET',
+        url: '/v1/finance/transactions',
+        headers: { Authorization: `Bearer ${scopedToken(7)}` },
+      });
+      expect(res.statusCode).toBe(200);
+    });
+
     it('Scenario 3 — Tenant de negocio (no Archonaut) ve el set completo (T2 ⊥) — sin filtro de categoría', async () => {
       (db.execute as Mock)
         .mockResolvedValueOnce([[{ id: 5 }], undefined]) // getUserOwnerIds → [5]
