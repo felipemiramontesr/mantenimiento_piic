@@ -84,4 +84,11 @@ describe('ProfileEditSlideOver — contrato PATCH /auth/users/:id (FC 076 R6)', 
     fireEvent.keyDown(screen.getByTestId('profile-edit-overlay'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('an unrelated key on the backdrop does not call onClose', () => {
+    const onClose = vi.fn();
+    render(<ProfileEditSlideOver isOpen onClose={onClose} />);
+    fireEvent.keyDown(screen.getByTestId('profile-edit-overlay'), { key: 'a' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

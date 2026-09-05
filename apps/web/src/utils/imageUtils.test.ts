@@ -43,6 +43,17 @@ describe('resolveProfileImageUrl', () => {
     expect(resolveProfileImageUrl('/uploads/foo.png')).toBe(`${baseUrl}/uploads/foo.png`);
     expect(resolveProfileImageUrl('uploads/foo.png')).toBe(`${baseUrl}/uploads/foo.png`);
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 2 — unc line 53 (api.defaults.baseURL || '') ──
+  it('falls back to an empty baseUrl when api.defaults.baseURL is unset', () => {
+    const original = api.defaults.baseURL;
+    api.defaults.baseURL = '';
+    try {
+      expect(resolveProfileImageUrl('/uploads/foo.png')).toBe('/uploads/foo.png');
+    } finally {
+      api.defaults.baseURL = original;
+    }
+  });
 });
 
 describe('compressImage', () => {

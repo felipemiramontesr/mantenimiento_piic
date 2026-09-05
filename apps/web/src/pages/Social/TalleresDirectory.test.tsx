@@ -91,4 +91,23 @@ describe('TalleresDirectory — FC-9 SocialNetwork FaseD', () => {
 
     expect(screen.getByTestId('taller-card-3')).toBeInTheDocument();
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 2 — unc lines 26,84 ──
+  it('shows "Sin reseñas" and unfilled stars for a workshop with avgRating=0', async () => {
+    const unratedTaller = {
+      ...MOCK_TALLERES[0],
+      id: 4,
+      label: 'Taller Nuevo',
+      avgRating: 0,
+      reviewCount: 0,
+    };
+    mockGet.mockResolvedValueOnce({ data: { talleres: [unratedTaller] } });
+    render(<TalleresDirectory />);
+    await waitFor(() => expect(screen.getByTestId('taller-card-4')).toBeInTheDocument());
+
+    expect(screen.getByText('Sin reseñas')).toBeInTheDocument();
+    const stars = screen.getByTestId('taller-card-4').querySelectorAll('svg');
+    const filled = Array.from(stars).filter((s) => s.classList.contains('fill-amber-400'));
+    expect(filled.length).toBe(0);
+  });
 });

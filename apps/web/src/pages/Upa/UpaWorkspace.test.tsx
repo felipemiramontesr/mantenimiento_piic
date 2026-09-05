@@ -92,6 +92,16 @@ describe('UpaWorkspace', () => {
       expect(screen.getByTestId('init-submit-btn').textContent).toContain('Iniciando');
     });
 
+    it('submitting the form with an empty vehicle id does not call startOrder', () => {
+      const startOrder = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, startOrder });
+      render(<UpaWorkspace />);
+      // Submit the <form> directly — bypasses the submit button's own
+      // disabled attribute, reaching InitForm's own handleSubmit guard.
+      fireEvent.submit(screen.getByTestId('init-submit-btn').closest('form')!);
+      expect(startOrder).not.toHaveBeenCalled();
+    });
+
     it('shows error message when error is set', () => {
       vi.mocked(useUpaOrder).mockReturnValue({
         ...baseHook,
@@ -109,6 +119,15 @@ describe('UpaWorkspace', () => {
       vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
       render(<UpaWorkspace />);
       expect(screen.getByTestId('upa-stepper')).toBeDefined();
+    });
+
+    it('shows "Flotilla Minería" for a mining fleet work order', () => {
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, fleetType: 'mining' },
+      });
+      render(<UpaWorkspace />);
+      expect(screen.getByText(/Flotilla Minería/)).toBeDefined();
     });
 
     it('renders task card for each task', () => {
@@ -236,6 +255,23 @@ describe('UpaWorkspace', () => {
       fireEvent.click(screen.getByTestId('defer-btn-triage_dashboard_lights'));
       fireEvent.click(screen.getByText('Cancelar'));
       expect(screen.queryByTestId('defer-modal')).toBeNull();
+    });
+
+    it('shows "Diferiendo..." on the confirm button while the defer is in flight', () => {
+      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
+      const { rerender } = render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('defer-btn-triage_dashboard_lights'));
+      expect(screen.getByTestId('defer-confirm-btn').textContent).toContain('Confirmar');
+
+      // Same task's deferTask call is now in flight — deferTaskId (local state)
+      // survives the rerender, so the modal picks up the new taskUpdating flag.
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: mockWorkOrder,
+        taskUpdating: { triage_dashboard_lights: true },
+      });
+      rerender(<UpaWorkspace />);
+      expect(screen.getByTestId('defer-confirm-btn').textContent).toContain('Diferiendo');
     });
 
     it('calls deferTask with DEFERRED_FINANCIAL when confirmed', () => {
@@ -599,6 +635,25 @@ describe('UpaWorkspace', () => {
       expect(screen.getByTestId('evidence-url-input-0')).toBeDefined();
       fireEvent.click(screen.getByLabelText('Eliminar URL'));
       expect(screen.queryByTestId('evidence-url-input-0')).toBeNull();
+    });
+
+    it('updating one URL input leaves the other URL entries unchanged', () => {
+      const closureTask = { ...mockTask, taskId: 'closure_check_final', stage: 'closure' as const };
+      vi.mocked(useUpaOrder).mockReturnValue({
+        ...baseHook,
+        workOrder: { ...mockWorkOrder, tasks: [closureTask] },
+      });
+      render(<UpaWorkspace />);
+      fireEvent.click(screen.getByTestId('accordion-toggle-closure'));
+      fireEvent.click(screen.getByTestId('add-evidence-url-btn'));
+      fireEvent.click(screen.getByTestId('add-evidence-url-btn'));
+      fireEvent.change(screen.getByTestId('evidence-url-input-1'), {
+        target: { value: 'https://example.com/second.jpg' },
+      });
+      expect((screen.getByTestId('evidence-url-input-0') as HTMLInputElement).value).toBe('');
+      expect((screen.getByTestId('evidence-url-input-1') as HTMLInputElement).value).toBe(
+        'https://example.com/second.jpg'
+      );
     });
   });
 

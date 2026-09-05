@@ -455,6 +455,75 @@ describe('UserRegistrationForm (Sentinel Identity)', () => {
     });
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 2 — unc lines 127,208,237,270 ──
+
+  it('editingUser with an empty department falls back to the empty string (not undefined)', () => {
+    currentMockState.editingUser = {
+      id: '4',
+      username: 'no_dept',
+      fullName: 'No Department',
+      email: 'nd@p.com',
+      roleId: 6,
+      department: '',
+    };
+    render(<UserRegistrationForm />);
+    // ArchonSelect renders the placeholder when value='' (not '(vacío)' etc.)
+    expect(screen.getByText('Seleccionar...')).toBeInTheDocument();
+  });
+
+  it('performUpdate does not call updateUser when editingUser becomes null before the audit is confirmed', async () => {
+    currentMockState.editingUser = {
+      id: '1',
+      username: 'admin',
+      fullName: 'Admin User',
+      email: 'a@p.com',
+      roleId: 0,
+      department: 'IT',
+    };
+    const { rerender } = render(<UserRegistrationForm />);
+    await act(async () => {
+      fireEvent.submit(screen.getByTestId('registration-form'));
+    });
+    const modal = await screen.findByRole('dialog');
+    fireEvent.change(within(modal).getByPlaceholderText(/error en kilometraje/i), {
+      target: { value: 'Valid update' },
+    });
+
+    // Race: editingUser is cleared from context before the audit is confirmed.
+    currentMockState.editingUser = null;
+    rerender(<UserRegistrationForm />);
+
+    await act(async () => {
+      fireEvent.click(within(screen.getByRole('dialog')).getByText('Sincronizar'));
+    });
+    expect(currentMockState.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('performDelete does not call deleteUser when editingUser becomes null before the audit is confirmed', async () => {
+    currentMockState.editingUser = {
+      id: '1',
+      username: 'admin',
+      fullName: 'Admin User',
+      email: 'a@p.com',
+      roleId: 0,
+      department: 'IT',
+    };
+    const { rerender } = render(<UserRegistrationForm />);
+    fireEvent.click(screen.getByText(/Eliminar Personal/i));
+    const modal = await screen.findByRole('dialog');
+    fireEvent.change(within(modal).getByPlaceholderText(/error en kilometraje/i), {
+      target: { value: 'Delete reason' },
+    });
+
+    currentMockState.editingUser = null;
+    rerender(<UserRegistrationForm />);
+
+    await act(async () => {
+      fireEvent.click(within(screen.getByRole('dialog')).getByText('Confirmar Baja'));
+    });
+    expect(currentMockState.deleteUser).not.toHaveBeenCalled();
+  });
+
   it('submit button is disabled when password set but shorter than 8 chars', () => {
     render(<UserRegistrationForm />);
     fireEvent.change(screen.getByPlaceholderText(/Auto-generada/i), { target: { value: 'ab' } });

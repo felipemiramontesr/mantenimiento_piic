@@ -152,4 +152,80 @@ describe('ReviewsPanel — FC-9 SocialNetwork FaseC', () => {
       );
     });
   });
+
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 2 — unc lines 17,52,53,58 ──
+
+  it('shows both filled and unfilled stars for a review rated below 5', async () => {
+    const partialReview = { ...MOCK_REVIEWS[0], id: 2, rating: 3 };
+    mockGet.mockResolvedValueOnce({ data: { reviews: [partialReview], avgRating: 3 } });
+    render(<ReviewsPanel tallerOwnerId={3} />);
+    await waitFor(() => expect(screen.getByTestId('review-card-2')).toBeInTheDocument());
+
+    const stars = screen.getByTestId('review-card-2').querySelectorAll('svg');
+    const filled = Array.from(stars).filter((s) => s.classList.contains('fill-amber-400'));
+    const unfilled = Array.from(stars).filter((s) => s.classList.contains('fill-slate-200'));
+    expect(filled.length).toBe(3);
+    expect(unfilled.length).toBe(2);
+  });
+
+  it('passes the raw message through when the backend error is not a recognized code', async () => {
+    mockGet.mockResolvedValueOnce({ data: { reviews: [], avgRating: null } });
+    const mockPost = vi.mocked(api.post);
+    mockPost.mockImplementation((url: string) => {
+      if (url === '/social/reviews') {
+        return Promise.reject({ response: { data: { error: 'SOME_OTHER_ERROR' } } });
+      }
+      return Promise.resolve({ data: { success: false } });
+    });
+
+    render(<ReviewsPanel tallerOwnerId={3} />);
+    await waitFor(() => expect(screen.getByTestId('reviews-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('review-body-input'), { target: { value: 'Buen taller' } });
+    fireEvent.submit(screen.getByTestId('review-form'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('review-submit-error')).toHaveTextContent('SOME_OTHER_ERROR');
+    });
+  });
+
+  it('falls back to a generic "Error" when the rejection has a response but no data.error', async () => {
+    mockGet.mockResolvedValueOnce({ data: { reviews: [], avgRating: null } });
+    const mockPost = vi.mocked(api.post);
+    mockPost.mockImplementation((url: string) => {
+      if (url === '/social/reviews') {
+        return Promise.reject({ response: { status: 500 } });
+      }
+      return Promise.resolve({ data: { success: false } });
+    });
+
+    render(<ReviewsPanel tallerOwnerId={3} />);
+    await waitFor(() => expect(screen.getByTestId('reviews-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('review-body-input'), { target: { value: 'Buen taller' } });
+    fireEvent.submit(screen.getByTestId('review-form'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('review-submit-error')).toHaveTextContent('Error');
+    });
+  });
+
+  it('falls back to a generic "Error" when the rejection is not a response-shaped object', async () => {
+    mockGet.mockResolvedValueOnce({ data: { reviews: [], avgRating: null } });
+    const mockPost = vi.mocked(api.post);
+    mockPost.mockImplementation((url: string) => {
+      if (url === '/social/reviews') return Promise.reject(new Error('network down'));
+      return Promise.resolve({ data: { success: false } });
+    });
+
+    render(<ReviewsPanel tallerOwnerId={3} />);
+    await waitFor(() => expect(screen.getByTestId('reviews-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('review-body-input'), { target: { value: 'Buen taller' } });
+    fireEvent.submit(screen.getByTestId('review-form'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('review-submit-error')).toHaveTextContent('Error');
+    });
+  });
 });

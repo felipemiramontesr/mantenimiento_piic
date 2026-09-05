@@ -87,8 +87,20 @@ describe('CommentThread', () => {
     render(<CommentThread postId={10} fetchComments={fetchComments} addComment={addComment} />);
     await screen.findByTestId('comments-empty');
     fireEvent.change(screen.getByTestId('comment-input'), { target: { value: '   ' } });
-    fireEvent.click(screen.getByTestId('comment-submit'));
+    // Submit the <form> directly — bypasses the submit button's own
+    // disabled attribute, reaching handleSubmit's own newText.trim() guard.
+    fireEvent.submit(screen.getByTestId('comment-form'));
     expect(addComment).not.toHaveBeenCalled();
+  });
+
+  it('falls back to a generic "Error" when the rejection has a response but no data.error', async () => {
+    const fetchComments = vi.fn().mockResolvedValue([]);
+    const addComment = vi.fn().mockRejectedValue({ response: { status: 500 } });
+    render(<CommentThread postId={10} fetchComments={fetchComments} addComment={addComment} />);
+    await screen.findByTestId('comments-empty');
+    fireEvent.change(screen.getByTestId('comment-input'), { target: { value: 'hola' } });
+    fireEvent.click(screen.getByTestId('comment-submit'));
+    expect(await screen.findByText('Error')).toBeInTheDocument();
   });
 
   it('maps the PII_DETECTED_IN_COMMENT server code to a readable es-MX message', async () => {

@@ -107,6 +107,90 @@ describe('ProfileView — FC-9 SocialNetwork FaseA', () => {
     });
   });
 
+  // ── R4-C Fc165 F2 Slice 2.3C Batch 2 — unc lines 197,204,205,208 ──
+
+  it('submitting the post form with empty/whitespace content does not call createPost', async () => {
+    mockGet.mockResolvedValue({ data: { posts: [] } });
+    const mockPost = vi.mocked(api.post);
+    render(<ProfileView />);
+    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('post-content-input'), { target: { value: '   ' } });
+    // Submit the <form> directly — bypasses the submit button's own
+    // disabled attribute, reaching NewPostForm's own onSubmit guard.
+    fireEvent.submit(screen.getByTestId('post-create-form'));
+
+    expect(mockPost).not.toHaveBeenCalledWith('/social/posts', expect.anything());
+  });
+
+  it('falls back to "Error al publicar" when the API error has no response.data.error', async () => {
+    mockGet.mockResolvedValue({ data: { posts: [] } });
+    const mockPost = vi.mocked(api.post);
+    mockPost.mockImplementation((url) => {
+      if (url === '/social/posts') {
+        return Promise.reject({ response: { status: 500 } });
+      }
+      return Promise.resolve({ data: { success: false } });
+    });
+    render(<ProfileView />);
+    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('post-content-input'), {
+      target: { value: 'Sin detalle de error' },
+    });
+    fireEvent.submit(screen.getByTestId('post-create-form'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('post-create-error')).toHaveTextContent('Error al publicar');
+    });
+  });
+
+  it('falls back to "Error al publicar" when the rejection is not a response-shaped object', async () => {
+    mockGet.mockResolvedValue({ data: { posts: [] } });
+    const mockPost = vi.mocked(api.post);
+    mockPost.mockImplementation((url) => {
+      if (url === '/social/posts') {
+        return Promise.reject(new Error('network down'));
+      }
+      return Promise.resolve({ data: { success: false } });
+    });
+    render(<ProfileView />);
+    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('post-content-input'), {
+      target: { value: 'Se cae la red' },
+    });
+    fireEvent.submit(screen.getByTestId('post-create-form'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('post-create-error')).toHaveTextContent('Error al publicar');
+    });
+  });
+
+  it('shows a friendly PII message when the API flags PII_DETECTED_IN_POST', async () => {
+    mockGet.mockResolvedValue({ data: { posts: [] } });
+    const mockPost = vi.mocked(api.post);
+    mockPost.mockImplementation((url) => {
+      if (url === '/social/posts') {
+        return Promise.reject({ response: { data: { error: 'PII_DETECTED_IN_POST' } } });
+      }
+      return Promise.resolve({ data: { success: false } });
+    });
+    render(<ProfileView />);
+    await waitFor(() => expect(screen.getByTestId('profile-posts-empty')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByTestId('post-content-input'), {
+      target: { value: 'Placa ABC-123' },
+    });
+    fireEvent.submit(screen.getByTestId('post-create-form'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('post-create-error')).toHaveTextContent(
+        'La publicación contiene datos sensibles (placa o VIN).'
+      );
+    });
+  });
+
   it('AT-SOC9-A-WEB-7: el botón Actualizar vuelve a invocar refresh()', async () => {
     mockGet.mockResolvedValue({ data: { posts: [] } });
     render(<ProfileView />);
