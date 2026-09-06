@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { InternalAxiosRequestConfig } from 'axios';
-import api from './client';
+import api, {
+  computeHostname,
+  computeDefaultURL,
+  logGatewayStartupIfNeeded,
+  readProcessSignal,
+} from './client';
 import { redirectUserToLogin } from './navigation';
 
 import { getToken, clearToken } from './tokenStore';
@@ -149,6 +154,80 @@ describe('Axios API Client (ARCHON CORE)', () => {
       expect(clearToken).toHaveBeenCalled();
       expect(redirectUserToLogin).toHaveBeenCalled();
       errorSpy.mockRestore();
+    });
+  });
+
+  // FC165 F3 Slice3.3 Lote C — createApiClient config helpers, testeados
+  // directamente (sin red real, sin vi.resetModules()).
+  describe('computeHostname / computeDefaultURL / logGatewayStartupIfNeeded (config puros)', () => {
+    it('computeHostname usa window.location.hostname cuando window existe', () => {
+      expect(computeHostname(window)).toBe(window.location.hostname);
+    });
+
+    it('computeHostname cae a "localhost" cuando window es undefined (SSR hipotético)', () => {
+      expect(computeHostname(undefined)).toBe('localhost');
+    });
+
+    it('computeDefaultURL retorna la URL de producción cuando isProd=true', () => {
+      expect(computeDefaultURL(true, 'ignored')).toBe('https://apiv1.piic.com.mx/v1');
+    });
+
+    it('computeDefaultURL retorna la URL local con el hostname cuando isProd=false', () => {
+      expect(computeDefaultURL(false, 'dev.local')).toBe('http://dev.local:3001/v1');
+    });
+
+    it('readProcessSignal reporta hasProcess=true bajo el runtime real de Vitest', () => {
+      expect(readProcessSignal()).toEqual({
+        hasProcess: true,
+        nodeEnv: process.env.NODE_ENV,
+        isVitest: !!process.env.VITEST,
+      });
+    });
+
+    it('readProcessSignal reporta hasProcess=false cuando `process` no existe (navegador de producción)', () => {
+      const original = globalThis.process;
+      // @ts-expect-error -- simula un runtime de navegador sin el global `process` de Node
+      delete globalThis.process;
+      try {
+        expect(readProcessSignal()).toEqual({
+          hasProcess: false,
+          nodeEnv: undefined,
+          isVitest: false,
+        });
+      } finally {
+        globalThis.process = original;
+      }
+    });
+
+    it('logGatewayStartupIfNeeded loguea cuando hasProcess=false (navegador de producción real)', () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      logGatewayStartupIfNeeded(false, undefined, false, 'https://example.test/v1');
+      expect(logSpy).toHaveBeenCalledWith(
+        '🚀 [Archon API Client V2] Active Gateway:',
+        'https://example.test/v1'
+      );
+      logSpy.mockRestore();
+    });
+
+    it('logGatewayStartupIfNeeded loguea cuando hasProcess=true pero NODE_ENV no es "test" ni VITEST', () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      logGatewayStartupIfNeeded(true, 'production', false, 'https://example.test/v1');
+      expect(logSpy).toHaveBeenCalled();
+      logSpy.mockRestore();
+    });
+
+    it('logGatewayStartupIfNeeded NO loguea bajo un run de Vitest real (NODE_ENV=test)', () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      logGatewayStartupIfNeeded(true, 'test', false, 'https://example.test/v1');
+      expect(logSpy).not.toHaveBeenCalled();
+      logSpy.mockRestore();
+    });
+
+    it('logGatewayStartupIfNeeded NO loguea cuando isVitest=true aunque NODE_ENV no sea "test"', () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      logGatewayStartupIfNeeded(true, 'development', true, 'https://example.test/v1');
+      expect(logSpy).not.toHaveBeenCalled();
+      logSpy.mockRestore();
     });
   });
 });

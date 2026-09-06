@@ -1,7 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as dns from 'dns';
+import * as https from 'https';
+import { EventEmitter } from 'events';
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import {
   OUTBOUND_ALLOWLIST,
@@ -16,6 +19,14 @@ import {
   type OutboundRequestFn,
 } from './outboundFetch';
 import { resetSecurityMetrics, renderPrometheusMetrics } from './securityLog';
+
+// `https.request` es un export ESM no configurable -- `vi.spyOn` no puede
+// reemplazarlo (a diferencia de `dns.promises.lookup`, una propiedad de
+// objeto plano). `vi.mock` sí puede sustituir el export completo del módulo.
+vi.mock('https', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('https')>();
+  return { ...actual, request: vi.fn() };
+});
 
 /**
  * 🔱 FC 062 F4 — A10_SSRF_Guard (Scenarios 4 y 5 · T1 8 filas · T3)
@@ -306,6 +317,62 @@ describe('T3 — CircuitBreaker (Scenario 5)', () => {
       { resolve: publicResolver, request: okTransport() }
     );
     expect(res.status).toBe(200);
+  });
+});
+
+describe('outboundFetch — deps por defecto (FC165 F3 Slice3.3 Lote B, sin red real)', () => {
+  // Cond.R-165-F3-S3-2 (Bravo): estas 2 condiciones son la rama `?? default*`
+  // de `deps.resolve`/`deps.request` cuando el caller no inyecta un doble de
+  // prueba — SIEMPRE ejercitada en producción, nunca en el resto de esta
+  // suite (que siempre inyecta ambos). Se cubre mockeando las primitivas de
+  // Node (`dns.promises.lookup` / `https.request`) que `defaultResolve`/
+  // `defaultRequest` invocan internamente — sin tocar la red real.
+  beforeEach(() => {
+    resetOutboundState();
+    resetSecurityMetrics();
+  });
+
+  afterEach(() => {
+    vi.mocked(https.request).mockReset();
+  });
+
+  it('usa defaultResolve cuando deps.resolve se omite (dns.promises.lookup mockeado)', async () => {
+    const lookupSpy = vi
+      .spyOn(dns.promises, 'lookup')
+      .mockResolvedValue([{ address: '93.184.216.34', family: 4 }] as never);
+    try {
+      const res = await outboundFetch(NHTSA, {}, { request: okTransport() });
+      expect(res.status).toBe(200);
+      expect(lookupSpy).toHaveBeenCalledWith(OUTBOUND_ALLOWLIST[0], {
+        all: true,
+        verbatim: true,
+      });
+    } finally {
+      lookupSpy.mockRestore();
+    }
+  });
+
+  it('usa defaultRequest cuando deps.request se omite (https.request mockeado)', async () => {
+    vi.mocked(https.request).mockImplementation(
+      (...args: unknown[]): ReturnType<typeof https.request> => {
+        const callback = args[1] as (res: EventEmitter) => void;
+        const reqEmitter = Object.assign(new EventEmitter(), {
+          write: vi.fn(),
+          end: vi.fn(),
+          destroy: vi.fn(),
+        });
+        queueMicrotask(() => {
+          const resEmitter = Object.assign(new EventEmitter(), { statusCode: 200, headers: {} });
+          callback(resEmitter);
+          resEmitter.emit('data', Buffer.from('{"ok":true}'));
+          resEmitter.emit('end');
+        });
+        return reqEmitter as unknown as ReturnType<typeof https.request>;
+      }
+    );
+    const res = await outboundFetch(NHTSA, {}, { resolve: publicResolver });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
   });
 });
 

@@ -235,10 +235,15 @@ async function handlePatchUser(
     return reply.code(400).send({ error: 'U1', details: body.error.format() });
   }
   const { data: updates, reason } = body.data;
-  const admin = request.user as ScopedUser & { roleId?: number };
-  // ?? [] inalcanzable: userAdminGuard exige permissions array antes de llegar aquí (lanzaría 500 si no).
-  /* v8 ignore next */
-  const adminIsOmega = admin.roleId === 0 || (admin.permissions ?? []).includes('*');
+  // `permissions: string[]` no opcional aquí (a diferencia de ScopedUser base):
+  // este handler está detrás de `userAdminGuard` → `requirePermission('user:admin')`,
+  // que ya desestructura `request.user.permissions` sin fallback y lanzaría 500
+  // antes de llegar aquí si no fuera un array real — el `?? []` que había era,
+  // por construcción del middleware, inalcanzable (FC165 F3 Slice3.3 Lote B,
+  // purga sintáctica; el `/* v8 ignore next */` previo no suprimía la condición
+  // ante SonarCloud, solo el reporte local de vitest).
+  const admin = request.user as ScopedUser & { roleId?: number; permissions: string[] };
+  const adminIsOmega = admin.roleId === 0 || admin.permissions.includes('*');
   const roleIdError = UserManagementService.validateRoleIdUpdate(updates.roleId, adminIsOmega);
   if (roleIdError) {
     return reply

@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { RowDataPacket } from 'mysql2';
 import FleetService from '../services/fleetService';
@@ -144,6 +144,277 @@ const resolveOwnerScope = (request: FastifyRequest): Promise<number[] | null> =>
   return resolveScope({ id, permissions, tenant_id: tenantId });
 };
 
+/**
+ * GET /api/v1/fleet
+ * (FC165 F3 Slice3.3 Lote B — extraído a función nombrada, Dual-Gate Isolation.)
+ */
+async function handleGetFleet(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+  reply.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+  try {
+    const ownerScope = await resolveOwnerScope(request);
+    if (ownerScope !== null && ownerScope.length === 0) {
+      return reply.send({ success: true, count: 0, data: [] });
+    }
+    const units = await FleetService.getAllUnits(request.log, ownerScope ?? undefined);
+    return reply.send({ success: true, count: units.length, data: units });
+  } catch (error) {
+    // FC 082 incidente DB-1045 P3 (A09) — nunca reenviar (error as Error).message
+    // crudo de MySQL al cliente (filtraba usuario@host). Traza completa solo en log.
+    request.log.error({ route: '/fleet', err: error }, 'Fleet listing failed');
+    return reply
+      .code(500)
+      .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al cargar la flota' });
+  }
+}
+
+/**
+ * GET /api/v1/fleet/:id
+ * (FC165 F3 Slice3.3 Lote B — extraído a función nombrada, Dual-Gate Isolation.)
+ */
+async function handleGetFleetById(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const { id } = request.params as { id: string };
+  try {
+    const ownerScope = await resolveOwnerScope(request);
+    if (ownerScope !== null && ownerScope.length === 0) {
+      return reply.code(404).send({ error: 'Unit not found' });
+    }
+    const unit = await FleetService.getUnitById(id, request.log, ownerScope ?? undefined);
+    if (!unit) return reply.code(404).send({ error: 'Unit not found' });
+    return reply.send({ success: true, data: unit });
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({ error: 'Failure retrieving unit details' });
+  }
+}
+
+/**
+ * POST /api/v1/fleet — Plan Omega: Base64 images are part of the main payload.
+ * (FC165 F3 Slice3.3 Lote B — extraído a función nombrada, Dual-Gate Isolation.)
+ */
+async function handleCreateFleetUnit(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const parse = createFleetSchema.safeParse(request.body);
+  if (!parse.success) {
+    return reply.code(400).send({ error: 'Validation failed', details: parse.error.format() });
+  }
+
+  try {
+    const result = await FleetService.createUnit(
+      parse.data as Parameters<typeof FleetService.createUnit>[0]
+    );
+    return reply.code(201).send({ success: true, ...result });
+  } catch (error: unknown) {
+    request.log.error(error as Error);
+    const err = error as Record<string, unknown>;
+    const message =
+      (err?.message as string) ||
+      (err?.sqlMessage as string) ||
+      (typeof err === 'string' ? err : 'Unknown DB Exception');
+
+    if (message.includes('CONFLICT')) {
+      return reply.code(409).send({ error: message });
+    }
+
+    return reply.code(500).send({ error: `Database Error: ${message}` });
+  }
+}
+
+/**
+ * PATCH /api/v1/fleet/:id
+ * Access: fleet:write (full CRUD roles) OR fleet:write:scoped (rol 9 — own units only).
+ * Anti-IDOR: scoped writers are owner-validated before the mutation executes.
+ * (FC165 F3 Slice3.3 Lote B — extraído a función nombrada, Dual-Gate Isolation.)
+ */
+async function handleUpdateFleetUnit(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const { id } = request.params as { id: string };
+  const user = request.user as { id: number; permissions: string[] };
+  const perms = user.permissions;
+  const canFullWrite = perms.includes('*') || perms.includes('fleet:write');
+  const canScopedWrite = perms.includes('fleet:write:scoped');
+
+  if (!canFullWrite && !canScopedWrite) {
+    return reply.code(403).send({
+      success: false,
+      code: 'FORBIDDEN',
+      message: 'Permission required: fleet:write or fleet:write:scoped',
+    });
+  }
+
+  const schema = z.object({
+    data: updateFleetSchema,
+    reason: z.string().min(5),
+  });
+
+  const parse = schema.safeParse(request.body);
+  if (!parse.success) {
+    return reply.code(400).send({ error: 'Invalid update format', details: parse.error.format() });
+  }
+
+  const { data, reason } = parse.data;
+
+  try {
+    // Anti-IDOR: scoped writers may only modify units belonging to their linked owners.
+    // `resolveOwnerScope` retorna `null` únicamente cuando `permissions.includes('*')`
+    // (Ω) -- el guard `!canFullWrite` de arriba ya excluye ese caso (misma fuente:
+    // `perms.includes('*')`), así que `ownerScope` nunca es `null` aquí (FC165 F3
+    // Slice3.3 Lote B, purga sintáctica; `if(ownerScope!==null)` era inalcanzable).
+    if (!canFullWrite && canScopedWrite) {
+      const ownerScope = (await resolveOwnerScope(request)) as number[];
+      if (ownerScope.length === 0) return reply.code(404).send({ error: 'Unit not found' });
+      const unit = await FleetService.getUnitById(id, request.log, ownerScope);
+      if (!unit) return reply.code(404).send({ error: 'Unit not found' });
+    }
+
+    const success = await FleetService.updateUnit(id, data, reason, user.id);
+    if (!success) return reply.code(404).send({ error: 'Unit not found' });
+    return reply.send({ success: true });
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({ error: 'Critical failure during update' });
+  }
+}
+
+/**
+ * DELETE /api/v1/fleet/:id
+ * (FC165 F3 Slice3.3 Lote B — extraído a función nombrada, Dual-Gate Isolation.)
+ */
+async function handleDeleteFleetUnit(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const { id } = request.params as { id: string };
+  const schema = z.object({
+    reason: z.string().min(5),
+  });
+  const parse = schema.safeParse(request.body);
+  if (!parse.success) {
+    return reply.code(400).send({ error: 'Reason required for deletion' });
+  }
+
+  const { reason } = parse.data;
+  const user = request.user as { id: number };
+
+  try {
+    const success = await FleetService.deleteUnit(id, reason, user.id);
+    if (!success) return reply.code(404).send({ error: 'Unit not found' });
+    return reply.send({ success: true });
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({ error: 'System error during deletion' });
+  }
+}
+
+async function fetchFleetUnitNodeRows(id: string): Promise<{
+  maintenanceRows: RowDataPacket[];
+  financialRows: RowDataPacket[];
+  incidentRows: RowDataPacket[];
+}> {
+  const yearStart = `${new Date().getFullYear()}-01`;
+  const yearEnd = `${new Date().getFullYear()}-12`;
+
+  // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado).
+  const [maintenanceRows, financialRows, incidentRows] = await Promise.all([
+    // Last 5 maintenance records
+    db.execute<RowDataPacket[]>(
+      `SELECT fm.uuid, fme.service_date,
+              cc_st.code AS service_type, fme.service_mode,
+              fme.cost, fme.technician, fm.start_reading AS odometer,
+              fm.end_reading, fm.status, fm.start_at, fm.end_at
+       FROM fleet_movements fm
+       JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
+       LEFT JOIN common_catalogs cc_st ON cc_st.id = fme.service_type_id
+       WHERE fm.unit_id = ? AND fm.movement_type = 'MAINTENANCE'
+       ORDER BY fme.service_date DESC, fm.id DESC
+       LIMIT 5`,
+      [id]
+    ),
+    // Financial summary by category for current year
+    db.execute<RowDataPacket[]>(
+      `SELECT cc.code AS category, SUM(ft.amount) AS total
+       FROM financial_transactions ft
+       LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
+       WHERE ft.unit_id = ? AND ft.period >= ? AND ft.period <= ?
+       GROUP BY cc.code`,
+      [id, yearStart, yearEnd]
+    ),
+    // Last 3 incidents linked to this unit
+    db.execute<RowDataPacket[]>(
+      `SELECT ri.id, cc_cat.code AS category, ri.description, ri.severity,
+              ri.status, ri.reported_at
+       FROM route_incidents ri
+       JOIN fleet_movements fm ON ri.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
+       LEFT JOIN common_catalogs cc_cat ON cc_cat.id = ri.category_id
+       WHERE fm.unit_id = ?
+       ORDER BY ri.reported_at DESC
+       LIMIT 3`,
+      [id]
+    ),
+  ]);
+
+  return {
+    maintenanceRows: maintenanceRows[0] as RowDataPacket[],
+    financialRows: financialRows[0] as RowDataPacket[],
+    incidentRows: incidentRows[0] as RowDataPacket[],
+  };
+}
+
+/**
+ * GET /api/v1/fleet/:id/node
+ * Sovereign Node — aggregates full unit profile + maintenance + financial + incidents
+ * (FC165 F3 Slice3.3 Lote B — extraído a función nombrada, Dual-Gate Isolation.)
+ */
+async function handleGetFleetUnitNode(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  const { id } = request.params as { id: string };
+  try {
+    const ownerScope = await resolveOwnerScope(request);
+    if (ownerScope !== null && ownerScope.length === 0) {
+      return reply.code(404).send({ error: 'Unidad no encontrada' });
+    }
+    const unit = await FleetService.getUnitById(id, request.log, ownerScope ?? undefined);
+    if (!unit) return reply.code(404).send({ error: 'Unidad no encontrada' });
+
+    const { maintenanceRows, financialRows, incidentRows } = await fetchFleetUnitNodeRows(id);
+
+    const byCategory: Record<string, number> = {};
+    financialRows.forEach((r) => {
+      byCategory[r.category as string] = Number(r.total);
+    });
+    const totalFinancial = Object.values(byCategory).reduce((s, v) => s + v, 0);
+
+    return reply.send({
+      success: true,
+      data: {
+        unit,
+        maintenance: { recentHistory: maintenanceRows },
+        financial: {
+          year: new Date().getFullYear(),
+          totalCost: totalFinancial,
+          byCategory,
+        },
+        incidents: {
+          recent: incidentRows,
+          openCount: incidentRows.filter((r) => r.status === 'OPEN').length,
+        },
+      },
+    });
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(500).send({ error: 'Error al cargar nodo de unidad' });
+  }
+}
+
+/** Registra las rutas de flota (FC165 F3 Slice3.3 Lote B — wiring puro, handlers extraídos arriba). */
 export default async function fleetRoutes(fastify: FastifyInstance): Promise<void> {
   // Security Hook
   fastify.addHook('onRequest', async (request, reply) => {
@@ -155,250 +426,18 @@ export default async function fleetRoutes(fastify: FastifyInstance): Promise<voi
   });
   fastify.addHook('preHandler', requirePermission('fleet:unit:view:any'));
 
-  /**
-   * GET /api/v1/fleet
-   */
-  fastify.get('/fleet', async (request, reply) => {
-    reply.header('Cache-Control', 'no-store, no-cache, must-revalidate');
-    try {
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null && ownerScope.length === 0) {
-        return reply.send({ success: true, count: 0, data: [] });
-      }
-      const units = await FleetService.getAllUnits(fastify.log, ownerScope ?? undefined);
-      return reply.send({ success: true, count: units.length, data: units });
-    } catch (error) {
-      // FC 082 incidente DB-1045 P3 (A09) — nunca reenviar (error as Error).message
-      // crudo de MySQL al cliente (filtraba usuario@host). Traza completa solo en log.
-      fastify.log.error({ route: '/fleet', err: error }, 'Fleet listing failed');
-      return reply
-        .code(500)
-        .send({ success: false, code: 'INTERNAL_ERROR', message: 'Error al cargar la flota' });
-    }
-  });
-
-  /**
-   * GET /api/v1/fleet/:id
-   */
-  fastify.get('/fleet/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    try {
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null && ownerScope.length === 0) {
-        return reply.code(404).send({ error: 'Unit not found' });
-      }
-      const unit = await FleetService.getUnitById(id, fastify.log, ownerScope ?? undefined);
-      if (!unit) return reply.code(404).send({ error: 'Unit not found' });
-      return reply.send({ success: true, data: unit });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Failure retrieving unit details' });
-    }
-  });
-
-  /**
-   * POST /api/v1/fleet
-   * Plan Omega: Base64 images are part of the main payload.
-   */
+  fastify.get('/fleet', handleGetFleet);
+  fastify.get('/fleet/:id', handleGetFleetById);
   fastify.post(
     '/fleet',
     { preHandler: [requirePermission('fleet:unit:create')] },
-    async (request, reply) => {
-      const parse = createFleetSchema.safeParse(request.body);
-      if (!parse.success) {
-        return reply.code(400).send({ error: 'Validation failed', details: parse.error.format() });
-      }
-
-      try {
-        const result = await FleetService.createUnit(
-          parse.data as Parameters<typeof FleetService.createUnit>[0]
-        );
-        return reply.code(201).send({ success: true, ...result });
-      } catch (error: unknown) {
-        fastify.log.error(error as Error);
-        const err = error as Record<string, unknown>;
-        const message =
-          (err?.message as string) ||
-          (err?.sqlMessage as string) ||
-          (typeof err === 'string' ? err : 'Unknown DB Exception');
-
-        if (message.includes('CONFLICT')) {
-          return reply.code(409).send({ error: message });
-        }
-
-        return reply.code(500).send({ error: `Database Error: ${message}` });
-      }
-    }
+    handleCreateFleetUnit
   );
-
-  /**
-   * PATCH /api/v1/fleet/:id
-   * Access: fleet:write (full CRUD roles) OR fleet:write:scoped (rol 9 — own units only).
-   * Anti-IDOR: scoped writers are owner-validated before the mutation executes.
-   */
-  fastify.patch('/fleet/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const user = request.user as { id: number; permissions: string[] };
-    const perms = user.permissions;
-    const canFullWrite = perms.includes('*') || perms.includes('fleet:write');
-    const canScopedWrite = perms.includes('fleet:write:scoped');
-
-    if (!canFullWrite && !canScopedWrite) {
-      return reply.code(403).send({
-        success: false,
-        code: 'FORBIDDEN',
-        message: 'Permission required: fleet:write or fleet:write:scoped',
-      });
-    }
-
-    const schema = z.object({
-      data: updateFleetSchema,
-      reason: z.string().min(5),
-    });
-
-    const parse = schema.safeParse(request.body);
-    if (!parse.success) {
-      return reply
-        .code(400)
-        .send({ error: 'Invalid update format', details: parse.error.format() });
-    }
-
-    const { data, reason } = parse.data;
-
-    try {
-      // Anti-IDOR: scoped writers may only modify units belonging to their linked owners.
-      if (!canFullWrite && canScopedWrite) {
-        const ownerScope = await resolveOwnerScope(request);
-        if (ownerScope !== null) {
-          if (ownerScope.length === 0) return reply.code(404).send({ error: 'Unit not found' });
-          const unit = await FleetService.getUnitById(id, fastify.log, ownerScope);
-          if (!unit) return reply.code(404).send({ error: 'Unit not found' });
-        }
-      }
-
-      const success = await FleetService.updateUnit(id, data, reason, user.id);
-      if (!success) return reply.code(404).send({ error: 'Unit not found' });
-      return reply.send({ success: true });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Critical failure during update' });
-    }
-  });
-
-  /**
-   * DELETE /api/v1/fleet/:id
-   */
+  fastify.patch('/fleet/:id', handleUpdateFleetUnit);
   fastify.delete(
     '/fleet/:id',
     { preHandler: [requirePermission('fleet:unit:delete:any')] },
-    async (request, reply) => {
-      const { id } = request.params as { id: string };
-      const schema = z.object({
-        reason: z.string().min(5),
-      });
-      const parse = schema.safeParse(request.body);
-      if (!parse.success) {
-        return reply.code(400).send({ error: 'Reason required for deletion' });
-      }
-
-      const { reason } = parse.data;
-      const user = request.user as { id: number };
-
-      try {
-        const success = await FleetService.deleteUnit(id, reason, user.id);
-        if (!success) return reply.code(404).send({ error: 'Unit not found' });
-        return reply.send({ success: true });
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.code(500).send({ error: 'System error during deletion' });
-      }
-    }
+    handleDeleteFleetUnit
   );
-
-  /**
-   * GET /api/v1/fleet/:id/node
-   * Sovereign Node — aggregates full unit profile + maintenance + financial + incidents
-   */
-  fastify.get('/fleet/:id/node', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    try {
-      const ownerScope = await resolveOwnerScope(request);
-      if (ownerScope !== null && ownerScope.length === 0) {
-        return reply.code(404).send({ error: 'Unidad no encontrada' });
-      }
-      const unit = await FleetService.getUnitById(id, fastify.log, ownerScope ?? undefined);
-      if (!unit) return reply.code(404).send({ error: 'Unidad no encontrada' });
-
-      const yearStart = `${new Date().getFullYear()}-01`;
-      const yearEnd = `${new Date().getFullYear()}-12`;
-
-      // FC 082 F2b3b — read cutover final: cc.code única fuente (ENUM dropeado).
-      const [maintenanceRows, financialRows, incidentRows] = await Promise.all([
-        // Last 5 maintenance records
-        db.execute<RowDataPacket[]>(
-          `SELECT fm.uuid, fme.service_date,
-                  cc_st.code AS service_type, fme.service_mode,
-                  fme.cost, fme.technician, fm.start_reading AS odometer,
-                  fm.end_reading, fm.status, fm.start_at, fm.end_at
-           FROM fleet_movements fm
-           JOIN fleet_maintenance_extensions fme ON fme.movement_id = fm.id
-           LEFT JOIN common_catalogs cc_st ON cc_st.id = fme.service_type_id
-           WHERE fm.unit_id = ? AND fm.movement_type = 'MAINTENANCE'
-           ORDER BY fme.service_date DESC, fm.id DESC
-           LIMIT 5`,
-          [id]
-        ),
-        // Financial summary by category for current year
-        db.execute<RowDataPacket[]>(
-          `SELECT cc.code AS category, SUM(ft.amount) AS total
-           FROM financial_transactions ft
-           LEFT JOIN common_catalogs cc ON cc.id = ft.category_id
-           WHERE ft.unit_id = ? AND ft.period >= ? AND ft.period <= ?
-           GROUP BY cc.code`,
-          [id, yearStart, yearEnd]
-        ),
-        // Last 3 incidents linked to this unit
-        db.execute<RowDataPacket[]>(
-          `SELECT ri.id, cc_cat.code AS category, ri.description, ri.severity,
-                  ri.status, ri.reported_at
-           FROM route_incidents ri
-           JOIN fleet_movements fm ON ri.route_uuid = fm.uuid COLLATE utf8mb4_unicode_ci
-           LEFT JOIN common_catalogs cc_cat ON cc_cat.id = ri.category_id
-           WHERE fm.unit_id = ?
-           ORDER BY ri.reported_at DESC
-           LIMIT 3`,
-          [id]
-        ),
-      ]);
-
-      const byCategory: Record<string, number> = {};
-      (financialRows[0] as RowDataPacket[]).forEach((r) => {
-        byCategory[r.category as string] = Number(r.total);
-      });
-      const totalFinancial = Object.values(byCategory).reduce((s, v) => s + v, 0);
-
-      return reply.send({
-        success: true,
-        data: {
-          unit,
-          maintenance: {
-            recentHistory: maintenanceRows[0] as RowDataPacket[],
-          },
-          financial: {
-            year: new Date().getFullYear(),
-            totalCost: totalFinancial,
-            byCategory,
-          },
-          incidents: {
-            recent: incidentRows[0] as RowDataPacket[],
-            openCount: (incidentRows[0] as RowDataPacket[]).filter((r) => r.status === 'OPEN')
-              .length,
-          },
-        },
-      });
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Error al cargar nodo de unidad' });
-    }
-  });
+  fastify.get('/fleet/:id/node', handleGetFleetUnitNode);
 }

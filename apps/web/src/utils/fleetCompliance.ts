@@ -162,7 +162,11 @@ function deriveEngomadoInfo(cleanPlaca: string): { color: string; meses: string 
   if (lastDigitMatch) {
     lastDigit = Number.parseInt(lastDigitMatch[0], 10);
   }
-  return CALENDARIO_ENGOMADO[lastDigit] || { color: 'Gris', meses: 'No determinado' };
+  // CALENDARIO_ENGOMADO mapea los 10 dígitos posibles (0-9) y `lastDigit` es
+  // siempre uno de ellos (parseInt de un solo dígito regex, o el fallback 9)
+  // -- el fallback `{Gris}` era, por exhaustividad del mapa, inalcanzable
+  // (FC165 F3 Slice3.3 Lote B, purga sintáctica).
+  return CALENDARIO_ENGOMADO[lastDigit];
 }
 
 // 4. Pre-selección heurística del Holograma basada en el Año (FC163 F2B3, split Alfa 227_AN).

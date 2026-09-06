@@ -239,11 +239,12 @@ function blockAndLog(url: URL, reason: string): SsrfBlockedError {
   return new SsrfBlockedError(reason);
 }
 
-export async function outboundFetch(
+/** T1 + (b)/(d): valida allowlist/scheme y resuelve+valida IPs (FC165 F3 Slice3.3
+ * Lote B — extraído de `outboundFetch` para respetar el cap de 50 líneas, Gate2). */
+async function resolveAndValidateTarget(
   url: string,
-  init: OutboundInit = {},
-  deps: OutboundDeps = {}
-): Promise<OutboundResponse> {
+  deps: OutboundDeps
+): Promise<{ parsed: URL; addresses: string[] }> {
   const parsed = new URL(url);
   const allowlisted = (OUTBOUND_ALLOWLIST as readonly string[]).includes(parsed.hostname);
   const isHttps = parsed.protocol === 'https:';
@@ -255,7 +256,9 @@ export async function outboundFetch(
   }
 
   // (b) + (d) — resolución previa y validación de TODAS las IPs
-  /* v8 ignore next -- rama default = DNS real, inalcanzable sin red (deps inyectables) */
+  // Rama default (`defaultResolve`) cubierta mockeando `dns.promises.lookup`
+  // (FC165 F3 Slice3.3 Lote B) -- el `/* v8 ignore */` previo no suprimía
+  // esta condición ante SonarCloud, solo el reporte local de vitest.
   const resolve = deps.resolve ?? defaultResolve;
   const addresses = await resolve(parsed.hostname);
   const resolutionClean = addresses.length > 0 && addresses.every((ip) => !isPrivateIp(ip));
@@ -267,17 +270,21 @@ export async function outboundFetch(
         : `resolución de ${parsed.hostname} contiene IP privada/link-local`
     );
   }
+  return { parsed, addresses };
+}
 
-  const breaker = getBreaker(parsed.hostname);
-  if (!breaker.canRequest()) {
-    throw new BreakerOpenError(parsed.hostname);
-  }
-
-  /* v8 ignore next -- rama default = socket TLS real, inalcanzable sin red (deps inyectables) */
-  const request = deps.request ?? defaultRequest;
+/** (a) + (c): ejecuta la petición pinneada y aplica la política de redirects/breaker
+ * (FC165 F3 Slice3.3 Lote B — extraído de `outboundFetch` para respetar Gate2). */
+async function performOutboundRequest(
+  parsed: URL,
+  addresses: string[],
+  init: OutboundInit,
+  requestFn: OutboundRequestFn,
+  breaker: CircuitBreaker
+): Promise<RawOutboundResponse> {
   let raw: RawOutboundResponse;
   try {
-    raw = await request({
+    raw = await requestFn({
       host: addresses[0],
       servername: parsed.hostname,
       port: parsed.port === '' ? 443 : Number(parsed.port),
@@ -299,6 +306,26 @@ export async function outboundFetch(
   }
 
   breaker.record(raw.status < 500);
+  return raw;
+}
+
+/** Wrapper único para salida HTTP outbound del API — T1 SSRF guard + T3 circuit breaker (L §11). */
+export async function outboundFetch(
+  url: string,
+  init: OutboundInit = {},
+  deps: OutboundDeps = {}
+): Promise<OutboundResponse> {
+  const { parsed, addresses } = await resolveAndValidateTarget(url, deps);
+
+  const breaker = getBreaker(parsed.hostname);
+  if (!breaker.canRequest()) {
+    throw new BreakerOpenError(parsed.hostname);
+  }
+
+  // Rama default (`defaultRequest`) cubierta mockeando `https.request` (FC165
+  // F3 Slice3.3 Lote B) -- mismo criterio que `resolve` arriba.
+  const requestFn = deps.request ?? defaultRequest;
+  const raw = await performOutboundRequest(parsed, addresses, init, requestFn, breaker);
 
   return {
     status: raw.status,

@@ -141,7 +141,10 @@ export const LEGACY_GODFILES = [
   'apps/web/src/components/Fleet/FleetGridView.tsx', // 1068 LOC
   'apps/web/src/components/Routes/RouteLogTable.tsx', // 745 LOC
   'apps/web/src/pages/Upa/UpaWorkspace.tsx', // 716 LOC
-  'apps/web/src/components/Maintenance/MaintenanceRegistrationForm.tsx', // 689 LOC
+  // FC165 F3 Slice3.3 Lote A — MaintenanceRegistrationForm.tsx REMOVED (RR2/Inv-C):
+  // descompuesto en carpeta MaintenanceRegistrationForm/ (constants, FuelSection,
+  // useRegistrationState, ModeBanner, ConfigPanel, OperationalPanel,
+  // UpaPreviewSection, ActionBar); orquestador 689->74 LOC.
   // FC158 T2 — ClientForm/vimCentro/tab VIM purged (dead onboarding UI); split
   // into useUniverseForm hook + CredencialesSection/PerfilSection/
   // DireccionSection/UniverseFormCard (Gate 2 max-lines-per-function); 646→505

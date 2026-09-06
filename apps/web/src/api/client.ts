@@ -3,11 +3,24 @@ import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { redirectUserToLogin } from './navigation';
 import { getToken, clearToken } from './tokenStore';
 
+/** Hostname para la URL de desarrollo. `window` siempre existe en esta SPA
+ * (navegador real o jsdom en tests) -- el parámetro admite `undefined` solo
+ * para poder testear directamente el fallback, sin depender de un entorno
+ * sin `window` real (FC165 F3 Slice3.3 Lote C, purga+test sin red real). */
+export function computeHostname(win: Window | undefined): string {
+  return win ? win.location.hostname : 'localhost';
+}
+
+/** URL base de la API según el ambiente (FC165 F3 Slice3.3 Lote C). */
+export function computeDefaultURL(isProd: boolean, hostname: string): string {
+  return isProd ? 'https://apiv1.piic.com.mx/v1' : `http://${hostname}:3001/v1`;
+}
+
 const isProduction = import.meta.env.PROD;
-const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const hostname = computeHostname(window);
 
 // En Hostinger, usamos el nuevo subdominio apiv1 creado específicamente para Node 24.
-const defaultURL = isProduction ? 'https://apiv1.piic.com.mx/v1' : `http://${hostname}:3001/v1`;
+const defaultURL = computeDefaultURL(isProduction, hostname);
 
 // 🔱 Telemetry Engine (Forensic Monitoring)
 export const currentTelemetry = {
@@ -24,14 +37,45 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// 🛡️ Zero-Noise Test Shield
-if (typeof process === 'undefined' || (process.env.NODE_ENV !== 'test' && !process.env.VITEST)) {
-  // Diagnostic log real en runtime; forzar cobertura vía vi.resetModules() desestabiliza la
-  // atribución v8 del resto del archivo (confirmado empíricamente, FC164/R4-C)
-  /* v8 ignore start */
-  console.log('🚀 [Archon API Client V2] Active Gateway:', api.defaults.baseURL);
-  /* v8 ignore stop */
+/** Deriva el estado de entorno Node/Vitest sin bifurcaciones en el call-site
+ * (FC165 F3 Slice3.3 Lote C). Se re-evalúa en cada llamada -- un test puede
+ * togglear `globalThis.process` alrededor de una llamada directa sin
+ * `vi.resetModules()` (que desestabilizaba la atribución v8 del resto de
+ * este archivo, confirmado empíricamente, ver client.test.ts). */
+export function readProcessSignal(): {
+  hasProcess: boolean;
+  nodeEnv: string | undefined;
+  isVitest: boolean;
+} {
+  if (typeof process === 'undefined') {
+    return { hasProcess: false, nodeEnv: undefined, isVitest: false };
+  }
+  return { hasProcess: true, nodeEnv: process.env.NODE_ENV, isVitest: !!process.env.VITEST };
 }
+
+/** Imprime el diagnóstico de gateway activo si no estamos en un test run
+ * (Zero-Noise Test Shield). Extraída y exportada para poder cubrir AMBOS
+ * lados de la condición con una llamada directa desde el test (FC165 F3
+ * Slice3.3 Lote C). */
+export function logGatewayStartupIfNeeded(
+  hasProcess: boolean,
+  nodeEnv: string | undefined,
+  isVitest: boolean,
+  baseUrl: string
+): void {
+  if (!hasProcess || (nodeEnv !== 'test' && !isVitest)) {
+    console.log('🚀 [Archon API Client V2] Active Gateway:', baseUrl);
+  }
+}
+
+// 🛡️ Zero-Noise Test Shield
+const gatewaySignal = readProcessSignal();
+logGatewayStartupIfNeeded(
+  gatewaySignal.hasProcess,
+  gatewaySignal.nodeEnv,
+  gatewaySignal.isVitest,
+  api.defaults.baseURL as string
+);
 
 // Request Interceptor for JWT & Telemetry
 api.interceptors.request.use((config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {

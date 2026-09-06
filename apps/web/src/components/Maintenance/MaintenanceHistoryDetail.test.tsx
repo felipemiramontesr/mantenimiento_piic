@@ -109,6 +109,20 @@ describe('MaintenanceHistoryDetail', () => {
     expect(screen.getAllByText(/cargando/i).length).toBeGreaterThan(0);
   });
 
+  // FC165 F3 Slice3.3 Lote A — unc branch: `if (res.data.success) setDetail(...)`
+  // nunca se ejercitaba con success:false (backend responde 200 pero rechaza
+  // la operación) — `detail` se queda en null y ni el estado vacío ni la lista
+  // de tareas renderizan, aunque loading ya haya terminado.
+  it('leaves detail unset when the backend responds success:false', async () => {
+    server.use(http.get('*/maintenance/:uuid', () => HttpResponse.json({ success: false })));
+    render(<MaintenanceHistoryDetail log={BASE_LOG} onBack={noop} />);
+    await waitFor(() => expect(screen.queryByText(/cargando tareas/i)).not.toBeInTheDocument());
+    expect(
+      screen.queryByText(/Este servicio no tiene tareas registradas/i)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Cambio de aceite')).not.toBeInTheDocument();
+  });
+
   it('shows empty state when details array is empty', async () => {
     server.use(
       http.get('*/maintenance/:uuid', () =>
