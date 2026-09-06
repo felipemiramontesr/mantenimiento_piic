@@ -186,9 +186,27 @@ const MaintenanceCalendarPanel: React.FC<{
   );
 };
 
-const MaintenanceModule: React.FC = (): React.ReactElement => {
-  const { setSectionData } = useSovereignLayout();
-  const [searchParams] = useSearchParams();
+interface MaintenancePanelState {
+  activePanel: MaintenancePanel;
+  setActivePanel: React.Dispatch<React.SetStateAction<MaintenancePanel>>;
+  refreshTrigger: number;
+  setRefreshTrigger: React.Dispatch<React.SetStateAction<number>>;
+  completingLog: MaintenanceLog | null;
+  setCompletingLog: React.Dispatch<React.SetStateAction<MaintenanceLog | null>>;
+  detailLog: MaintenanceLog | null;
+  setDetailLog: React.Dispatch<React.SetStateAction<MaintenanceLog | null>>;
+  scheduleInitialUnit: string;
+  setScheduleInitialUnit: React.Dispatch<React.SetStateAction<string>>;
+  activeUpaOrderId: number | null;
+  setActiveUpaOrderId: React.Dispatch<React.SetStateAction<number | null>>;
+  panelRef: React.RefObject<HTMLDivElement>;
+  scrollToTop: () => void;
+}
+
+/** Estado de navegación interna del módulo — extraído de `MaintenanceModule`
+ * para mantenerlo bajo el presupuesto de Gate2 (FC165 F3 Slice3.1 Batch2,
+ * Dual-Gate Isolation). */
+function useMaintenancePanelState(): MaintenancePanelState {
   const [activePanel, setActivePanel] = useState<MaintenancePanel>('FORECAST');
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [completingLog, setCompletingLog] = useState<MaintenanceLog | null>(null);
@@ -197,21 +215,68 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
   const [activeUpaOrderId, setActiveUpaOrderId] = useState<number | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
 
+  // FC165 F3 Slice3.1 — purga: `panelRef` se adjunta a un <div> incondicional
+  // del root, y `scrollIntoView` es un método estándar de todo
+  // HTMLDivElement — el guard `if(panelRef.current?.scrollIntoView)` que
+  // envolvía cada llamada era siempre-verdadero (censo vivo: 0 hits en su
+  // lado falso tras la suite completa). Se conserva `?.` solo por el tipo.
   const scrollToTop = (): void => {
-    if (panelRef.current?.scrollIntoView) {
-      setTimeout((): void => {
-        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
+    setTimeout((): void => {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
+  return {
+    activePanel,
+    setActivePanel,
+    refreshTrigger,
+    setRefreshTrigger,
+    completingLog,
+    setCompletingLog,
+    detailLog,
+    setDetailLog,
+    scheduleInitialUnit,
+    setScheduleInitialUnit,
+    activeUpaOrderId,
+    setActiveUpaOrderId,
+    panelRef,
+    scrollToTop,
+  };
+}
+
+/** Preselecciona SCHEDULE cuando la URL trae `?unitId=` (deep-link desde
+ * pronósticos/otros módulos) — ver nota de `useMaintenancePanelState`. */
+function useMaintenanceUrlInit(state: MaintenancePanelState): void {
+  const [searchParams] = useSearchParams();
+  const { setScheduleInitialUnit, setActivePanel } = state;
   useEffect(() => {
     const unitId = searchParams.get('unitId');
     if (unitId) {
       setScheduleInitialUnit(unitId);
       setActivePanel('SCHEDULE');
     }
-  }, [searchParams]);
+  }, [searchParams, setScheduleInitialUnit, setActivePanel]);
+}
+
+interface MaintenanceNavHandlers {
+  handleReturnToGrid: () => void;
+  handleForecastSchedule: (unitId: string) => void;
+  handleCancelSchedule: () => void;
+  handleCompleteRequest: (log: MaintenanceLog) => void;
+  handleDetailRequest: (log: MaintenanceLog) => void;
+}
+
+/** Handlers de navegación entre paneles (no-UPA) — ver nota de
+ * `useMaintenancePanelState`. */
+function useMaintenanceNavHandlers(state: MaintenancePanelState): MaintenanceNavHandlers {
+  const {
+    setActivePanel,
+    setCompletingLog,
+    setDetailLog,
+    setScheduleInitialUnit,
+    setRefreshTrigger,
+    scrollToTop,
+  } = state;
 
   const handleReturnToGrid = (): void => {
     setActivePanel('HISTORY');
@@ -226,10 +291,14 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
     scrollToTop();
   };
 
+  // FC165 F3 Slice3.1 — purga: 'SCHEDULE' solo se activa vía
+  // `handleForecastSchedule` o `useMaintenanceUrlInit`, ambos con un
+  // `unitId` no-vacío garantizado, así que al cancelar el origen siempre es
+  // 'FORECAST' — el ternario `!=='' ? FORECAST : HISTORY` tenía un lado
+  // (HISTORY) inalcanzable (censo vivo: 0 hits tras la suite completa).
   const handleCancelSchedule = (): void => {
-    const origin: MaintenancePanel = scheduleInitialUnit !== '' ? 'FORECAST' : 'HISTORY';
     setScheduleInitialUnit('');
-    setActivePanel(origin);
+    setActivePanel('FORECAST');
     scrollToTop();
   };
 
@@ -244,6 +313,29 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
     setActivePanel('HISTORY_DETAIL');
     scrollToTop();
   };
+
+  return {
+    handleReturnToGrid,
+    handleForecastSchedule,
+    handleCancelSchedule,
+    handleCompleteRequest,
+    handleDetailRequest,
+  };
+}
+
+interface MaintenanceUpaHandlers {
+  handleOpenUpa: (workOrderId: number) => void;
+  handleReturnFromUpa: () => void;
+  handleAcceptOrder: (uuid: string) => Promise<void>;
+  handleRejectOrder: (uuid: string) => Promise<void>;
+}
+
+/** Handlers del flujo UPA (abrir/volver/aceptar/rechazar orden) — ver nota
+ * de `useMaintenancePanelState`. `scrollToTop`/`setState` no entran en los
+ * arreglos de deps (igual que el código original): son estables o leen
+ * `panelRef.current` en el momento de la llamada, no en el cierre. */
+function useMaintenanceUpaHandlers(state: MaintenancePanelState): MaintenanceUpaHandlers {
+  const { setActivePanel, setActiveUpaOrderId, setRefreshTrigger, scrollToTop } = state;
 
   const handleOpenUpa = useCallback((workOrderId: number): void => {
     setActiveUpaOrderId(workOrderId);
@@ -281,182 +373,300 @@ const MaintenanceModule: React.FC = (): React.ReactElement => {
     }
   }, []);
 
+  return { handleOpenUpa, handleReturnFromUpa, handleAcceptOrder, handleRejectOrder };
+}
+
+type HeaderAction = NonNullable<
+  Parameters<ReturnType<typeof useSovereignLayout>['setSectionData']>[3]
+>;
+
+const MAINTENANCE_TITLE = 'Administrar Mantenimientos';
+const MAINTENANCE_DESC = 'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla';
+
+/** Descriptores del `headerAction` por panel — extraídos de la sección-data
+ * effect para mantenerla bajo el presupuesto de Gate2. */
+function buildCompleteAction(onClick: () => void): HeaderAction {
+  return {
+    variant: 'navy',
+    headerTitle: 'Cancelar Finalización',
+    HeaderIcon: ShieldAlert,
+    PayloadIcon: CheckCircle2,
+    actionTitle: 'Retorno',
+    description: 'Cancelar Cierre',
+    buttonText: 'Volver al Historial',
+    isActive: true,
+    onClick,
+  };
+}
+
+function buildScheduleAction(onClick: () => void): HeaderAction {
+  return {
+    variant: 'navy',
+    headerTitle: 'Cancelar',
+    HeaderIcon: ShieldAlert,
+    PayloadIcon: ShieldAlert,
+    actionTitle: 'Retorno',
+    description: 'Cancelar Programación',
+    buttonText: 'Cerrar Formulario',
+    isActive: true,
+    onClick,
+  };
+}
+
+function buildUpaAction(onClick: () => void): HeaderAction {
+  return {
+    variant: 'navy',
+    headerTitle: 'Volver al Historial',
+    HeaderIcon: ClipboardList,
+    PayloadIcon: Cpu,
+    actionTitle: 'Retorno',
+    description: 'Volver al historial de mantenimiento',
+    buttonText: 'Volver',
+    isActive: false,
+    onClick,
+  };
+}
+
+function buildForecastToHistoryAction(onClick: () => void): HeaderAction {
+  return {
+    variant: 'emerald',
+    headerTitle: 'Historial de Servicios',
+    HeaderIcon: ClipboardList,
+    PayloadIcon: ClipboardList,
+    actionTitle: 'Historial',
+    description: 'Ver Historial de Servicios',
+    buttonText: 'Ver Historial',
+    isActive: false,
+    onClick,
+  };
+}
+
+function buildHistoryToForecastAction(onClick: () => void): HeaderAction {
+  return {
+    variant: 'navy',
+    headerTitle: 'Ver Pronósticos',
+    HeaderIcon: BarChart3,
+    PayloadIcon: BarChart3,
+    actionTitle: 'Pronósticos',
+    description: 'Panel de Pronósticos',
+    buttonText: 'Ver Pronósticos',
+    isActive: false,
+    onClick,
+  };
+}
+
+interface MaintenanceSectionDataArgs {
+  setSectionData: ReturnType<typeof useSovereignLayout>['setSectionData'];
+  state: MaintenancePanelState;
+  handleReturnToGrid: () => void;
+  handleCancelSchedule: () => void;
+  handleReturnFromUpa: () => void;
+}
+
+type SectionDataTuple = [title: string, description: string, action: HeaderAction | null];
+
+/** Resuelve (título, descripción, headerAction) para el panel activo — ver
+ * nota de `useMaintenanceSectionData`. */
+function resolveMaintenanceSectionData(args: MaintenanceSectionDataArgs): SectionDataTuple {
+  const { state, handleReturnToGrid, handleCancelSchedule, handleReturnFromUpa } = args;
+  const { activePanel, completingLog, detailLog, setActivePanel, scrollToTop } = state;
+
+  if (activePanel === 'COMPLETE') {
+    return [
+      'Finalizar Servicio',
+      `Cierre de Mantenimiento — ${completingLog?.unit_id ?? ''}`,
+      buildCompleteAction(handleReturnToGrid),
+    ];
+  }
+  if (activePanel === 'HISTORY_DETAIL') {
+    return ['Detalle de Servicio', `Historial — ${detailLog?.unit_id ?? ''}`, null];
+  }
+  if (activePanel === 'SCHEDULE') {
+    return [MAINTENANCE_TITLE, MAINTENANCE_DESC, buildScheduleAction(handleCancelSchedule)];
+  }
+  if (activePanel === 'UPA') {
+    return [
+      'Proceso UPA',
+      'Pipeline Universal Archon — Control de Servicio Sistemático',
+      buildUpaAction(handleReturnFromUpa),
+    ];
+  }
+  if (activePanel === 'FORECAST') {
+    return [
+      MAINTENANCE_TITLE,
+      MAINTENANCE_DESC,
+      buildForecastToHistoryAction(() => {
+        setActivePanel('HISTORY');
+        scrollToTop();
+      }),
+    ];
+  }
+  return [
+    MAINTENANCE_TITLE,
+    MAINTENANCE_DESC,
+    buildHistoryToForecastAction(() => {
+      setActivePanel('FORECAST');
+      scrollToTop();
+    }),
+  ];
+}
+
+/** Publica título/descripción/botón de acción al layout según el panel
+ * activo — extraído de `MaintenanceModule` para mantenerlo bajo el
+ * presupuesto de Gate2 (FC165 F3 Slice3.1 Batch2, Dual-Gate Isolation). */
+function useMaintenanceSectionData(args: MaintenanceSectionDataArgs): void {
+  const { setSectionData, state, handleReturnFromUpa } = args;
+  const { activePanel, completingLog, detailLog } = state;
+
   useEffect(() => {
-    const isScheduling = activePanel === 'SCHEDULE';
-    const isCompleting = activePanel === 'COMPLETE';
-    const isUpa = activePanel === 'UPA';
-
-    if (isCompleting) {
-      setSectionData(
-        'Finalizar Servicio',
-        `Cierre de Mantenimiento — ${completingLog?.unit_id ?? ''}`,
-        null,
-        {
-          variant: 'navy',
-          headerTitle: 'Cancelar Finalización',
-          HeaderIcon: ShieldAlert,
-          PayloadIcon: CheckCircle2,
-          actionTitle: 'Retorno',
-          description: 'Cancelar Cierre',
-          buttonText: 'Volver al Historial',
-          isActive: true,
-          onClick: handleReturnToGrid,
-        }
-      );
-      return;
-    }
-
-    if (activePanel === 'HISTORY_DETAIL') {
-      setSectionData('Detalle de Servicio', `Historial — ${detailLog?.unit_id ?? ''}`, null, null);
-      return;
-    }
-
-    if (isScheduling) {
-      setSectionData(
-        'Administrar Mantenimientos',
-        'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla',
-        null,
-        {
-          variant: 'navy',
-          headerTitle: 'Cancelar',
-          HeaderIcon: ShieldAlert,
-          PayloadIcon: ShieldAlert,
-          actionTitle: 'Retorno',
-          description: 'Cancelar Programación',
-          buttonText: 'Cerrar Formulario',
-          isActive: true,
-          onClick: handleCancelSchedule,
-        }
-      );
-      return;
-    }
-
-    if (isUpa) {
-      setSectionData(
-        'Proceso UPA',
-        'Pipeline Universal Archon — Control de Servicio Sistemático',
-        null,
-        {
-          variant: 'navy',
-          headerTitle: 'Volver al Historial',
-          HeaderIcon: ClipboardList,
-          PayloadIcon: Cpu,
-          actionTitle: 'Retorno',
-          description: 'Volver al historial de mantenimiento',
-          buttonText: 'Volver',
-          isActive: false,
-          onClick: handleReturnFromUpa,
-        }
-      );
-      return;
-    }
-
-    if (activePanel === 'FORECAST') {
-      setSectionData(
-        'Administrar Mantenimientos',
-        'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla',
-        null,
-        {
-          variant: 'emerald',
-          headerTitle: 'Historial de Servicios',
-          HeaderIcon: ClipboardList,
-          PayloadIcon: ClipboardList,
-          actionTitle: 'Historial',
-          description: 'Ver Historial de Servicios',
-          buttonText: 'Ver Historial',
-          isActive: false,
-          onClick: () => {
-            setActivePanel('HISTORY');
-            scrollToTop();
-          },
-        }
-      );
-      return;
-    }
-
-    setSectionData(
-      'Administrar Mantenimientos',
-      'Control de Servicios, Mantenimiento Preventivo & Correctivo de Flotilla',
-      null,
-      {
-        variant: 'navy',
-        headerTitle: 'Ver Pronósticos',
-        HeaderIcon: BarChart3,
-        PayloadIcon: BarChart3,
-        actionTitle: 'Pronósticos',
-        description: 'Panel de Pronósticos',
-        buttonText: 'Ver Pronósticos',
-        isActive: false,
-        onClick: () => {
-          setActivePanel('FORECAST');
-          scrollToTop();
-        },
-      }
-    );
+    const [title, description, action] = resolveMaintenanceSectionData(args);
+    setSectionData(title, description, null, action);
+    // handleReturnToGrid/handleCancelSchedule se recrean cada render (no
+    // memoizados) — omitidos deliberadamente del arreglo de deps, igual que
+    // el código original, para no re-disparar el efecto en cada render.
   }, [activePanel, completingLog, detailLog, setSectionData, handleReturnFromUpa]);
+}
+
+interface MaintenanceHistoryViewProps {
+  refreshTrigger: number;
+  nav: MaintenanceNavHandlers;
+  upa: MaintenanceUpaHandlers;
+}
+
+/** Vista HISTORY (tabla/calendario de servicios) — extraída de
+ * `MaintenanceModuleBody` para mantenerlo bajo el presupuesto de Gate2. */
+function MaintenanceHistoryView({
+  refreshTrigger,
+  nav,
+  upa,
+}: MaintenanceHistoryViewProps): React.JSX.Element {
+  const { handleCompleteRequest, handleDetailRequest } = nav;
+  const { handleAcceptOrder, handleRejectOrder, handleOpenUpa } = upa;
+  return (
+    <ArchonAdaptiveView
+      storageKey="maintenance-history"
+      views={{
+        TABLE: (
+          <MaintenanceGridView
+            refreshTrigger={refreshTrigger}
+            onCompleteRequest={handleCompleteRequest}
+            onDetailRequest={handleDetailRequest}
+            onAcceptOrder={handleAcceptOrder}
+            onRejectOrder={handleRejectOrder}
+            onOpenUpa={handleOpenUpa}
+          />
+        ),
+        CALENDAR: (
+          <MaintenanceCalendarPanel
+            refreshTrigger={refreshTrigger}
+            onEventClick={handleDetailRequest}
+          />
+        ),
+      }}
+    />
+  );
+}
+
+/** Vista FORECAST (tabla/tarjetas de pronóstico) — ver nota de
+ * `MaintenanceHistoryView`. */
+function MaintenanceForecastPanelView({
+  onScheduleRequest,
+}: {
+  onScheduleRequest: (unitId: string) => void;
+}): React.JSX.Element {
+  return (
+    <ArchonAdaptiveView
+      storageKey="maintenance-forecast"
+      views={{
+        TABLE: <MaintenanceForecastView onScheduleRequest={onScheduleRequest} />,
+        CARDS: <MaintenanceForecastCardPanel onScheduleRequest={onScheduleRequest} />,
+      }}
+    />
+  );
+}
+
+interface MaintenanceModuleBodyProps {
+  state: MaintenancePanelState;
+  nav: MaintenanceNavHandlers;
+  upa: MaintenanceUpaHandlers;
+}
+
+/** Cuerpo del módulo: una vista por `activePanel` — extraído de
+ * `MaintenanceModule` para mantenerlo bajo el presupuesto de Gate2 (FC165
+ * F3 Slice3.1 Batch2, Dual-Gate Isolation). */
+function MaintenanceModuleBody({ state, nav, upa }: MaintenanceModuleBodyProps): React.JSX.Element {
+  const {
+    activePanel,
+    refreshTrigger,
+    completingLog,
+    detailLog,
+    scheduleInitialUnit,
+    activeUpaOrderId,
+    panelRef,
+  } = state;
+  const { handleReturnToGrid, handleForecastSchedule, handleCancelSchedule } = nav;
+  const { handleReturnFromUpa } = upa;
+
+  return (
+    <div ref={panelRef}>
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        {activePanel === 'HISTORY' && (
+          <MaintenanceHistoryView refreshTrigger={refreshTrigger} nav={nav} upa={upa} />
+        )}
+        {activePanel === 'FORECAST' && (
+          <MaintenanceForecastPanelView onScheduleRequest={handleForecastSchedule} />
+        )}
+        {activePanel === 'SCHEDULE' && (
+          <MaintenanceRegistrationForm
+            onSuccess={handleReturnToGrid}
+            onCancel={handleCancelSchedule}
+            initialUnitId={scheduleInitialUnit}
+          />
+        )}
+        {activePanel === 'COMPLETE' && completingLog && (
+          <MaintenanceCompletionPanel
+            log={completingLog}
+            onSuccess={handleReturnToGrid}
+            onCancel={handleReturnToGrid}
+          />
+        )}
+        {activePanel === 'HISTORY_DETAIL' && detailLog && (
+          <MaintenanceHistoryDetail log={detailLog} onBack={handleReturnToGrid} />
+        )}
+        {activePanel === 'UPA' && activeUpaOrderId !== null && (
+          <UpaWorkspace workOrderId={activeUpaOrderId} onReturn={handleReturnFromUpa} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** FC165 F3 Slice3.1 Batch2 (Dual-Gate Isolation): orquestador delgado —
+ * estado/handlers en `useMaintenancePanelState`/`useMaintenanceNavHandlers`/
+ * `useMaintenanceUpaHandlers`, layout en `useMaintenanceSectionData`, render
+ * en `MaintenanceModuleBody`. */
+const MaintenanceModule: React.FC = (): React.ReactElement => {
+  const { setSectionData } = useSovereignLayout();
+  const state = useMaintenancePanelState();
+
+  useMaintenanceUrlInit(state);
+
+  const nav = useMaintenanceNavHandlers(state);
+  const upa = useMaintenanceUpaHandlers(state);
+
+  useMaintenanceSectionData({
+    setSectionData,
+    state,
+    handleReturnToGrid: nav.handleReturnToGrid,
+    handleCancelSchedule: nav.handleCancelSchedule,
+    handleReturnFromUpa: upa.handleReturnFromUpa,
+  });
 
   return (
     <div className="animate-in fade-in duration-700">
       <section className="archon-workspace-chassis">
         <div className="archon-axial-container">
-          <div ref={panelRef}>
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              {activePanel === 'HISTORY' && (
-                <ArchonAdaptiveView
-                  storageKey="maintenance-history"
-                  views={{
-                    TABLE: (
-                      <MaintenanceGridView
-                        refreshTrigger={refreshTrigger}
-                        onCompleteRequest={handleCompleteRequest}
-                        onDetailRequest={handleDetailRequest}
-                        onAcceptOrder={handleAcceptOrder}
-                        onRejectOrder={handleRejectOrder}
-                        onOpenUpa={handleOpenUpa}
-                      />
-                    ),
-                    CALENDAR: (
-                      <MaintenanceCalendarPanel
-                        refreshTrigger={refreshTrigger}
-                        onEventClick={handleDetailRequest}
-                      />
-                    ),
-                  }}
-                />
-              )}
-              {activePanel === 'FORECAST' && (
-                <ArchonAdaptiveView
-                  storageKey="maintenance-forecast"
-                  views={{
-                    TABLE: <MaintenanceForecastView onScheduleRequest={handleForecastSchedule} />,
-                    CARDS: (
-                      <MaintenanceForecastCardPanel onScheduleRequest={handleForecastSchedule} />
-                    ),
-                  }}
-                />
-              )}
-              {activePanel === 'SCHEDULE' && (
-                <MaintenanceRegistrationForm
-                  onSuccess={handleReturnToGrid}
-                  onCancel={handleCancelSchedule}
-                  initialUnitId={scheduleInitialUnit}
-                />
-              )}
-              {activePanel === 'COMPLETE' && completingLog && (
-                <MaintenanceCompletionPanel
-                  log={completingLog}
-                  onSuccess={handleReturnToGrid}
-                  onCancel={handleReturnToGrid}
-                />
-              )}
-              {activePanel === 'HISTORY_DETAIL' && detailLog && (
-                <MaintenanceHistoryDetail log={detailLog} onBack={handleReturnToGrid} />
-              )}
-              {activePanel === 'UPA' && activeUpaOrderId !== null && (
-                <UpaWorkspace workOrderId={activeUpaOrderId} onReturn={handleReturnFromUpa} />
-              )}
-            </div>
-          </div>
+          <MaintenanceModuleBody state={state} nav={nav} upa={upa} />
         </div>
       </section>
     </div>

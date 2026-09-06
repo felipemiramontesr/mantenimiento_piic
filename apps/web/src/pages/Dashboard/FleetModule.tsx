@@ -1,159 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { PlusCircle, ShieldAlert, Gauge, MapPin } from 'lucide-react';
 import { useFleet } from '../../context/FleetContext';
 import { useSovereignLayout } from '../../context/SovereignLayoutContext';
-import { FleetUnit, CreateFleetUnit, ManagementPanel } from '../../types/fleet';
 import usePermissions from '../../hooks/usePermissions';
-import { toDateOnly } from '../../utils/dateUtils';
-
-// 🔱 Specialized Sub-components (Silicon Valley Standards)
-import FleetGridView from '../../components/Fleet/FleetGridView';
-import api from '../../api/client';
-import FleetRegistrationForm from '../../components/Fleet/FleetRegistrationForm';
-import FleetSuccessView from '../../components/Fleet/FleetSuccessView';
 import useFleetForm from '../../hooks/useFleetForm';
-import ArchonAdaptiveView from '../../components/Common/ArchonAdaptiveView';
-import ArchonCardView, {
-  CardMetricRow,
-  CardAlertBadge,
-} from '../../components/Common/ArchonCardView';
+import useFleetModuleUrlSearch from './FleetModule/useFleetModuleUrlSearch';
+import { useFleetPanelState, useFleetModuleHandlers } from './FleetModule/useFleetModuleNav';
+import { useFleetModuleSectionData } from './FleetModule/actionButton';
+import FleetModuleBody from './FleetModule/FleetModuleBody';
+
+export { mapUnitToFormData, daysUntil, deriveFleetAlert } from './FleetModule/fleetFormMapping';
 
 /**
- * 🚀 ARCHON FLEET MODULE (v.28.19.0)
+ * 🚀 ARCHON FLEET MODULE (v.28.19.0 — v.29.0.0 FC165 F3 Slice3.1 Batch2:
+ * split en `FleetModule/`, Dual-Gate Isolation)
  * Architecture: Sovereign Instrumental Node
  * Principles: SOLID, DRY, DIP
  * Refinement: Centralized Header/Footer via SovereignLayoutContext
  */
-
-const mapBaseIds = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
-  assetTypeId: unit.assetTypeId || 0,
-  brandId: unit.brandId || 0,
-  modelId: unit.modelId || 0,
-  departmentId: unit.departmentId || undefined,
-  operationalUseId: unit.operationalUseId || undefined,
-  locationId: unit.locationId || undefined,
-  engineTypeId: unit.engineTypeId || undefined,
-  traccionId: unit.traccionId || 0,
-  transmisionId: unit.transmisionId || 0,
-  fuelTypeId: unit.fuelTypeId || 0,
-  colorId: unit.colorId || undefined,
-  maintenanceCenterId: unit.maintenanceCenterId || undefined,
-});
-
-const mapOperationalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
-  placas: unit.placas || undefined,
-  numeroSerie: unit.numeroSerie || undefined,
-  year: unit.year || 2024,
-  tireSpec: unit.tireSpec || undefined,
-  tireBrandId: unit.tireBrandId || undefined,
-  terrainTypeId: unit.terrainTypeId || undefined,
-  capacidadCarga: unit.capacidadCarga || undefined,
-  fuelTankCapacity: unit.fuelTankCapacity || 0,
-  odometer: unit.odometer || 0,
-  protocolStartDate: toDateOnly(unit.protocolStartDate) || undefined,
-  maintIntervalDays: unit.maintIntervalDays || 90,
-  maintIntervalKm: unit.maintIntervalKm || 5000,
-  lastServiceDate: toDateOnly(unit.lastServiceDate) || undefined,
-  lastServiceReading: unit.lastServiceReading || 0,
-  dailyUsageAvg: unit.dailyUsageAvg || undefined,
-  initialFuelLevel: unit.initialFuelLevel ?? 100,
-  lastFuelLevel: unit.lastFuelLevel ?? 100,
-});
-
-const mapLegalData = (unit: FleetUnit): Partial<CreateFleetUnit> => ({
-  vencimientoVerificacion: toDateOnly(unit.vencimientoVerificacion) || undefined,
-  circulationCardNumber: unit.circulationCardNumber || undefined,
-  accountingAccount: unit.accountingAccount || undefined,
-  legalComplianceDate: toDateOnly(unit.legalComplianceDate) || undefined,
-  insuranceExpiryDate: toDateOnly(unit.insuranceExpiryDate) || undefined,
-  insurancePolicyNumber: unit.insurancePolicyNumber || undefined,
-  insuranceCompanyId: unit.insuranceCompanyId || undefined,
-  insuranceCost: unit.insuranceCost || 0,
-  lastEnvironmentalVerification: toDateOnly(unit.lastEnvironmentalVerification) || undefined,
-  lastMechanicalVerification: toDateOnly(unit.lastMechanicalVerification) || undefined,
-  environmentalHologram: unit.environmentalHologram || undefined,
-  monthlyLeasePayment: unit.monthlyLeasePayment || 0,
-  ownerId: unit.ownerId || undefined,
-  complianceStatusId: unit.complianceStatusId || undefined,
-});
-
-// FC 078 F2(b) — días hasta una fecha ISO; null si no hay fecha o es inválida
-// (misma semántica de umbral que daysColor en MaintenanceForecastView).
-export const daysUntil = (iso: string | null): number | null => {
-  if (!iso) return null;
-  const target = new Date(iso).getTime();
-  if (Number.isNaN(target)) return null;
-  return Math.ceil((target - Date.now()) / (1000 * 60 * 60 * 24));
-};
-
-export interface FleetCardAlert {
-  tone: 'critical' | 'warning';
-  label: string;
-}
-
-// FC 078 F2(b) — alerta activa derivada de la verificación vehicular vigente
-// (vencida = critical, <=30 días = warning, resto = sin alerta).
-export const deriveFleetAlert = (unit: FleetUnit): FleetCardAlert | null => {
-  const days = daysUntil(unit.vencimientoVerificacion);
-  if (days === null) return null;
-  if (days < 0) return { tone: 'critical', label: 'Verificación vencida' };
-  if (days <= 30) return { tone: 'warning', label: `Verificación vence en ${days}d` };
-  return null;
-};
-
-// FC 074 F3 / FC 078 F2(b) — render de tarjeta para la vista CARDS del
-// contenedor adaptativo (receta v2: header+badge, identidad, 2 métricas,
-// alerta activa opcional — piloto FC 041, grid interno de FleetGridView intacto).
-const renderFleetCard = (unit: FleetUnit): React.ReactNode => {
-  const alert = deriveFleetAlert(unit);
-  return (
-    <div className="flex flex-col gap-2 min-w-0">
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-black text-pinnacle-navy text-archon-md truncate">{unit.id}</span>
-        <span className="shrink-0 px-2 py-0.5 rounded-[4px] bg-pinnacle-navy/5 text-pinnacle-navy/70 text-archon-xs font-bold uppercase tracking-widest">
-          {unit.status}
-        </span>
-      </div>
-      <div className="text-pinnacle-navy/70 text-archon-base truncate">
-        {unit.marca} {unit.modelo}
-      </div>
-      <div className="text-pinnacle-navy/40 text-archon-sm uppercase tracking-widest truncate">
-        {unit.placas || 'Sin placas'}
-      </div>
-      <div className="flex flex-col gap-1 pt-2 border-t border-pinnacle-navy/5">
-        <CardMetricRow
-          icon={<Gauge size={12} />}
-          label="Odómetro"
-          value={`${unit.odometer.toLocaleString()} km`}
-        />
-        <CardMetricRow
-          icon={<MapPin size={12} />}
-          label="Sede"
-          value={unit.sede || unit.departamento || '—'}
-        />
-      </div>
-      {alert && (
-        <CardAlertBadge tone={alert.tone}>
-          <ShieldAlert size={12} />
-          {alert.label}
-        </CardAlertBadge>
-      )}
-    </div>
-  );
-};
-
-export const mapUnitToFormData = (unit: FleetUnit): CreateFleetUnit =>
-  ({
-    id: unit.id,
-    images: unit.images || [],
-    status: unit.status,
-    description: unit.description || undefined,
-    ...mapBaseIds(unit),
-    ...mapOperationalData(unit),
-    ...mapLegalData(unit),
-  } as CreateFleetUnit);
-
 const FleetModule: React.FC = (): React.ReactElement => {
   const { refreshUnits, units, loading } = useFleet();
   const { setSectionData, setSearchTerm } = useSovereignLayout();
@@ -161,107 +25,30 @@ const FleetModule: React.FC = (): React.ReactElement => {
   const canCreate = hasPermission('fleet:write');
   const canScopedWrite = hasPermission('fleet:write:scoped');
   const location = useLocation();
-  const [activePanel, setActivePanel] = useState<ManagementPanel>('STRATEGY');
-  const [editingUnit, setEditingUnit] = useState<FleetUnit | null>(null);
-  const panelRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect((): (() => void) => {
-    const params = new URLSearchParams(location.search);
-    const categoria = params.get('categoria');
-    const status = params.get('status');
-    if (categoria) {
-      setSearchTerm(categoria);
-    } else if (status) {
-      setSearchTerm(status);
-    } else {
-      setSearchTerm('');
-    }
-    return (): void => {
-      setSearchTerm('');
-    };
-  }, [location.search, setSearchTerm]);
+  useFleetModuleUrlSearch(location.search, setSearchTerm);
+
+  const panel = useFleetPanelState();
+  const { activePanel, editingUnit, panelRef } = panel;
 
   // 🔱 CENTRALIZED STATE HOOK (DIP compliant)
   // Deferred Hydration: Only start catalog sync when expansion panel is requested
   const fleetController = useFleetForm(activePanel === 'EXPANSION' || !!editingUnit);
-  const { formData, registrationSuccess, setRegistrationSuccess } = fleetController;
+  const { formData, registrationSuccess } = fleetController;
+  const { handlePanelChange, handleReturnToGrid, handleEditUnit } = useFleetModuleHandlers(
+    panel,
+    fleetController
+  );
 
-  const handlePanelChange = (panel: ManagementPanel): void => {
-    setActivePanel(panel);
-    setRegistrationSuccess(false);
-
-    if (panelRef.current?.scrollIntoView) {
-      setTimeout((): void => {
-        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
-  };
-
-  const handleReturnToGrid = (): void => {
-    setActivePanel('STRATEGY');
-    setEditingUnit(null);
-    setRegistrationSuccess(false);
-  };
-
-  const handleEditUnit = async (unit: FleetUnit): Promise<void> => {
-    try {
-      // 🔱 Lazy Load: Fetch full unit profile (including heavy assets)
-      const response = await api.get(`/fleet/${unit.id}`);
-      const fullUnit = response.data.data;
-
-      setEditingUnit(fullUnit);
-      setActivePanel('EXPANSION');
-      setRegistrationSuccess(false);
-
-      // 🔱 HYDRATE CONTROLLER
-      await fleetController.hydrateEditUnit(mapUnitToFormData(fullUnit));
-
-      if (panelRef.current?.scrollIntoView) {
-        setTimeout((): void => {
-          panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to load full unit profile:', error);
-    }
-  };
-
-  const isExpanding = activePanel === 'EXPANSION' || !!editingUnit;
-  // canCreate: gates the "Iniciar Registro" new-unit flow (fleet:write only).
-  // Scoped-write users still get the cancel button when already in edit mode.
-  const showActionButton = canCreate || (canScopedWrite && isExpanding);
-  const actionButton = showActionButton
-    ? {
-        variant: (isExpanding ? 'navy' : 'emerald') as 'navy' | 'emerald',
-        headerTitle: isExpanding ? 'Cancelar' : 'Expansión de Flota',
-        HeaderIcon: isExpanding ? ShieldAlert : PlusCircle,
-        PayloadIcon: isExpanding ? ShieldAlert : PlusCircle,
-        actionTitle: isExpanding ? 'Retorno' : 'Registrar',
-        description: isExpanding ? 'Cancelar Registro' : 'Alta de Activos',
-        buttonText: isExpanding ? 'Cerrar Formulario' : 'Iniciar Registro',
-        isActive: isExpanding,
-        testId: 'fleet-registration-btn',
-        onClick: (): void => {
-          if (editingUnit) {
-            handleReturnToGrid();
-          } else {
-            handlePanelChange(activePanel === 'EXPANSION' ? 'STRATEGY' : 'EXPANSION');
-          }
-        },
-      }
-    : undefined;
-
-  useEffect(() => {
-    setSectionData(
-      editingUnit ? `Rectificación: ${editingUnit.id}` : 'Administrar Unidades',
-      editingUnit
-        ? 'Protocolo de Gestión Forense Archon'
-        : 'Administración de Activos, Registro Técnico & Optimización de Flota',
-      null,
-      actionButton
-    );
-  }, [editingUnit, activePanel, setSectionData, canCreate, canScopedWrite]);
+  useFleetModuleSectionData({
+    setSectionData,
+    canCreate,
+    canScopedWrite,
+    editingUnit,
+    activePanel,
+    handlePanelChange,
+    handleReturnToGrid,
+  });
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -269,45 +56,19 @@ const FleetModule: React.FC = (): React.ReactElement => {
       <section className="archon-workspace-chassis">
         {/* 🔱 AXIAL SYNC CONTAINER */}
         <div className="archon-axial-container">
-          <div ref={panelRef}>
-            {registrationSuccess ? (
-              <FleetSuccessView formData={formData} />
-            ) : (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                {activePanel === 'STRATEGY' && (
-                  <ArchonAdaptiveView
-                    storageKey="fleet-strategy"
-                    views={{
-                      TABLE: (
-                        <FleetGridView units={units} loading={loading} onEdit={handleEditUnit} />
-                      ),
-                      CARDS: (
-                        <ArchonCardView<FleetUnit>
-                          items={units}
-                          keyExtractor={(unit): string => unit.id}
-                          renderCard={renderFleetCard}
-                          onCardClick={handleEditUnit}
-                          emptyMessage="SIN UNIDADES REGISTRADAS"
-                        />
-                      ),
-                    }}
-                  />
-                )}
-                {activePanel === 'EXPANSION' && (
-                  <FleetRegistrationForm
-                    controller={fleetController}
-                    onSuccess={async (): Promise<void> => {
-                      await refreshUnits();
-                      handleReturnToGrid();
-                    }}
-                    onCancel={handleReturnToGrid}
-                    isEdit={!!editingUnit}
-                    unitId={editingUnit?.id}
-                  />
-                )}
-              </div>
-            )}
-          </div>
+          <FleetModuleBody
+            panelRef={panelRef}
+            registrationSuccess={registrationSuccess}
+            formData={formData}
+            activePanel={activePanel}
+            units={units}
+            loading={loading}
+            handleEditUnit={handleEditUnit}
+            fleetController={fleetController}
+            editingUnit={editingUnit}
+            refreshUnits={refreshUnits}
+            handleReturnToGrid={handleReturnToGrid}
+          />
         </div>
       </section>
     </div>
