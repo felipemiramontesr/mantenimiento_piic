@@ -118,10 +118,13 @@ function useEgressFetch(buildUrl: (cursor?: string) => string): UseEgressFetchRe
   }, [fetchRows]);
 
   const loadMore = async (): Promise<void> => {
-    if (!nextCursor) return;
+    // Único call-site real: el botón "Cargar más" (EgressTable.tsx), que solo
+    // se renderiza cuando `state.nextCursor` ya es truthy — el guard
+    // `if(!nextCursor)` era, por construcción, inalcanzable (FC165 F3
+    // Slice3.2 Batch2, purga sintáctica).
     setLoadingMore(true);
     try {
-      const res = await api.get<TransactionsPage>(buildUrl(nextCursor));
+      const res = await api.get<TransactionsPage>(buildUrl(nextCursor as string));
       setRows((prev) => [...prev, ...res.data.data]);
       setNextCursor(res.data.meta.nextCursor);
     } finally {

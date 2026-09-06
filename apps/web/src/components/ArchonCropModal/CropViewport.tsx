@@ -48,7 +48,11 @@ export const CropViewport: React.FC<CropViewportProps> = ({
   onKeyDown,
 }) => {
   const minScale = getMinScale(naturalSize.w, naturalSize.h);
-  const zoomPercent = minScale > 0 ? Math.round((scale / minScale) * 100) : 100;
+  // getMinScale nunca retorna <=0 (fallback 1 si nw|nh===0, si no
+  // Math.max(CROP_SIZE/nw, CROP_SIZE/nh) con ambos positivos) — el fallback
+  // `: 100` era, por contrato de la función, inalcanzable (FC165 F3
+  // Slice3.2 Batch2, purga sintáctica).
+  const zoomPercent = Math.round((scale / minScale) * 100);
   return (
     <div
       ref={containerRef}

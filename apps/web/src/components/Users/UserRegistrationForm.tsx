@@ -404,7 +404,11 @@ const IdentityPhotoField: React.FC<IdentityPhotoFieldProps> = ({
         reducedHeight={true}
         images={formData.imageUrl ? [formData.imageUrl] : []}
         onChange={(imgs: string[]): void => setFormData({ ...formData, imageUrl: imgs[0] || '' })}
-        onFileChange={(files: File[]): void => onFileChange(files[0] || null)}
+        // ArchonImageUploader (notifyFileChange) solo invoca este callback
+        // cuando `files.length>0` — `files[0]` nunca es falsy aquí; el
+        // fallback `|| null` era, por construcción, inalcanzable (FC165 F3
+        // Slice3.2 Batch2, purga sintáctica).
+        onFileChange={(files: File[]): void => onFileChange(files[0])}
         maxImages={1}
         title="Arrastra tu fotografía de perfil"
         allowedFormats="JPG, PNG"

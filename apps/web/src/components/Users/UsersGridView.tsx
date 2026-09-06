@@ -195,9 +195,11 @@ function useUserSearchConfig(
   React.useEffect(() => {
     setSearchConfig({
       placeholder: 'Buscar por empleado, nombre, email, rol o departamento...',
+      // `users: UserIndustrial[]` no opcional -- el fallback `|| []` era, por
+      // tipo, inalcanzable (FC165 F3 Slice3.2 Batch2, purga sintáctica).
       getSuggestions: (term: string): SearchSuggestion[] => {
         const query = term.toLowerCase().trim();
-        return (users || [])
+        return users
           .map((u): SearchSuggestion | null => {
             const match = matchFieldInUser(u, query);
             if (!match) return null;

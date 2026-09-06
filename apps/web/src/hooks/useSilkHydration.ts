@@ -125,7 +125,10 @@ export default function useSilkHydration<T>({
           );
         }
       } finally {
-        if (failsafe) clearTimeout(failsafe);
+        // setTimeout nunca retorna un valor falsy -- el guard `if(failsafe)`
+        // era, por contrato de la API, inalcanzable (FC165 F3 Slice3.2
+        // Batch2, purga sintáctica).
+        clearTimeout(failsafe);
         if (isMounted.current) {
           isSyncingRef.current = false;
           setIsSyncing(false);

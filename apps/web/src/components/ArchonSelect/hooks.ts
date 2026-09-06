@@ -70,8 +70,10 @@ export function usePortalClickOutside(
   }, [containerRef, onOutside]);
 }
 
-/** Asegura que el nodo raíz del portal exista en el DOM (FC163 F1B-2, split Alfa 219_AN). */
-export function usePortalRoot(): HTMLElement | null {
+/** Asegura que el nodo raíz del portal exista en el DOM (FC163 F1B-2, split Alfa 219_AN).
+ * SPA cliente-only (Vite, sin SSR) — `document` siempre existe cuando este hook corre;
+ * el fallback `: null` era, por arquitectura, inalcanzable (FC165 F3 Slice3.2 Batch2). */
+export function usePortalRoot(): HTMLElement {
   useEffect((): void => {
     let portalRoot = document.getElementById('archon-select-portal');
     if (!portalRoot) {
@@ -80,9 +82,7 @@ export function usePortalRoot(): HTMLElement | null {
       document.body.appendChild(portalRoot);
     }
   }, []);
-  return typeof document !== 'undefined'
-    ? document.getElementById('archon-select-portal') ?? document.body
-    : null;
+  return document.getElementById('archon-select-portal') ?? document.body;
 }
 
 /** Normaliza, filtra (búsqueda difusa) y resuelve la etiqueta actual de las opciones (FC163 F1B-2, split Alfa 219_AN). */
@@ -164,7 +164,7 @@ export interface UseArchonSelectStateResult {
   filteredOptions: SelectOption[];
   currentLabel: string;
   dropdownStyle: CSSProperties;
-  portalRoot: HTMLElement | null;
+  portalRoot: HTMLElement;
   handleToggle: () => void;
   handleSelect: (v: string) => void;
 }

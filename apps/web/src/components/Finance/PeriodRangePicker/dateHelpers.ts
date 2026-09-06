@@ -44,9 +44,11 @@ export function todayISO(): string {
   return toISO(n.getFullYear(), n.getMonth(), n.getDate());
 }
 
-/** Formatea una fecha ISO a etiqueta legible en es-MX (FC163 F2B4 Sub-Batch 4B-2). */
+/** Formatea una fecha ISO a etiqueta legible en es-MX (FC163 F2B4 Sub-Batch 4B-2).
+ * Ambos call-sites (CalendarPanel.tsx, computeAppliedLabel) ya guardan la
+ * fecha truthy antes de llamar — el fallback `'—'` era, por construcción,
+ * inalcanzable (FC165 F3 Slice3.2 Batch2, purga sintáctica). */
 export function formatLabel(date: string): string {
-  if (!date) return '—';
   const [y, m, d] = date.split('-');
   return `${Number(d)} de ${MESES[Number(m) - 1].toLowerCase()} de ${y}`;
 }

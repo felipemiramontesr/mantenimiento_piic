@@ -114,15 +114,14 @@ export const ArchonDoctor: React.FC = () => {
               {logs.filter((l) => l.type !== 'data').length === 0 ? (
                 <p className="text-pinnacle-white/20 italic">Listening for network events...</p>
               ) : (
+                // addLog() en este componente solo produce type 'err' o 'data'
+                // (ver handleError/el boton "Export JSON to Console" abajo) --
+                // filtrado 'data' arriba, todo lo que llega aqui es siempre
+                // 'err' (FC165 F3 Slice3.2 Batch2, purga de ternario muerto).
                 logs
                   .filter((l) => l.type !== 'data')
                   .map((log, i) => (
-                    <div
-                      key={i}
-                      className={`flex gap-2 ${
-                        log.type === 'err' ? 'text-red-400' : 'text-pinnacle-white/60'
-                      }`}
-                    >
+                    <div key={i} className="flex gap-2 text-red-400">
                       <span className="opacity-30">[{log.ts}]</span>
                       <span>{log.msg}</span>
                     </div>

@@ -216,7 +216,7 @@ function ArchonSelectDropdown({
 }
 
 interface ArchonSelectPortalDropdownProps {
-  portalRoot: HTMLElement | null;
+  portalRoot: HTMLElement;
   isOpen: boolean;
   dropdownStyle: React.CSSProperties;
   searchable: boolean;
@@ -242,8 +242,9 @@ function ArchonSelectPortalDropdown({
   filteredOptions,
   value,
   onSelect,
-}: ArchonSelectPortalDropdownProps): React.ReactPortal | null {
-  if (!portalRoot) return null;
+}: ArchonSelectPortalDropdownProps): React.ReactPortal {
+  // `portalRoot` (usePortalRoot) siempre existe -- SPA cliente-only sin SSR
+  // (FC165 F3 Slice3.2 Batch2, purga de guard inalcanzable).
   return createPortal(
     <AnimatePresence>
       {isOpen && (

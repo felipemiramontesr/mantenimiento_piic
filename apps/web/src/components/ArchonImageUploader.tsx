@@ -96,9 +96,12 @@ function processSelectedFiles(files: FileList | File[], args: ProcessFilesArgs):
       });
     });
   }
-  if (fileInputRef.current) {
-    fileInputRef.current.value = '';
-  }
+  // DropzoneFileInput renderiza el <input ref={fileInputRef}> de forma
+  // incondicional -- React adjunta el ref en el commit, antes de que este
+  // handler (disparado por su propio onChange/onDrop) pueda ejecutarse. El
+  // guard `if(fileInputRef.current)` era, por construcción, inalcanzable
+  // (FC165 F3 Slice3.2 Batch2, purga sintáctica).
+  (fileInputRef.current as HTMLInputElement).value = '';
 }
 
 interface UseImageUploaderStateArgs {
