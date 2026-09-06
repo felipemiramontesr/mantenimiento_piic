@@ -316,7 +316,7 @@ describe('MaintenanceForecastView', () => {
     );
     renderForecast();
     await waitFor(() => {
-      const placeholder = screen.getByAltText('Archon Unit Placeholder');
+      const placeholder = screen.getByAltText('Unidad Archon sin imagen');
       expect(placeholder).toBeInTheDocument();
     });
   });
