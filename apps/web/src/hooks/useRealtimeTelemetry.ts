@@ -58,9 +58,14 @@ export function useRealtimeTelemetry(): UseTelemetryResult {
       HEARTBEAT_INTERVAL_MS
     );
 
+    // Ambos refs se asignan de forma síncrona arriba, en este mismo cuerpo de
+    // efecto, antes de que React pueda invocar este cleanup (unmount o
+    // re-ejecución por cambio de deps) — el guard `if (ref.current)` era, por
+    // construcción, incapaz de ver `null` aquí (FC165 F3 Slice3.2 Batch1,
+    // purga de guard inalcanzable).
     return (): void => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      clearInterval(pollRef.current as ReturnType<typeof setInterval>);
+      clearInterval(heartbeatRef.current as ReturnType<typeof setInterval>);
     };
   }, [fetchUnits, sendHeartbeat]);
 

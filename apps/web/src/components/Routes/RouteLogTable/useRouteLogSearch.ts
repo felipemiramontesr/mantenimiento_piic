@@ -35,9 +35,13 @@ export function useRouteLogSearch(
   useEffect(() => {
     setSearchConfig({
       placeholder: 'Buscar por unidad, operador, origen, destino o marca...',
+      // `logs: RouteLog[]` (no opcional) desde `useRouteLogs`/`useSilkHydration`
+      // (`data: T[]`, siempre inicializado a `[]`) — el fallback `|| []` que
+      // había aquí era, por tipo, inalcanzable (FC165 F3 Slice3.2 Batch1,
+      // purga sintáctica por tipo).
       getSuggestions: (term: string): SearchSuggestion[] => {
         const query = term.toLowerCase().trim();
-        return (logs || [])
+        return logs
           .map((log) => buildRouteSuggestion(log, query, users, units))
           .filter((s): s is SearchSuggestion => s !== null);
       },

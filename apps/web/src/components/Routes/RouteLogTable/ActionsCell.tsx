@@ -23,13 +23,12 @@ interface InRouteActionsProps {
   onFinish: (l: RouteLog) => void;
 }
 
-/** Botones exclusivos de rutas en curso: reportar incidencia + finalizar misión (FC163 F2B4 Sub-Batch 4B-2). */
-function InRouteActions({
-  log,
-  onReport,
-  onFinish,
-}: InRouteActionsProps): React.JSX.Element | null {
-  if (log.end_time) return null;
+/** Botones exclusivos de rutas en curso: reportar incidencia + finalizar
+ * misión (FC163 F2B4 Sub-Batch 4B-2). El único call-site (`ActionsCell`,
+ * abajo) ya guarda `{!log.end_time && <InRouteActions .../>}` — el `if
+ * (log.end_time) return null` que existía aquí era, por construcción,
+ * inalcanzable (FC165 F3 Slice3.2 Batch1, purga de guard redundante). */
+function InRouteActions({ log, onReport, onFinish }: InRouteActionsProps): React.JSX.Element {
   return (
     <>
       <button

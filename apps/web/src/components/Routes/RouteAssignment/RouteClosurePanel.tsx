@@ -52,13 +52,17 @@ function FuelConsumptionIndicator({
       </div>
     );
   }
+  // Invariante: `consumedLiters` (useClosurePanelState) es `null` sii
+  // `tankCapacity<=0` — el `if` de arriba ya devolvió en ese caso, así que
+  // llegar aquí garantiza `consumedLiters` real (FC165 F3 Slice3.2 Batch1,
+  // purga de fallback inalcanzable).
   return (
     <div className="flex items-center justify-between bg-[#0f2a44]/5 border border-[#0f2a44]/10 p-2 rounded-[4px] mt-1.5 select-none">
       <span className="text-archon-sm font-black uppercase tracking-wider text-[#0f2a44]/60 flex items-center gap-1">
         🔱 Consumo de Ruta
       </span>
       <span className="font-mono text-xs font-black text-[#0f2a44]">
-        {consumedLiters !== null ? `${consumedLiters.toFixed(1)} L` : '--'}
+        {(consumedLiters as number).toFixed(1)} L
       </span>
     </div>
   );
