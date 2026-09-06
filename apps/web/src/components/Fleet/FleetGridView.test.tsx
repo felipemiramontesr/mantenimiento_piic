@@ -694,6 +694,37 @@ describe('FleetGridView — branch coverage (FC165 F2B2.1)', () => {
     });
   });
 
+  // FC165 F3 Slice3.1 — a unit missing MOST optional fields still has
+  // `placas` defined ('SRC-001'/etc.) in every other sparse fixture in this
+  // suite, and `.some()` short-circuits as soon as a matching (or merely
+  // present-but-non-matching) key is checked -- the loop never reaches a
+  // key whose value is actually null/undefined. A unit missing `placas`
+  // itself (the FIRST queryableKey) forces the null-check to run for real
+  // before any other key is tried.
+  it('search filter skips queryable keys that are null/undefined without crashing (queryableKeys null-check)', () => {
+    mockSearchTerm = 'zzz-no-such-term';
+    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+      layoutData: { title: 'Flota', description: 'ERP' },
+      searchTerm: mockSearchTerm,
+      setSearchTerm: vi.fn(),
+      searchConfig: null,
+      setSearchConfig: vi.fn(),
+      setSectionData: vi.fn(),
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: vi.fn(),
+    });
+    const bareUnit = {
+      id: 'ASM-NULLKEYS',
+      status: 'Disponible',
+      odometer: 5000,
+    } as unknown as FleetUnit;
+    render(<FleetGridView units={[bareUnit]} onEdit={vi.fn()} />);
+    // No unit matches the search term -- the grid renders its empty state,
+    // not the excluded unit, and (critically) doesn't crash walking the
+    // null/undefined `placas`/`marca`/`modelo`/... fields of `bareUnit`.
+    expect(screen.queryByText('ASM-NULLKEYS')).not.toBeInTheDocument();
+  });
+
   it('renders every display fallback ("—"/"---"/"S/D") when optional fields are entirely absent', () => {
     const sparseUnit = {
       id: 'ASM-SPARSE',
@@ -807,6 +838,21 @@ describe('FleetGridView — branch coverage (FC165 F2B2.1)', () => {
     const units = [
       { id: 'ASM-005', placas: 'A', status: 'Disponible', odometer: 1 },
       { id: 'NO-DIGITS', placas: 'B', status: 'Disponible', odometer: 2 },
+    ] as unknown as FleetUnit[];
+    render(<FleetGridView units={units} onEdit={vi.fn()} />);
+    fireEvent.click(screen.getByText('UNIDAD'));
+    expect(screen.getAllByText(/ASM-005|NO-DIGITS/).length).toBeGreaterThan(0);
+  });
+
+  // FC165 F3 Slice3.1 — el test anterior deja el id sin dígitos en la
+  // posición `index1` del array; el comparador de `Array.prototype.sort`
+  // para 2 elementos lo liga siempre al parámetro `b` (valB usa el
+  // fallback), nunca a `a` (valA). Invertir el orden fuerza el caso
+  // simétrico y cierra el fallback `valA = parseInt(...) || 0`.
+  it('sorts by UNIDAD falling back to 0 when the no-digits id comes first', () => {
+    const units = [
+      { id: 'NO-DIGITS', placas: 'B', status: 'Disponible', odometer: 2 },
+      { id: 'ASM-005', placas: 'A', status: 'Disponible', odometer: 1 },
     ] as unknown as FleetUnit[];
     render(<FleetGridView units={units} onEdit={vi.fn()} />);
     fireEvent.click(screen.getByText('UNIDAD'));

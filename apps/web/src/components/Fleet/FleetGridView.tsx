@@ -907,7 +907,13 @@ export const FleetGridView = ({
           } else if (sortConfig.field === 'programacion') {
             valA = a.forecast.kmParaServicio;
             valB = b.forecast.kmParaServicio;
-          } else if (sortConfig.field === 'pronostico') {
+          } else {
+            // FC165 F3 Slice3.1 — purga: el guard `if(!sortConfig.field)
+            // return` de arriba ya excluye null, y el tipo de field es
+            // cerrado a 'unidad'|'programacion'|'pronostico' — por
+            // eliminación, si no es ninguno de los dos anteriores solo
+            // puede ser 'pronostico' (censo vivo: 0 hits en un tercer
+            // `=== 'pronostico'` explícito).
             valA = a.forecast.forecastDate.getTime();
             valB = b.forecast.forecastDate.getTime();
           }
