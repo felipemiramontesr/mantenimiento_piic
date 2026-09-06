@@ -148,7 +148,11 @@ export const LEGACY_GODFILES = [
   // LOC, still over budget from the directory/universe-form breadth, not from
   // this cleanup — no new exception needed, comment kept current (RR2).
   'apps/web/src/pages/Dashboard/OnboardingModule.tsx', // 505 LOC
-  'apps/web/src/components/Routes/ForensicJournalTable.tsx', // 608 LOC
+  // FC165 F3 Slice3.1 Batch4 — ForensicJournalTable.tsx REMOVED (RR2/Inv-C):
+  // descompuesto en carpeta ForensicJournalTable/ (types, eventStyle,
+  // journalLogFilters, useForensicLogs, anomalyDetection, UniversalDeltaEngine,
+  // DescriptionCell, ImpactCell, JournalRow, JournalBody) — orquestador
+  // principal ahora 55 LOC, muy por debajo del presupuesto de 400 (Cond.R-142-S6).
   // FC163 F1B-2 (Alfa 219_AN) — Combobox generico descompuesto en
   // useComboboxToggle/useComboboxData/useCombobox/useClickOutside +
   // ComboboxTrigger/ComboboxOptionItem/ComboboxDropdownPanel (Gate 2

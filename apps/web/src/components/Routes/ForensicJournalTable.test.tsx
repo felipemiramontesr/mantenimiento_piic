@@ -145,6 +145,38 @@ describe('ForensicJournalTable (Apex Standard)', () => {
     expect(screen.getByText('90%')).toBeInTheDocument();
   });
 
+  // FC165 F3 Slice3.1 Batch4 — el guard `reading_before===reading_after`
+  // (ReadingImpactRow) y `fuel_before===fuel_after` (FuelLitersImpactRow)
+  // quedaron sin ejercitar tras la extracción a `ImpactCell.tsx`: ningún
+  // fixture preexistente tenía ambos valores presentes pero IGUALES (el
+  // único fixture de reading usa 1000/1250, distintos). Cierra las 2
+  // condiciones sin cambiar ningún otro comportamiento.
+  it('omits the reading/fuel-liters impact rows when both values are present but unchanged', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          {
+            id: 'uuid-noimpact-reading-fuel',
+            unit_id: 'ASM-007',
+            event_type: 'ADMIN_EDIT',
+            reading_before: 500,
+            reading_after: 500,
+            fuel_before: 30,
+            fuel_after: 30,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+    render(<ForensicJournalTable />);
+    await waitFor(() =>
+      expect(screen.queryByText(/Accediendo a Memoria Forense/i)).not.toBeInTheDocument()
+    );
+    expect(screen.queryByText(/KM$/)).not.toBeInTheDocument();
+    expect(screen.queryByText('30.0 L')).not.toBeInTheDocument();
+  });
+
   it('flags a percentage-anomaly fuel entry with the deviation banner', async () => {
     vi.mocked(api.get).mockResolvedValueOnce({
       data: {

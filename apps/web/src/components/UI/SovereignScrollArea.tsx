@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { computeAffordance } from './SovereignScrollArea/affordance';
 
 /**
  * 🔱 SOVEREIGN SCROLL AREA — FC 078 F1(b) (orden de Ω vía convergencia Alfa)
@@ -27,10 +28,9 @@ const SovereignScrollArea: React.FC<SovereignScrollAreaProps> = ({
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const updateAffordance = useCallback((): void => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > EDGE_TOLERANCE_PX);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - EDGE_TOLERANCE_PX);
+    const affordance = computeAffordance(scrollRef.current, EDGE_TOLERANCE_PX);
+    setCanScrollLeft(affordance.canScrollLeft);
+    setCanScrollRight(affordance.canScrollRight);
   }, []);
 
   useEffect(() => {

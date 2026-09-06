@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/testUtils';
 import SovereignScrollArea from './SovereignScrollArea';
+import { computeAffordance } from './SovereignScrollArea/affordance';
 
 /**
  * FC 078 F1 (Cond.2 Bravo) — tests propios de affordance. jsdom no hace
@@ -78,6 +79,17 @@ describe('SovereignScrollArea — affordance de scroll (FC 078)', () => {
     const vp = setup();
     expect(vp.textContent).toContain('contenido ancho');
     expect(vp.className).toContain('overflow-x-auto');
+  });
+
+  // FC165 F3 Slice3.1 Batch4 (Cond.R Bravo 267_AN: "NO borrar el guard de
+  // unmount, test o extraer") — `computeAffordance`'s `!el` guard protege
+  // contra un ResizeObserver/evento scroll en vuelo que invoque el callback
+  // justo después de que React desmonte el componente y limpie
+  // `scrollRef.current` a null; imposible de simular de forma fiable
+  // disparando el ciclo de vida real de React en jsdom, así que se prueba
+  // la función pura extraída directamente con `el=null`.
+  it('computeAffordance sin contenedor (guard de desmontaje) retorna "sin hints" en vez de crashear', () => {
+    expect(computeAffordance(null, 1)).toEqual({ canScrollLeft: false, canScrollRight: false });
   });
 
   // ── FC 078 F4 — regresión atrapada por el gate NoInternalCollapse ──
