@@ -53,7 +53,7 @@ describe('ArchonCenter Component (Apex Standard)', () => {
     expect(screen.getByText(/Incidencias en Ruta/i)).toBeDefined();
 
     const detailButtons = screen.getAllByRole('button', { name: /VER REPORTE/i });
-    expect(detailButtons.length).toBe(6);
+    expect(detailButtons).toHaveLength(6);
   });
 
   it('renders the KPI skeleton (pulse placeholder) while fleet stats are loading', async () => {
@@ -103,7 +103,7 @@ describe('ArchonCenter Component (Apex Standard)', () => {
     expect(screen.getByText('Maquinaria Pesada')).toBeDefined();
     expect(screen.getByText('Herramienta Menor')).toBeDefined();
 
-    expect(screen.getAllByText(/Segmento Operativo/i).length).toBe(3);
+    expect(screen.getAllByText(/Segmento Operativo/i)).toHaveLength(3);
   });
 
   it('navigates to the KPI path when a "VER REPORTE" button is clicked', async () => {

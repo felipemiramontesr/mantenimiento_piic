@@ -150,7 +150,7 @@ describe('PeriodRangePicker (FC164 F1 — parseYMFromDate empty/invalid fallback
     expect(() => openPicker()).not.toThrow();
     expect(screen.getByText('Desde')).toBeInTheDocument();
     expect(screen.getByText('Hasta')).toBeInTheDocument();
-    expect(screen.getAllByText('Septiembre 2026').length).toBe(2);
+    expect(screen.getAllByText('Septiembre 2026')).toHaveLength(2);
   });
 
   it('FC164-R1-3: aplicar sin seleccionar fecha (tras abrir con rango vacío) muestra el error de campos requeridos', () => {
@@ -183,6 +183,6 @@ describe('PeriodRangePicker (FC164 F1 — parseYMFromDate empty/invalid fallback
 
     openPicker();
 
-    expect(screen.getAllByText('Mayo 2026').length).toBe(2);
+    expect(screen.getAllByText('Mayo 2026')).toHaveLength(2);
   });
 });

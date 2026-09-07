@@ -53,6 +53,7 @@ describe('useTco (UT-TCO-1..3)', () => {
   // ── R4-C Fc165 F2 Slice 2.3B — unc lines 37,40,43 ──
 
   it('does not update state after unmount while a resolving fetch is still in flight', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     let resolveGet: (v: unknown) => void = () => {};
     vi.mocked(api.get).mockReturnValueOnce(
       new Promise((resolve) => {
@@ -65,9 +66,12 @@ describe('useTco (UT-TCO-1..3)', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it('does not update state after unmount while a rejecting fetch is still in flight', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     let rejectGet: (e: unknown) => void = () => {};
     vi.mocked(api.get).mockReturnValueOnce(
       new Promise((_resolve, reject) => {
@@ -80,5 +84,7 @@ describe('useTco (UT-TCO-1..3)', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

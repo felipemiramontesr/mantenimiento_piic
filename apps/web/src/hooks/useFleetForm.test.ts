@@ -25,8 +25,8 @@ describe('useFleetForm Hook', () => {
       await result.current.handleAssetTypeChange(2);
     });
     expect(result.current.formData.assetTypeId).toBe(2);
-    expect(result.current.formData.brandId).toBe(null);
-    expect(result.current.formData.modelId).toBe(null);
+    expect(result.current.formData.brandId).toBeNull();
+    expect(result.current.formData.modelId).toBeNull();
   });
 
   it('should handle marca changes and update available models', async (): Promise<void> => {
@@ -177,7 +177,7 @@ describe('useFleetForm Hook', () => {
     await act(async (): Promise<void> => {
       result.current.resetError();
     });
-    expect(result.current.error).toBe(null);
+    expect(result.current.error).toBeNull();
   });
 
   it('should convert files to base64 strings', async (): Promise<void> => {

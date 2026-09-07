@@ -208,7 +208,7 @@ describe('AuditLogView', () => {
 
       fireEvent.click(screen.getByTestId('toggle-only-diffs'));
       expect(screen.getByText('Mostrar todo')).toBeTruthy();
-      expect(screen.queryAllByText(/unchanged:/).length).toBe(0);
+      expect(screen.queryAllByText(/unchanged:/)).toHaveLength(0);
     });
 
     it('expandir una fila sin datos de snapshot muestra el mensaje vacío', async () => {

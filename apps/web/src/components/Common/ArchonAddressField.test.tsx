@@ -236,7 +236,7 @@ describe('ArchonAddressField', () => {
 
     await waitFor(() => {
       const stateSelect = screen.getByTestId('address-state-select').querySelector('select')!;
-      expect(stateSelect.querySelectorAll('option').length).toBe(1);
+      expect(stateSelect.querySelectorAll('option')).toHaveLength(1);
     });
   });
 
@@ -258,7 +258,7 @@ describe('ArchonAddressField', () => {
 
     await waitFor(() => {
       const muniSelect = screen.getByTestId('address-municipality-select').querySelector('select')!;
-      expect(muniSelect.querySelectorAll('option').length).toBe(1);
+      expect(muniSelect.querySelectorAll('option')).toHaveLength(1);
     });
   });
 
@@ -289,7 +289,7 @@ describe('ArchonAddressField', () => {
       const neighSelect = screen
         .getByTestId('address-neighborhood-select')
         .querySelector('select')!;
-      expect(neighSelect.querySelectorAll('option').length).toBe(1);
+      expect(neighSelect.querySelectorAll('option')).toHaveLength(1);
     });
   });
 
@@ -336,7 +336,7 @@ describe('ArchonAddressField', () => {
     render(<Wrapper />);
     await waitFor(() => expect(api.get).toHaveBeenCalledWith('/geolocation/states'));
     const stateSelect = screen.getByTestId('address-state-select').querySelector('select')!;
-    expect(stateSelect.querySelectorAll('option').length).toBe(1);
+    expect(stateSelect.querySelectorAll('option')).toHaveLength(1);
   });
 
   it('falls back to an empty municipios list when that fetch resolves without a data array', async () => {
@@ -352,7 +352,7 @@ describe('ArchonAddressField', () => {
 
     await waitFor(() => {
       const muniSelect = screen.getByTestId('address-municipality-select').querySelector('select')!;
-      expect(muniSelect.querySelectorAll('option').length).toBe(1);
+      expect(muniSelect.querySelectorAll('option')).toHaveLength(1);
     });
   });
 
@@ -378,7 +378,7 @@ describe('ArchonAddressField', () => {
       const neighSelect = screen
         .getByTestId('address-neighborhood-select')
         .querySelector('select')!;
-      expect(neighSelect.querySelectorAll('option').length).toBe(1);
+      expect(neighSelect.querySelectorAll('option')).toHaveLength(1);
     });
   });
 
@@ -410,7 +410,7 @@ describe('ArchonAddressField', () => {
 
     expect(screen.getByTestId('current-neighborhood').textContent).toBe('');
     expect(screen.getByTestId('current-postal').textContent).toBe('');
-    expect((api.get as Mock).mock.calls.length).toBe(callsBefore);
+    expect((api.get as Mock).mock.calls).toHaveLength(callsBefore);
   });
 
   it('defaults postalCode to empty string when the neighborhood response omits it', async () => {

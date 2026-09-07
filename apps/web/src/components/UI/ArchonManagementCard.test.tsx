@@ -48,6 +48,7 @@ describe('ArchonManagementCard', () => {
     ];
     variants.forEach((variant) => {
       const { unmount } = render(<ArchonManagementCard {...BASE_PROPS} variant={variant} />);
+      expect(screen.getByText('Flota')).toBeInTheDocument();
       unmount();
     });
   });

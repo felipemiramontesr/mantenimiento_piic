@@ -54,6 +54,7 @@ describe('useAssetTypeFields', () => {
   // ── R4-C Fc165 F2 Slice 2.3B — unc lines 32,41 ──
 
   it('does not update state after unmount while a resolving fetch is still in flight', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     let resolveGet: (v: unknown) => void = () => {};
     vi.mocked(api.get).mockReturnValueOnce(
       new Promise((resolve) => {
@@ -66,5 +67,7 @@ describe('useAssetTypeFields', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

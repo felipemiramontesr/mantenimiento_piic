@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import IncidentReportForm from './IncidentReportForm';
 import { FleetContext } from '../../context/FleetContext';
@@ -133,9 +133,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     const submitBtn = screen.getByRole('button', { name: /Emitir Alerta Sentinel/i });
     expect(submitBtn).not.toBeDisabled();
 
-    await act(async () => {
-      fireEvent.click(submitBtn);
-    });
+    fireEvent.click(submitBtn);
 
     await waitFor(() => {
       expect(mockReportIncident).toHaveBeenCalledWith(
@@ -162,9 +160,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Falla crítica en transmisión' } });
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
 
     await waitFor(() => expect(mockReportIncident).toHaveBeenCalled());
     expect(mockOnClose).toHaveBeenCalled();
@@ -179,9 +175,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Evento de prueba' } });
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
 
     await waitFor(() => {
       expect(screen.getByText(new RegExp(errorMsg, 'i'))).toBeDefined();
@@ -248,9 +242,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Error test' } });
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
 
     // err instanceof Error = false → uses fallback string (line 103 false branch)
     await waitFor(() => {
@@ -274,9 +266,7 @@ describe('IncidentReportForm (Sentinel Protocol)', () => {
     const desc = screen.getByPlaceholderText(/Describe la incidencia de forma breve y precisa/i);
     fireEvent.change(desc, { target: { value: 'Accidente total' } });
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: /Emitir Alerta Sentinel/i }));
 
     await waitFor(() => {
       expect(mockReportIncident).toHaveBeenCalledWith(

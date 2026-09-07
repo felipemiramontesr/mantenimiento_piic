@@ -79,6 +79,7 @@ describe('CosmologyModule', () => {
   });
 
   it('does not update state after unmount once an in-flight (resolving) fetch settles', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockPerms({ omega: true });
     let resolveFetch: (v: unknown) => void = () => {};
     vi.mocked(api.get).mockImplementationOnce(
@@ -93,9 +94,12 @@ describe('CosmologyModule', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it('does not update state after unmount once an in-flight (rejecting) fetch settles', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockPerms({ omega: true });
     let rejectFetch: (e: unknown) => void = () => {};
     vi.mocked(api.get).mockImplementationOnce(
@@ -110,6 +114,8 @@ describe('CosmologyModule', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it('Scenario 3 — Ω creates a Universe, list refreshes without reload', async () => {

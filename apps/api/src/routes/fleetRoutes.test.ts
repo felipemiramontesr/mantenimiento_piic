@@ -223,7 +223,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body).data.length).toBe(2);
+      expect(JSON.parse(response.body).data).toHaveLength(2);
     });
 
     it('should return 400 on fetch error', async (): Promise<void> => {
@@ -250,7 +250,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body).data.length).toBe(1);
+      expect(JSON.parse(response.body).data).toHaveLength(1);
     });
 
     it('should return 400 on journal error', async (): Promise<void> => {
@@ -324,7 +324,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body).data.length).toBe(1);
+      expect(JSON.parse(response.body).data).toHaveLength(1);
     });
 
     it('GET /v1/incidents should list all incidents', async (): Promise<void> => {
@@ -337,7 +337,7 @@ describe('FleetRoutes Endpoints - Sovereign Dispatch', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      expect(JSON.parse(response.body).data.length).toBe(1);
+      expect(JSON.parse(response.body).data).toHaveLength(1);
     });
 
     it('GET /v1/incidents should return 400 on error', async (): Promise<void> => {

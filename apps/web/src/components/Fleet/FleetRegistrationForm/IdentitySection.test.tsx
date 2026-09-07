@@ -193,6 +193,6 @@ describe('IdentitySection', () => {
     };
     render(<Wrapper />);
 
-    expect(screen.getAllByText('Sincronizando...').length).toBe(2);
+    expect(screen.getAllByText('Sincronizando...')).toHaveLength(2);
   });
 });

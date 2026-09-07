@@ -41,7 +41,7 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       const logger = { info: vi.fn(), error: vi.fn() };
       const results = await FleetService.getAllUnits(logger as any);
 
-      expect(results.length).toBe(1);
+      expect(results).toHaveLength(1);
       expect(results[0].id).toBe('ASM-001');
       expect(db.execute).toHaveBeenCalled();
     });

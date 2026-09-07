@@ -231,19 +231,19 @@ describe('UsersGridView Component', () => {
     };
 
     // username match
-    expect(cfg.getSuggestions('admin').length).toBe(1);
+    expect(cfg.getSuggestions('admin')).toHaveLength(1);
     // fullName match
-    expect(cfg.getSuggestions('operator one').length).toBe(1);
+    expect(cfg.getSuggestions('operator one')).toHaveLength(1);
     // email match
-    expect(cfg.getSuggestions('op1@piic').length).toBe(1);
+    expect(cfg.getSuggestions('op1@piic')).toHaveLength(1);
     // employeeNumber match
-    expect(cfg.getSuggestions('001').length).toBe(1);
+    expect(cfg.getSuggestions('001')).toHaveLength(1);
     // roleName match
-    expect(cfg.getSuggestions('archon').length).toBe(1);
+    expect(cfg.getSuggestions('archon')).toHaveLength(1);
     // department match
-    expect(cfg.getSuggestions('it').length).toBe(1);
+    expect(cfg.getSuggestions('it')).toHaveLength(1);
     // no match
-    expect(cfg.getSuggestions('zzznomatch').length).toBe(0);
+    expect(cfg.getSuggestions('zzznomatch')).toHaveLength(0);
   });
 
   it('onSuggestionSelect calls setSearchTerm with suggestion id', () => {

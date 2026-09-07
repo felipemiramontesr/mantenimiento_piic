@@ -281,6 +281,7 @@ describe('useSilkHydration', () => {
   });
 
   it('does not update data after unmount while a resolving fetch is still in flight', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(archonCache.get).mockReturnValue(null);
     let resolveGet: (v: unknown) => void = () => {};
     vi.mocked(api.get).mockReturnValueOnce(
@@ -298,9 +299,12 @@ describe('useSilkHydration', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it('does not set error after unmount while a rejecting fetch is still in flight', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(archonCache.get).mockReturnValue(null);
     let rejectGet: (e: unknown) => void = () => {};
     vi.mocked(api.get).mockReturnValueOnce(
@@ -318,5 +322,7 @@ describe('useSilkHydration', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

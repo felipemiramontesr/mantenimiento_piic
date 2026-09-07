@@ -92,6 +92,6 @@ describe('InsuranceFields', () => {
       );
     };
     render(<Wrapper />);
-    expect(screen.getAllByText('Seleccionar...').length).toBe(2);
+    expect(screen.getAllByText('Seleccionar...')).toHaveLength(2);
   });
 });

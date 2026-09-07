@@ -501,51 +501,61 @@ describe('authIntegration.test', () => {
   });
 
   it('Deep: findUserByEmail Resilience Matrix', async () => {
-    // 53-54: response is null
+    // 53-54: response is null -- findAllActiveUsers destructures [rows] from a
+    // null db.execute() result and throws uncaught, so the route degrades to
+    // a 500 rather than a clean 401 (genuine unhandled-shape resilience case).
     (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce(null);
-    await app.inject({
+    const res1 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'e@e.com', password: 'p' },
     });
+    expect(res1.statusCode).toBe(500);
 
-    // 57-58: results is null
+    // 57-58: results is null -- findAllActiveUsers returns null (rows=null),
+    // then findUserByEmail's candidates.find() throws on a null receiver.
     (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([null]);
-    await app.inject({
+    const res2 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'e@e.com', password: 'p' },
     });
+    expect(res2.statusCode).toBe(500);
 
     // 70-71: !found
     (db.execute as Mock).mockResolvedValueOnce([[]]).mockResolvedValueOnce([[{ email: 'not-me' }]]);
-    await app.inject({
+    const res3 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'target@t.com', password: 'p' },
     });
+    expect(res3.statusCode).toBe(401);
 
-    // 77-78: fullResponse is null
+    // 77-78: fullResponse is null -- candidate matches by decrypted email, so
+    // findUserWithRoleAndDepartmentById(5) runs and hits the same null-
+    // destructure crash as scenario 1 -- also a 500.
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
       .mockResolvedValueOnce([[{ id: 5, email: 'e@e.com', is_active: 1 }]])
       .mockResolvedValueOnce(null);
-    await app.inject({
+    const res4 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'e@e.com', password: 'p' },
     });
+    expect(res4.statusCode).toBe(500);
 
     // 81-83: !fullRows[0]
     (db.execute as Mock)
       .mockResolvedValueOnce([[]])
       .mockResolvedValueOnce([[{ id: 6, email: 'e@e.com', is_active: 1 }]])
       .mockResolvedValueOnce([[]]);
-    await app.inject({
+    const res5 = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
       payload: { username: 'e@e.com', password: 'p' },
     });
+    expect(res5.statusCode).toBe(401);
   });
 
   // ─── GET /users/:uuid/node ────────────────────────────────────────────────────

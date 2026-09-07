@@ -122,6 +122,7 @@ describe('SpecialtiesSelect', () => {
   });
 
   it('does not update state after unmount while the catalog fetch is still in flight', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     let resolveGet: (v: unknown) => void = () => {};
     (api.get as Mock).mockReturnValueOnce(
       new Promise((resolve) => {
@@ -134,6 +135,8 @@ describe('SpecialtiesSelect', () => {
     await new Promise((r) => {
       setTimeout(r, 0);
     });
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it('a mousedown inside the container does not close the dropdown', async () => {

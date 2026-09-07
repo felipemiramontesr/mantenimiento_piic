@@ -109,13 +109,11 @@ describe('FleetContext (World Class QA Suite)', () => {
 
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: mockCache } });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     // Wait for hydration to stabilize
     await waitFor(() => {
@@ -130,13 +128,11 @@ describe('FleetContext (World Class QA Suite)', () => {
     vi.mocked(archonCache.get).mockReturnValue(mockCache);
     vi.mocked(api.get).mockRejectedValue(new Error('Internal Server Error 500'));
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     // Wait for sync attempt to finish
     await waitFor(() => {
@@ -156,13 +152,11 @@ describe('FleetContext (World Class QA Suite)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -189,13 +183,11 @@ describe('FleetContext (World Class QA Suite)', () => {
     vi.mocked(archonCache.get).mockReturnValue(complexFleet);
     vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: complexFleet } });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     // This component only shows total, but it forces useMemo calculation
     expect(screen.getByTestId('total').textContent).toBe('3');
@@ -226,13 +218,11 @@ describe('FleetContext — transformUnits normalization edge cases', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -244,13 +234,11 @@ describe('FleetContext — transformUnits normalization edge cases', () => {
       data: { data: [{ id: 'U-IMG-ARR', assetTypeId: 1, images: ['/img/a.png'] }] },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -262,13 +250,11 @@ describe('FleetContext — transformUnits normalization edge cases', () => {
       data: { data: [{ id: 'U-IMG-STR', assetTypeId: 1, images: '["/img/b.png"]' }] },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -280,13 +266,11 @@ describe('FleetContext — transformUnits normalization edge cases', () => {
       data: { data: [{ id: 'U-IMG-BAD', assetTypeId: 1, images: 'not-json' }] },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -310,13 +294,11 @@ describe('FleetContext — stats aggregation (MTBF/MTTR + catch)', () => {
       },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('2');
@@ -343,13 +325,11 @@ describe('FleetContext — stats aggregation (MTBF/MTTR + catch)', () => {
     };
     vi.mocked(api.get).mockResolvedValue({ data: { data: [poisonUnit] } });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     // Wait for hydration to actually finish (not just the pre-fetch default
     // state, which also happens to read total='0') before asserting the
@@ -386,9 +366,7 @@ describe('FleetContext — action methods (startRoute/finishRoute/reportIncident
     );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('start'));
-    });
+    fireEvent.click(screen.getByText('start'));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/routes/start', expect.any(Object));
@@ -409,9 +387,7 @@ describe('FleetContext — action methods (startRoute/finishRoute/reportIncident
     );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('finish'));
-    });
+    fireEvent.click(screen.getByText('finish'));
 
     await waitFor(() => {
       expect(api.patch).toHaveBeenCalledWith('/routes/route-1/finish', expect.any(Object));
@@ -428,9 +404,7 @@ describe('FleetContext — action methods (startRoute/finishRoute/reportIncident
     );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('report'));
-    });
+    fireEvent.click(screen.getByText('report'));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/routes/route-1/incidents', expect.any(Object));
@@ -453,9 +427,7 @@ describe('FleetContext — action methods (startRoute/finishRoute/reportIncident
     );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('details'));
-    });
+    fireEvent.click(screen.getByText('details'));
 
     await waitFor(() => {
       expect(screen.getByTestId('detail').textContent).toBe('U-1');
@@ -476,9 +448,7 @@ describe('FleetContext — action methods (startRoute/finishRoute/reportIncident
     );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('details'));
-    });
+    fireEvent.click(screen.getByText('details'));
 
     await waitFor(() => {
       expect(screen.getByTestId('detail').textContent).toBe('null');
@@ -508,13 +478,11 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
   it('transformUnits falls back to [] when the raw payload is neither an array nor an object with a .data array', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: 'not-an-object-or-array' });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
@@ -540,13 +508,11 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
       },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -576,13 +542,11 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
     };
     vi.mocked(api.get).mockResolvedValue({ data: { data: [] } });
 
-    await act(async () => {
-      render(
-        <IsolatedProvider>
-          <Probe />
-        </IsolatedProvider>
-      );
-    });
+    render(
+      <IsolatedProvider>
+        <Probe />
+      </IsolatedProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
@@ -632,13 +596,11 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
       },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -681,9 +643,7 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
       </FleetProvider>
     );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
-    await act(async () => {
-      fireEvent.click(screen.getByText('fetch-empty'));
-    });
+    fireEvent.click(screen.getByText('fetch-empty'));
     await waitFor(() => {
       expect(screen.getByTestId('empty-detail').textContent).toBe('null');
     });
@@ -714,9 +674,7 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
     );
     await waitFor(() => expect(screen.getByTestId('units-count').textContent).toBe('2'));
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('details'));
-    });
+    fireEvent.click(screen.getByText('details'));
 
     await waitFor(() => {
       expect(screen.getByTestId('detail').textContent).toBe('U-1');
@@ -728,13 +686,11 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
       data: { data: [{ id: 'U-IMG-OBJ', assetTypeId: 1, images: '{"not":"an-array"}' }] },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');
@@ -757,13 +713,11 @@ describe('FleetContext — branch coverage (FC165 F2B2.1)', () => {
       },
     });
 
-    await act(async () => {
-      render(
-        <FleetProvider>
-          <TestComponent />
-        </FleetProvider>
-      );
-    });
+    render(
+      <FleetProvider>
+        <TestComponent />
+      </FleetProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('total').textContent).toBe('1');

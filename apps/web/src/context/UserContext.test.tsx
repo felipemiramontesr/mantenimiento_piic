@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor, act, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, waitFor, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UserProvider, useUsers } from './UserContext';
 import api from '../api/client';
@@ -120,13 +120,11 @@ describe('UserContext (Silk Hydration Suite)', () => {
         })
     );
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <TestComponent />
-        </UserProvider>
-      );
-    });
+    render(
+      <UserProvider>
+        <TestComponent />
+      </UserProvider>
+    );
 
     // Wait for the Silk Hydration initial sync to stabilize
     await waitFor(() => {
@@ -157,13 +155,11 @@ describe('UserContext (Silk Hydration Suite)', () => {
     });
     vi.mocked(api.get).mockRejectedValue(new Error('Network Failure'));
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <TestComponent />
-        </UserProvider>
-      );
-    });
+    render(
+      <UserProvider>
+        <TestComponent />
+      </UserProvider>
+    );
 
     await waitFor(() => {
       expect(api.get).toHaveBeenCalledWith('/auth/users');
@@ -195,13 +191,11 @@ describe('UserContext (Silk Hydration Suite)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <TestComponent />
-        </UserProvider>
-      );
-    });
+    render(
+      <UserProvider>
+        <TestComponent />
+      </UserProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('users-count').textContent).toBe('1');
@@ -239,13 +233,11 @@ describe('UserContext (Silk Hydration Suite)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <DetailComponent />
-        </UserProvider>
-      );
-    });
+    render(
+      <UserProvider>
+        <DetailComponent />
+      </UserProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('name-0').textContent).toBe('Camel Case Name');
@@ -264,13 +256,11 @@ describe('UserContext (Silk Hydration Suite)', () => {
       return Promise.resolve({ data: { success: true, data: [] } });
     });
 
-    await act(async () => {
-      render(
-        <UserProvider>
-          <DetailComponent />
-        </UserProvider>
-      );
-    });
+    render(
+      <UserProvider>
+        <DetailComponent />
+      </UserProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('departments').textContent).toBe('Logística Real');
@@ -308,13 +298,11 @@ describe('UserContext (Silk Hydration Suite)', () => {
 const renderActions = async (): Promise<void> => {
   vi.mocked(archonCache.get).mockReturnValue([]);
   vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [] } });
-  await act(async () => {
-    render(
-      <UserProvider>
-        <ActionsTestComponent />
-      </UserProvider>
-    );
-  });
+  render(
+    <UserProvider>
+      <ActionsTestComponent />
+    </UserProvider>
+  );
 };
 
 describe('UserContext — toggleUserStatus', () => {
@@ -331,9 +319,7 @@ describe('UserContext — toggleUserStatus', () => {
     await renderActions();
 
     const getCallsBefore = vi.mocked(api.get).mock.calls.length;
-    await act(async () => {
-      fireEvent.click(screen.getByText('toggle'));
-    });
+    fireEvent.click(screen.getByText('toggle'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('toggled'));
     expect(api.patch).toHaveBeenCalledWith(
@@ -349,12 +335,10 @@ describe('UserContext — toggleUserStatus', () => {
     await renderActions();
 
     const getCallsBefore = vi.mocked(api.get).mock.calls.length;
-    await act(async () => {
-      fireEvent.click(screen.getByText('toggle'));
-    });
+    fireEvent.click(screen.getByText('toggle'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('toggled'));
-    expect(vi.mocked(api.get).mock.calls.length).toBe(getCallsBefore);
+    expect(vi.mocked(api.get).mock.calls).toHaveLength(getCallsBefore);
   });
 });
 
@@ -375,9 +359,7 @@ describe('UserContext — updateUser', () => {
     });
     await renderActions();
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('update'));
-    });
+    fireEvent.click(screen.getByText('update'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('update-true'));
     expect(capturedBody).toEqual(
@@ -393,21 +375,17 @@ describe('UserContext — updateUser', () => {
     await renderActions();
 
     const getCallsBefore = vi.mocked(api.get).mock.calls.length;
-    await act(async () => {
-      fireEvent.click(screen.getByText('update'));
-    });
+    fireEvent.click(screen.getByText('update'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('update-false'));
-    expect(vi.mocked(api.get).mock.calls.length).toBe(getCallsBefore);
+    expect(vi.mocked(api.get).mock.calls).toHaveLength(getCallsBefore);
   });
 
   it('returns false when the PATCH call rejects', async () => {
     vi.mocked(api.patch).mockRejectedValue(new Error('network down'));
     await renderActions();
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('update'));
-    });
+    fireEvent.click(screen.getByText('update'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('update-false'));
   });
@@ -427,9 +405,7 @@ describe('UserContext — deleteUser', () => {
     await renderActions();
 
     const getCallsBefore = vi.mocked(api.get).mock.calls.length;
-    await act(async () => {
-      fireEvent.click(screen.getByText('delete'));
-    });
+    fireEvent.click(screen.getByText('delete'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('delete-true'));
     expect(api.delete).toHaveBeenCalledWith('/auth/users/1', { data: { reason: 'reason' } });
@@ -440,9 +416,7 @@ describe('UserContext — deleteUser', () => {
     vi.mocked(api.delete).mockResolvedValue({ data: { success: false } });
     await renderActions();
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('delete'));
-    });
+    fireEvent.click(screen.getByText('delete'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('delete-false'));
   });
@@ -451,9 +425,7 @@ describe('UserContext — deleteUser', () => {
     vi.mocked(api.delete).mockRejectedValue(new Error('network down'));
     await renderActions();
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('delete'));
-    });
+    fireEvent.click(screen.getByText('delete'));
 
     await waitFor(() => expect(screen.getByTestId('result').textContent).toBe('delete-false'));
   });

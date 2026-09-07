@@ -29,12 +29,12 @@ describe('ArchonSkeleton Components', () => {
   it('renders ArchonTableSkeleton with default rows', (): void => {
     const { container } = render(<ArchonTableSkeleton />);
     const rows = container.querySelectorAll('.flex.space-x-4');
-    expect(rows.length).toBe(5);
+    expect(rows).toHaveLength(5);
   });
 
   it('renders ArchonTableSkeleton with custom rows', (): void => {
     const { container } = render(<ArchonTableSkeleton rows={3} />);
     const rows = container.querySelectorAll('.flex.space-x-4');
-    expect(rows.length).toBe(3);
+    expect(rows).toHaveLength(3);
   });
 });

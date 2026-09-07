@@ -11,7 +11,7 @@ describe('ArchonLogo', () => {
   it('renders only the icon (no brand text) when collapsed', () => {
     const { container } = render(<ArchonLogo isCollapsed />);
     expect(screen.queryByText('Archon')).not.toBeInTheDocument();
-    expect(container.querySelectorAll('svg').length).toBe(1);
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
   it('renders the icon plus brand text when expanded', () => {

@@ -165,7 +165,7 @@ describe('ArchonImageUploader Component', () => {
     );
 
     const slots = container.querySelectorAll('.aspect-square');
-    expect(slots.length).toBe(4);
+    expect(slots).toHaveLength(4);
   });
 
   it('should render with reduced height when reducedHeight is true', () => {
