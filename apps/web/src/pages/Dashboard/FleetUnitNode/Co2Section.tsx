@@ -5,7 +5,7 @@ import { useCo2 } from '../../../hooks/useCo2';
 import { InfoRow, SectionCard, formatNum } from '../nodes/NodeShared';
 
 /** CO2/ESG footprint card for a fleet unit. */
-export function Co2Section({ unitId }: { unitId: string }): React.JSX.Element {
+export function Co2Section({ unitId }: { readonly unitId: string }): React.JSX.Element {
   const { data, loading } = useCo2(unitId);
   const period =
     data?.period_from && data.period_to ? `${data.period_from} — ${data.period_to}` : null;

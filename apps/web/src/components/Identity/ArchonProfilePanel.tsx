@@ -8,8 +8,8 @@ import PersonalDataCard from './ArchonProfilePanel/PersonalDataCard';
 import SecurityAccessCard from './ArchonProfilePanel/SecurityAccessCard';
 
 interface ProfileSubmitButtonProps {
-  isSubmitting: boolean;
-  canSubmit: boolean;
+  readonly isSubmitting: boolean;
+  readonly canSubmit: boolean;
 }
 
 /** Fila de acción con el botón de submit — extraída de `ArchonProfilePanel`

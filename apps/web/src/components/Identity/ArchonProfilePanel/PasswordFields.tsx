@@ -4,10 +4,10 @@ import ArchonField from '../../ArchonField';
 import { ProfileFormData } from './types';
 
 export interface NewPasswordFieldProps {
-  password: string;
-  onChange: (v: string) => void;
-  showPassword: boolean;
-  setShowPassword: (v: boolean) => void;
+  readonly password: string;
+  readonly onChange: (v: string) => void;
+  readonly showPassword: boolean;
+  readonly setShowPassword: (v: boolean) => void;
 }
 
 /** Input de nueva contraseña + toggle de visibilidad — extraído de
@@ -43,10 +43,10 @@ export function NewPasswordField({
 }
 
 export interface ConfirmPasswordFieldProps {
-  confirmPassword: string;
-  onChange: (v: string) => void;
-  showPassword: boolean;
-  passwordsMatch: boolean;
+  readonly confirmPassword: string;
+  readonly onChange: (v: string) => void;
+  readonly showPassword: boolean;
+  readonly passwordsMatch: boolean;
 }
 
 /** Input de confirmación de contraseña + feedback de match — ver nota de
@@ -87,10 +87,10 @@ export function ConfirmPasswordField({
 }
 
 export interface PasswordFieldsProps {
-  formData: ProfileFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ProfileFormData>>;
-  showPassword: boolean;
-  setShowPassword: (v: boolean) => void;
+  readonly formData: ProfileFormData;
+  readonly setFormData: React.Dispatch<React.SetStateAction<ProfileFormData>>;
+  readonly showPassword: boolean;
+  readonly setShowPassword: (v: boolean) => void;
 }
 
 /** Campo de nueva contraseña + confirmación condicional (con feedback de match). */

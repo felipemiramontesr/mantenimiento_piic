@@ -69,8 +69,8 @@ function HeaderActionSlot({ layoutData }: { layoutData: LayoutData }): React.Rea
 }
 
 interface SearchSuggestionItemProps {
-  suggestion: SearchSuggestion;
-  onSelect: (suggestion: SearchSuggestion) => void;
+  readonly suggestion: SearchSuggestion;
+  readonly onSelect: (suggestion: SearchSuggestion) => void;
 }
 
 /** Ítem individual de sugerencia de búsqueda (FC163 F1B-2, split Alfa 219_AN). */
@@ -101,8 +101,8 @@ function SearchSuggestionItem({
 }
 
 interface SearchSuggestionsListProps {
-  suggestions: SearchSuggestion[];
-  onSelect: (suggestion: SearchSuggestion) => void;
+  readonly suggestions: SearchSuggestion[];
+  readonly onSelect: (suggestion: SearchSuggestion) => void;
 }
 
 /** Lista desplegable de sugerencias de búsqueda (FC163 F1B-2, split Alfa 219_AN). */
@@ -123,25 +123,25 @@ function SearchSuggestionsList({
 }
 
 interface HeaderSearchBarProps {
-  containerRef: React.RefObject<HTMLDivElement>;
-  searchConfig: UniversalSearchConfig;
-  searchTerm: string;
-  isOpen: boolean;
-  suggestions: SearchSuggestion[];
-  onSearchChange: (value: string) => void;
-  onOpen: () => void;
-  onCloseOnEnter: () => void;
-  onClear: () => void;
-  onSuggestionSelect: (suggestion: SearchSuggestion) => void;
+  readonly containerRef: React.RefObject<HTMLDivElement>;
+  readonly searchConfig: UniversalSearchConfig;
+  readonly searchTerm: string;
+  readonly isOpen: boolean;
+  readonly suggestions: SearchSuggestion[];
+  readonly onSearchChange: (value: string) => void;
+  readonly onOpen: () => void;
+  readonly onCloseOnEnter: () => void;
+  readonly onClear: () => void;
+  readonly onSuggestionSelect: (suggestion: SearchSuggestion) => void;
 }
 
 interface SearchInputFieldProps {
-  placeholder: string;
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-  onOpen: () => void;
-  onCloseOnEnter: () => void;
-  onClear: () => void;
+  readonly placeholder: string;
+  readonly searchTerm: string;
+  readonly onSearchChange: (value: string) => void;
+  readonly onOpen: () => void;
+  readonly onCloseOnEnter: () => void;
+  readonly onClear: () => void;
 }
 
 /** Input de búsqueda con icono + botón de limpiar (FC163 F2B4 Sub-Batch 4B-1). */
@@ -221,12 +221,12 @@ function HeaderSearchBar({
 }
 
 interface HeaderTitleBlockProps {
-  isMobileMenuOpen: boolean;
-  onToggleMobileMenu: () => void;
-  MainIcon: React.ElementType;
-  SubIcon: React.ElementType;
-  title: string;
-  description: string;
+  readonly isMobileMenuOpen: boolean;
+  readonly onToggleMobileMenu: () => void;
+  readonly MainIcon: React.ElementType;
+  readonly SubIcon: React.ElementType;
+  readonly title: string;
+  readonly description: string;
 }
 
 /** Bloque de título de sección + toggle de menú móvil (FC163 F1B-2, split Alfa 219_AN). */
@@ -291,16 +291,16 @@ function useCloseOnOutsideOrEscape(
 }
 
 interface SovereignHeaderIdentityColumnProps {
-  layoutData: LayoutData;
-  searchConfig: UniversalSearchConfig | null;
-  isMobileMenuOpen: boolean;
-  setIsMobileMenuOpen: (open: boolean) => void;
-  searchTerm: string;
-  setSearchTerm: (v: string) => void;
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  suggestions: SearchSuggestion[];
-  containerRef: React.RefObject<HTMLDivElement>;
+  readonly layoutData: LayoutData;
+  readonly searchConfig: UniversalSearchConfig | null;
+  readonly isMobileMenuOpen: boolean;
+  readonly setIsMobileMenuOpen: (open: boolean) => void;
+  readonly searchTerm: string;
+  readonly setSearchTerm: (v: string) => void;
+  readonly isOpen: boolean;
+  readonly setIsOpen: (open: boolean) => void;
+  readonly suggestions: SearchSuggestion[];
+  readonly containerRef: React.RefObject<HTMLDivElement>;
 }
 
 /** Handlers de la barra de búsqueda predictiva, aislados de la columna de identidad (FC163 F1B-2, split Alfa 219_AN). */

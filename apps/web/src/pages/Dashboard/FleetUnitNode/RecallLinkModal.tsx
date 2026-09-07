@@ -3,9 +3,9 @@ import { Bell } from 'lucide-react';
 import ArchonModal from '../../../components/UI/ArchonModal';
 
 type RecallLinkModalProps = {
-  isOpen: boolean;
-  onClose(): void;
-  onConfirm(recallId: number): Promise<void>;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: (recallId: number) => Promise<void>;
 };
 
 function RecallLinkModalFooter({

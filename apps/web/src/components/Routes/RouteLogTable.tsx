@@ -26,7 +26,7 @@ const TABLE_HEADERS: ArchonTableHeader[] = [
 ];
 
 interface SyncIndicatorProps {
-  visible: boolean;
+  readonly visible: boolean;
 }
 
 /** Indicador de sincronización en curso (esquina superior derecha) (FC163 F2B4 Sub-Batch 4B-2). */
@@ -43,9 +43,9 @@ function SyncIndicator({ visible }: SyncIndicatorProps): React.ReactElement | nu
 }
 
 interface IncidentReportPanelProps {
-  route: RouteLog;
-  onClose: () => void;
-  onSuccess: () => void;
+  readonly route: RouteLog;
+  readonly onClose: () => void;
+  readonly onSuccess: () => void;
 }
 
 /** Panel de reporte de incidencia, reemplaza la tabla mientras está activo (FC163 F2B4 Sub-Batch 4B-2). */

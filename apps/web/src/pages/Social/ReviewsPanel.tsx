@@ -4,7 +4,7 @@ import { useSocialReviews } from '../../hooks/useSocialReviews';
 import AT from '../../styles/archonTypography';
 
 interface ReviewsPanelProps {
-  tallerOwnerId: number;
+  readonly tallerOwnerId: number;
 }
 
 function StarRating({ value }: { value: number }): React.ReactElement {

@@ -2,9 +2,9 @@ import React from 'react';
 import { Zap } from 'lucide-react';
 
 type AuditSectionProps = {
-  pronosticoText: string;
-  pronosticoDateStr: string;
-  isPronosticoReady: boolean;
+  readonly pronosticoText: string;
+  readonly pronosticoDateStr: string;
+  readonly isPronosticoReady: boolean;
 };
 
 /** PANEL 5b (sin título) — Pronóstico automático de vencimiento de mantenimiento. */

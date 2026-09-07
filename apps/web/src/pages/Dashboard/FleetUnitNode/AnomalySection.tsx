@@ -5,7 +5,7 @@ import { useAnomalyDetection } from '../../../hooks/useAnomalyDetection';
 import { InfoRow, SectionCard, formatPct, formatNum } from '../nodes/NodeShared';
 
 /** Anomaly-detection KPIs card for a fleet unit. */
-export function AnomalySection({ unitId }: { unitId: string }): React.JSX.Element {
+export function AnomalySection({ unitId }: { readonly unitId: string }): React.JSX.Element {
   const { data, loading } = useAnomalyDetection(unitId);
   return (
     <SectionCard title="Detección de Anomalías" icon={<Zap size={16} className="text-[#f2b705]" />}>

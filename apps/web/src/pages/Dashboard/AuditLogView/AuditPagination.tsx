@@ -2,10 +2,10 @@ import React from 'react';
 import { AuditMeta } from './types';
 
 interface AuditPaginationProps {
-  meta: AuditMeta;
-  page: number;
-  setPage: React.Dispatch<React.SetStateAction<number>>;
-  totalPages: number;
+  readonly meta: AuditMeta;
+  readonly page: number;
+  readonly setPage: React.Dispatch<React.SetStateAction<number>>;
+  readonly totalPages: number;
 }
 
 /** Controles de paginación del historial de auditoría (FC163 F2B4 Sub-Batch 4B-2). */

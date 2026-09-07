@@ -179,10 +179,10 @@ function useAreaMutations(
 }
 
 interface AreaCreateFormProps {
-  newAreaName: string;
-  setNewAreaName: (v: string) => void;
-  isCreating: boolean;
-  createArea: () => Promise<void>;
+  readonly newAreaName: string;
+  readonly setNewAreaName: (v: string) => void;
+  readonly isCreating: boolean;
+  readonly createArea: () => Promise<void>;
 }
 
 /** Fila de alta rápida de Área (solo visible para isAdmin). */
@@ -220,11 +220,11 @@ function AreaCreateForm({
 }
 
 interface AreaEditToggleProps {
-  area: Area;
-  editId: number | null;
-  setEditId: (v: number | null) => void;
-  setEditName: (v: string) => void;
-  saveEdit: (areaId: number) => Promise<void>;
+  readonly area: Area;
+  readonly editId: number | null;
+  readonly setEditId: (v: number | null) => void;
+  readonly setEditName: (v: string) => void;
+  readonly saveEdit: (areaId: number) => Promise<void>;
 }
 
 /** Botón "Guardar" (en edición) o "Editar" (en reposo) de una fila de Área. */
@@ -265,13 +265,13 @@ function AreaEditToggle({
 }
 
 interface AreaRowActionsProps {
-  area: Area;
-  isAdmin: boolean;
-  editId: number | null;
-  setEditId: (v: number | null) => void;
-  setEditName: (v: string) => void;
-  saveEdit: (areaId: number) => Promise<void>;
-  deactivateArea: (areaId: number) => Promise<void>;
+  readonly area: Area;
+  readonly isAdmin: boolean;
+  readonly editId: number | null;
+  readonly setEditId: (v: number | null) => void;
+  readonly setEditName: (v: string) => void;
+  readonly saveEdit: (areaId: number) => Promise<void>;
+  readonly deactivateArea: (areaId: number) => Promise<void>;
 }
 
 /** Botonera de una fila de Área: guardar/editar/desactivar, o badge "Inactiva". */
@@ -316,14 +316,14 @@ function AreaRowActions({
 }
 
 interface AreaRowProps {
-  area: Area;
-  isAdmin: boolean;
-  editId: number | null;
-  setEditId: (v: number | null) => void;
-  editName: string;
-  setEditName: (v: string) => void;
-  saveEdit: (areaId: number) => Promise<void>;
-  deactivateArea: (areaId: number) => Promise<void>;
+  readonly area: Area;
+  readonly isAdmin: boolean;
+  readonly editId: number | null;
+  readonly setEditId: (v: number | null) => void;
+  readonly editName: string;
+  readonly setEditName: (v: string) => void;
+  readonly saveEdit: (areaId: number) => Promise<void>;
+  readonly deactivateArea: (areaId: number) => Promise<void>;
 }
 
 /** Una fila de la lista de Áreas: nombre (o input de edición) + botonera. */
@@ -379,9 +379,9 @@ function AreaRow({
 }
 
 interface AreasListProps {
-  areas: Area[];
-  isAdmin: boolean;
-  mutations: AreaMutations;
+  readonly areas: Area[];
+  readonly isAdmin: boolean;
+  readonly mutations: AreaMutations;
 }
 
 /** Lista de Áreas, o el mensaje de estado vacío. */

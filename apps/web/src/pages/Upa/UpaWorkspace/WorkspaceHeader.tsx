@@ -67,10 +67,10 @@ function AwaitingAuthNotice(): React.ReactElement {
 }
 
 interface WorkspaceHeaderProps {
-  wo: UpaWorkOrderDetail;
-  currentStep: number;
-  error: string | null;
-  onReturn?: () => void;
+  readonly wo: UpaWorkOrderDetail;
+  readonly currentStep: number;
+  readonly error: string | null;
+  readonly onReturn?: () => void;
 }
 
 /** Encabezado del workspace: back button, stepper, banners de estado/error/autorización (FC163 F2B4 Sub-Batch 4B-2). */

@@ -74,8 +74,8 @@ const TypeBadge: React.FC<{ code: string }> = ({ code }) => (
 );
 
 interface UniverseTableRowProps {
-  row: UniverseRow;
-  onDestroy: (u: UniverseRow) => void;
+  readonly row: UniverseRow;
+  readonly onDestroy: (u: UniverseRow) => void;
 }
 
 /** Single table row — extracted so `UniversesTable` stays under budget. */
@@ -107,10 +107,10 @@ function UniverseTableRow({ row, onDestroy }: UniverseTableRowProps): React.Reac
 }
 
 interface UniversesTableProps {
-  universes: UniverseRow[];
-  loading: boolean;
-  error: boolean;
-  onDestroy: (u: UniverseRow) => void;
+  readonly universes: UniverseRow[];
+  readonly loading: boolean;
+  readonly error: boolean;
+  readonly onDestroy: (u: UniverseRow) => void;
 }
 
 function UniversesTable({
@@ -143,10 +143,10 @@ function UniversesTable({
 }
 
 interface UniversesDirectoryCardProps {
-  universes: UniverseRow[];
-  loading: boolean;
-  error: boolean;
-  onDestroy: (u: UniverseRow) => void;
+  readonly universes: UniverseRow[];
+  readonly loading: boolean;
+  readonly error: boolean;
+  readonly onDestroy: (u: UniverseRow) => void;
 }
 
 /** Card wrapping the header + `UniversesTable` — extracted to keep `CosmologyModule` under budget. */

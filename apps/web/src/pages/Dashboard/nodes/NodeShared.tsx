@@ -77,8 +77,8 @@ export function InfoRow({
   label,
   value,
 }: {
-  label: string;
-  value: React.ReactNode;
+  readonly label: string;
+  readonly value: React.ReactNode;
 }): React.JSX.Element {
   return (
     <div className="flex items-start justify-between py-2 border-b border-slate-100 last:border-0 gap-4">
@@ -93,9 +93,9 @@ export function SectionCard({
   icon,
   children,
 }: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
+  readonly title: string;
+  readonly icon: React.ReactNode;
+  readonly children: React.ReactNode;
 }): React.JSX.Element {
   return (
     <div className="card-archon-sovereign">
@@ -122,9 +122,9 @@ export function NodeErrorState({
   backTo,
   backLabel,
 }: {
-  error: string | null;
-  backTo: string;
-  backLabel: string;
+  readonly error: string | null;
+  readonly backTo: string;
+  readonly backLabel: string;
 }): React.JSX.Element {
   return (
     <div className="flex flex-col items-center justify-center py-32 gap-4">
@@ -140,7 +140,14 @@ export function NodeErrorState({
   );
 }
 
-export function NodeBackLink({ to, label }: { to: string; label: string }): React.JSX.Element {
+/** Back-navigation link shown at the top of a node detail page. */
+export function NodeBackLink({
+  to,
+  label,
+}: {
+  readonly to: string;
+  readonly label: string;
+}): React.JSX.Element {
   return (
     <Link
       to={to}

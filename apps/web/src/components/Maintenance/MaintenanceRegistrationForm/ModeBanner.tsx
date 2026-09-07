@@ -2,8 +2,8 @@ import React from 'react';
 import { Warehouse, Wrench } from 'lucide-react';
 
 interface ModeBannerProps {
-  selectedUnit: string;
-  isInProgress: boolean;
+  readonly selectedUnit: string;
+  readonly isInProgress: boolean;
 }
 
 /** Banner de modo de registro automático (In Situ / Taller)

@@ -24,12 +24,12 @@ function buildAuditHeaders(omnipotent: boolean): ArchonTableHeader[] {
 }
 
 interface AuditLogTableProps {
-  rows: AuditRow[];
-  omnipotent: boolean;
-  expandedRow: string | null;
-  setExpandedRow: React.Dispatch<React.SetStateAction<string | null>>;
-  onlyDiffs: boolean;
-  setOnlyDiffs: React.Dispatch<React.SetStateAction<boolean>>;
+  readonly rows: AuditRow[];
+  readonly omnipotent: boolean;
+  readonly expandedRow: string | null;
+  readonly setExpandedRow: React.Dispatch<React.SetStateAction<string | null>>;
+  readonly onlyDiffs: boolean;
+  readonly setOnlyDiffs: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /** Tabla de auditoría (ArchonDataTable) con filas expandibles de diff (FC163 F2B4 Sub-Batch 4B-2). */

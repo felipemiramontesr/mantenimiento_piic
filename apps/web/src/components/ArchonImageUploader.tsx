@@ -13,17 +13,17 @@ interface CropQueueItem {
 }
 
 interface ArchonImageUploaderProps {
-  compact?: boolean;
-  reducedHeight?: boolean;
-  images: string[];
-  onChange: (images: string[]) => void;
-  maxImages?: number;
-  onFileChange?: (files: File[]) => void | Promise<void>;
-  title?: string;
-  allowedFormats?: string;
-  accept?: string;
-  variant?: 'square' | 'circle';
-  disabled?: boolean;
+  readonly compact?: boolean;
+  readonly reducedHeight?: boolean;
+  readonly images: string[];
+  readonly onChange: (images: string[]) => void;
+  readonly maxImages?: number;
+  readonly onFileChange?: (files: File[]) => void | Promise<void>;
+  readonly title?: string;
+  readonly allowedFormats?: string;
+  readonly accept?: string;
+  readonly variant?: 'square' | 'circle';
+  readonly disabled?: boolean;
 }
 
 /** Lee un File como data URL y entrega el resultado (FC163 F1B-2, split Alfa 219_AN). */
@@ -222,9 +222,9 @@ function buildDropzoneVisual(
 }
 
 interface CropModalGateProps {
-  item?: CropQueueItem;
-  onConfirm: (url: string) => void;
-  onCancel: () => void;
+  readonly item?: CropQueueItem;
+  readonly onConfirm: (url: string) => void;
+  readonly onCancel: () => void;
 }
 
 /** Construye el bundle de handlers de la dropzone (FC163 F1B-2, split Alfa 219_AN — sub-split del orquestador). */
@@ -254,25 +254,25 @@ function CropModalGate({ item, onConfirm, onCancel }: CropModalGateProps): React
 }
 
 interface ImageUploaderViewProps {
-  cropItem?: CropQueueItem;
-  onCropConfirm: (url: string) => void;
-  onCropCancel: () => void;
-  compact: boolean;
-  isDisabled: boolean;
-  isDragging: boolean;
-  reducedHeight: boolean;
-  title: string;
-  atCapacity: boolean;
-  maxImages: number;
-  allowedFormats: string;
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  accept: string;
-  dragHandlers: Omit<UseDragHandlersResult, 'isDragging'>;
-  onFilesSelected: (files: FileList) => void;
-  images: string[];
-  variant: 'square' | 'circle';
-  disabled: boolean;
-  onRemoveImage: (idx: number) => void;
+  readonly cropItem?: CropQueueItem;
+  readonly onCropConfirm: (url: string) => void;
+  readonly onCropCancel: () => void;
+  readonly compact: boolean;
+  readonly isDisabled: boolean;
+  readonly isDragging: boolean;
+  readonly reducedHeight: boolean;
+  readonly title: string;
+  readonly atCapacity: boolean;
+  readonly maxImages: number;
+  readonly allowedFormats: string;
+  readonly fileInputRef: React.RefObject<HTMLInputElement>;
+  readonly accept: string;
+  readonly dragHandlers: Omit<UseDragHandlersResult, 'isDragging'>;
+  readonly onFilesSelected: (files: FileList) => void;
+  readonly images: string[];
+  readonly variant: 'square' | 'circle';
+  readonly disabled: boolean;
+  readonly onRemoveImage: (idx: number) => void;
 }
 
 /** Ensambla la vista completa (modal de recorte + dropzone + grilla) (FC163 F1B-2, split Alfa 219_AN — sub-split del orquestador). */

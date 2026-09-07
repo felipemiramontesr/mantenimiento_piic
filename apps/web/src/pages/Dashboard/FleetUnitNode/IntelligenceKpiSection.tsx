@@ -37,7 +37,7 @@ function buildIntelligenceKpis(data: FleetIntelligenceData | null): Intelligence
 }
 
 /** Fleet-intelligence KPI grid for a fleet unit. */
-export function IntelligenceKpiSection({ unitId }: { unitId: string }): React.JSX.Element {
+export function IntelligenceKpiSection({ unitId }: { readonly unitId: string }): React.JSX.Element {
   const { data, loading } = useFleetIntelligence(unitId);
   const kpis = buildIntelligenceKpis(data);
 

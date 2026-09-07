@@ -14,9 +14,9 @@ function checklistCheckboxCls(status: UpaTaskDetail['status']): string {
 }
 
 interface ChecklistCheckboxProps {
-  task: UpaTaskDetail;
-  isUpdating: boolean;
-  onComplete: () => void;
+  readonly task: UpaTaskDetail;
+  readonly isUpdating: boolean;
+  readonly onComplete: () => void;
 }
 
 /** Checkbox de estado/completar de una tarea del checklist UPA (FC163 F2B4 Sub-Batch 4B-2). */
@@ -52,10 +52,10 @@ function ChecklistCheckbox({
 }
 
 interface ChecklistTrailingActionProps {
-  task: UpaTaskDetail;
-  isPending: boolean;
-  isUpdating: boolean;
-  onDefer: () => void;
+  readonly task: UpaTaskDetail;
+  readonly isPending: boolean;
+  readonly isUpdating: boolean;
+  readonly onDefer: () => void;
 }
 
 /** Badge de estatus (no pendiente) o botón de diferir (pendiente) al final de la fila (FC163 F2B4 Sub-Batch 4B-2). */
@@ -91,14 +91,14 @@ function ChecklistTrailingAction({
 }
 
 interface ChecklistRowProps {
-  task: UpaTaskDetail;
-  isUpdating: boolean;
-  evidenceUrls: string[];
-  evidenceNotes: string;
-  onComplete: () => void;
-  onDefer: () => void;
-  onEvidenceUrlsChange: (urls: string[]) => void;
-  onEvidenceNotesChange: (notes: string) => void;
+  readonly task: UpaTaskDetail;
+  readonly isUpdating: boolean;
+  readonly evidenceUrls: string[];
+  readonly evidenceNotes: string;
+  readonly onComplete: () => void;
+  readonly onDefer: () => void;
+  readonly onEvidenceUrlsChange: (urls: string[]) => void;
+  readonly onEvidenceNotesChange: (notes: string) => void;
 }
 
 /** Fila de tarea del checklist UPA: checkbox, descripción, badge/defer, evidencia (FC163 F2B4 Sub-Batch 4B-2). */

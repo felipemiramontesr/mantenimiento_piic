@@ -5,10 +5,10 @@ import { useNhtsaRecalls, NhtsaRecall } from '../../../hooks/useNhtsaRecalls';
 import { useFailurePatterns, FailurePatternsList, FailurePattern } from './FailurePatternsList';
 
 type NhtsaResultsModalProps = {
-  isOpen: boolean;
-  make: string;
-  model: string;
-  year: number;
+  readonly isOpen: boolean;
+  readonly make: string;
+  readonly model: string;
+  readonly year: number;
   onClose(): void;
   onImported(): void;
   linkRecall(recallId: number): Promise<void>;

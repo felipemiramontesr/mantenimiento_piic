@@ -5,17 +5,17 @@ import ReactionBar from './ReactionBar';
 import CommentThread from './CommentThread';
 
 interface PostCardProps {
-  post: SocialPost;
-  isOwner: boolean;
-  onDelete: (id: number) => void;
-  onReact: (postId: number, type: ReactionType) => void;
-  fetchComments: (postId: number) => Promise<SocialComment[]>;
-  addComment: (postId: number, text: string, parentId?: number) => Promise<void>;
+  readonly post: SocialPost;
+  readonly isOwner: boolean;
+  readonly onDelete: (id: number) => void;
+  readonly onReact: (postId: number, type: ReactionType) => void;
+  readonly fetchComments: (postId: number) => Promise<SocialComment[]>;
+  readonly addComment: (postId: number, text: string, parentId?: number) => Promise<void>;
 }
 
 interface DeleteButtonProps {
-  postId: number;
-  onDelete: (id: number) => void;
+  readonly postId: number;
+  readonly onDelete: (id: number) => void;
 }
 
 /** Botón de eliminación de publicación propia (FC163 F2B4 Sub-Batch 4B-1). */
@@ -34,9 +34,9 @@ function DeleteButton({ postId, onDelete }: DeleteButtonProps): React.JSX.Elemen
 }
 
 interface CommentsToggleButtonProps {
-  postId: number;
-  showComments: boolean;
-  onToggle: () => void;
+  readonly postId: number;
+  readonly showComments: boolean;
+  readonly onToggle: () => void;
 }
 
 /** Botón que expande/colapsa el hilo de comentarios (FC163 F2B4 Sub-Batch 4B-1). */

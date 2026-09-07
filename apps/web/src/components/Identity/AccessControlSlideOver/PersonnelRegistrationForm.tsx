@@ -4,8 +4,8 @@ import type { PersonnelFormData } from './types';
 import { getRoleName, ASSIGNABLE_ROLE_IDS } from './roles';
 
 interface TextFieldProps {
-  value: string;
-  onChange: (v: string) => void;
+  readonly value: string;
+  readonly onChange: (v: string) => void;
 }
 
 /** Campo de identidad de usuario (FC163 F1B-3, split Alfa 219_AN — sub-split de PersonnelRegistrationForm). */
@@ -65,8 +65,8 @@ function PasswordField({ value, onChange }: TextFieldProps): React.JSX.Element {
 }
 
 interface RoleSelectorProps {
-  roleId: number;
-  onSelect: (roleId: number) => void;
+  readonly roleId: number;
+  readonly onSelect: (roleId: number) => void;
 }
 
 /** Selector de nivel de autorización (rol) (FC163 F1B-3, split Alfa 219_AN — sub-split de PersonnelRegistrationForm). */
@@ -100,7 +100,7 @@ function RoleSelector({ roleId, onSelect }: RoleSelectorProps): React.JSX.Elemen
 }
 
 interface RegistrationSubmitButtonProps {
-  isLoading: boolean;
+  readonly isLoading: boolean;
 }
 
 /** Botón de guardado con estado de carga (FC163 F1B-3, split Alfa 219_AN — sub-split de PersonnelRegistrationForm). */
@@ -125,11 +125,11 @@ function RegistrationSubmitButton({ isLoading }: RegistrationSubmitButtonProps):
 }
 
 export interface PersonnelRegistrationFormProps {
-  formData: PersonnelFormData;
-  setFormData: (f: PersonnelFormData) => void;
-  error: string | null;
-  isLoading: boolean;
-  onSubmit: (e: React.FormEvent) => void;
+  readonly formData: PersonnelFormData;
+  readonly setFormData: (f: PersonnelFormData) => void;
+  readonly error: string | null;
+  readonly isLoading: boolean;
+  readonly onSubmit: (e: React.FormEvent) => void;
 }
 
 /** Formulario de registro de personal (FC163 F1B-3, split Alfa 219_AN). */

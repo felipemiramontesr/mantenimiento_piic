@@ -18,13 +18,13 @@ function getRowClassName(isActive: boolean, isCompleted: boolean, clickable: boo
 }
 
 interface MaintenanceLogRowProps {
-  log: MaintenanceLog;
-  index: number;
-  onCompleteRequest?: (log: MaintenanceLog) => void;
-  onDetailRequest?: (log: MaintenanceLog) => void;
-  onAcceptOrder?: (uuid: string, logId: number) => void;
-  onRejectOrder?: (uuid: string) => void;
-  onOpenUpa?: (workOrderId: number) => void;
+  readonly log: MaintenanceLog;
+  readonly index: number;
+  readonly onCompleteRequest?: (log: MaintenanceLog) => void;
+  readonly onDetailRequest?: (log: MaintenanceLog) => void;
+  readonly onAcceptOrder?: (uuid: string, logId: number) => void;
+  readonly onRejectOrder?: (uuid: string) => void;
+  readonly onOpenUpa?: (workOrderId: number) => void;
 }
 
 /** Fila del grid de mantenimiento: compone las celdas de datos + acciones (FC165 F2 Slice 2.1B). */

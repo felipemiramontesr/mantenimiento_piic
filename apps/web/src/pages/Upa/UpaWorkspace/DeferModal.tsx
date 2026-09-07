@@ -2,8 +2,8 @@ import React from 'react';
 import type { UpaDeferredType } from '../../../types/upa';
 
 interface DeferTypeSelectProps {
-  deferType: UpaDeferredType;
-  onDeferTypeChange: (t: UpaDeferredType) => void;
+  readonly deferType: UpaDeferredType;
+  readonly onDeferTypeChange: (t: UpaDeferredType) => void;
 }
 
 /** Select del tipo de diferimiento (financiero/estructural) (FC163 F2B4 Sub-Batch 4B-2). */
@@ -34,9 +34,9 @@ function DeferTypeSelect({
 }
 
 interface DeferModalActionsProps {
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading: boolean;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+  readonly loading: boolean;
 }
 
 /** Botones de cancelar/confirmar del modal de diferimiento (FC163 F2B4 Sub-Batch 4B-2). */
@@ -68,12 +68,12 @@ function DeferModalActions({
 }
 
 interface DeferModalProps {
-  taskDescription: string;
-  deferType: UpaDeferredType;
-  onDeferTypeChange: (t: UpaDeferredType) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading: boolean;
+  readonly taskDescription: string;
+  readonly deferType: UpaDeferredType;
+  readonly onDeferTypeChange: (t: UpaDeferredType) => void;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+  readonly loading: boolean;
 }
 
 /** Modal de confirmación para diferir una tarea (financiero o estructural) (FC163 F2B4 Sub-Batch 4B-2). */

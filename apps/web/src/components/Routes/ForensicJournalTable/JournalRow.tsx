@@ -8,7 +8,7 @@ import DescriptionCell from './DescriptionCell';
 import ImpactCell from './ImpactCell';
 
 interface ActivoCellProps {
-  log: ActivityLog;
+  readonly log: ActivityLog;
 }
 
 /** Celda "ACTIVO" (unidad + marca/modelo) — solo cuando no hay `unitId` fijo. */
@@ -28,7 +28,7 @@ function ActivoCell({ log }: ActivoCellProps): React.JSX.Element {
 }
 
 interface EventoCellProps {
-  eventType: string;
+  readonly eventType: string;
 }
 
 /** Celda "EVENTO / IMPACTO" (ícono + label del tipo de evento). */
@@ -50,10 +50,10 @@ function EventoCell({ eventType }: EventoCellProps): React.JSX.Element {
 }
 
 export interface JournalRowProps {
-  log: ActivityLog;
-  unitId: string | undefined;
-  units: FleetUnit[];
-  sessionEvidence: Map<string, { maxObserved: number }>;
+  readonly log: ActivityLog;
+  readonly unitId: string | undefined;
+  readonly units: FleetUnit[];
+  readonly sessionEvidence: Map<string, { maxObserved: number }>;
 }
 
 /** Una fila `<tr>` del Journal Forense — extraída de

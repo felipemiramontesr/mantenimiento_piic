@@ -5,8 +5,8 @@ import { UnitSuggestionItem } from './UnitSuggestionItem';
 import { ALL_CATEGORIES } from './constants';
 
 interface UnitSuggestionsListProps {
-  suggestions: string[];
-  onSelectUnit: (unit: string) => void;
+  readonly suggestions: string[];
+  readonly onSelectUnit: (unit: string) => void;
 }
 
 /** Lista desplegable de sugerencias de unidad (FC163 F1B-3, split Alfa 219_AN — sub-split de UnitSearchBox). */
@@ -27,15 +27,15 @@ function UnitSuggestionsList({
 }
 
 interface UnitSearchBoxProps {
-  searchRef: React.RefObject<HTMLDivElement>;
-  unitSearch: string;
-  onSearchChange: (v: string) => void;
-  onOpen: () => void;
-  onCloseOnEscape: () => void;
-  onClear: () => void;
-  searchOpen: boolean;
-  suggestions: string[];
-  onSelectUnit: (unit: string) => void;
+  readonly searchRef: React.RefObject<HTMLDivElement>;
+  readonly unitSearch: string;
+  readonly onSearchChange: (v: string) => void;
+  readonly onOpen: () => void;
+  readonly onCloseOnEscape: () => void;
+  readonly onClear: () => void;
+  readonly searchOpen: boolean;
+  readonly suggestions: string[];
+  readonly onSelectUnit: (unit: string) => void;
 }
 
 /** Autocompletado de búsqueda por unidad (FC163 F1B-3, split Alfa 219_AN — sub-split de EgressToolbar). */
@@ -87,8 +87,8 @@ function UnitSearchBox({
 }
 
 interface CategoryFilterSelectProps {
-  categoryFilter: FinanceCategory | '';
-  onChange: (c: FinanceCategory | '') => void;
+  readonly categoryFilter: FinanceCategory | '';
+  readonly onChange: (c: FinanceCategory | '') => void;
 }
 
 /** Filtro de categoría (FC163 F1B-3, split Alfa 219_AN — sub-split de EgressToolbar). */
@@ -120,10 +120,10 @@ function CategoryFilterSelect({
 }
 
 interface ToolbarActionsProps {
-  total: number;
-  onExport: () => void;
-  exporting: boolean;
-  onRegister: () => void;
+  readonly total: number;
+  readonly onExport: () => void;
+  readonly exporting: boolean;
+  readonly onRegister: () => void;
 }
 
 /** Contador + botones de exportar/registrar (FC163 F1B-3, split Alfa 219_AN — sub-split de EgressToolbar). */
@@ -160,21 +160,21 @@ function ToolbarActions({
 }
 
 export interface EgressToolbarProps {
-  searchRef: React.RefObject<HTMLDivElement>;
-  unitSearch: string;
-  onUnitSearchChange: (v: string) => void;
-  onOpenSearch: () => void;
-  onCloseSearchOnEscape: () => void;
-  onClearUnit: () => void;
-  searchOpen: boolean;
-  suggestions: string[];
-  onSelectUnit: (unit: string) => void;
-  categoryFilter: FinanceCategory | '';
-  onCategoryChange: (c: FinanceCategory | '') => void;
-  total: number;
-  onExport: () => void;
-  exporting: boolean;
-  onRegister: () => void;
+  readonly searchRef: React.RefObject<HTMLDivElement>;
+  readonly unitSearch: string;
+  readonly onUnitSearchChange: (v: string) => void;
+  readonly onOpenSearch: () => void;
+  readonly onCloseSearchOnEscape: () => void;
+  readonly onClearUnit: () => void;
+  readonly searchOpen: boolean;
+  readonly suggestions: string[];
+  readonly onSelectUnit: (unit: string) => void;
+  readonly categoryFilter: FinanceCategory | '';
+  readonly onCategoryChange: (c: FinanceCategory | '') => void;
+  readonly total: number;
+  readonly onExport: () => void;
+  readonly exporting: boolean;
+  readonly onRegister: () => void;
 }
 
 /** Barra de filtros + acciones de la tabla de egresos (FC163 F1B-3, split Alfa 219_AN). */

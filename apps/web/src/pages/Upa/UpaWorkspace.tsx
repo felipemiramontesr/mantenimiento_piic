@@ -12,8 +12,8 @@ import { useUpaWorkspaceState, UpaWorkspaceState } from './UpaWorkspace/useUpaWo
 export { getStatusLabel } from './UpaWorkspace/taskHelpers';
 
 interface UpaWorkspaceProps {
-  workOrderId?: number;
-  onReturn?: () => void;
+  readonly workOrderId?: number;
+  readonly onReturn?: () => void;
 }
 
 function buildTasksByStage(tasks: UpaTaskDetail[]): Record<UpaTaskStage, UpaTaskDetail[]> {
@@ -24,10 +24,10 @@ function buildTasksByStage(tasks: UpaTaskDetail[]): Record<UpaTaskStage, UpaTask
 }
 
 interface LoadedWorkspaceProps {
-  wo: UpaWorkOrderDetail;
-  upa: ReturnType<typeof useUpaOrder>;
-  state: UpaWorkspaceState;
-  onReturn?: () => void;
+  readonly wo: UpaWorkOrderDetail;
+  readonly upa: ReturnType<typeof useUpaOrder>;
+  readonly state: UpaWorkspaceState;
+  readonly onReturn?: () => void;
 }
 
 /** Contenido del workspace una vez la orden está cargada (FC163 F2B4 Sub-Batch 4B-2). */

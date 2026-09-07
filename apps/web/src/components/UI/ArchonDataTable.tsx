@@ -39,22 +39,22 @@ export function deriveMinTableWidth(headers: ArchonTableHeader[], minTableWidth?
 }
 
 interface ArchonDataTableProps<T> {
-  data: T[];
-  headers: ArchonTableHeader[];
-  renderRow: (item: T, index: number) => React.ReactNode;
-  loading?: boolean;
-  loadingMessage?: string;
-  emptyMessage?: string;
-  testId?: string;
-  className?: string;
-  onSort?: (key: string) => void;
-  sortConfig?: {
+  readonly data: T[];
+  readonly headers: ArchonTableHeader[];
+  readonly renderRow: (item: T, index: number) => React.ReactNode;
+  readonly loading?: boolean;
+  readonly loadingMessage?: string;
+  readonly emptyMessage?: string;
+  readonly testId?: string;
+  readonly className?: string;
+  readonly onSort?: (key: string) => void;
+  readonly sortConfig?: {
     field: string | null;
     direction: 'asc' | 'desc';
   };
-  variant?: 'master' | 'embedded';
+  readonly variant?: 'master' | 'embedded';
   /** FC 078 — override explícito del ancho mínimo (px) de la tabla. */
-  minTableWidth?: number;
+  readonly minTableWidth?: number;
 }
 
 /**

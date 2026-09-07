@@ -2,8 +2,8 @@ import React from 'react';
 import { RouteLogStatus } from './telemetryCalcs';
 
 interface StatusCellProps {
-  status: RouteLogStatus;
-  className: string;
+  readonly status: RouteLogStatus;
+  readonly className: string;
 }
 
 /** Celda de estado visual de la ruta (en ruta/finalizada) (FC163 F2B4 Sub-Batch 4B-2). */

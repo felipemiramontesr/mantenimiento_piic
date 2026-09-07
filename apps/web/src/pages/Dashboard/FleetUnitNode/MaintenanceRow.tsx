@@ -12,7 +12,7 @@ const SERVICE_TYPE_LABEL: Record<string, string> = {
 };
 
 /** Table row for a single maintenance record. */
-export function MaintenanceRow(r: MaintenanceRecord): React.JSX.Element {
+export function MaintenanceRow(r: Readonly<MaintenanceRecord>): React.JSX.Element {
   const isCompleted = r.status === 'COMPLETED';
   return (
     <tr key={r.uuid} className="hover:bg-slate-50/70 transition-colors">

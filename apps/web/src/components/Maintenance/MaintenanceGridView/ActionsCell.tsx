@@ -18,10 +18,10 @@ function ViewNodeLink({ uuid }: { uuid: string }): React.JSX.Element {
 }
 
 interface OpenOrderActionsProps {
-  uuid: string;
-  logId: number;
-  onAcceptOrder?: (uuid: string, logId: number) => void;
-  onRejectOrder?: (uuid: string) => void;
+  readonly uuid: string;
+  readonly logId: number;
+  readonly onAcceptOrder?: (uuid: string, logId: number) => void;
+  readonly onRejectOrder?: (uuid: string) => void;
 }
 
 /** Botones de aceptar/rechazar para órdenes OPEN asignadas al técnico (FC165 F2 Slice 2.1B). */
@@ -66,11 +66,11 @@ function OpenOrderActions({
 }
 
 interface CompletionActionsProps {
-  log: MaintenanceLog;
-  isActive: boolean;
-  hasUpa: boolean;
-  onCompleteRequest?: (log: MaintenanceLog) => void;
-  onOpenUpa?: (workOrderId: number) => void;
+  readonly log: MaintenanceLog;
+  readonly isActive: boolean;
+  readonly hasUpa: boolean;
+  readonly onCompleteRequest?: (log: MaintenanceLog) => void;
+  readonly onOpenUpa?: (workOrderId: number) => void;
 }
 
 /** Botón de UPA (si aplica) o de "Finalizar Servicio" legacy (FC165 F2 Slice 2.1B). */
@@ -118,14 +118,14 @@ function CompletionActions({
 }
 
 interface ActionsCellProps {
-  log: MaintenanceLog;
-  isOpen: boolean;
-  isActive: boolean;
-  hasUpa: boolean;
-  onCompleteRequest?: (log: MaintenanceLog) => void;
-  onAcceptOrder?: (uuid: string, logId: number) => void;
-  onRejectOrder?: (uuid: string) => void;
-  onOpenUpa?: (workOrderId: number) => void;
+  readonly log: MaintenanceLog;
+  readonly isOpen: boolean;
+  readonly isActive: boolean;
+  readonly hasUpa: boolean;
+  readonly onCompleteRequest?: (log: MaintenanceLog) => void;
+  readonly onAcceptOrder?: (uuid: string, logId: number) => void;
+  readonly onRejectOrder?: (uuid: string) => void;
+  readonly onOpenUpa?: (workOrderId: number) => void;
 }
 
 /** Celda de acciones: ver nodo, aceptar/rechazar orden, UPA o finalizar servicio (FC165 F2 Slice 2.1B). */

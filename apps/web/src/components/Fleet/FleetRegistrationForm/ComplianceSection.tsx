@@ -9,8 +9,8 @@ import { UseFleetFormReturn, CatalogOption, CreateFleetUnit } from '../../../typ
 import InsuranceFields from './InsuranceFields';
 
 interface FlotillaOnlyFieldProps {
-  show: boolean;
-  children: React.ReactNode;
+  readonly show: boolean;
+  readonly children: React.ReactNode;
 }
 
 const FlotillaOnlyField: React.FC<FlotillaOnlyFieldProps> = ({ show, children }) => {
@@ -31,8 +31,8 @@ export type EnvironmentalPrediction = {
 type SetFormData = UseFleetFormReturn['setFormData'];
 
 type CirculationCardAndLegalFieldsProps = {
-  formData: Pick<CreateFleetUnit, 'circulationCardNumber' | 'legalComplianceDate'>;
-  setFormData: SetFormData;
+  readonly formData: Pick<CreateFleetUnit, 'circulationCardNumber' | 'legalComplianceDate'>;
+  readonly setFormData: SetFormData;
 };
 
 function CirculationCardAndLegalFields({
@@ -65,12 +65,12 @@ function CirculationCardAndLegalFields({
 }
 
 type EnvironmentalAndMechanicalFieldsProps = {
-  formData: Pick<
+  readonly formData: Pick<
     CreateFleetUnit,
     'lastEnvironmentalVerification' | 'lastMechanicalVerification' | 'environmentalHologram'
   >;
-  setFormData: SetFormData;
-  vencimientoVerif: string | undefined;
+  readonly setFormData: SetFormData;
+  readonly vencimientoVerif: string | undefined;
 };
 
 function EnvironmentalAndMechanicalFields({
@@ -114,7 +114,7 @@ function EnvironmentalAndMechanicalFields({
 }
 
 type VerificationFieldsProps = {
-  formData: Pick<
+  readonly formData: Pick<
     CreateFleetUnit,
     | 'circulationCardNumber'
     | 'legalComplianceDate'
@@ -122,8 +122,8 @@ type VerificationFieldsProps = {
     | 'lastMechanicalVerification'
     | 'environmentalHologram'
   >;
-  setFormData: SetFormData;
-  vencimientoVerif: string | undefined;
+  readonly setFormData: SetFormData;
+  readonly vencimientoVerif: string | undefined;
 };
 
 function VerificationFields({
@@ -159,9 +159,9 @@ const ENGOMADO_COLORS: Record<string, string> = {
 };
 
 type HologramPredictionPreviewProps = {
-  prediction: EnvironmentalPrediction;
-  currentHologram: string | null | undefined;
-  setFormData: SetFormData;
+  readonly prediction: EnvironmentalPrediction;
+  readonly currentHologram: string | null | undefined;
+  readonly setFormData: SetFormData;
 };
 
 function HologramPredictionPreview({
@@ -237,9 +237,9 @@ function EnvironmentalHologramField({
 }
 
 type FinancialFieldsProps = {
-  formData: Pick<CreateFleetUnit, 'accountingAccount' | 'monthlyLeasePayment'>;
-  setFormData: SetFormData;
-  isFlotillaOrInternal: boolean;
+  readonly formData: Pick<CreateFleetUnit, 'accountingAccount' | 'monthlyLeasePayment'>;
+  readonly setFormData: SetFormData;
+  readonly isFlotillaOrInternal: boolean;
 };
 
 function FinancialFields({

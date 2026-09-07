@@ -13,7 +13,7 @@ import {
 } from './geoOptionAccessors';
 
 interface FieldLabelProps {
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
 /** Etiqueta decorativa (no asociable, el control es un Combobox custom) de un campo geográfico (FC163 F2B5). */
@@ -26,10 +26,10 @@ function FieldLabel({ children }: FieldLabelProps): React.JSX.Element {
 }
 
 interface StateFieldProps {
-  hierarchy: GeoHierarchyData;
-  actions: GeoActions;
-  disabled: boolean;
-  label: string;
+  readonly hierarchy: GeoHierarchyData;
+  readonly actions: GeoActions;
+  readonly disabled: boolean;
+  readonly label: string;
 }
 
 /** Campo combobox de Estado (etiquetado "Destino" cuando originNode está presente) (FC163 F2B5). */
@@ -52,9 +52,9 @@ function StateField({ hierarchy, actions, disabled, label }: StateFieldProps): R
 }
 
 interface MunicipioFieldProps {
-  hierarchy: GeoHierarchyData;
-  actions: GeoActions;
-  disabled: boolean;
+  readonly hierarchy: GeoHierarchyData;
+  readonly actions: GeoActions;
+  readonly disabled: boolean;
 }
 
 /** Campo combobox de Municipio (FC163 F2B5). */
@@ -77,10 +77,10 @@ function MunicipioField({ hierarchy, actions, disabled }: MunicipioFieldProps): 
 }
 
 interface NeighborhoodFieldProps {
-  hierarchy: GeoHierarchyData;
-  actions: GeoActions;
-  disabled: boolean;
-  neighborhoodValue: number | undefined;
+  readonly hierarchy: GeoHierarchyData;
+  readonly actions: GeoActions;
+  readonly disabled: boolean;
+  readonly neighborhoodValue: number | undefined;
 }
 
 /** Campo combobox de Colonia / Código Postal (FC163 F2B5). */
@@ -111,11 +111,11 @@ function NeighborhoodField({
 }
 
 export interface GeoFieldsGroupProps {
-  disabled: boolean;
-  neighborhoodValue: number | undefined;
-  hierarchy: GeoHierarchyData;
-  actions: GeoActions;
-  stateLabel: string;
+  readonly disabled: boolean;
+  readonly neighborhoodValue: number | undefined;
+  readonly hierarchy: GeoHierarchyData;
+  readonly actions: GeoActions;
+  readonly stateLabel: string;
 }
 
 /** Estado + Municipio + Colonia: los 3 combobox geográficos, reusados en ambos layouts (FC163 F2B5). */

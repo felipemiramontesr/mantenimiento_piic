@@ -22,9 +22,9 @@ import StatusCell from './StatusCell';
 import ActionsCell from './ActionsCell';
 
 interface ForensicAccordionRowProps {
-  unitId: string;
-  routeUuid: string;
-  isExpanded: boolean;
+  readonly unitId: string;
+  readonly routeUuid: string;
+  readonly isExpanded: boolean;
 }
 
 /** Cálculos de telemetría (litros/km/costo) memoizados por log+unidad (FC163 F2B4 Sub-Batch 4B-2). */
@@ -63,20 +63,20 @@ function ForensicAccordionRow({
 }
 
 interface RouteLogDataRowProps {
-  log: RouteLog;
-  index: number;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onEdit?: (l: RouteLog) => void;
-  onReport: (l: RouteLog) => void;
-  onFinish: (l: RouteLog) => void;
-  operator: ReturnType<typeof useUsers>['users'][number] | undefined;
-  unit: FleetUnit | undefined;
-  sede: string;
-  status: ReturnType<typeof getRouteLogStatus>;
-  consumedLiters: number | null;
-  kmPerLiter: number | null;
-  costPerKm: number | null;
+  readonly log: RouteLog;
+  readonly index: number;
+  readonly isExpanded: boolean;
+  readonly onToggle: () => void;
+  readonly onEdit?: (l: RouteLog) => void;
+  readonly onReport: (l: RouteLog) => void;
+  readonly onFinish: (l: RouteLog) => void;
+  readonly operator: ReturnType<typeof useUsers>['users'][number] | undefined;
+  readonly unit: FleetUnit | undefined;
+  readonly sede: string;
+  readonly status: ReturnType<typeof getRouteLogStatus>;
+  readonly consumedLiters: number | null;
+  readonly kmPerLiter: number | null;
+  readonly costPerKm: number | null;
 }
 
 /** Fila de tabla con las celdas de datos de un log de ruta (FC163 F2B4 Sub-Batch 4B-2). */

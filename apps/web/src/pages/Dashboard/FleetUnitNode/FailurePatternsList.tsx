@@ -58,7 +58,7 @@ export function useFailurePatterns(
   return { results, loading, error };
 }
 
-function FailurePatternRow({ p }: { p: FailurePattern }): React.JSX.Element {
+function FailurePatternRow({ p }: { readonly p: FailurePattern }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-[4px]">
       <div className="flex-1 min-w-0">
@@ -99,9 +99,9 @@ export function FailurePatternsList({
   error,
   results,
 }: {
-  loading: boolean;
-  error: string | null;
-  results: FailurePattern[];
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly results: FailurePattern[];
 }): React.JSX.Element {
   return (
     <div>

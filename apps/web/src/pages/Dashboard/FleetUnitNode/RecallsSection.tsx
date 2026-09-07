@@ -28,10 +28,10 @@ const RECALL_HEADERS: ArchonTableHeader[] = [
 ];
 
 type RecallsSectionProps = {
-  unitId: string;
-  make: string;
-  model: string;
-  year: number;
+  readonly unitId: string;
+  readonly make: string;
+  readonly model: string;
+  readonly year: number;
 };
 
 function RecallsToolbar({

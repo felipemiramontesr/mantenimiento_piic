@@ -10,11 +10,11 @@ interface CategoryData {
 }
 
 interface CategoryAnalyticsCardProps {
-  title: string;
-  categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta';
-  accentColor: string;
-  data: CategoryData;
-  onViewDetails: (categoryKey: string) => void;
+  readonly title: string;
+  readonly categoryKey: 'vehiculo' | 'maquinaria' | 'herramienta';
+  readonly accentColor: string;
+  readonly data: CategoryData;
+  readonly onViewDetails: (categoryKey: string) => void;
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -36,10 +36,10 @@ const getAvailabilityDot = (percent: number): string => {
 };
 
 interface CardHeaderSlotProps {
-  Icon: React.ElementType;
-  accentColor: string;
-  title: string;
-  count: number;
+  readonly Icon: React.ElementType;
+  readonly accentColor: string;
+  readonly title: string;
+  readonly count: number;
 }
 
 /** Encabezado de icono + título + conteo de activos (FC163 F2B4 Sub-Batch 4B-1). */

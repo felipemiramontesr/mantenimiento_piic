@@ -3,9 +3,9 @@ import AT from '../../../styles/archonTypography';
 import { RouteLog } from './types';
 
 interface ConsumptionCellProps {
-  consumedLiters: number | null;
-  kmPerLiter: number | null;
-  className: string;
+  readonly consumedLiters: number | null;
+  readonly kmPerLiter: number | null;
+  readonly className: string;
 }
 
 /** Celda de consumo de combustible en litros + rendimiento KM/L (FC163 F2B4 Sub-Batch 4B-2). */
@@ -40,9 +40,9 @@ export function ConsumptionCell({
 }
 
 interface CostCellProps {
-  log: RouteLog;
-  costPerKm: number | null;
-  className: string;
+  readonly log: RouteLog;
+  readonly costPerKm: number | null;
+  readonly className: string;
 }
 
 /** Celda de costo total de combustible + costo por kilómetro (FC163 F2B4 Sub-Batch 4B-2). */

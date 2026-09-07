@@ -528,9 +528,9 @@ function useMaintenanceSectionData(args: MaintenanceSectionDataArgs): void {
 }
 
 interface MaintenanceHistoryViewProps {
-  refreshTrigger: number;
-  nav: MaintenanceNavHandlers;
-  upa: MaintenanceUpaHandlers;
+  readonly refreshTrigger: number;
+  readonly nav: MaintenanceNavHandlers;
+  readonly upa: MaintenanceUpaHandlers;
 }
 
 /** Vista HISTORY (tabla/calendario de servicios) — extraída de
@@ -586,9 +586,9 @@ function MaintenanceForecastPanelView({
 }
 
 interface MaintenanceModuleBodyProps {
-  state: MaintenancePanelState;
-  nav: MaintenanceNavHandlers;
-  upa: MaintenanceUpaHandlers;
+  readonly state: MaintenancePanelState;
+  readonly nav: MaintenanceNavHandlers;
+  readonly upa: MaintenanceUpaHandlers;
 }
 
 /** Cuerpo del módulo: una vista por `activePanel` — extraído de

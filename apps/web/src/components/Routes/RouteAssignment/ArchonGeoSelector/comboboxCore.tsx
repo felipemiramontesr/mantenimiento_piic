@@ -16,11 +16,11 @@ export function useClickOutside(ref: React.RefObject<HTMLElement>, onOutside: ()
 }
 
 interface ComboboxTriggerProps {
-  disabled: boolean;
-  isOpen: boolean;
-  selectedLabel: string;
-  placeholderText: string;
-  onClick: () => void;
+  readonly disabled: boolean;
+  readonly isOpen: boolean;
+  readonly selectedLabel: string;
+  readonly placeholderText: string;
+  readonly onClick: () => void;
 }
 
 /** Área disparadora del combobox genérico (FC163 F1B-2, split Alfa 219_AN). */
@@ -68,8 +68,8 @@ export function ComboboxTrigger({
 }
 
 interface ComboboxOptionItemProps {
-  item: ComboboxOptionItemData;
-  onSelect: (id: number, label: string) => void;
+  readonly item: ComboboxOptionItemData;
+  readonly onSelect: (id: number, label: string) => void;
 }
 
 /** Ítem individual de resultado del combobox genérico (FC163 F1B-2, split Alfa 219_AN). */
@@ -110,12 +110,12 @@ export function ComboboxOptionItem({ item, onSelect }: ComboboxOptionItemProps):
 }
 
 interface ComboboxDropdownPanelProps {
-  searchTerm: string;
-  onSearchChange: (v: string) => void;
-  loading: boolean;
-  inputRef: React.RefObject<HTMLInputElement>;
-  items: ComboboxOptionItemData[];
-  onSelect: (id: number, label: string) => void;
+  readonly searchTerm: string;
+  readonly onSearchChange: (v: string) => void;
+  readonly loading: boolean;
+  readonly inputRef: React.RefObject<HTMLInputElement>;
+  readonly items: ComboboxOptionItemData[];
+  readonly onSelect: (id: number, label: string) => void;
 }
 
 /** Panel desplegable (buscador + lista) del combobox genérico (FC163 F1B-2, split Alfa 219_AN). */

@@ -19,13 +19,13 @@ export interface CalendarCell {
 }
 
 export interface ArchonCalendarViewProps<T> {
-  items: T[];
-  keyExtractor: (item: T) => string | number;
-  dateExtractor: (item: T) => string | Date | null;
-  renderEvent: (item: T) => React.ReactNode;
-  onEventClick?: (item: T) => void;
+  readonly items: T[];
+  readonly keyExtractor: (item: T) => string | number;
+  readonly dateExtractor: (item: T) => string | Date | null;
+  readonly renderEvent: (item: T) => React.ReactNode;
+  readonly onEventClick?: (item: T) => void;
   /** 'YYYY-MM' — mes inicial determinista (tests); default: mes actual. */
-  initialMonth?: string;
+  readonly initialMonth?: string;
 }
 
 const WEEKDAYS_ES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];

@@ -6,14 +6,14 @@ import { shiftMonth, YearMonth } from './dateHelpers';
 import { PeriodRangeDraftState } from './usePeriodRangeDraft';
 
 interface CalendarPanelSlotProps {
-  title: string;
-  view: YearMonth;
-  selected: string;
-  rangeFrom: string;
-  rangeTo: string;
-  today: string;
-  onDaySelect: (date: string) => void;
-  setView: Dispatch<SetStateAction<YearMonth>>;
+  readonly title: string;
+  readonly view: YearMonth;
+  readonly selected: string;
+  readonly rangeFrom: string;
+  readonly rangeTo: string;
+  readonly today: string;
+  readonly onDaySelect: (date: string) => void;
+  readonly setView: Dispatch<SetStateAction<YearMonth>>;
 }
 
 /** Envoltorio con card + navegación de mes para un panel Desde/Hasta (FC163 F2B4 Sub-Batch 4B-2). */
@@ -46,8 +46,8 @@ function CalendarPanelSlot({
 }
 
 interface ApplyFooterProps {
-  error: string | null;
-  onApply: () => void;
+  readonly error: string | null;
+  readonly onApply: () => void;
 }
 
 /** Pie con mensaje de error y botón de aplicar rango (FC163 F2B4 Sub-Batch 4B-2). */
@@ -69,7 +69,7 @@ function ApplyFooter({ error, onApply }: ApplyFooterProps): React.ReactElement {
 }
 
 interface CalendarPanelsBodyProps {
-  draft: PeriodRangeDraftState;
+  readonly draft: PeriodRangeDraftState;
 }
 
 /** Paneles de calendario Desde/Hasta + pie con error y botón de aplicar (FC163 F2B4 Sub-Batch 4B-2). */

@@ -5,11 +5,11 @@ import { ProfileFormData } from './types';
 import PasswordFields from './PasswordFields';
 
 export interface SecurityAccessCardProps {
-  formData: ProfileFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ProfileFormData>>;
-  showPassword: boolean;
-  setShowPassword: (v: boolean) => void;
-  roleName: string;
+  readonly formData: ProfileFormData;
+  readonly setFormData: React.Dispatch<React.SetStateAction<ProfileFormData>>;
+  readonly showPassword: boolean;
+  readonly setShowPassword: (v: boolean) => void;
+  readonly roleName: string;
 }
 
 /** Panel "Seguridad y Acceso": correo, contraseña y rol (solo lectura). */

@@ -3,11 +3,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { MESES } from './dateHelpers';
 
 interface MonthNavProps {
-  title: string;
-  year: number;
-  month: number;
-  onPrev: () => void;
-  onNext: () => void;
+  readonly title: string;
+  readonly year: number;
+  readonly month: number;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
 }
 
 const NAV_BTN_CLS =

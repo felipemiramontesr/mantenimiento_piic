@@ -4,7 +4,7 @@ import { ActivityLog } from './types';
 import UniversalDeltaEngine from './UniversalDeltaEngine';
 
 interface ReadingImpactRowProps {
-  log: ActivityLog;
+  readonly log: ActivityLog;
 }
 
 /** 🚗 READING IMPACT (KM/HRS). */
@@ -132,7 +132,7 @@ function hasNoImpact(log: ActivityLog): boolean {
 }
 
 export interface ImpactCellProps {
-  log: ActivityLog;
+  readonly log: ActivityLog;
 }
 
 /** Columna "MODIFICACIÓN": una fila por cada tipo de impacto detectado

@@ -4,8 +4,8 @@ import { RegistrationState } from './useRegistrationState';
 import { getSubmitBtnClass, getSubmitLabel } from './constants';
 
 interface ActionBarProps {
-  state: RegistrationState;
-  onCancel: () => void;
+  readonly state: RegistrationState;
+  readonly onCancel: () => void;
 }
 
 /** Barra de acciones: cancelar / registrar servicio

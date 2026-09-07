@@ -33,17 +33,17 @@ import useAlertsCount from '../../hooks/useAlertsCount';
  */
 
 interface SidebarProps {
-  isCollapsed: boolean;
-  onToggle: () => void;
+  readonly isCollapsed: boolean;
+  readonly onToggle: () => void;
 }
 
 interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  path: string;
-  active?: boolean;
-  isCollapsed: boolean;
-  badgeCount?: number;
+  readonly icon: React.ReactNode;
+  readonly label: string;
+  readonly path: string;
+  readonly active?: boolean;
+  readonly isCollapsed: boolean;
+  readonly badgeCount?: number;
 }
 
 const ScrollContainerCtx = React.createContext<React.RefObject<HTMLElement> | undefined>(undefined);
@@ -87,8 +87,8 @@ function useScrollFade(itemRef: React.RefObject<HTMLDivElement>, active?: boolea
 }
 
 interface NavBadgeProps {
-  badgeLabel: string;
-  compact?: boolean;
+  readonly badgeLabel: string;
+  readonly compact?: boolean;
 }
 
 /** Badge numérico de alertas, compartido entre modo colapsado/expandido (FC164 Adenda G2, split Alfa 211_AN). */
@@ -106,11 +106,11 @@ const NavBadge: React.FC<NavBadgeProps> = ({ badgeLabel, compact }) => (
 );
 
 interface NavItemIconProps {
-  icon: React.ReactNode;
-  active?: boolean;
-  showBadge: boolean;
-  isCollapsed: boolean;
-  badgeLabel: string;
+  readonly icon: React.ReactNode;
+  readonly active?: boolean;
+  readonly showBadge: boolean;
+  readonly isCollapsed: boolean;
+  readonly badgeLabel: string;
 }
 
 /** Ícono + badge compacto en modo colapsado (FC164 Adenda G2, split Alfa 211_AN — sub-split de NavItem). */
@@ -136,9 +136,9 @@ const NavItemIcon: React.FC<NavItemIconProps> = ({
 );
 
 interface NavItemLabelProps {
-  label: string;
-  isCollapsed: boolean;
-  active?: boolean;
+  readonly label: string;
+  readonly isCollapsed: boolean;
+  readonly active?: boolean;
 }
 
 /** Etiqueta de texto del ítem de navegación (FC164 Adenda G2, split Alfa 211_AN — sub-split de NavItem). */
@@ -248,8 +248,8 @@ function useMobileDrawerA11y(
 }
 
 interface MobileOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
 }
 
 /** 🌑 MOBILE OVERLAY — extracted to keep `Sidebar` under budget. */
@@ -268,8 +268,8 @@ function MobileOverlay({ isOpen, onClose }: MobileOverlayProps): React.ReactElem
 }
 
 interface CollapseTriggerProps {
-  isCollapsed: boolean;
-  onToggle: () => void;
+  readonly isCollapsed: boolean;
+  readonly onToggle: () => void;
 }
 
 /** 🔘 COLLAPSE TRIGGER (Desktop Only) — extracted to keep `Sidebar` under budget. */
@@ -286,9 +286,9 @@ function CollapseTrigger({ isCollapsed, onToggle }: CollapseTriggerProps): React
 }
 
 interface SidebarAvatarButtonProps {
-  fullImageUrl: string | null;
-  onProfileClick: () => void;
-  firstFocusableRef: React.RefObject<HTMLButtonElement>;
+  readonly fullImageUrl: string | null;
+  readonly onProfileClick: () => void;
+  readonly firstFocusableRef: React.RefObject<HTMLButtonElement>;
 }
 
 /** Avatar/profile trigger button — extracted so `SidebarProfileHeader` stays under budget. */
@@ -324,11 +324,11 @@ function SidebarAvatarButton({
 }
 
 interface SidebarProfileHeaderProps {
-  isCollapsed: boolean;
-  fullImageUrl: string | null;
-  username: string;
-  onProfileClick: () => void;
-  firstFocusableRef: React.RefObject<HTMLButtonElement>;
+  readonly isCollapsed: boolean;
+  readonly fullImageUrl: string | null;
+  readonly username: string;
+  readonly onProfileClick: () => void;
+  readonly firstFocusableRef: React.RefObject<HTMLButtonElement>;
 }
 
 /** 🔱 HEADER (10%) — extracted to keep `Sidebar` under budget. */
@@ -549,13 +549,13 @@ function buildNavEntries(
 }
 
 interface SidebarNavListProps {
-  isCollapsed: boolean;
-  pathname: string;
-  hasPermission: (permission: string) => boolean;
-  hasAnyPermission: (permissions: string[]) => boolean;
-  isOmegaStrict: () => boolean;
-  alertsCount: number;
-  scrollRef: React.RefObject<HTMLElement>;
+  readonly isCollapsed: boolean;
+  readonly pathname: string;
+  readonly hasPermission: (permission: string) => boolean;
+  readonly hasAnyPermission: (permissions: string[]) => boolean;
+  readonly isOmegaStrict: () => boolean;
+  readonly alertsCount: number;
+  readonly scrollRef: React.RefObject<HTMLElement>;
 }
 
 /** 🗺️ BODY (80%) — FC 078 F1(c): era <main> (dos landmarks main en el DOM +
@@ -611,8 +611,8 @@ function SidebarNavList({
 }
 
 interface SidebarFooterProps {
-  isCollapsed: boolean;
-  onLogout: () => void;
+  readonly isCollapsed: boolean;
+  readonly onLogout: () => void;
 }
 
 /** ⚙️ FOOTER (15%) — FC 082 F3c2: botón "Panel de Control" (/dashboard/admin)

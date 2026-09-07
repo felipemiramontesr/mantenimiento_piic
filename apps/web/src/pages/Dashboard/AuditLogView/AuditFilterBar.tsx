@@ -2,11 +2,11 @@ import React from 'react';
 import { Filters, ENTITY_OPTIONS, ACTION_OPTIONS, LABEL_CLS } from './types';
 
 interface FilterSelectFieldProps {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  testId: string;
-  onChange: (v: string) => void;
+  readonly label: string;
+  readonly value: string;
+  readonly options: { value: string; label: string }[];
+  readonly testId: string;
+  readonly onChange: (v: string) => void;
 }
 
 /** Campo de filtro tipo select (entidad/acción) (FC163 F2B4 Sub-Batch 4B-2). */
@@ -37,10 +37,10 @@ function FilterSelectField({
 }
 
 interface FilterDateFieldProps {
-  label: string;
-  value: string;
-  testId: string;
-  onChange: (v: string) => void;
+  readonly label: string;
+  readonly value: string;
+  readonly testId: string;
+  readonly onChange: (v: string) => void;
 }
 
 /** Campo de filtro tipo fecha (desde/hasta) (FC163 F2B4 Sub-Batch 4B-2). */
@@ -65,9 +65,9 @@ function FilterDateField({
 }
 
 interface AuditFilterBarProps {
-  filters: Filters;
-  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  onApply: () => void;
+  readonly filters: Filters;
+  readonly setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  readonly onApply: () => void;
 }
 
 /** Filtros de entidad, acción y rango de fechas del historial de auditoría (FC163 F2B4 Sub-Batch 4B-2). */

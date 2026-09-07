@@ -5,8 +5,8 @@ import AT from '../../../styles/archonTypography';
 import { fmtDateTime, daysBetween } from './dateHelpers';
 
 interface DateFieldRowProps {
-  label: string;
-  children: React.ReactNode;
+  readonly label: string;
+  readonly children: React.ReactNode;
 }
 
 /** Fila "etiqueta / valor" de la celda de fechas (Entrada, Salida, Días). */
@@ -22,10 +22,10 @@ function DateFieldRow({ label, children }: DateFieldRowProps): React.JSX.Element
 }
 
 interface DateTimeValueProps {
-  date: string;
-  time: string;
-  iconClassName: string;
-  timeClassName: string;
+  readonly date: string;
+  readonly time: string;
+  readonly iconClassName: string;
+  readonly timeClassName: string;
 }
 
 /** Icono + fecha + hora opcional (Entrada/Salida cuando no está "En curso"). */
@@ -45,8 +45,8 @@ function DateTimeValue({
 }
 
 interface DatesCellProps {
-  log: MaintenanceLog;
-  isActive: boolean;
+  readonly log: MaintenanceLog;
+  readonly isActive: boolean;
 }
 
 /** Celda de fechas: entrada, salida (o "En curso") y días transcurridos (FC165 F2 Slice 2.1B). */

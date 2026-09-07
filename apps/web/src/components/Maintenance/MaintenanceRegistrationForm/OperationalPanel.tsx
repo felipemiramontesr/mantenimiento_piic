@@ -7,7 +7,7 @@ import { RegistrationState } from './useRegistrationState';
 
 /** Panel "Datos Operativos": técnico ejecutor + costo del servicio
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation — sub-split de MaintenanceRegistrationForm). */
-function OperationalPanel({ state }: { state: RegistrationState }): React.JSX.Element {
+function OperationalPanel({ state }: { readonly state: RegistrationState }): React.JSX.Element {
   return (
     <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 relative z-20 [--card-accent:#0f2a44]">
       <div className="card-sovereign-header">

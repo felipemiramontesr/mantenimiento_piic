@@ -30,8 +30,8 @@ function playSOSBeep(): void {
 }
 
 interface PanicButtonTriggerProps {
-  status: PanicStatus;
-  onTrigger: () => void;
+  readonly status: PanicStatus;
+  readonly onTrigger: () => void;
 }
 
 /** Botón flotante de SOS, fixed bottom-right (FC163 F2B4 Sub-Batch 4B-1). */
@@ -62,9 +62,9 @@ function PanicButtonTrigger({ status, onTrigger }: PanicButtonTriggerProps): Rea
 }
 
 interface PanicSentBannerProps {
-  status: Extract<PanicStatus, 'sent' | 'error'>;
-  notifiedCount: number;
-  onDismiss: () => void;
+  readonly status: Extract<PanicStatus, 'sent' | 'error'>;
+  readonly notifiedCount: number;
+  readonly onDismiss: () => void;
 }
 
 /** Banner de confirmación de SOS enviado o error (FC163 F2B4 Sub-Batch 4B-1). */

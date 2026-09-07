@@ -2,8 +2,8 @@ import React from 'react';
 import { ChevronDown } from 'lucide-react';
 
 export interface LoadMoreButtonProps {
-  onClick: () => void;
-  loading: boolean;
+  readonly onClick: () => void;
+  readonly loading: boolean;
 }
 
 /** Botón de paginación "cargar más" (FC163 F1B-3, split Alfa 219_AN). */

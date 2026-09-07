@@ -16,8 +16,8 @@ import ArchonImageUploader from '../../ArchonImageUploader';
 import { UseFleetFormReturn, CatalogOption, CreateFleetUnit } from '../../../types/fleet';
 
 interface FlotillaOnlyFieldProps {
-  show: boolean;
-  children: React.ReactNode;
+  readonly show: boolean;
+  readonly children: React.ReactNode;
 }
 
 const FlotillaOnlyField: React.FC<FlotillaOnlyFieldProps> = ({ show, children }) => {
@@ -137,8 +137,8 @@ function IdAndOwnerFields({
 }
 
 type PlatesAndSerialFieldsProps = {
-  formData: Pick<CreateFleetUnit, 'placas' | 'numeroSerie'>;
-  setFormData: SetFormData;
+  readonly formData: Pick<CreateFleetUnit, 'placas' | 'numeroSerie'>;
+  readonly setFormData: SetFormData;
 };
 
 function PlatesAndSerialFields({

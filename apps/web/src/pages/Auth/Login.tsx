@@ -116,21 +116,21 @@ function HeroContent(): React.JSX.Element {
 }
 
 interface LoginFormProps {
-  username: string;
-  password: string;
-  onUsernameChange: (v: string) => void;
-  onPasswordChange: (v: string) => void;
-  loading: boolean;
-  error: string | null;
-  onSubmit: (e: React.FormEvent) => void;
+  readonly username: string;
+  readonly password: string;
+  readonly onUsernameChange: (v: string) => void;
+  readonly onPasswordChange: (v: string) => void;
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly onSubmit: (e: React.FormEvent) => void;
 }
 
 interface LoginCredentialFieldsProps {
-  username: string;
-  password: string;
-  onUsernameChange: (v: string) => void;
-  onPasswordChange: (v: string) => void;
-  loading: boolean;
+  readonly username: string;
+  readonly password: string;
+  readonly onUsernameChange: (v: string) => void;
+  readonly onPasswordChange: (v: string) => void;
+  readonly loading: boolean;
 }
 
 /** Campos de usuario y contraseña del formulario de acceso (FC163 F2B4 Sub-Batch 4B-2). */
@@ -245,8 +245,8 @@ function LoginForm({
 }
 
 interface CookieBannerProps {
-  onReject: () => void;
-  onAccept: () => void;
+  readonly onReject: () => void;
+  readonly onAccept: () => void;
 }
 
 /** Banner de consentimiento de cookies, fijo al pie (FC163 F2B4 Sub-Batch 4B-2). */
@@ -285,13 +285,13 @@ function CookieBanner({ onReject, onAccept }: CookieBannerProps): React.JSX.Elem
 }
 
 interface LoginPanelProps {
-  username: string;
-  password: string;
-  onUsernameChange: (v: string) => void;
-  onPasswordChange: (v: string) => void;
-  loading: boolean;
-  error: string | null;
-  onSubmit: (e: React.FormEvent) => void;
+  readonly username: string;
+  readonly password: string;
+  readonly onUsernameChange: (v: string) => void;
+  readonly onPasswordChange: (v: string) => void;
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly onSubmit: (e: React.FormEvent) => void;
 }
 
 /** Panel derecho: logo móvil, formulario de acceso, pie de página (FC163 F2B4 Sub-Batch 4B-2). */

@@ -8,8 +8,8 @@ interface AreaOption {
 }
 
 interface AreasSelectProps {
-  value: string[];
-  onChange: (areas: string[]) => void;
+  readonly value: string[];
+  readonly onChange: (areas: string[]) => void;
 }
 
 /** Catálogo de áreas (`/catalogs/areas`) — vacío + `loading` si falla o mientras carga
@@ -134,8 +134,8 @@ function useAreasSelectState(
 }
 
 interface AreaChipsProps {
-  value: string[];
-  onRemove: (area: string) => void;
+  readonly value: string[];
+  readonly onRemove: (area: string) => void;
 }
 
 /** Chips de áreas ya seleccionadas (FC165 F3 Slice3.2 Batch2, Dual-Gate Isolation). */
@@ -165,11 +165,11 @@ function AreaChips({ value, onRemove }: AreaChipsProps): React.JSX.Element | nul
 }
 
 interface AreasDropdownProps {
-  available: AreaOption[];
-  open: boolean;
-  onToggleOpen: () => void;
-  onSelect: (label: string) => void;
-  onSelectOtro: () => void;
+  readonly available: AreaOption[];
+  readonly open: boolean;
+  readonly onToggleOpen: () => void;
+  readonly onSelect: (label: string) => void;
+  readonly onSelectOtro: () => void;
 }
 
 /** Disparador + panel del dropdown de áreas disponibles
@@ -226,9 +226,9 @@ function AreasDropdown({
 }
 
 interface OtroInputRowProps {
-  otroInput: string;
-  onInputChange: (v: string) => void;
-  onAdd: () => void;
+  readonly otroInput: string;
+  readonly onInputChange: (v: string) => void;
+  readonly onAdd: () => void;
 }
 
 /** Campo de texto libre para un área fuera del catálogo

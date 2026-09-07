@@ -5,10 +5,10 @@ import { STAGE_ICONS, STAGE_LABELS, STAGE_STEP } from './stageConfig';
 import ChecklistRow from './ChecklistRow';
 
 interface AccordionSectionHeaderProps {
-  stage: UpaTaskStage;
-  pendingCount: number;
-  isOpen: boolean;
-  onToggle: () => void;
+  readonly stage: UpaTaskStage;
+  readonly pendingCount: number;
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
 }
 
 /** Botón de encabezado desplegable de una sección del acordeón (FC163 F2B4 Sub-Batch 4B-2). */
@@ -43,15 +43,15 @@ function AccordionSectionHeader({
 }
 
 interface AccordionSectionTasksProps {
-  stage: UpaTaskStage;
-  tasks: UpaTaskDetail[];
-  taskUpdating: Record<string, boolean>;
-  evidenceUrls: Record<string, string[]>;
-  evidenceNotes: Record<string, string>;
-  onComplete: (task: UpaTaskDetail) => void;
-  onDefer: (taskId: string) => void;
-  onEvidenceUrlsChange: (taskId: string, urls: string[]) => void;
-  onEvidenceNotesChange: (taskId: string, notes: string) => void;
+  readonly stage: UpaTaskStage;
+  readonly tasks: UpaTaskDetail[];
+  readonly taskUpdating: Record<string, boolean>;
+  readonly evidenceUrls: Record<string, string[]>;
+  readonly evidenceNotes: Record<string, string>;
+  readonly onComplete: (task: UpaTaskDetail) => void;
+  readonly onDefer: (taskId: string) => void;
+  readonly onEvidenceUrlsChange: (taskId: string, urls: string[]) => void;
+  readonly onEvidenceNotesChange: (taskId: string, notes: string) => void;
 }
 
 /** Lista de filas de tarea dentro de una sección desplegada del acordeón (FC163 F2B4 Sub-Batch 4B-2). */
@@ -89,17 +89,17 @@ function AccordionSectionTasks({
 }
 
 interface AccordionSectionProps {
-  stage: UpaTaskStage;
-  tasks: UpaTaskDetail[];
-  isOpen: boolean;
-  onToggle: () => void;
-  taskUpdating: Record<string, boolean>;
-  evidenceUrls: Record<string, string[]>;
-  evidenceNotes: Record<string, string>;
-  onComplete: (task: UpaTaskDetail) => void;
-  onDefer: (taskId: string) => void;
-  onEvidenceUrlsChange: (taskId: string, urls: string[]) => void;
-  onEvidenceNotesChange: (taskId: string, notes: string) => void;
+  readonly stage: UpaTaskStage;
+  readonly tasks: UpaTaskDetail[];
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
+  readonly taskUpdating: Record<string, boolean>;
+  readonly evidenceUrls: Record<string, string[]>;
+  readonly evidenceNotes: Record<string, string>;
+  readonly onComplete: (task: UpaTaskDetail) => void;
+  readonly onDefer: (taskId: string) => void;
+  readonly onEvidenceUrlsChange: (taskId: string, urls: string[]) => void;
+  readonly onEvidenceNotesChange: (taskId: string, notes: string) => void;
 }
 
 /** Sección acordeón de una etapa: header desplegable + filas de tareas (FC163 F2B4 Sub-Batch 4B-2). */
@@ -147,17 +147,17 @@ function AccordionSection({
 }
 
 interface TaskAccordionProps {
-  stageOrder: UpaTaskStage[];
-  tasksByStage: Record<UpaTaskStage, UpaTaskDetail[]>;
-  openStages: Record<UpaTaskStage, boolean>;
-  onToggleStage: (stage: UpaTaskStage) => void;
-  taskUpdating: Record<string, boolean>;
-  evidenceUrls: Record<string, string[]>;
-  evidenceNotes: Record<string, string>;
-  onComplete: (task: UpaTaskDetail) => void;
-  onDefer: (taskId: string) => void;
-  onEvidenceUrlsChange: (taskId: string, urls: string[]) => void;
-  onEvidenceNotesChange: (taskId: string, notes: string) => void;
+  readonly stageOrder: UpaTaskStage[];
+  readonly tasksByStage: Record<UpaTaskStage, UpaTaskDetail[]>;
+  readonly openStages: Record<UpaTaskStage, boolean>;
+  readonly onToggleStage: (stage: UpaTaskStage) => void;
+  readonly taskUpdating: Record<string, boolean>;
+  readonly evidenceUrls: Record<string, string[]>;
+  readonly evidenceNotes: Record<string, string>;
+  readonly onComplete: (task: UpaTaskDetail) => void;
+  readonly onDefer: (taskId: string) => void;
+  readonly onEvidenceUrlsChange: (taskId: string, urls: string[]) => void;
+  readonly onEvidenceNotesChange: (taskId: string, notes: string) => void;
 }
 
 /** Acordeón de etapas del pipeline UPA, cada una con sus tareas (FC163 F2B4 Sub-Batch 4B-2). */

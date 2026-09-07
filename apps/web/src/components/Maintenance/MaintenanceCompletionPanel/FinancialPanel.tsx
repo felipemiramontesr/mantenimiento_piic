@@ -7,7 +7,7 @@ import { CompletionState } from './useCompletionState';
 
 /** Panel "Confirmación Final": técnico ejecutor + costo del servicio
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function FinancialPanel({ state }: { state: CompletionState }): React.JSX.Element {
+function FinancialPanel({ state }: { readonly state: CompletionState }): React.JSX.Element {
   return (
     <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 relative z-20 [--card-accent:#f2b705]">
       <div className="card-sovereign-header">

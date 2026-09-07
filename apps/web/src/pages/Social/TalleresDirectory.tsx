@@ -32,9 +32,9 @@ function StarBar({ value }: { value: number }): React.ReactElement {
 }
 
 interface DirectoryFilterHeaderProps {
-  q: string;
-  onQChange: (v: string) => void;
-  onSearch: (e: React.FormEvent) => void;
+  readonly q: string;
+  readonly onQChange: (v: string) => void;
+  readonly onSearch: (e: React.FormEvent) => void;
 }
 
 /** Barra de búsqueda del directorio de talleres (FC163 F2B4 Sub-Batch 4B-1). */
@@ -147,9 +147,9 @@ function WorkshopCardItem({ taller }: { taller: TallerEntry }): React.JSX.Elemen
 }
 
 interface DirectoryResultsProps {
-  isLoading: boolean;
-  error: string | null;
-  talleres: TallerEntry[];
+  readonly isLoading: boolean;
+  readonly error: string | null;
+  readonly talleres: TallerEntry[];
 }
 
 /** Estados de carga/error y listado de talleres del directorio (FC163 F2B4 Sub-Batch 4B-1). */

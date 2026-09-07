@@ -4,8 +4,8 @@ import { formatDateTime, calculateDuration } from '../../../utils/dateUtils';
 import { RouteLog } from './types';
 
 interface DepartureRecordProps {
-  log: RouteLog;
-  sede: string;
+  readonly log: RouteLog;
+  readonly sede: string;
 }
 
 /** Registro de salida: hora, sede origen y destino (FC163 F2B4 Sub-Batch 4B-2). */
@@ -38,8 +38,8 @@ function DepartureRecord({ log, sede }: DepartureRecordProps): React.JSX.Element
 }
 
 interface ArrivalRecordProps {
-  log: RouteLog;
-  sede: string;
+  readonly log: RouteLog;
+  readonly sede: string;
 }
 
 /** Registro de llegada: hora, sede, destino y tiempo total (FC163 F2B4 Sub-Batch 4B-2). */
@@ -84,9 +84,9 @@ function ArrivalRecord({ log, sede }: ArrivalRecordProps): React.JSX.Element | n
 }
 
 interface MissionCellProps {
-  log: RouteLog;
-  sede: string;
-  className: string;
+  readonly log: RouteLog;
+  readonly sede: string;
+  readonly className: string;
 }
 
 /** Celda de misión: registros de salida y llegada del trayecto (FC163 F2B4 Sub-Batch 4B-2). */

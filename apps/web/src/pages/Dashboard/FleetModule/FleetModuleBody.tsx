@@ -8,9 +8,9 @@ import ArchonCardView from '../../../components/Common/ArchonCardView';
 import renderFleetCard from './FleetUnitCard';
 
 interface FleetStrategyViewProps {
-  units: FleetUnit[];
-  loading: boolean;
-  handleEditUnit: (unit: FleetUnit) => Promise<void>;
+  readonly units: FleetUnit[];
+  readonly loading: boolean;
+  readonly handleEditUnit: (unit: FleetUnit) => Promise<void>;
 }
 
 /** Vista STRATEGY (tabla/tarjetas de flota) — extraída de `FleetModuleBody`
@@ -40,17 +40,17 @@ function FleetStrategyView({
 }
 
 export interface FleetModuleBodyProps {
-  panelRef: React.RefObject<HTMLDivElement>;
-  registrationSuccess: boolean;
-  formData: CreateFleetUnit;
-  activePanel: ManagementPanel;
-  units: FleetUnit[];
-  loading: boolean;
-  handleEditUnit: (unit: FleetUnit) => Promise<void>;
-  fleetController: Parameters<typeof FleetRegistrationForm>[0]['controller'];
-  editingUnit: FleetUnit | null;
-  refreshUnits: () => Promise<void>;
-  handleReturnToGrid: () => void;
+  readonly panelRef: React.RefObject<HTMLDivElement>;
+  readonly registrationSuccess: boolean;
+  readonly formData: CreateFleetUnit;
+  readonly activePanel: ManagementPanel;
+  readonly units: FleetUnit[];
+  readonly loading: boolean;
+  readonly handleEditUnit: (unit: FleetUnit) => Promise<void>;
+  readonly fleetController: Parameters<typeof FleetRegistrationForm>[0]['controller'];
+  readonly editingUnit: FleetUnit | null;
+  readonly refreshUnits: () => Promise<void>;
+  readonly handleReturnToGrid: () => void;
 }
 
 /** Cuerpo del módulo: grid/tarjetas de la flota, o el formulario de alta/edición

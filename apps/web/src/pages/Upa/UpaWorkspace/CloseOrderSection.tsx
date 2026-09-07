@@ -3,9 +3,9 @@ import { CheckCircle } from 'lucide-react';
 import type { UpaWorkOrderDetail } from '../../../types/upa';
 
 interface CloseOrderButtonProps {
-  onClose: () => void;
-  closing: boolean;
-  loading: boolean;
+  readonly onClose: () => void;
+  readonly closing: boolean;
+  readonly loading: boolean;
 }
 
 /** Botón para cerrar la orden UPA activa (FC163 F2B4 Sub-Batch 4B-2). */
@@ -30,9 +30,9 @@ function CloseOrderButton({
 }
 
 interface ClosedStateViewProps {
-  wo: UpaWorkOrderDetail;
-  onReturn?: () => void;
-  onResetOrder: () => void;
+  readonly wo: UpaWorkOrderDetail;
+  readonly onReturn?: () => void;
+  readonly onResetOrder: () => void;
 }
 
 /** Vista de confirmación tras cerrar la orden, con acción de volver/nueva orden (FC163 F2B4 Sub-Batch 4B-2). */
@@ -68,12 +68,12 @@ function ClosedStateView({ wo, onReturn, onResetOrder }: ClosedStateViewProps): 
 }
 
 interface CloseOrderSectionProps {
-  wo: UpaWorkOrderDetail;
-  closing: boolean;
-  loading: boolean;
-  onClose: () => void;
-  onReturn?: () => void;
-  onResetOrder: () => void;
+  readonly wo: UpaWorkOrderDetail;
+  readonly closing: boolean;
+  readonly loading: boolean;
+  readonly onClose: () => void;
+  readonly onReturn?: () => void;
+  readonly onResetOrder: () => void;
 }
 
 /** Sección de cierre de orden: botón de cerrar o vista de orden ya cerrada (FC163 F2B4 Sub-Batch 4B-2). */

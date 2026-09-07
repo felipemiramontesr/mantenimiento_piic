@@ -4,7 +4,7 @@ import { useCombobox } from './comboboxHooks';
 import { ComboboxProps } from './types';
 
 /** Combobox genérico con búsqueda remota, usado por selectores de estado/municipio/colonia (FC163 F1B-2, split Alfa 219_AN). */
-export function Combobox<T>(props: ComboboxProps<T>): React.JSX.Element {
+export function Combobox<T>(props: Readonly<ComboboxProps<T>>): React.JSX.Element {
   const { placeholder: placeholderText = 'Seleccionar...' } = props;
   const cb = useCombobox(props);
   return (

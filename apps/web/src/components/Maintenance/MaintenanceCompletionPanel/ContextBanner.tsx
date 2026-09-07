@@ -4,7 +4,7 @@ import { MaintenanceLog } from '../../../types/maintenance';
 import { SERVICE_LABELS, SERVICE_MODE_LABELS } from './constants';
 
 /** Banner de contexto del cierre de servicio (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function ContextBanner({ log }: { log: MaintenanceLog }): React.JSX.Element {
+function ContextBanner({ log }: { readonly log: MaintenanceLog }): React.JSX.Element {
   return (
     <div className="flex items-start gap-4 px-6 py-5 rounded-[4px] bg-amber-500/10 border border-amber-400/40">
       <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0 mt-0.5">

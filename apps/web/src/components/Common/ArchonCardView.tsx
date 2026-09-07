@@ -12,11 +12,11 @@ import React from 'react';
  */
 
 export interface ArchonCardViewProps<T> {
-  items: T[];
-  keyExtractor: (item: T) => string | number;
-  renderCard: (item: T) => React.ReactNode;
-  onCardClick?: (item: T) => void;
-  emptyMessage?: string;
+  readonly items: T[];
+  readonly keyExtractor: (item: T) => string | number;
+  readonly renderCard: (item: T) => React.ReactNode;
+  readonly onCardClick?: (item: T) => void;
+  readonly emptyMessage?: string;
 }
 
 const CARD_BASE_CLASSES =
@@ -31,9 +31,9 @@ const CARD_BASE_CLASSES =
  * Fleet/Users/Maintenance — solo cambian los datos de dominio.
  */
 export interface CardMetricRowProps {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
+  readonly icon: React.ReactNode;
+  readonly label: string;
+  readonly value: React.ReactNode;
 }
 
 export const CardMetricRow: React.FC<CardMetricRowProps> = ({ icon, label, value }) => (
@@ -56,8 +56,8 @@ const ALERT_TONE_CLASSES: Record<CardAlertTone, string> = {
 };
 
 export interface CardAlertBadgeProps {
-  tone: CardAlertTone;
-  children: React.ReactNode;
+  readonly tone: CardAlertTone;
+  readonly children: React.ReactNode;
 }
 
 export const CardAlertBadge: React.FC<CardAlertBadgeProps> = ({ tone, children }) => (

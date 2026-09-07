@@ -7,7 +7,7 @@ import { RouteAssignmentPanelProps } from './types';
 import { CatalogOption } from '../../../types/fleet';
 
 interface RouteMissionPanelProps extends RouteAssignmentPanelProps {
-  origins: CatalogOption[];
+  readonly origins: CatalogOption[];
 }
 
 /** Encabezado de fase II: misión y destino (FC163 F2B5). */
@@ -30,9 +30,9 @@ function MissionPanelHeader(): React.JSX.Element {
 }
 
 interface OriginFieldProps {
-  origins: CatalogOption[];
-  origin: string;
-  onOriginChange: (v: string) => void;
+  readonly origins: CatalogOption[];
+  readonly origin: string;
+  readonly onOriginChange: (v: string) => void;
 }
 
 /** Selector de origen, insertado como originNode del ArchonGeoSelector (FC163 F2B5). */
@@ -53,13 +53,13 @@ function OriginField({ origins, origin, onOriginChange }: OriginFieldProps): Rea
 }
 
 interface AddressInputFieldProps {
-  id: string;
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (v: string) => void;
-  icon: LucideIcon;
-  colSpanClassName: string;
+  readonly id: string;
+  readonly label: string;
+  readonly placeholder: string;
+  readonly value: string;
+  readonly onChange: (v: string) => void;
+  readonly icon: LucideIcon;
+  readonly colSpanClassName: string;
 }
 
 /** Campo de dirección reusado (Calle / Número / Num. Int.), input+icono+label asociado (FC163 F2B5). */
@@ -99,12 +99,12 @@ function AddressInputField({
 }
 
 interface AddressDetailFieldsProps {
-  calle: string;
-  numero: string;
-  numeroInterior: string;
-  onCalleChange: (v: string) => void;
-  onNumeroChange: (v: string) => void;
-  onNumeroInteriorChange: (v: string) => void;
+  readonly calle: string;
+  readonly numero: string;
+  readonly numeroInterior: string;
+  readonly onCalleChange: (v: string) => void;
+  readonly onNumeroChange: (v: string) => void;
+  readonly onNumeroInteriorChange: (v: string) => void;
 }
 
 /** Campos de calle, número y número interior del destino (FC163 F2B5). */

@@ -60,8 +60,8 @@ function resolveWhitelistedChanges(
 }
 
 export interface UniversalDeltaEngineProps {
-  snapshotBefore: unknown;
-  snapshotAfter: unknown;
+  readonly snapshotBefore: unknown;
+  readonly snapshotAfter: unknown;
 }
 
 /** 🔱 UNIVERSAL DELTA ENGINE (Snapshot Comparison) — compara los snapshots

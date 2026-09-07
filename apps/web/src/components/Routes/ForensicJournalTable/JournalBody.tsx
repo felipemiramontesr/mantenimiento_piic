@@ -40,10 +40,10 @@ function buildHeaders(unitId: string | undefined): ArchonTableHeader[] {
 }
 
 export interface JournalBodyProps extends ForensicJournalTableProps {
-  logs: ActivityLog[];
-  loading: boolean;
-  units: FleetUnit[];
-  sessionEvidence: Map<string, { maxObserved: number }>;
+  readonly logs: ActivityLog[];
+  readonly loading: boolean;
+  readonly units: FleetUnit[];
+  readonly sessionEvidence: Map<string, { maxObserved: number }>;
 }
 
 /** Decide entre el banner de verificación de ruta, el banner "ruta

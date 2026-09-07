@@ -6,7 +6,7 @@ import { CompletionState } from './useCompletionState';
 
 /** Tarjeta de sensor de nivel de combustible al cierre
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function FuelLevelCard({ state }: { state: CompletionState }): React.JSX.Element {
+function FuelLevelCard({ state }: { readonly state: CompletionState }): React.JSX.Element {
   return (
     <div className="card-archon-sovereign bg-white p-10 space-y-8 [--card-accent:#f2b705]">
       <div className="card-sovereign-header">
@@ -21,7 +21,7 @@ function FuelLevelCard({ state }: { state: CompletionState }): React.JSX.Element
 }
 
 /** Campo de litros de combustible cargados (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function FuelLitersField({ state }: { state: CompletionState }): React.JSX.Element {
+function FuelLitersField({ state }: { readonly state: CompletionState }): React.JSX.Element {
   return (
     <ArchonField label="Litros Cargados" icon={Droplets}>
       <div className="relative flex items-center">
@@ -46,7 +46,7 @@ function FuelLitersField({ state }: { state: CompletionState }): React.JSX.Eleme
 
 /** Tarjeta de litros/monto del ticket de combustible de retorno
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function FuelReturnDataCard({ state }: { state: CompletionState }): React.JSX.Element {
+function FuelReturnDataCard({ state }: { readonly state: CompletionState }): React.JSX.Element {
   return (
     <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 [--card-accent:#f2b705]">
       <div className="card-sovereign-header">
@@ -83,7 +83,7 @@ function FuelReturnDataCard({ state }: { state: CompletionState }): React.JSX.El
 
 /** Sección de telemetría de combustible: sensor de nivel + litros/monto del ticket
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function FuelTelemetrySection({ state }: { state: CompletionState }): React.JSX.Element {
+function FuelTelemetrySection({ state }: { readonly state: CompletionState }): React.JSX.Element {
   return (
     <div className="archon-grid-2-sovereign items-start gap-10">
       <FuelLevelCard state={state} />

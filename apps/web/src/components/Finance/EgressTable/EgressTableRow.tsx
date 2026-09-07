@@ -4,7 +4,7 @@ import { formatMXN, formatDate, cleanConcept } from './formatters';
 import { CATEGORY_BADGE } from './constants';
 
 interface ConceptCellProps {
-  row: FinancialTransaction;
+  readonly row: FinancialTransaction;
 }
 
 /** Celda de concepto (con referencia de factura para filas manuales) (FC163 F1B-3, split Alfa 219_AN — sub-split de EgressTableRow). */
@@ -29,7 +29,7 @@ function ConceptCell({ row }: ConceptCellProps): React.JSX.Element {
 }
 
 export interface EgressTableRowProps {
-  row: FinancialTransaction;
+  readonly row: FinancialTransaction;
 }
 
 /** Fila de la tabla de egresos (FC163 F1B-3, split Alfa 219_AN). */

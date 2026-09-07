@@ -2,13 +2,13 @@ import React from 'react';
 import { DIAS_CORTOS, getDaysInMonth, getFirstWeekday, getDayCls, toISO } from './dateHelpers';
 
 interface DayGridProps {
-  year: number;
-  month: number;
-  selected: string;
-  rangeFrom: string;
-  rangeTo: string;
-  today: string;
-  onDaySelect: (date: string) => void;
+  readonly year: number;
+  readonly month: number;
+  readonly selected: string;
+  readonly rangeFrom: string;
+  readonly rangeTo: string;
+  readonly today: string;
+  readonly onDaySelect: (date: string) => void;
 }
 
 /** Fila de encabezados de días de la semana (FC163 F2B4 Sub-Batch 4B-2). */
@@ -28,14 +28,14 @@ function DayGridHeaders(): React.ReactElement {
 }
 
 interface DayCellButtonProps {
-  year: number;
-  month: number;
-  day: number;
-  selected: string;
-  rangeFrom: string;
-  rangeTo: string;
-  today: string;
-  onDaySelect: (date: string) => void;
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly selected: string;
+  readonly rangeFrom: string;
+  readonly rangeTo: string;
+  readonly today: string;
+  readonly onDaySelect: (date: string) => void;
 }
 
 /** Botón de un día individual dentro de la grilla (FC163 F2B4 Sub-Batch 4B-2). */

@@ -6,9 +6,9 @@ import { resolveProfileImageUrl } from '../../../utils/imageUtils';
 import { ProfileFormData } from './types';
 
 export interface ProfilePhotoFieldProps {
-  imageUrl: string;
-  onImageUrlChange: (url: string) => void;
-  setSelectedFile: (f: File | null) => void;
+  readonly imageUrl: string;
+  readonly onImageUrlChange: (url: string) => void;
+  readonly setSelectedFile: (f: File | null) => void;
 }
 
 /** Campo de fotografía de perfil — extraído de `PersonalDataCard` para
@@ -42,11 +42,11 @@ export function ProfilePhotoField({
 }
 
 interface IdentityFieldsProps {
-  fullName: string;
-  employeeNumber: string;
-  username: string;
-  onFullNameChange: (v: string) => void;
-  onEmployeeNumberChange: (v: string) => void;
+  readonly fullName: string;
+  readonly employeeNumber: string;
+  readonly username: string;
+  readonly onFullNameChange: (v: string) => void;
+  readonly onEmployeeNumberChange: (v: string) => void;
 }
 
 /** Nombre completo + usuario (solo lectura) + no. de empleado — extraído de
@@ -93,10 +93,10 @@ function IdentityFields({
 }
 
 export interface PersonalDataCardProps {
-  formData: ProfileFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ProfileFormData>>;
-  username: string;
-  setSelectedFile: (f: File | null) => void;
+  readonly formData: ProfileFormData;
+  readonly setFormData: React.Dispatch<React.SetStateAction<ProfileFormData>>;
+  readonly username: string;
+  readonly setSelectedFile: (f: File | null) => void;
 }
 
 /** Panel "Información Personal": nombre, usuario, no. de empleado y foto. */

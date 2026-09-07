@@ -25,8 +25,8 @@ function IdentityPanelHeader(): React.JSX.Element {
 }
 
 interface UnitPreviewCardProps {
-  unit: FleetUnit;
-  isEdit: boolean;
+  readonly unit: FleetUnit;
+  readonly isEdit: boolean;
 }
 
 /** Tarjeta de previsualización de la unidad seleccionada (FC163 F2B5). */
@@ -73,8 +73,8 @@ function UnitPreviewCard({ unit, isEdit }: UnitPreviewCardProps): React.JSX.Elem
 }
 
 interface ValidationHintProps {
-  isEdit: boolean;
-  endReading: string | number;
+  readonly isEdit: boolean;
+  readonly endReading: string | number;
 }
 
 /** Aviso de validación de kilometraje/estatus al confirmar la ruta (FC163 F2B5). */

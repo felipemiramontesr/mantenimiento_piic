@@ -4,9 +4,9 @@ import { FleetUnit } from '../../../types/fleet';
 import AT from '../../../styles/archonTypography';
 
 interface UnitCellProps {
-  log: MaintenanceLog;
-  unit: FleetUnit | undefined;
-  isActive: boolean;
+  readonly log: MaintenanceLog;
+  readonly unit: FleetUnit | undefined;
+  readonly isActive: boolean;
 }
 
 /** Celda de unidad: miniatura, id, badge "EN TALLER" y marca/modelo (FC165 F2 Slice 2.1B). */

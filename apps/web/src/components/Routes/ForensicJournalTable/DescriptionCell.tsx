@@ -10,10 +10,10 @@ import {
 } from './anomalyDetection';
 
 export interface DescriptionCellProps {
-  log: ActivityLog;
-  units: FleetUnit[];
-  sessionEvidence: Map<string, { maxObserved: number }>;
-  isIncident: boolean;
+  readonly log: ActivityLog;
+  readonly units: FleetUnit[];
+  readonly sessionEvidence: Map<string, { maxObserved: number }>;
+  readonly isIncident: boolean;
 }
 
 /** Celda de descripción: resuelve la unidad, detecta anomalías de consumo

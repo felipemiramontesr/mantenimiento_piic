@@ -6,9 +6,9 @@ import { CompletionState } from './useCompletionState';
 import { statusOptions } from './constants';
 
 interface ChecklistRowProps {
-  task: MaintenanceTemplateTask;
-  idx: number;
-  state: CompletionState;
+  readonly task: MaintenanceTemplateTask;
+  readonly idx: number;
+  readonly state: CompletionState;
 }
 
 /** Fila individual de la checklist de cierre (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */

@@ -40,7 +40,7 @@ const BUCKET_LABELS: Record<string, string> = {
 };
 
 interface CreateUniverseFormProps {
-  onCreated: () => void;
+  readonly onCreated: () => void;
 }
 
 const FIELD_LABEL_CLASS =
@@ -49,11 +49,11 @@ const FIELD_INPUT_CLASS =
   'mt-1 w-full border border-slate-300 rounded-[4px] px-3 py-2 text-sm font-normal normal-case';
 
 interface SelectFieldProps {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  testId: string;
-  options: Array<{ value: string; label: string }>;
+  readonly label: string;
+  readonly value: string;
+  readonly onChange: (v: string) => void;
+  readonly testId: string;
+  readonly options: Array<{ value: string; label: string }>;
 }
 
 /** One labeled `<select>` — reused for `universeTypeCode`/`ownerTypeCode`. */
@@ -84,12 +84,12 @@ function SelectField({
 }
 
 interface CreateUniverseFieldsProps {
-  label: string;
-  onLabel: (v: string) => void;
-  universeTypeCode: string;
-  onUniverseTypeCode: (v: string) => void;
-  ownerTypeCode: string;
-  onOwnerTypeCode: (v: string) => void;
+  readonly label: string;
+  readonly onLabel: (v: string) => void;
+  readonly universeTypeCode: string;
+  readonly onUniverseTypeCode: (v: string) => void;
+  readonly ownerTypeCode: string;
+  readonly onOwnerTypeCode: (v: string) => void;
 }
 
 /** The 3-field grid (label + 2 static selects) — extracted to keep `CreateUniverseForm` under budget. */
@@ -205,9 +205,9 @@ export function CreateUniverseForm({ onCreated }: CreateUniverseFormProps): Reac
 }
 
 interface DestroyUniverseModalProps {
-  universe: UniverseRow | null;
-  onClose: () => void;
-  onDestroyed: () => void;
+  readonly universe: UniverseRow | null;
+  readonly onClose: () => void;
+  readonly onDestroyed: () => void;
 }
 
 /** Extrae `details` de un 409 UNIVERSE_NOT_ZERO_STATE, o null si no aplica. */
@@ -244,11 +244,11 @@ function ZeroStateBlockersList({
 }
 
 interface DestroyUniverseFieldsProps {
-  typedLabel: string;
-  onTypedLabel: (v: string) => void;
-  expectedLabel: string;
-  reason: string;
-  onReason: (v: string) => void;
+  readonly typedLabel: string;
+  readonly onTypedLabel: (v: string) => void;
+  readonly expectedLabel: string;
+  readonly reason: string;
+  readonly onReason: (v: string) => void;
 }
 
 /** Type-to-confirm label input + optional reason textarea (Cond.R-161-R4). */
@@ -286,10 +286,10 @@ async function submitDestroy(universeId: number, reason: string): Promise<void> 
 }
 
 interface DestroyUniverseActionsProps {
-  onClose: () => void;
-  onConfirm: () => void;
-  disabled: boolean;
-  submitting: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: () => void;
+  readonly disabled: boolean;
+  readonly submitting: boolean;
 }
 
 /** Cancel/confirm button pair — extracted to keep `DestroyUniverseModal` under budget. */
@@ -361,9 +361,9 @@ function useDestroySubmission(
 }
 
 interface DestroyUniverseModalContentProps {
-  universe: UniverseRow;
-  onClose: () => void;
-  onDestroyed: () => void;
+  readonly universe: UniverseRow;
+  readonly onClose: () => void;
+  readonly onDestroyed: () => void;
 }
 
 /** FC165 F3 Slice3.1 — cuerpo del modal, aislado en un componente propio para

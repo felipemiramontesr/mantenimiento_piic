@@ -2,8 +2,8 @@ import React from 'react';
 import { CheckCircle, Shield } from 'lucide-react';
 
 export interface ProfileFormBannersProps {
-  success: boolean;
-  error: string | null;
+  readonly success: boolean;
+  readonly error: string | null;
 }
 
 /** Bandas de éxito/error sobre el formulario de perfil. */

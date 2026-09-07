@@ -7,10 +7,10 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 // ============================================================================
 
 interface ArchonDatePickerProps {
-  value: string;
-  onChange: (newDate: string) => void;
-  placeholder?: string;
-  id?: string;
+  readonly value: string;
+  readonly onChange: (newDate: string) => void;
+  readonly placeholder?: string;
+  readonly id?: string;
 }
 
 const MONTHS_ES: string[] = [
@@ -190,10 +190,10 @@ function useDatePickerState(value: string, onChange: (newDate: string) => void):
 }
 
 interface DatePickerTriggerProps {
-  id?: string;
-  value: string;
-  placeholder: string;
-  onClick: () => void;
+  readonly id?: string;
+  readonly value: string;
+  readonly placeholder: string;
+  readonly onClick: () => void;
 }
 
 /** Input-botón que abre/cierra el calendario (FC165 F1, split). */
@@ -222,10 +222,10 @@ function DatePickerTrigger({
 }
 
 interface CalendarMonthHeaderProps {
-  viewMonth: number;
-  viewYear: number;
-  onPrev: () => void;
-  onNext: () => void;
+  readonly viewMonth: number;
+  readonly viewYear: number;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
 }
 
 /** Fila de navegación de mes (anterior/nombre-de-mes/siguiente) (FC165 F1, split). */
@@ -277,10 +277,10 @@ function DayNamesRow(): React.JSX.Element {
 }
 
 interface CalendarDaysGridProps {
-  cells: (number | null)[];
-  isSelectedDay: (day: number) => boolean;
-  isTodayDay: (day: number) => boolean;
-  onSelectDay: (day: number) => void;
+  readonly cells: (number | null)[];
+  readonly isSelectedDay: (day: number) => boolean;
+  readonly isTodayDay: (day: number) => boolean;
+  readonly onSelectDay: (day: number) => void;
 }
 
 /** Cuadrícula de celdas de día (7 columnas, huecos + botones seleccionables) (FC165 F1, split). */
@@ -314,7 +314,7 @@ function CalendarDaysGrid({
 }
 
 interface ClearDateButtonProps {
-  onClear: () => void;
+  readonly onClear: () => void;
 }
 
 /** Enlace "Limpiar fecha" bajo el calendario, visible solo con valor seleccionado (FC165 F1, split). */

@@ -134,8 +134,8 @@ function EngineFuelTypeFields({
 }
 
 type CapacityFieldsProps = {
-  formData: Pick<CreateFleetUnit, 'capacidadCarga' | 'fuelTankCapacity'>;
-  setFormData: SetFormData;
+  readonly formData: Pick<CreateFleetUnit, 'capacidadCarga' | 'fuelTankCapacity'>;
+  readonly setFormData: SetFormData;
 };
 
 function CapacityFields({ formData, setFormData }: CapacityFieldsProps): React.JSX.Element {
@@ -187,9 +187,9 @@ function CapacityFields({ formData, setFormData }: CapacityFieldsProps): React.J
 }
 
 type FuelLevelFieldProps = {
-  formData: Pick<CreateFleetUnit, 'lastFuelLevel' | 'initialFuelLevel'>;
-  setFormData: SetFormData;
-  isEdit: boolean;
+  readonly formData: Pick<CreateFleetUnit, 'lastFuelLevel' | 'initialFuelLevel'>;
+  readonly setFormData: SetFormData;
+  readonly isEdit: boolean;
 };
 
 function FuelLevelField({ formData, setFormData, isEdit }: FuelLevelFieldProps): React.JSX.Element {

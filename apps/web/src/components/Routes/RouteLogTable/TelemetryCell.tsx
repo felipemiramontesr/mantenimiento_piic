@@ -3,8 +3,8 @@ import { Gauge, CheckCircle2 } from 'lucide-react';
 import { RouteLog } from './types';
 
 interface TelemetryCellProps {
-  log: RouteLog;
-  className: string;
+  readonly log: RouteLog;
+  readonly className: string;
 }
 
 /** Celda de telemetría: KM de partida y KM final (FC163 F2B4 Sub-Batch 4B-2). */

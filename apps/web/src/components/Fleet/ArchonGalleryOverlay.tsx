@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ArchonGalleryOverlayProps {
-  images: string[];
-  initialIndex?: number;
-  onClose: () => void;
-  assetId: string;
+  readonly images: string[];
+  readonly initialIndex?: number;
+  readonly onClose: () => void;
+  readonly assetId: string;
 }
 
 /** Botón de cierre del overlay de galería (FC163 F2B4 Sub-Batch 4B-1). */
@@ -23,8 +23,8 @@ function GalleryCloseButton({ onClose }: { onClose: () => void }): React.JSX.Ele
 }
 
 interface GalleryNavControlsProps {
-  onPrev: () => void;
-  onNext: () => void;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
 }
 
 /** Flechas de navegación prev/next sobre la imagen (FC163 F2B4 Sub-Batch 4B-1). */
@@ -50,9 +50,9 @@ function GalleryNavControls({ onPrev, onNext }: GalleryNavControlsProps): React.
 }
 
 interface GalleryFooterProps {
-  assetId: string;
-  imageCount: number;
-  currentIndex: number;
+  readonly assetId: string;
+  readonly imageCount: number;
+  readonly currentIndex: number;
 }
 
 /** Pie con nombre del asset + indicadores de posición (FC163 F2B4 Sub-Batch 4B-1). */
@@ -79,11 +79,11 @@ function GalleryFooter({
 }
 
 interface GalleryLightboxContentProps {
-  images: string[];
-  currentIndex: number;
-  assetId: string;
-  onPrev: () => void;
-  onNext: () => void;
+  readonly images: string[];
+  readonly currentIndex: number;
+  readonly assetId: string;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
 }
 
 /** Contenido central del lightbox: imagen activa + navegación + pie (FC163 F2B4 Sub-Batch 4B-1). */

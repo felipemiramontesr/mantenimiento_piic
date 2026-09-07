@@ -14,8 +14,8 @@ import {
 import { kmRemainingColor, formatDate, daysColor } from './helpers';
 
 interface UnitCellProps {
-  row: MaintenanceForecastRow;
-  unit: FleetUnit | undefined;
+  readonly row: MaintenanceForecastRow;
+  readonly unit: FleetUnit | undefined;
 }
 
 /** Celda UNIDAD (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
@@ -108,8 +108,8 @@ function UrgencyCell({ row }: { row: MaintenanceForecastRow }): React.JSX.Elemen
 }
 
 interface ScheduleActionCellProps {
-  unitId: string;
-  onScheduleRequest: (unitId: string) => void;
+  readonly unitId: string;
+  readonly onScheduleRequest: (unitId: string) => void;
 }
 
 /** Celda ACCIONES — botón de programar servicio (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
@@ -137,10 +137,10 @@ function ScheduleActionCell({
 }
 
 export interface ForecastRowProps {
-  row: MaintenanceForecastRow;
-  index: number;
-  unit: FleetUnit | undefined;
-  onScheduleRequest: (unitId: string) => void;
+  readonly row: MaintenanceForecastRow;
+  readonly index: number;
+  readonly unit: FleetUnit | undefined;
+  readonly onScheduleRequest: (unitId: string) => void;
 }
 
 /** Fila de la tabla de pronóstico (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */

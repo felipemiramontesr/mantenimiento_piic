@@ -1,9 +1,9 @@
 import React from 'react';
 
 interface SnapshotDiffProps {
-  before: Record<string, unknown> | null;
-  after: Record<string, unknown> | null;
-  onlyDiffs: boolean;
+  readonly before: Record<string, unknown> | null;
+  readonly after: Record<string, unknown> | null;
+  readonly onlyDiffs: boolean;
 }
 
 /** Comparación lado a lado (antes/después) de un snapshot de auditoría (FC163 F2B4 Sub-Batch 4B-2). */

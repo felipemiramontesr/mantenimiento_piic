@@ -2,9 +2,9 @@ import React from 'react';
 import usePermissions from '../../hooks/usePermissions';
 
 interface PermissionGateProps {
-  permission: string;
-  fallback?: React.ReactNode;
-  children: React.ReactNode;
+  readonly permission: string;
+  readonly fallback?: React.ReactNode;
+  readonly children: React.ReactNode;
 }
 
 export default function PermissionGate({

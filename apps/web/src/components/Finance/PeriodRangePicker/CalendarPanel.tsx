@@ -4,16 +4,16 @@ import { DayGrid } from './DayGrid';
 import { formatLabel } from './dateHelpers';
 
 interface PanelProps {
-  title: string;
-  year: number;
-  month: number;
-  selected: string;
-  rangeFrom: string;
-  rangeTo: string;
-  today: string;
-  onDaySelect: (date: string) => void;
-  onPrev: () => void;
-  onNext: () => void;
+  readonly title: string;
+  readonly year: number;
+  readonly month: number;
+  readonly selected: string;
+  readonly rangeFrom: string;
+  readonly rangeTo: string;
+  readonly today: string;
+  readonly onDaySelect: (date: string) => void;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
 }
 
 /** Panel de calendario individual: navegación de mes + grilla de días (FC163 F2B4 Sub-Batch 4B-2). */

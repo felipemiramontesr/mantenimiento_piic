@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import ArchonModal from '../UI/ArchonModal';
 
 interface AuditJustificationModalProps {
-  isOpen: boolean;
-  onClose(): void;
-  onConfirm(reason: string): void;
-  title: string;
-  actionType: 'UPDATE' | 'DELETE';
-  loading?: boolean;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: (reason: string) => void;
+  readonly title: string;
+  readonly actionType: 'UPDATE' | 'DELETE';
+  readonly loading?: boolean;
 }
 
 interface ModalHeaderCopyProps {
-  title: string;
-  isDelete: boolean;
+  readonly title: string;
+  readonly isDelete: boolean;
 }
 
 /** Título + descripción de la modal de justificación de auditoría (FC163 F2B5). */
@@ -36,8 +36,8 @@ function ModalHeaderCopy({ title, isDelete }: ModalHeaderCopyProps): React.JSX.E
 }
 
 interface ReasonFieldProps {
-  reason: string;
-  onReasonChange: (v: string) => void;
+  readonly reason: string;
+  readonly onReasonChange: (v: string) => void;
 }
 
 /** Campo de motivo/justificación del cambio (FC163 F2B5). */
@@ -67,11 +67,11 @@ function ReasonField({ reason, onReasonChange }: ReasonFieldProps): React.JSX.El
 }
 
 interface ModalActionsProps {
-  isDelete: boolean;
-  reason: string;
-  loading?: boolean;
-  onClose: () => void;
-  onConfirm: (reason: string) => void;
+  readonly isDelete: boolean;
+  readonly reason: string;
+  readonly loading?: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: (reason: string) => void;
 }
 
 /** Botones de cancelar/confirmar de la modal de justificación (FC163 F2B5). */

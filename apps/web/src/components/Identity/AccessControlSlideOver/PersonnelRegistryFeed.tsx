@@ -28,8 +28,8 @@ function PersonnelRow({ user }: { user: PersonnelRecord }): React.JSX.Element {
 }
 
 export interface PersonnelRegistryFeedProps {
-  isLoading: boolean;
-  users: PersonnelRecord[];
+  readonly isLoading: boolean;
+  readonly users: PersonnelRecord[];
 }
 
 /** Listado de personal registrado (con estado de carga/vacío) (FC163 F1B-3, split Alfa 219_AN). */

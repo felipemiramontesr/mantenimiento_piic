@@ -4,10 +4,10 @@ import SnapshotDiff from './SnapshotDiff';
 import { AuditRow, ACTION_BADGE, ACTION_LABEL } from './types';
 
 interface AuditRowMainProps {
-  row: AuditRow;
-  omnipotent: boolean;
-  isExpanded: boolean;
-  onToggle: () => void;
+  readonly row: AuditRow;
+  readonly omnipotent: boolean;
+  readonly isExpanded: boolean;
+  readonly onToggle: () => void;
 }
 
 /** Fila principal (colapsada) de un registro de auditoría (FC163 F2B4 Sub-Batch 4B-2). */
@@ -59,10 +59,10 @@ function AuditRowMain({
 }
 
 interface AuditRowDiffProps {
-  row: AuditRow;
-  omnipotent: boolean;
-  onlyDiffs: boolean;
-  onToggleOnlyDiffs: () => void;
+  readonly row: AuditRow;
+  readonly omnipotent: boolean;
+  readonly onlyDiffs: boolean;
+  readonly onToggleOnlyDiffs: () => void;
 }
 
 /** Fila expandida con el diff de snapshot antes/después (FC163 F2B4 Sub-Batch 4B-2). */
@@ -102,12 +102,12 @@ function AuditRowDiff({
 }
 
 interface AuditLogItemRowProps {
-  row: AuditRow;
-  omnipotent: boolean;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
-  onlyDiffs: boolean;
-  onToggleOnlyDiffs: () => void;
+  readonly row: AuditRow;
+  readonly omnipotent: boolean;
+  readonly isExpanded: boolean;
+  readonly onToggleExpand: () => void;
+  readonly onlyDiffs: boolean;
+  readonly onToggleOnlyDiffs: () => void;
 }
 
 /** Fila de tabla (colapsada + diff expandible) de un registro de auditoría (FC163 F2B4 Sub-Batch 4B-2). */

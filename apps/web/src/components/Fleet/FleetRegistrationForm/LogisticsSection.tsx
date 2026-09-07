@@ -67,9 +67,9 @@ function LocationOdometerFields({
 }
 
 type MaintenanceCycleGridProps = {
-  formData: Pick<CreateFleetUnit, 'maintIntervalDays' | 'maintIntervalKm' | 'assetTypeId'>;
-  setFormData: SetFormData;
-  assetTypes: CatalogOption[];
+  readonly formData: Pick<CreateFleetUnit, 'maintIntervalDays' | 'maintIntervalKm' | 'assetTypeId'>;
+  readonly setFormData: SetFormData;
+  readonly assetTypes: CatalogOption[];
 };
 
 function MaintenanceCycleGrid({
@@ -123,8 +123,8 @@ function MaintenanceCycleGrid({
 }
 
 type ProtocolStartDateFieldProps = {
-  formData: Pick<CreateFleetUnit, 'protocolStartDate'>;
-  setFormData: SetFormData;
+  readonly formData: Pick<CreateFleetUnit, 'protocolStartDate'>;
+  readonly setFormData: SetFormData;
 };
 
 function ProtocolStartDateField({
@@ -144,13 +144,13 @@ function ProtocolStartDateField({
 }
 
 type MaintenanceCycleFieldsProps = {
-  formData: Pick<
+  readonly formData: Pick<
     CreateFleetUnit,
     'maintIntervalDays' | 'maintIntervalKm' | 'assetTypeId' | 'protocolStartDate'
   >;
-  setFormData: SetFormData;
-  assetTypes: CatalogOption[];
-  isEdit: boolean;
+  readonly setFormData: SetFormData;
+  readonly assetTypes: CatalogOption[];
+  readonly isEdit: boolean;
 };
 
 function MaintenanceCycleFields({
@@ -168,9 +168,12 @@ function MaintenanceCycleFields({
 }
 
 type LastServiceFieldsProps = {
-  formData: Pick<CreateFleetUnit, 'lastServiceDate' | 'lastServiceReading' | 'assetTypeId'>;
-  setFormData: SetFormData;
-  assetTypes: CatalogOption[];
+  readonly formData: Pick<
+    CreateFleetUnit,
+    'lastServiceDate' | 'lastServiceReading' | 'assetTypeId'
+  >;
+  readonly setFormData: SetFormData;
+  readonly assetTypes: CatalogOption[];
 };
 
 function LastServiceFields({

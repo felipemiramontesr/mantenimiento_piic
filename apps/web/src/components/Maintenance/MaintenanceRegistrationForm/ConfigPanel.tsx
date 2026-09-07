@@ -28,7 +28,11 @@ function UpaTypeBadge({ state }: { state: RegistrationState }): React.JSX.Elemen
 }
 
 /** Campos de odómetro al servicio + fecha (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function OdometerAndDateFields({ state }: { state: RegistrationState }): React.JSX.Element {
+function OdometerAndDateFields({
+  state,
+}: {
+  readonly state: RegistrationState;
+}): React.JSX.Element {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <ArchonField label="Odómetro al Servicio" icon={Gauge} required>
@@ -67,7 +71,7 @@ function OdometerAndDateFields({ state }: { state: RegistrationState }): React.J
 
 /** Panel "Configuración": unidad + tipo UPA + odómetro/fecha
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation — sub-split de MaintenanceRegistrationForm). */
-function ConfigPanel({ state }: { state: RegistrationState }): React.JSX.Element {
+function ConfigPanel({ state }: { readonly state: RegistrationState }): React.JSX.Element {
   return (
     <div className="card-archon-sovereign !overflow-visible bg-white p-10 space-y-8 relative z-20 [--card-accent:#0f2a44]">
       <div className="card-sovereign-header">

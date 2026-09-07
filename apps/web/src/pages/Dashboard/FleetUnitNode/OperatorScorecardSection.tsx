@@ -5,7 +5,9 @@ import { useOperatorScorecard } from '../../../hooks/useOperatorScorecard';
 import { InfoRow, SectionCard, formatNum, formatPct } from '../nodes/NodeShared';
 
 /** Operator scorecard KPIs card for a fleet unit. */
-export function OperatorScorecardSection({ unitId }: { unitId: string }): React.JSX.Element {
+export function OperatorScorecardSection({
+  unitId,
+}: Readonly<{ unitId: string }>): React.JSX.Element {
   const { data, loading } = useOperatorScorecard(unitId);
   return (
     <SectionCard

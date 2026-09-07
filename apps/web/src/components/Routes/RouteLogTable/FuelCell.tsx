@@ -4,9 +4,9 @@ import { FleetUnit } from '../../../types/fleet';
 import { RouteLog } from './types';
 
 interface FuelCellProps {
-  log: RouteLog;
-  unit: FleetUnit | undefined;
-  className: string;
+  readonly log: RouteLog;
+  readonly unit: FleetUnit | undefined;
+  readonly className: string;
 }
 
 /** Celda de combustible: % de tanque y litros reales al punto de lectura (FC163 F2B4 Sub-Batch 4B-2). */

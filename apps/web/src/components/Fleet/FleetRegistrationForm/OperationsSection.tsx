@@ -2,7 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import { UseFleetFormReturn } from '../../../types/fleet';
 
-type OperationsSectionProps = Pick<UseFleetFormReturn, 'formData' | 'setFormData'>;
+type OperationsSectionProps = Readonly<Pick<UseFleetFormReturn, 'formData' | 'setFormData'>>;
 
 /** PANEL 5a (sin título) — Especificaciones de fábrica / notas técnicas del activo. */
 export function OperationsSection({

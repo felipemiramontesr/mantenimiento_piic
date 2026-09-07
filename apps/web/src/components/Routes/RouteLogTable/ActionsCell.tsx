@@ -18,9 +18,9 @@ function ViewNodeLink({ uuid }: { uuid: string }): React.JSX.Element {
 }
 
 interface InRouteActionsProps {
-  log: RouteLog;
-  onReport: (l: RouteLog) => void;
-  onFinish: (l: RouteLog) => void;
+  readonly log: RouteLog;
+  readonly onReport: (l: RouteLog) => void;
+  readonly onFinish: (l: RouteLog) => void;
 }
 
 /** Botones exclusivos de rutas en curso: reportar incidencia + finalizar
@@ -58,11 +58,11 @@ function InRouteActions({ log, onReport, onFinish }: InRouteActionsProps): React
 }
 
 interface ActionsCellProps {
-  log: RouteLog;
-  className: string;
-  onEdit?: (l: RouteLog) => void;
-  onReport: (l: RouteLog) => void;
-  onFinish: (l: RouteLog) => void;
+  readonly log: RouteLog;
+  readonly className: string;
+  readonly onEdit?: (l: RouteLog) => void;
+  readonly onReport: (l: RouteLog) => void;
+  readonly onFinish: (l: RouteLog) => void;
 }
 
 /** Celda de acciones: ver nodo, reportar incidencia, editar, finalizar misión (FC163 F2B4 Sub-Batch 4B-2). */

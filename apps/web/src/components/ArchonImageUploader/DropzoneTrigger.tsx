@@ -15,9 +15,9 @@ function dropzoneClassName(
 }
 
 interface DropzoneIconProps {
-  compact: boolean;
-  isDragging: boolean;
-  iconPaddingClasses: string;
+  readonly compact: boolean;
+  readonly isDragging: boolean;
+  readonly iconPaddingClasses: string;
 }
 
 /** Ícono animado de la dropzone (FC163 F1B-2, split Alfa 219_AN). */
@@ -39,13 +39,13 @@ function DropzoneIcon({
 }
 
 interface DropzoneCaptionProps {
-  compact: boolean;
-  isDragging: boolean;
-  title: string;
-  atCapacity: boolean;
-  maxImages: number;
-  allowedFormats: string;
-  reducedHeight: boolean;
+  readonly compact: boolean;
+  readonly isDragging: boolean;
+  readonly title: string;
+  readonly atCapacity: boolean;
+  readonly maxImages: number;
+  readonly allowedFormats: string;
+  readonly reducedHeight: boolean;
 }
 
 /** Texto/estado de la dropzone (FC163 F1B-2, split Alfa 219_AN). */
@@ -103,11 +103,11 @@ export interface DropzoneHandlers {
 }
 
 interface DropzoneFileInputProps {
-  multiple: boolean;
-  accept: string;
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  disabled: boolean;
-  onFilesSelected: (files: FileList) => void;
+  readonly multiple: boolean;
+  readonly accept: string;
+  readonly fileInputRef: React.RefObject<HTMLInputElement>;
+  readonly disabled: boolean;
+  readonly onFilesSelected: (files: FileList) => void;
 }
 
 /** Input de archivo oculto de la dropzone (FC163 F1B-2, split Alfa 219_AN — sub-split de DropzoneTrigger). */
@@ -134,11 +134,11 @@ function DropzoneFileInput({
 }
 
 export interface DropzoneTriggerProps {
-  visual: DropzoneVisualState;
-  copy: DropzoneCopy;
-  handlers: DropzoneHandlers;
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  accept: string;
+  readonly visual: DropzoneVisualState;
+  readonly copy: DropzoneCopy;
+  readonly handlers: DropzoneHandlers;
+  readonly fileInputRef: React.RefObject<HTMLInputElement>;
+  readonly accept: string;
 }
 
 /** Zona de drag & drop + input de archivo (FC163 F1B-2, split Alfa 219_AN — movido a archivo hermano por max-lines:400). */

@@ -5,7 +5,7 @@ import { formatKm } from '../nodes/NodeShared';
 export function KmRemainingValue({
   kmRemaining,
 }: {
-  kmRemaining: number | null;
+  readonly kmRemaining: number | null;
 }): React.JSX.Element {
   if (kmRemaining == null) return <span>—</span>;
   const overdue = kmRemaining < 0;

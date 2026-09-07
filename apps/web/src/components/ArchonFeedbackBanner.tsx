@@ -10,9 +10,9 @@ import { AlertCircle, X, CheckCircle, Info } from 'lucide-react';
 export type FeedbackType = 'error' | 'success' | 'info';
 
 interface ArchonFeedbackBannerProps {
-  message: string;
-  type?: FeedbackType;
-  onClear: () => void;
+  readonly message: string;
+  readonly type?: FeedbackType;
+  readonly onClear: () => void;
 }
 
 const FEEDBACK_STYLES: Record<

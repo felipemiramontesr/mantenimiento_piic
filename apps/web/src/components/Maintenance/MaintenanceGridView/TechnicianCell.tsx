@@ -5,8 +5,8 @@ import { UserIndustrial } from '../../../types/user';
 import AT from '../../../styles/archonTypography';
 
 interface TechnicianCellProps {
-  log: MaintenanceLog;
-  technician: UserIndustrial | undefined;
+  readonly log: MaintenanceLog;
+  readonly technician: UserIndustrial | undefined;
 }
 
 /** Celda de técnico asignado: avatar, nombre y número de empleado (FC165 F2 Slice 2.1B). */

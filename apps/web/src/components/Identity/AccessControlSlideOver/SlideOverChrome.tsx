@@ -2,7 +2,7 @@ import React from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 
 interface SlideOverHeaderProps {
-  onClose: () => void;
+  readonly onClose: () => void;
 }
 
 /** Cabecera con título y botón de cierre (FC163 F1B-3, split Alfa 219_AN). */
@@ -25,8 +25,8 @@ export function SlideOverHeader({ onClose }: SlideOverHeaderProps): React.JSX.El
 }
 
 interface SlideOverTabsProps {
-  view: 'list' | 'create';
-  onSelectView: (v: 'list' | 'create') => void;
+  readonly view: 'list' | 'create';
+  readonly onSelectView: (v: 'list' | 'create') => void;
 }
 
 /** Navegación por pestañas (plantilla activa / registrar) (FC163 F1B-3, split Alfa 219_AN). */
@@ -60,7 +60,7 @@ export function SlideOverTabs({ view, onSelectView }: SlideOverTabsProps): React
 }
 
 interface SlideOverBackdropProps {
-  onClose: () => void;
+  readonly onClose: () => void;
 }
 
 /** Backdrop clickeable/teclado del slide-over (FC163 F1B-3, split Alfa 219_AN). */

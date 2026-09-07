@@ -2,11 +2,11 @@ import React from 'react';
 import { Image as ImageIcon, X } from 'lucide-react';
 
 interface ImagePreviewItemProps {
-  src: string;
-  idx: number;
-  variant: 'square' | 'circle';
-  disabled: boolean;
-  onRemove: (idx: number) => void;
+  readonly src: string;
+  readonly idx: number;
+  readonly variant: 'square' | 'circle';
+  readonly disabled: boolean;
+  readonly onRemove: (idx: number) => void;
 }
 
 /** Miniatura individual con botón de eliminar (FC163 F1B-2, split Alfa 219_AN — movido a archivo hermano por max-lines:400). */
@@ -56,12 +56,12 @@ function ImagePreviewItem({
 }
 
 export interface ImagePreviewGridProps {
-  images: string[];
-  maxImages: number;
-  compact: boolean;
-  variant: 'square' | 'circle';
-  disabled: boolean;
-  onRemove: (idx: number) => void;
+  readonly images: string[];
+  readonly maxImages: number;
+  readonly compact: boolean;
+  readonly variant: 'square' | 'circle';
+  readonly disabled: boolean;
+  readonly onRemove: (idx: number) => void;
 }
 
 /** Grilla de miniaturas + slots vacíos (FC163 F1B-2, split Alfa 219_AN — movido a archivo hermano por max-lines:400). */

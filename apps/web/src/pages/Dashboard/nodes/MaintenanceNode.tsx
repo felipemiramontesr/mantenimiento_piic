@@ -23,12 +23,12 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TaskDetail {
-  taskCode: string;
-  status: string;
-  notes: string | null;
-  label: string;
-  isCritical: boolean;
-  statusLabel: string;
+  readonly taskCode: string;
+  readonly status: string;
+  readonly notes: string | null;
+  readonly label: string;
+  readonly isCritical: boolean;
+  readonly statusLabel: string;
 }
 
 interface MaintenanceOrder {

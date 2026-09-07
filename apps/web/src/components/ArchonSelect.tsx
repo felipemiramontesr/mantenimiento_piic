@@ -9,22 +9,22 @@ import { useArchonSelectState } from './ArchonSelect/hooks';
 export type { SelectOption };
 
 interface ArchonSelectProps {
-  options: readonly (string | SelectOption)[] | (string | SelectOption)[];
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  icon?: React.ElementType;
-  disabled?: boolean;
-  searchable?: boolean;
+  readonly options: readonly (string | SelectOption)[] | (string | SelectOption)[];
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly placeholder?: string;
+  readonly icon?: React.ElementType;
+  readonly disabled?: boolean;
+  readonly searchable?: boolean;
 }
 
 interface ArchonSelectTriggerProps {
-  disabled: boolean;
-  isOpen: boolean;
-  Icon?: React.ElementType;
-  currentLabel: string;
-  hasValue: boolean;
-  onToggle: () => void;
+  readonly disabled: boolean;
+  readonly isOpen: boolean;
+  readonly Icon?: React.ElementType;
+  readonly currentLabel: string;
+  readonly hasValue: boolean;
+  readonly onToggle: () => void;
 }
 
 /** className del contenedor disparador (FC163 F1B-2, split Alfa 219_AN — sub-split de ArchonSelectTrigger). */
@@ -88,10 +88,10 @@ function ArchonSelectTrigger({
 }
 
 interface ArchonSelectSearchBoxProps {
-  searchTerm: string;
-  onSearchChange: (v: string) => void;
-  onClearSearch: () => void;
-  inputRef: React.RefObject<HTMLInputElement>;
+  readonly searchTerm: string;
+  readonly onSearchChange: (v: string) => void;
+  readonly onClearSearch: () => void;
+  readonly inputRef: React.RefObject<HTMLInputElement>;
 }
 
 /** Caja de búsqueda del dropdown (FC163 F1B-2, split Alfa 219_AN). */
@@ -131,10 +131,10 @@ function ArchonSelectSearchBox({
 }
 
 interface ArchonSelectOptionsListProps {
-  filteredOptions: SelectOption[];
-  value: string;
-  searchTerm: string;
-  onSelect: (v: string) => void;
+  readonly filteredOptions: SelectOption[];
+  readonly value: string;
+  readonly searchTerm: string;
+  readonly onSelect: (v: string) => void;
 }
 
 /** Lista de opciones filtradas (o mensaje vacío) del dropdown (FC163 F1B-2, split Alfa 219_AN). */
@@ -165,15 +165,15 @@ function ArchonSelectOptionsList({
 }
 
 interface ArchonSelectDropdownProps {
-  dropdownStyle: React.CSSProperties;
-  searchable: boolean;
-  searchTerm: string;
-  onSearchChange: (v: string) => void;
-  onClearSearch: () => void;
-  inputRef: React.RefObject<HTMLInputElement>;
-  filteredOptions: SelectOption[];
-  value: string;
-  onSelect: (v: string) => void;
+  readonly dropdownStyle: React.CSSProperties;
+  readonly searchable: boolean;
+  readonly searchTerm: string;
+  readonly onSearchChange: (v: string) => void;
+  readonly onClearSearch: () => void;
+  readonly inputRef: React.RefObject<HTMLInputElement>;
+  readonly filteredOptions: SelectOption[];
+  readonly value: string;
+  readonly onSelect: (v: string) => void;
 }
 
 /** Panel desplegable (buscador + lista de opciones) renderizado en el portal (FC163 F1B-2, split Alfa 219_AN). */
@@ -216,17 +216,17 @@ function ArchonSelectDropdown({
 }
 
 interface ArchonSelectPortalDropdownProps {
-  portalRoot: HTMLElement;
-  isOpen: boolean;
-  dropdownStyle: React.CSSProperties;
-  searchable: boolean;
-  searchTerm: string;
-  onSearchChange: (v: string) => void;
-  onClearSearch: () => void;
-  inputRef: React.RefObject<HTMLInputElement>;
-  filteredOptions: SelectOption[];
-  value: string;
-  onSelect: (v: string) => void;
+  readonly portalRoot: HTMLElement;
+  readonly isOpen: boolean;
+  readonly dropdownStyle: React.CSSProperties;
+  readonly searchable: boolean;
+  readonly searchTerm: string;
+  readonly onSearchChange: (v: string) => void;
+  readonly onClearSearch: () => void;
+  readonly inputRef: React.RefObject<HTMLInputElement>;
+  readonly filteredOptions: SelectOption[];
+  readonly value: string;
+  readonly onSelect: (v: string) => void;
 }
 
 /** Envuelve ArchonSelectDropdown en su portal + transición de entrada/salida (FC163 F1B-2, split Alfa 219_AN). */

@@ -15,7 +15,7 @@ function statusBadgeClass(status: string): string {
   return FLEET_STATUS_BADGE[status] ?? 'bg-slate-100 text-slate-500';
 }
 
-function UnitHeaderPhoto({ unit }: { unit: NodeUnit }): React.JSX.Element {
+function UnitHeaderPhoto({ unit }: { readonly unit: NodeUnit }): React.JSX.Element {
   const [imgSrc, setImgSrc] = React.useState(unit.images?.[0] ?? '/img/archon-unit-default.png');
   return (
     <div className="w-28 h-28 shrink-0 rounded-[4px] overflow-hidden bg-slate-50 border border-slate-100">
@@ -34,9 +34,9 @@ function UnitHeaderIdentity({
   badge,
   openIncidents,
 }: {
-  unit: NodeUnit;
-  badge: string;
-  openIncidents: number;
+  readonly unit: NodeUnit;
+  readonly badge: string;
+  readonly openIncidents: number;
 }): React.JSX.Element {
   return (
     <div className="flex-1 flex flex-col gap-2">
@@ -75,7 +75,7 @@ function UnitHeaderIdentity({
 
 type UnitHeaderKpi = { label: string; value: string };
 
-function UnitHeaderKpiGrid({ kpis }: { kpis: UnitHeaderKpi[] }): React.JSX.Element {
+function UnitHeaderKpiGrid({ kpis }: { readonly kpis: UnitHeaderKpi[] }): React.JSX.Element {
   return (
     <div className="hidden md:grid grid-cols-2 gap-3 shrink-0">
       {kpis.map(({ label, value }) => (
@@ -96,8 +96,8 @@ export function UnitHeader({
   unit,
   openIncidents,
 }: {
-  unit: NodeUnit;
-  openIncidents: number;
+  readonly unit: NodeUnit;
+  readonly openIncidents: number;
 }): React.JSX.Element {
   const badge = statusBadgeClass(unit.status);
   const kpis = [

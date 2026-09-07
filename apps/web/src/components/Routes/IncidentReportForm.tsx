@@ -21,10 +21,10 @@ import { IncidentCategory, IncidentSeverity } from '../../types/route';
 import ArchonImageUploader from '../ArchonImageUploader';
 
 interface IncidentReportFormProps {
-  routeUuid: string;
-  unitId: string;
-  onClose: () => void;
-  onSuccess?: () => void;
+  readonly routeUuid: string;
+  readonly unitId: string;
+  readonly onClose: () => void;
+  readonly onSuccess?: () => void;
 }
 
 interface FormData {
@@ -55,8 +55,8 @@ const SEVERITIES: { value: IncidentSeverity; label: string; color: string; bg: s
 ];
 
 interface IncidentFormHeaderProps {
-  unitId: string;
-  onClose: () => void;
+  readonly unitId: string;
+  readonly onClose: () => void;
 }
 
 /** Encabezado forense con unidad + botón de cierre (FC163 F2B4 Sub-Batch 4B-2). */
@@ -95,8 +95,8 @@ function IncidentFormHeader({ unitId, onClose }: IncidentFormHeaderProps): React
 }
 
 interface CategorySelectorProps {
-  selected: IncidentCategory;
-  onSelect: (value: IncidentCategory) => void;
+  readonly selected: IncidentCategory;
+  readonly onSelect: (value: IncidentCategory) => void;
 }
 
 /** Selector de categoría del evento (FC163 F2B4 Sub-Batch 4B-2). */
@@ -143,8 +143,8 @@ function CategorySelector({ selected, onSelect }: CategorySelectorProps): React.
 }
 
 interface SeveritySelectorProps {
-  selected: IncidentSeverity;
-  onSelect: (value: IncidentSeverity) => void;
+  readonly selected: IncidentSeverity;
+  readonly onSelect: (value: IncidentSeverity) => void;
 }
 
 /** Selector de grado de severidad (FC163 F2B4 Sub-Batch 4B-2). */
@@ -178,8 +178,8 @@ function SeveritySelector({ selected, onSelect }: SeveritySelectorProps): React.
 }
 
 interface DescriptionFieldProps {
-  value: string;
-  onChange: (v: string) => void;
+  readonly value: string;
+  readonly onChange: (v: string) => void;
 }
 
 /** Textarea de relato de los hechos con contador de caracteres (FC163 F2B4 Sub-Batch 4B-2). */
@@ -217,9 +217,9 @@ function DescriptionField({ value, onChange }: DescriptionFieldProps): React.JSX
 }
 
 interface IncidentFormActionsProps {
-  onClose: () => void;
-  submitting: boolean;
-  hasDescription: boolean;
+  readonly onClose: () => void;
+  readonly submitting: boolean;
+  readonly hasDescription: boolean;
 }
 
 /** Acciones de cancelar/emitir del reporte (FC163 F2B4 Sub-Batch 4B-2). */
@@ -264,11 +264,11 @@ function IncidentFormActions({
 }
 
 interface IncidentFormBodyProps {
-  formData: FormData;
-  setFormData: (f: FormData) => void;
-  error: string | null;
-  submitting: boolean;
-  onClose: () => void;
+  readonly formData: FormData;
+  readonly setFormData: (f: FormData) => void;
+  readonly error: string | null;
+  readonly submitting: boolean;
+  readonly onClose: () => void;
 }
 
 /** Cuerpo del formulario: descripción, evidencia, error, acciones (FC163 F2B4 Sub-Batch 4B-2). */

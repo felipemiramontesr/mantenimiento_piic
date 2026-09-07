@@ -18,9 +18,9 @@ export function MaintenanceSection({
   kmSinceService,
   kmRemaining,
 }: {
-  unit: NodeUnit;
-  kmSinceService: number | null;
-  kmRemaining: number | null;
+  readonly unit: NodeUnit;
+  readonly kmSinceService: number | null;
+  readonly kmRemaining: number | null;
 }): React.JSX.Element {
   return (
     <SectionCard

@@ -9,7 +9,7 @@ export default function ArchonGeoSelector({
   onChange,
   disabled = false,
   originNode,
-}: ArchonGeoSelectorProps): React.JSX.Element {
+}: Readonly<ArchonGeoSelectorProps>): React.JSX.Element {
   const hierarchy = useGeoHierarchyData(value);
   const actions = useGeoActions(
     hierarchy.states,

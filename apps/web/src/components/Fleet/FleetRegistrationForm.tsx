@@ -26,11 +26,11 @@ import {
  */
 
 interface FleetRegistrationFormProps {
-  controller: UseFleetFormReturn;
-  onSuccess: () => Promise<void>;
-  onCancel: () => void;
-  isEdit?: boolean;
-  unitId?: string;
+  readonly controller: UseFleetFormReturn;
+  readonly onSuccess: () => Promise<void>;
+  readonly onCancel: () => void;
+  readonly isEdit?: boolean;
+  readonly unitId?: string;
 }
 
 function getIsFlotillaOrInternal(ownerType: 'FLOTILLA' | 'ARCHONAUT' | null): boolean {
@@ -38,14 +38,14 @@ function getIsFlotillaOrInternal(ownerType: 'FLOTILLA' | 'ARCHONAUT' | null): bo
 }
 
 interface FormPanelsProps {
-  controller: UseFleetFormReturn;
-  isFlotillaOrInternal: boolean;
-  isEdit: boolean;
-  vencimientoVerif: string | undefined;
-  prediction: EnvironmentalPrediction;
-  pronosticoText: string;
-  pronosticoDateStr: string;
-  isPronosticoReady: boolean;
+  readonly controller: UseFleetFormReturn;
+  readonly isFlotillaOrInternal: boolean;
+  readonly isEdit: boolean;
+  readonly vencimientoVerif: string | undefined;
+  readonly prediction: EnvironmentalPrediction;
+  readonly pronosticoText: string;
+  readonly pronosticoDateStr: string;
+  readonly isPronosticoReady: boolean;
 }
 
 /** Compone los 4 paneles de datos + fila de notas/pronóstico (Cond.R-142-H3). */
@@ -89,13 +89,13 @@ function FormPanels({
 }
 
 interface FormActionBarProps {
-  isEdit: boolean;
-  isProcessing: boolean;
-  isSubmitting: boolean;
-  canSubmit: boolean;
-  capturedReason: string | null;
-  onRequestDelete: () => void;
-  onCancel: () => void;
+  readonly isEdit: boolean;
+  readonly isProcessing: boolean;
+  readonly isSubmitting: boolean;
+  readonly canSubmit: boolean;
+  readonly capturedReason: string | null;
+  readonly onRequestDelete: () => void;
+  readonly onCancel: () => void;
 }
 
 function submitButtonLabel(busy: boolean, capturedReason: string | null, isEdit: boolean): string {
@@ -144,16 +144,16 @@ function FormActionBar({
 }
 
 interface FormBodyProps {
-  controller: UseFleetFormReturn;
-  computed: FormComputed;
-  auditFlow: AuditModalFlowResult;
-  isFlotillaOrInternal: boolean;
-  isEdit: boolean;
-  isSubmitting: boolean;
-  error: string | null;
-  resetError: () => void;
-  onCancel: () => void;
-  unitId: string | undefined;
+  readonly controller: UseFleetFormReturn;
+  readonly computed: FormComputed;
+  readonly auditFlow: AuditModalFlowResult;
+  readonly isFlotillaOrInternal: boolean;
+  readonly isEdit: boolean;
+  readonly isSubmitting: boolean;
+  readonly error: string | null;
+  readonly resetError: () => void;
+  readonly onCancel: () => void;
+  readonly unitId: string | undefined;
 }
 
 /** `<form>` + banner + paneles + barra de acciones + modal de auditoría. */

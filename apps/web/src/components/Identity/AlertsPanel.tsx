@@ -124,7 +124,7 @@ const HEADERS: ArchonTableHeader[] = [
   { key: 'actions', label: 'Acciones', align: 'center', width: '12%' },
 ];
 
-function AlertRow(alert: Alert): React.JSX.Element {
+function AlertRow(alert: Readonly<Alert>): React.JSX.Element {
   const badge = SEVERITY_BADGE[alert.severity];
   const dot = SEVERITY_DOT[alert.severity];
   return (

@@ -6,10 +6,10 @@ import { RegistrationState } from './useRegistrationState';
 import { UPA_STAGE_ORDER, UPA_STAGE_LABELS, UPA_STAGE_ICONS } from './constants';
 
 interface TaskRowProps {
-  task: UpaPreviewTask;
-  upaStatusOptions: SelectOption[];
-  details: { taskCode: string; status: string }[];
-  onDetailChange: (taskId: string, value: string) => void;
+  readonly task: UpaPreviewTask;
+  readonly upaStatusOptions: SelectOption[];
+  readonly details: { taskCode: string; status: string }[];
+  readonly onDetailChange: (taskId: string, value: string) => void;
 }
 
 /** Fila de una tarea UPA individual dentro de una etapa expandida
@@ -38,13 +38,13 @@ function TaskRow({
 }
 
 interface StageAccordionProps {
-  stage: UpaTaskStage;
-  tasks: UpaPreviewTask[];
-  isOpen: boolean;
-  onToggle: () => void;
-  upaStatusOptions: SelectOption[];
-  details: { taskCode: string; status: string }[];
-  onDetailChange: (taskId: string, value: string) => void;
+  readonly stage: UpaTaskStage;
+  readonly tasks: UpaPreviewTask[];
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
+  readonly upaStatusOptions: SelectOption[];
+  readonly details: { taskCode: string; status: string }[];
+  readonly onDetailChange: (taskId: string, value: string) => void;
 }
 
 /** Sección colapsable de una etapa UPA (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */

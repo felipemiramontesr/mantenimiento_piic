@@ -3,8 +3,8 @@ import AT from '../../../styles/archonTypography';
 import { RouteLog } from './types';
 
 interface DeltaValueProps {
-  startKm: number;
-  endKm: number;
+  readonly startKm: number;
+  readonly endKm: number;
 }
 
 /** Valor de delta de kilómetros con signo y color según polaridad (FC163 F2B4 Sub-Batch 4B-2). */
@@ -25,8 +25,8 @@ function DeltaValue({ startKm, endKm }: DeltaValueProps): React.JSX.Element {
 }
 
 interface DeltaCellProps {
-  log: RouteLog;
-  className: string;
+  readonly log: RouteLog;
+  readonly className: string;
 }
 
 /** Celda de delta de kilómetros recorridos (FC163 F2B4 Sub-Batch 4B-2). */

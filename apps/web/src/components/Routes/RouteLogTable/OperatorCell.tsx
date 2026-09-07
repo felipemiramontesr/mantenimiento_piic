@@ -4,8 +4,8 @@ import AT from '../../../styles/archonTypography';
 import { UserIndustrial } from '../../../types/user';
 
 interface OperatorCellProps {
-  operator: UserIndustrial | undefined;
-  className: string;
+  readonly operator: UserIndustrial | undefined;
+  readonly className: string;
 }
 
 /** Celda de operador: avatar, nombre y número de empleado (FC163 F2B4 Sub-Batch 4B-2). */

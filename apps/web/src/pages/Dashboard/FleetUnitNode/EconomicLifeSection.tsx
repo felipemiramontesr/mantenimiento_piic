@@ -17,7 +17,7 @@ const RECOMMENDATION_LABEL: Record<string, string> = {
 };
 
 /** Economic-life / replacement-recommendation card for a fleet unit. */
-export function EconomicLifeSection({ unitId }: { unitId: string }): React.JSX.Element {
+export function EconomicLifeSection({ unitId }: { readonly unitId: string }): React.JSX.Element {
   const { data, loading } = useEconomicLife(unitId);
   return (
     <SectionCard title="Vida Económica" icon={<BarChart2 size={16} className="text-[#f2b705]" />}>

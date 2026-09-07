@@ -3,8 +3,8 @@ import { X, CheckCircle2 } from 'lucide-react';
 import { CompletionState } from './useCompletionState';
 
 interface ActionBarProps {
-  state: CompletionState;
-  onCancel: () => void;
+  readonly state: CompletionState;
+  readonly onCancel: () => void;
 }
 
 /** Barra de acciones: cancelar / finalizar servicio (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */

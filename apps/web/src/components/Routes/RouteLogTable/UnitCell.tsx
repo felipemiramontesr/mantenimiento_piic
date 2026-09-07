@@ -4,9 +4,9 @@ import { FleetUnit } from '../../../types/fleet';
 import { RouteLog } from './types';
 
 interface UnitCellProps {
-  log: RouteLog;
-  unit: FleetUnit | undefined;
-  className: string;
+  readonly log: RouteLog;
+  readonly unit: FleetUnit | undefined;
+  readonly className: string;
 }
 
 /** Celda de activo: imagen, ID de unidad, folio de ruta, marca/modelo (FC163 F2B4 Sub-Batch 4B-2). */

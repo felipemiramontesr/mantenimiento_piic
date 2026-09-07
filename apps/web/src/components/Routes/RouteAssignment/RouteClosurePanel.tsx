@@ -24,15 +24,15 @@ function ClosurePanelHeader(): React.JSX.Element {
 }
 
 interface FuelLoadedFieldProps {
-  value: string | number;
-  onChange: (v: string) => void;
-  tankCapacity: number;
-  consumedLiters: number | null;
+  readonly value: string | number;
+  readonly onChange: (v: string) => void;
+  readonly tankCapacity: number;
+  readonly consumedLiters: number | null;
 }
 
 interface FuelConsumptionIndicatorProps {
-  tankCapacity: number;
-  consumedLiters: number | null;
+  readonly tankCapacity: number;
+  readonly consumedLiters: number | null;
 }
 
 /** Indicador de consumo de combustible calculado, o aviso si no hay capacidad de tanque (FC163 F2B5). */
@@ -106,8 +106,8 @@ function FuelLoadedField({
 }
 
 interface FuelAmountFieldProps {
-  value: string | number;
-  onChange: (v: string) => void;
+  readonly value: string | number;
+  readonly onChange: (v: string) => void;
 }
 
 /** Campo de monto total del ticket de combustible (FC163 F2B5). */
@@ -145,8 +145,8 @@ function FuelAmountField({ value, onChange }: FuelAmountFieldProps): React.JSX.E
 }
 
 interface AdditivesChecklistProps {
-  checked: boolean;
-  onChange: (v: boolean) => void;
+  readonly checked: boolean;
+  readonly onChange: (v: boolean) => void;
 }
 
 /** Checkbox de aditivos aplicados (FC163 F2B5). */
@@ -170,8 +170,8 @@ function AdditivesChecklist({ checked, onChange }: AdditivesChecklistProps): Rea
 }
 
 interface TirePressureFieldsProps {
-  tireData: Record<string, string>;
-  onUpdateTire: (pos: string, val: string) => void;
+  readonly tireData: Record<string, string>;
+  readonly onUpdateTire: (pos: string, val: string) => void;
 }
 
 /** Campos de presión de neumáticos por posición (FC163 F2B5). */
@@ -207,8 +207,8 @@ function TirePressureFields({
 }
 
 interface ObservationsFieldProps {
-  value: string;
-  onChange: (v: string) => void;
+  readonly value: string;
+  readonly onChange: (v: string) => void;
 }
 
 /** Campo de observaciones de la misión (FC163 F2B5). */
@@ -234,10 +234,10 @@ function ObservationsField({ value, onChange }: ObservationsFieldProps): React.J
 }
 
 interface ForensicChecklistSectionProps {
-  additivesCheck: boolean;
-  onAdditivesChange: (v: boolean) => void;
-  tireData: Record<string, string>;
-  onUpdateTire: (pos: string, val: string) => void;
+  readonly additivesCheck: boolean;
+  readonly onAdditivesChange: (v: boolean) => void;
+  readonly tireData: Record<string, string>;
+  readonly onUpdateTire: (pos: string, val: string) => void;
 }
 
 /** Checklist forense: aditivos + presión de neumáticos (FC163 F2B5). */
@@ -256,8 +256,8 @@ function ForensicChecklistSection({
 }
 
 interface FuelEvidenceSectionProps {
-  fuelImages: string[];
-  onChange: (imgs: string[]) => void;
+  readonly fuelImages: string[];
+  readonly onChange: (imgs: string[]) => void;
 }
 
 /** Sección de captura de evidencia fotográfica del ticket de combustible (FC163 F2B5). */

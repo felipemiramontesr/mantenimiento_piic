@@ -6,8 +6,8 @@ import { CompletionState } from './useCompletionState';
 import { inputClass } from './constants';
 
 interface OdometerFieldsProps {
-  log: MaintenanceLog;
-  state: CompletionState;
+  readonly log: MaintenanceLog;
+  readonly state: CompletionState;
 }
 
 /** Campos de odómetro de entrada/salida del taller (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
@@ -62,8 +62,8 @@ function OdometerFields({ log, state }: OdometerFieldsProps): React.JSX.Element 
 }
 
 interface ClosureDataPanelProps {
-  log: MaintenanceLog;
-  state: CompletionState;
+  readonly log: MaintenanceLog;
+  readonly state: CompletionState;
 }
 
 /** Panel "Datos de Cierre": odómetros de entrada/salida + fecha

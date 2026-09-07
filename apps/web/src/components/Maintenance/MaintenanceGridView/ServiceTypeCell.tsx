@@ -3,7 +3,7 @@ import { MaintenanceLog } from '../../../types/maintenance';
 import AT from '../../../styles/archonTypography';
 
 interface ServiceTypeCellProps {
-  log: MaintenanceLog;
+  readonly log: MaintenanceLog;
 }
 
 /** Celda de tipo de servicio: badge "Servicio Menor" vs "Preventivo" (FC165 F2 Slice 2.1B). */

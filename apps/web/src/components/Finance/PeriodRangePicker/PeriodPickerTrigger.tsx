@@ -2,9 +2,9 @@ import React from 'react';
 import { ChevronDown, Calendar } from 'lucide-react';
 
 interface PeriodPickerTriggerProps {
-  appliedLabel: string;
-  isOpen: boolean;
-  onToggle: () => void;
+  readonly appliedLabel: string;
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
 }
 
 /** Botón disparador que muestra el rango aplicado (FC163 F2B4 Sub-Batch 4B-2). */

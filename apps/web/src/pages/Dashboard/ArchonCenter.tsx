@@ -8,14 +8,14 @@ import AccessControlSlideOver from '../../components/Identity/AccessControlSlide
 import CategoryAnalyticsCard from '../../components/Dashboard/CategoryAnalyticsCard';
 
 interface CenterModuleCardProps {
-  label: string;
-  value: string | number;
-  Icon: React.ElementType;
-  color: string;
-  description: string;
-  path: string;
-  loading: boolean;
-  onNavigate: (path: string) => void;
+  readonly label: string;
+  readonly value: string | number;
+  readonly Icon: React.ElementType;
+  readonly color: string;
+  readonly description: string;
+  readonly path: string;
+  readonly loading: boolean;
+  readonly onNavigate: (path: string) => void;
 }
 
 /** Tarjeta de KPI del centro de comando, con estado de carga y navegación (FC163 F2B4 Sub-Batch 4B-1). */

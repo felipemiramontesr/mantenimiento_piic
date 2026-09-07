@@ -2,10 +2,10 @@ import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface EvidenceUrlRowProps {
-  url: string;
-  idx: number;
-  onUpdate: (idx: number, val: string) => void;
-  onRemove: (idx: number) => void;
+  readonly url: string;
+  readonly idx: number;
+  readonly onUpdate: (idx: number, val: string) => void;
+  readonly onRemove: (idx: number) => void;
 }
 
 /** Fila de una URL de evidencia con botón de eliminar (FC163 F2B4 Sub-Batch 4B-2). */
@@ -33,10 +33,10 @@ function EvidenceUrlRow({ url, idx, onUpdate, onRemove }: EvidenceUrlRowProps): 
 }
 
 interface EvidenceInputProps {
-  urls: string[];
-  notes: string;
-  onUrlsChange: (urls: string[]) => void;
-  onNotesChange: (notes: string) => void;
+  readonly urls: string[];
+  readonly notes: string;
+  readonly onUrlsChange: (urls: string[]) => void;
+  readonly onNotesChange: (notes: string) => void;
 }
 
 /** Captura de URLs de evidencia + notas para el cierre de una tarea (FC163 F2B4 Sub-Batch 4B-2). */

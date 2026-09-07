@@ -8,8 +8,8 @@ import { useSovereignLayout } from '../../context/SovereignLayoutContext';
 import AT from '../../styles/archonTypography';
 
 interface ProfileHeaderActionsProps {
-  onRefresh: () => void;
-  onEditClick: () => void;
+  readonly onRefresh: () => void;
+  readonly onEditClick: () => void;
 }
 
 /** Botones de refrescar/editar perfil en el header del muro social (FC163 F2B4 Sub-Batch 4B-1). */
@@ -42,11 +42,11 @@ function ProfileHeaderActions({
 }
 
 interface NewPostFormProps {
-  username: string;
-  newContent: string;
-  onContentChange: (v: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  postError: string | null;
+  readonly username: string;
+  readonly newContent: string;
+  readonly onContentChange: (v: string) => void;
+  readonly onSubmit: (e: React.FormEvent) => void;
+  readonly postError: string | null;
 }
 
 /** Formulario de creación de publicación en el muro social (FC163 F2B4 Sub-Batch 4B-1). */
@@ -102,14 +102,14 @@ function NewPostForm({
 }
 
 interface PostsWallProps {
-  isLoading: boolean;
-  error: string | null;
-  posts: SocialPost[];
-  currentUserId: number | undefined;
-  onDeletePost: (id: number) => void;
-  onReact: (postId: number, type: ReactionType) => void;
-  fetchComments: ReturnType<typeof useSocialPosts>['fetchComments'];
-  addComment: ReturnType<typeof useSocialPosts>['addComment'];
+  readonly isLoading: boolean;
+  readonly error: string | null;
+  readonly posts: SocialPost[];
+  readonly currentUserId: number | undefined;
+  readonly onDeletePost: (id: number) => void;
+  readonly onReact: (postId: number, type: ReactionType) => void;
+  readonly fetchComments: ReturnType<typeof useSocialPosts>['fetchComments'];
+  readonly addComment: ReturnType<typeof useSocialPosts>['addComment'];
 }
 
 type PostsListProps = Omit<PostsWallProps, 'isLoading' | 'error'>;
@@ -239,8 +239,8 @@ function useProfileWallActions(
 }
 
 interface ProfileWallHeaderProps {
-  onRefresh: () => void;
-  onEditClick: () => void;
+  readonly onRefresh: () => void;
+  readonly onEditClick: () => void;
 }
 
 /** Título del muro social + acciones de refrescar/editar (FC163 F2B4 Sub-Batch 4B-1). */

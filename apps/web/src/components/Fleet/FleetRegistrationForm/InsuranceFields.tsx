@@ -73,8 +73,8 @@ function PolicyAndCompanyFields({
 }
 
 type InsuranceExpiryAndCostFieldsProps = {
-  formData: Pick<CreateFleetUnit, 'insuranceExpiryDate' | 'insuranceCost'>;
-  setFormData: SetFormData;
+  readonly formData: Pick<CreateFleetUnit, 'insuranceExpiryDate' | 'insuranceCost'>;
+  readonly setFormData: SetFormData;
 };
 
 function InsuranceExpiryAndCostFields({
