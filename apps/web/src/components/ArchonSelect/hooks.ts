@@ -60,7 +60,7 @@ export function usePortalClickOutside(
       if (
         containerRef.current &&
         !containerRef.current.contains(target) &&
-        !(portalRoot && portalRoot.contains(target))
+        !portalRoot?.contains(target)
       ) {
         onOutside();
       }

@@ -91,6 +91,232 @@ const fallbackMeta: StatusMeta = {
   border: 'border-slate-200',
 };
 
+interface HistoryHeaderProps {
+  log: MaintenanceLog;
+  onBack: () => void;
+}
+
+/** FC166 Track D — extracted from MaintenanceHistoryDetail to satisfy max-lines-per-function. */
+const HistoryHeader: React.FC<HistoryHeaderProps> = ({ log, onBack }) => (
+  <div className="flex items-center gap-4">
+    <button
+      type="button"
+      onClick={onBack}
+      className="flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 text-[#0f2a44] text-archon-md font-black uppercase tracking-wider transition-all duration-200"
+    >
+      <ArrowLeft size={14} />
+      Volver
+    </button>
+    <div>
+      <p className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
+        Historial de Servicio
+      </p>
+      <p className="text-[15px] font-black text-[#0f2a44]">
+        MNT-{String(log.id).padStart(5, '0')} · {log.unit_id}
+      </p>
+    </div>
+    {/* FC 041 F.E — exportación PDF con gate offline (T1) */}
+    <button
+      type="button"
+      data-testid="download-pdf-btn"
+      disabled={!isRemoteExportAllowed(true, navigator.onLine)}
+      title={
+        isRemoteExportAllowed(true, navigator.onLine)
+          ? 'Descargar PDF de la orden'
+          : 'Acción no disponible en modo sin conexión'
+      }
+      onClick={async (): Promise<void> => {
+        const response = await api.get(`/reports/maintenance/${log.uuid}/pdf`, {
+          responseType: 'blob',
+        });
+        const url = URL.createObjectURL(response.data as Blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `orden_${log.uuid}.pdf`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      }}
+      className="ml-auto flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44] text-white text-archon-md font-black uppercase tracking-wider transition-all duration-200 hover:bg-[#0f2a44]/90 disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      <FileDown size={14} />
+      Descargar PDF
+    </button>
+  </div>
+);
+
+/** FC166 Track D — extracted from MaintenanceHistoryDetail to satisfy max-lines-per-function. */
+const ServiceSummaryCard: React.FC<{ log: MaintenanceLog }> = ({ log }) => (
+  <div className="card-archon-sovereign bg-white p-8 [--card-accent:#0f2a44]">
+    <div className="card-sovereign-header mb-6">
+      <Wrench className="text-[var(--card-accent)]" size={20} />
+      <h3 className="card-sovereign-title text-archon-lg opacity-100">DATOS DEL SERVICIO</h3>
+    </div>
+    <dl className="space-y-3">
+      {[
+        {
+          icon: <Wrench size={13} />,
+          label: 'Tipo',
+          value: SERVICE_LABELS[log.service_type] ?? log.service_type,
+        },
+        {
+          icon: <Gauge size={13} />,
+          label: 'Odómetro',
+          value: `${Number(log.odometer_at_service).toLocaleString()} KM`,
+        },
+        { icon: <Calendar size={13} />, label: 'Fecha', value: formatDate(log.service_date) },
+        { icon: <User size={13} />, label: 'Técnico', value: log.technician },
+        {
+          icon: <DollarSign size={13} />,
+          label: 'Costo',
+          value: `$${Number(log.cost).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })} MXN`,
+        },
+      ].map(({ icon, label, value }) => (
+        <div key={label} className="flex items-center gap-3">
+          <span className="text-[#0f2a44]/30 shrink-0">{icon}</span>
+          <span className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.12em] w-16 shrink-0">
+            {label}
+          </span>
+          <span className="text-archon-label font-bold text-[#0f2a44] truncate">{value}</span>
+        </div>
+      ))}
+    </dl>
+  </div>
+);
+
+interface TaskCountSummaryCardProps {
+  loading: boolean;
+  grouped: Record<string, MaintenanceTaskDetail[]>;
+  totalCount: number;
+}
+
+/** FC166 Track D — extracted from MaintenanceHistoryDetail to satisfy max-lines-per-function. */
+const TaskCountSummaryCard: React.FC<TaskCountSummaryCardProps> = ({
+  loading,
+  grouped,
+  totalCount,
+}) => (
+  <div className="card-archon-sovereign bg-white p-8 [--card-accent:#0f2a44]">
+    <div className="card-sovereign-header mb-6">
+      <ClipboardCheck className="text-[var(--card-accent)]" size={20} />
+      <h3 className="card-sovereign-title text-archon-lg opacity-100">RESUMEN DE TAREAS</h3>
+    </div>
+    {loading ? (
+      <p className="text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
+        Cargando...
+      </p>
+    ) : (
+      <dl className="space-y-2">
+        {Object.entries(STATUS_META).map(([code, meta]) => {
+          const count = (grouped[code] ?? []).length;
+          if (count === 0) return null;
+          return (
+            <div key={code} className="flex items-center gap-3">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-archon-sm font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
+              >
+                {meta.icon}
+                {code}
+              </span>
+              <span className="text-archon-lg font-black text-[#0f2a44]">{count}</span>
+            </div>
+          );
+        })}
+        <div className="pt-2 border-t border-[#0f2a44]/5 flex items-center gap-3">
+          <span className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.12em]">
+            Total
+          </span>
+          <span className="text-[15px] font-black text-[#0f2a44]">{totalCount}</span>
+        </div>
+      </dl>
+    )}
+  </div>
+);
+
+/** FC166 Track D — extracted from TaskDetailList to satisfy max-lines-per-function. */
+const TaskDetailRow: React.FC<{ task: MaintenanceTaskDetail }> = ({ task }) => {
+  const meta = STATUS_META[task.status] ?? fallbackMeta;
+  return (
+    <div className="px-10 py-4 flex items-center gap-8 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200">
+      {/* Status badge */}
+      <div className="shrink-0 w-28">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-archon-sm font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
+        >
+          {meta.icon}
+          {task.statusLabel}
+        </span>
+      </div>
+
+      {/* Task info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-archon-lg font-bold text-[#0f2a44] truncate">{task.label}</span>
+          {task.isCritical && (
+            <span
+              className={`${AT.statusBadge} bg-red-500/10 text-red-700 border-red-500/20 shrink-0`}
+            >
+              ● CRÍTICO
+            </span>
+          )}
+        </div>
+        <span className="text-archon-sm font-black text-[#0f2a44]/30 uppercase tracking-[0.15em]">
+          {task.taskCode}
+        </span>
+      </div>
+
+      {/* Notes */}
+      {task.notes && (
+        <p className="shrink-0 max-w-[200px] text-archon-md text-[#0f2a44]/50 italic truncate">
+          {task.notes}
+        </p>
+      )}
+    </div>
+  );
+};
+
+interface TaskDetailListProps {
+  loading: boolean;
+  error: string | null;
+  detail: MaintenanceFullDetail | null;
+}
+
+/** FC166 Track D — extracted from MaintenanceHistoryDetail to satisfy max-lines-per-function. */
+const TaskDetailList: React.FC<TaskDetailListProps> = ({ loading, error, detail }) => (
+  <div className="card-archon-sovereign bg-white [--card-accent:#0f2a44] !pb-2">
+    <div className="card-sovereign-header p-10 pb-0">
+      <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
+      <h3 className="card-sovereign-title text-archon-xl opacity-100">DETALLE DE TAREAS</h3>
+    </div>
+
+    {loading && (
+      <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
+        Cargando tareas...
+      </div>
+    )}
+
+    {error && (
+      <div className="p-8 text-center text-archon-label font-bold text-red-600">{error}</div>
+    )}
+
+    {!loading && !error && detail?.details.length === 0 && (
+      <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
+        Este servicio no tiene tareas registradas.
+      </div>
+    )}
+
+    {!loading && !error && detail && detail.details.length > 0 && (
+      <div className="divide-y divide-[#0f2a44]/5">
+        {detail.details.map((task) => (
+          <TaskDetailRow key={task.taskCode} task={task} />
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log, onBack }) => {
   const [detail, setDetail] = useState<MaintenanceFullDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -124,205 +350,20 @@ const MaintenanceHistoryDetail: React.FC<MaintenanceHistoryDetailProps> = ({ log
   return (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full pb-20 space-y-8">
       {/* ── HEADER ────────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44]/5 hover:bg-[#0f2a44]/10 text-[#0f2a44] text-archon-md font-black uppercase tracking-wider transition-all duration-200"
-        >
-          <ArrowLeft size={14} />
-          Volver
-        </button>
-        <div>
-          <p className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
-            Historial de Servicio
-          </p>
-          <p className="text-[15px] font-black text-[#0f2a44]">
-            MNT-{String(log.id).padStart(5, '0')} · {log.unit_id}
-          </p>
-        </div>
-        {/* FC 041 F.E — exportación PDF con gate offline (T1) */}
-        <button
-          type="button"
-          data-testid="download-pdf-btn"
-          disabled={!isRemoteExportAllowed(true, navigator.onLine)}
-          title={
-            isRemoteExportAllowed(true, navigator.onLine)
-              ? 'Descargar PDF de la orden'
-              : 'Acción no disponible en modo sin conexión'
-          }
-          onClick={async (): Promise<void> => {
-            const response = await api.get(`/reports/maintenance/${log.uuid}/pdf`, {
-              responseType: 'blob',
-            });
-            const url = URL.createObjectURL(response.data as Blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = `orden_${log.uuid}.pdf`;
-            anchor.click();
-            URL.revokeObjectURL(url);
-          }}
-          className="ml-auto flex items-center gap-2 px-3 py-2 rounded-[4px] bg-[#0f2a44] text-white text-archon-md font-black uppercase tracking-wider transition-all duration-200 hover:bg-[#0f2a44]/90 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <FileDown size={14} />
-          Descargar PDF
-        </button>
-      </div>
+      <HistoryHeader log={log} onBack={onBack} />
 
       {/* ── SUMMARY CARDS ──────────────────────────────────────────────────────── */}
       <div className="archon-grid-2-sovereign items-start gap-10">
-        <div className="card-archon-sovereign bg-white p-8 [--card-accent:#0f2a44]">
-          <div className="card-sovereign-header mb-6">
-            <Wrench className="text-[var(--card-accent)]" size={20} />
-            <h3 className="card-sovereign-title text-archon-lg opacity-100">DATOS DEL SERVICIO</h3>
-          </div>
-          <dl className="space-y-3">
-            {[
-              {
-                icon: <Wrench size={13} />,
-                label: 'Tipo',
-                value: SERVICE_LABELS[log.service_type] ?? log.service_type,
-              },
-              {
-                icon: <Gauge size={13} />,
-                label: 'Odómetro',
-                value: `${Number(log.odometer_at_service).toLocaleString()} KM`,
-              },
-              { icon: <Calendar size={13} />, label: 'Fecha', value: formatDate(log.service_date) },
-              { icon: <User size={13} />, label: 'Técnico', value: log.technician },
-              {
-                icon: <DollarSign size={13} />,
-                label: 'Costo',
-                value: `$${Number(log.cost).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} MXN`,
-              },
-            ].map(({ icon, label, value }) => (
-              <div key={label} className="flex items-center gap-3">
-                <span className="text-[#0f2a44]/30 shrink-0">{icon}</span>
-                <span className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.12em] w-16 shrink-0">
-                  {label}
-                </span>
-                <span className="text-archon-label font-bold text-[#0f2a44] truncate">{value}</span>
-              </div>
-            ))}
-          </dl>
-        </div>
-
-        {/* Task count summary */}
-        <div className="card-archon-sovereign bg-white p-8 [--card-accent:#0f2a44]">
-          <div className="card-sovereign-header mb-6">
-            <ClipboardCheck className="text-[var(--card-accent)]" size={20} />
-            <h3 className="card-sovereign-title text-archon-lg opacity-100">RESUMEN DE TAREAS</h3>
-          </div>
-          {loading ? (
-            <p className="text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
-              Cargando...
-            </p>
-          ) : (
-            <dl className="space-y-2">
-              {Object.entries(STATUS_META).map(([code, meta]) => {
-                const count = (grouped[code] ?? []).length;
-                if (count === 0) return null;
-                return (
-                  <div key={code} className="flex items-center gap-3">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-archon-sm font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
-                    >
-                      {meta.icon}
-                      {code}
-                    </span>
-                    <span className="text-archon-lg font-black text-[#0f2a44]">{count}</span>
-                  </div>
-                );
-              })}
-              <div className="pt-2 border-t border-[#0f2a44]/5 flex items-center gap-3">
-                <span className="text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.12em]">
-                  Total
-                </span>
-                <span className="text-[15px] font-black text-[#0f2a44]">
-                  {detail?.details.length ?? 0}
-                </span>
-              </div>
-            </dl>
-          )}
-        </div>
+        <ServiceSummaryCard log={log} />
+        <TaskCountSummaryCard
+          loading={loading}
+          grouped={grouped}
+          totalCount={detail?.details.length ?? 0}
+        />
       </div>
 
       {/* ── TASK DETAIL LIST ──────────────────────────────────────────────────── */}
-      <div className="card-archon-sovereign bg-white [--card-accent:#0f2a44] !pb-2">
-        <div className="card-sovereign-header p-10 pb-0">
-          <ClipboardCheck className="text-[var(--card-accent)]" size={22} />
-          <h3 className="card-sovereign-title text-archon-xl opacity-100">DETALLE DE TAREAS</h3>
-        </div>
-
-        {loading && (
-          <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/40 uppercase tracking-[0.2em]">
-            Cargando tareas...
-          </div>
-        )}
-
-        {error && (
-          <div className="p-8 text-center text-archon-label font-bold text-red-600">{error}</div>
-        )}
-
-        {!loading && !error && detail && detail.details.length === 0 && (
-          <div className="p-12 text-center text-archon-base font-black text-[#0f2a44]/30 uppercase tracking-[0.2em]">
-            Este servicio no tiene tareas registradas.
-          </div>
-        )}
-
-        {!loading && !error && detail && detail.details.length > 0 && (
-          <div className="divide-y divide-[#0f2a44]/5">
-            {detail.details.map((task) => {
-              const meta = STATUS_META[task.status] ?? fallbackMeta;
-              return (
-                <div
-                  key={task.taskCode}
-                  className="px-10 py-4 flex items-center gap-8 hover:bg-[#0f2a44]/[0.02] transition-colors duration-200"
-                >
-                  {/* Status badge */}
-                  <div className="shrink-0 w-28">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-archon-sm font-black uppercase tracking-wider ${meta.bg} ${meta.text} ${meta.border}`}
-                    >
-                      {meta.icon}
-                      {task.statusLabel}
-                    </span>
-                  </div>
-
-                  {/* Task info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-archon-lg font-bold text-[#0f2a44] truncate">
-                        {task.label}
-                      </span>
-                      {task.isCritical && (
-                        <span
-                          className={`${AT.statusBadge} bg-red-500/10 text-red-700 border-red-500/20 shrink-0`}
-                        >
-                          ● CRÍTICO
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-archon-sm font-black text-[#0f2a44]/30 uppercase tracking-[0.15em]">
-                      {task.taskCode}
-                    </span>
-                  </div>
-
-                  {/* Notes */}
-                  {task.notes && (
-                    <p className="shrink-0 max-w-[200px] text-archon-md text-[#0f2a44]/50 italic truncate">
-                      {task.notes}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <TaskDetailList loading={loading} error={error} detail={detail} />
     </div>
   );
 };

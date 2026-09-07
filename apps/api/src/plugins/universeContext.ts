@@ -23,7 +23,7 @@ export default async function universeContextPlugin(fastify: FastifyInstance): P
     const user = request.user as
       | { id?: number; roleId?: number; permissions?: string[] }
       | undefined;
-    if (!user || !user.id) return;
+    if (!user?.id) return;
 
     const { roleId = -1, permissions = [] } = user;
     const isOmnipotent = roleId === 0 || permissions.includes('*');

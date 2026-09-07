@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import requirePermission from '../middleware/requirePermission';
 import {
   getDashboard,

@@ -1,5 +1,5 @@
 import { RowDataPacket } from 'mysql2';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import db from './db';
 import { outboundFetch } from './outboundFetch';
 

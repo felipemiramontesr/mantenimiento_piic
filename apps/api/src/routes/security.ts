@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import db from '../services/db';
 import { logSecurityEvent } from '../services/securityLog';
 import requirePermission from '../middleware/requirePermission';

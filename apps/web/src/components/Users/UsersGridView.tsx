@@ -14,19 +14,19 @@ const matchFieldInUser = (
   if (u.username?.toLowerCase().includes(query)) {
     return { label: 'Empleado', value: u.username };
   }
-  if (u.fullName && u.fullName.toLowerCase().includes(query)) {
+  if (u.fullName?.toLowerCase().includes(query)) {
     return { label: 'Nombre', value: u.fullName };
   }
   if (u.email?.toLowerCase().includes(query)) {
     return { label: 'Email', value: u.email };
   }
-  if (u.employeeNumber && u.employeeNumber.toLowerCase().includes(query)) {
+  if (u.employeeNumber?.toLowerCase().includes(query)) {
     return { label: 'No. Empleado', value: u.employeeNumber };
   }
-  if (u.roleName && u.roleName.toLowerCase().includes(query)) {
+  if (u.roleName?.toLowerCase().includes(query)) {
     return { label: 'Rol', value: u.roleName };
   }
-  if (u.department && u.department.toLowerCase().includes(query)) {
+  if (u.department?.toLowerCase().includes(query)) {
     return { label: 'Depto', value: u.department };
   }
   return null;

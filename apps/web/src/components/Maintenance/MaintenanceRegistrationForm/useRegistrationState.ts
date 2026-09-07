@@ -156,7 +156,7 @@ function useMaintenanceDerived(
 ): MaintenanceDerived {
   const isMineUnit =
     Number(unit?.maintIntervalKm ?? agencyDefaultIntervalKm) === mineUnitIntervalKm;
-  const hasCascadeTasks = upaPreview !== null && upaPreview.some((t) => t.stage === 'cascade');
+  const hasCascadeTasks = upaPreview?.some((t) => t.stage === 'cascade') ?? false;
   // Mine units without cascade → In Situ; agency milestones + mine cascade → Taller
   const isInProgress = !isMineUnit || hasCascadeTasks;
   const cascadeLevel: UpaPackageLevel | null = ((): UpaPackageLevel | null => {

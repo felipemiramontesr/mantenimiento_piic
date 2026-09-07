@@ -48,7 +48,7 @@ export function mapUserResponse(user: RowDataPacket): MappedUser {
   }
   // Plan Omega: data URIs pass through directly, legacy filenames use endpoint
   let pic = null;
-  if (img && img.startsWith('data:')) {
+  if (img?.startsWith('data:')) {
     pic = img;
   } else if (img) {
     pic = `/v1/users/${user.id}/profile-image`;

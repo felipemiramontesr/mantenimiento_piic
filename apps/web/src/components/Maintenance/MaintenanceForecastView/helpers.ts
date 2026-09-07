@@ -29,11 +29,11 @@ export const matchFieldInForecast = (
   if (row.unitId.toLowerCase().includes(query)) {
     return { label: 'Unidad', value: row.unitId };
   }
-  if (row.departamento && row.departamento.toLowerCase().includes(query)) {
+  if (row.departamento?.toLowerCase().includes(query)) {
     return { label: 'Depto', value: row.departamento };
   }
   const svcLabel = SERVICE_LABELS[row.projectedServiceType];
-  if (svcLabel && svcLabel.toLowerCase().includes(query)) {
+  if (svcLabel?.toLowerCase().includes(query)) {
     return { label: 'Servicio', value: svcLabel };
   }
   return null;

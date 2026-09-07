@@ -128,7 +128,7 @@ async function handleRefresh(request: FastifyRequest, reply: FastifyReply): Prom
       type: string;
       tenant_id?: number | null;
     }>();
-    if (!decoded || decoded.type !== 'refresh') {
+    if (decoded?.type !== 'refresh') {
       return reply.code(401).send({ error: 'INVALID_TOKEN_TYPE' });
     }
     const result = await SessionService.refresh(decoded.id, decoded.tenant_id);

@@ -10,8 +10,8 @@
  *   (d) validación anti-IP-privada/link-local sobre TODAS las IPs resueltas.
  * T3: Circuit Breaker por host — umbral 50% en ventana 10s · recovery 30s (L §11).
  */
-import * as dns from 'dns';
-import * as https from 'https';
+import * as dns from 'node:dns';
+import * as https from 'node:https';
 
 import { logSecurityEvent } from './securityLog';
 

@@ -11,7 +11,7 @@ function SnapshotDiff({ before, after, onlyDiffs }: SnapshotDiffProps): React.Re
   const allKeys = Array.from(new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]));
 
   const visibleKeys = onlyDiffs
-    ? allKeys.filter((k) => JSON.stringify((before ?? {})[k]) !== JSON.stringify((after ?? {})[k]))
+    ? allKeys.filter((k) => JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k]))
     : allKeys;
 
   if (visibleKeys.length === 0) {
@@ -29,8 +29,8 @@ function SnapshotDiff({ before, after, onlyDiffs }: SnapshotDiffProps): React.Re
         <span>Después</span>
       </div>
       {visibleKeys.map((key) => {
-        const bVal = JSON.stringify((before ?? {})[key] ?? null);
-        const aVal = JSON.stringify((after ?? {})[key] ?? null);
+        const bVal = JSON.stringify(before?.[key] ?? null);
+        const aVal = JSON.stringify(after?.[key] ?? null);
         const changed = bVal !== aVal;
         return (
           <React.Fragment key={key}>
