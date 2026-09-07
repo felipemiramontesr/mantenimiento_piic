@@ -15,7 +15,7 @@ interface TallerEntry {
   reviewCount: number;
 }
 
-function StarBar({ value }: { value: number }): React.ReactElement {
+function StarBar({ value }: Readonly<{ value: number }>): React.ReactElement {
   const rounded = Math.round(value);
   return (
     <div className="flex items-center gap-0.5">

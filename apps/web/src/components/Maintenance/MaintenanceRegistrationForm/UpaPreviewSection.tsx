@@ -126,7 +126,11 @@ function UpaStageList({
 
 /** Sección "Revisión de Tareas UPA": carga/vacío/lista de etapas
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation — sub-split de MaintenanceRegistrationForm). */
-function UpaPreviewSection({ state }: { state: RegistrationState }): React.JSX.Element | null {
+function UpaPreviewSection({
+  state,
+}: {
+  readonly state: RegistrationState;
+}): React.JSX.Element | null {
   if (!state.selectedUnit) return null;
   return (
     <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#0f2a44]">
