@@ -2,6 +2,7 @@ import React from 'react';
 import { ClipboardCheck, User, DollarSign } from 'lucide-react';
 import ArchonField from '../../ArchonField';
 import ArchonSelect from '../../ArchonSelect';
+import CurrencyAmountField from '../CurrencyAmountField';
 import { RegistrationState } from './useRegistrationState';
 
 /** Panel "Datos Operativos": técnico ejecutor + costo del servicio
@@ -24,24 +25,7 @@ function OperationalPanel({ state }: { state: RegistrationState }): React.JSX.El
           />
         </ArchonField>
         <ArchonField label="Costo del Servicio" icon={DollarSign}>
-          <div className="flex items-center w-full h-11 bg-[#0f2a44]/5 border-0 border-b-2 border-solid border-[#0f2a44]/10 focus-within:border-b-[#f2b705] focus-within:bg-white focus-within:shadow-[0_4px_12px_rgba(15,42,68,0.05)] px-4 rounded-[4px] transition-all duration-300">
-            <span className="text-[#0f2a44]/40 font-bold text-archon-lg">$</span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              inputMode="decimal"
-              placeholder="Ej: 3,450.00"
-              className="flex-1 w-full bg-transparent px-2 py-0 border-none outline-none focus:ring-0 text-archon-lg font-mono text-emerald-600 font-bold placeholder:text-[#0f2a44]/30 placeholder:font-normal placeholder:text-archon-lg placeholder:font-sans placeholder:tracking-normal"
-              value={state.cost || ''}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
-                state.setCost(e.target.valueAsNumber)
-              }
-            />
-            <span className="text-archon-base font-black text-slate-400 uppercase tracking-widest pointer-events-none">
-              MXN
-            </span>
-          </div>
+          <CurrencyAmountField value={state.cost} onChange={state.setCost} />
         </ArchonField>
       </div>
     </div>

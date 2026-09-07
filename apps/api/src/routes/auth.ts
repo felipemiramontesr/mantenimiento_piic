@@ -52,6 +52,49 @@ function refreshCookieOpts(): {
   };
 }
 
+/** Shared shape of the "session issued" success branch of login/refresh/switch-tenant
+ * (FC166 Track A.2 — extraída para extinguir la duplicación S6759-adjacent detectada
+ * por SonarCloud entre handleLogin y handleSwitchTenant, isomorfa: mismo JWT/cookie
+ * emitidos byte a byte, 0 cambio de comportamiento). */
+interface SessionSuccessResult {
+  userId: number;
+  username: string;
+  mapped: SessionService.MappedUser;
+  tenantId: number | null;
+  permissions: string[];
+  ownerType: string | null;
+  availableTenants: number[];
+}
+
+/** Firma access+refresh JWT y responde con la cookie httpOnly — único punto de
+ * emisión de sesión para /login y /switch-tenant (FC166 Track A.2). */
+function issueSessionResponse(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  result: SessionSuccessResult
+): FastifyReply {
+  const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
+  const token = request.server.jwt.sign({
+    id: result.userId,
+    username: result.username,
+    roleId: mapped.roleId,
+    roleName: mapped.roleName,
+    permissions,
+    type: 'access',
+    tenant_id: tenantId,
+    owner_type: ownerType,
+  });
+  const refreshToken = request.server.jwt.sign(
+    { id: result.userId, type: 'refresh', tenant_id: tenantId },
+    { expiresIn: '7d' }
+  );
+  return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts()).send({
+    success: true,
+    token,
+    user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
+  });
+}
+
 async function handleLogin(
   request: FastifyRequest<{ Body: { username?: string; password?: string } }>,
   reply: FastifyReply
@@ -68,26 +111,7 @@ async function handleLogin(
     if (!result.ok) {
       return reply.code(401).send({ error: result.errorCode });
     }
-    const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
-    const token = request.server.jwt.sign({
-      id: result.userId,
-      username: result.username,
-      roleId: mapped.roleId,
-      roleName: mapped.roleName,
-      permissions,
-      type: 'access',
-      tenant_id: tenantId,
-      owner_type: ownerType,
-    });
-    const refreshToken = request.server.jwt.sign(
-      { id: result.userId, type: 'refresh', tenant_id: tenantId },
-      { expiresIn: '7d' }
-    );
-    return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts()).send({
-      success: true,
-      token,
-      user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
-    });
+    return issueSessionResponse(request, reply, result);
   } catch (e) {
     if (e instanceof MultiMembershipHaltError) {
       return haltMultiMembership(request, reply, e);
@@ -170,28 +194,9 @@ async function handleSwitchTenant(
         ...(result.message ? { message: result.message } : {}),
       });
     }
-    const { mapped, tenantId, permissions, ownerType, availableTenants } = result;
-    const token = request.server.jwt.sign({
-      id: result.userId,
-      username: result.username,
-      roleId: mapped.roleId,
-      roleName: mapped.roleName,
-      permissions,
-      type: 'access',
-      tenant_id: tenantId,
-      owner_type: ownerType,
-    });
-    const refreshToken = request.server.jwt.sign(
-      { id: result.userId, type: 'refresh', tenant_id: tenantId },
-      { expiresIn: '7d' }
-    );
     // R2b (Bravo) — reemitir la cookie con los MISMOS atributos que /login,
     // si no la cookie vieja sin tenant_id gana en el próximo /refresh.
-    return reply.setCookie('refresh_token', refreshToken, refreshCookieOpts()).send({
-      success: true,
-      token,
-      user: { ...mapped, permissions, ownerType, tenantId, availableTenants },
-    });
+    return issueSessionResponse(request, reply, result);
   } catch (e) {
     request.log.error({ route: '/switch-tenant', err: e }, 'Switch-tenant failed');
     return reply.code(500).send({ success: false, code: 'INTERNAL_ERROR' });

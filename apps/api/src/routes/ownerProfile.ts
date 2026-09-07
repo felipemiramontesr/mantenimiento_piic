@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { z } from 'zod';
 import db from '../services/db';
@@ -126,258 +126,268 @@ async function applySpecialtiesUpdate(
   }
 }
 
+/** GET /catalogs/specialties y GET /catalogs/areas comparten el mismo esqueleto
+ * (jwtGuard + 1 SELECT + reply) — extraído para extinguir la duplicación
+ * detectada por SonarCloud entre ambos handlers (FC166 Track A.2, isomorfo). */
+async function handleCatalogFetch(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  query: string,
+  failCode: string
+): Promise<FastifyReply> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+  }
+  try {
+    const [rows] = await db.execute<RowDataPacket[]>(query);
+    return reply.send({ success: true, data: rows });
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send({ success: false, code: failCode });
+  }
+}
+
+async function handleGetSpecialtiesCatalog(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  return handleCatalogFetch(
+    request,
+    reply,
+    "SELECT code, label FROM common_catalogs WHERE category = 'SPECIALTY' ORDER BY label ASC",
+    'SPECIALTIES_FETCH_FAIL'
+  );
+}
+
+async function handleGetAreasCatalog(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  return handleCatalogFetch(
+    request,
+    reply,
+    "SELECT code, label FROM common_catalogs WHERE category = 'FLEET_AREA' ORDER BY id ASC",
+    'AREAS_FETCH_FAIL'
+  );
+}
+
+async function fetchOwnerProfile(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  ownerId: number | string
+): Promise<FastifyReply> {
+  try {
+    const [rows] = await db.execute<RowDataPacket[]>(PROFILE_SELECT_SQL, [ownerId]);
+    if (rows.length === 0) {
+      return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
+    }
+    const especialidades = await fetchEspecialidades(ownerId);
+    return reply.send({ success: true, data: hydrateProfile(rows[0], especialidades) });
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send({ success: false, code: 'PROFILE_FETCH_FAIL' });
+  }
+}
+
+/** GET /owners/me/profile — self-service: resolves ownerId from JWT. */
+async function handleGetMyProfile(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+  }
+  const caller = request.user as { id: number; permissions: string[] };
+  const ownerIds = await getCallerOwnerIds(caller.id);
+  if (ownerIds.length === 0) {
+    return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
+  }
+  return fetchOwnerProfile(request, reply, ownerIds[0]);
+}
+
+/** GET /owners/:ownerId/profile — admin/scoped, con validación de pertenencia. */
+async function handleGetOwnerProfile(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+  }
+  const { ownerId } = request.params as { ownerId: string };
+  const caller = request.user as { id: number; permissions: string[] };
+  if (!hasAdminAccess(caller.permissions)) {
+    const ownerIds = await getCallerOwnerIds(caller.id);
+    if (!ownerIds.includes(Number(ownerId))) {
+      return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
+    }
+  }
+  return fetchOwnerProfile(request, reply, ownerId);
+}
+
+/** Ejecuta el UPDATE de campos + especialidades dentro de una única transacción
+ * (FC166 Track A.2 — sub-extracción de `applyOwnerProfilePatch` para respetar
+ * el cap de 50 líneas de Gate2, isomorfa: mismo SQL/orden/rollback). */
+async function runOwnerProfileUpdateTransaction(
+  ownerId: number | string,
+  fields: string[],
+  values: (string | number | null)[],
+  hasSpecialtiesUpdate: boolean,
+  especialidades: string[] | null | undefined
+): Promise<void> {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    if (fields.length > 0) {
+      values.push(String(ownerId));
+      await conn.execute<ResultSetHeader>(
+        `UPDATE owner_profiles SET ${fields.join(', ')} WHERE owner_id = ?`,
+        values
+      );
+    }
+    if (hasSpecialtiesUpdate) {
+      await applySpecialtiesUpdate(conn, ownerId, especialidades ?? null);
+    }
+    await conn.commit();
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+/** Lógica compartida de PATCH /owners/me/profile y PATCH /owners/:ownerId/profile
+ * (validación de especialidades, campos a actualizar, RFC condicional, transacción)
+ * — extraída para extinguir la duplicación detectada por SonarCloud entre ambos
+ * handlers (FC166 Track A.2, isomorfo — mismo comportamiento byte a byte,
+ * `String(ownerId)` es un no-op para el caso admin donde ya llega como string). */
+async function applyOwnerProfilePatch(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  ownerId: number | string,
+  parsed: PatchData
+): Promise<FastifyReply> {
+  if (
+    parsed.especialidades !== undefined &&
+    parsed.especialidades !== null &&
+    !(await validateSpecialtyCodes(parsed.especialidades))
+  ) {
+    return reply.code(400).send({ success: false, code: 'INVALID_SPECIALTY_CODES' });
+  }
+
+  const { fields, values } = buildUpdateFields(parsed);
+  const hasSpecialtiesUpdate = parsed.especialidades !== undefined;
+  if (fields.length === 0 && !hasSpecialtiesUpdate) {
+    return reply.code(400).send({ success: false, code: 'NO_FIELDS_TO_UPDATE' });
+  }
+
+  try {
+    const [profileRows] = await db.execute<RowDataPacket[]>(
+      'SELECT op.id, otc.code AS owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE op.owner_id = ? LIMIT 1',
+      [ownerId]
+    );
+    if (profileRows.length === 0) {
+      return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
+    }
+    const { owner_type: ownerType } = profileRows[0];
+    const { rfc } = parsed;
+    if (
+      rfc !== undefined &&
+      (rfc === null || rfc.trim() === '') &&
+      (ownerType === 'FLOTILLA' || ownerType === 'CENTER')
+    ) {
+      return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
+    }
+    await runOwnerProfileUpdateTransaction(
+      ownerId,
+      fields,
+      values,
+      hasSpecialtiesUpdate,
+      parsed.especialidades
+    );
+    return reply.send({ success: true });
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send({ success: false, code: 'PROFILE_UPDATE_FAIL' });
+  }
+}
+
+/** PATCH /owners/me/profile — self-service update. */
+async function handlePatchMyProfile(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+  }
+  const parsed = patchSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return reply
+      .code(400)
+      .send({ success: false, code: 'VALIDATION_ERROR', details: parsed.error.format() });
+  }
+  const caller = request.user as { id: number; permissions: string[] };
+  const ownerIds = await getCallerOwnerIds(caller.id);
+  if (ownerIds.length === 0) {
+    return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
+  }
+  return applyOwnerProfilePatch(request, reply, ownerIds[0], parsed.data);
+}
+
+/** PATCH /owners/:ownerId/profile — admin/scoped update. */
+async function handlePatchOwnerProfile(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<FastifyReply> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
+  }
+  const parsed = patchSchema.safeParse(request.body);
+  if (!parsed.success) {
+    return reply
+      .code(400)
+      .send({ success: false, code: 'VALIDATION_ERROR', details: parsed.error.format() });
+  }
+  const { ownerId } = request.params as { ownerId: string };
+  const caller = request.user as { id: number; permissions: string[] };
+  if (!hasAdminAccess(caller.permissions)) {
+    const ownerIds = await getCallerOwnerIds(caller.id);
+    if (!ownerIds.includes(Number(ownerId))) {
+      return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
+    }
+  }
+  return applyOwnerProfilePatch(request, reply, ownerId, parsed.data);
+}
+
+/** Registra las rutas de perfil de propietario (catálogos, self-service y
+ * admin/scoped) — wiring puro, la lógica vive en los handlers nombrados de
+ * arriba (Dual-Gate Isolation, FC166 Track A.2). */
 export default async function ownerProfileRoutes(fastify: FastifyInstance): Promise<void> {
   // GET /v1/catalogs/specialties — public catalog (jwtGuard only, no permission gate)
-  fastify.get('/catalogs/specialties', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
-    }
-    try {
-      const [rows] = await db.execute<RowDataPacket[]>(
-        "SELECT code, label FROM common_catalogs WHERE category = 'SPECIALTY' ORDER BY label ASC"
-      );
-      return reply.send({ success: true, data: rows });
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ success: false, code: 'SPECIALTIES_FETCH_FAIL' });
-    }
-  });
+  fastify.get('/catalogs/specialties', handleGetSpecialtiesCatalog);
 
   // GET /v1/catalogs/areas — fleet area catalog (jwtGuard only, no permission gate)
-  fastify.get('/catalogs/areas', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
-    }
-    try {
-      const [rows] = await db.execute<RowDataPacket[]>(
-        "SELECT code, label FROM common_catalogs WHERE category = 'FLEET_AREA' ORDER BY id ASC"
-      );
-      return reply.send({ success: true, data: rows });
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ success: false, code: 'AREAS_FETCH_FAIL' });
-    }
-  });
+  fastify.get('/catalogs/areas', handleGetAreasCatalog);
 
   // GET /v1/owners/me/profile — self-service: resolves ownerId from JWT
-  fastify.get('/owners/me/profile', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
-    }
-    const caller = request.user as { id: number; permissions: string[] };
-    const ownerIds = await getCallerOwnerIds(caller.id);
-    if (ownerIds.length === 0) {
-      return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
-    }
-    try {
-      const [rows] = await db.execute<RowDataPacket[]>(PROFILE_SELECT_SQL, [ownerIds[0]]);
-      if (rows.length === 0) {
-        return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
-      }
-      const especialidades = await fetchEspecialidades(ownerIds[0]);
-      return reply.send({ success: true, data: hydrateProfile(rows[0], especialidades) });
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ success: false, code: 'PROFILE_FETCH_FAIL' });
-    }
-  });
+  fastify.get('/owners/me/profile', handleGetMyProfile);
 
   // PATCH /v1/owners/me/profile — self-service update
-  fastify.patch('/owners/me/profile', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
-    }
-    const parsed = patchSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply
-        .code(400)
-        .send({ success: false, code: 'VALIDATION_ERROR', details: parsed.error.format() });
-    }
-    const caller = request.user as { id: number; permissions: string[] };
-    const ownerIds = await getCallerOwnerIds(caller.id);
-    if (ownerIds.length === 0) {
-      return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
-    }
-    if (
-      parsed.data.especialidades !== undefined &&
-      parsed.data.especialidades !== null &&
-      !(await validateSpecialtyCodes(parsed.data.especialidades))
-    ) {
-      return reply.code(400).send({ success: false, code: 'INVALID_SPECIALTY_CODES' });
-    }
-    const ownerId = ownerIds[0];
-    const { fields, values } = buildUpdateFields(parsed.data);
-    const hasSpecialtiesUpdate = parsed.data.especialidades !== undefined;
-    if (fields.length === 0 && !hasSpecialtiesUpdate) {
-      return reply.code(400).send({ success: false, code: 'NO_FIELDS_TO_UPDATE' });
-    }
-    try {
-      const [profileRows] = await db.execute<RowDataPacket[]>(
-        'SELECT op.id, otc.code AS owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE op.owner_id = ? LIMIT 1',
-        [ownerId]
-      );
-      if (profileRows.length === 0) {
-        return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
-      }
-      const { owner_type: ownerType } = profileRows[0];
-      const { rfc } = parsed.data;
-      if (
-        rfc !== undefined &&
-        (rfc === null || rfc.trim() === '') &&
-        (ownerType === 'FLOTILLA' || ownerType === 'CENTER')
-      ) {
-        return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
-      }
-      const conn = await db.getConnection();
-      try {
-        await conn.beginTransaction();
-        if (fields.length > 0) {
-          values.push(String(ownerId));
-          await conn.execute<ResultSetHeader>(
-            `UPDATE owner_profiles SET ${fields.join(', ')} WHERE owner_id = ?`,
-            values
-          );
-        }
-        if (hasSpecialtiesUpdate) {
-          await applySpecialtiesUpdate(conn, ownerId, parsed.data.especialidades ?? null);
-        }
-        await conn.commit();
-        return reply.send({ success: true });
-      } catch (e) {
-        await conn.rollback();
-        throw e;
-      } finally {
-        conn.release();
-      }
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ success: false, code: 'PROFILE_UPDATE_FAIL' });
-    }
-  });
+  fastify.patch('/owners/me/profile', handlePatchMyProfile);
 
   // GET /v1/owners/:ownerId/profile
-  fastify.get('/owners/:ownerId/profile', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
-    }
-
-    const { ownerId } = request.params as { ownerId: string };
-    const caller = request.user as { id: number; permissions: string[] };
-
-    if (!hasAdminAccess(caller.permissions)) {
-      const ownerIds = await getCallerOwnerIds(caller.id);
-      if (!ownerIds.includes(Number(ownerId))) {
-        return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
-      }
-    }
-
-    try {
-      const [rows] = await db.execute<RowDataPacket[]>(PROFILE_SELECT_SQL, [ownerId]);
-      if (rows.length === 0) {
-        return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
-      }
-      const especialidades = await fetchEspecialidades(ownerId);
-      return reply.send({ success: true, data: hydrateProfile(rows[0], especialidades) });
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ success: false, code: 'PROFILE_FETCH_FAIL' });
-    }
-  });
+  fastify.get('/owners/:ownerId/profile', handleGetOwnerProfile);
 
   // PATCH /v1/owners/:ownerId/profile
-  fastify.patch('/owners/:ownerId/profile', async (request, reply) => {
-    try {
-      await request.jwtVerify();
-    } catch {
-      return reply.code(401).send({ success: false, code: 'UNAUTHORIZED' });
-    }
-
-    const parsed = patchSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply
-        .code(400)
-        .send({ success: false, code: 'VALIDATION_ERROR', details: parsed.error.format() });
-    }
-
-    const { ownerId } = request.params as { ownerId: string };
-    const caller = request.user as { id: number; permissions: string[] };
-
-    if (!hasAdminAccess(caller.permissions)) {
-      const ownerIds = await getCallerOwnerIds(caller.id);
-      if (!ownerIds.includes(Number(ownerId))) {
-        return reply.code(403).send({ success: false, code: 'FORBIDDEN' });
-      }
-    }
-
-    if (
-      parsed.data.especialidades !== undefined &&
-      parsed.data.especialidades !== null &&
-      !(await validateSpecialtyCodes(parsed.data.especialidades))
-    ) {
-      return reply.code(400).send({ success: false, code: 'INVALID_SPECIALTY_CODES' });
-    }
-
-    const { fields, values } = buildUpdateFields(parsed.data);
-    const hasSpecialtiesUpdate = parsed.data.especialidades !== undefined;
-    if (fields.length === 0 && !hasSpecialtiesUpdate) {
-      return reply.code(400).send({ success: false, code: 'NO_FIELDS_TO_UPDATE' });
-    }
-
-    try {
-      const [profileRows] = await db.execute<RowDataPacket[]>(
-        'SELECT op.id, otc.code AS owner_type FROM owner_profiles op JOIN owners o ON o.id = op.owner_id JOIN owner_types_catalog otc ON otc.id = o.owner_type_id WHERE op.owner_id = ? LIMIT 1',
-        [ownerId]
-      );
-
-      if (profileRows.length === 0) {
-        return reply.code(404).send({ success: false, code: 'PROFILE_NOT_FOUND' });
-      }
-
-      const { owner_type: ownerType } = profileRows[0];
-      const { rfc } = parsed.data;
-
-      if (
-        rfc !== undefined &&
-        (rfc === null || rfc.trim() === '') &&
-        (ownerType === 'FLOTILLA' || ownerType === 'CENTER')
-      ) {
-        return reply.code(400).send({ success: false, code: 'MISSING_RFC' });
-      }
-
-      const conn = await db.getConnection();
-      try {
-        await conn.beginTransaction();
-        if (fields.length > 0) {
-          values.push(ownerId);
-          await conn.execute<ResultSetHeader>(
-            `UPDATE owner_profiles SET ${fields.join(', ')} WHERE owner_id = ?`,
-            values
-          );
-        }
-        if (hasSpecialtiesUpdate) {
-          await applySpecialtiesUpdate(conn, ownerId, parsed.data.especialidades ?? null);
-        }
-        await conn.commit();
-        return reply.send({ success: true });
-      } catch (e) {
-        await conn.rollback();
-        throw e;
-      } finally {
-        conn.release();
-      }
-    } catch (e) {
-      fastify.log.error(e);
-      return reply.code(500).send({ success: false, code: 'PROFILE_UPDATE_FAIL' });
-    }
-  });
+  fastify.patch('/owners/:ownerId/profile', handlePatchOwnerProfile);
 }
