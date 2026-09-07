@@ -643,8 +643,9 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
   // FC166 Track C Batch 2 (S5976) — VALIDATION-2/3/5/6/8 shared the exact
   // same "no-payload request with a non-numeric tenantId → 400
   // VALIDATION_ERROR" body, varying only method/url; consolidated (0 loss
-  // of coverage). VALIDATION-1/4/7 keep their own payload shape and stay
-  // separate `it()` blocks (not part of the flagged clone group).
+  // of coverage). VALIDATION-1/4/7 keep their own payload shape (POST with
+  // a body) and stay separate `it()` blocks (not part of the flagged clone
+  // group).
   it.each([
     ['DELETE', '/v1/cosmology/universes/not-a-number/superclusters/FINANZAS'],
     ['GET', '/v1/cosmology/universes/not-a-number/superclusters'],
@@ -663,6 +664,17 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
     }
   );
+
+  it('COSMOLOGY-VALIDATION-4: POST add cluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/cosmology/universes/not-a-number/clusters',
+      headers: omegaHeader(),
+      payload: { clusterCode: 'GASTOS' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+  });
 
   it('COSMOLOGY-VALIDATION-7: POST create universe with empty label — 400 VALIDATION_ERROR', async () => {
     const res = await app.inject({
