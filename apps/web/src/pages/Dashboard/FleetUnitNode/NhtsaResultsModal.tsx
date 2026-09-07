@@ -9,9 +9,9 @@ type NhtsaResultsModalProps = {
   readonly make: string;
   readonly model: string;
   readonly year: number;
-  onClose(): void;
-  onImported(): void;
-  linkRecall(recallId: number): Promise<void>;
+  readonly onClose: () => void;
+  readonly onImported: () => void;
+  readonly linkRecall: (recallId: number) => Promise<void>;
 };
 
 function NhtsaModalHeader({
@@ -20,10 +20,10 @@ function NhtsaModalHeader({
   year,
   onClose,
 }: {
-  make: string;
-  model: string;
-  year: number;
-  onClose(): void;
+  readonly make: string;
+  readonly model: string;
+  readonly year: number;
+  readonly onClose: () => void;
 }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between">
@@ -47,8 +47,8 @@ function NhtsaModalTabs({
   activeTab,
   onTabChange,
 }: {
-  activeTab: 'nhtsa' | 'patterns';
-  onTabChange(tab: 'nhtsa' | 'patterns'): void;
+  readonly activeTab: 'nhtsa' | 'patterns';
+  readonly onTabChange: (tab: 'nhtsa' | 'patterns') => void;
 }): React.JSX.Element {
   return (
     <div className="flex gap-1 border-b border-white/10">
@@ -75,9 +75,9 @@ function NhtsaResultRow({
   importingCode,
   onImport,
 }: {
-  r: NhtsaRecall;
-  importingCode: string | null;
-  onImport(r: NhtsaRecall): void;
+  readonly r: NhtsaRecall;
+  readonly importingCode: string | null;
+  readonly onImport: (r: NhtsaRecall) => void;
 }): React.JSX.Element {
   return (
     <div className="flex items-start justify-between gap-3 p-3 bg-white/5 rounded-[4px]">
@@ -108,11 +108,11 @@ function NhtsaResultsList({
   importingCode,
   onImport,
 }: {
-  loading: boolean;
-  error: string | null;
-  results: NhtsaRecall[];
-  importingCode: string | null;
-  onImport(r: NhtsaRecall): void;
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly results: NhtsaRecall[];
+  readonly importingCode: string | null;
+  readonly onImport: (r: NhtsaRecall) => void;
 }): React.JSX.Element {
   return (
     <div>
@@ -222,15 +222,15 @@ function NhtsaTabContent({
   patternsError,
   patternsResults,
 }: {
-  activeTab: 'nhtsa' | 'patterns';
-  loading: boolean;
-  error: string | null;
-  results: NhtsaRecall[];
-  importingCode: string | null;
-  onImport(r: NhtsaRecall): void;
-  patternsLoading: boolean;
-  patternsError: string | null;
-  patternsResults: FailurePattern[];
+  readonly activeTab: 'nhtsa' | 'patterns';
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly results: NhtsaRecall[];
+  readonly importingCode: string | null;
+  readonly onImport: (r: NhtsaRecall) => void;
+  readonly patternsLoading: boolean;
+  readonly patternsError: string | null;
+  readonly patternsResults: FailurePattern[];
 }): React.JSX.Element {
   if (activeTab === 'patterns') {
     return (

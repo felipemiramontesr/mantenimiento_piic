@@ -72,7 +72,7 @@ function CardHeaderSlot({
 }
 
 /** Grid de 4 métricas operativas (disponibilidad/critico/MTBF/MTTR) (FC163 F2B4 Sub-Batch 4B-1). */
-function CardMetricsGrid({ data }: { data: CategoryData }): React.JSX.Element {
+function CardMetricsGrid({ data }: { readonly data: CategoryData }): React.JSX.Element {
   const dotColor = getAvailabilityDot(data.availablePercent);
 
   return (

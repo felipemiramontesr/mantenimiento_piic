@@ -4,7 +4,7 @@ import { ExternalLink, CheckCircle2, XCircle, Cpu, Wrench } from 'lucide-react';
 import { MaintenanceLog } from '../../../types/maintenance';
 
 /** Enlace para ver el nodo de detalle del mantenimiento (FC165 F2 Slice 2.1B). */
-function ViewNodeLink({ uuid }: { uuid: string }): React.JSX.Element {
+function ViewNodeLink({ uuid }: { readonly uuid: string }): React.JSX.Element {
   return (
     <Link
       to={`/dashboard/maintenance/${uuid}`}

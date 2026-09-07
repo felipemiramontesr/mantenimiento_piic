@@ -4,7 +4,7 @@ import type { PersonnelRecord } from './types';
 import { getRoleBadgeClass, getRoleName } from './roles';
 
 /** Fila individual del listado de personal (FC163 F1B-3, split Alfa 219_AN — sub-split de PersonnelRegistryFeed). */
-function PersonnelRow({ user }: { user: PersonnelRecord }): React.JSX.Element {
+function PersonnelRow({ user }: { readonly user: PersonnelRecord }): React.JSX.Element {
   return (
     <div className="p-4 border border-gray-100 rounded-[4px] flex items-center justify-between hover:border-[#0f2a44]/20 transition-all group">
       <div className="flex items-center gap-4">

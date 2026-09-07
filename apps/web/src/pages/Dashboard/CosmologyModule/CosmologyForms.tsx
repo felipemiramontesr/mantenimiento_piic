@@ -221,7 +221,7 @@ function extractZeroStateDetails(err: unknown): Record<string, number> | null {
 function ZeroStateBlockersList({
   blockers,
 }: {
-  blockers: Record<string, number> | null;
+  readonly blockers: Record<string, number> | null;
 }): React.JSX.Element | null {
   if (!blockers) return null;
   return (

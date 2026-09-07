@@ -185,7 +185,7 @@ function LoginCredentialFields({
 }
 
 /** Botón de submit + link de contraseña olvidada (FC163 F2B4 Sub-Batch 4B-2). */
-function LoginSubmitButton({ loading }: { loading: boolean }): React.JSX.Element {
+function LoginSubmitButton({ loading }: { readonly loading: boolean }): React.JSX.Element {
   return (
     <div className="flex flex-col">
       <button type="submit" disabled={loading} className="btn-archon-primary w-full !md:w-full">

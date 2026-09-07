@@ -7,7 +7,7 @@ interface ReviewsPanelProps {
   readonly tallerOwnerId: number;
 }
 
-function StarRating({ value }: { value: number }): React.ReactElement {
+function StarRating({ value }: { readonly value: number }): React.ReactElement {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (

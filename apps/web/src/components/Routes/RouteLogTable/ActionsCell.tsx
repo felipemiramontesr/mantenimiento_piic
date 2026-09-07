@@ -4,7 +4,7 @@ import { Pencil, CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react'
 import { RouteLog } from './types';
 
 /** Enlace para ver el nodo de detalle de la ruta (FC163 F2B4 Sub-Batch 4B-2). */
-function ViewNodeLink({ uuid }: { uuid: string }): React.JSX.Element {
+function ViewNodeLink({ uuid }: { readonly uuid: string }): React.JSX.Element {
   return (
     <Link
       to={`/dashboard/routes/${uuid}`}

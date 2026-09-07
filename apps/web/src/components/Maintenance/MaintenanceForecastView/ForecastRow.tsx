@@ -54,7 +54,7 @@ function UnitCell({ row, unit }: UnitCellProps): React.JSX.Element {
 
 /** Celdas ODÓMETRO/KM RESTANTES/PRÓX. SERVICIO/TIPO PROYECTADO
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function TelemetryCells({ row }: { row: MaintenanceForecastRow }): React.JSX.Element {
+function TelemetryCells({ row }: { readonly row: MaintenanceForecastRow }): React.JSX.Element {
   const svcBadge = SERVICE_BADGE[row.projectedServiceType] ?? FALLBACK_BADGE;
   return (
     <>
@@ -91,7 +91,7 @@ function TelemetryCells({ row }: { row: MaintenanceForecastRow }): React.JSX.Ele
 }
 
 /** Celda URGENCIA (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function UrgencyCell({ row }: { row: MaintenanceForecastRow }): React.JSX.Element {
+function UrgencyCell({ row }: { readonly row: MaintenanceForecastRow }): React.JSX.Element {
   const urgMeta = URGENCY_META[row.urgency] ?? fallbackUrgencyMeta(row.urgency);
   return (
     <td className="py-4 px-3 text-center">

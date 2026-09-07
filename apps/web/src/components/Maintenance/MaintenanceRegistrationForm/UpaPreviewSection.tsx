@@ -101,8 +101,8 @@ function UpaStageList({
   upaPreview,
   state,
 }: {
-  upaPreview: UpaPreviewTask[];
-  state: RegistrationState;
+  readonly upaPreview: UpaPreviewTask[];
+  readonly state: RegistrationState;
 }): React.JSX.Element {
   return (
     <div className="px-10 pb-10 space-y-2">

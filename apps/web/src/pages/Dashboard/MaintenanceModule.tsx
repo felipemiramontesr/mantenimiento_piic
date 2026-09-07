@@ -572,7 +572,7 @@ function MaintenanceHistoryView({
 function MaintenanceForecastPanelView({
   onScheduleRequest,
 }: {
-  onScheduleRequest: (unitId: string) => void;
+  readonly onScheduleRequest: (unitId: string) => void;
 }): React.JSX.Element {
   return (
     <ArchonAdaptiveView

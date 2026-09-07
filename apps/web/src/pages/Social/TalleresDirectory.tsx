@@ -67,7 +67,7 @@ function DirectoryFilterHeader({
 }
 
 /** Encabezado de tarjeta de taller: nombre, razón social, calificación (FC163 F2B4 Sub-Batch 4B-1). */
-function WorkshopCardHeader({ taller }: { taller: TallerEntry }): React.JSX.Element {
+function WorkshopCardHeader({ taller }: { readonly taller: TallerEntry }): React.JSX.Element {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex flex-col gap-0.5">
@@ -89,7 +89,7 @@ function WorkshopCardHeader({ taller }: { taller: TallerEntry }): React.JSX.Elem
 }
 
 /** Fila de contacto (teléfono/dirección) + botón de ver perfil (FC163 F2B4 Sub-Batch 4B-1). */
-function WorkshopContactRow({ taller }: { taller: TallerEntry }): React.JSX.Element {
+function WorkshopContactRow({ taller }: { readonly taller: TallerEntry }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between gap-2 mt-1">
       <div className="flex items-center gap-3 text-slate-400">
@@ -120,7 +120,7 @@ function WorkshopContactRow({ taller }: { taller: TallerEntry }): React.JSX.Elem
 }
 
 /** Tarjeta de un taller en el directorio: header, especialidades, contacto (FC163 F2B4 Sub-Batch 4B-1). */
-function WorkshopCardItem({ taller }: { taller: TallerEntry }): React.JSX.Element {
+function WorkshopCardItem({ taller }: { readonly taller: TallerEntry }): React.JSX.Element {
   return (
     <div
       data-testid={`taller-card-${taller.id}`}

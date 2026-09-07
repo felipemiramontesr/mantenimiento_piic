@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface CurrencyAmountFieldProps {
-  value: number;
-  onChange: (value: number) => void;
+  readonly value: number;
+  readonly onChange: (value: number) => void;
 }
 
 /** Input de monto en MXN (símbolo `$` + sufijo `MXN`) compartido por

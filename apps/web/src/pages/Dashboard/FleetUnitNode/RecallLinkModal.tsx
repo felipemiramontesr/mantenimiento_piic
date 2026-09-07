@@ -14,10 +14,10 @@ function RecallLinkModalFooter({
   onCancel,
   onSubmit,
 }: {
-  recallId: string;
-  submitting: boolean;
-  onCancel(): void;
-  onSubmit(): void;
+  readonly recallId: string;
+  readonly submitting: boolean;
+  readonly onCancel: () => void;
+  readonly onSubmit: () => void;
 }): React.JSX.Element {
   return (
     <div className="flex gap-3 justify-end">

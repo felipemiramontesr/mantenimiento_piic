@@ -7,7 +7,7 @@ import { inputClass } from './constants';
 
 /** Badge de tipo de servicio UPA, visible cuando ya se conoce el tipo
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation — sub-split de MaintenanceRegistrationForm). */
-function UpaTypeBadge({ state }: { state: RegistrationState }): React.JSX.Element | null {
+function UpaTypeBadge({ state }: { readonly state: RegistrationState }): React.JSX.Element | null {
   const visible =
     state.selectedUnit &&
     (state.isMineUnit || (state.upaPreview !== null && !state.upaPreviewLoading));

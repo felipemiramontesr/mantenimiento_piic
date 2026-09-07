@@ -40,7 +40,7 @@ const FEEDBACK_STYLES: Record<
 };
 
 /** Botón de cierre del banner de notificación (FC163 F2B4 Sub-Batch 4B-1). */
-function BannerCloseButton({ onClear }: { onClear: () => void }): React.JSX.Element {
+function BannerCloseButton({ onClear }: { readonly onClear: () => void }): React.JSX.Element {
   return (
     <button
       type="button"

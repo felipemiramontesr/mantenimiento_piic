@@ -26,7 +26,7 @@ export interface ActivityLog {
 }
 
 export interface ForensicJournalTableProps {
-  unitId?: string;
-  routeUuid?: string;
-  hideHeader?: boolean;
+  readonly unitId?: string;
+  readonly routeUuid?: string;
+  readonly hideHeader?: boolean;
 }

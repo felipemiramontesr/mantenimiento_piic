@@ -38,8 +38,8 @@ function RecallsToolbar({
   onSearchClick,
   onLinkClick,
 }: {
-  onSearchClick(): void;
-  onLinkClick(): void;
+  readonly onSearchClick: () => void;
+  readonly onLinkClick: () => void;
 }): React.JSX.Element {
   return (
     <div className="flex justify-end mb-3 gap-2">
@@ -68,9 +68,9 @@ function RecallRowActions({
   onComplete,
   onNotApplicable,
 }: {
-  r: RecallItem;
-  onComplete(recallId: number): void;
-  onNotApplicable(recallId: number): void;
+  readonly r: RecallItem;
+  readonly onComplete: (recallId: number) => void;
+  readonly onNotApplicable: (recallId: number) => void;
 }): React.JSX.Element {
   return (
     <div className="flex items-center justify-center gap-2">
@@ -103,9 +103,9 @@ function RecallRow({
   onComplete,
   onNotApplicable,
 }: {
-  r: RecallItem;
-  onComplete(recallId: number): void;
-  onNotApplicable(recallId: number): void;
+  readonly r: RecallItem;
+  readonly onComplete: (recallId: number) => void;
+  readonly onNotApplicable: (recallId: number) => void;
 }): React.ReactElement {
   return (
     <tr key={r.recall_id} className="hover:bg-slate-50/70 transition-colors">
@@ -145,15 +145,15 @@ function RecallModals({
   onCloseLink,
   onCloseNhtsa,
 }: {
-  modalOpen: boolean;
-  nhtsaModalOpen: boolean;
-  make: string;
-  model: string;
-  year: number;
-  linkRecall(recallId: number): Promise<void>;
-  refresh(): void;
-  onCloseLink(): void;
-  onCloseNhtsa(): void;
+  readonly modalOpen: boolean;
+  readonly nhtsaModalOpen: boolean;
+  readonly make: string;
+  readonly model: string;
+  readonly year: number;
+  readonly linkRecall: (recallId: number) => Promise<void>;
+  readonly refresh: () => void;
+  readonly onCloseLink: () => void;
+  readonly onCloseNhtsa: () => void;
 }): React.JSX.Element {
   return (
     <>
@@ -196,10 +196,10 @@ function RecallsTable({
   onComplete,
   onNotApplicable,
 }: {
-  recalls: RecallItem[];
-  loading: boolean;
-  onComplete(recallId: number): void;
-  onNotApplicable(recallId: number): void;
+  readonly recalls: RecallItem[];
+  readonly loading: boolean;
+  readonly onComplete: (recallId: number) => void;
+  readonly onNotApplicable: (recallId: number) => void;
 }): React.JSX.Element {
   return (
     <ArchonDataTable

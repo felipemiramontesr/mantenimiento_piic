@@ -41,7 +41,7 @@ function getHeaderIcons(title: string): { main: React.ElementType; sub: React.El
 }
 
 /** Slot de acción dinámica del header (headerSlot custom o ArchonManagementCard) (FC163 F1B-2, split Alfa 219_AN). */
-function HeaderActionSlot({ layoutData }: { layoutData: LayoutData }): React.ReactNode {
+function HeaderActionSlot({ layoutData }: { readonly layoutData: LayoutData }): React.ReactNode {
   if (layoutData.headerSlot != null) {
     return <div className="w-full">{layoutData.headerSlot}</div>;
   }

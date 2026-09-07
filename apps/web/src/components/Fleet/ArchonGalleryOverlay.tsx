@@ -10,7 +10,7 @@ interface ArchonGalleryOverlayProps {
 }
 
 /** Botón de cierre del overlay de galería (FC163 F2B4 Sub-Batch 4B-1). */
-function GalleryCloseButton({ onClose }: { onClose: () => void }): React.JSX.Element {
+function GalleryCloseButton({ onClose }: { readonly onClose: () => void }): React.JSX.Element {
   return (
     <button
       type="button"

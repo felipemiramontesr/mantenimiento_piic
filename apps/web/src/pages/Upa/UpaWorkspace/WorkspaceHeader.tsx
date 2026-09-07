@@ -13,7 +13,7 @@ const STATUS_CONFIG: Record<UpaWorkOrderDetail['status'], { label: string; color
 };
 
 /** Botón de regreso, visible solo en modo panel embebido (FC163 F2B4 Sub-Batch 4B-2). */
-function ReturnButton({ onReturn }: { onReturn: () => void }): React.ReactElement {
+function ReturnButton({ onReturn }: { readonly onReturn: () => void }): React.ReactElement {
   return (
     <button
       type="button"
@@ -28,7 +28,7 @@ function ReturnButton({ onReturn }: { onReturn: () => void }): React.ReactElemen
 }
 
 /** Banner de estatus de la orden (en proceso/esperando autorización/cerrada) (FC163 F2B4 Sub-Batch 4B-2). */
-function OrderStatusBanner({ wo }: { wo: UpaWorkOrderDetail }): React.ReactElement {
+function OrderStatusBanner({ wo }: { readonly wo: UpaWorkOrderDetail }): React.ReactElement {
   const sc = STATUS_CONFIG[wo.status];
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-[4px] border mb-6 ${sc.color}`}>

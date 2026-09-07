@@ -56,7 +56,7 @@ function ChecklistRow({ task, idx, state }: ChecklistRowProps): React.JSX.Elemen
 
 /** Checklist de cierre: carga/vacío/lista de tareas del servicio
  * (FC165 F3 Slice3.3 Lote A, Dual-Gate Isolation). */
-function ClosureChecklist({ state }: { state: CompletionState }): React.JSX.Element {
+function ClosureChecklist({ state }: { readonly state: CompletionState }): React.JSX.Element {
   return (
     <div className="card-archon-sovereign bg-white relative z-0 [--card-accent:#f2b705] !pb-2">
       <div className="card-sovereign-header p-10 pb-0">
