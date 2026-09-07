@@ -246,8 +246,16 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     unmount2();
   });
 
-  it('filters and suggests units by string properties (Aveo, Arian)', () => {
-    mockSearchTerm = 'aveo';
+  // FC166 Track C Batch 2 (S5976) — the string/numeric/projection suggestion
+  // cases shared the exact same spy+render+focus body, varying only the
+  // search term and the expected suggestion text; consolidated (0 loss of
+  // coverage).
+  it.each([
+    ['aveo', 'ASM-002 (Modelo: Aveo)'],
+    ['15,800', 'ASM-002 (Leasing: 15,800.5 USD)'],
+    ['7,650', 'ASM-002 (Km. Restantes: 7,650 KM)'],
+  ])('filters and suggests units matching search term %s', (searchTerm, expectedText) => {
+    mockSearchTerm = searchTerm;
     // Re-trigger layout spy for updated search term
     vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
       layoutData: mockLayoutData as any,
@@ -267,55 +275,7 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
     );
     fireEvent.focus(input);
 
-    expect(screen.getByText('ASM-002 (Modelo: Aveo)')).toBeInTheDocument();
-  });
-
-  it('filters and suggests units by numeric properties (Leasing, Odometer)', () => {
-    mockSearchTerm = '15,800';
-    // Re-trigger layout spy
-    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
-      layoutData: mockLayoutData as any,
-      searchTerm: mockSearchTerm,
-      setSearchTerm: mockSetSearchTerm,
-      searchConfig: mockSearchConfig,
-      setSearchConfig: vi.fn(),
-      setSectionData: vi.fn(),
-      isMobileMenuOpen: false,
-      setIsMobileMenuOpen: vi.fn(),
-    });
-
-    render(<SovereignHeader />);
-
-    const input = screen.getByPlaceholderText(
-      'Buscar por placas, marca, modelo, sede o departamento...'
-    );
-    fireEvent.focus(input);
-
-    expect(screen.getByText('ASM-002 (Leasing: 15,800.5 USD)')).toBeInTheDocument();
-  });
-
-  it('filters and suggests units by dynamic projection kilometers remaining', () => {
-    mockSearchTerm = '7,650';
-    // Re-trigger layout spy
-    vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
-      layoutData: mockLayoutData as any,
-      searchTerm: mockSearchTerm,
-      setSearchTerm: mockSetSearchTerm,
-      searchConfig: mockSearchConfig,
-      setSearchConfig: vi.fn(),
-      setSectionData: vi.fn(),
-      isMobileMenuOpen: false,
-      setIsMobileMenuOpen: vi.fn(),
-    });
-
-    render(<SovereignHeader />);
-
-    const input = screen.getByPlaceholderText(
-      'Buscar por placas, marca, modelo, sede o departamento...'
-    );
-    fireEvent.focus(input);
-
-    expect(screen.getByText('ASM-002 (Km. Restantes: 7,650 KM)')).toBeInTheDocument();
+    expect(screen.getByText(expectedText)).toBeInTheDocument();
   });
 
   it('updates the search query and closes dropdown when suggestion is clicked', () => {
@@ -452,53 +412,31 @@ describe('SovereignHeader Component (100% QA Universal Search Coverage)', () => 
   });
 
   describe('FC 074 F2 — Navegación Soberana Móvil', () => {
-    it('AT-FC074-F2-SH-1: toggle expone aria-expanded="false" cuando el drawer está cerrado', () => {
-      vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
-        layoutData: mockLayoutData as any,
-        searchTerm: '',
-        setSearchTerm: mockSetSearchTerm,
-        searchConfig: null,
-        setSearchConfig: vi.fn(),
-        setSectionData: vi.fn(),
-        isMobileMenuOpen: false,
-        setIsMobileMenuOpen: vi.fn(),
-      });
-      render(<SovereignHeader />);
-      const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
-      expect(menuBtn).toHaveAttribute('aria-expanded', 'false');
-    });
-
-    it('AT-FC074-F2-SH-2: toggle expone aria-expanded="true" cuando el drawer está abierto', () => {
-      vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
-        layoutData: mockLayoutData as any,
-        searchTerm: '',
-        setSearchTerm: mockSetSearchTerm,
-        searchConfig: null,
-        setSearchConfig: vi.fn(),
-        setSectionData: vi.fn(),
-        isMobileMenuOpen: true,
-        setIsMobileMenuOpen: vi.fn(),
-      });
-      render(<SovereignHeader />);
-      const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
-      expect(menuBtn).toHaveAttribute('aria-expanded', 'true');
-    });
-
-    it('AT-FC074-F2-SH-3: toggle expone aria-controls="mobile-sidebar"', () => {
-      vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
-        layoutData: mockLayoutData as any,
-        searchTerm: '',
-        setSearchTerm: mockSetSearchTerm,
-        searchConfig: null,
-        setSearchConfig: vi.fn(),
-        setSectionData: vi.fn(),
-        isMobileMenuOpen: false,
-        setIsMobileMenuOpen: vi.fn(),
-      });
-      render(<SovereignHeader />);
-      const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
-      expect(menuBtn).toHaveAttribute('aria-controls', 'mobile-sidebar');
-    });
+    // FC166 Track C Batch 2 (S5976) — SH-1/SH-2/SH-3 shared the exact same
+    // spy+render+attribute-assert body, varying only isMobileMenuOpen and
+    // the asserted attribute/value; consolidated (0 loss of coverage).
+    it.each([
+      [false, 'aria-expanded', 'false'],
+      [true, 'aria-expanded', 'true'],
+      [false, 'aria-controls', 'mobile-sidebar'],
+    ])(
+      'AT-FC074-F2-SH: toggle exposes %s="%s" when isMobileMenuOpen=%s',
+      (isMobileMenuOpen, attr, value) => {
+        vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({
+          layoutData: mockLayoutData as any,
+          searchTerm: '',
+          setSearchTerm: mockSetSearchTerm,
+          searchConfig: null,
+          setSearchConfig: vi.fn(),
+          setSectionData: vi.fn(),
+          isMobileMenuOpen,
+          setIsMobileMenuOpen: vi.fn(),
+        });
+        render(<SovereignHeader />);
+        const menuBtn = screen.getByRole('button', { name: /Toggle Menu/i });
+        expect(menuBtn).toHaveAttribute(attr, value);
+      }
+    );
 
     it('AT-FC074-F2-SH-4: toggle usa p-2.5 (44px con icono 24px) en vez de p-2 (40px)', () => {
       vi.spyOn(layoutContext, 'useSovereignLayout').mockReturnValue({

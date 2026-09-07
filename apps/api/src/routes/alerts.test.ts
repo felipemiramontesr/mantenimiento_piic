@@ -102,34 +102,19 @@ describe('computeOverdueSeverity — km-based', () => {
 });
 
 describe('computeOverdueSeverity — days-based', () => {
-  it('CRITICAL when > 60 days overdue', () => {
+  // FC166 Track C Batch 2 (S5976) — SonarCloud's own secondary locations
+  // (flows) confirmed this exact 5-test clone set (build a date N days in
+  // the past, assert one severity band); consolidated (0 loss of coverage).
+  it.each([
+    [240, 'CRITICAL'],
+    [130, 'HIGH'],
+    [110, 'MEDIUM'],
+    [97, 'LOW'],
+    [83, 'LOW'],
+  ])('%i days overdue → %s', (daysAgo, expected) => {
     const date = new Date();
-    date.setDate(date.getDate() - 240);
-    expect(computeOverdueSeverity(0, null, date, 90)).toBe('CRITICAL');
-  });
-
-  it('HIGH when 30–60 days overdue', () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 130);
-    expect(computeOverdueSeverity(0, null, date, 90)).toBe('HIGH');
-  });
-
-  it('MEDIUM when 14–30 days overdue', () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 110);
-    expect(computeOverdueSeverity(0, null, date, 90)).toBe('MEDIUM');
-  });
-
-  it('LOW when <= 14 days overdue', () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 97);
-    expect(computeOverdueSeverity(0, null, date, 90)).toBe('LOW');
-  });
-
-  it('LOW when upcoming (within 14 days before due)', () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 83);
-    expect(computeOverdueSeverity(0, null, date, 90)).toBe('LOW');
+    date.setDate(date.getDate() - daysAgo);
+    expect(computeOverdueSeverity(0, null, date, 90)).toBe(expected);
   });
 });
 

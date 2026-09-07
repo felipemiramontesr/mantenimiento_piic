@@ -375,11 +375,20 @@ describe('FleetGridView — search suggestions (matchFieldInUnit)', () => {
     });
   });
 
-  it('matches by unit id (Código)', () => {
+  // FC166 Track C Batch 2 (S5976) — the id/marca/odómetro/año suggestion
+  // matches shared the exact same 4-line body (getSuggestions → length 1 →
+  // metaLabel); consolidated (0 loss of coverage). The forecast case below
+  // keeps its own dedicated unit fixture and stays separate.
+  it.each([
+    ['asm-010', 'Código'],
+    ['nissan', 'Marca'],
+    ['30,000', 'Odómetro'],
+    ['2021', 'Año'],
+  ])('matches suggestions for "%s" → %s', (term, metaLabel) => {
     const getSuggestions = captureGetSuggestions([baseUnit]);
-    const results = getSuggestions('asm-010');
+    const results = getSuggestions(term);
     expect(results).toHaveLength(1);
-    expect(results[0].metaLabel).toBe('Código');
+    expect(results[0].metaLabel).toBe(metaLabel);
   });
 
   it('matches by forecast remaining km (Km. Restantes)', () => {
@@ -401,27 +410,6 @@ describe('FleetGridView — search suggestions (matchFieldInUnit)', () => {
     const results = getSuggestions('5000');
     expect(results).toHaveLength(1);
     expect(results[0].metaLabel).toBe('Km. Restantes');
-  });
-
-  it('matches a string field via SEARCH_CONFIGS (marca)', () => {
-    const getSuggestions = captureGetSuggestions([baseUnit]);
-    const results = getSuggestions('nissan');
-    expect(results).toHaveLength(1);
-    expect(results[0].metaLabel).toBe('Marca');
-  });
-
-  it('matches a numeric field via SEARCH_CONFIGS (odómetro)', () => {
-    const getSuggestions = captureGetSuggestions([baseUnit]);
-    const results = getSuggestions('30,000');
-    expect(results).toHaveLength(1);
-    expect(results[0].metaLabel).toBe('Odómetro');
-  });
-
-  it('matches by year when no other field matches', () => {
-    const getSuggestions = captureGetSuggestions([baseUnit]);
-    const results = getSuggestions('2021');
-    expect(results).toHaveLength(1);
-    expect(results[0].metaLabel).toBe('Año');
   });
 
   it('returns no suggestions when nothing matches', () => {

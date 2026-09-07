@@ -515,15 +515,17 @@ describe('workOrderService', () => {
       });
     });
 
-    it('maps kia brand label (line 74)', async () => {
-      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel: 'Kia Sportage' })]);
-      (db.execute as any).mockResolvedValueOnce([[]]);
-      const result = await previewWorkOrder('VEH-001');
-      expect(result).toBeDefined();
-    });
-
-    it('maps nissan brand label (line 75)', async () => {
-      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel: 'Nissan X-Trail' })]);
+    // FC166 Track C Batch 2 (S5976) — SonarCloud's own secondary locations
+    // (flows) confirmed this exact 3-test clone set spans "kia", "nissan"
+    // and "ram" (the "mitsubishi" case in between has a wrapped mock-array
+    // literal and was NOT part of the flagged clone set); consolidated
+    // (0 loss of coverage).
+    it.each([
+      ['maps kia brand label (line 74)', 'Kia Sportage'],
+      ['maps nissan brand label (line 75)', 'Nissan X-Trail'],
+      ['maps ram brand label via dodge_ram path (line 77)', 'RAM 1500'],
+    ])('%s', async (_scenario, brandLabel) => {
+      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel })]);
       (db.execute as any).mockResolvedValueOnce([[]]);
       const result = await previewWorkOrder('VEH-001');
       expect(result).toBeDefined();
@@ -533,13 +535,6 @@ describe('workOrderService', () => {
       (db.execute as any).mockResolvedValueOnce([
         mockVehicleRow({ brandLabel: 'Mitsubishi Galant' }),
       ]);
-      (db.execute as any).mockResolvedValueOnce([[]]);
-      const result = await previewWorkOrder('VEH-001');
-      expect(result).toBeDefined();
-    });
-
-    it('maps ram brand label via dodge_ram path (line 77)', async () => {
-      (db.execute as any).mockResolvedValueOnce([mockVehicleRow({ brandLabel: 'RAM 1500' })]);
       (db.execute as any).mockResolvedValueOnce([[]]);
       const result = await previewWorkOrder('VEH-001');
       expect(result).toBeDefined();

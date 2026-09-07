@@ -59,13 +59,6 @@ describe('ArchonAdaptiveView (FC 041 Fase A)', () => {
     expect(screen.getByText('CONTENIDO TARJETAS')).toBeInTheDocument();
   });
 
-  // ── T2 filas ⊤⊤/⊤⊥: la preferencia persistida gana sobre el viewport ──────
-  it('stored preference wins over desktop default', () => {
-    localStorage.setItem(STORAGE_KEY, 'CARDS');
-    renderAdaptive({ CARDS: <div>CONTENIDO TARJETAS</div> });
-    expect(screen.getByText('CONTENIDO TARJETAS')).toBeInTheDocument();
-  });
-
   it('stored preference wins over mobile default', () => {
     setMatchMediaMobile(true);
     localStorage.setItem(STORAGE_KEY, 'TABLE');
@@ -73,17 +66,18 @@ describe('ArchonAdaptiveView (FC 041 Fase A)', () => {
     expect(screen.getByText('CONTENIDO TABLA')).toBeInTheDocument();
   });
 
-  // ── Dominio cerrado (lección FC 071): valor persistido corrupto → fallback ─
-  it('falls back to TABLE when stored value is outside the closed domain', () => {
-    localStorage.setItem(STORAGE_KEY, 'MEDIUM');
+  // FC166 Track C Batch 2 (S5976) — the desktop-preference and dominio-
+  // cerrado (FC 071) fallback cases shared the exact same 3-line body,
+  // varying only the stored value and expected view; consolidated (0 loss
+  // of coverage).
+  it.each([
+    ['CARDS', 'CONTENIDO TARJETAS'],
+    ['MEDIUM', 'CONTENIDO TABLA'],
+    ['CHARTS', 'CONTENIDO TABLA'],
+  ])('resolves the initial view when the stored preference is %s', (stored, expectedText) => {
+    localStorage.setItem(STORAGE_KEY, stored);
     renderAdaptive({ CARDS: <div>CONTENIDO TARJETAS</div> });
-    expect(screen.getByText('CONTENIDO TABLA')).toBeInTheDocument();
-  });
-
-  it('falls back to TABLE when stored view is not among provided views', () => {
-    localStorage.setItem(STORAGE_KEY, 'CHARTS');
-    renderAdaptive({ CARDS: <div>CONTENIDO TARJETAS</div> });
-    expect(screen.getByText('CONTENIDO TABLA')).toBeInTheDocument();
+    expect(screen.getByText(expectedText)).toBeInTheDocument();
   });
 
   // ── Botonera: solo vistas provistas ─────────────────────────────────────────

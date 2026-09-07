@@ -285,11 +285,19 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     ]);
   });
 
-  it('COSMOLOGY-LIST-2: GET superclusters — unknown tenant → 404 TENANT_NOT_FOUND (sendListResult !ok branch, 100% mandatorio FC162 F3)', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[]]); // tenantExists → false
+  // FC166 Track C Batch 2 (S5976) — COSMOLOGY-LIST-2/T4/T6 shared the exact
+  // same "no-payload request against an unknown tenant → 404
+  // TENANT_NOT_FOUND" body, varying only method/url; consolidated (0 loss
+  // of coverage). T1/T3 keep their own payload shape and stay separate.
+  it.each([
+    ['GET', '/v1/cosmology/universes/999/superclusters'],
+    ['GET', '/v1/cosmology/universes/999/clusters'],
+    ['DELETE', '/v1/cosmology/universes/999'],
+  ])('COSMOLOGY-LIST: %s %s — unknown tenant → 404 TENANT_NOT_FOUND', async (method, url) => {
+    (db.execute as Mock).mockResolvedValueOnce([[]]); // tenantExists/findTenantById → not found
     const res = await app.inject({
-      method: 'GET',
-      url: '/v1/cosmology/universes/999/superclusters',
+      method: method as 'GET' | 'DELETE',
+      url,
       headers: omegaHeader(),
     });
     expect(res.statusCode).toBe(404);
@@ -316,17 +324,6 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body).data).toHaveLength(1);
-  });
-
-  it('T4: GET clusters — unknown tenant → 404 TENANT_NOT_FOUND (100% mandatorio, FC162 F3)', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[]]); // tenantExists → empty
-    const res = await app.inject({
-      method: 'GET',
-      url: '/v1/cosmology/universes/999/clusters',
-      headers: omegaHeader(),
-    });
-    expect(res.statusCode).toBe(404);
-    expect(JSON.parse(res.body).code).toBe('TENANT_NOT_FOUND');
   });
 
   it('T4: GET clusters — never-activated cluster surfaces NEVER_ACTIVATED (100% mandatorio, FC162 F3)', async () => {
@@ -609,17 +606,6 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it('T6: unknown tenant — 404 TENANT_NOT_FOUND, no zero-state check run', async () => {
-    (db.execute as Mock).mockResolvedValueOnce([[]]); // findTenantById → not found
-    const res = await app.inject({
-      method: 'DELETE',
-      url: '/v1/cosmology/universes/999',
-      headers: omegaHeader(),
-    });
-    expect(res.statusCode).toBe(404);
-    expect(JSON.parse(res.body).code).toBe('TENANT_NOT_FOUND');
-  });
-
   it('T7: GET /universes lists every Universo with type + active SC/Cúmulo census', async () => {
     (db.execute as Mock).mockResolvedValueOnce([
       [
@@ -654,56 +640,29 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
     expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
   });
 
-  it('COSMOLOGY-VALIDATION-2: DELETE remove supercluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
-    const res = await app.inject({
-      method: 'DELETE',
-      url: '/v1/cosmology/universes/not-a-number/superclusters/FINANZAS',
-      headers: omegaHeader(),
-    });
-    expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
-  });
-
-  it('COSMOLOGY-VALIDATION-3: GET list superclusters with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/v1/cosmology/universes/not-a-number/superclusters',
-      headers: omegaHeader(),
-    });
-    expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
-  });
-
-  it('COSMOLOGY-VALIDATION-4: POST add cluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
-    const res = await app.inject({
-      method: 'POST',
-      url: '/v1/cosmology/universes/not-a-number/clusters',
-      headers: omegaHeader(),
-      payload: { clusterCode: 'GASTOS' },
-    });
-    expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
-  });
-
-  it('COSMOLOGY-VALIDATION-5: DELETE remove cluster with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
-    const res = await app.inject({
-      method: 'DELETE',
-      url: '/v1/cosmology/universes/not-a-number/clusters/GASTOS',
-      headers: omegaHeader(),
-    });
-    expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
-  });
-
-  it('COSMOLOGY-VALIDATION-6: GET list clusters with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/v1/cosmology/universes/not-a-number/clusters',
-      headers: omegaHeader(),
-    });
-    expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
-  });
+  // FC166 Track C Batch 2 (S5976) — VALIDATION-2/3/5/6/8 shared the exact
+  // same "no-payload request with a non-numeric tenantId → 400
+  // VALIDATION_ERROR" body, varying only method/url; consolidated (0 loss
+  // of coverage). VALIDATION-1/4/7 keep their own payload shape and stay
+  // separate `it()` blocks (not part of the flagged clone group).
+  it.each([
+    ['DELETE', '/v1/cosmology/universes/not-a-number/superclusters/FINANZAS'],
+    ['GET', '/v1/cosmology/universes/not-a-number/superclusters'],
+    ['DELETE', '/v1/cosmology/universes/not-a-number/clusters/GASTOS'],
+    ['GET', '/v1/cosmology/universes/not-a-number/clusters'],
+    ['DELETE', '/v1/cosmology/universes/not-a-number'],
+  ])(
+    'COSMOLOGY-VALIDATION: %s %s with non-numeric tenantId — 400 VALIDATION_ERROR',
+    async (method, url) => {
+      const res = await app.inject({
+        method: method as 'GET' | 'DELETE',
+        url,
+        headers: omegaHeader(),
+      });
+      expect(res.statusCode).toBe(400);
+      expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
+    }
+  );
 
   it('COSMOLOGY-VALIDATION-7: POST create universe with empty label — 400 VALIDATION_ERROR', async () => {
     const res = await app.inject({
@@ -711,16 +670,6 @@ describe('FC160 F1: /v1/cosmology/universes/:tenantId', () => {
       url: '/v1/cosmology/universes',
       headers: omegaHeader(),
       payload: { label: '', universeTypeCode: 'FMS', ownerTypeCode: 'FLOTILLA' },
-    });
-    expect(res.statusCode).toBe(400);
-    expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');
-  });
-
-  it('COSMOLOGY-VALIDATION-8: DELETE destroy universe with non-numeric tenantId — 400 VALIDATION_ERROR', async () => {
-    const res = await app.inject({
-      method: 'DELETE',
-      url: '/v1/cosmology/universes/not-a-number',
-      headers: omegaHeader(),
     });
     expect(res.statusCode).toBe(400);
     expect(JSON.parse(res.body).code).toBe('VALIDATION_ERROR');

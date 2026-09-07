@@ -129,35 +129,33 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       );
     });
 
-    it('Omega Protocol: maintIntervalDays=180 maps to maintenanceTimeFreqId=1044', async () => {
-      const mockConn = await db.getConnection();
-      (mockConn.execute as any)
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
-        .mockResolvedValueOnce([{ affectedRows: 1 }])
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
+    // FC166 Track C Batch 2 (S5976) — 5 structurally-identical mapping tests
+    // (maintIntervalDays/Km → frequency catalog id) consolidated into one
+    // parameterized case; each row below is exactly one of the original
+    // `it()` bodies, same mocks/assertions, 0 loss of coverage.
+    it.each([
+      ['maintIntervalDays', 180, 1044],
+      ['maintIntervalDays', 365, 1045],
+      ['maintIntervalDays', 90, 1048],
+      ['maintIntervalKm', 10000, 1047],
+      ['maintIntervalKm', 5000, 1046],
+    ] as const)(
+      'Omega Protocol: %s=%i maps to frequency id %i',
+      async (field, value, expectedId) => {
+        const mockConn = await db.getConnection();
+        (mockConn.execute as any)
+          .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
+          .mockResolvedValueOnce([{ affectedRows: 1 }])
+          .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
 
-      await FleetService.updateUnit('ASM-001', { maintIntervalDays: 180 }, 'Reason', 1);
+        await FleetService.updateUnit('ASM-001', { [field]: value }, 'Reason', 1);
 
-      expect(mockConn.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_units SET'),
-        expect.arrayContaining([1044, 'ASM-001'])
-      );
-    });
-
-    it('Omega Protocol: maintIntervalDays=365 maps to maintenanceTimeFreqId=1045', async () => {
-      const mockConn = await db.getConnection();
-      (mockConn.execute as any)
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
-        .mockResolvedValueOnce([{ affectedRows: 1 }])
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
-
-      await FleetService.updateUnit('ASM-001', { maintIntervalDays: 365 }, 'Reason', 1);
-
-      expect(mockConn.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_units SET'),
-        expect.arrayContaining([1045, 'ASM-001'])
-      );
-    });
+        expect(mockConn.execute).toHaveBeenCalledWith(
+          expect.stringContaining('UPDATE fleet_units SET'),
+          expect.arrayContaining([expectedId, 'ASM-001'])
+        );
+      }
+    );
 
     it('Omega Protocol: unrecognized maintIntervalDays maps maintenanceTimeFreqId to null', async () => {
       const mockConn = await db.getConnection();
@@ -172,21 +170,6 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       expect(updateCall[1]).toContain(null);
     });
 
-    it('Omega Protocol: maintIntervalKm=10000 maps to maintenanceUsageFreqId=1047', async () => {
-      const mockConn = await db.getConnection();
-      (mockConn.execute as any)
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
-        .mockResolvedValueOnce([{ affectedRows: 1 }])
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
-
-      await FleetService.updateUnit('ASM-001', { maintIntervalKm: 10000 }, 'Reason', 1);
-
-      expect(mockConn.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_units SET'),
-        expect.arrayContaining([1047, 'ASM-001'])
-      );
-    });
-
     it('Omega Protocol: unrecognized maintIntervalKm maps maintenanceUsageFreqId to null', async () => {
       const mockConn = await db.getConnection();
       (mockConn.execute as any)
@@ -198,36 +181,6 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
 
       const updateCall = (mockConn.execute as any).mock.calls[1];
       expect(updateCall[1]).toContain(null);
-    });
-
-    it('Omega Protocol: maintIntervalDays=90 maps to maintenanceTimeFreqId=1048 (line 320)', async () => {
-      const mockConn = await db.getConnection();
-      (mockConn.execute as any)
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
-        .mockResolvedValueOnce([{ affectedRows: 1 }])
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
-
-      await FleetService.updateUnit('ASM-001', { maintIntervalDays: 90 }, 'Reason', 1);
-
-      expect(mockConn.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_units SET'),
-        expect.arrayContaining([1048, 'ASM-001'])
-      );
-    });
-
-    it('Omega Protocol: maintIntervalKm=5000 maps to maintenanceUsageFreqId=1046 (line 333)', async () => {
-      const mockConn = await db.getConnection();
-      (mockConn.execute as any)
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]])
-        .mockResolvedValueOnce([{ affectedRows: 1 }])
-        .mockResolvedValueOnce([[{ id: 'ASM-001' }]]);
-
-      await FleetService.updateUnit('ASM-001', { maintIntervalKm: 5000 }, 'Reason', 1);
-
-      expect(mockConn.execute).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE fleet_units SET'),
-        expect.arrayContaining([1046, 'ASM-001'])
-      );
     });
 
     it('Omega Protocol: maintIntervalDays=null uses 0 fallback → maintenanceTimeFreqId=null (line 320 null branch)', async () => {
@@ -348,11 +301,20 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       trace: vi.fn(),
     };
 
-    it('AT-DH-A-1: SQL contains assetTypeCode [VIM catalog enrichment]', async () => {
+    // FC166 Track C Batch 2 (S5976) — AT-DH-A-1/4/5/6/7 shared the exact same
+    // "assert SQL contains join keyword" body, varying only the keyword;
+    // consolidated into one parameterized case (0 loss of coverage).
+    it.each([
+      ['assetTypeCode', 'VIM catalog enrichment'],
+      ['owner', 'ERP organizational'],
+      ['sede', 'ERP organizational'],
+      ['centroMantenimiento', 'ERP organizational'],
+      ['insuranceCompany', 'ERP organizational'],
+    ])('AT-DH-A: SQL contains %s JOIN [%s]', async (keyword) => {
       (db.execute as any).mockResolvedValue([[]]); // unit not found — still validates query
       await FleetService.getUnitById('AT-DH-PROBE', logger as any);
       const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
-      expect(sql).toContain('assetTypeCode');
+      expect(sql).toContain(keyword);
     });
 
     it('AT-DH-A-2: usageUnitName KM flows through result for standard vehicle', async () => {
@@ -377,34 +339,6 @@ describe('FleetService - Unit Certification (Sovereign Grade)', () => {
       (db.execute as any).mockResolvedValueOnce([row]).mockResolvedValue([[]]);
       const result = await FleetService.getUnitById('MAQ-HRS', logger as any);
       expect((result as any).usageUnitName).toBe('HRS');
-    });
-
-    it('AT-DH-A-4: SQL contains owner JOIN [ERP organizational]', async () => {
-      (db.execute as any).mockResolvedValue([[]]);
-      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
-      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
-      expect(sql).toContain('owner');
-    });
-
-    it('AT-DH-A-5: SQL contains sede JOIN [ERP organizational]', async () => {
-      (db.execute as any).mockResolvedValue([[]]);
-      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
-      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
-      expect(sql).toContain('sede');
-    });
-
-    it('AT-DH-A-6: SQL contains centroMantenimiento JOIN [ERP organizational]', async () => {
-      (db.execute as any).mockResolvedValue([[]]);
-      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
-      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
-      expect(sql).toContain('centroMantenimiento');
-    });
-
-    it('AT-DH-A-7: SQL contains insuranceCompany JOIN [ERP organizational]', async () => {
-      (db.execute as any).mockResolvedValue([[]]);
-      await FleetService.getUnitById('AT-DH-PROBE', logger as any);
-      const [sql] = (db.execute as any).mock.calls[0] as [string, unknown[]];
-      expect(sql).toContain('insuranceCompany');
     });
 
     it('AT-DH-A-8: NULL FK fields do not crash — LEFT JOINs survive', async () => {

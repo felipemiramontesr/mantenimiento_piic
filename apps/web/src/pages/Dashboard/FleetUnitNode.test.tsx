@@ -202,22 +202,28 @@ describe('FleetUnitNode', () => {
     await waitFor(() => expect(screen.getByText('Juan Mecánico')).toBeInTheDocument());
   });
 
-  it('renders financial summary section', async () => {
+  // FC166 Track C Batch 2 (S5976) — SonarCloud's own secondary locations
+  // (flows) confirmed this exact 5-test clone set spans lines 205, 211,
+  // 217, 310 and 798: render → waitFor(one label) → expect(one value),
+  // varying only the two literals; consolidated (0 loss of coverage).
+  it.each([
+    ['renders financial summary section', 'Resumen Financiero 2026', 'Mantenimiento'],
+    ['renders compliance & legal card', 'Cumplimiento & Legal', 'Vencimiento seguro'],
+    [
+      'renders incidents section when recent incidents exist',
+      'Incidentes Recientes',
+      'Falla en suspensión delantera',
+    ],
+    ['shows Resuelto label for non-OPEN incident status', 'Incidentes Recientes', 'Resuelto'],
+    [
+      'RECALL-NODE-3: shows empty message when recalls list is empty',
+      'Recalls',
+      'Sin recalls registrados para esta unidad',
+    ],
+  ])('%s', async (_scenario, waitText, expectText) => {
     render(<FleetUnitNode />);
-    await waitFor(() => expect(screen.getByText('Resumen Financiero 2026')).toBeInTheDocument());
-    expect(screen.getByText('Mantenimiento')).toBeInTheDocument();
-  });
-
-  it('renders compliance & legal card', async () => {
-    render(<FleetUnitNode />);
-    await waitFor(() => expect(screen.getByText('Cumplimiento & Legal')).toBeInTheDocument());
-    expect(screen.getByText('Vencimiento seguro')).toBeInTheDocument();
-  });
-
-  it('renders incidents section when recent incidents exist', async () => {
-    render(<FleetUnitNode />);
-    await waitFor(() => expect(screen.getByText('Incidentes Recientes')).toBeInTheDocument());
-    expect(screen.getByText('Falla en suspensión delantera')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(waitText)).toBeInTheDocument());
+    expect(screen.getByText(expectText)).toBeInTheDocument();
   });
 
   it('does not render incidents section when list is empty', async () => {
@@ -305,12 +311,6 @@ describe('FleetUnitNode', () => {
     render(<FleetUnitNode />);
     await waitFor(() => expect(screen.getByText('Incidentes Recientes')).toBeInTheDocument());
     expect(screen.getByText('Abierto')).toBeInTheDocument();
-  });
-
-  it('shows Resuelto label for non-OPEN incident status', async () => {
-    render(<FleetUnitNode />);
-    await waitFor(() => expect(screen.getByText('Incidentes Recientes')).toBeInTheDocument());
-    expect(screen.getByText('Resuelto')).toBeInTheDocument();
   });
 
   it('renders unknown severity as fallback badge in incident list', async () => {
@@ -793,12 +793,6 @@ describe('FleetUnitNode', () => {
       expect(screen.getByRole('dialog', { name: 'Vincular recall' })).toBeInTheDocument()
     );
     expect(screen.getByText('Vincular Recall al Catálogo')).toBeInTheDocument();
-  });
-
-  it('RECALL-NODE-3: shows empty message when recalls list is empty', async () => {
-    render(<FleetUnitNode />);
-    await waitFor(() => expect(screen.getByText('Recalls')).toBeInTheDocument());
-    expect(screen.getByText('Sin recalls registrados para esta unidad')).toBeInTheDocument();
   });
 
   it('RECALL-NODE-4: an unknown status falls back to the raw value with no badge class', async () => {

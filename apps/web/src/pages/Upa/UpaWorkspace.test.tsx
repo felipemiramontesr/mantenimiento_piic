@@ -115,10 +115,20 @@ describe('UpaWorkspace', () => {
   // ─── Active Work Order ──────────────────────────────────────────────────────
 
   describe('Active Work Order View', () => {
-    it('renders stepper when work order is active', () => {
+    // FC166 Track C Batch 2 (S5976) — SonarCloud's own secondary locations
+    // (flows) confirmed this exact 4-test clone set (mock an active work
+    // order, render, assert one testid is present); consolidated (0 loss
+    // of coverage). The "Flotilla Minería" case below overrides the mock
+    // with an extra field and stays separate.
+    it.each([
+      ['renders stepper when work order is active', 'upa-stepper'],
+      ['renders task card for each task', 'task-card-triage_dashboard_lights'],
+      ['renders defer button for pending task', 'defer-btn-triage_dashboard_lights'],
+      ['renders close order button', 'close-order-btn'],
+    ])('%s', (_scenario, testId) => {
       vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
       render(<UpaWorkspace />);
-      expect(screen.getByTestId('upa-stepper')).toBeDefined();
+      expect(screen.getByTestId(testId)).toBeDefined();
     });
 
     it('shows "Flotilla Minería" for a mining fleet work order', () => {
@@ -128,24 +138,6 @@ describe('UpaWorkspace', () => {
       });
       render(<UpaWorkspace />);
       expect(screen.getByText(/Flotilla Minería/)).toBeDefined();
-    });
-
-    it('renders task card for each task', () => {
-      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
-      render(<UpaWorkspace />);
-      expect(screen.getByTestId('task-card-triage_dashboard_lights')).toBeDefined();
-    });
-
-    it('renders defer button for pending task', () => {
-      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
-      render(<UpaWorkspace />);
-      expect(screen.getByTestId('defer-btn-triage_dashboard_lights')).toBeDefined();
-    });
-
-    it('renders close order button', () => {
-      vi.mocked(useUpaOrder).mockReturnValue({ ...baseHook, workOrder: mockWorkOrder });
-      render(<UpaWorkspace />);
-      expect(screen.getByTestId('close-order-btn')).toBeDefined();
     });
 
     it('calls closeCurrentOrder when close button is clicked', () => {
